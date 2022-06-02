@@ -27,19 +27,19 @@ const constexpr char repo_hash[] = REPO_HASH;
 const constexpr char repo_hash[] = "nonrepo";
 #endif
 
-#define INIT_LOG                                                                               \
-    constexpr std::tuple opts{                                                                 \
-        lucid::argparse::option<'l'>(identity, "/dev/null", "log", "File to log to", "FILE"),  \
-        lucid::argparse::option<'n'>(                                                          \
-            [](std::string_view word) noexcept { return std::atoi(word.data()); },             \
-            10000000,                                                                          \
-            "runs",                                                                            \
-            "Number of runs",                                                                  \
-            "N")};                                                                             \
-    lucid::argparse::ArgsRange args(argc, argv);                                               \
-    const auto                 pr =                                                            \
-        lucid::argparse::parse(opts, args, lucid::argparse::StandardErrorHandler(args, opts)); \
-    LogFile      log(pr.get_opt<'l'>());                                                       \
+#define INIT_LOG                                                                                        \
+    constexpr std::tuple       opts{lucid::argparse::option<'l'>(                                       \
+                                  lucid::identity, "/dev/null", "log", "File to log to", "FILE"), \
+                              lucid::argparse::option<'n'>([](std::string_view word) noexcept     \
+                                                           { return std::atoi(word.data()); },    \
+                                                           10000000,                              \
+                                                           "runs",                                \
+                                                           "Number of runs",                      \
+                                                           "N")};                                 \
+    lucid::argparse::ArgsRange args(argc, argv);                                                        \
+    const auto                 pr =                                                                     \
+        lucid::argparse::parse(opts, args, lucid::argparse::StandardErrorHandler(args, opts));          \
+    LogFile      log(pr.get_opt<'l'>());                                                                \
     const size_t n = pr.get_opt<'n'>();
 
 namespace lucid

@@ -14,7 +14,7 @@ struct uniform_init
 
 namespace detail
 {
-template <size_t I, typename T>
+template <std::size_t I, typename T>
 class steady_tuple_leaf
 {
     T value;
@@ -55,7 +55,7 @@ class steady_tuple_leaf
 template <typename Idxs, typename... Ts>
 class steady_tuple_impl;
 
-template <size_t... Idxs, typename... Ts>
+template <std::size_t... Idxs, typename... Ts>
 class steady_tuple_impl<std::index_sequence<Idxs...>, Ts...> : public steady_tuple_leaf<Idxs, Ts>...
 {
   public:
@@ -67,7 +67,7 @@ class steady_tuple_impl<std::index_sequence<Idxs...>, Ts...> : public steady_tup
     steady_tuple_impl&
     operator=(steady_tuple_impl&&) = delete;
 
-    template <size_t... LeafIdxs, typename... LeafTs, typename... ValueTs>
+    template <std::size_t... LeafIdxs, typename... LeafTs, typename... ValueTs>
     constexpr steady_tuple_impl(std::index_sequence<LeafIdxs...>,
                                 typelist<LeafTs...>,
                                 ValueTs&&... values) :
@@ -75,7 +75,7 @@ class steady_tuple_impl<std::index_sequence<Idxs...>, Ts...> : public steady_tup
     {
     }
 
-    template <size_t... LeafIdxs, typename... LeafTs, typename... ValueTs>
+    template <std::size_t... LeafIdxs, typename... LeafTs, typename... ValueTs>
     constexpr steady_tuple_impl(std::index_sequence<LeafIdxs...>,
                                 typelist<LeafTs...>,
                                 std::piecewise_construct_t pc,
@@ -84,7 +84,7 @@ class steady_tuple_impl<std::index_sequence<Idxs...>, Ts...> : public steady_tup
     {
     }
 
-    template <size_t... LeafIdxs, typename... LeafTs, typename Val>
+    template <std::size_t... LeafIdxs, typename... LeafTs, typename Val>
     constexpr steady_tuple_impl(std::index_sequence<LeafIdxs...>,
                                 typelist<LeafTs...>,
                                 uniform_init,
@@ -130,7 +130,7 @@ class steady_tuple
     {
     }
 
-    template <size_t I>
+    template <std::size_t I>
     constexpr decltype(auto)
     get() const noexcept
     {
@@ -138,7 +138,7 @@ class steady_tuple
             .get();
     }
 
-    template <size_t I>
+    template <std::size_t I>
     constexpr decltype(auto)
     get() noexcept
     {
