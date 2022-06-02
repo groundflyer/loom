@@ -85,9 +85,9 @@ add_subdirectory(ext/fmt EXCLUDE_FROM_ALL)
 
 # External includes
 # Concurrent Queue: concurrentqueue.h
-# range-v3: concept, meta, range, std
 # static math: static_math
 include_directories(ext/include)
+include_directories(ext/range-v3/include)
 
 # docs
 if(BUILD_DOC)

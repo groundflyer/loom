@@ -4,3 +4,6 @@
 [submodule "glfw"]
 	path = ext/glfw
 	url = https://github.com/glfw/glfw.git
+[submodule "range-v3"]
+	path = ext/range-v3
+	url = https://github.com/ericniebler/range-v3
