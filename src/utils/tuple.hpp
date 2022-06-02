@@ -210,7 +210,8 @@ template <typename Visitor, typename... Ts, template <typename...> typename Tupl
 constexpr void
 visit(const std::size_t case_, Visitor&& visitor, Tuple<Ts...>& tuple)
 {
-    if(case_ >= std::tuple_size_v<Tuple>) throw out_of_range{case_, std::tuple_size_v<Tuple>};
+    if(case_ >= std::tuple_size_v<Tuple<Ts...>>)
+        throw out_of_range{case_, std::tuple_size_v<Tuple<Ts...>>};
 
     detail::visit_impl<0>(case_, std::forward<Visitor>(visitor), tuple);
 }
