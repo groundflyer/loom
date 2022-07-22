@@ -8,7 +8,7 @@
 #pragma once
 
 #include "vector.hpp"
-#include <utils/intlist.hpp>
+#include <utils/permut.hpp>
 
 namespace lucid
 {
@@ -409,7 +409,7 @@ template <std::size_t... Ns,
 constexpr T
 det_impl(const Matrix<T, M, M, Container>& m, std::index_sequence<Ns...>) noexcept
 {
-    return (T{0} + ... + det_elem<intlist::nlperm_t<Ns, M>>(m, std::make_index_sequence<M>{}));
+    return (T{0} + ... + det_elem<nlperm_t<Ns, M>>(m, std::make_index_sequence<M>{}));
 }
 } // namespace detail
 
@@ -584,7 +584,8 @@ template <typename T,
 constexpr auto
 inverse(const Matrix<T, M, N, Container>& a) noexcept
 {
-    const auto is_zero = [](const T& val) noexcept {
+    const auto is_zero = [](const T& val) noexcept
+    {
         if constexpr(std::is_floating_point_v<T>)
             return almost_equal(val, T{0}, 5);
         else
