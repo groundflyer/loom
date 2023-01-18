@@ -1,0 +1,79 @@
+// -*- C++ -*-
+// test some template metaprogramming functions
+// if it compiles, it works
+
+#include <utils/tmp.hpp>
+
+using namespace std;
+
+namespace lucid::intlist
+{
+using testlist1 = integer_sequence<int, 1, 2, 3, 4>;
+
+static_assert(is_same_v<reverse<testlist1>, integer_sequence<int, 4, 3, 2, 1>>);
+static_assert(is_same_v<nappend<integer_sequence<int, 1, 2, 3, 4>, 3, 0>,
+                        integer_sequence<int, 1, 2, 3, 4, 0, 0, 0>>);
+static_assert(is_same_v<take<2, testlist1>, integer_sequence<int, 1, 2>>);
+static_assert(is_same_v<drop<2, testlist1>, integer_sequence<int, 3, 4>>);
+static_assert(elem<2, testlist1>);
+static_assert(!elem<5, testlist1>);
+static_assert(index<2, testlist1> == 1);
+static_assert(is_same_v<del<3, testlist1>, integer_sequence<int, 1, 2, 4>>);
+static_assert(is_same_v<map<decltype([](int i) { return i + 20; }), testlist1>,
+                        integer_sequence<int, 21, 22, 23, 24>>);
+
+using lcnt = lehmer_code<463>;
+using lcnv = index_sequence<3, 4, 1, 0, 1, 0>;
+static_assert(is_same_v<lcnv, lcnt>);
+
+constexpr size_t L = 3;
+using pm_seq0      = make_index_sequence<L>;
+using pm_seq1      = index_sequence<0, 2, 1>;
+using pm_seq2      = index_sequence<1, 0, 2>;
+using pm_seq3      = index_sequence<1, 2, 0>;
+using pm_seq4      = index_sequence<2, 0, 1>;
+using pm_seq5      = index_sequence<2, 1, 0>;
+static_assert(is_same_v<nlperm<0, L>, pm_seq0>);
+static_assert(is_same_v<nlperm<1, L>, pm_seq1>);
+static_assert(is_same_v<nlperm<2, L>, pm_seq2>);
+static_assert(is_same_v<nlperm<3, L>, pm_seq3>);
+static_assert(is_same_v<nlperm<4, L>, pm_seq4>);
+static_assert(is_same_v<nlperm<5, L>, pm_seq5>);
+} // namespace lucid::intlist
+
+namespace lucid::typelist
+{
+using testlist1 = type_sequence<bool, int, float, char>;
+using testlist2 = type_sequence<double, unsigned, short>;
+using testlist3 = type_sequence<long, size_t, unsigned char>;
+
+static_assert(
+    is_same_v<reverse<testlist1>, type_sequence<char, float, int, bool>>);
+static_assert(is_same_v<take<2, testlist1>, type_sequence<bool, int>>);
+static_assert(is_same_v<drop<2, testlist1>, type_sequence<float, char>>);
+static_assert(elem<float, testlist1>);
+static_assert(!elem<long, testlist1>);
+static_assert(index<float, testlist1> == 2);
+static_assert(is_same_v<zip<testlist2, testlist3>,
+                        type_sequence<type_sequence<double, long>,
+                                      type_sequence<unsigned, size_t>,
+                                      type_sequence<short, unsigned char>>>);
+static_assert(is_same_v<concat<type_sequence<testlist1, testlist2, testlist3>>,
+                        type_sequence<bool,
+                                      int,
+                                      float,
+                                      char,
+                                      double,
+                                      unsigned,
+                                      short,
+                                      long,
+                                      size_t,
+                                      unsigned char>>);
+static_assert(is_same_v<del<int, testlist1>, type_sequence<bool, float, char>>);
+} // namespace lucid::typelist
+
+int
+main()
+{
+    return 0;
+}
