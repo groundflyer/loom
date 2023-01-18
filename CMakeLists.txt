@@ -8,12 +8,6 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
-# Check for required compiler features
-include(CxxFeatures)
-
-# Clang-related checks
-include(Clang)
-
 # Default Build Type is Release
 if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
   set(CMAKE_BUILD_TYPE Release CACHE STRING "Choose the type of build." FORCE)
@@ -27,6 +21,20 @@ option(BUILD_TESTS "Build tests" OFF)
 option(BUILD_BENCHMARKS "Build benchmarks" OFF)
 option(BUILD_DOC "Build documentation" OFF)
 option(ENABLE_IPO "Enable interprocedural optimization" OFF)
+
+# Set floating point precision
+set(_precision "single")
+if(USE_DOUBLE_PRECISION)
+  set(_precision "double")
+  add_definitions(-D_DOUBLE_PRECISION)
+endif()
+message(STATUS "Floating-point format: ${_precision} precision")
+
+# Check for required compiler features
+include(CxxFeatures)
+
+# Clang-related checks
+include(Clang)
 
 add_compile_options(-Wall -Wpedantic -Wextra -fno-rtti)
 # Optimize for the host machine
@@ -53,14 +61,6 @@ if(CMAKE_BUILD_TYPE STREQUAL "Release")
   endif()
 endif()
 
-# Set floating point precision
-set(_precision "single")
-if(USE_DOUBLE_PRECISION)
-  set(_precision "double")
-  add_definitions(-D_DOUBLE_PRECISION)
-endif()
-message(STATUS "Floating-point format: ${_precision} precision")
-
 # Threads
 set(CMAKE_THREAD_PREFER_PTHREAD 1)
 set(THREADS_PREFER_PTHREAD_FLAG 1)
@@ -71,23 +71,26 @@ set(OpenGL_GL_PREFERENCE LEGACY)
 find_package(OpenGL REQUIRED)
 
 # GLFW3
-set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
-set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
-set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
-add_subdirectory(ext/glfw)
-set(GL_LIBS ${OPENGL_gl_LIBRARY} glfw)
-set(GL_DEFS "-DGLFW_INCLUDE_GLCOREARB -DGLFW_INCLUDE_GLEXT -DGL_GLEXT_PROTOTYPES")
-
+find_package(glfw3 3.3 REQUIRED)
+if(glfw3_FOUND)
+  message(STATUS "Found glfw3: " ${glfw3_VERSION})
+  set(GL_LIBS OpenGL::GL glfw)
+  set(GL_DEFS "-DGLFW_INCLUDE_GLCOREARB -DGLFW_INCLUDE_GLEXT -DGL_GLEXT_PROTOTYPES")
+endif()
+  
 # fmt
-set(BUILD_SHARED_LIBS FALSE)
-add_definitions(-DFMT_USE_GRISU=1)
-add_subdirectory(ext/fmt EXCLUDE_FROM_ALL)
+find_package(fmt REQUIRED)
+if(fmt_FOUND)
+  message(STATUS "Found fmt: " ${fmt_VERSION})
+  set(FMT fmt::fmt-header-only)
+  # add_definitions(-DFMT_USE_GRISU=1)
+endif()
 
 # External includes
 # Concurrent Queue: concurrentqueue.h
 # static math: static_math
+find_package(range-v3 REQUIRED)
 include_directories(ext/include)
-include_directories(ext/range-v3/include)
 
 # docs
 if(BUILD_DOC)
@@ -100,6 +103,8 @@ if(BUILD_DOC)
     set(BIB_DIR ${DOC_DIR}/bib)
 
     set(DOXYGEN_PROJECT_BRIEF "Experimental renderer")
+    set(DOXYGEN_CLANG_ASSISTED_PARSING YES)
+    set(DOXYGEN_CLANG_DATABASE_PATH ${CMAKE_CURRENT_BINARY_DIR})
     set(DOXYGEN_FILE_PATTERNS *.cpp *.hpp *.md)
     set(DOXYGEN_EXTRACT_LOCAL_CLASSES NO)
     set(DOXYGEN_HIDE_UNDOC_CLASSES YES)
