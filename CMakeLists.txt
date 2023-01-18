@@ -79,10 +79,10 @@ if(glfw3_FOUND)
 endif()
   
 # fmt
-find_package(fmt REQUIRED)
+find_package(fmt 9 REQUIRED)
 if(fmt_FOUND)
   message(STATUS "Found fmt: " ${fmt_VERSION})
-  set(FMT fmt::fmt-header-only)
+  set(FMTLIB fmt::fmt-header-only)
   # add_definitions(-DFMT_USE_GRISU=1)
 endif()
 
