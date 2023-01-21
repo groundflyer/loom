@@ -202,13 +202,13 @@ struct tuple_maker_fn
 };
 } // namespace fn
 
-static constexpr fn::identity_fn identity;
+inline constexpr fn::identity_fn identity;
 
 template <typename T, bool list_init = false>
-static constexpr fn::maker_fn<T, list_init> maker;
+inline constexpr fn::maker_fn<T, list_init> maker;
 
 template <typename T>
-static constexpr fn::tuple_maker_fn<T> tuple_maker;
+inline constexpr fn::tuple_maker_fn<T> tuple_maker;
 
 template <typename BinaryOp, typename Init, typename... Args>
 constexpr decltype(auto)

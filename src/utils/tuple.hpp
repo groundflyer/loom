@@ -5,99 +5,38 @@
 #pragma once
 
 #include "functional.hpp"
-#include "typelist.hpp"
+#include "tmp.hpp"
+
+#include <variant>
 
 namespace lucid
 {
-struct out_of_range
-{
-    std::size_t idx;
-    std::size_t size;
-};
 
 namespace detail
 {
 template <typename Tuple, std::size_t... Ids>
-decltype(auto)
+constexpr auto
 enumerate_impl(const Tuple& tuple, std::index_sequence<Ids...>) noexcept
 {
     return std::tuple{
-        std::pair<std::size_t, std::tuple_element_t<Ids, Tuple>>{Ids, std::get<Ids>(tuple)}...};
-}
-
-template <typename Ret, std::size_t Idx, typename TupleArgs, typename Func, typename... RestFuncs>
-constexpr Ret
-switcher_func_impl(const std::size_t case_,
-                   TupleArgs&&       tuple_args,
-                   Func&&            func,
-                   RestFuncs&&... rest) noexcept
-{
-    if(Idx == case_ || sizeof...(rest) == 0)
-        return std::apply(std::forward<Func>(func), std::forward<TupleArgs>(tuple_args));
-
-    if constexpr(sizeof...(rest) > 0)
-        return switcher_func_impl<Ret, Idx + 1>(
-            case_, std::forward<TupleArgs>(tuple_args), std::forward<RestFuncs>(rest)...);
-}
-
-template <typename Ret, std::size_t Idx, typename TupleArgs, typename Func, typename... RestFuncs>
-constexpr Ret
-switcher_func_impl(const std::size_t case_,
-                   const TupleArgs&  tuple_args,
-                   const Func&       func,
-                   const RestFuncs&... rest) noexcept
-{
-    if(Idx == case_ || sizeof...(rest) == 0) return std::apply(func, tuple_args);
-
-    if constexpr(sizeof...(rest) > 0)
-        return switcher_func_impl<Ret, Idx + 1>(case_, tuple_args, rest...);
-}
-
-template <typename Ret, std::size_t Idx, typename Visitor, typename Tuple>
-constexpr Ret
-visit_impl(const std::size_t case_, Visitor&& visitor, const Tuple& tuple)
-{
-    if(Idx == case_) return visitor(std::get<Idx>(tuple));
-
-    if constexpr(Idx < std::tuple_size_v<Tuple> - 1)
-        return visit_impl<Ret, Idx + 1>(case_, std::forward<Visitor>(visitor), tuple);
-
-    // throwing from here to avoid
-    // "Reaching the end of non-void function" warning
-    throw out_of_range{case_, std::tuple_size_v<Tuple>};
+        std::pair<std::size_t, std::tuple_element_t<Ids, Tuple>>{
+                                                                 Ids, std::get<Ids>(tuple)}
+          ...
+    };
 }
 
 template <std::size_t Idx, typename Visitor, typename Tuple>
-constexpr void
-visit_impl(const std::size_t case_, Visitor&& visitor, Tuple& tuple) noexcept
+constexpr decltype(auto)
+visit_impl(const std::size_t case_, Visitor&& visitor, Tuple&& tuple)
 {
-    // because return type is void
-    // we check case_ before calling this
-    // and we don't throw out_of_range here
-    if(Idx == case_) return visitor(std::get<Idx>(tuple));
+    if(Idx == case_)
+        return std::invoke(std::forward<Visitor>(visitor),
+                           std::get<Idx>(tuple));
 
-    if constexpr(Idx < std::tuple_size_v<Tuple> - 1)
-        visit_impl<Idx + 1>(case_, std::forward<Visitor>(visitor), tuple);
-}
-
-template <typename Ret, std::size_t Idx, typename Visitor, typename Tuple>
-constexpr Ret
-visit_clamped_impl(const std::size_t case_, Visitor&& visitor, const Tuple& tuple) noexcept
-{
-    if(Idx == case_ || Idx == std::tuple_size_v<Tuple> - 1) return visitor(std::get<Idx>(tuple));
-
-    if constexpr(Idx < std::tuple_size_v<Tuple> - 1)
-        return visit_clamped_impl<Ret, Idx + 1>(case_, std::forward<Visitor>(visitor), tuple);
-}
-
-template <std::size_t Idx, typename Visitor, typename Tuple>
-constexpr void
-visit_clamped_impl(const std::size_t case_, Visitor&& visitor, Tuple& tuple) noexcept
-{
-    if(Idx == case_ || Idx == std::tuple_size_v<Tuple> - 1) return visitor(std::get<Idx>(tuple));
-
-    if constexpr(Idx < std::tuple_size_v<Tuple> - 1)
-        visit_clamped_impl<Idx + 1>(case_, std::forward<Visitor>(visitor), tuple);
+    if constexpr(Idx < std::tuple_size_v<std::decay_t<Tuple>> - 1)
+        return visit_impl<Idx + 1>(case_,
+                                   std::forward<Visitor>(visitor),
+                                   std::forward<Tuple>(tuple));
 }
 
 template <std::size_t I, typename T, std::size_t N1, std::size_t N2>
@@ -135,33 +74,35 @@ apply_impl(F&& f, Tuple& tuple, std::index_sequence<I...>) noexcept
 
 template <typename F, typename Tuple, std::size_t... I>
 constexpr void
-for_each_impl(F&& f, const Tuple& tuple, std::index_sequence<I...>)
+for_each_impl(F&& f, Tuple&& tuple, std::index_sequence<I...>)
 {
-    (..., std::invoke(f, std::get<I>(tuple)));
-}
-
-template <typename F, typename Tuple, std::size_t... I>
-constexpr void
-for_each_impl(F&& f, Tuple& tuple, std::index_sequence<I...>)
-{
-    (..., std::invoke(f, std::get<I>(tuple)));
+    (..., std::invoke(std::forward<F>(f), std::get<I>(tuple)));
 }
 } // namespace detail
 
+/// @brief Left-assotiative fold of a @p tuple.
 template <typename BinaryOp, typename T, typename... Ts>
 constexpr decltype(auto)
-fold_tuple(BinaryOp&& op, const T& init, const std::tuple<Ts...>& tuple) noexcept
+fold_tuple(BinaryOp&&               op,
+           const T&                 init,
+           const std::tuple<Ts...>& tuple) noexcept
 {
-    return std::apply([&](const Ts&... args) noexcept { return fold(op, init, args...); }, tuple);
+    return std::apply([&](const Ts&... args) noexcept
+                      { return fold(op, init, args...); },
+                      tuple);
 }
 
+/// @brief Left-assotiative fold of a non-empty @p tuple.
 template <typename BinaryOp, typename Tuple>
 constexpr decltype(auto)
 fold_tuple(BinaryOp&& op, const Tuple& tuple) noexcept
 {
-    return std::apply([&](const auto&... args) noexcept { return fold(op, args...); }, tuple);
+    return std::apply([&](const auto&... args) noexcept
+                      { return fold(op, args...); },
+                      tuple);
 }
 
+/// @brief Make tuple of pairs (i, elem).
 template <typename... Ts>
 constexpr decltype(auto)
 enumerate(const std::tuple<Ts...>& tuple) noexcept
@@ -169,83 +110,45 @@ enumerate(const std::tuple<Ts...>& tuple) noexcept
     return detail::enumerate_impl(tuple, std::index_sequence_for<Ts...>{});
 }
 
-template <typename... Args, typename... Funcs, template <typename...> typename Tuple>
+/// @brief Invoke @p visitor on the @p case_'th element of @p tuple.
+///
+/// @return Value of either std::variant comprising of all possible
+/// return types of @p Visitor(Ts)... or a singular type if all the resulting
+/// types of @p Visitor(Ts)... are the same.
+///
+/// @param case_ which @p tuple element to invoke @p visitor on.
+/// @param visitor callable to invoke. Must be able to take @p tuple elements
+/// as arguments.
+/// @param tuple contains elements to invoke @p visitor on.
+///
+/// @p case_ is bigger than the size of @p tuple is UB.
+template <typename Visitor, typename Tuple>
 constexpr decltype(auto)
-switcher_func(const std::size_t case_, Tuple<Funcs...>&& funcs, Args&&... args)
+visit(const std::size_t case_, Visitor&& visitor, Tuple&& tuple)
 {
-    return std::apply(
-        [case_, args_tuple = std::forward_as_tuple(args...)](Funcs&&... items) mutable {
-            using tpl = typename typelist<Funcs...>::template result_of<Args...>;
-            using ret = std::conditional_t<tpl::same, typename tpl::front, typename tpl::variant>;
-            return detail::switcher_func_impl<ret, 0>(
-                case_, args_tuple, std::forward<Funcs>(items)...);
-        },
-        std::forward<Tuple<Funcs...>>(funcs));
+    return detail::visit_impl<0>(case_,
+                                 std::forward<Visitor>(visitor),
+                                 std::forward<Tuple>(tuple));
 }
 
-template <typename... Args, typename... Funcs, template <typename...> typename Tuple>
-constexpr decltype(auto)
-switcher_func(const std::size_t case_, const Tuple<Funcs...>& funcs, const Args&... args)
-{
-    return std::apply(
-        [case_, args_tuple = std::tuple{args...}](const Funcs&... items) mutable {
-            using tpl = typename typelist<Funcs...>::template result_of<Args...>;
-            using ret = std::conditional_t<tpl::same, typename tpl::front, typename tpl::variant>;
-            return detail::switcher_func_impl<ret, 0>(case_, args_tuple, items...);
-        },
-        funcs);
-}
-
-template <typename Visitor, typename... Ts, template <typename...> typename Tuple>
-constexpr decltype(auto)
-visit(const std::size_t case_, Visitor&& visitor, const Tuple<Ts...>& tuple)
-{
-    using tpl = typelist<std::invoke_result_t<Visitor, Ts>...>;
-    using ret = std::conditional_t<tpl::same, typename tpl::front, typename tpl::variant>;
-
-    return detail::visit_impl<ret, 0>(case_, std::forward<Visitor>(visitor), tuple);
-}
-
-template <typename Visitor, typename... Ts, template <typename...> typename Tuple>
-constexpr void
-visit(const std::size_t case_, Visitor&& visitor, Tuple<Ts...>& tuple)
-{
-    if(case_ >= std::tuple_size_v<Tuple<Ts...>>)
-        throw out_of_range{case_, std::tuple_size_v<Tuple<Ts...>>};
-
-    detail::visit_impl<0>(case_, std::forward<Visitor>(visitor), tuple);
-}
-
-template <typename Visitor, typename... Ts, template <typename...> typename Tuple>
-constexpr decltype(auto)
-visit_clamped(const std::size_t case_, Visitor&& visitor, const Tuple<Ts...>& tuple) noexcept
-{
-    using tpl = typelist<std::invoke_result_t<Visitor, Ts>...>;
-    using ret = std::conditional_t<tpl::same, typename tpl::front, typename tpl::variant>;
-
-    return detail::visit_clamped_impl<ret, 0>(case_, std::forward<Visitor>(visitor), tuple);
-}
-
-template <typename Visitor, typename... Ts, template <typename...> typename Tuple>
-constexpr void
-visit_clamped(const std::size_t case_, Visitor&& visitor, Tuple<Ts...>& tuple) noexcept
-{
-    detail::visit_clamped_impl<0>(case_, std::forward<Visitor>(visitor), tuple);
-}
-
+/// @brief Concatenate arrays.
 template <typename T, std::size_t N1, std::size_t N2, typename... Rest>
 constexpr auto
 array_cat(const std::array<T, N1>& first,
           const std::array<T, N2>& second,
           const Rest&... rest) noexcept
 {
-    const auto ret = detail::array_cat_impl(first, second, std::make_index_sequence<N1 + N2>{});
+    const auto ret =
+        detail::array_cat_impl(first,
+                               second,
+                               std::make_index_sequence<N1 + N2>{});
 
     if constexpr(sizeof...(rest)) return array_cat(ret, rest...);
 
     return ret;
 }
 
+/// @brief Create an std::tuple of size @p N consisting only of values @p value.
 template <std::size_t N, typename T>
 constexpr auto
 repeat_to_tuple(const T& value) noexcept
@@ -253,9 +156,11 @@ repeat_to_tuple(const T& value) noexcept
     if constexpr(N == 1)
         return std::tuple{value};
     else
-        return std::tuple_cat(std::tuple{value}, repeat_to_tuple<(N - 1)>(value));
+        return std::tuple_cat(std::tuple{value},
+                              repeat_to_tuple<(N - 1)>(value));
 }
 
+/// @brief Create std::array of size @p N consisting only of values @p value.
 template <std::size_t N, typename T>
 constexpr auto
 repeat_to_array(const T& value) noexcept
@@ -263,9 +168,12 @@ repeat_to_array(const T& value) noexcept
     if constexpr(N == 1)
         return std::array<T, 1>{value};
     else
-        return array_cat(std::array<T, 1>{value}, repeat_to_array<(N - 1)>(value));
+        return array_cat(std::array<T, 1>{value},
+                         repeat_to_array<(N - 1)>(value));
 }
 
+/// @brief Make an array of size @p N consisting of elements made by applying @p
+/// g to @p args.
 template <size_t N, typename G, typename... Args>
 constexpr std::array<std::invoke_result_t<G, Args...>, N>
 generate(G&& g, Args&&... args) noexcept
@@ -281,28 +189,26 @@ template <typename F, typename... Ts, template <typename...> typename Tuple>
 constexpr decltype(auto)
 apply(F&& f, Tuple<Ts...>&& tuple)
 {
-    return detail::apply_impl(
-        std::forward<F>(f), std::forward<Tuple<Ts...>>(tuple), std::index_sequence_for<Ts...>{});
+    return detail::apply_impl(f,
+                              std::forward<Tuple<Ts...>>(tuple),
+                              std::index_sequence_for<Ts...>{});
 }
 
 template <typename F, typename... Ts, template <typename...> typename Tuple>
 constexpr decltype(auto)
 apply(F&& f, Tuple<Ts...>& tuple) noexcept
 {
-    return detail::apply_impl(std::forward<F>(f), tuple, std::index_sequence_for<Ts...>{});
+    return detail::apply_impl(f, tuple, std::index_sequence_for<Ts...>{});
 }
 
-template <typename F, typename... Ts>
+/// @brief Invoke @p F on every element of @p tuple.
+template <typename F, typename Tuple>
 constexpr void
-for_each(F&& f, const std::tuple<Ts...>& tuple)
+for_each(F&& f, Tuple&& tuple)
 {
-    detail::for_each_impl(std::forward<F>(f), tuple, std::index_sequence_for<Ts...>{});
-}
-
-template <typename F, typename... Ts>
-constexpr void
-for_each(F&& f, std::tuple<Ts...>& tuple)
-{
-    detail::for_each_impl(std::forward<F>(f), tuple, std::index_sequence_for<Ts...>{});
+    detail::for_each_impl(
+        std::forward<F>(f),
+        std::forward<Tuple>(tuple),
+        std::make_index_sequence<std::tuple_size_v<std::decay_t<Tuple>>>{});
 }
 } // namespace lucid
