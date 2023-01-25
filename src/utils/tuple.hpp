@@ -25,9 +25,12 @@ enumerate_impl(const Tuple& tuple, std::index_sequence<Ids...>) noexcept
     };
 }
 
-template <std::size_t Idx, typename Visitor, typename Tuple>
+template <std::size_t Idx, typename Visitor, typename Tuple, typename Default>
 constexpr decltype(auto)
-visit_impl(const std::size_t case_, Visitor&& visitor, Tuple&& tuple)
+visit_impl(const std::size_t case_,
+           Visitor&&         visitor,
+           Tuple&&           tuple,
+           Default&&         def)
 {
     if(Idx == case_)
         return std::invoke(std::forward<Visitor>(visitor),
@@ -36,7 +39,10 @@ visit_impl(const std::size_t case_, Visitor&& visitor, Tuple&& tuple)
     if constexpr(Idx < std::tuple_size_v<std::decay_t<Tuple>> - 1)
         return visit_impl<Idx + 1>(case_,
                                    std::forward<Visitor>(visitor),
-                                   std::forward<Tuple>(tuple));
+                                   std::forward<Tuple>(tuple),
+                                   std::forward<Default>(def));
+    else
+        return std::invoke(std::forward<Default>(def));
 }
 
 template <std::size_t I, typename T, std::size_t N1, std::size_t N2>
@@ -120,15 +126,18 @@ enumerate(const std::tuple<Ts...>& tuple) noexcept
 /// @param visitor callable to invoke. Must be able to take @p tuple elements
 /// as arguments.
 /// @param tuple contains elements to invoke @p visitor on.
-///
-/// @p case_ is bigger than the size of @p tuple is UB.
-template <typename Visitor, typename Tuple>
+/// @param def is invoked if @p case_ is out of range.
+template <typename Visitor, typename Tuple, typename Default>
 constexpr decltype(auto)
-visit(const std::size_t case_, Visitor&& visitor, Tuple&& tuple)
+visit(const std::size_t case_,
+      Visitor&&         visitor,
+      Tuple&&           tuple,
+      Default&&         defval)
 {
     return detail::visit_impl<0>(case_,
                                  std::forward<Visitor>(visitor),
-                                 std::forward<Tuple>(tuple));
+                                 std::forward<Tuple>(tuple),
+                                 std::forward<Default>(defval));
 }
 
 /// @brief Concatenate arrays.
