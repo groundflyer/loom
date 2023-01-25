@@ -9,18 +9,22 @@ using namespace std;
 namespace lucid::intlist
 {
 using testlist1 = integer_sequence<int, 1, 2, 3, 4>;
+using testlist2 = integer_sequence<int, 1, 2, 3, 4, 0, 0, 0>;
 
 static_assert(is_same_v<reverse<testlist1>, integer_sequence<int, 4, 3, 2, 1>>);
-static_assert(is_same_v<nappend<integer_sequence<int, 1, 2, 3, 4>, 3, 0>,
-                        integer_sequence<int, 1, 2, 3, 4, 0, 0, 0>>);
+static_assert(
+    is_same_v<nappend<integer_sequence<int, 1, 2, 3, 4>, 3, 0>, testlist2>);
 static_assert(is_same_v<take<2, testlist1>, integer_sequence<int, 1, 2>>);
 static_assert(is_same_v<drop<2, testlist1>, integer_sequence<int, 3, 4>>);
 static_assert(elem<2, testlist1>);
 static_assert(!elem<5, testlist1>);
 static_assert(index<2, testlist1> == 1);
-static_assert(is_same_v<del<3, testlist1>, integer_sequence<int, 1, 2, 4>>);
+static_assert(is_same_v<del<3, integer_sequence<int, 3, 1, 2, 3, 4, 3, 3>>,
+                        integer_sequence<int, 1, 2, 4>>);
 static_assert(is_same_v<map<decltype([](int i) { return i + 20; }), testlist1>,
                         integer_sequence<int, 21, 22, 23, 24>>);
+static_assert(!has_duplicates<testlist1>);
+static_assert(has_duplicates<testlist2>);
 
 using lcnt = lehmer_code<463>;
 using lcnv = index_sequence<3, 4, 1, 0, 1, 0>;
@@ -46,6 +50,7 @@ namespace lucid::typelist
 using testlist1 = type_sequence<bool, int, float, char>;
 using testlist2 = type_sequence<double, unsigned, short>;
 using testlist3 = type_sequence<long, size_t, unsigned char>;
+using testlist4 = type_sequence<int, bool, int, float, int, char, int>;
 
 static_assert(
     is_same_v<reverse<testlist1>, type_sequence<char, float, int, bool>>);
@@ -69,7 +74,9 @@ static_assert(is_same_v<concat<type_sequence<testlist1, testlist2, testlist3>>,
                                       long,
                                       size_t,
                                       unsigned char>>);
-static_assert(is_same_v<del<int, testlist1>, type_sequence<bool, float, char>>);
+static_assert(is_same_v<del<int, testlist4>, type_sequence<bool, float, char>>);
+static_assert(has_duplicates<testlist4>);
+static_assert(!has_duplicates<testlist1>);
 } // namespace lucid::typelist
 
 int

@@ -252,7 +252,7 @@ struct del<T, type_sequence<X, Xs...>>
 {
     using type = std::conditional_t<
         std::is_same_v<T, X>,
-        type_sequence<Xs...>,
+        typename del<T, type_sequence<Xs...>>::type,
         typename cons<X, typename del<T, type_sequence<Xs...>>::type>::type>;
 };
 
@@ -272,6 +272,23 @@ template <typename... Args, typename... Fs>
 struct result_of<type_sequence<Fs...>, Args...>
 {
     using type = type_sequence<std::invoke_result_t<Fs, Args...>...>;
+};
+
+template <typename List>
+struct has_duplicates;
+
+template <typename T>
+struct has_duplicates<type_sequence<T>>
+{
+    static constexpr bool value = false;
+};
+
+template <typename T, typename... Ts>
+struct has_duplicates<type_sequence<T, Ts...>>
+{
+    using ts = type_sequence<Ts...>;
+    static constexpr bool value =
+        elem<T, ts>::value || has_duplicates<ts>::value;
 };
 } // namespace detail
 
@@ -347,7 +364,7 @@ using reverse = foldr<append, type_sequence<>, List>;
 template <template <typename> typename F, typename List>
 using map = typename detail::map<F, List>::type;
 
-/// @brief Remove the first occurence of type @p T from @p List.
+/// @brief Remove all occurences of type @p T from @p List.
 ///
 /// Does nothing if there is no @p T in @p List.
 template <typename T, typename List>
@@ -378,7 +395,7 @@ using concat = foldr<join, type_sequence<>, List>;
 
 /// @brief Check whether the classes of @p List are the same.
 template <typename List>
-inline constexpr bool same = detail::same<List>::value;
+constexpr bool same = detail::same<List>::value;
 
 /// @brief Considering the classes of type_sequence @p Fs as functions
 /// get the list of return types by applying the functions to
@@ -388,6 +405,10 @@ inline constexpr bool same = detail::same<List>::value;
 /// @tparam Args Arguments to apply function from @p Fs to.
 template <typename Fs, typename... Args>
 using result_of = typename detail::result_of<Fs, Args...>;
+
+/// @brief Check if there are duplicates in @p List.
+template <typename List>
+constexpr bool has_duplicates = detail::has_duplicates<List>::value;
 /// @}
 } // namespace typelist
 
@@ -597,7 +618,7 @@ struct del<Val, std::integer_sequence<Int, Head, Rest...>>
   public:
     using type = std::conditional_t<
         Head == Val,
-        rest,
+        typename del<Val, rest>::type,
         typename cons<Head, typename del<Val, rest>::type>::type>;
 };
 
@@ -608,6 +629,23 @@ template <typename Int, Int... Is>
 struct array<std::integer_sequence<Int, Is...>>
 {
     static constexpr Int value[sizeof...(Is)] = {Is...};
+};
+
+template <typename List>
+struct has_duplicates;
+
+template <typename Int, Int I>
+struct has_duplicates<std::integer_sequence<Int, I>>
+{
+    static constexpr bool value = false;
+};
+
+template <typename Int, Int X, Int... Xs>
+struct has_duplicates<std::integer_sequence<Int, X, Xs...>>
+{
+    using xs = std::integer_sequence<Int, Xs...>;
+    static constexpr bool value =
+        elem<X, xs>::value || has_duplicates<xs>::value;
 };
 } // namespace detail
 /// @defgroup Intlist Intlist
@@ -694,9 +732,13 @@ using take = typename detail::take<N, List>::type;
 template <std::size_t N, typename List>
 using drop = typename detail::drop<N, List>::type;
 
-/// @brief Convert std::integer_sequence to C array.
+/// @brief Convert std::integer_sequence into C array.
 template <typename List>
-inline constexpr auto array = detail::array<List>::value;
+constexpr auto array = detail::array<List>::value;
+
+/// @brief Check if there are duplicates in @p List.
+template <typename List>
+constexpr bool has_duplicates = detail::has_duplicates<List>::value;
 /// @}
 
 template <std::size_t N, std::size_t I>
