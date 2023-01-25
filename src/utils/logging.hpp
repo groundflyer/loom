@@ -34,7 +34,7 @@ class Logger
         CRITICAL = 50  /*!< only critical errors */
     };
 
-    /// @brief Empty class type that used to indicate Logger
+    /// @brief Empty class tag type that used to indicate Logger
     /// if the output line should be rewritten in place.
     struct Flush
     {
