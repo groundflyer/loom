@@ -96,26 +96,26 @@ struct keyword_index<Keyword, std::tuple<Options...>>
 
 template <std::size_t Idx, typename FirstOption, typename... RestOptions>
 constexpr std::size_t
-tokenize_impl(const char key)
+tokenize_impl(const char key) noexcept
 {
     if(key == FirstOption::key) return Idx;
 
     if constexpr(sizeof...(RestOptions) > 0ul)
         return tokenize_impl<Idx + 1, RestOptions...>(key);
-
-    throw KeyException<char>{key};
+    else
+        return -1ul;
 }
 
 template <std::size_t Idx, typename FirstOption, typename... RestOptions>
 constexpr std::size_t
-tokenize_impl(const std::string_view keyword)
+tokenize_impl(const std::string_view keyword) noexcept
 {
     if(keyword == FirstOption::keyword) return Idx;
 
     if constexpr(sizeof...(RestOptions) > 0ul)
         return tokenize_impl<Idx + 1, RestOptions...>(keyword);
-
-    throw KeyException<std::string_view>{keyword};
+    else
+        return -1ul;
 }
 
 template <typename Converter, std::size_t... Idxs>
@@ -130,12 +130,15 @@ argv2array(char*     argc[],
     return value_type{converter(argc[Idxs])...};
 }
 
+// we change state during parsing
 template <typename Desc, typename Bindings>
 struct State
 {
     const Desc& desc;
     Bindings    bindings;
+    // option token to store value in
     std::size_t token;
+    // how many values remain to set
     std::size_t remain;
 
     constexpr State(const Desc& _desc,
@@ -240,6 +243,20 @@ struct keyword_ok_impl<char_sequence<cs...>>
     static constexpr bool value =
         (true && ... && (is_alphadigit(cs) || cs == '-' || cs == '_'));
 };
+
+// Lazy man's flag converter
+// converts any word except no, off, false and 0 to true
+struct FlagConverter
+{
+    constexpr bool
+    operator()(std::string_view word) const noexcept
+    {
+        if(word == "no" || word == "off" || word == "false" || word == "0")
+            return false;
+
+        return true;
+    }
+};
 } // namespace detail
 
 template <detail::StringLiteral s>
@@ -293,6 +310,7 @@ class ArgsRange : public ranges::view_facade<ArgsRange>
     }
 };
 
+/// @brief Stores pointer to argv for later conversion
 template <typename Converter, std::size_t nvals>
 class Binding
 {
@@ -740,47 +758,32 @@ option_list(Converter              converter,
     return {converter, doc, var};
 }
 
-struct FlagConverter
-{
-    struct Exception
-    {
-        std::string_view word;
-    };
-
-    constexpr bool
-    operator()(std::string_view word) const
-    {
-        if(word == "yes" || word == "on" || word == "true") return true;
-
-        if(word == "no" || word == "off" || word == "false") return false;
-
-        throw Exception{word};
-    }
-};
-
 template <char Key, detail::StringLiteral s>
-constexpr Option<Key, wrap_string<s>, FlagConverter, 1ul>
+constexpr Option<Key, wrap_string<s>, detail::FlagConverter, 1ul>
 flag(const bool def_val, const std::string_view doc) noexcept
 {
     CHECK_KEY;
     CHECK_KEYWORD;
-    return {FlagConverter{}, def_val, doc, ""};
+    return {detail::FlagConverter{}, def_val, doc, ""};
 }
 
 template <char Key>
-constexpr Option<Key, detail::missing_keyword, FlagConverter, 1ul>
+constexpr Option<Key, detail::missing_keyword, detail::FlagConverter, 1ul>
 flag(const bool def_val, const std::string_view doc) noexcept
 {
     CHECK_KEY;
-    return {FlagConverter{}, def_val, doc, ""};
+    return {detail::FlagConverter{}, def_val, doc, ""};
 }
 
 template <detail::StringLiteral s>
-constexpr Option<detail::missing_keychar, wrap_string<s>, FlagConverter, 1ul>
+constexpr Option<detail::missing_keychar,
+                 wrap_string<s>,
+                 detail::FlagConverter,
+                 1ul>
 flag(const bool def_val, const std::string_view doc) noexcept
 {
     CHECK_KEYWORD;
-    return {FlagConverter{}, def_val, doc, ""};
+    return {detail::FlagConverter{}, def_val, doc, ""};
 }
 
 template <typename Converter>
@@ -812,7 +815,7 @@ positional_list(Converter&&            converter,
 
 template <typename Key, typename... Options>
 constexpr std::size_t
-tokenize(const Key key, const std::tuple<Options...>)
+tokenize(const Key key, const std::tuple<Options...>) noexcept
 {
     return detail::tokenize_impl<0ul, Options...>(key);
 }
@@ -835,21 +838,21 @@ struct ParseResults<std::pair<OptBindings, PosBindings>, Options>
 
     template <char Key>
     constexpr decltype(auto)
-    get_opt() const noexcept
+    get_opt() const
     {
         return std::get<key_index<Key, Options>>(opt_bindings)();
     }
 
     template <detail::StringLiteral s>
     constexpr decltype(auto)
-    get_opt() const noexcept
+    get_opt() const
     {
         return std::get<keyword_index<string_type<s>, Options>>(opt_bindings)();
     }
 
     template <std::size_t Idx>
     constexpr decltype(auto)
-    get_pos() const noexcept
+    get_pos() const
     {
         return std::get<Idx>(pos_bindings)();
     }
@@ -1046,12 +1049,28 @@ class Visitor
     }
 
     template <typename Key>
-    constexpr auto
+    constexpr std::pair<std::size_t, std::size_t>
     key_info(const Key key)
     {
         const std::size_t new_token = tokenize(key, opt_state.desc);
         const std::size_t new_nvals = get_nvals(new_token, opt_state.desc);
-        return std::pair{new_token, new_nvals};
+        return {new_token, new_nvals};
+    }
+
+    constexpr void
+    reclaim_opt_later(const std::size_t new_token,
+                      const std::size_t new_nvals) noexcept
+    {
+        opt_state.token  = new_token;
+        opt_state.remain = new_nvals;
+        is_pos           = false;
+    }
+
+    constexpr void
+    set_flag(const std::size_t new_token) noexcept
+    {
+        set_binding(opt_state.bindings, new_token, "");
+        reset_opt();
     }
 
   public:
@@ -1092,6 +1111,7 @@ class Visitor
             return opt_state.bindings;
     }
 
+    // just "-k"
     template <typename T>
     constexpr void
     operator()(const Key<T>& key)
@@ -1102,18 +1122,15 @@ class Visitor
 
         // is flag
         if(new_nvals == 0ul)
-        {
-            set_binding(opt_state.bindings, new_token, "");
-            reset_opt();
-        }
+
+            set_flag(new_token);
+
         else
-        {
-            opt_state.token  = new_token;
-            opt_state.remain = new_nvals;
-            is_pos           = false;
-        }
+
+            reclaim_opt_later(new_token, new_nvals);
     }
 
+    // --keyword=value
     constexpr void
     operator()(const KeywordValue& keyval)
     {
@@ -1127,6 +1144,7 @@ class Visitor
         reset_opt();
     }
 
+    // just "value"
     constexpr void
     operator()(const Value& value)
     {
@@ -1169,38 +1187,47 @@ class Visitor
                 std::mem_fn(&Visitor::reset_opt));
     }
 
+    // -abcd where "bcd" could be keys or a value
     constexpr void
     operator()(const KeyCharSeq& value)
     {
         check_opt();
-        for(std::size_t i = 0ul; i < value.seq.size(); ++i)
+
+        const std::string_view seq = value.seq;
+        for(std::size_t i = 0ul; i < seq.size(); ++i)
         {
-            const auto [new_token, new_nvals] = key_info(value.seq[i]);
+            const char si                     = seq[i];
+            const auto [new_token, new_nvals] = key_info(si);
 
-            if(new_nvals > 1ul)
-                throw FewArgumentsException{
-                    get_keyword(new_token, opt_state.desc)};
+            if(new_token == -1ul) throw KeyException<char>{si};
 
-            if(opt_state.remain == 1ul)
+            if(new_nvals == 1)
             {
-                if(i == value.seq.size() - 1)
+                if(i == seq.size() - 1)
                 {
-                    // at the end
-                    opt_state.token  = new_token;
-                    opt_state.remain = new_nvals;
+                    // if we're at the end of the word
+                    // store token to reclaim the value later
+                    reclaim_opt_later(new_token, new_nvals);
                 }
                 else
                 {
+                    // otherwise we bind option's value to the tail of the
+                    // string
                     set_binding(opt_state.bindings,
                                 new_token,
-                                value.seq.substr(i + 1ul));
+                                seq.substr(i + 1ul));
                     break;
                 }
             }
+            else if(new_nvals > 1ul)
+            {
+                throw FewArgumentsException{
+                    get_keyword(new_token, opt_state.desc)};
+            }
             else
             {
-                // flip flag
-                set_binding(opt_state.bindings, new_token, "");
+                // that's just a flag
+                set_flag(new_token);
             }
         }
     }
@@ -1244,7 +1271,7 @@ parse(const std::tuple<Options...>&     options,
     }
     catch(const NeedHelpException& ex)
     {
-        error_handler(ex);
+        std::puts("Printing help\n");
     }
     catch(const FewArgumentsException& ex)
     {
@@ -1614,7 +1641,6 @@ show_help(std::string_view                  program_name,
     fmt::print(file, "mock\n");
 }
 
-template <typename Options, typename Positionals = std::tuple<>>
 class StandardErrorHandler
 {
     static constexpr std::string_view error_head = "Argument Parsing Error";
@@ -1629,38 +1655,7 @@ class StandardErrorHandler
                    argv0.substr(slash_pos + 1);
     }
 
-    const Options&     options;
-    const Positionals& positionals;
-    std::string_view   program_name;
-
-    void
-    help(FILE* file = stderr) const noexcept
-    {
-        show_help(program_name, options, positionals, file);
-    };
-
   public:
-    StandardErrorHandler(ArgsRange          args,
-                         const Options&     _options,
-                         const Positionals& _positionals = Positionals{}) :
-        options(_options),
-        positionals(_positionals), program_name(make_program_name(args))
-    {
-    }
-
-    StandardErrorHandler()                            = delete;
-    StandardErrorHandler(const StandardErrorHandler&) = delete;
-    StandardErrorHandler(StandardErrorHandler&&)      = delete;
-    StandardErrorHandler&
-    operator=(const StandardErrorHandler&) = delete;
-
-    void
-    operator()(const NeedHelpException&) const noexcept
-    {
-        help(stdout);
-        exit(0);
-    }
-
     void
     operator()(const FewArgumentsException& ex) const noexcept
     {
@@ -1668,7 +1663,6 @@ class StandardErrorHandler
                    "{}: too few arguments for parameter \"{}\"\n",
                    error_head,
                    ex.keyword);
-        help(stderr);
         exit(1);
     }
 
@@ -1677,7 +1671,6 @@ class StandardErrorHandler
     operator()(const KeyException<Key>& ex) const noexcept
     {
         fmt::print(stderr, "{}: unknown key \"{}\"\n", error_head, ex.value);
-        help(stderr);
         exit(1);
     }
 
@@ -1685,29 +1678,24 @@ class StandardErrorHandler
     operator()(const UnexpectedValue& ex) const noexcept
     {
         fmt::print(stderr,
-                   "{}: unexpected value \"{}\"n",
+                   "{}: unexpected value \"{}\"\n",
                    error_head,
                    ex.value);
-        help(stderr);
     }
 
     void
     operator()(const std::string_view problem_key) const noexcept
     {
         fmt::print(stderr,
-                   "{}: too few arguments for parameter \"{}\"\nUsage:\n",
+                   "{}: too few arguments for parameter \"{}\"\n",
                    error_head,
                    problem_key);
-        help(stderr);
     }
 
     void
     operator()(bool) const noexcept
     {
-        fmt::print(stderr,
-                   "{}: too few positional arguments\nUsage:\n",
-                   error_head);
-        help();
+        fmt::print(stderr, "{}: too few positional arguments\n", error_head);
         exit(1);
     }
 };
