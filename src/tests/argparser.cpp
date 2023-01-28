@@ -68,6 +68,7 @@ constexpr tuple options{
                             "long doc for foo lore ipsum hule bly",
                             "FOO"),
     flag<'f', "flag">(false, "doc for flag bla bla bla foo bar"),
+    flag<'F', "Flag">(true, "doc for Flag2 bla bla bla foo bar"),
     option<'d', "two-val", 2ul>(
         lucid::identity,
         {"1111", "2222"},
@@ -121,8 +122,9 @@ error_check() noexcept
 int
 main(int argc, char* argv[])
 {
-    int        ret = 0;
-    ArgsRange  args(argc, argv);
+    int       ret = 0;
+    ArgsRange args(argc, argv);
+    show_help(make_program_name(args), options, positionals);
     const auto results =
         parse(options, positionals, args, StandardErrorHandler{});
     fmt::print("a = {}\n", results.get_opt<'a'>());
@@ -134,6 +136,5 @@ main(int argc, char* argv[])
     fmt::print("pos2 = {}\n", results.get_pos<1>());
     // ret += no_error_check();
     // ret += error_check();
-    // show_help("lucid", options, positionals);
     return ret;
 }

@@ -77,6 +77,8 @@ static_assert(is_same_v<concat<type_sequence<testlist1, testlist2, testlist3>>,
 static_assert(is_same_v<del<int, testlist4>, type_sequence<bool, float, char>>);
 static_assert(has_duplicates<testlist4>);
 static_assert(!has_duplicates<testlist1>);
+static_assert(is_same_v<filter<std::is_integral, testlist1>,
+                        type_sequence<bool, int, char>>);
 } // namespace lucid::typelist
 
 int

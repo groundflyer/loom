@@ -40,7 +40,7 @@ struct to;
 template <template <typename...> typename Target, typename... Ts>
 struct to<type_sequence<Ts...>, Target>
 {
-    using type = type_sequence<Ts...>;
+    using type = Target<Ts...>;
 };
 
 template <typename T, typename List>
@@ -290,6 +290,24 @@ struct has_duplicates<type_sequence<T, Ts...>>
     static constexpr bool value =
         elem<T, ts>::value || has_duplicates<ts>::value;
 };
+
+template <template <typename> typename F, typename List>
+struct filter;
+
+template <template <typename> typename F, typename T>
+struct filter<F, type_sequence<T>>
+{
+    using type =
+        std::conditional_t<F<T>::value, type_sequence<T>, type_sequence<>>;
+};
+
+template <template <typename> typename F, typename T, typename... Ts>
+struct filter<F, type_sequence<T, Ts...>>
+{
+    using rest = typename filter<F, type_sequence<Ts...>>::type;
+    using type =
+        std::conditional_t<F<T>::value, typename cons<T, rest>::type, rest>;
+};
 } // namespace detail
 
 /// @brief Convert a class template @p Source into type_sequence.
@@ -409,6 +427,26 @@ using result_of = typename detail::result_of<Fs, Args...>;
 /// @brief Check if there are duplicates in @p List.
 template <typename List>
 constexpr bool has_duplicates = detail::has_duplicates<List>::value;
+
+/// @brief Filter @p List elements with @ F.
+///
+/// @tparam F must have static constexpr bool value member;
+template <template <typename> typename F, typename List>
+using filter = typename detail::filter<F, List>::type;
+
+/// @brief Check if @p List is empty.
+template <typename List>
+constexpr bool empty = length<List> == 0;
+
+/// @brief Invoke @p f with each class of @p List as template parameter.
+template <typename F, typename... Ts>
+constexpr void
+for_each(F f, type_sequence<Ts...>) noexcept((true &&
+                                              ...&& noexcept(f.template
+                                                             operator()<Ts>())))
+{
+    (..., f.template operator()<Ts>());
+}
 /// @}
 } // namespace typelist
 

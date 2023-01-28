@@ -20,6 +20,8 @@
 
 #include <fmt/printf.h>
 
+#include <cstdio>
+
 namespace lucid::argparse
 {
 template <char... Cs>
@@ -256,6 +258,18 @@ struct FlagConverter
 
         return true;
     }
+};
+
+template <typename _Option>
+struct filter_flag
+{
+    static constexpr bool value = _Option::is_flag;
+};
+
+template <typename _Option>
+struct filter_option
+{
+    static constexpr bool value = !_Option::is_flag;
 };
 } // namespace detail
 
@@ -1234,7 +1248,7 @@ class Visitor
 };
 
 template <typename... Options, typename... Positionals, typename ErrorHandler>
-auto
+constexpr auto
 parse(const std::tuple<Options...>&     options,
       const std::tuple<Positionals...>& positionals,
       ArgsRange                         args,
@@ -1636,24 +1650,131 @@ void
 show_help(std::string_view                  program_name,
           const std::tuple<Options...>&     options,
           const std::tuple<Positionals...>& positionals,
-          FILE*                             file = stderr) noexcept
+          FILE*                             file = stdout) noexcept
 {
-    fmt::print(file, "mock\n");
+    constexpr std::size_t line_width   = 80;
+    constexpr std::size_t short_margin = 2;
+    fmt::print(file, "Usage: {}", program_name);
+
+    const std::size_t margin1 = 7 + program_name.size();
+    std::size_t       column  = margin1;
+
+    const auto try_newline1 = [&margin1, &column, file]() constexpr noexcept
+    {
+        if(column >= line_width)
+        {
+            std::fputc('\n', file);
+            for(std::size_t i = 0; i < margin1; ++i) std::fputc(' ', file);
+            column = margin1;
+        }
+    };
+
+    // print flags key characters first, e.g. [-fLaGs]
+    using flag_opts =
+        typelist::filter<detail::filter_flag, type_sequence<Options...>>;
+    if constexpr(!typelist::empty<flag_opts>)
+    {
+        std::fputs(" [-", file);
+        typelist::for_each(
+            [file, &column]<typename O>() noexcept
+            {
+                std::fputc(O::key, file);
+                ++column;
+            },
+            flag_opts{});
+        std::fputc(']', file);
+        column += 4;
+        try_newline1();
+    }
+
+    const auto print_var =
+        [&]<typename O>(const O&, const std::string_view var) constexpr noexcept
+    {
+        fmt::print(file, " <{}", var);
+        column += 2 + var.size();
+
+        if constexpr(O::num_vals == -1ul)
+        {
+            // is parameter list
+            std::fputs("...", file);
+            column += 3;
+        }
+
+        std::fputc('>', file);
+        ++column;
+    };
+
+    const auto print_vars =
+        [&]<typename O>(const O& option, bool t = false) constexpr noexcept
+    {
+        if constexpr(O::num_vals == -1ul || O::num_vals == 1)
+        { // option.var is just a string_view
+            print_var(option, option.var);
+            if(t) try_newline1();
+        }
+        else
+            // option.var is std::array<num_vals, std::string_view>
+            for(std::size_t i = 0; i < O::num_vals; ++i)
+            {
+                print_var(option, option.var[i]);
+                if(t) try_newline1();
+            }
+    };
+
+    // print options with vars, e.g. [-o var] or [--option var]
+    lucid::for_each(
+        [&]<typename O>(const O& option) constexpr noexcept
+        {
+            if constexpr(!O::is_flag)
+            {
+                if constexpr(O::key == detail::missing_keychar)
+                {
+                    fmt::print(file, " [--{}", O::keyword);
+                    column += 4 + O::keyword.size();
+                }
+                else
+                {
+                    fmt::print(file, " [-{}", O::key);
+                    column += 4;
+                }
+                print_vars(option);
+                std::fputc(']', file);
+                ++column;
+                try_newline1();
+            }
+        },
+        options);
+
+    // print positionals
+    lucid::for_each([&](const auto& p) constexpr noexcept
+                    { print_vars(p, true); },
+                    positionals);
+
+    std::fputc('\n', file);
+
+    const auto try_newline2 = [&column, file]() constexpr noexcept
+    {
+        if(column >= line_width)
+        {
+            std::fputc('\n', file);
+            for(std::size_t i = 0; i < short_margin; ++i) std::fputc(' ', file);
+            column = short_margin;
+        }
+    };
+}
+
+std::string_view
+make_program_name(ArgsRange args) noexcept
+{
+    const std::string_view argv0{*args.read()};
+    const std::size_t      slash_pos{argv0.rfind('/')};
+    return slash_pos == std::string_view::npos ? argv0 :
+                                                 argv0.substr(slash_pos + 1);
 }
 
 class StandardErrorHandler
 {
     static constexpr std::string_view error_head = "Argument Parsing Error";
-
-    static std::string_view
-    make_program_name(ArgsRange args) noexcept
-    {
-        const std::string_view argv0{*args.read()};
-        const std::size_t      slash_pos{argv0.rfind('/')};
-        return slash_pos == std::string_view::npos ?
-                   argv0 :
-                   argv0.substr(slash_pos + 1);
-    }
 
   public:
     void
