@@ -43,7 +43,7 @@ struct UnexpectedValue
     std::string_view value;
 };
 
-struct NeedHelpException
+struct HelpRequest
 {
 };
 
@@ -583,7 +583,7 @@ struct Option
     std::string_view doc;
     var_type         var;
 
-    constexpr Option(Converter              _converter,
+    consteval Option(Converter              _converter,
                      const value_type&      _default_value,
                      const std::string_view _doc,
                      const var_type&        _var) noexcept :
@@ -614,7 +614,7 @@ struct Option<Key, Keyword, Converter, -1ul>
     std::string_view doc;
     std::string_view var;
 
-    constexpr Option(Converter              _converter,
+    consteval Option(Converter              _converter,
                      const std::string_view _doc,
                      const std::string_view _var) noexcept :
         converter(_converter),
@@ -641,7 +641,7 @@ struct Positional
     std::string_view doc;
     var_type         var;
 
-    constexpr Positional(Converter&&            _converter,
+    consteval Positional(Converter&&            _converter,
                          const std::string_view _doc,
                          const var_type&        _var) noexcept :
         converter(_converter),
@@ -668,7 +668,7 @@ struct Positional
                   "('help' is reserved)")
 
 template <char Key, detail::StringLiteral s, typename Converter>
-constexpr Option<Key, wrap_string<s>, Converter, 1ul>
+consteval Option<Key, wrap_string<s>, Converter, 1ul>
 option(Converter                             converter,
        const detail::result_type<Converter>& def_val,
        const std::string_view                doc,
@@ -680,7 +680,7 @@ option(Converter                             converter,
 }
 
 template <char Key, typename Converter>
-constexpr Option<Key, detail::missing_keyword, Converter, 1ul>
+consteval Option<Key, detail::missing_keyword, Converter, 1ul>
 option(Converter                             converter,
        const detail::result_type<Converter>& def_val,
        const std::string_view                doc,
@@ -691,7 +691,7 @@ option(Converter                             converter,
 }
 
 template <detail::StringLiteral s, typename Converter>
-constexpr Option<detail::missing_keychar, wrap_string<s>, Converter, 1ul>
+consteval Option<detail::missing_keychar, wrap_string<s>, Converter, 1ul>
 option(Converter                             converter,
        const detail::result_type<Converter>& def_val,
        const std::string_view                doc,
@@ -702,7 +702,7 @@ option(Converter                             converter,
 }
 
 template <char Key, detail::StringLiteral s, std::size_t N, typename Converter>
-constexpr Option<Key, wrap_string<s>, Converter, N>
+consteval Option<Key, wrap_string<s>, Converter, N>
 option(Converter                                            converter,
        const std::array<detail::result_type<Converter>, N>& def_val,
        const std::string_view                               doc,
@@ -715,7 +715,7 @@ option(Converter                                            converter,
 }
 
 template <char Key, std::size_t N, typename Converter>
-constexpr Option<Key, detail::missing_keyword, Converter, N>
+consteval Option<Key, detail::missing_keyword, Converter, N>
 option(Converter                                            converter,
        const std::array<detail::result_type<Converter>, N>& def_val,
        const std::string_view                               doc,
@@ -727,7 +727,7 @@ option(Converter                                            converter,
 }
 
 template <detail::StringLiteral s, std::size_t N, typename Converter>
-constexpr Option<detail::missing_keychar, wrap_string<s>, Converter, N>
+consteval Option<detail::missing_keychar, wrap_string<s>, Converter, N>
 option(Converter                                            converter,
        const std::array<detail::result_type<Converter>, N>& def_val,
        const std::string_view                               doc,
@@ -742,7 +742,7 @@ template <char                  Key,
           detail::StringLiteral s,
           typename Converter,
           typename... Args>
-constexpr Option<Key, wrap_string<s>, Converter, -1ul>
+consteval Option<Key, wrap_string<s>, Converter, -1ul>
 option_list(Converter              converter,
             const std::string_view doc,
             const std::string_view var) noexcept
@@ -753,7 +753,7 @@ option_list(Converter              converter,
 }
 
 template <char Key, typename Converter, typename... Args>
-constexpr Option<Key, detail::missing_keyword, Converter, -1ul>
+consteval Option<Key, detail::missing_keyword, Converter, -1ul>
 option_list(Converter              converter,
             const std::string_view doc,
             const std::string_view var) noexcept
@@ -763,7 +763,7 @@ option_list(Converter              converter,
 }
 
 template <detail::StringLiteral s, typename Converter, typename... Args>
-constexpr Option<detail::missing_keychar, wrap_string<s>, Converter, -1ul>
+consteval Option<detail::missing_keychar, wrap_string<s>, Converter, -1ul>
 option_list(Converter              converter,
             const std::string_view doc,
             const std::string_view var) noexcept
@@ -773,7 +773,7 @@ option_list(Converter              converter,
 }
 
 template <char Key, detail::StringLiteral s>
-constexpr Option<Key, wrap_string<s>, detail::FlagConverter, 1ul>
+consteval Option<Key, wrap_string<s>, detail::FlagConverter, 1ul>
 flag(const bool def_val, const std::string_view doc) noexcept
 {
     CHECK_KEY;
@@ -782,7 +782,7 @@ flag(const bool def_val, const std::string_view doc) noexcept
 }
 
 template <char Key>
-constexpr Option<Key, detail::missing_keyword, detail::FlagConverter, 1ul>
+consteval Option<Key, detail::missing_keyword, detail::FlagConverter, 1ul>
 flag(const bool def_val, const std::string_view doc) noexcept
 {
     CHECK_KEY;
@@ -790,7 +790,7 @@ flag(const bool def_val, const std::string_view doc) noexcept
 }
 
 template <detail::StringLiteral s>
-constexpr Option<detail::missing_keychar,
+consteval Option<detail::missing_keychar,
                  wrap_string<s>,
                  detail::FlagConverter,
                  1ul>
@@ -801,7 +801,7 @@ flag(const bool def_val, const std::string_view doc) noexcept
 }
 
 template <typename Converter>
-constexpr Positional<Converter, 1ul>
+consteval Positional<Converter, 1ul>
 positional(Converter&&            converter,
            const std::string_view doc,
            const std::string_view var) noexcept
@@ -810,7 +810,7 @@ positional(Converter&&            converter,
 }
 
 template <std::size_t nvals, typename Converter>
-constexpr Positional<Converter, nvals>
+consteval Positional<Converter, nvals>
 positional(Converter&&                                            converter,
            const std::string_view                                 doc,
            const typename Positional<Converter, nvals>::var_type& var) noexcept
@@ -819,7 +819,7 @@ positional(Converter&&                                            converter,
 }
 
 template <typename Converter>
-constexpr Positional<Converter, -1ul>
+consteval Positional<Converter, -1ul>
 positional_list(Converter&&            converter,
                 const std::string_view doc,
                 const std::string_view var) noexcept
@@ -1247,6 +1247,142 @@ class Visitor
     }
 };
 
+std::size_t
+try_newline(const std::size_t line_width,
+            const std::size_t margin,
+            std::size_t       column,
+            std::FILE*        file) noexcept
+{
+    if(column >= line_width)
+    {
+        std::fputc('\n', file);
+        for(std::size_t i = 0; i < margin; ++i) std::fputc(' ', file);
+        column = margin;
+    }
+    return column;
+}
+
+template <typename O>
+std::size_t
+print_var(const O&,
+          const std::string_view var,
+          std::size_t            column,
+          std::FILE*             file) noexcept
+{
+    fmt::print(file, " <{}", var);
+    column += 2 + var.size();
+
+    if constexpr(O::num_vals == -1ul)
+    {
+        // is parameter list
+        std::fputs("...", file);
+        column += 3;
+    }
+
+    std::fputc('>', file);
+    ++column;
+    return column;
+}
+
+template <bool t, typename O, typename LB>
+std::size_t
+print_vars(const O&    option,
+           LB&&        line_breaker,
+           std::size_t column,
+           std::FILE*  file) noexcept
+{
+    if constexpr(O::num_vals == -1ul || O::num_vals == 1)
+    { // option.var is just a string_view
+        column = print_var(option, option.var, column, file);
+        if constexpr(t) column = line_breaker(column);
+    }
+    else
+        // option.var is std::array<num_vals, std::string_view>
+        for(std::size_t i = 0; i < O::num_vals; ++i)
+        {
+            column = print_var(option, option.var[i], column, file);
+            if constexpr(t) column = line_breaker(column);
+        }
+    return column;
+}
+
+template <typename... Options, typename... Positionals>
+void
+show_help(std::string_view                  program_name,
+          const std::tuple<Options...>&     options,
+          const std::tuple<Positionals...>& positionals,
+          std::FILE*                        file = stdout) noexcept
+{
+    constexpr std::size_t line_width = 80;
+    // constexpr std::size_t short_margin = 2;
+    fmt::print(file, "Usage: {}", program_name);
+
+    const std::size_t margin1 = 7 + program_name.size();
+    std::size_t       column  = margin1;
+
+    const auto try_newline1 =
+        [margin1, file](std::size_t column) constexpr noexcept
+    { return try_newline(line_width, margin1, column, file); };
+
+    // print flags key characters first, e.g. [-fLaGs]
+    using flag_opts =
+        typelist::filter<detail::filter_flag, type_sequence<Options...>>;
+    if constexpr(!typelist::empty<flag_opts>)
+    {
+        std::fputs(" [-", file);
+        typelist::for_each(
+            [file, &column]<typename O>() noexcept
+            {
+                std::fputc(O::key, file);
+                ++column;
+            },
+            flag_opts{});
+        std::fputc(']', file);
+        column += 4;
+        column = try_newline1(column);
+    }
+
+    // print options short descriptions, e.g. [-o var] or [--option var]
+    lucid::for_each(
+        [&]<typename O>(const O& option) constexpr noexcept
+        {
+            if constexpr(!O::is_flag)
+            {
+                if constexpr(O::key == detail::missing_keychar)
+                {
+                    fmt::print(file, " [--{}", O::keyword);
+                    column += 4 + O::keyword.size();
+                }
+                else
+                {
+                    fmt::print(file, " [-{}", O::key);
+                    column += 4;
+                }
+                column = print_vars<false>(option, try_newline1, column, file);
+                std::fputc(']', file);
+                ++column;
+                column = try_newline1(column);
+            }
+        },
+        options);
+
+    // print positionals short description
+    lucid::for_each(
+        [&](const auto& p) constexpr noexcept
+        { column = print_vars<true>(p, try_newline1, column, file); },
+        positionals);
+
+    std::fputs("\n\nOptions:\n", file);
+}
+
+std::string_view
+make_program_name(std::string_view argv0) noexcept
+{
+    const std::size_t slash_pos{argv0.rfind('/')};
+    return slash_pos == std::string_view::npos ? argv0 :
+                                                 argv0.substr(slash_pos + 1);
+}
+
 template <typename... Options, typename... Positionals, typename ErrorHandler>
 constexpr auto
 parse(const std::tuple<Options...>&     options,
@@ -1262,6 +1398,7 @@ parse(const std::tuple<Options...>&     options,
     static_assert(!intlist::has_duplicates<keychars>, "Keys must be unique");
     static_assert(!typelist::has_duplicates<keywords>, "Keys must be unique");
 
+    const std::string_view argv0 = {*args.read()};
     args.next();
 
     Visitor visitor{options, positionals};
@@ -1271,7 +1408,7 @@ parse(const std::tuple<Options...>&     options,
         std::string_view word{*data};
 
         // very dirty way to stop iteration
-        if(word == "-h" || word == "--help") throw NeedHelpException{};
+        if(word == "-h" || word == "--help") throw HelpRequest{};
 
         if(word == "--")
             only_values = true;
@@ -1283,9 +1420,10 @@ parse(const std::tuple<Options...>&     options,
     {
         ranges::for_each(args, update);
     }
-    catch(const NeedHelpException& ex)
+    catch(const HelpRequest&)
     {
-        std::puts("Printing help\n");
+        show_help(make_program_name(argv0), options, positionals);
+        exit(0);
     }
     catch(const FewArgumentsException& ex)
     {
@@ -1320,457 +1458,6 @@ parse(const std::tuple<Options...>& options,
 {
     return parse(options, std::tuple<>{}, args, std::move(error_handler));
 }
-} // namespace lucid::argparse
-
-// namespace fmt
-// {
-// namespace internal
-// {
-// template <typename IterOut>
-// constexpr IterOut
-// copy(IterOut out, const std::string_view word) noexcept
-// {
-//     return fmt::detail::copy_str<char>(word.cbegin(), word.cend(), out);
-// }
-
-// template <std::size_t nvals, typename IterOut, typename Var>
-// constexpr IterOut
-// format_var(IterOut out, const Var& var) noexcept
-// {
-//     if constexpr(nvals == 1) { out = copy(out, var); }
-//     else if constexpr(nvals == -1ul) { out = format_to(out, "{}...", var); }
-//     else
-//     {
-//         out = copy(out, var[0]);
-//         for(std::size_t i = 1; i < nvals; ++i)
-//         {
-//             out = format_to(out, " {}", var[i]);
-//         }
-//     }
-//     return out;
-// }
-// } // namespace internal
-
-// template <char Key, typename Converter, std::size_t nvals>
-// struct formatter<lucid::argparse::Option<Key, Converter, nvals>>
-// {
-//   private:
-//     char presentation = 's';
-
-//   public:
-//     constexpr auto
-//     parse(format_parse_context& ctx)
-//     {
-//         auto it = ctx.begin(), end = ctx.end();
-
-//         if(it != end && (*it == 's' || *it == 'l')) presentation = *it++;
-
-//         if(it != end && *it != '}') throw format_error("invalid format");
-
-//         return it;
-//     }
-
-//     template <typename FormatContext>
-//     constexpr auto
-//     format(const lucid::argparse::Option<Key, Converter, nvals>& desc,
-//            FormatContext&                                        ctx) const
-//     {
-//         auto out = ctx.out();
-//         if(presentation == 's')
-//         {
-//             out = format_to(out, "-{}", Key);
-//             if constexpr(!lucid::argparse::Option<Key, Converter, nvals>::
-//                              is_flag)
-//             {
-//                 *out++ = ' ';
-//                 out    = internal::format_var<nvals>(out, desc.var);
-//             }
-//         }
-//         else
-//         {
-//             out = format_to(out, "-{}", Key);
-//             if(!desc.keyword.empty())
-//                 out = format_to(out, ", --{} ", desc.keyword);
-//             out = internal::format_var<nvals>(out, desc.var);
-//         }
-//         return out;
-//     }
-// };
-
-// template <typename Converter, std::size_t nvals>
-// struct formatter<lucid::argparse::Positional<Converter, nvals>>
-// {
-//     constexpr auto
-//     parse(format_parse_context& ctx) const
-//     {
-//         auto it = ctx.begin();
-//         return it++;
-//     }
-
-//     template <typename FormatContext>
-//     constexpr auto
-//     format(const lucid::argparse::Positional<Converter, nvals>& desc,
-//     FormatContext& ctx) const
-//     {
-//         return internal::format_var<nvals>(ctx.out(), desc.var);
-//     }
-// };
-
-// template <std::size_t max_width, typename IterOut>
-// constexpr IterOut
-// aligned_doc(IterOut                out,
-//             const std::string_view text,
-//             const std::size_t      margin) noexcept
-// {
-//     std::size_t column = margin;
-//     const auto  end    = text.cend();
-
-//     auto is_not_space = [&](char a) constexpr noexcept
-//     { return ((a != ' ') && (a != '\t') && (a != '\n')); };
-//     auto word_size = [&](auto iter) constexpr noexcept
-//     {
-//         std::size_t counter = 0ul;
-//         while(is_not_space(*iter) && iter != end)
-//         {
-//             ++iter;
-//             ++counter;
-//         }
-//         return counter;
-//     };
-
-//     for(auto iter = text.cbegin(); iter != end; ++iter)
-//     {
-//         const std::size_t esteem_column = column + word_size(iter) + 1ul;
-
-//         if(is_not_space(*iter) || (esteem_column <= max_width))
-//         {
-//             *out++ = *iter;
-//             ++column;
-//         }
-//         else
-//         {
-//             *out++ = '\n';
-//             for(std::size_t i = 0; i < margin; ++i) *out++ = ' ';
-//             column = margin;
-//         }
-//     }
-
-//     return out;
-// }
-
-// template <bool        is_short,
-//           std::size_t max_width,
-//           typename OutIter,
-//           typename... Options,
-//           typename... Positionals>
-// constexpr OutIter
-// format_opts(OutIter                           out,
-//             const std::tuple<Options...>&     options,
-//             const std::tuple<Positionals...>& positionals,
-//             const std::size_t                 margin) noexcept
-// {
-//     if constexpr(is_short)
-//     {
-//         out                        = internal::copy(out, "[-h");
-//         std::size_t current_column = margin + 3;
-
-//         auto next_line = [&](const std::size_t column) constexpr noexcept
-//         {
-//             if(column > max_width)
-//             {
-//                 *out++ = '\n';
-//                 for(std::size_t i = 0; i < margin - 1; ++i) *out++ = ' ';
-//                 current_column = margin;
-//             }
-//         };
-
-//         if constexpr((false || ... || Options::is_flag))
-//             lucid::for_each(
-//                 [&](const auto& option) constexpr noexcept
-//                 {
-//                     using OptionType = std::decay_t<decltype(option)>;
-//                     if constexpr(OptionType::is_flag)
-//                     {
-//                         *out++ = OptionType::key;
-//                         ++current_column;
-//                     }
-//                 },
-//                 options);
-
-//         *out++ = ']';
-//         ++current_column;
-//         next_line(current_column);
-
-//         auto printer = [&]<typename T>(fmt::format_string<T> str,
-//                                        const T& elem) constexpr noexcept
-//         {
-//             const std::size_t str_size = formatted_size(str, elem);
-//             next_line(current_column + str_size);
-//             out = format_to(out, str, elem);
-//             current_column += str_size;
-//         };
-
-//         lucid::for_each(
-//             [&](const auto& option)
-//             {
-//                 using OptionType = std::decay_t<decltype(option)>;
-//                 if constexpr(!OptionType::is_flag) printer(" [{:s}]",
-//                 option);
-//             },
-//             options);
-
-//         // short positionals
-//         lucid::for_each([&](const auto& elem) constexpr noexcept
-//                         { printer(" {}", elem); },
-//                         positionals);
-//     }
-//     else
-//     {
-//         auto align_printer = [&]<typename T>(fmt::format_string<T> str,
-//                                              const T& elem) constexpr
-//                                              noexcept
-//         {
-//             out = format_to(out, str, elem);
-//             // width is guarandeed to be less the margin
-//             const std::size_t width = formatted_size(str, elem) - 1ul;
-//             for(std::size_t i = 0; i < (margin - width); ++i) *out++ = ' ';
-//             out = aligned_doc<max_width>(out, elem.doc, margin);
-//         };
-
-//         align_printer(
-//             "\n    {:l}",
-//             lucid::argparse::flag<'h'>(false,
-//                                        "help",
-//                                        "Show this message and exit."));
-
-//         lucid::for_each([&](const auto& option) constexpr noexcept
-//                         { align_printer("\n    {:l}", option); },
-//                         options);
-
-//         lucid::for_each([&](const auto& pos)
-//                         { align_printer("\n    {}", pos); },
-//                         positionals);
-//     }
-//     return out;
-// }
-
-// template <typename Options,
-//           typename Positionals,
-//           std::size_t... OptIdx,
-//           std::size_t... PosIdx>
-// constexpr std::size_t
-// longest_head(const Options&     options,
-//              const Positionals& positionals,
-//              std::index_sequence<OptIdx...>,
-//              std::index_sequence<PosIdx...>) noexcept
-// {
-//     const std::size_t opt_max = lucid::fold_tuple(
-//         [](const std::size_t a, const auto& option2) noexcept -> std::size_t
-//         { return std::max(a, formatted_size("{:l}", option2)); },
-//         0ul,
-//         options);
-
-//     std::size_t pos_max = 0;
-
-//     if constexpr(std::tuple_size_v<Positionals> == 1)
-//     {
-//         pos_max = formatted_size("{}", std::get<0>(positionals));
-//     }
-//     else if constexpr((std::tuple_size_v<Positionals>) > 1)
-//     {
-//         pos_max = lucid::fold_tuple(
-//             [](const std::size_t a, const auto& pos2) noexcept -> std::size_t
-//             { return std::max(a, formatted_size("{}", pos2)); },
-//             0ul,
-//             positionals);
-//     }
-
-//     return std::max(opt_max, pos_max);
-// }
-
-// template <typename... Options, typename... Positionals>
-// struct formatter<
-//     lucid::argparse::detail::fmt_data<std::tuple<Options...>,
-//     std::tuple<Positionals...>>>
-// {
-//     using Desc =
-//         lucid::argparse::detail::fmt_data<std::tuple<Options...>,
-//         std::tuple<Positionals...>>;
-
-//     constexpr auto
-//     parse(format_parse_context& ctx) const
-//     {
-//         auto it = ctx.begin();
-//         return it++;
-//     }
-
-//     template <typename FormatContext>
-//     constexpr auto
-//     format(const Desc& desc, FormatContext& ctx) const
-//     {
-//         constexpr std::size_t max_width   = 80;
-//         const auto&           options     = desc.options;
-//         const auto&           positionals = desc.positionals;
-
-//         auto out = ctx.out();
-
-//         constexpr auto front = "Usage: {} ";
-
-//         out = format_to(out, front, desc.program_name);
-
-//         // short options
-//         out = format_opts<true, max_width>(
-//             out,
-//             options,
-//             positionals,
-//             formatted_size(front, desc.program_name));
-
-//         out = internal::copy(out, "\n\nOptions:");
-
-//         const std::size_t new_margin =
-//             longest_head(options,
-//                          positionals,
-//                          std::index_sequence_for<Options...>{},
-//                          std::index_sequence_for<Positionals...>{});
-
-//         out = format_opts<false, max_width>(out,
-//                                             options,
-//                                             positionals,
-//                                             new_margin + 5ul);
-
-//         return out;
-//     }
-// };
-// } // namespace fmt
-
-namespace lucid::argparse
-{
-template <typename... Options, typename... Positionals>
-void
-show_help(std::string_view                  program_name,
-          const std::tuple<Options...>&     options,
-          const std::tuple<Positionals...>& positionals,
-          FILE*                             file = stdout) noexcept
-{
-    constexpr std::size_t line_width   = 80;
-    constexpr std::size_t short_margin = 2;
-    fmt::print(file, "Usage: {}", program_name);
-
-    const std::size_t margin1 = 7 + program_name.size();
-    std::size_t       column  = margin1;
-
-    const auto try_newline1 = [&margin1, &column, file]() constexpr noexcept
-    {
-        if(column >= line_width)
-        {
-            std::fputc('\n', file);
-            for(std::size_t i = 0; i < margin1; ++i) std::fputc(' ', file);
-            column = margin1;
-        }
-    };
-
-    // print flags key characters first, e.g. [-fLaGs]
-    using flag_opts =
-        typelist::filter<detail::filter_flag, type_sequence<Options...>>;
-    if constexpr(!typelist::empty<flag_opts>)
-    {
-        std::fputs(" [-", file);
-        typelist::for_each(
-            [file, &column]<typename O>() noexcept
-            {
-                std::fputc(O::key, file);
-                ++column;
-            },
-            flag_opts{});
-        std::fputc(']', file);
-        column += 4;
-        try_newline1();
-    }
-
-    const auto print_var =
-        [&]<typename O>(const O&, const std::string_view var) constexpr noexcept
-    {
-        fmt::print(file, " <{}", var);
-        column += 2 + var.size();
-
-        if constexpr(O::num_vals == -1ul)
-        {
-            // is parameter list
-            std::fputs("...", file);
-            column += 3;
-        }
-
-        std::fputc('>', file);
-        ++column;
-    };
-
-    const auto print_vars =
-        [&]<typename O>(const O& option, bool t = false) constexpr noexcept
-    {
-        if constexpr(O::num_vals == -1ul || O::num_vals == 1)
-        { // option.var is just a string_view
-            print_var(option, option.var);
-            if(t) try_newline1();
-        }
-        else
-            // option.var is std::array<num_vals, std::string_view>
-            for(std::size_t i = 0; i < O::num_vals; ++i)
-            {
-                print_var(option, option.var[i]);
-                if(t) try_newline1();
-            }
-    };
-
-    // print options with vars, e.g. [-o var] or [--option var]
-    lucid::for_each(
-        [&]<typename O>(const O& option) constexpr noexcept
-        {
-            if constexpr(!O::is_flag)
-            {
-                if constexpr(O::key == detail::missing_keychar)
-                {
-                    fmt::print(file, " [--{}", O::keyword);
-                    column += 4 + O::keyword.size();
-                }
-                else
-                {
-                    fmt::print(file, " [-{}", O::key);
-                    column += 4;
-                }
-                print_vars(option);
-                std::fputc(']', file);
-                ++column;
-                try_newline1();
-            }
-        },
-        options);
-
-    // print positionals
-    lucid::for_each([&](const auto& p) constexpr noexcept
-                    { print_vars(p, true); },
-                    positionals);
-
-    std::fputc('\n', file);
-
-    const auto try_newline2 = [&column, file]() constexpr noexcept
-    {
-        if(column >= line_width)
-        {
-            std::fputc('\n', file);
-            for(std::size_t i = 0; i < short_margin; ++i) std::fputc(' ', file);
-            column = short_margin;
-        }
-    };
-}
-
-std::string_view
-make_program_name(ArgsRange args) noexcept
-{
-    const std::string_view argv0{*args.read()};
-    const std::size_t      slash_pos{argv0.rfind('/')};
-    return slash_pos == std::string_view::npos ? argv0 :
-                                                 argv0.substr(slash_pos + 1);
-}
 
 class StandardErrorHandler
 {
@@ -1784,7 +1471,6 @@ class StandardErrorHandler
                    "{}: too few arguments for parameter \"{}\"\n",
                    error_head,
                    ex.keyword);
-        exit(1);
     }
 
     template <typename Key>
@@ -1792,7 +1478,6 @@ class StandardErrorHandler
     operator()(const KeyException<Key>& ex) const noexcept
     {
         fmt::print(stderr, "{}: unknown key \"{}\"\n", error_head, ex.value);
-        exit(1);
     }
 
     void
@@ -1817,7 +1502,6 @@ class StandardErrorHandler
     operator()(bool) const noexcept
     {
         fmt::print(stderr, "{}: too few positional arguments\n", error_head);
-        exit(1);
     }
 };
 } // namespace lucid::argparse

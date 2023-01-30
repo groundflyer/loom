@@ -122,9 +122,8 @@ error_check() noexcept
 int
 main(int argc, char* argv[])
 {
-    int       ret = 0;
-    ArgsRange args(argc, argv);
-    show_help(make_program_name(args), options, positionals);
+    int        ret = 0;
+    ArgsRange  args(argc, argv);
     const auto results =
         parse(options, positionals, args, StandardErrorHandler{});
     fmt::print("a = {}\n", results.get_opt<'a'>());
