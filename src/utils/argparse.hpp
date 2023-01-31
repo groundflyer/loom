@@ -260,16 +260,23 @@ struct FlagConverter
     }
 };
 
-template <typename _Option>
-struct filter_flag
+template <typename O>
+struct has_keychar
 {
-    static constexpr bool value = _Option::is_flag;
+    static constexpr bool value = O::key != missing_keychar;
 };
 
-template <typename _Option>
-struct filter_option
+template <typename O>
+struct has_keyword
 {
-    static constexpr bool value = !_Option::is_flag;
+    static constexpr bool value =
+        !std::is_same_v<typename O::keyword_type, missing_keyword>;
+};
+
+template <typename O>
+struct is_flag
+{
+    static constexpr bool value = O::is_flag;
 };
 } // namespace detail
 
@@ -282,15 +289,26 @@ using wrap_string = typename detail::
     wrap_string_helper<s, std::make_index_sequence<s.size()>>::type;
 
 template <char Key, typename Options>
-constexpr inline std::size_t key_index = detail::key_index<Key, Options>::value;
+constexpr std::size_t key_index = detail::key_index<Key, Options>::value;
 
 template <typename Keyword, typename Options>
-constexpr inline std::size_t keyword_index =
+constexpr std::size_t keyword_index =
     detail::keyword_index<Keyword, Options>::value;
 
 template <detail::StringLiteral s>
-constexpr inline bool keyword_ok =
-    detail::keyword_ok_impl<string_type<s>>::value;
+constexpr bool keyword_ok = detail::keyword_ok_impl<string_type<s>>::value;
+
+template <typename O>
+constexpr bool has_keychar = detail::has_keychar<O>::value;
+
+template <typename O>
+constexpr bool has_keyword = detail::has_keyword<O>::value;
+
+template <typename O>
+constexpr bool is_flag = detail::is_flag<O>::value;
+
+template <typename O>
+constexpr bool is_option = !is_flag<O>;
 
 class ArgsRange : public ranges::view_facade<ArgsRange>
 {
@@ -659,6 +677,43 @@ struct Positional
     }
 };
 
+template <detail::StringLiteral s>
+struct Category
+{
+    static constexpr std::size_t num_vals = 0;
+    static constexpr char        key      = detail::missing_keychar;
+    static constexpr bool        is_flag  = false;
+
+    using keyword_type = detail::missing_keyword;
+
+    static constexpr std::string_view value = s.view();
+};
+
+template <detail::StringLiteral s>
+consteval Category<s>
+category() noexcept
+{
+    return {};
+}
+
+namespace detail
+{
+template <typename T>
+struct is_category
+{
+    static constexpr bool value = false;
+};
+
+template <std::size_t N, StringLiteral<N> s>
+struct is_category<Category<s>>
+{
+    static constexpr bool value = true;
+};
+} // namespace detail
+
+template <typename T>
+constexpr bool is_category = detail::is_category<T>::value;
+
 #define CHECK_KEY                                   \
     static_assert(is_alphadigit(Key) && Key != 'h', \
                   "Only alphanumbers except 'h' (reserved) are allowed")
@@ -799,6 +854,9 @@ flag(const bool def_val, const std::string_view doc) noexcept
     CHECK_KEYWORD;
     return {detail::FlagConverter{}, def_val, doc, ""};
 }
+
+#undef CHECK_KEY
+#undef CHECK_KEYWORD
 
 template <typename Converter>
 consteval Positional<Converter, 1ul>
@@ -1314,7 +1372,6 @@ show_help(std::string_view                  program_name,
           std::FILE*                        file = stdout) noexcept
 {
     constexpr std::size_t line_width = 80;
-    // constexpr std::size_t short_margin = 2;
     fmt::print(file, "Usage: {}", program_name);
 
     const std::size_t margin1 = 7 + program_name.size();
@@ -1326,7 +1383,7 @@ show_help(std::string_view                  program_name,
 
     // print flags key characters first, e.g. [-fLaGs]
     using flag_opts =
-        typelist::filter<detail::filter_flag, type_sequence<Options...>>;
+        typelist::filter<detail::is_flag, type_sequence<Options...>>;
     if constexpr(!typelist::empty<flag_opts>)
     {
         std::fputs(" [-", file);
@@ -1346,17 +1403,17 @@ show_help(std::string_view                  program_name,
     lucid::for_each(
         [&]<typename O>(const O& option) constexpr noexcept
         {
-            if constexpr(!O::is_flag)
+            if constexpr(is_option<O>)
             {
-                if constexpr(O::key == detail::missing_keychar)
-                {
-                    fmt::print(file, " [--{}", O::keyword);
-                    column += 4 + O::keyword.size();
-                }
-                else
+                if constexpr(has_keychar<O>)
                 {
                     fmt::print(file, " [-{}", O::key);
                     column += 4;
+                }
+                else if constexpr(has_keyword<O>)
+                {
+                    fmt::print(file, " [--{}", O::keyword);
+                    column += 4 + O::keyword.size();
                 }
                 column = print_vars<false>(option, try_newline1, column, file);
                 std::fputc(']', file);
@@ -1373,6 +1430,74 @@ show_help(std::string_view                  program_name,
         positionals);
 
     std::fputs("\n\nOptions:\n", file);
+
+    constexpr std::size_t short_margin = 2;
+    const auto shift = []<typename O>(const O& option) constexpr noexcept
+    {
+        std::size_t ret = 0;
+
+        if constexpr(is_option<O> || is_flag<O>)
+        {
+            if constexpr(has_keychar<O>) ret += 2; // '-k'
+            if constexpr(has_keyword<O>)
+                ret += 2 + O::keyword.size(); // '--keyword'
+            if constexpr(has_keychar<O> && has_keyword<O>) ret += 2; // ', '
+
+            if constexpr(O::num_vals == -1ul)
+                ret += 6 + option.var.size(); // ' <var...>'
+            else if constexpr(O::num_vals > 1)
+            {
+                for(std::size_t i = 0; i < O::num_vals; ++i)
+                    ret += 3 + option.var[i].size(); // ' <var1> <var2>'
+            }
+            else if constexpr(O::num_vals == 1)
+                ret += 3 + option.var.size(); // '=<var>'
+        }
+
+        return ret;
+    };
+    const std::size_t doc_margin =
+        fold_tuple([](const auto& o1, const auto& o2) constexpr noexcept
+                   { return std::max(o1, o2); },
+                   map_tuple(shift, options)) +
+        short_margin + 1;
+
+    column = 0;
+    lucid::for_each(
+        [file, doc_margin, &column, shift]<typename O>(const O& option) noexcept
+        {
+            if constexpr(is_category<O>) fmt::print(file, "{}:\n", O::value);
+
+            if constexpr(is_option<O> || is_flag<O>)
+            {
+                for(std::size_t i = 0; i < short_margin; ++i)
+                    std::fputc(' ', file);
+
+                if constexpr(has_keychar<O> && !has_keyword<O>)
+                    fmt::print(file, "-{}", O::key);
+                else if constexpr(!has_keychar<O> && has_keyword<O>)
+                    fmt::print(file, "--{}", O::keyword);
+                else if constexpr(has_keychar<O> && has_keyword<O>)
+                    fmt::print(file, "-{}, --{}", O::key, O::keyword);
+
+                if constexpr(O::num_vals == -1ul)
+                    fmt::print(file, " <{}...>", option.var);
+                else if constexpr(O::num_vals > 1)
+                {
+                    for(std::size_t i = 0; i < O::num_vals; ++i)
+                        fmt::print(file, " <{}>", option.var[i]);
+                }
+                else if constexpr(O::num_vals == 1)
+                    fmt::print(file, "=<{}>", option.var);
+
+                column += short_margin + shift(option);
+                while(column++ < doc_margin) std::fputc(' ', file);
+
+                fmt::print(file, "{}\n", option.doc);
+                column = 0;
+            }
+        },
+        options);
 }
 
 std::string_view
