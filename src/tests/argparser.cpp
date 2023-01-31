@@ -8,7 +8,6 @@
 #include <string>
 #include <vector>
 
-using namespace std;
 using namespace lucid;
 using namespace lucid::argparse;
 
@@ -62,7 +61,7 @@ struct to_unsigned_f
 
 constexpr to_unsigned_f to_unsigned{};
 
-constexpr tuple options{
+constexpr std::tuple options{
     option<'a', "argonaft">(to_unsigned,
                             100,
                             "long doc for foo lore ipsum hule bly",
@@ -72,13 +71,22 @@ constexpr tuple options{
     option<'d', "two-val", 2ul>(
         lucid::identity,
         {"1111", "2222"},
-        "doc for two-val here we have an array fo string views of size two",
+        "Tu es comme le vent qui fait chanter les violons et emporte au loin "
+        "le parfum des roses. Caramels, bonbons et chocolats Par moments, je "
+        "ne te comprends pas. Merci, pas pour moi Mais tu peux bien les offrir "
+        "à une autre qui aime le vent et le parfum des roses Moi, les mots "
+        "tendres enrobés de douceur se posent sur ma bouche mais jamais sur "
+        "mon cœur Une parole encore. Paroles, paroles, paroles Ecoute-moi. "
+        "Paroles, paroles, paroles Je t'en prie. Paroles, paroles, paroles Je "
+        "te jure. Parole, parole, parole, parole, parole encore des paroles "
+        "que tu sèmes au vent Voilà mon destin te parler.... te parler comme "
+        "la première fois. Encore des mots toujours des mots les mêmes mots",
         {"2val1", "2val2"}),
     option_list<'m', "multi-val">(lucid::identity,
                                   "doc for unlimited values",
                                   "VAL")};
 
-constexpr tuple positionals{
+constexpr std::tuple positionals{
     positional<2ul>(lucid::identity,
                     "doc for 1st positional",
                     {"pos11", "pos12"}),

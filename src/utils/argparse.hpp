@@ -17,6 +17,9 @@
 
 #include <range/v3/algorithm/for_each.hpp>
 #include <range/v3/view/facade.hpp>
+#include <range/v3/view/filter.hpp>
+#include <range/v3/view/split.hpp>
+#include <range/v3/view/transform.hpp>
 
 #include <fmt/printf.h>
 
@@ -676,43 +679,6 @@ struct Positional
             return PositionalBinding<Converter, nvals>(converter);
     }
 };
-
-template <detail::StringLiteral s>
-struct Category
-{
-    static constexpr std::size_t num_vals = 0;
-    static constexpr char        key      = detail::missing_keychar;
-    static constexpr bool        is_flag  = false;
-
-    using keyword_type = detail::missing_keyword;
-
-    static constexpr std::string_view value = s.view();
-};
-
-template <detail::StringLiteral s>
-consteval Category<s>
-category() noexcept
-{
-    return {};
-}
-
-namespace detail
-{
-template <typename T>
-struct is_category
-{
-    static constexpr bool value = false;
-};
-
-template <std::size_t N, StringLiteral<N> s>
-struct is_category<Category<s>>
-{
-    static constexpr bool value = true;
-};
-} // namespace detail
-
-template <typename T>
-constexpr bool is_category = detail::is_category<T>::value;
 
 #define CHECK_KEY                                   \
     static_assert(is_alphadigit(Key) && Key != 'h', \
@@ -1466,36 +1432,57 @@ show_help(std::string_view                  program_name,
     lucid::for_each(
         [file, doc_margin, &column, shift]<typename O>(const O& option) noexcept
         {
-            if constexpr(is_category<O>) fmt::print(file, "{}:\n", O::value);
+            for(std::size_t i = 0; i < short_margin; ++i) std::fputc(' ', file);
 
-            if constexpr(is_option<O> || is_flag<O>)
+            if constexpr(has_keychar<O> && !has_keyword<O>)
+                fmt::print(file, "-{}", O::key);
+            else if constexpr(!has_keychar<O> && has_keyword<O>)
+                fmt::print(file, "--{}", O::keyword);
+            else if constexpr(has_keychar<O> && has_keyword<O>)
+                fmt::print(file, "-{}, --{}", O::key, O::keyword);
+
+            if constexpr(O::num_vals == -1ul)
+                fmt::print(file, " <{}...>", option.var);
+            else if constexpr(O::num_vals > 1)
             {
-                for(std::size_t i = 0; i < short_margin; ++i)
-                    std::fputc(' ', file);
-
-                if constexpr(has_keychar<O> && !has_keyword<O>)
-                    fmt::print(file, "-{}", O::key);
-                else if constexpr(!has_keychar<O> && has_keyword<O>)
-                    fmt::print(file, "--{}", O::keyword);
-                else if constexpr(has_keychar<O> && has_keyword<O>)
-                    fmt::print(file, "-{}, --{}", O::key, O::keyword);
-
-                if constexpr(O::num_vals == -1ul)
-                    fmt::print(file, " <{}...>", option.var);
-                else if constexpr(O::num_vals > 1)
-                {
-                    for(std::size_t i = 0; i < O::num_vals; ++i)
-                        fmt::print(file, " <{}>", option.var[i]);
-                }
-                else if constexpr(O::num_vals == 1)
-                    fmt::print(file, "=<{}>", option.var);
-
-                column += short_margin + shift(option);
-                while(column++ < doc_margin) std::fputc(' ', file);
-
-                fmt::print(file, "{}\n", option.doc);
-                column = 0;
+                for(std::size_t i = 0; i < O::num_vals; ++i)
+                    fmt::print(file, " <{}>", option.var[i]);
             }
+            else if constexpr(O::num_vals == 1)
+                fmt::print(file, "=<{}>", option.var);
+
+            column += short_margin + shift(option);
+            while(column++ < doc_margin) std::fputc(' ', file);
+
+            auto words = option.doc | ranges::views::split(' ') |
+                         ranges::views::transform(
+                             [](auto&& rng) {
+                                 return std::string_view(&*rng.begin(),
+                                                         ranges::distance(rng));
+                             }) |
+                         ranges::views::filter([](std::string_view w) noexcept
+                                               { return !w.empty(); });
+            ranges::for_each(
+                words,
+                [&column, doc_margin, file](std::string_view w) noexcept
+                {
+                    if(column + w.size() <= line_width)
+                    {
+                        fmt::print(file, " {}", w);
+                        column += 1 + w.size();
+                    }
+                    else
+                    {
+                        std::fputc('\n', file);
+                        column = 0;
+                        while(column++ < doc_margin) std::fputc(' ', file);
+                        fmt::print(file, " {}", w);
+                        column += 1 + w.size();
+                    }
+                });
+
+            std::fputc('\n', file);
+            column = 0;
         },
         options);
 }
