@@ -11,8 +11,20 @@
 
 namespace lucid
 {
+/// @defgroup TMP Metaprogramming
+/// @brief Template metaprogramming.
+///
+/// Here we define metafunctions as class templates,
+/// where function parameters are template parameters
+/// and the result is a public typedef @p type
+/// or a static constexpr member @p value.
+///
+/// The templates are hidden in the @p detail namespace,
+/// while type aliases and variable templates are visible.
+
 /// @defgroup Typelist Typelist
 /// @brief List operations on type sequences.
+/// @ingroup TMP
 /// @{
 
 /// @brief Sequence of types.
@@ -452,6 +464,10 @@ for_each(F f, type_sequence<Ts...>) noexcept((true &&
 
 namespace intlist
 {
+/// @defgroup Intlist Intlist
+/// @brief Compile-time list operations on std::integer_sequence.
+/// @ingroup TMP
+/// @{
 namespace detail
 {
 template <auto Val, typename List>
@@ -686,9 +702,6 @@ struct has_duplicates<std::integer_sequence<Int, X, Xs...>>
         elem<X, xs>::value || has_duplicates<xs>::value;
 };
 } // namespace detail
-/// @defgroup Intlist Intlist
-/// @brief Compile-time list operations on std::integer_sequence.
-/// @{
 
 /// @brief Add integer value @p Val to the beginning of @p List.
 template <auto Val, typename List>
@@ -777,7 +790,6 @@ constexpr auto array = detail::array<List>::value;
 /// @brief Check if there are duplicates in @p List.
 template <typename List>
 constexpr bool has_duplicates = detail::has_duplicates<List>::value;
-/// @}
 
 template <std::size_t N, std::size_t I>
 struct lehmer_code_impl
@@ -825,7 +837,7 @@ struct lehmer_perm_impl<Idxs, std::index_sequence<Head, Rest...>>
 template <std::size_t N>
 using lehmer_code = typename lehmer_code_impl<N, 1>::type;
 
-/// @brief Generates a permutation of index array @p Idxs from
+/// @brief Generate a permutation of index array @p Idxs from
 /// its factorial representation @p FacNum.
 template <typename Idxs, typename FacNum>
 using lehmer_perm = typename lehmer_perm_impl<Idxs, FacNum>::type;
@@ -849,5 +861,6 @@ struct nlperm_impl
 /// of an index sequence of length @p L.
 template <std::size_t N, std::size_t L>
 using nlperm = typename nlperm_impl<N, L>::type;
+/// @}
 } // namespace intlist
 } // namespace lucid

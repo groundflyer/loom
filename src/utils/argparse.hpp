@@ -1,6 +1,6 @@
 // -*- C++ -*-
-// argparse.hpp
-//
+/// @file argparse.hpp
+/// @brief Parsing command line arguments.
 
 #pragma once
 
@@ -21,26 +21,35 @@
 #include <range/v3/view/split.hpp>
 #include <range/v3/view/transform.hpp>
 
-#include <fmt/printf.h>
+#include <fmt/core.h>
 
 #include <cstdio>
 
 namespace lucid::argparse
 {
+/// @defgroup ArgParse ArgParse
+/// @brief Parsing command line arguments.
+/// @{
+
+/// @brief Compile-time string.
 template <char... Cs>
 using char_sequence = std::integer_sequence<char, Cs...>;
 
+/// @brief Thrown when unknown key is encountered.
 template <typename Key>
 struct KeyException
 {
     Key value;
 };
 
+/// @brief Thrown when reaching the end of the arguments list
+/// while unset values remain.
 struct FewArgumentsException
 {
     std::string_view keyword;
 };
 
+/// @brief Thrown when parser encounters a value while expecting a -(-)key.
 struct UnexpectedValue
 {
     std::string_view value;
@@ -283,21 +292,28 @@ struct is_flag
 };
 } // namespace detail
 
+/// @brief Convert detail::StringLiteral into char_sequence.
 template <detail::StringLiteral s>
 using string_type =
     typename detail::sl2cs_impl<s, std::make_index_sequence<s.size()>>::type;
 
+/// @brief Make a pair of detail::StringLiteral and a char_sequence.
 template <detail::StringLiteral s>
 using wrap_string = typename detail::
     wrap_string_helper<s, std::make_index_sequence<s.size()>>::type;
 
+/// @brief Get the index of an Option with character key @p Key in the list of
+/// @p Options
 template <char Key, typename Options>
 constexpr std::size_t key_index = detail::key_index<Key, Options>::value;
 
+/// @brief Get the index of an Option with keyword @p Keyword in the list of @p
+/// Options
 template <typename Keyword, typename Options>
 constexpr std::size_t keyword_index =
     detail::keyword_index<Keyword, Options>::value;
 
+/// @brief Check if keyword @p s meets requirements.
 template <detail::StringLiteral s>
 constexpr bool keyword_ok = detail::keyword_ok_impl<string_type<s>>::value;
 
@@ -313,6 +329,7 @@ constexpr bool is_flag = detail::is_flag<O>::value;
 template <typename O>
 constexpr bool is_option = !is_flag<O>;
 
+/// @brief Wraps program arguments into a range view.
 class ArgsRange : public ranges::view_facade<ArgsRange>
 {
     friend ranges::range_access;
@@ -345,7 +362,7 @@ class ArgsRange : public ranges::view_facade<ArgsRange>
     }
 };
 
-/// @brief Stores pointer to argv for later conversion
+/// @brief Holds pointer to an argument of an option.
 template <typename Converter, std::size_t nvals>
 class Binding
 {
@@ -516,6 +533,7 @@ class Binding<Converter, -1ul>
     }
 };
 
+/// @brief Holds pointer to positional argument.
 template <typename Converter, std::size_t nvals>
 class PositionalBinding
 {
@@ -580,6 +598,7 @@ class PositionalBinding<Converter, 1>
     }
 };
 
+/// @brief Defines an option.
 template <char Key, typename Keyword, typename Converter, std::size_t nvals>
 struct Option
 {
@@ -650,6 +669,7 @@ struct Option<Key, Keyword, Converter, -1ul>
     }
 };
 
+/// @brief Defines positional, required argument.
 template <typename Converter, std::size_t nvals>
 struct Positional
 {
@@ -680,7 +700,7 @@ struct Positional
     }
 };
 
-#define CHECK_KEY                                   \
+#define CHECK_KEYCHAR                               \
     static_assert(is_alphadigit(Key) && Key != 'h', \
                   "Only alphanumbers except 'h' (reserved) are allowed")
 #define CHECK_KEYWORD                                                     \
@@ -688,6 +708,7 @@ struct Positional
                   "One-letter length or empty keywords are not allowed, " \
                   "('help' is reserved)")
 
+/// @brief Define an option with key @p Key and keyword @p s.
 template <char Key, detail::StringLiteral s, typename Converter>
 consteval Option<Key, wrap_string<s>, Converter, 1ul>
 option(Converter                             converter,
@@ -695,11 +716,12 @@ option(Converter                             converter,
        const std::string_view                doc,
        const std::string_view                var) noexcept
 {
-    CHECK_KEY;
+    CHECK_KEYCHAR;
     CHECK_KEYWORD;
     return {converter, def_val, doc, var};
 }
 
+/// @brief Define an option with key @p Key.
 template <char Key, typename Converter>
 consteval Option<Key, detail::missing_keyword, Converter, 1ul>
 option(Converter                             converter,
@@ -707,10 +729,11 @@ option(Converter                             converter,
        const std::string_view                doc,
        const std::string_view                var) noexcept
 {
-    CHECK_KEY;
+    CHECK_KEYCHAR;
     return {converter, def_val, doc, var};
 }
 
+/// @brief Define an option with keyword @p s.
 template <detail::StringLiteral s, typename Converter>
 consteval Option<detail::missing_keychar, wrap_string<s>, Converter, 1ul>
 option(Converter                             converter,
@@ -722,6 +745,7 @@ option(Converter                             converter,
     return {converter, def_val, doc, var};
 }
 
+/// @brief Define an option that takes @p N values.
 template <char Key, detail::StringLiteral s, std::size_t N, typename Converter>
 consteval Option<Key, wrap_string<s>, Converter, N>
 option(Converter                                            converter,
@@ -730,7 +754,7 @@ option(Converter                                            converter,
        const std::array<std::string_view, N>&               var) noexcept
 {
     static_assert(N > 1ul && N != -1ul, "Use option without N argument");
-    CHECK_KEY;
+    CHECK_KEYCHAR;
     CHECK_KEYWORD;
     return {converter, def_val, doc, var};
 }
@@ -743,7 +767,7 @@ option(Converter                                            converter,
        const std::array<std::string_view, N>&               var) noexcept
 {
     static_assert(N > 1ul && N != -1ul, "Use option without N argument");
-    CHECK_KEY;
+    CHECK_KEYCHAR;
     return {converter, def_val, doc, var};
 }
 
@@ -759,6 +783,7 @@ option(Converter                                            converter,
     return {converter, def_val, doc, var};
 }
 
+/// @brief Define an option that takes multiple values.
 template <char                  Key,
           detail::StringLiteral s,
           typename Converter,
@@ -768,7 +793,7 @@ option_list(Converter              converter,
             const std::string_view doc,
             const std::string_view var) noexcept
 {
-    CHECK_KEY;
+    CHECK_KEYCHAR;
     CHECK_KEYWORD;
     return {converter, doc, var};
 }
@@ -779,7 +804,7 @@ option_list(Converter              converter,
             const std::string_view doc,
             const std::string_view var) noexcept
 {
-    CHECK_KEY;
+    CHECK_KEYCHAR;
     return {converter, doc, var};
 }
 
@@ -793,11 +818,12 @@ option_list(Converter              converter,
     return {converter, doc, var};
 }
 
+/// @brief Define a flag option.
 template <char Key, detail::StringLiteral s>
 consteval Option<Key, wrap_string<s>, detail::FlagConverter, 1ul>
 flag(const bool def_val, const std::string_view doc) noexcept
 {
-    CHECK_KEY;
+    CHECK_KEYCHAR;
     CHECK_KEYWORD;
     return {detail::FlagConverter{}, def_val, doc, ""};
 }
@@ -806,7 +832,7 @@ template <char Key>
 consteval Option<Key, detail::missing_keyword, detail::FlagConverter, 1ul>
 flag(const bool def_val, const std::string_view doc) noexcept
 {
-    CHECK_KEY;
+    CHECK_KEYCHAR;
     return {detail::FlagConverter{}, def_val, doc, ""};
 }
 
@@ -821,9 +847,10 @@ flag(const bool def_val, const std::string_view doc) noexcept
     return {detail::FlagConverter{}, def_val, doc, ""};
 }
 
-#undef CHECK_KEY
+#undef CHECK_KEYCHAR
 #undef CHECK_KEYWORD
 
+/// @brief Create a positional.
 template <typename Converter>
 consteval Positional<Converter, 1ul>
 positional(Converter&&            converter,
@@ -1616,4 +1643,5 @@ class StandardErrorHandler
         fmt::print(stderr, "{}: too few positional arguments\n", error_head);
     }
 };
+/// @}
 } // namespace lucid::argparse
