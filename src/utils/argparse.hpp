@@ -31,34 +31,6 @@ namespace lucid::argparse
 /// @brief Zero-cost, Unix/GNU style command line argument parser.
 /// @{
 
-/// @brief Compile-time string.
-template <char... Cs>
-using char_sequence = std::integer_sequence<char, Cs...>;
-
-/// @brief Thrown when unknown key is encountered.
-template <typename Key>
-struct KeyException
-{
-    Key value;
-};
-
-/// @brief Thrown when reaching the end of the arguments list
-/// while unset values remain.
-struct FewArgumentsException
-{
-    std::string_view keyword;
-};
-
-/// @brief Thrown when parser encounters a value while expecting a -(-)key.
-struct UnexpectedValue
-{
-    std::string_view value;
-};
-
-struct HelpRequest
-{
-};
-
 constexpr bool
 is_alpha_upper(char c) noexcept
 {
@@ -292,6 +264,34 @@ struct is_flag
 };
 } // namespace detail
 
+/// @brief Thrown when unknown key is encountered.
+template <typename Key>
+struct KeyException
+{
+    Key value;
+};
+
+/// @brief Thrown when reaching the end of the arguments list
+/// while unset values remain.
+struct FewArgumentsException
+{
+    std::string_view keyword;
+};
+
+/// @brief Thrown when parser encounters a value while expecting a -(-)key.
+struct UnexpectedValue
+{
+    std::string_view value;
+};
+
+struct HelpRequest
+{
+};
+
+template <typename T>
+concept Converter = std::is_invocable_v<T, std::string_view> && !
+std::is_void_v<std::invoke_result_t<T, std::string_view>>;
+
 /// @brief Convert detail::StringLiteral into char_sequence.
 template <detail::StringLiteral s>
 using string_type =
@@ -363,12 +363,12 @@ class ArgsRange : public ranges::view_facade<ArgsRange>
 };
 
 /// @brief Holds pointer to an argument of an option.
-template <typename Converter, std::size_t nvals>
+template <Converter C, std::size_t nvals>
 class Binding
 {
-    using value_type = std::array<detail::result_type<Converter>, nvals>;
+    using value_type = std::array<detail::result_type<C>, nvals>;
 
-    Converter   converter;
+    C           converter;
     value_type  default_value;
     char**      words  = nullptr;
     std::size_t idx    = 0ul;
@@ -382,10 +382,8 @@ class Binding
     }
 
   public:
-    constexpr Binding(const Converter&  _converter,
-                      const value_type& value) noexcept :
-        converter(_converter),
-        default_value(value)
+    constexpr Binding(C _converter, const value_type& value) noexcept :
+        converter(_converter), default_value(value)
     {
     }
 
@@ -412,21 +410,19 @@ class Binding
     }
 };
 
-template <typename Converter>
-class Binding<Converter, 1>
+template <Converter C>
+class Binding<C, 1>
 {
-    using value_type = detail::result_type<Converter>;
+    using value_type = detail::result_type<C>;
 
-    Converter        converter;
+    C                converter;
     value_type       default_value;
     std::string_view word;
     bool             is_set = false;
 
   public:
-    constexpr Binding(const Converter&  _converter,
-                      const value_type& value) noexcept :
-        converter(_converter),
-        default_value(value)
+    constexpr Binding(C _converter, const value_type& value) noexcept :
+        converter(_converter), default_value(value)
     {
     }
 
@@ -454,14 +450,14 @@ class Binding<Converter, 1>
     }
 };
 
-template <typename Converter>
-class Binding<Converter, -1ul>
+template <Converter C>
+class Binding<C, -1ul>
 {
     class value_range : public ranges::view_facade<value_range>
     {
         friend ranges::range_access;
 
-        Converter   converter;
+        C           converter;
         char**      data = nullptr;
         std::size_t size = 0ul;
         std::size_t idx  = 0ul;
@@ -487,16 +483,16 @@ class Binding<Converter, -1ul>
       public:
         value_range() = default;
 
-        explicit value_range(const Converter& _converter,
-                             char*            _data[],
-                             std::size_t      _size) noexcept :
+        explicit value_range(C           _converter,
+                             char*       _data[],
+                             std::size_t _size) noexcept :
             converter(_converter),
             data(_data), size(_size)
         {
         }
     };
 
-    Converter   converter;
+    C           converter;
     char**      data = nullptr;
     std::size_t size = 0ul;
 
@@ -507,10 +503,7 @@ class Binding<Converter, -1ul>
     }
 
   public:
-    constexpr explicit Binding(const Converter& _converter) noexcept :
-        converter(_converter)
-    {
-    }
+    constexpr explicit Binding(C _converter) noexcept : converter(_converter) {}
 
     constexpr void
     set(std::string_view) noexcept
@@ -534,15 +527,15 @@ class Binding<Converter, -1ul>
 };
 
 /// @brief Holds pointer to positional argument.
-template <typename Converter, std::size_t nvals>
+template <Converter C, std::size_t nvals>
 class PositionalBinding
 {
-    Converter   converter;
+    C           converter;
     char**      words = nullptr;
     std::size_t idx   = 0ul;
 
   public:
-    explicit constexpr PositionalBinding(const Converter& _converter) noexcept :
+    explicit constexpr PositionalBinding(C _converter) noexcept :
         converter(_converter)
     {
     }
@@ -569,14 +562,14 @@ class PositionalBinding
     }
 };
 
-template <typename Converter>
-class PositionalBinding<Converter, 1>
+template <Converter C>
+class PositionalBinding<C, 1>
 {
-    Converter        converter;
+    C                converter;
     std::string_view word;
 
   public:
-    explicit constexpr PositionalBinding(const Converter& _converter) noexcept :
+    explicit constexpr PositionalBinding(C _converter) noexcept :
         converter(_converter){};
 
     constexpr void
@@ -599,10 +592,10 @@ class PositionalBinding<Converter, 1>
 };
 
 /// @brief Defines an option.
-template <char Key, typename Keyword, typename Converter, std::size_t nvals>
+template <char Key, typename Keyword, Converter C, std::size_t nvals>
 struct Option
 {
-    using singular_value_type = detail::result_type<Converter>;
+    using singular_value_type = detail::result_type<C>;
     using value_type =
         std::conditional_t<(nvals > 1),
                            std::array<singular_value_type, nvals>,
@@ -618,12 +611,12 @@ struct Option
     static constexpr std::size_t      num_vals = is_flag ? 0ul : nvals;
     static constexpr std::string_view keyword  = Keyword::view;
 
-    Converter        converter;
+    C                converter;
     value_type       default_value;
     std::string_view doc;
     var_type         var;
 
-    consteval Option(Converter              _converter,
+    consteval Option(C                      _converter,
                      const value_type&      _default_value,
                      const std::string_view _doc,
                      const var_type&        _var) noexcept :
@@ -632,29 +625,29 @@ struct Option
     {
     }
 
-    constexpr Binding<Converter, nvals>
+    constexpr Binding<C, nvals>
     binding() const noexcept
     {
-        return Binding<Converter, nvals>(converter, default_value);
+        return Binding<C, nvals>(converter, default_value);
     }
 };
 
-template <char Key, typename Keyword, typename Converter>
-struct Option<Key, Keyword, Converter, -1ul>
+template <char Key, typename Keyword, Converter C>
+struct Option<Key, Keyword, C, -1ul>
 {
     static constexpr std::size_t      num_vals = -1ul;
     static constexpr char             key      = Key;
     static constexpr bool             is_flag  = false;
     static constexpr std::string_view keyword  = Keyword::view;
 
-    using value_type   = detail::result_type<Converter>;
+    using value_type   = detail::result_type<C>;
     using keyword_type = typename Keyword::type;
 
-    Converter        converter;
+    C                converter;
     std::string_view doc;
     std::string_view var;
 
-    consteval Option(Converter              _converter,
+    consteval Option(C                      _converter,
                      const std::string_view _doc,
                      const std::string_view _var) noexcept :
         converter(_converter),
@@ -662,15 +655,15 @@ struct Option<Key, Keyword, Converter, -1ul>
     {
     }
 
-    constexpr Binding<Converter, -1ul>
+    constexpr Binding<C, -1ul>
     binding() const noexcept
     {
-        return Binding<Converter, -1ul>(converter);
+        return Binding<C, -1ul>(converter);
     }
 };
 
 /// @brief Defines positional, required argument.
-template <typename Converter, std::size_t nvals>
+template <Converter C, std::size_t nvals>
 struct Positional
 {
     using var_type = std::conditional_t<(nvals > 1 && nvals != -1ul),
@@ -678,11 +671,11 @@ struct Positional
                                         std::string_view>;
     static constexpr std::size_t num_vals = nvals;
 
-    Converter        converter;
+    C                converter;
     std::string_view doc;
     var_type         var;
 
-    consteval Positional(Converter&&            _converter,
+    consteval Positional(C                      _converter,
                          const std::string_view _doc,
                          const var_type&        _var) noexcept :
         converter(_converter),
@@ -694,9 +687,9 @@ struct Positional
     binding() const noexcept
     {
         if constexpr(nvals == -1ul)
-            return Binding<Converter, -1ul>(converter);
+            return Binding<C, -1ul>(converter);
         else
-            return PositionalBinding<Converter, nvals>(converter);
+            return PositionalBinding<C, nvals>(converter);
     }
 };
 
@@ -709,12 +702,12 @@ struct Positional
                   "('help' is reserved)")
 
 /// @brief Define an option with key @p Key and keyword @p s.
-template <char Key, detail::StringLiteral s, typename Converter>
-consteval Option<Key, wrap_string<s>, Converter, 1ul>
-option(Converter                             converter,
-       const detail::result_type<Converter>& def_val,
-       const std::string_view                doc,
-       const std::string_view                var) noexcept
+template <char Key, detail::StringLiteral s, Converter C>
+consteval Option<Key, wrap_string<s>, C, 1ul>
+option(C                             converter,
+       const detail::result_type<C>& def_val,
+       const std::string_view        doc,
+       const std::string_view        var) noexcept
 {
     CHECK_KEYCHAR;
     CHECK_KEYWORD;
@@ -722,36 +715,36 @@ option(Converter                             converter,
 }
 
 /// @brief Define an option with key @p Key.
-template <char Key, typename Converter>
-consteval Option<Key, detail::missing_keyword, Converter, 1ul>
-option(Converter                             converter,
-       const detail::result_type<Converter>& def_val,
-       const std::string_view                doc,
-       const std::string_view                var) noexcept
+template <char Key, Converter C>
+consteval Option<Key, detail::missing_keyword, C, 1ul>
+option(C                             converter,
+       const detail::result_type<C>& def_val,
+       const std::string_view        doc,
+       const std::string_view        var) noexcept
 {
     CHECK_KEYCHAR;
     return {converter, def_val, doc, var};
 }
 
 /// @brief Define an option with keyword @p s.
-template <detail::StringLiteral s, typename Converter>
-consteval Option<detail::missing_keychar, wrap_string<s>, Converter, 1ul>
-option(Converter                             converter,
-       const detail::result_type<Converter>& def_val,
-       const std::string_view                doc,
-       const std::string_view                var) noexcept
+template <detail::StringLiteral s, Converter C>
+consteval Option<detail::missing_keychar, wrap_string<s>, C, 1ul>
+option(C                             converter,
+       const detail::result_type<C>& def_val,
+       const std::string_view        doc,
+       const std::string_view        var) noexcept
 {
     CHECK_KEYWORD;
     return {converter, def_val, doc, var};
 }
 
 /// @brief Define an option that takes @p N values.
-template <char Key, detail::StringLiteral s, std::size_t N, typename Converter>
-consteval Option<Key, wrap_string<s>, Converter, N>
-option(Converter                                            converter,
-       const std::array<detail::result_type<Converter>, N>& def_val,
-       const std::string_view                               doc,
-       const std::array<std::string_view, N>&               var) noexcept
+template <char Key, detail::StringLiteral s, std::size_t N, Converter C>
+consteval Option<Key, wrap_string<s>, C, N>
+option(C                                            converter,
+       const std::array<detail::result_type<C>, N>& def_val,
+       const std::string_view                       doc,
+       const std::array<std::string_view, N>&       var) noexcept
 {
     static_assert(N > 1ul && N != -1ul, "Use option without N argument");
     CHECK_KEYCHAR;
@@ -759,24 +752,24 @@ option(Converter                                            converter,
     return {converter, def_val, doc, var};
 }
 
-template <char Key, std::size_t N, typename Converter>
-consteval Option<Key, detail::missing_keyword, Converter, N>
-option(Converter                                            converter,
-       const std::array<detail::result_type<Converter>, N>& def_val,
-       const std::string_view                               doc,
-       const std::array<std::string_view, N>&               var) noexcept
+template <char Key, std::size_t N, Converter C>
+consteval Option<Key, detail::missing_keyword, C, N>
+option(C                                            converter,
+       const std::array<detail::result_type<C>, N>& def_val,
+       const std::string_view                       doc,
+       const std::array<std::string_view, N>&       var) noexcept
 {
     static_assert(N > 1ul && N != -1ul, "Use option without N argument");
     CHECK_KEYCHAR;
     return {converter, def_val, doc, var};
 }
 
-template <detail::StringLiteral s, std::size_t N, typename Converter>
-consteval Option<detail::missing_keychar, wrap_string<s>, Converter, N>
-option(Converter                                            converter,
-       const std::array<detail::result_type<Converter>, N>& def_val,
-       const std::string_view                               doc,
-       const std::array<std::string_view, N>&               var) noexcept
+template <detail::StringLiteral s, std::size_t N, Converter C>
+consteval Option<detail::missing_keychar, wrap_string<s>, C, N>
+option(C                                            converter,
+       const std::array<detail::result_type<C>, N>& def_val,
+       const std::string_view                       doc,
+       const std::array<std::string_view, N>&       var) noexcept
 {
     static_assert(N > 1ul && N != -1ul, "Use option without N argument");
     CHECK_KEYWORD;
@@ -784,12 +777,9 @@ option(Converter                                            converter,
 }
 
 /// @brief Define an option that takes multiple values.
-template <char                  Key,
-          detail::StringLiteral s,
-          typename Converter,
-          typename... Args>
-consteval Option<Key, wrap_string<s>, Converter, -1ul>
-option_list(Converter              converter,
+template <char Key, detail::StringLiteral s, Converter C, typename... Args>
+consteval Option<Key, wrap_string<s>, C, -1ul>
+option_list(C                      converter,
             const std::string_view doc,
             const std::string_view var) noexcept
 {
@@ -798,9 +788,9 @@ option_list(Converter              converter,
     return {converter, doc, var};
 }
 
-template <char Key, typename Converter, typename... Args>
-consteval Option<Key, detail::missing_keyword, Converter, -1ul>
-option_list(Converter              converter,
+template <char Key, Converter C, typename... Args>
+consteval Option<Key, detail::missing_keyword, C, -1ul>
+option_list(C                      converter,
             const std::string_view doc,
             const std::string_view var) noexcept
 {
@@ -808,9 +798,9 @@ option_list(Converter              converter,
     return {converter, doc, var};
 }
 
-template <detail::StringLiteral s, typename Converter, typename... Args>
-consteval Option<detail::missing_keychar, wrap_string<s>, Converter, -1ul>
-option_list(Converter              converter,
+template <detail::StringLiteral s, Converter C, typename... Args>
+consteval Option<detail::missing_keychar, wrap_string<s>, C, -1ul>
+option_list(C                      converter,
             const std::string_view doc,
             const std::string_view var) noexcept
 {
@@ -851,27 +841,27 @@ flag(const bool def_val, const std::string_view doc) noexcept
 #undef CHECK_KEYWORD
 
 /// @brief Create a positional.
-template <typename Converter>
-consteval Positional<Converter, 1ul>
-positional(Converter&&            converter,
+template <Converter C>
+consteval Positional<C, 1ul>
+positional(C&&                    converter,
            const std::string_view doc,
            const std::string_view var) noexcept
 {
     return {converter, doc, var};
 }
 
-template <std::size_t nvals, typename Converter>
-consteval Positional<Converter, nvals>
-positional(Converter&&                                            converter,
-           const std::string_view                                 doc,
-           const typename Positional<Converter, nvals>::var_type& var) noexcept
+template <std::size_t nvals, Converter C>
+consteval Positional<C, nvals>
+positional(C&&                                            converter,
+           const std::string_view                         doc,
+           const typename Positional<C, nvals>::var_type& var) noexcept
 {
     return {converter, doc, var};
 }
 
-template <typename Converter>
-consteval Positional<Converter, -1ul>
-positional_list(Converter&&            converter,
+template <Converter C>
+consteval Positional<C, -1ul>
+positional_list(C&&                    converter,
                 const std::string_view doc,
                 const std::string_view var) noexcept
 {

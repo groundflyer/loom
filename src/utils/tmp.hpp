@@ -33,6 +33,10 @@ struct type_sequence
 {
 };
 
+/// @brief Compile-time string.
+template <char... Cs>
+using char_sequence = std::integer_sequence<char, Cs...>;
+
 namespace typelist
 {
 namespace detail
