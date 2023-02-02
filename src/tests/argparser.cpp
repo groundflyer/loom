@@ -68,7 +68,7 @@ constexpr std::tuple options{
                             "FOO"),
     flag<'f', "flag">(false, "doc for flag bla bla bla foo bar"),
     flag<'F', "Flag">(true, "doc for Flag2 bla bla bla foo bar"),
-    option<'d', "two-val", 2ul>(
+    option<"two-val", 2ul>(
         lucid::identity,
         {"1111", "2222"},
         "Tu es comme le vent qui fait chanter les violons et emporte au loin "

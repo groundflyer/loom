@@ -28,7 +28,7 @@
 namespace lucid::argparse
 {
 /// @defgroup ArgParse ArgParse
-/// @brief Zero-cost, Unix/GNU style command line argument parser.
+/// @brief Zero-cost, Unix/GNU style command line arguments parser.
 /// @{
 
 constexpr bool
@@ -260,7 +260,7 @@ struct has_keyword
 template <typename O>
 struct is_flag
 {
-    static constexpr bool value = O::is_flag;
+    static constexpr bool value = O::is_flag && has_keychar<O>::value;
 };
 } // namespace detail
 
@@ -591,7 +591,7 @@ class PositionalBinding<C, 1>
     }
 };
 
-/// @brief Defines an option.
+/// @brief Describes an option with multiple fields.
 template <char Key, typename Keyword, Converter C, std::size_t nvals>
 struct Option
 {
@@ -662,7 +662,7 @@ struct Option<Key, Keyword, C, -1ul>
     }
 };
 
-/// @brief Defines positional, required argument.
+/// @brief Describes positional argument.
 template <Converter C, std::size_t nvals>
 struct Positional
 {
@@ -701,7 +701,9 @@ struct Positional
                   "One-letter length or empty keywords are not allowed, " \
                   "('help' is reserved)")
 
-/// @brief Define an option with key @p Key and keyword @p s.
+/// @brief Create an option with key @p Key and keyword @p s.
+/// @tparam Key ASCII character for Unix style argument setting.
+/// @tparam s string for GNU style argument setting.
 template <char Key, detail::StringLiteral s, Converter C>
 consteval Option<Key, wrap_string<s>, C, 1ul>
 option(C                             converter,
@@ -714,7 +716,7 @@ option(C                             converter,
     return {converter, def_val, doc, var};
 }
 
-/// @brief Define an option with key @p Key.
+/// @brief Shortcut to create an option without keyword.
 template <char Key, Converter C>
 consteval Option<Key, detail::missing_keyword, C, 1ul>
 option(C                             converter,
@@ -726,7 +728,7 @@ option(C                             converter,
     return {converter, def_val, doc, var};
 }
 
-/// @brief Define an option with keyword @p s.
+/// @brief Shorcut to create an option without character key.
 template <detail::StringLiteral s, Converter C>
 consteval Option<detail::missing_keychar, wrap_string<s>, C, 1ul>
 option(C                             converter,
@@ -738,7 +740,10 @@ option(C                             converter,
     return {converter, def_val, doc, var};
 }
 
-/// @brief Define an option that takes @p N values.
+/// @brief Create a multi-field, one that has @p N fields to set.
+/// @tparam Key ASCII character for Unix style argument setting.
+/// @tparam s string for GNU style argument setting.
+/// @tparam N the number of fields.
 template <char Key, detail::StringLiteral s, std::size_t N, Converter C>
 consteval Option<Key, wrap_string<s>, C, N>
 option(C                                            converter,
@@ -752,6 +757,7 @@ option(C                                            converter,
     return {converter, def_val, doc, var};
 }
 
+/// @brief Shortcut to create a multi-field, option without keyword.
 template <char Key, std::size_t N, Converter C>
 consteval Option<Key, detail::missing_keyword, C, N>
 option(C                                            converter,
@@ -764,6 +770,7 @@ option(C                                            converter,
     return {converter, def_val, doc, var};
 }
 
+/// @brief Shorcut to create a multi-field option without character key.
 template <detail::StringLiteral s, std::size_t N, Converter C>
 consteval Option<detail::missing_keychar, wrap_string<s>, C, N>
 option(C                                            converter,
@@ -776,7 +783,7 @@ option(C                                            converter,
     return {converter, def_val, doc, var};
 }
 
-/// @brief Define an option that takes multiple values.
+/// @brief Create a list option, one that takes one-or-more values.
 template <char Key, detail::StringLiteral s, Converter C, typename... Args>
 consteval Option<Key, wrap_string<s>, C, -1ul>
 option_list(C                      converter,
@@ -788,6 +795,7 @@ option_list(C                      converter,
     return {converter, doc, var};
 }
 
+/// @brief Shorcut to create a list option without keyword.
 template <char Key, Converter C, typename... Args>
 consteval Option<Key, detail::missing_keyword, C, -1ul>
 option_list(C                      converter,
@@ -798,6 +806,7 @@ option_list(C                      converter,
     return {converter, doc, var};
 }
 
+/// @brief Shorcut to create a list option without character key.
 template <detail::StringLiteral s, Converter C, typename... Args>
 consteval Option<detail::missing_keychar, wrap_string<s>, C, -1ul>
 option_list(C                      converter,
@@ -808,7 +817,8 @@ option_list(C                      converter,
     return {converter, doc, var};
 }
 
-/// @brief Define a flag option.
+/// @brief Create a flag option, i.e. one that holds a boolean value
+/// so it doesn't require argument when being set.
 template <char Key, detail::StringLiteral s>
 consteval Option<Key, wrap_string<s>, detail::FlagConverter, 1ul>
 flag(const bool def_val, const std::string_view doc) noexcept
@@ -818,6 +828,7 @@ flag(const bool def_val, const std::string_view doc) noexcept
     return {detail::FlagConverter{}, def_val, doc, ""};
 }
 
+/// @brief Shortcut to create a flag option without keyword.
 template <char Key>
 consteval Option<Key, detail::missing_keyword, detail::FlagConverter, 1ul>
 flag(const bool def_val, const std::string_view doc) noexcept
@@ -826,6 +837,7 @@ flag(const bool def_val, const std::string_view doc) noexcept
     return {detail::FlagConverter{}, def_val, doc, ""};
 }
 
+/// @brief Shortcut to create a flag option without character key.
 template <detail::StringLiteral s>
 consteval Option<detail::missing_keychar,
                  wrap_string<s>,
@@ -840,25 +852,27 @@ flag(const bool def_val, const std::string_view doc) noexcept
 #undef CHECK_KEYCHAR
 #undef CHECK_KEYWORD
 
-/// @brief Create a positional.
+/// @brief Create a positional option.
 template <Converter C>
 consteval Positional<C, 1ul>
-positional(C&&                    converter,
+positional(C                      converter,
            const std::string_view doc,
            const std::string_view var) noexcept
 {
     return {converter, doc, var};
 }
 
+/// @brief Create a multi-field positional option.
 template <std::size_t nvals, Converter C>
 consteval Positional<C, nvals>
-positional(C&&                                            converter,
+positional(C                                              converter,
            const std::string_view                         doc,
            const typename Positional<C, nvals>::var_type& var) noexcept
 {
     return {converter, doc, var};
 }
 
+/// @brief Create a positional list option.
 template <Converter C>
 consteval Positional<C, -1ul>
 positional_list(C&&                    converter,
@@ -868,6 +882,7 @@ positional_list(C&&                    converter,
     return {converter, doc, var};
 }
 
+/// @brief Get a corresponding option index with a key @p key.
 template <typename Key, typename... Options>
 constexpr std::size_t
 tokenize(const Key key, const std::tuple<Options...>) noexcept
@@ -878,6 +893,7 @@ tokenize(const Key key, const std::tuple<Options...>) noexcept
 template <typename Bindings, typename Options>
 struct ParseResults;
 
+/// @brief Holds results of parsing.
 template <typename OptBindings, typename PosBindings, typename Options>
 struct ParseResults<std::pair<OptBindings, PosBindings>, Options>
 {
@@ -913,6 +929,7 @@ struct ParseResults<std::pair<OptBindings, PosBindings>, Options>
     }
 };
 
+/// @brief Holds results of parsing when positionals are not defined.
 template <typename... OptBindings, typename Options>
 struct ParseResults<std::tuple<OptBindings...>, Options>
 {
@@ -1347,6 +1364,7 @@ print_vars(const O&    option,
     return column;
 }
 
+/// @brief Prints help message to @p file.
 template <typename... Options, typename... Positionals>
 void
 show_help(std::string_view                  program_name,
@@ -1421,10 +1439,9 @@ show_help(std::string_view                  program_name,
 
         if constexpr(is_option<O> || is_flag<O>)
         {
-            if constexpr(has_keychar<O>) ret += 2; // '-k'
+            ret += 2; // '-k'
             if constexpr(has_keyword<O>)
-                ret += 2 + O::keyword.size(); // '--keyword'
-            if constexpr(has_keychar<O> && has_keyword<O>) ret += 2; // ', '
+                ret += 4 + O::keyword.size(); // ', --keyword'
 
             if constexpr(O::num_vals == -1ul)
                 ret += 6 + option.var.size(); // ' <var...>'
@@ -1499,7 +1516,7 @@ show_help(std::string_view                  program_name,
             if constexpr(has_keychar<O> && !has_keyword<O>)
                 fmt::print(file, "-{}", O::key);
             else if constexpr(!has_keychar<O> && has_keyword<O>)
-                fmt::print(file, "--{}", O::keyword);
+                fmt::print(file, "    --{}", O::keyword);
             else if constexpr(has_keychar<O> && has_keyword<O>)
                 fmt::print(file, "-{}, --{}", O::key, O::keyword);
 
@@ -1545,6 +1562,7 @@ make_program_name(std::string_view argv0) noexcept
                                                  argv0.substr(slash_pos + 1);
 }
 
+/// @brief Prints parse errors to stderr.
 class StandardErrorHandler
 {
     static constexpr std::string_view error_head = "Argument Parsing Error";
@@ -1591,6 +1609,7 @@ class StandardErrorHandler
     }
 };
 
+/// @brief Parse command line arguments.
 template <typename... Options,
           typename... Positionals,
           typename ErrorHandler = StandardErrorHandler>

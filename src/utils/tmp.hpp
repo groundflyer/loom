@@ -21,21 +21,23 @@ namespace lucid
 ///
 /// The templates are hidden in the @p detail namespace,
 /// while type aliases and variable templates are visible.
-
-/// @defgroup Typelist Typelist
-/// @brief List operations on type sequences.
-/// @ingroup TMP
 /// @{
+
+/// @brief Compile-time string.
+template <char... Cs>
+using char_sequence = std::integer_sequence<char, Cs...>;
 
 /// @brief Sequence of types.
 template <typename... Ts>
 struct type_sequence
 {
 };
+/// @}
 
-/// @brief Compile-time string.
-template <char... Cs>
-using char_sequence = std::integer_sequence<char, Cs...>;
+/// @defgroup Typelist Typelist
+/// @brief List operations on type sequences.
+/// @ingroup TMP
+/// @{
 
 namespace typelist
 {
