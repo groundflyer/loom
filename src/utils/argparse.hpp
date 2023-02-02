@@ -28,7 +28,7 @@
 namespace lucid::argparse
 {
 /// @defgroup ArgParse ArgParse
-/// @brief Parsing command line arguments.
+/// @brief Zero-cost, Unix/GNU style command line argument parser.
 /// @{
 
 /// @brief Compile-time string.
@@ -1455,11 +1455,56 @@ show_help(std::string_view                  program_name,
                    map_tuple(shift, options)) +
         short_margin + 1;
 
+    const auto doc_align = [&]() noexcept
+    {
+        while(column++ < doc_margin - 1) std::fputc(' ', file);
+    };
+
+    const auto doc_print = [&](const std::string_view doc) noexcept
+    {
+        doc_align();
+
+        ranges::for_each(
+            doc | ranges::views::split(' ') |
+                ranges::views::transform(
+                    [](auto&& rng) {
+                        return std::string_view(&*rng.begin(),
+                                                ranges::distance(rng));
+                    }) |
+                ranges::views::filter([](std::string_view w) noexcept
+                                      { return !w.empty(); }),
+            [&column, doc_align, file](std::string_view w) noexcept
+            {
+                if(column + w.size() <= line_width)
+                {
+                    fmt::print(file, " {}", w);
+                    column += 1 + w.size();
+                }
+                else
+                {
+                    std::fputc('\n', file);
+                    column = 0;
+                    doc_align();
+                    fmt::print(file, " {}", w);
+                    column += 1 + w.size();
+                }
+            });
+
+        std::fputc('\n', file);
+        column = 0;
+    };
+
+    const auto opt_align = [&column, file]() noexcept
+    {
+        for(std::size_t i = 0; i < short_margin; ++i) std::fputc(' ', file);
+        column += short_margin;
+    };
+
     column = 0;
     lucid::for_each(
-        [file, doc_margin, &column, shift]<typename O>(const O& option) noexcept
+        [&]<typename O>(const O& option) noexcept
         {
-            for(std::size_t i = 0; i < short_margin; ++i) std::fputc(' ', file);
+            opt_align();
 
             if constexpr(has_keychar<O> && !has_keyword<O>)
                 fmt::print(file, "-{}", O::key);
@@ -1478,40 +1523,28 @@ show_help(std::string_view                  program_name,
             else if constexpr(O::num_vals == 1)
                 fmt::print(file, "=<{}>", option.var);
 
-            column += short_margin + shift(option);
-            while(column++ < doc_margin) std::fputc(' ', file);
-
-            auto words = option.doc | ranges::views::split(' ') |
-                         ranges::views::transform(
-                             [](auto&& rng) {
-                                 return std::string_view(&*rng.begin(),
-                                                         ranges::distance(rng));
-                             }) |
-                         ranges::views::filter([](std::string_view w) noexcept
-                                               { return !w.empty(); });
-            ranges::for_each(
-                words,
-                [&column, doc_margin, file](std::string_view w) noexcept
-                {
-                    if(column + w.size() <= line_width)
-                    {
-                        fmt::print(file, " {}", w);
-                        column += 1 + w.size();
-                    }
-                    else
-                    {
-                        std::fputc('\n', file);
-                        column = 0;
-                        while(column++ < doc_margin) std::fputc(' ', file);
-                        fmt::print(file, " {}", w);
-                        column += 1 + w.size();
-                    }
-                });
-
-            std::fputc('\n', file);
-            column = 0;
+            column += shift(option);
+            doc_print(option.doc);
         },
         options);
+
+    if constexpr(sizeof...(Positionals) > 0)
+    {
+        std::fputs("\nRequired arguments:\n", file);
+
+        lucid::for_each(
+            [&](const auto& o) noexcept
+            {
+                opt_align();
+                column = print_vars<false>(
+                    o,
+                    []() {},
+                    column,
+                    file);
+                doc_print(o.doc);
+            },
+            positionals);
+    }
 }
 
 std::string_view
@@ -1522,12 +1555,60 @@ make_program_name(std::string_view argv0) noexcept
                                                  argv0.substr(slash_pos + 1);
 }
 
-template <typename... Options, typename... Positionals, typename ErrorHandler>
+class StandardErrorHandler
+{
+    static constexpr std::string_view error_head = "Argument Parsing Error";
+
+  public:
+    void
+    operator()(const FewArgumentsException& ex) const noexcept
+    {
+        fmt::print(stderr,
+                   "{}: too few arguments for parameter \"{}\"\n",
+                   error_head,
+                   ex.keyword);
+    }
+
+    template <typename Key>
+    void
+    operator()(const KeyException<Key>& ex) const noexcept
+    {
+        fmt::print(stderr, "{}: unknown key \"{}\"\n", error_head, ex.value);
+    }
+
+    void
+    operator()(const UnexpectedValue& ex) const noexcept
+    {
+        fmt::print(stderr,
+                   "{}: unexpected value \"{}\"\n",
+                   error_head,
+                   ex.value);
+    }
+
+    void
+    operator()(const std::string_view problem_key) const noexcept
+    {
+        fmt::print(stderr,
+                   "{}: too few arguments for parameter \"{}\"\n",
+                   error_head,
+                   problem_key);
+    }
+
+    void
+    operator()(bool) const noexcept
+    {
+        fmt::print(stderr, "{}: too few positional arguments\n", error_head);
+    }
+};
+
+template <typename... Options,
+          typename... Positionals,
+          typename ErrorHandler = StandardErrorHandler>
 constexpr auto
 parse(const std::tuple<Options...>&     options,
       const std::tuple<Positionals...>& positionals,
       ArgsRange                         args,
-      ErrorHandler&&                    error_handler) noexcept
+      ErrorHandler&& error_handler = StandardErrorHandler{}) noexcept
 {
     using keychars =
         intlist::del<detail::missing_keychar, char_sequence<Options::key...>>;
@@ -1597,51 +1678,5 @@ parse(const std::tuple<Options...>& options,
 {
     return parse(options, std::tuple<>{}, args, std::move(error_handler));
 }
-
-class StandardErrorHandler
-{
-    static constexpr std::string_view error_head = "Argument Parsing Error";
-
-  public:
-    void
-    operator()(const FewArgumentsException& ex) const noexcept
-    {
-        fmt::print(stderr,
-                   "{}: too few arguments for parameter \"{}\"\n",
-                   error_head,
-                   ex.keyword);
-    }
-
-    template <typename Key>
-    void
-    operator()(const KeyException<Key>& ex) const noexcept
-    {
-        fmt::print(stderr, "{}: unknown key \"{}\"\n", error_head, ex.value);
-    }
-
-    void
-    operator()(const UnexpectedValue& ex) const noexcept
-    {
-        fmt::print(stderr,
-                   "{}: unexpected value \"{}\"\n",
-                   error_head,
-                   ex.value);
-    }
-
-    void
-    operator()(const std::string_view problem_key) const noexcept
-    {
-        fmt::print(stderr,
-                   "{}: too few arguments for parameter \"{}\"\n",
-                   error_head,
-                   problem_key);
-    }
-
-    void
-    operator()(bool) const noexcept
-    {
-        fmt::print(stderr, "{}: too few positional arguments\n", error_head);
-    }
-};
 /// @}
 } // namespace lucid::argparse

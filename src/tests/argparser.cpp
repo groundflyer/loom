@@ -132,8 +132,7 @@ main(int argc, char* argv[])
 {
     int        ret = 0;
     ArgsRange  args(argc, argv);
-    const auto results =
-        parse(options, positionals, args, StandardErrorHandler{});
+    const auto results = parse(options, positionals, args);
     fmt::print("a = {}\n", results.get_opt<'a'>());
     fmt::print("argonaft = {}\n", results.get_opt<"argonaft">());
     fmt::print("f = {}\n", results.get_opt<'f'>());
