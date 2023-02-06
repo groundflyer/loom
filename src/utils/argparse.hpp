@@ -1679,11 +1679,11 @@ parse(const std::tuple<Options...>&     options,
     return ParseResults(visitor.get_bindings(), options);
 }
 
-template <typename... Options, typename ErrorHandler>
+template <typename... Options, typename ErrorHandler = StandardErrorHandler>
 auto
 parse(const std::tuple<Options...>& options,
       ArgsRange                     args,
-      ErrorHandler&&                error_handler) noexcept
+      ErrorHandler&& error_handler = StandardErrorHandler{}) noexcept
 {
     return parse(options, std::tuple<>{}, args, std::move(error_handler));
 }

@@ -13,7 +13,7 @@
 #include <range/v3/view/zip.hpp>
 
 #include <fmt/chrono.h>
-#include <fmt/format.h>
+#include <fmt/core.h>
 #include <fmt/ranges.h>
 
 #include <cstdio>
@@ -27,20 +27,22 @@ const constexpr char repo_hash[] = REPO_HASH;
 const constexpr char repo_hash[] = "nonrepo";
 #endif
 
-#define INIT_LOG                                                                                        \
-    constexpr std::tuple       opts{lucid::argparse::option<'l'>(                                       \
-                                  lucid::identity, "/dev/null", "log", "File to log to", "FILE"), \
-                              lucid::argparse::option<'n'>([](std::string_view word) noexcept     \
-                                                           { return std::atoi(word.data()); },    \
-                                                           10000000,                              \
-                                                           "runs",                                \
-                                                           "Number of runs",                      \
-                                                           "N")};                                 \
-    lucid::argparse::ArgsRange args(argc, argv);                                                        \
-    const auto                 pr =                                                                     \
-        lucid::argparse::parse(opts, args, lucid::argparse::StandardErrorHandler(args, opts));          \
-    LogFile      log(pr.get_opt<'l'>());                                                                \
-    const size_t n = pr.get_opt<'n'>();
+#define INIT_LOG                                                        \
+    constexpr std::tuple opts{                                          \
+        lucid::argparse::option<'l', "log">(lucid::identity,            \
+                                            "/dev/null",                \
+                                            "File to log to",           \
+                                            "FILE"),                    \
+        lucid::argparse::option<'n', "runs">(                           \
+            [](std::string_view word) noexcept                          \
+            { return std::atoi(word.data()); },                         \
+            10000000,                                                   \
+            "Number of runs",                                           \
+            "N")};                                                      \
+    lucid::argparse::ArgsRange args(argc, argv);                        \
+    const auto                 pr = lucid::argparse::parse(opts, args); \
+    LogFile                    log(pr.get_opt<'l'>());                  \
+    const size_t               n = pr.get_opt<'n'>();
 
 namespace lucid
 {
@@ -82,10 +84,10 @@ struct LogFile
     }
 
     template <typename... Args>
-    void
+    constexpr void
     append(Args&&... args) const
     {
-        if(file) fmt::print(file, std::forward<Args>(args)...);
+        if(file) fmt::print(file, "{},{:%Y%m%d},{},{},{}\n", args...);
     }
 };
 
@@ -106,7 +108,8 @@ struct helper
 
     template <typename G>
     helper(G&& g, std::size_t _n) noexcept :
-        args(ranges::views::generate_n(g, _n) | ranges::to<std::vector>()), n(_n)
+        args(ranges::views::generate_n(g, _n) | ranges::to<std::vector>()),
+        n(_n)
     {
     }
 
@@ -183,14 +186,19 @@ struct helper<std::tuple<Ts...>>
     run(R&& f, Results<R>& results) const noexcept
     {
         for(std::size_t i = 0; i < n; ++i)
-            std::apply([&](const auto&... vs) { results[i] = f(vs[i]...); }, args);
+            std::apply([&](const auto&... vs) { results[i] = f(vs[i]...); },
+                       args);
     }
 };
 } // namespace detail
 
 template <typename G, typename R>
 void
-microbench(LogFile& log, const std::size_t n, std::string_view name, G&& g, R&& r) noexcept
+microbench(LogFile&          log,
+           const std::size_t n,
+           std::string_view  name,
+           G&&               g,
+           R&&               r) noexcept
 {
     using Helper = detail::helper<std::invoke_result_t<G>>;
 
@@ -209,7 +217,6 @@ microbench(LogFile& log, const std::size_t n, std::string_view name, G&& g, R&& 
     const auto t  = ns / n;
     fmt::print("{}: {} for {} runs; ~{}/call\n", name, ms, n, t);
 
-    log.append(
-        "{},{:%Y%m%d},{},{},{}\n", repo_hash, fmt::localtime(std::time(nullptr)), name, ns, n);
+    log.append(repo_hash, fmt::localtime(std::time(nullptr)), name, ns, n);
 }
 } // namespace lucid

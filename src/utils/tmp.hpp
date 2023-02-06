@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include <array>
 #include <type_traits>
 #include <utility>
 
@@ -446,7 +447,7 @@ using result_of = typename detail::result_of<Fs, Args...>;
 template <typename List>
 constexpr bool has_duplicates = detail::has_duplicates<List>::value;
 
-/// @brief Filter @p List elements with @ F.
+/// @brief Filter @p List elements with @p F.
 ///
 /// @tparam F must have static constexpr bool value member;
 template <template <typename> typename F, typename List>
@@ -692,6 +693,15 @@ struct array<std::integer_sequence<Int, Is...>>
 };
 
 template <typename List>
+struct stdarray;
+
+template <typename Int, Int... Is>
+struct stdarray<std::integer_sequence<Int, Is...>>
+{
+    static constexpr std::array<Int, sizeof...(Is)> value = {Is...};
+};
+
+template <typename List>
 struct has_duplicates;
 
 template <typename Int, Int I>
@@ -792,6 +802,10 @@ using drop = typename detail::drop<N, List>::type;
 /// @brief Convert std::integer_sequence into C array.
 template <typename List>
 constexpr auto array = detail::array<List>::value;
+
+/// @brief Convert std::integer_sequence into std::array.
+template <typename List>
+constexpr auto stdarray = detail::stdarray<List>::value;
 
 /// @brief Check if there are duplicates in @p List.
 template <typename List>

@@ -1,0 +1,1951 @@
+// -*- C++ -*-
+// linal.hpp
+/// @file Linear algebra
+
+#pragma once
+
+#include <utils/debug.hpp>
+#include <utils/functional.hpp>
+#include <utils/math.hpp>
+#include <utils/static_span.hpp>
+#include <utils/tmp.hpp>
+
+#include <array>
+#include <functional>
+#include <limits>
+#include <numeric>
+#include <type_traits>
+#include <utility>
+
+// Generates code for arithmetic binary operators for both Vector and Matrix.
+#define MAKE_BINARY_OP(FUNC, OP)                                          \
+    namespace fn                                                          \
+    {                                                                     \
+    struct FUNC##_fn                                                      \
+    {                                                                     \
+        template <typename T1,                                            \
+                  std::size_t N,                                          \
+                  template <typename, std::size_t>                        \
+                  typename Container,                                     \
+                  typename T2>                                            \
+        constexpr auto                                                    \
+        operator()(const Vector<T1, N, Container>& lhs,                   \
+                   const T2&                       rhs) const noexcept                          \
+        {                                                                 \
+            return transform(std::FUNC<T1>{}, lhs, rhs);                  \
+        }                                                                 \
+        template <typename T,                                             \
+                  std::size_t M,                                          \
+                  std::size_t N,                                          \
+                  template <typename, std::size_t>                        \
+                  typename Container1,                                    \
+                  template <typename, std::size_t>                        \
+                  typename Container2>                                    \
+        constexpr Matrix<T, M, N, std::array>                             \
+        operator()(const Matrix<T, M, N, Container1>& lhs,                \
+                   const Matrix<T, M, N, Container2>& rhs) const noexcept \
+        {                                                                 \
+            constexpr std::FUNC<T>      op{};                             \
+            Matrix<T, M, N, std::array> ret{};                            \
+            for(std::size_t i = 0; i < (M * N); ++i)                      \
+                ret.at(i) = op(lhs.at(i), rhs.at(i));                     \
+            return ret;                                                   \
+        }                                                                 \
+        template <typename T,                                             \
+                  std::size_t M,                                          \
+                  std::size_t N,                                          \
+                  template <typename, std::size_t>                        \
+                  typename Container>                                     \
+        constexpr Matrix<T, M, N, std::array>                             \
+        operator()(const Matrix<T, M, N, Container>& lhs,                 \
+                   const T&                          rhs) const noexcept                           \
+        {                                                                 \
+            constexpr std::FUNC<T>      op{};                             \
+            Matrix<T, M, N, std::array> ret{};                            \
+            for(std::size_t i = 0; i < (M * N); ++i)                      \
+                ret.at(i) = op(lhs.at(i), rhs);                           \
+            return ret;                                                   \
+        }                                                                 \
+        template <typename Rhs>                                           \
+        constexpr decltype(auto)                                          \
+        operator^(const Rhs& rhs) const noexcept                          \
+        {                                                                 \
+            return compose(*this, rhs);                                   \
+        }                                                                 \
+    };                                                                    \
+    }                                                                     \
+    static constexpr fn::FUNC##_fn FUNC{};                                \
+    template <typename T1,                                                \
+              std::size_t N,                                              \
+              template <typename, std::size_t>                            \
+              typename Container,                                         \
+              typename T2>                                                \
+    constexpr auto OP(const Vector<T1, N, Container>& lhs,                \
+                      const T2&                       rhs) noexcept                             \
+    {                                                                     \
+        return FUNC(lhs, rhs);                                            \
+    }                                                                     \
+    template <typename T1,                                                \
+              std::size_t M,                                              \
+              std::size_t N,                                              \
+              template <typename, std::size_t>                            \
+              typename Container,                                         \
+              typename T2>                                                \
+    constexpr auto OP(const Matrix<T1, M, N, Container>& lhs,             \
+                      const T2&                          rhs) noexcept                             \
+    {                                                                     \
+        return FUNC(lhs, rhs);                                            \
+    }
+
+#define MAKE_UNARY_OP(FUNC, OP)                                          \
+    namespace fn                                                         \
+    {                                                                    \
+    struct FUNC##_fn                                                     \
+    {                                                                    \
+        template <typename T,                                            \
+                  std::size_t N,                                         \
+                  template <typename, std::size_t>                       \
+                  typename Container>                                    \
+        constexpr Vector<T, N, std::array>                               \
+        operator()(const Vector<T, N, Container>& lhs) const noexcept    \
+        {                                                                \
+            return transform(std::FUNC<T>(), lhs);                       \
+        }                                                                \
+        template <typename T,                                            \
+                  std::size_t M,                                         \
+                  std::size_t N,                                         \
+                  template <typename, std::size_t>                       \
+                  typename Container>                                    \
+        constexpr Matrix<T, M, N, std::array>                            \
+        operator()(const Matrix<T, M, N, Container>& lhs) const noexcept \
+        {                                                                \
+            return Matrix<T, M, N, std::array>(                          \
+                transform(std::FUNC<T>(), flat_ref(lhs)));               \
+        }                                                                \
+        template <typename Rhs>                                          \
+        constexpr decltype(auto)                                         \
+        operator^(const Rhs& rhs) const noexcept                         \
+        {                                                                \
+            return compose(*this, rhs);                                  \
+        }                                                                \
+    };                                                                   \
+    }                                                                    \
+    static constexpr fn::FUNC##_fn FUNC{};                               \
+    template <typename T,                                                \
+              std::size_t N,                                             \
+              template <typename, std::size_t>                           \
+              typename Container>                                        \
+    constexpr Vector<T, N, std::array> OP(                               \
+        const Vector<T, N, Container>& lhs) noexcept                     \
+    {                                                                    \
+        return FUNC(lhs);                                                \
+    }                                                                    \
+    template <typename T,                                                \
+              std::size_t M,                                             \
+              std::size_t N,                                             \
+              template <typename, std::size_t>                           \
+              typename Container>                                        \
+    constexpr Matrix<T, M, N, std::array> OP(                            \
+        const Matrix<T, M, N, Container>& lhs) noexcept                  \
+    {                                                                    \
+        return FUNC(lhs);                                                \
+    }
+
+#define VEC_NAMED_FN_OBJ(NAME, FUNC)                   \
+    namespace fn                                       \
+    {                                                  \
+    struct NAME##_fn                                   \
+    {                                                  \
+        template <typename T,                          \
+                  std::size_t N,                       \
+                  template <typename, std::size_t>     \
+                  typename Container,                  \
+                  typename... Args>                    \
+        constexpr decltype(auto)                       \
+        operator()(const Vector<T, N, Container>& v,   \
+                   const Args&... args) const noexcept \
+        {                                              \
+            return transform(*this, v, args...);       \
+        }                                              \
+        template <typename... Args>                    \
+        constexpr decltype(auto)                       \
+        operator()(const Args&... args) const noexcept \
+        {                                              \
+            return FUNC(args...);                      \
+        }                                              \
+        template <typename Rhs>                        \
+        constexpr decltype(auto)                       \
+        operator^(const Rhs& rhs) const noexcept       \
+        {                                              \
+            return compose(*this, rhs);                \
+        }                                              \
+    };                                                 \
+    }                                                  \
+    static constexpr fn::NAME##_fn NAME{};
+
+#define VEC_FN_OBJ(FUNC) VEC_NAMED_FN_OBJ(FUNC, FUNC)
+
+#define VEC_NAMED_FN_OBJ_SMATH(FUNC)                   \
+    namespace fn                                       \
+    {                                                  \
+    struct FUNC##_fn                                   \
+    {                                                  \
+        template <typename T,                          \
+                  std::size_t N,                       \
+                  template <typename, std::size_t>     \
+                  typename Container,                  \
+                  typename... Args>                    \
+        constexpr decltype(auto)                       \
+        operator()(const Vector<T, N, Container>& v,   \
+                   const Args&... args) const noexcept \
+        {                                              \
+            return transform(*this, v, args...);       \
+        }                                              \
+        template <typename... Args>                    \
+        constexpr decltype(auto)                       \
+        operator()(const Args&... args) const noexcept \
+        {                                              \
+            if(std::is_constant_evaluated())           \
+                return smath::FUNC(args...);           \
+            else                                       \
+                return std::FUNC(args...);             \
+        }                                              \
+        template <typename Rhs>                        \
+        constexpr decltype(auto)                       \
+        operator^(const Rhs& rhs) const noexcept       \
+        {                                              \
+            return compose(*this, rhs);                \
+        }                                              \
+    };                                                 \
+    }                                                  \
+    static constexpr fn::FUNC##_fn FUNC{};
+
+namespace lucid
+{
+/// @brief Generic N-dimensional euclidian vector.
+/// @tparam T value type. Must be arithmetic.
+/// @tparam N dimensionality.
+/// @tparam Container std::array-like container that used to store the data.
+template <typename T,
+          std::size_t N,
+          template <typename, std::size_t>
+          typename Container>
+class Vector
+{
+    static_assert(std::is_arithmetic<T>::value, "T is not an arithmetic type.");
+
+    using Data = Container<T, N>;
+
+    Data m_data{};
+
+    template <std::size_t idx>
+    constexpr void
+    unpack()
+    {
+        if constexpr(idx < N)
+            for(auto i = idx; i < N; ++i) m_data[i] = static_cast<T>(0);
+    }
+
+    template <std::size_t idx, typename... Ts>
+    constexpr void
+    unpack(const T& first, const Ts&... other)
+    {
+        static_assert(idx < N, "Too many elements.");
+        m_data[idx] = first;
+        if constexpr(sizeof...(other) == 0 && idx < N - 1)
+            unpack<idx + 1>(first);
+        else
+            unpack<idx + 1>(other...);
+    }
+
+    template <std::size_t idx,
+              typename T1,
+              std::size_t N1,
+              template <typename, std::size_t>
+              typename Container1,
+              typename... Ts>
+    constexpr void
+    unpack(const Vector<T1, N1, Container1>& first, const Ts&... other)
+    {
+        static_assert(idx < N, "Too many elements.");
+        for(std::size_t i = 0; i < std::min(N - idx, N1); ++i)
+            m_data[idx + i] = static_cast<T>(first[i]);
+        unpack<idx + N1>(other...);
+    }
+
+    template <std::size_t idx, typename T1, std::size_t N1, typename... Ts>
+    constexpr void
+    unpack(const Container<T1, N1>& first, const Ts&... other)
+    {
+        static_assert(idx < N, "Too many elements.");
+        for(std::size_t i = 0; i < std::min(N - idx, N1); ++i)
+            m_data[idx + i] = static_cast<T>(first[i]);
+        unpack<idx + N1>(other...);
+    }
+
+  public:
+    constexpr Vector() noexcept {}
+
+    constexpr Vector(const Vector& rhs) noexcept : m_data(rhs.m_data) {}
+
+    explicit constexpr Vector(Data&& rhs) noexcept : m_data(std::move(rhs)) {}
+
+    explicit constexpr Vector(const Data& rhs) noexcept : m_data(rhs) {}
+
+    explicit constexpr Vector(Data& rhs) noexcept : m_data(rhs) {}
+
+    explicit constexpr Vector(T&& rhs) noexcept
+    {
+        for(T& i: m_data) i = rhs;
+    }
+
+    template <typename... Ts>
+    explicit constexpr Vector(const Ts&... rhs) noexcept
+    {
+        unpack<0>(rhs...);
+    }
+
+    constexpr Vector&
+    operator=(const Vector& rhs) noexcept
+    {
+        m_data = rhs.m_data;
+        return *this;
+    }
+
+    template <template <typename, std::size_t> typename Container2>
+    constexpr Vector&
+    operator=(const Vector<T, N, Container2>& rhs) noexcept
+    {
+        for(std::size_t i = 0; i < N; ++i) m_data[i] = rhs[i];
+        return *this;
+    }
+
+    constexpr Vector&
+    operator=(const T& rhs) noexcept
+    {
+        for(T& i: m_data) i = rhs;
+        return *this;
+    }
+
+    constexpr auto
+    begin() const noexcept
+    {
+        return m_data.begin();
+    }
+    constexpr auto
+    end() const noexcept
+    {
+        return m_data.end();
+    }
+    constexpr auto
+    cbegin() const noexcept
+    {
+        return m_data.cbegin();
+    }
+    constexpr auto
+    cend() const noexcept
+    {
+        return m_data.cend();
+    }
+
+    constexpr const T&
+    operator[](const std::size_t i) const noexcept
+    {
+        CHECK_INDEX(i, N);
+        return m_data[i];
+    }
+    constexpr T&
+    operator[](const std::size_t i) noexcept
+    {
+        CHECK_INDEX(i, N);
+        return m_data[i];
+    }
+
+    template <std::size_t I>
+    constexpr T&
+    get() noexcept
+    {
+        return std::get<I>(m_data);
+    }
+
+    template <std::size_t I>
+    constexpr const T&
+    get() const noexcept
+    {
+        return std::get<I>(m_data);
+    }
+
+    constexpr const T&
+    at(const std::size_t i) const noexcept
+    {
+        CHECK_INDEX(i, N);
+        return m_data[i];
+    }
+    constexpr T&
+    at(const std::size_t i) noexcept
+    {
+        CHECK_INDEX(i, N);
+        return m_data[i];
+    }
+
+    constexpr const Data&
+    data() const noexcept
+    {
+        return m_data;
+    }
+
+    template <template <typename, std::size_t> typename Container2>
+    constexpr Vector&
+    operator+=(const Vector<T, N, Container2>& rhs) noexcept
+    {
+        for(std::size_t i = 0; i < N; ++i) m_data[i] += rhs[i];
+
+        return *this;
+    }
+    constexpr Vector&
+    operator+=(const T& rhs) noexcept
+    {
+        for(std::size_t i = 0; i < N; ++i) m_data[i] += rhs;
+
+        return *this;
+    }
+
+    template <template <typename, std::size_t> typename Container2>
+    constexpr Vector&
+    operator-=(const Vector<T, N, Container2>& rhs) noexcept
+    {
+        for(std::size_t i = 0; i < N; ++i) m_data[i] -= rhs[i];
+
+        return *this;
+    }
+    constexpr Vector&
+    operator-=(const T& rhs) noexcept
+    {
+        for(std::size_t i = 0; i < N; ++i) m_data[i] -= rhs;
+
+        return *this;
+    }
+
+    template <template <typename, std::size_t> typename Container2>
+    constexpr Vector&
+    operator*=(const Vector<T, N, Container2>& rhs) noexcept
+    {
+        for(std::size_t i = 0; i < N; ++i) m_data[i] *= rhs[i];
+
+        return *this;
+    }
+    constexpr Vector&
+    operator*=(const T& rhs) noexcept
+    {
+        for(std::size_t i = 0; i < N; ++i) m_data[i] *= rhs;
+
+        return *this;
+    }
+
+    template <template <typename, std::size_t> typename Container2>
+    constexpr Vector&
+    operator/=(const Vector<T, N, Container2>& rhs) noexcept
+    {
+        for(std::size_t i = 0; i < N; ++i) m_data[i] /= rhs[i];
+
+        return *this;
+    }
+
+    constexpr Vector&
+    operator/=(const T& rhs) noexcept
+    {
+        for(std::size_t i = 0; i < N; ++i) m_data[i] /= rhs;
+
+        return *this;
+    }
+
+    constexpr std::size_t
+    size() const noexcept
+    {
+        return N;
+    }
+};
+
+template <typename T,
+          std::size_t N,
+          template <typename, std::size_t>
+          typename Container>
+Vector(Container<T, N>&&) -> Vector<T, N, Container>;
+
+/// @brief Generic row-major two-dimensional Matrix of constant size.
+/// @tparam T value type. Must be arithmetic.
+/// @tparam M number of rows.
+/// @tparam N number of columns.
+/// @tparam Container std::array-like container that used to store the data.
+template <typename T,
+          std::size_t M,
+          std::size_t N,
+          template <typename, std::size_t>
+          typename Container>
+class Matrix
+{
+    static_assert(std::is_arithmetic<T>::value, "T is not an arithmetic type.");
+    static_assert(M > 1 && N > 1,
+                  "One-dimensional matrices are not supported.");
+
+    static const constexpr std::size_t MN = M * N;
+
+    using Data = Container<T, MN>;
+    Data m_data{};
+
+    static constexpr auto
+    pos(const std::size_t i,
+        const std::size_t j,
+        const std::size_t J = N) noexcept
+    {
+        return i * J + j;
+    }
+
+    static constexpr auto
+    indices(const std::size_t pos) noexcept
+    {
+        return std::pair(pos / N, pos % N);
+    }
+
+    // variyng template sink
+    template <std::size_t>
+    constexpr void
+    unpack() const noexcept
+    {
+    }
+
+    template <std::size_t idx, typename... Ts>
+    constexpr void
+    unpack(const T& head, Ts&&... tail) noexcept
+    {
+        static_assert(idx < MN, "Too many elements.");
+
+        m_data[idx] = head;
+
+        if constexpr(sizeof...(tail) == 0 && idx < MN - 1)
+            unpack<idx + 1>(head);
+        else
+            unpack<idx + 1>(std::forward<Ts>(tail)...);
+    }
+
+    // unpack vector arguments
+    template <std::size_t idx,
+              std::size_t MN1,
+              template <typename, std::size_t>
+              typename Container2,
+              typename... Ts>
+    constexpr void
+    unpack(const Vector<T, MN1, Container2>& head, Ts&&... tail) noexcept
+    {
+        static_assert(idx < MN, "Too many elements.");
+
+        const constexpr auto end = std::min(MN - idx, MN1);
+
+        for(std::size_t i = 0; i < end; ++i) m_data[idx + i] = head[i];
+
+        unpack<idx + end>(std::forward<Ts>(tail)...);
+    }
+
+    template <std::size_t idx, std::size_t MN1, typename... Ts>
+    constexpr void
+    unpack(const Container<T, MN1>& head, Ts&&... tail) noexcept
+    {
+        static_assert(idx < MN, "Too many elements.");
+        const constexpr auto end = std::min(MN - idx, MN1);
+        for(std::size_t i = 0; i < end; ++i) m_data[idx + i] = head[i];
+        unpack<idx + end>(std::forward<Ts>(tail)...);
+    }
+
+    template <std::size_t idx,
+              std::size_t M1,
+              std::size_t N1,
+              template <typename, std::size_t>
+              typename Container1,
+              typename... Ts>
+    constexpr void
+    unpack(const Matrix<T, M1, N1, Container1>& head, Ts&&... tail) noexcept
+    {
+        const constexpr auto shift   = indices(idx);
+        const constexpr auto shift_i = shift.first;
+        const constexpr auto shift_j = shift.second;
+        const constexpr auto I       = std::min(M - shift_i, M1);
+        const constexpr auto J       = std::min(N - shift_j, N1);
+
+        for(std::size_t i = 0; i < I; ++i)
+            for(std::size_t j = 0; j < J; ++j)
+                m_data[pos(shift_i + i, shift_j + j)] = head.at(i, j);
+
+        unpack<pos(I, J, J) + 1>(std::forward<Ts>(tail)...);
+    }
+
+  public:
+    constexpr Matrix() noexcept {}
+
+    constexpr Matrix(const Matrix& rhs) noexcept : m_data(rhs.m_data) {}
+
+    constexpr Matrix(Matrix&& rhs) noexcept : m_data(std::move(rhs.m_data)) {}
+
+    // single scalar construcor
+    explicit constexpr Matrix(T&& rhs) noexcept
+    {
+        for(auto& elem: m_data) elem = rhs;
+    }
+
+    explicit constexpr Matrix(Data&& rhs) noexcept : m_data(std::move(rhs)) {}
+
+    explicit constexpr Matrix(Data& rhs) noexcept : m_data(rhs) {}
+
+    explicit constexpr Matrix(const Data& rhs) noexcept : m_data(rhs) {}
+
+    template <typename... Ts>
+    explicit constexpr Matrix(Ts&&... rhs) noexcept
+    {
+        unpack<0>(std::forward<Ts>(rhs)...);
+    }
+
+    constexpr Matrix&
+    operator=(const Matrix& rhs) noexcept
+    {
+        m_data = rhs.m_data;
+        return *this;
+    }
+
+    constexpr Matrix&
+    operator=(Matrix&& rhs) noexcept
+    {
+        m_data = std::move(rhs.m_data);
+        return *this;
+    }
+
+    template <template <typename, std::size_t> typename Container2>
+    constexpr Matrix&
+    operator=(const Matrix<T, M, N, Container2>& rhs) noexcept
+    {
+        std::copy(rhs.cbegin(), rhs.cend(), begin());
+        return *this;
+    }
+
+    constexpr Matrix&
+    operator=(const T& rhs) noexcept
+    {
+        for(T& i: m_data) i = rhs;
+        return *this;
+    }
+
+    constexpr decltype(auto)
+    operator[](const std::size_t i) const noexcept
+    {
+        CHECK_INDEX(i, M);
+        return Vector(StaticSpan<T, N>(at(i, 0)));
+    }
+    constexpr auto
+    operator[](const std::size_t i) noexcept
+    {
+        CHECK_INDEX(i, M);
+        return Vector(StaticSpan<T, N>(at(i, 0)));
+    }
+
+    template <std::size_t I>
+    constexpr auto
+    get() const noexcept
+    {
+        return Vector(StaticSpan<T, N>(std::get<pos(I, 0)>(m_data)));
+    }
+
+    template <std::size_t I>
+    constexpr auto
+    get() noexcept
+    {
+        return Vector(StaticSpan<T, N>(std::get<pos(I, 0)>(m_data)));
+    }
+
+    template <std::size_t I, std::size_t J>
+    constexpr const T&
+    get() const noexcept
+    {
+        static_assert(I < M || J < N, "Index out of range");
+        return std::get<pos(I, J)>(m_data);
+    }
+
+    template <std::size_t I, std::size_t J>
+    constexpr T&
+    get() noexcept
+    {
+        static_assert(I < M || J < N, "Index out of range");
+        return std::get<pos(I, J)>(m_data);
+    }
+
+    const constexpr T&
+    at(const std::size_t i) const noexcept
+    {
+        CHECK_INDEX(i, MN);
+        return m_data[i];
+    }
+    constexpr T&
+    at(const std::size_t i) noexcept
+    {
+        CHECK_INDEX(i, MN);
+        return m_data[i];
+    }
+
+    const constexpr T&
+    at(const std::size_t i, const std::size_t j) const noexcept
+    {
+        CHECK_INDEX(i, M);
+        CHECK_INDEX(j, N);
+        return m_data[pos(i, j)];
+    }
+    constexpr T&
+    at(const std::size_t i, const std::size_t j) noexcept
+    {
+        CHECK_INDEX(i, M);
+        CHECK_INDEX(j, N);
+        return m_data[pos(i, j)];
+    }
+
+    constexpr auto
+    begin() const noexcept
+    {
+        return m_data.begin();
+    }
+    constexpr auto
+    end() const noexcept
+    {
+        return m_data.end();
+    }
+    constexpr decltype(auto)
+    cbegin() const noexcept
+    {
+        return m_data.cbegin();
+    }
+    constexpr decltype(auto)
+    cend() const noexcept
+    {
+        return m_data.cend();
+    }
+
+    template <template <typename, std::size_t> typename Container2>
+    constexpr Matrix&
+    operator+=(const Matrix<T, M, N, Container2>& rhs)
+    {
+        for(std::size_t i = 0; i < MN; ++i) at(i) += rhs.at(i);
+
+        return *this;
+    }
+    constexpr Matrix&
+    operator+=(const T& rhs) noexcept
+    {
+        for(std::size_t i = 0; i < MN; ++i) at(i) += rhs;
+
+        return *this;
+    }
+
+    template <template <typename, std::size_t> typename Container2>
+    constexpr Matrix&
+    operator-=(const Matrix<T, M, N, Container2>& rhs)
+    {
+        for(std::size_t i = 0; i < MN; ++i) at(i) -= rhs.at(i);
+
+        return *this;
+    }
+    constexpr Matrix&
+    operator-=(const T& rhs) noexcept
+    {
+        for(std::size_t i = 0; i < MN; ++i) at(i) -= rhs;
+
+        return *this;
+    }
+
+    constexpr Matrix&
+    operator*=(const T& rhs) noexcept
+    {
+        for(std::size_t i = 0; i < MN; ++i) at(i) *= rhs;
+
+        return *this;
+    }
+
+    const constexpr Data&
+    data() const noexcept
+    {
+        return m_data;
+    }
+
+    static constexpr Matrix
+    identity()
+    {
+        Matrix ret{};
+
+        for(std::size_t i = 0; i < M; ++i)
+            for(std::size_t j = 0; j < N; ++j) ret.at(i, j) = T(i == j);
+
+        return ret;
+    }
+};
+
+namespace detail
+{
+template <typename T>
+struct vector_val_type
+{
+    using type = T;
+};
+
+template <typename T,
+          std::size_t N,
+          template <typename, std::size_t>
+          typename Container>
+struct vector_val_type<Vector<T, N, Container>>
+{
+    using type = T;
+};
+
+template <typename T,
+          std::size_t N,
+          template <typename, std::size_t>
+          typename Container>
+constexpr const T&
+elem(const Vector<T, N, Container>& v, const std::size_t i) noexcept
+{
+    return v[i];
+}
+
+template <typename T>
+constexpr const T&
+elem(const T& v, const std::size_t) noexcept
+{
+    return v;
+}
+
+template <std::size_t I, typename... Args>
+constexpr decltype(auto)
+elem(const std::size_t i, const Args&... vectors) noexcept
+{
+    return elem(select<I>(vectors...), i);
+}
+
+template <typename... Vectors>
+struct vector_dim;
+
+template <typename T,
+          std::size_t N,
+          template <typename, std::size_t>
+          typename Container,
+          typename... Rest>
+struct vector_dim<Vector<T, N, Container>, Rest...>
+{
+    static constexpr std::size_t n = N;
+};
+
+template <std::size_t N, typename T>
+struct check_dim
+{
+    static constexpr bool value = true;
+};
+
+template <std::size_t N1,
+          typename T,
+          std::size_t N2,
+          template <typename, std::size_t>
+          typename Container>
+struct check_dim<N1, Vector<T, N2, Container>>
+{
+    static constexpr bool value = N1 == N2;
+};
+
+template <typename T>
+struct promote_tuple
+{
+    template <std::size_t N>
+    using ret_type = Vector<std::decay_t<T>, N, std::array>;
+
+    template <std::size_t N>
+    static constexpr void
+    assign(ret_type<N>& v, const std::size_t i, const T& val) noexcept
+    {
+        v[i] = val;
+    }
+};
+
+template <typename T1, typename T2>
+struct promote_tuple<std::pair<T1, T2>>
+{
+    template <std::size_t N>
+    using ret_type = std::pair<Vector<std::decay_t<T1>, N, std::array>,
+                               Vector<std::decay_t<T2>, N, std::array>>;
+
+    template <std::size_t N>
+    static constexpr void
+    assign(ret_type<N>&             v,
+           const std::size_t        i,
+           const std::pair<T1, T2>& val) noexcept
+    {
+        std::tie(v.first[i], v.second[i]) = val;
+    }
+};
+
+template <typename... Ts>
+struct promote_tuple<std::tuple<Ts...>>
+{
+    template <std::size_t N>
+    using ret_type = std::tuple<Vector<std::decay_t<Ts>, N, std::array>...>;
+
+    template <std::size_t N>
+    static constexpr void
+    assign(ret_type<N>&             v,
+           const std::size_t        i,
+           const std::tuple<Ts...>& val) noexcept
+    {
+        std::apply([&val, &i](Ts&... vv) noexcept { std::tie(vv[i]...) = val; },
+                   v);
+    }
+};
+
+template <typename F, std::size_t... Idxs, typename... Vectors>
+constexpr auto
+transform_impl(const F& f,
+               std::index_sequence<Idxs...>,
+               const Vectors&... vs) noexcept
+{
+    using val_type = std::invoke_result_t<
+        F,
+        typename vector_val_type<
+            std::tuple_element_t<Idxs, std::tuple<Vectors...>>>::type...>;
+    constexpr std::size_t N = vector_dim<Vectors...>::n;
+    static_assert((true && ... && check_dim<N, Vectors>::value),
+                  "Vectors should have the same dimensionality");
+    using pt       = promote_tuple<val_type>;
+    using ret_type = typename pt::template ret_type<N>;
+
+    ret_type ret{};
+
+    for(std::size_t i = 0; i < N; ++i)
+        pt::assign(ret, i, f(elem<Idxs>(i, vs...)...));
+
+    return ret;
+}
+
+template <int         _Sgn,
+          std::size_t J,
+          std::size_t K,
+          typename T,
+          std::size_t N,
+          template <typename, std::size_t>
+          typename Container1,
+          template <typename, std::size_t>
+          typename Container2>
+constexpr T
+cross_impl_factor_ab(const Vector<T, N, Container1>& a,
+                     const Vector<T, N, Container2>& b) noexcept
+{
+    return _Sgn * a.template get<J>() * b.template get<K>();
+}
+
+template <std::size_t I,
+          std::size_t J,
+          std::size_t K,
+          typename T,
+          std::size_t N,
+          template <typename, std::size_t>
+          typename Container1,
+          template <typename, std::size_t>
+          typename Container2>
+constexpr T
+cross_impl_factor(const Vector<T, N, Container1>& a,
+                  const Vector<T, N, Container2>& b) noexcept
+{
+    // passing sgn as template parameter to force compile-time evaluation
+    return cross_impl_factor_ab<sgn(std::array<std::size_t, 3>{I, J, K}), J, K>(
+        a,
+        b);
+}
+
+template <std::size_t I,
+          std::size_t J,
+          std::size_t... Ks,
+          typename T,
+          std::size_t N,
+          template <typename, std::size_t>
+          typename Container1,
+          template <typename, std::size_t>
+          typename Container2>
+constexpr T
+cross_impl_ks(const Vector<T, N, Container1>& a,
+              const Vector<T, N, Container2>& b,
+              std::index_sequence<Ks...>) noexcept
+{
+    return (T{0} + ... + cross_impl_factor<I, J, Ks>(a, b));
+}
+
+template <std::size_t I,
+          std::size_t... Js,
+          typename T,
+          std::size_t N,
+          template <typename, std::size_t>
+          typename Container1,
+          template <typename, std::size_t>
+          typename Container2>
+constexpr T
+cross_impl_js(const Vector<T, N, Container1>& a,
+              const Vector<T, N, Container2>& b,
+              std::index_sequence<Js...>) noexcept
+{
+    return (T{0} + ... +
+            cross_impl_ks<I, Js>(a, b, std::make_index_sequence<N>{}));
+}
+
+template <std::size_t... Is,
+          typename T,
+          std::size_t N,
+          template <typename, std::size_t>
+          typename Container1,
+          template <typename, std::size_t>
+          typename Container2>
+constexpr Vector<T, N, std::array>
+cross_impl(const Vector<T, N, Container1>& a,
+           const Vector<T, N, Container2>& b,
+           std::index_sequence<Is...>) noexcept
+{
+    return Vector<T, N, std::array>(
+        cross_impl_js<Is>(a, b, std::make_index_sequence<N>{})...);
+}
+
+template <std::size_t I,
+          std::size_t J,
+          std::size_t Idx,
+          std::size_t Jdx,
+          typename T,
+          std::size_t M,
+          std::size_t N,
+          template <typename, std::size_t>
+          typename Container>
+constexpr T
+minor_matrix_op(const Matrix<T, M, N, Container>& m) noexcept
+{
+    constexpr std::size_t idx = Idx >= I ? Idx + 1 : Idx;
+    constexpr std::size_t jdx = Jdx >= J ? Jdx + 1 : Jdx;
+    return m.template get<idx, jdx>();
+}
+
+template <std::size_t I,
+          std::size_t J,
+          std::size_t Idx,
+          std::size_t... Jdxs,
+          typename T,
+          std::size_t M,
+          std::size_t N,
+          template <typename, std::size_t>
+          typename Container>
+constexpr auto
+minor_matrix_jdxs(const Matrix<T, M, N, Container>& m,
+                  std::index_sequence<Jdxs...>) noexcept
+{
+    return std::tuple{minor_matrix_op<I, J, Idx, Jdxs>(m)...};
+}
+
+template <std::size_t I,
+          std::size_t J,
+          std::size_t... Idxs,
+          typename T,
+          std::size_t M,
+          std::size_t N,
+          template <typename, std::size_t>
+          typename Container>
+constexpr auto
+minor_matrix_impl(const Matrix<T, M, N, Container>& m,
+                  std::index_sequence<Idxs...>) noexcept
+{
+    return std::tuple_cat(
+        minor_matrix_jdxs<I, J, Idxs>(m, std::make_index_sequence<N - 1>{})...);
+}
+
+template <typename Idxs,
+          std::size_t... Is,
+          typename T,
+          std::size_t M,
+          template <typename, std::size_t>
+          typename Container>
+constexpr T
+det_elem(const Matrix<T, M, M, Container>& m,
+         std::index_sequence<Is...>) noexcept
+{
+    constexpr auto _sgn = sgn(intlist::stdarray<Idxs>);
+    return _sgn * (T{1} * ... * m.template get<Is, intlist::at<Is, Idxs>>());
+}
+
+template <std::size_t... Ns,
+          typename T,
+          std::size_t M,
+          template <typename, std::size_t>
+          typename Container>
+constexpr T
+det_impl(const Matrix<T, M, M, Container>& m,
+         std::index_sequence<Ns...>) noexcept
+{
+    return (T{0} + ... +
+            det_elem<intlist::nlperm<Ns, M>>(m, std::make_index_sequence<M>{}));
+}
+} // namespace detail
+
+/// @brief View of vector @p v.
+template <typename T,
+          std::size_t N,
+          template <typename, std::size_t>
+          typename Container>
+constexpr const Vector<T, N, StaticSpan>
+ref(const Vector<T, N, Container>& v) noexcept
+{
+    return Vector<T, N, StaticSpan>(StaticSpan<T, N>(v.template get<0>()));
+}
+
+/// @brief View of matrix @p m.
+template <typename T,
+          std::size_t M,
+          std::size_t N,
+          template <typename, std::size_t>
+          typename Container>
+constexpr Matrix<T, M, N, StaticSpan>
+ref(const Matrix<T, M, N, Container>& m) noexcept
+{
+    return Matrix<T, M, N, StaticSpan>(StaticSpan<T, M * N>(m.at(0)));
+}
+
+/// @brief Unroll matrix @m to a vector view of size @f$M N@f$.
+template <typename T,
+          std::size_t M,
+          std::size_t N,
+          template <typename, std::size_t>
+          typename Container>
+constexpr Vector<T, M * N, StaticSpan>
+flat_ref(const Matrix<T, M, N, Container>& m) noexcept
+{
+    return Vector(StaticSpan<T, M * N>(m.at(0)));
+}
+
+/// @brief Apply function to corresponding elements of input vectors.
+/// @return Vector containing results of applycation @f to the elements of input
+/// vectors or pair or tuple of vectors if @f returns such.
+/// @p f accepts as many arguments as the number of input vectors @p vs.
+/// @p Vectors should have the same dimensionality.
+template <typename F, typename... Vectors>
+constexpr auto
+transform(const F& f, const Vectors&... vs) noexcept
+{
+    return detail::transform_impl(f,
+                                  std::index_sequence_for<Vectors...>{},
+                                  vs...);
+}
+
+/// @brief Perform left fold on a given vector.
+/// @param binary_op folding operator.
+/// @param a vector to fold.
+/// @param init initial value.
+template <typename T,
+          std::size_t N,
+          template <typename, std::size_t>
+          typename Container,
+          typename BinaryOperation,
+          typename Init>
+constexpr auto
+reduce(BinaryOperation                binary_op,
+       const Vector<T, N, Container>& a,
+       Init                           init) noexcept
+{
+    for(std::size_t i = 0; i < N; ++i) init = binary_op(init, a[i]);
+
+    return init;
+}
+
+/// @brief Efficient shortcut for
+/// @code{.cpp} reduce(binary_op2, transform(binary_op1, a, b), init) @endcode
+/// @param binary_op1 operator for transform.
+/// @param binary_op2 operator for reduce.
+template <typename T1,
+          typename T2,
+          std::size_t N,
+          template <typename, std::size_t>
+          typename Container1,
+          template <typename, std::size_t>
+          typename Container2,
+          typename BinaryOperation1,
+          typename BinaryOperation2,
+          typename Init>
+constexpr auto
+transform_reduce(BinaryOperation1                 binary_op1,
+                 BinaryOperation2                 binary_op2,
+                 const Vector<T1, N, Container1>& a,
+                 const Vector<T2, N, Container2>& b,
+                 Init                             init) noexcept
+{
+    for(std::size_t i = 0; i < N; ++i)
+        init = binary_op2(init, binary_op1(a[i], b[i]));
+
+    return init;
+}
+
+/// @brief Efficient shortcut for
+/// @code{.cpp} reduce(binary_op, transform(unary_op, a), init) @endcode
+/// @param unary_op operator for transform.
+/// @param binary_op operator for reduce.
+template <typename T,
+          std::size_t N,
+          template <typename, std::size_t>
+          typename Container,
+          typename UnaryOperation,
+          typename BinaryOperation,
+          typename Init>
+constexpr auto
+transform_reduce(UnaryOperation                 unary_op,
+                 BinaryOperation                binary_op,
+                 const Vector<T, N, Container>& a,
+                 Init                           init) noexcept
+{
+    for(std::size_t i = 0; i < N; ++i) init = binary_op(init, unary_op(a[i]));
+
+    return init;
+}
+
+VEC_FN_OBJ(almost_equal)
+VEC_FN_OBJ(lerp)
+VEC_NAMED_FN_OBJ(isfinite, std::isfinite)
+VEC_NAMED_FN_OBJ(clamp, std::clamp)
+VEC_NAMED_FN_OBJ(minmax, std::minmax)
+VEC_NAMED_FN_OBJ(fmod, std::fmod)
+VEC_NAMED_FN_OBJ(atan, std::atan)
+// functions that have static_math counterpart
+VEC_NAMED_FN_OBJ_SMATH(sqrt)
+VEC_NAMED_FN_OBJ_SMATH(abs)
+VEC_NAMED_FN_OBJ_SMATH(pow)
+VEC_NAMED_FN_OBJ_SMATH(sin)
+VEC_NAMED_FN_OBJ_SMATH(cos)
+VEC_NAMED_FN_OBJ_SMATH(tan)
+VEC_NAMED_FN_OBJ_SMATH(round)
+VEC_NAMED_FN_OBJ_SMATH(floor)
+
+namespace fn
+{
+// we define multiplies and operator* separately because to
+// not override Matrix multiplication
+struct multiplies_fn
+{
+    template <typename T1,
+              std::size_t N,
+              template <typename, std::size_t>
+              typename Container,
+              typename T2>
+    constexpr auto
+    operator()(const Vector<T1, N, Container>& lhs,
+               const T2&                       rhs) const noexcept
+    {
+        return transform(std::multiplies<T1>(), lhs, rhs);
+    }
+    template <typename Rhs>
+    constexpr decltype(auto)
+    operator^(const Rhs& rhs) const noexcept
+    {
+        return compose(*this, rhs);
+    }
+};
+
+/// @brief Compute dot product of the given vectors.
+template <typename T,
+          std::size_t N,
+          template <typename, std::size_t>
+          typename Container1,
+          template <typename, std::size_t>
+          typename Container2>
+constexpr T
+dot(const Vector<T, N, Container1>& a,
+    const Vector<T, N, Container2>& b) noexcept
+{
+    return transform_reduce(std::multiplies<T>(), std::plus<T>(), a, b, T{0});
+}
+
+/// @brief Compute product of matrix and column-vector.
+template <typename T,
+          std::size_t M,
+          std::size_t N,
+          template <typename, std::size_t>
+          typename MContainer,
+          template <typename, std::size_t>
+          typename VContainer>
+constexpr Vector<T, N, std::array>
+dot(const Matrix<T, M, N, MContainer>& lhs,
+    const Vector<T, N, VContainer>&    rhs) noexcept
+{
+    Vector<T, N, std::array> ret{};
+
+    for(std::size_t i = 0; i < M; ++i)
+        for(std::size_t j = 0; j < N; ++j) ret[i] += lhs.at(i, j) * rhs[j];
+
+    return ret;
+}
+
+/// @brief Compute matrix product.
+template <typename T,
+          std::size_t M1,
+          std::size_t N1,
+          std::size_t M2,
+          std::size_t N2,
+          template <typename, std::size_t>
+          typename Container1,
+          template <typename, std::size_t>
+          typename Container2>
+constexpr typename std::enable_if_t<N1 == M2, Matrix<T, M1, N2, std::array>>
+dot(const Matrix<T, M1, N1, Container1>& lhs,
+    const Matrix<T, M2, N2, Container2>& rhs) noexcept
+{
+    Matrix<T, M1, N2, std::array> ret{};
+
+    for(std::size_t i = 0; i < M1; ++i)
+        for(std::size_t j = 0; j < N2; ++j)
+            for(std::size_t r = 0; r < N1; ++r)
+                ret.at(i, j) += lhs.at(i, r) * rhs.at(r, j);
+
+    return ret;
+}
+
+/// @brief Implements efficient generic N-dimensional cross product.
+///
+/// Naive implementation would be:
+/// @code{.cpp}
+/// Vector<T, N, std::array> ret;
+/// for(std::size_t i = 0; i < N; ++i)
+///     for(std::size_t j = 0; j < N; ++j)
+///         for(std::size_t k = 0; k < N; ++k)
+///             ret[i] += sgn(std::array<std::size_t, 3>{i, j, k}) * a[j] *
+///             b[k];
+/// @endcode
+template <typename T,
+          std::size_t N,
+          template <typename, std::size_t>
+          typename Container1,
+          template <typename, std::size_t>
+          typename Container2>
+constexpr auto
+cross(const Vector<T, N, Container1>& a,
+      const Vector<T, N, Container2>& b) noexcept
+{
+    return detail::cross_impl(a, b, std::make_index_sequence<N>{});
+}
+
+/// @brief Compute squared length of a vector.
+template <typename T,
+          std::size_t N,
+          template <typename, std::size_t>
+          typename Container>
+constexpr T
+length2(const Vector<T, N, Container>& a) noexcept
+{
+    return transform_reduce(static_pow<2, T>, std::plus<T>(), a, T{0});
+}
+
+/// @brief Compute length of a vector.
+template <typename T,
+          std::size_t N,
+          template <typename, std::size_t>
+          typename Container>
+constexpr T
+length(const Vector<T, N, Container>& a) noexcept
+{
+    return sqrt(length2(a));
+}
+
+/// @brief Normalize vector.
+template <typename T,
+          std::size_t N,
+          template <typename, std::size_t>
+          typename Container>
+constexpr Vector<T, N, std::array>
+normalize(const Vector<T, N, Container>& a) noexcept
+{
+    const T l = length(a);
+    if constexpr(std::is_floating_point_v<T>)
+        return (almost_equal(l, T{1}, 5) || almost_equal(l, T{0}, 5)) ? a :
+                                                                        a / l;
+    else
+        return (l == 1 && l == 0) ? a : a / l;
+}
+
+/// @brief Compute distance between two vectors.
+template <typename T,
+          std::size_t N,
+          template <typename, std::size_t>
+          typename Container1,
+          template <typename, std::size_t>
+          typename Container2>
+constexpr T
+distance(const Vector<T, N, Container1>& a,
+         const Vector<T, N, Container2>& b) noexcept
+{
+    return length(a - b);
+}
+
+/// @brief Sum of all vector elements.
+template <typename T,
+          std::size_t N,
+          template <typename, std::size_t>
+          typename Container>
+constexpr T
+sum(const Vector<T, N, Container>& a) noexcept
+{
+    return reduce(std::plus<T>(), a, T{0});
+}
+
+/// @brief Product of all vector elements.
+template <typename T,
+          std::size_t N,
+          template <typename, std::size_t>
+          typename Container>
+constexpr T
+product(const Vector<T, N, Container>& a) noexcept
+{
+    return reduce(std::multiplies<T>(), a, T{1});
+}
+
+/// @brief Test whether all vector elements evaluate to true.
+template <typename T,
+          std::size_t N,
+          template <typename, std::size_t>
+          typename Container>
+constexpr bool
+all(const Vector<T, N, Container>& a) noexcept
+{
+    return reduce(std::logical_and<bool>(), a, true);
+}
+
+/// @brief Test whether any vector element evaluates to true.
+template <typename T,
+          std::size_t N,
+          template <typename, std::size_t>
+          typename Container>
+constexpr bool
+any(const Vector<T, N, Container>& a) noexcept
+{
+    return reduce(std::logical_or<bool>(), a, false);
+}
+
+/// @brief Compute average of all vector elements.
+template <typename T,
+          std::size_t N,
+          template <typename, std::size_t>
+          typename Container>
+constexpr T
+avg(const Vector<T, N, Container>& a) noexcept
+{
+    return sum(a) / N;
+}
+
+/// @brief Roll vector elements.
+/// @param shift the number of places which elements are shifted.
+template <typename T,
+          std::size_t N,
+          template <typename, std::size_t>
+          typename Container>
+constexpr Vector<T, N, std::array>
+roll(const Vector<T, N, Container>& v, const std::size_t shift) noexcept
+{
+    Vector<T, N, std::array> ret{};
+
+    for(std::size_t i = 0; i < N; ++i) ret[i] = v[(i - shift) % N];
+
+    return ret;
+}
+
+/// @brief Rise vector elements to a constant power.
+/// @tparam exp power exponent.
+template <unsigned exp>
+struct static_pow_fn
+{
+    template <typename T>
+    constexpr T
+    operator()(const T& value) const noexcept
+    {
+        return static_pow<exp>(value);
+    }
+
+    template <typename T,
+              std::size_t N,
+              template <typename, std::size_t>
+              typename Container>
+    constexpr Vector<T, N, Container>
+    operator()(const Vector<T, N, Container>& v) const noexcept
+    {
+        return transform(*this, v);
+    }
+
+    template <typename Rhs>
+    constexpr decltype(auto)
+    operator^(const Rhs& rhs) const noexcept
+    {
+        return compose(*this, rhs);
+    }
+};
+
+struct min_fn
+{
+    template <typename T>
+    constexpr decltype(auto)
+    operator()(const T& a, const T& b) const noexcept
+    {
+        if constexpr(std::is_arithmetic_v<T>)
+            return std::min(a, b);
+        else
+            return transform(*this, a, b);
+    }
+
+    template <typename T,
+              std::size_t N,
+              template <typename, std::size_t>
+              typename Container>
+    constexpr T
+    operator()(const Vector<T, N, Container>& a) const noexcept
+    {
+        return reduce(*this, a, std::numeric_limits<T>::max());
+    }
+
+    template <typename Rhs>
+    constexpr decltype(auto)
+    operator^(const Rhs& rhs) const noexcept
+    {
+        return compose(*this, rhs);
+    }
+};
+
+struct max_fn
+{
+    template <typename T>
+    constexpr decltype(auto)
+    operator()(const T& a, const T& b) const noexcept
+    {
+        if constexpr(std::is_arithmetic_v<T>)
+            return std::max(a, b);
+        else
+            return transform(*this, a, b);
+    }
+
+    template <typename T,
+              std::size_t N,
+              template <typename, std::size_t>
+              typename Container>
+    constexpr T
+    operator()(const Vector<T, N, Container>& a) const noexcept
+    {
+        return reduce(*this, a, std::numeric_limits<T>::min());
+    }
+
+    template <typename Rhs>
+    constexpr decltype(auto)
+    operator^(const Rhs& rhs) const noexcept
+    {
+        return compose(*this, rhs);
+    }
+};
+
+template <typename Integer>
+struct downsample_fn
+{
+    static_assert(std::is_integral_v<Integer>);
+
+    template <typename Float>
+    constexpr std::enable_if_t<std::is_floating_point_v<Float>, Integer>
+    operator()(const Float& value) const noexcept
+    {
+        Float clamped = std::clamp(value, Float{0}, Float{1});
+        clamped *= std::numeric_limits<Integer>::max();
+        return static_cast<Integer>(clamped);
+    }
+
+    template <typename Float,
+              std::size_t N,
+              template <typename, std::size_t>
+              typename Container>
+    constexpr std::enable_if_t<std::is_floating_point_v<Float>,
+                               Vector<Integer, N, std::array>>
+    operator()(const Vector<Float, N, Container>& vec) const noexcept
+    {
+        return transform(*this, vec);
+    }
+
+    template <typename Rhs>
+    constexpr decltype(auto)
+    operator^(const Rhs& rhs) const noexcept
+    {
+        return compose(*this, rhs);
+    }
+};
+
+/// @brief Transpose matrix.
+template <typename T,
+          std::size_t M,
+          std::size_t N,
+          template <typename, std::size_t>
+          typename Container>
+constexpr auto
+transpose(const Matrix<T, M, N, Container>& a) noexcept
+{
+    Matrix<T, N, M, std::array> ret{};
+
+    for(std::size_t i = 0; i < N; ++i)
+        for(std::size_t j = 0; j < M; ++j) ret[i][j] = a[j][i];
+
+    return ret;
+}
+
+/// @brief Compute matrix determinant.
+template <typename T,
+          std::size_t M,
+          template <typename, std::size_t>
+          typename Container>
+constexpr T
+det(const Matrix<T, M, M, Container>& m) noexcept
+{
+    return detail::det_impl(m, std::make_index_sequence<fac(M)>{});
+}
+
+/// @brief Contructs minor matrix by removing I row, J column.
+template <std::size_t I,
+          std::size_t J,
+          typename T,
+          std::size_t M,
+          std::size_t N,
+          template <typename, std::size_t>
+          typename Container>
+constexpr Matrix<T, M - 1, N - 1, std::array>
+minor_matrix(const Matrix<T, M, N, Container>& m) noexcept
+{
+    static_assert(I < M || J < N, "Indicies out of range");
+    return std::make_from_tuple<Matrix<T, M - 1, N - 1, std::array>>(
+        detail::minor_matrix_impl<I, J>(m, std::make_index_sequence<M - 1>{}));
+}
+
+namespace detail
+{
+template <std::size_t I,
+          std::size_t J,
+          typename T,
+          std::size_t M,
+          std::size_t N,
+          template <typename, std::size_t>
+          typename Container>
+constexpr T
+cofactor_op(const Matrix<T, M, N, Container>& m) noexcept
+{
+    return minus_one_pow(I + J) * det(minor_matrix<I, J>(m));
+}
+
+template <std::size_t I,
+          std::size_t... Js,
+          typename T,
+          std::size_t M,
+          std::size_t N,
+          template <typename, std::size_t>
+          typename Container>
+constexpr auto
+cofactor_js(const Matrix<T, M, N, Container>& m,
+            std::index_sequence<Js...>) noexcept
+{
+    return std::tuple{cofactor_op<I, Js>(m)...};
+}
+
+template <std::size_t... Is,
+          typename T,
+          std::size_t M,
+          std::size_t N,
+          template <typename, std::size_t>
+          typename Container>
+constexpr auto
+cofactor_impl(const Matrix<T, M, N, Container>& m,
+              std::index_sequence<Is...>) noexcept
+{
+    return std::tuple_cat(cofactor_js<Is>(m, std::make_index_sequence<N>{})...);
+}
+} // namespace detail
+
+/// @brief Compute cofactor matrix.
+template <typename T,
+          std::size_t M,
+          std::size_t N,
+          template <typename, std::size_t>
+          typename Container>
+constexpr Matrix<T, M, N, std::array>
+cofactor(const Matrix<T, M, N, Container>& m) noexcept
+{
+    return std::make_from_tuple<Matrix<T, M, N, std::array>>(
+        detail::cofactor_impl(m, std::make_index_sequence<M>{}));
+}
+
+/// @brief Compute inverse matrix.
+template <typename T,
+          std::size_t M,
+          std::size_t N,
+          template <typename, std::size_t>
+          typename Container>
+constexpr auto
+inverse(const Matrix<T, M, N, Container>& a) noexcept
+{
+    const auto is_zero = [](const T& val) noexcept
+    {
+        if constexpr(std::is_floating_point_v<T>)
+            return almost_equal(val, T{0}, 5);
+        else
+            return val == 0;
+    };
+
+    const T d = det(a);
+
+    if(!is_zero(d))
+        return transpose(cofactor(a)) * (T{1} / d);
+    else
+        return a;
+}
+} // namespace fn
+
+template <unsigned exp>
+constexpr fn::static_pow_fn<exp> static_pow;
+constexpr fn::min_fn             min;
+constexpr fn::max_fn             max;
+
+/// @brief Downsample floating point value to integer value with maximum integer
+/// equal to 1.0 of floating point value.
+template <typename Integer>
+constexpr fn::downsample_fn<Integer> downsample;
+
+MK_FN_OBJ(dot)
+MK_FN_OBJ(cross)
+MK_FN_OBJ(length2)
+MK_FN_OBJ(length)
+MK_FN_OBJ(normalize)
+MK_FN_OBJ(distance)
+MK_FN_OBJ(sum)
+MK_FN_OBJ(product)
+MK_FN_OBJ(all)
+MK_FN_OBJ(any)
+MK_FN_OBJ(avg)
+MK_FN_OBJ(roll)
+MK_FN_OBJ(transpose)
+MK_FN_OBJ(det)
+MK_FN_OBJ(inverse)
+
+template <typename T,
+          std::size_t N,
+          template <typename, std::size_t>
+          typename Container>
+constexpr const T&
+get_x(const Vector<T, N, Container>& v) noexcept
+{
+    return v.template get<0>();
+}
+
+template <typename T,
+          std::size_t N,
+          template <typename, std::size_t>
+          typename Container>
+constexpr T&
+get_x(Vector<T, N, Container>& v) noexcept
+{
+    return v.template get<0>();
+}
+
+template <typename T,
+          std::size_t N,
+          template <typename, std::size_t>
+          typename Container>
+constexpr const T&
+get_y(const Vector<T, N, Container>& v) noexcept
+{
+    return v.template get<1>();
+}
+
+template <typename T,
+          std::size_t N,
+          template <typename, std::size_t>
+          typename Container>
+constexpr T&
+get_y(Vector<T, N, Container>& v) noexcept
+{
+    return v.template get<1>();
+}
+
+template <typename T,
+          std::size_t N,
+          template <typename, std::size_t>
+          typename Container>
+constexpr const T&
+get_z(const Vector<T, N, Container>& v) noexcept
+{
+    return v.template get<2>();
+}
+
+template <typename T,
+          std::size_t N,
+          template <typename, std::size_t>
+          typename Container>
+constexpr T&
+get_z(Vector<T, N, Container>& v) noexcept
+{
+    return v.template get<2>();
+}
+
+template <typename T,
+          std::size_t N,
+          template <typename, std::size_t>
+          typename Container>
+constexpr const T&
+get_w(const Vector<T, N, Container>& v) noexcept
+{
+    return v.template get<3>();
+}
+
+template <typename T,
+          std::size_t N,
+          template <typename, std::size_t>
+          typename Container>
+constexpr T&
+get_w(Vector<T, N, Container>& v) noexcept
+{
+    return v.template get<3>();
+}
+
+constexpr fn::multiplies_fn multiplies;
+
+template <typename T,
+          std::size_t N,
+          template <typename, std::size_t>
+          typename Container>
+constexpr auto
+operator*(const Vector<T, N, Container>& lhs, const T& rhs) noexcept
+{
+    return multiplies(lhs, rhs);
+}
+
+template <typename T,
+          std::size_t M,
+          std::size_t N,
+          template <typename, std::size_t>
+          typename MContainer,
+          template <typename, std::size_t>
+          typename VContainer>
+constexpr Vector<T, N, std::array>
+operator*(const Matrix<T, M, N, MContainer>& m,
+          const Vector<T, N, VContainer>&    v) noexcept
+{
+    return dot(m, v);
+}
+
+template <typename T,
+          std::size_t M1,
+          std::size_t N1,
+          std::size_t M2,
+          std::size_t N2,
+          template <typename, std::size_t>
+          typename Container1,
+          template <typename, std::size_t>
+          typename Container2>
+constexpr typename std::enable_if_t<N1 == M2, Matrix<T, M1, N2, std::array>>
+operator*(const Matrix<T, M1, N1, Container1>& a,
+          const Matrix<T, M2, N2, Container2>& b) noexcept
+{
+    return dot(a, b);
+}
+
+template <typename T,
+          std::size_t M,
+          std::size_t N,
+          template <typename, std::size_t>
+          typename Container>
+constexpr Matrix<T, M, N, std::array>
+operator*(const Matrix<T, M, N, Container>& m, const T& s) noexcept
+{
+    Matrix<T, M, N, std::array> ret{};
+
+    for(std::size_t i = 0; i < M * N; ++i) ret.at(i) = m.at(i) * s;
+
+    return ret;
+}
+
+MAKE_UNARY_OP(negate, operator-)
+MAKE_UNARY_OP(logical_not, operator!)
+MAKE_BINARY_OP(plus, operator+)
+MAKE_BINARY_OP(minus, operator-)
+MAKE_BINARY_OP(divides, operator/)
+MAKE_BINARY_OP(equal_to, operator==)
+MAKE_BINARY_OP(not_equal_to, operator!=)
+MAKE_BINARY_OP(greater, operator>)
+MAKE_BINARY_OP(less, operator<)
+MAKE_BINARY_OP(greater_equal, operator>=)
+MAKE_BINARY_OP(less_equal, operator<=)
+} // namespace lucid
+
+#undef MAKE_BINARY_OP
+#undef MAKE_UNARY_OP
+#undef VEC_NAMED_FN_OBJ
+#undef VEC_FN_OBJ
+#undef VEC_NAMED_FN_OBJ_SMATH
+
+namespace std
+{
+template <typename T, size_t N, template <typename, size_t> typename Container>
+class tuple_size<lucid::Vector<T, N, Container>>
+{
+  public:
+    static constexpr const size_t value = N;
+};
+
+template <size_t I,
+          typename T,
+          size_t N,
+          template <typename, size_t>
+          typename Container>
+class tuple_element<I, lucid::Vector<T, N, Container>>
+{
+  public:
+    using type = T;
+};
+
+template <size_t I,
+          typename T,
+          size_t N,
+          template <typename, size_t>
+          typename Container>
+constexpr decltype(auto)
+get(const lucid::Vector<T, N, Container>& vec) noexcept
+{
+    return vec.template get<I>();
+}
+
+template <typename T,
+          size_t M,
+          size_t N,
+          template <typename, size_t>
+          typename Container>
+class tuple_size<lucid::Matrix<T, M, N, Container>>
+{
+  public:
+    static const constexpr size_t value = M;
+};
+
+template <size_t I,
+          typename T,
+          size_t M,
+          size_t N,
+          template <typename, size_t>
+          typename Container>
+class tuple_element<I, lucid::Matrix<T, M, N, Container>>
+{
+  public:
+    using type = decltype(declval<lucid::Matrix<T, M, N, Container>>()
+                              .template get<I>());
+};
+
+template <size_t I,
+          typename T,
+          size_t M,
+          size_t N,
+          template <typename, size_t>
+          typename Container>
+constexpr decltype(auto)
+get(const lucid::Matrix<T, M, N, Container>& mat) noexcept
+{
+    return mat.template get<I>();
+}
+} // namespace std
