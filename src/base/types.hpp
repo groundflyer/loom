@@ -4,8 +4,7 @@
 
 #pragma once
 
-#include "matrix.hpp"
-#include "vector.hpp"
+#include "linal.hpp"
 
 #include <cstdint>
 
@@ -19,7 +18,10 @@ typedef float real;
 
 constexpr real operator"" _r(long double d) { return static_cast<real>(d); }
 
-constexpr real operator"" _r(unsigned long long d) { return static_cast<real>(d); }
+constexpr real operator"" _r(unsigned long long d)
+{
+    return static_cast<real>(d);
+}
 
 template <template <typename, size_t> typename Container>
 using Vec2_ = Vector<real, 2, Container>;
@@ -74,7 +76,7 @@ using RGBA  = RGBA_<std::array>;
 using RGB8  = RGB8_<std::array>;
 using RGBA8 = RGBA8_<std::array>;
 
-static constexpr real Pi      = Pi_<real>;
-static constexpr Mat3 Mat3_id = Mat3::identity();
-static constexpr Mat4 Mat4_id = Mat4::identity();
+constexpr real Pi      = Pi_<real>;
+constexpr Mat3 Mat3_id = Mat3::identity();
+constexpr Mat4 Mat4_id = Mat4::identity();
 } // namespace lucid

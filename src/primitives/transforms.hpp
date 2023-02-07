@@ -5,7 +5,9 @@
 #pragma once
 
 #include <base/types.hpp>
-#include <utils/typelist.hpp>
+#include <utils/tmp.hpp>
+
+#include <variant>
 
 namespace lucid
 {
@@ -20,14 +22,14 @@ using Triangle_ = std::array<Vec3_<Container>, 3>;
 template <template <typename, size_t> typename Container>
 struct Sphere_;
 template <template <typename, size_t> typename Container>
-using AllPrimTypes = typelist<AABB_<Container>,
-                              Sphere_<Container>,
-                              Triangle_<Container>,
-                              Quad_<Container>,
-                              Disk_<Container>>;
+using AllPrimTypes = type_sequence<AABB_<Container>,
+                                   Sphere_<Container>,
+                                   Triangle_<Container>,
+                                   Quad_<Container>,
+                                   Disk_<Container>>;
 
 template <template <typename, size_t> typename Container>
-using GenericPrimitive_ = typename AllPrimTypes<Container>::variant;
+using GenericPrimitive_ = typelist::to<AllPrimTypes<Container>, std::variant>;
 
 using GenericPrimitive = GenericPrimitive_<std::array>;
 
@@ -43,31 +45,37 @@ template <template <typename, std::size_t> typename MatContainer,
           template <typename, std::size_t>
           typename PrimContainer>
 constexpr AABB
-apply_transform(const Mat4_<MatContainer>&, const AABB_<PrimContainer>&) noexcept;
+apply_transform(const Mat4_<MatContainer>&,
+                const AABB_<PrimContainer>&) noexcept;
 
 template <template <typename, std::size_t> typename MatContainer,
           template <typename, std::size_t>
           typename PrimContainer>
 constexpr Disk
-apply_transform(const Mat4_<MatContainer>&, const Disk_<PrimContainer>&) noexcept;
+apply_transform(const Mat4_<MatContainer>&,
+                const Disk_<PrimContainer>&) noexcept;
 template <template <typename, std::size_t> typename MatContainer,
           template <typename, std::size_t>
           typename TriangleContainer>
 constexpr Triangle
-apply_transform(const Mat4_<MatContainer>&, const Triangle_<TriangleContainer>&) noexcept;
+apply_transform(const Mat4_<MatContainer>&,
+                const Triangle_<TriangleContainer>&) noexcept;
 template <template <typename, size_t> typename MatContainer,
           template <typename, size_t>
           typename QuadContainer>
 constexpr Quad
-apply_transform(const Mat4_<MatContainer>&, const Quad_<QuadContainer>&) noexcept;
+apply_transform(const Mat4_<MatContainer>&,
+                const Quad_<QuadContainer>&) noexcept;
 
 template <template <typename, size_t> typename MatContainer,
           template <typename, size_t>
           typename PrimContainer>
 constexpr Sphere
-apply_transform(const Mat4_<MatContainer>&, const Sphere_<PrimContainer>&) noexcept;
+apply_transform(const Mat4_<MatContainer>&,
+                const Sphere_<PrimContainer>&) noexcept;
 template <template <typename, size_t> typename MatContainer, typename... Prims>
 constexpr std::variant<Prims...>
-apply_transform(const Mat4_<MatContainer>& t, const std::variant<Prims...>& prim) noexcept;
+apply_transform(const Mat4_<MatContainer>&    t,
+                const std::variant<Prims...>& prim) noexcept;
 } // namespace fn
 } // namespace lucid

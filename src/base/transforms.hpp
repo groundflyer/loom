@@ -1,9 +1,6 @@
 // -*- C++ -*-
 // transforms.hpp --
-//
-
-/// @file
-/// Defines coordinate transformation functions.
+/// @file Coordinate transformations.
 
 #pragma once
 
@@ -44,7 +41,8 @@ template <template <typename, size_t> typename MatContainer,
           template <typename, size_t>
           typename VecContainer>
 constexpr Vec3
-apply_transform(const Mat4_<MatContainer>& t, const Vec3_<VecContainer>& v) noexcept
+apply_transform(const Mat4_<MatContainer>& t,
+                const Vec3_<VecContainer>& v) noexcept
 {
     return dehomogenize(t * Vec4(v));
 }
@@ -56,7 +54,8 @@ template <template <typename, size_t> typename MatContainer,
           template <typename, size_t>
           typename Vec3Container>
 constexpr Vec3
-apply_transform_p(const Mat4_<MatContainer>& t, const Vec3_<Vec3Container>& p) noexcept
+apply_transform_p(const Mat4_<MatContainer>&  t,
+                  const Vec3_<Vec3Container>& p) noexcept
 {
     return dehomogenize(t * Vec4(p, 1));
 }
@@ -68,7 +67,8 @@ template <template <typename, size_t> typename MatContainer,
           template <typename, size_t>
           typename NormalContainer>
 constexpr Vec3
-apply_transform_n(const Mat4_<MatContainer>& t, const Vec3_<NormalContainer>& n) noexcept
+apply_transform_n(const Mat4_<MatContainer>&    t,
+                  const Vec3_<NormalContainer>& n) noexcept
 {
     return normalize(dehomogenize(transpose(inverse(t)) * (Vec4(n))));
 }
@@ -101,9 +101,7 @@ constexpr Mat4
 rotate(const real angle, const Vec3_<Container>& axis) noexcept
 {
     const auto& [x, y, z] = axis;
-
     const Mat3 K{0, -z, y, z, 0, -x, -y, x, 0};
-
     return Mat4(Mat3_id + K * sin(angle) + K * K * (1_r - cos(angle)));
 }
 
@@ -124,7 +122,8 @@ look_at(const Vec3_<EyeContainer>& eye,
     const Vec3 f = normalize(eye - target);
     const Vec3 r = normalize(cross(up, f));
     const Vec3 u = normalize(cross(f, r));
-    return inverse(Mat4(r, 0_r, u, 0_r, f, 0_r, 0_r, 0_r, 0_r, 1_r) * translate(-eye));
+    return inverse(Mat4(r, 0_r, u, 0_r, f, 0_r, 0_r, 0_r, 0_r, 1_r) *
+                   translate(-eye));
 }
 
 /// @brief Build orthonormal basis for given normal (z axis).
@@ -138,8 +137,9 @@ basis(const Vec3_<Container>& n) noexcept
     const real sign          = std::copysign(1_r, nz);
     const real a             = -1_r / (sign + nz);
     const real b             = nx * ny * a;
-    return std::pair(make_normal(1_r + sign * nx * nx * a, sign * b, -sign * nx),
-                     make_normal(b, sign + ny * ny * a, -ny));
+    return std::pair(
+        make_normal(1_r + sign * nx * nx * a, sign * b, -sign * nx),
+        make_normal(b, sign + ny * ny * a, -ny));
 }
 
 /// @brief Build orthonormal basis for given normal (z axis).
