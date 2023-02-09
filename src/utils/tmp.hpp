@@ -5,6 +5,7 @@
 #pragma once
 
 #include <array>
+#include <string_view>
 #include <type_traits>
 #include <utility>
 
@@ -33,6 +34,62 @@ template <typename... Ts>
 struct type_sequence
 {
 };
+/// @}
+
+/// @defgroup CTString Compile-time string
+/// @brief Converting string literals into char_sequence at compile time.
+/// @ingroup TMP
+/// @{
+
+/// @brief Wraps char[@p N].
+template <size_t _N>
+struct StringLiteral
+{
+    // cut off null terminator
+    static constexpr std::size_t N = _N - 1;
+
+    constexpr StringLiteral(const char (&str)[_N])
+    {
+        for(std::size_t i = 0; i < N; ++i) value[i] = str[i];
+    }
+
+    char value[N]{};
+
+    constexpr char
+    operator[](const std::size_t i) const
+    {
+        return value[i];
+    }
+
+    constexpr std::size_t
+    size() const
+    {
+        return N;
+    }
+
+    constexpr std::string_view
+    view() const
+    {
+        return std::string_view(value, N);
+    }
+};
+
+namespace detail
+{
+template <StringLiteral s, typename Idxs>
+struct sl2cs_impl;
+
+template <StringLiteral s, std::size_t... Idxs>
+struct sl2cs_impl<s, std::index_sequence<Idxs...>>
+{
+    using type = char_sequence<s[Idxs]...>;
+};
+} // namespace detail
+
+/// @brief Convert StringLiteral into char_sequence.
+template <StringLiteral s>
+using sl2cs =
+    typename detail::sl2cs_impl<s, std::make_index_sequence<s.size()>>::type;
 /// @}
 
 /// @defgroup Typelist Typelist

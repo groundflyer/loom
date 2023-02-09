@@ -162,38 +162,6 @@ struct missing_keyword
 // This character is used to indicate that character key is not defined.
 constexpr inline char missing_keychar = ' ';
 
-template <size_t _N>
-struct StringLiteral
-{
-    // cut off null terminator
-    static constexpr std::size_t N = _N - 1;
-
-    constexpr StringLiteral(const char (&str)[_N])
-    {
-        for(std::size_t i = 0; i < N; ++i) value[i] = str[i];
-    }
-
-    char value[N]{};
-
-    constexpr char
-    operator[](const std::size_t i) const
-    {
-        return value[i];
-    }
-
-    constexpr std::size_t
-    size() const
-    {
-        return N;
-    }
-
-    constexpr std::string_view
-    view() const
-    {
-        return std::string_view(value, N);
-    }
-};
-
 template <typename CharSeq, StringLiteral s>
 struct KeywordWrapper
 {
@@ -202,18 +170,9 @@ struct KeywordWrapper
 };
 
 template <StringLiteral s, typename Idxs>
-struct sl2cs_impl;
-
-template <StringLiteral s, std::size_t... Idxs>
-struct sl2cs_impl<s, std::index_sequence<Idxs...>>
-{
-    using type = char_sequence<s[Idxs]...>;
-};
-
-template <StringLiteral s, typename Idxs>
 struct wrap_string_helper
 {
-    using type = KeywordWrapper<typename sl2cs_impl<s, Idxs>::type, s>;
+    using type = KeywordWrapper<sl2cs<s>, s>;
 };
 
 template <typename Converter>
@@ -292,13 +251,8 @@ template <typename T>
 concept Converter = std::is_invocable_v<T, std::string_view> && !
 std::is_void_v<std::invoke_result_t<T, std::string_view>>;
 
-/// @brief Convert detail::StringLiteral into char_sequence.
-template <detail::StringLiteral s>
-using string_type =
-    typename detail::sl2cs_impl<s, std::make_index_sequence<s.size()>>::type;
-
-/// @brief Make a pair of detail::StringLiteral and a char_sequence.
-template <detail::StringLiteral s>
+/// @brief Make a pair of StringLiteral and a char_sequence.
+template <StringLiteral s>
 using wrap_string = typename detail::
     wrap_string_helper<s, std::make_index_sequence<s.size()>>::type;
 
@@ -314,8 +268,8 @@ constexpr std::size_t keyword_index =
     detail::keyword_index<Keyword, Options>::value;
 
 /// @brief Check if keyword @p s meets requirements.
-template <detail::StringLiteral s>
-constexpr bool keyword_ok = detail::keyword_ok_impl<string_type<s>>::value;
+template <StringLiteral s>
+constexpr bool keyword_ok = detail::keyword_ok_impl<sl2cs<s>>::value;
 
 template <typename O>
 constexpr bool has_keychar = detail::has_keychar<O>::value;
@@ -704,7 +658,7 @@ struct Positional
 /// @brief Create an option with key @p Key and keyword @p s.
 /// @tparam Key ASCII character for Unix style argument setting.
 /// @tparam s string for GNU style argument setting.
-template <char Key, detail::StringLiteral s, Converter C>
+template <char Key, StringLiteral s, Converter C>
 consteval Option<Key, wrap_string<s>, C, 1ul>
 option(C                             converter,
        const detail::result_type<C>& def_val,
@@ -729,7 +683,7 @@ option(C                             converter,
 }
 
 /// @brief Shorcut to create an option without character key.
-template <detail::StringLiteral s, Converter C>
+template <StringLiteral s, Converter C>
 consteval Option<detail::missing_keychar, wrap_string<s>, C, 1ul>
 option(C                             converter,
        const detail::result_type<C>& def_val,
@@ -744,7 +698,7 @@ option(C                             converter,
 /// @tparam Key ASCII character for Unix style argument setting.
 /// @tparam s string for GNU style argument setting.
 /// @tparam N the number of fields.
-template <char Key, detail::StringLiteral s, std::size_t N, Converter C>
+template <char Key, StringLiteral s, std::size_t N, Converter C>
 consteval Option<Key, wrap_string<s>, C, N>
 option(C                                            converter,
        const std::array<detail::result_type<C>, N>& def_val,
@@ -771,7 +725,7 @@ option(C                                            converter,
 }
 
 /// @brief Shorcut to create a multi-field option without character key.
-template <detail::StringLiteral s, std::size_t N, Converter C>
+template <StringLiteral s, std::size_t N, Converter C>
 consteval Option<detail::missing_keychar, wrap_string<s>, C, N>
 option(C                                            converter,
        const std::array<detail::result_type<C>, N>& def_val,
@@ -784,7 +738,7 @@ option(C                                            converter,
 }
 
 /// @brief Create a list option, one that takes one-or-more values.
-template <char Key, detail::StringLiteral s, Converter C, typename... Args>
+template <char Key, StringLiteral s, Converter C, typename... Args>
 consteval Option<Key, wrap_string<s>, C, -1ul>
 option_list(C                      converter,
             const std::string_view doc,
@@ -807,7 +761,7 @@ option_list(C                      converter,
 }
 
 /// @brief Shorcut to create a list option without character key.
-template <detail::StringLiteral s, Converter C, typename... Args>
+template <StringLiteral s, Converter C, typename... Args>
 consteval Option<detail::missing_keychar, wrap_string<s>, C, -1ul>
 option_list(C                      converter,
             const std::string_view doc,
@@ -819,7 +773,7 @@ option_list(C                      converter,
 
 /// @brief Create a flag option, i.e. one that holds a boolean value
 /// so it doesn't require argument when being set.
-template <char Key, detail::StringLiteral s>
+template <char Key, StringLiteral s>
 consteval Option<Key, wrap_string<s>, detail::FlagConverter, 1ul>
 flag(const bool def_val, const std::string_view doc) noexcept
 {
@@ -838,7 +792,7 @@ flag(const bool def_val, const std::string_view doc) noexcept
 }
 
 /// @brief Shortcut to create a flag option without character key.
-template <detail::StringLiteral s>
+template <StringLiteral s>
 consteval Option<detail::missing_keychar,
                  wrap_string<s>,
                  detail::FlagConverter,
@@ -914,11 +868,11 @@ struct ParseResults<std::pair<OptBindings, PosBindings>, Options>
         return std::get<key_index<Key, Options>>(opt_bindings)();
     }
 
-    template <detail::StringLiteral s>
+    template <StringLiteral s>
     constexpr decltype(auto)
     get_opt() const
     {
-        return std::get<keyword_index<string_type<s>, Options>>(opt_bindings)();
+        return std::get<keyword_index<sl2cs<s>, Options>>(opt_bindings)();
     }
 
     template <std::size_t Idx>
@@ -948,11 +902,11 @@ struct ParseResults<std::tuple<OptBindings...>, Options>
         return std::get<key_index<Key, Options>>(opt_bindings)();
     }
 
-    template <detail::StringLiteral s>
+    template <StringLiteral s>
     constexpr decltype(auto)
     get_opt() const noexcept
     {
-        return std::get<keyword_index<string_type<s>, Options>>(opt_bindings)();
+        return std::get<keyword_index<sl2cs<s>, Options>>(opt_bindings)();
     }
 };
 
