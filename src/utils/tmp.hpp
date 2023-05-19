@@ -316,6 +316,12 @@ struct zip<type_sequence<X, Xs...>, type_sequence<Y, Ys...>>
 template <typename T, typename List>
 struct del;
 
+template <typename T>
+struct del<T, type_sequence<>>
+{
+    using type = type_sequence<>;
+};
+
 template <typename T, typename X>
 struct del<T, type_sequence<X>>
 {
@@ -383,6 +389,23 @@ struct filter<F, type_sequence<T, Ts...>>
     using rest = typename filter<F, type_sequence<Ts...>>::type;
     using type =
         std::conditional_t<F<T>::value, typename cons<T, rest>::type, rest>;
+};
+
+template <typename List>
+struct nub;
+
+template <>
+struct nub<type_sequence<>>
+{
+    using type = type_sequence<>;
+};
+
+template <typename T, typename... Ts>
+struct nub<type_sequence<T, Ts...>>
+{
+    using type = typename cons<
+        T,
+        typename nub<typename del<T, type_sequence<Ts...>>::type>::type>::type;
 };
 } // namespace detail
 
@@ -503,6 +526,10 @@ using result_of = typename detail::result_of<Fs, Args...>;
 /// @brief Check if there are duplicates in @p List.
 template <typename List>
 constexpr bool has_duplicates = detail::has_duplicates<List>::value;
+
+/// @brief Remove duplicate elements from @p List.
+template <typename List>
+using nub = typename detail::nub<List>::type;
 
 /// @brief Filter @p List elements with @p F.
 ///
