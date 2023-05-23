@@ -746,6 +746,12 @@ struct drop<N, std::integer_sequence<Int, I, Is...>>
 template <auto Val, typename List>
 struct del;
 
+template <typename Int, Int Val>
+struct del<Val, std::integer_sequence<Int>>
+{
+    using type = std::integer_sequence<Int>;
+};
+
 template <typename Int, Int Last, Int Val>
 struct del<Val, std::integer_sequence<Int, Last>>
 {
@@ -800,6 +806,24 @@ struct has_duplicates<std::integer_sequence<Int, X, Xs...>>
     using xs = std::integer_sequence<Int, Xs...>;
     static constexpr bool value =
         elem<X, xs>::value || has_duplicates<xs>::value;
+};
+
+template <typename List>
+struct nub;
+
+template <typename Int>
+struct nub<std::integer_sequence<Int>>
+{
+    using type = std::integer_sequence<Int>;
+};
+
+template <typename Int, Int X, Int... Xs>
+struct nub<std::integer_sequence<Int, X, Xs...>>
+{
+    using type = typename cons<
+        X,
+        typename nub<typename del<X, std::integer_sequence<Int, Xs...>>::type>::
+            type>::type;
 };
 } // namespace detail
 
@@ -894,6 +918,10 @@ constexpr auto stdarray = detail::stdarray<List>::value;
 /// @brief Check if there are duplicates in @p List.
 template <typename List>
 constexpr bool has_duplicates = detail::has_duplicates<List>::value;
+
+/// @brief Remove duplicate elements from @p List.
+template <typename List>
+using nub = typename detail::nub<List>::type;
 
 template <std::size_t N, std::size_t I>
 struct lehmer_code_impl

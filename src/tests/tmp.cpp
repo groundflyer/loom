@@ -10,6 +10,7 @@ namespace lucid::intlist
 {
 using testlist1 = integer_sequence<int, 1, 2, 3, 4>;
 using testlist2 = integer_sequence<int, 1, 2, 3, 4, 0, 0, 0>;
+using testlist3 = integer_sequence<int, 1, 2, 1, 3, 4, 3, 4, 2, 1>;
 
 static_assert(is_same_v<reverse<testlist1>, integer_sequence<int, 4, 3, 2, 1>>);
 static_assert(
@@ -25,6 +26,7 @@ static_assert(is_same_v<map<decltype([](int i) { return i + 20; }), testlist1>,
                         integer_sequence<int, 21, 22, 23, 24>>);
 static_assert(!has_duplicates<testlist1>);
 static_assert(has_duplicates<testlist2>);
+static_assert(is_same_v<testlist1, nub<testlist3>>);
 
 using lcnt = lehmer_code<463>;
 using lcnv = index_sequence<3, 4, 1, 0, 1, 0>;
