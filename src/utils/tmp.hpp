@@ -407,6 +407,24 @@ struct nub<type_sequence<T, Ts...>>
         T,
         typename nub<typename del<T, type_sequence<Ts...>>::type>::type>::type;
 };
+
+template <typename T, typename Map>
+struct lookup;
+
+template <typename T>
+struct lookup<T, type_sequence<>>
+{
+    using type = void;
+};
+
+template <typename T, typename Key, typename Value, typename... Ts>
+struct lookup<T, type_sequence<type_sequence<Key, Value>, Ts...>>
+{
+    using type =
+        std::conditional_t<std::is_same_v<T, Key>,
+                           Value,
+                           typename lookup<T, type_sequence<Ts...>>::type>;
+};
 } // namespace detail
 
 /// @brief Convert a class template @p Source into type_sequence.
@@ -533,9 +551,17 @@ using nub = typename detail::nub<List>::type;
 
 /// @brief Filter @p List elements with @p F.
 ///
-/// @tparam F must have static constexpr bool value member;
+/// @tparam F must have static constexpr bool value member.
 template <template <typename> typename F, typename List>
 using filter = typename detail::filter<F, List>::type;
+
+/// @brief Lookup a key @p Key in association list @p Map.
+///
+/// @tparam Map consists of key-value pairs type_sequence<Key, Value>.
+///
+/// If @p Key not found the resulting type is void.
+template <typename Key, typename Map>
+using lookup = typename detail::lookup<Key, Map>::type;
 
 /// @brief Check if @p List is empty.
 template <typename List>

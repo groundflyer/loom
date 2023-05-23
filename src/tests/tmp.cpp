@@ -54,6 +54,9 @@ using testlist2    = type_sequence<double, unsigned, short>;
 using testlist3    = type_sequence<long, size_t, unsigned char>;
 using testlist4    = type_sequence<int, bool, int, float, int, char, int>;
 using testlist4nub = type_sequence<int, bool, float, char>;
+using testmap      = type_sequence<type_sequence<char, unsigned char>,
+                              type_sequence<int, unsigned int>,
+                              type_sequence<float, double>>;
 
 static_assert(
     is_same_v<reverse<testlist1>, type_sequence<char, float, int, bool>>);
@@ -83,6 +86,8 @@ static_assert(!has_duplicates<testlist1>);
 static_assert(is_same_v<filter<std::is_integral, testlist1>,
                         type_sequence<bool, int, char>>);
 static_assert(is_same_v<testlist4nub, nub<testlist4>>);
+static_assert(is_same_v<lookup<float, testmap>, double>);
+static_assert(is_void_v<lookup<long*, testmap>>);
 } // namespace lucid::typelist
 
 int
