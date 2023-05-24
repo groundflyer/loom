@@ -1,6 +1,6 @@
 // -*- C++ -*-
-// linal.hpp
-/// @file Linear algebra
+/// @file linal.hpp
+/// @brief Linar algebra classes and operators.
 
 #pragma once
 
@@ -181,7 +181,7 @@
         }                                              \
     };                                                 \
     }                                                  \
-    static constexpr fn::NAME##_fn NAME{};
+    constexpr fn::NAME##_fn NAME{};
 
 #define VEC_FN_OBJ(FUNC) VEC_NAMED_FN_OBJ(FUNC, FUNC)
 
@@ -218,10 +218,14 @@
         }                                              \
     };                                                 \
     }                                                  \
-    static constexpr fn::FUNC##_fn FUNC{};
+    constexpr fn::FUNC##_fn FUNC{};
 
 namespace lucid
 {
+/// @defgroup LINAL Linear Algebra
+/// @brief Linear algebra classes and operators.
+/// @{
+
 /// @brief Generic N-dimensional euclidian vector.
 /// @tparam T value type. Must be arithmetic.
 /// @tparam N dimensionality.
@@ -230,10 +234,9 @@ template <typename T,
           std::size_t N,
           template <typename, std::size_t>
           typename Container>
+    requires std::is_arithmetic_v<T>
 class Vector
 {
-    static_assert(std::is_arithmetic<T>::value, "T is not an arithmetic type.");
-
     using Data = Container<T, N>;
 
     Data m_data{};
@@ -472,7 +475,7 @@ template <typename T,
           typename Container>
 Vector(Container<T, N>&&) -> Vector<T, N, Container>;
 
-/// @brief Generic row-major two-dimensional Matrix of constant size.
+/// @brief Generic row-major matrix of constant size.
 /// @tparam T value type. Must be arithmetic.
 /// @tparam M number of rows.
 /// @tparam N number of columns.
@@ -482,18 +485,15 @@ template <typename T,
           std::size_t N,
           template <typename, std::size_t>
           typename Container>
+    requires(std::is_arithmetic_v<T> && M > 1 && N > 1)
 class Matrix
 {
-    static_assert(std::is_arithmetic<T>::value, "T is not an arithmetic type.");
-    static_assert(M > 1 && N > 1,
-                  "One-dimensional matrices are not supported.");
-
-    static const constexpr std::size_t MN = M * N;
+    static constexpr std::size_t MN = M * N;
 
     using Data = Container<T, MN>;
     Data m_data{};
 
-    static constexpr auto
+    static constexpr std::size_t
     pos(const std::size_t i,
         const std::size_t j,
         const std::size_t J = N) noexcept
@@ -501,7 +501,7 @@ class Matrix
         return i * J + j;
     }
 
-    static constexpr auto
+    static constexpr std::pair<std::size_t, std::size_t>
     indices(const std::size_t pos) noexcept
     {
         return std::pair(pos / N, pos % N);
@@ -565,11 +565,11 @@ class Matrix
     constexpr void
     unpack(const Matrix<T, M1, N1, Container1>& head, Ts&&... tail) noexcept
     {
-        const constexpr auto shift   = indices(idx);
-        const constexpr auto shift_i = shift.first;
-        const constexpr auto shift_j = shift.second;
-        const constexpr auto I       = std::min(M - shift_i, M1);
-        const constexpr auto J       = std::min(N - shift_j, N1);
+        constexpr auto shift   = indices(idx);
+        constexpr auto shift_i = shift.first;
+        constexpr auto shift_j = shift.second;
+        constexpr auto I       = std::min(M - shift_i, M1);
+        constexpr auto J       = std::min(N - shift_j, N1);
 
         for(std::size_t i = 0; i < I; ++i)
             for(std::size_t j = 0; j < J; ++j)
@@ -781,6 +781,8 @@ class Matrix
         return ret;
     }
 };
+
+/// @}
 
 namespace detail
 {
@@ -1086,7 +1088,10 @@ det_impl(const Matrix<T, M, M, Container>& m,
 }
 } // namespace detail
 
-/// @brief View of vector @p v.
+/// @addtogroup LINAL
+/// @{
+
+/// @brief Get vector view.
 template <typename T,
           std::size_t N,
           template <typename, std::size_t>
@@ -1097,7 +1102,7 @@ ref(const Vector<T, N, Container>& v) noexcept
     return Vector<T, N, StaticSpan>(StaticSpan<T, N>(v.template get<0>()));
 }
 
-/// @brief View of matrix @p m.
+/// @brief Get matrix view.
 template <typename T,
           std::size_t M,
           std::size_t N,
@@ -1109,7 +1114,7 @@ ref(const Matrix<T, M, N, Container>& m) noexcept
     return Matrix<T, M, N, StaticSpan>(StaticSpan<T, M * N>(m.at(0)));
 }
 
-/// @brief Unroll matrix @m to a vector view of size @f$M N@f$.
+/// @brief Unroll matrix @p m to a vector view of size @f$M N@f$.
 template <typename T,
           std::size_t M,
           std::size_t N,
@@ -1121,11 +1126,10 @@ flat_ref(const Matrix<T, M, N, Container>& m) noexcept
     return Vector(StaticSpan<T, M * N>(m.at(0)));
 }
 
-/// @brief Apply function to corresponding elements of input vectors.
-/// @return Vector containing results of applycation @f to the elements of input
-/// vectors or pair or tuple of vectors if @f returns such.
+/// @brief Apply function @p f to corresponding elements of input vectors @p vs.
+/// @return Vector containing results of application @p f to the elements of input.
 /// @p f accepts as many arguments as the number of input vectors @p vs.
-/// @p Vectors should have the same dimensionality.
+/// @p Vectors must be of the same dimensionality.
 template <typename F, typename... Vectors>
 constexpr auto
 transform(const F& f, const Vectors&... vs) noexcept
@@ -1135,10 +1139,12 @@ transform(const F& f, const Vectors&... vs) noexcept
                                   vs...);
 }
 
-/// @brief Perform left fold on a given vector.
-/// @param binary_op folding operator.
-/// @param a vector to fold.
+/// @brief Accumulate elements of vector @p v with @p binary_op.
+/// @param binary_op binary operator.
+/// @param a vector to accumulate.
 /// @param init initial value.
+///
+/// The operation is left-associative.
 template <typename T,
           std::size_t N,
           template <typename, std::size_t>
@@ -1147,16 +1153,15 @@ template <typename T,
           typename Init>
 constexpr auto
 reduce(BinaryOperation                binary_op,
-       const Vector<T, N, Container>& a,
+       const Vector<T, N, Container>& v,
        Init                           init) noexcept
 {
-    for(std::size_t i = 0; i < N; ++i) init = binary_op(init, a[i]);
+    for(std::size_t i = 0; i < N; ++i) init = binary_op(init, v[i]);
 
     return init;
 }
 
-/// @brief Efficient shortcut for
-/// @code{.cpp} reduce(binary_op2, transform(binary_op1, a, b), init) @endcode
+/// @brief Efficient shortcut for @code{.cpp} reduce(binary_op2, transform(binary_op1, a, b), init) @endcode
 /// @param binary_op1 operator for transform.
 /// @param binary_op2 operator for reduce.
 template <typename T1,
@@ -1221,9 +1226,11 @@ VEC_NAMED_FN_OBJ_SMATH(tan)
 VEC_NAMED_FN_OBJ_SMATH(round)
 VEC_NAMED_FN_OBJ_SMATH(floor)
 
+/// @}
+
 namespace fn
 {
-// we define multiplies and operator* separately because to
+// we define multiplies and operator* separately to
 // not override Matrix multiplication
 struct multiplies_fn
 {
@@ -1245,6 +1252,9 @@ struct multiplies_fn
         return compose(*this, rhs);
     }
 };
+
+/// @addtogroup LINAL
+/// @{
 
 /// @brief Compute dot product of the given vectors.
 template <typename T,
@@ -1306,7 +1316,7 @@ dot(const Matrix<T, M1, N1, Container1>& lhs,
 
 /// @brief Implements efficient generic N-dimensional cross product.
 ///
-/// Naive implementation would be:
+/// The alogrithm:
 /// @code{.cpp}
 /// Vector<T, N, std::array> ret;
 /// for(std::size_t i = 0; i < N; ++i)
@@ -1436,7 +1446,7 @@ avg(const Vector<T, N, Container>& a) noexcept
 }
 
 /// @brief Roll vector elements.
-/// @param shift the number of places which elements are shifted.
+/// @param shift the number of places which elements are shifted. The sign defines the direction, i.e. (-) to the left otherwise to the right.
 template <typename T,
           std::size_t N,
           template <typename, std::size_t>
@@ -1451,8 +1461,6 @@ roll(const Vector<T, N, Container>& v, const std::size_t shift) noexcept
     return ret;
 }
 
-/// @brief Rise vector elements to a constant power.
-/// @tparam exp power exponent.
 template <unsigned exp>
 struct static_pow_fn
 {
@@ -1541,18 +1549,16 @@ struct max_fn
     }
 };
 
-template <typename Integer>
+template <typename Int> requires std::is_integral_v<Int>
 struct downsample_fn
 {
-    static_assert(std::is_integral_v<Integer>);
-
     template <typename Float>
-    constexpr std::enable_if_t<std::is_floating_point_v<Float>, Integer>
+    constexpr std::enable_if_t<std::is_floating_point_v<Float>, Int>
     operator()(const Float& value) const noexcept
     {
         Float clamped = std::clamp(value, Float{0}, Float{1});
-        clamped *= std::numeric_limits<Integer>::max();
-        return static_cast<Integer>(clamped);
+        clamped *= std::numeric_limits<Int>::max();
+        return static_cast<Int>(clamped);
     }
 
     template <typename Float,
@@ -1560,7 +1566,7 @@ struct downsample_fn
               template <typename, std::size_t>
               typename Container>
     constexpr std::enable_if_t<std::is_floating_point_v<Float>,
-                               Vector<Integer, N, std::array>>
+                               Vector<Int, N, std::array>>
     operator()(const Vector<Float, N, Container>& vec) const noexcept
     {
         return transform(*this, vec);
@@ -1602,7 +1608,9 @@ det(const Matrix<T, M, M, Container>& m) noexcept
     return detail::det_impl(m, std::make_index_sequence<fac(M)>{});
 }
 
-/// @brief Contructs minor matrix by removing I row, J column.
+/// @brief Contructs minor matrix by removing @p I row, @p J column.
+/// @tparam I row to remove.
+/// @tparam J column to remove.
 template <std::size_t I,
           std::size_t J,
           typename T,
@@ -1611,9 +1619,8 @@ template <std::size_t I,
           template <typename, std::size_t>
           typename Container>
 constexpr Matrix<T, M - 1, N - 1, std::array>
-minor_matrix(const Matrix<T, M, N, Container>& m) noexcept
+minor_matrix(const Matrix<T, M, N, Container>& m) noexcept requires (I < M || J < N)
 {
-    static_assert(I < M || J < N, "Indicies out of range");
     return std::make_from_tuple<Matrix<T, M - 1, N - 1, std::array>>(
         detail::minor_matrix_impl<I, J>(m, std::make_index_sequence<M - 1>{}));
 }
@@ -1624,11 +1631,10 @@ template <std::size_t I,
           std::size_t J,
           typename T,
           std::size_t M,
-          std::size_t N,
           template <typename, std::size_t>
           typename Container>
 constexpr T
-cofactor_op(const Matrix<T, M, N, Container>& m) noexcept
+cofactor_op(const Matrix<T, M, M, Container>& m) noexcept
 {
     return minus_one_pow(I + J) * det(minor_matrix<I, J>(m));
 }
@@ -1637,11 +1643,10 @@ template <std::size_t I,
           std::size_t... Js,
           typename T,
           std::size_t M,
-          std::size_t N,
           template <typename, std::size_t>
           typename Container>
 constexpr auto
-cofactor_js(const Matrix<T, M, N, Container>& m,
+cofactor_js(const Matrix<T, M, M, Container>& m,
             std::index_sequence<Js...>) noexcept
 {
     return std::tuple{cofactor_op<I, Js>(m)...};
@@ -1650,40 +1655,37 @@ cofactor_js(const Matrix<T, M, N, Container>& m,
 template <std::size_t... Is,
           typename T,
           std::size_t M,
-          std::size_t N,
           template <typename, std::size_t>
           typename Container>
 constexpr auto
-cofactor_impl(const Matrix<T, M, N, Container>& m,
+cofactor_impl(const Matrix<T, M, M, Container>& m,
               std::index_sequence<Is...>) noexcept
 {
-    return std::tuple_cat(cofactor_js<Is>(m, std::make_index_sequence<N>{})...);
+    return std::tuple_cat(cofactor_js<Is>(m, std::make_index_sequence<M>{})...);
 }
 } // namespace detail
 
 /// @brief Compute cofactor matrix.
 template <typename T,
           std::size_t M,
-          std::size_t N,
           template <typename, std::size_t>
           typename Container>
-constexpr Matrix<T, M, N, std::array>
-cofactor(const Matrix<T, M, N, Container>& m) noexcept
+constexpr Matrix<T, M, M, std::array>
+cofactor(const Matrix<T, M, M, Container>& m) noexcept
 {
-    return std::make_from_tuple<Matrix<T, M, N, std::array>>(
+    return std::make_from_tuple<Matrix<T, M, M, std::array>>(
         detail::cofactor_impl(m, std::make_index_sequence<M>{}));
 }
 
-/// @brief Compute inverse matrix.
+/// @brief Compute inverse matrix @f$A^{-1}@f$.
 template <typename T,
           std::size_t M,
-          std::size_t N,
           template <typename, std::size_t>
           typename Container>
-constexpr auto
-inverse(const Matrix<T, M, N, Container>& a) noexcept
+constexpr Matrix<T, M, M, std::array>
+inverse(const Matrix<T, M, M, Container>& a) noexcept
 {
-    const auto is_zero = [](const T& val) noexcept
+    const auto is_zero = [](const T& val) noexcept -> bool
     {
         if constexpr(std::is_floating_point_v<T>)
             return almost_equal(val, T{0}, 5);
@@ -1698,17 +1700,27 @@ inverse(const Matrix<T, M, N, Container>& a) noexcept
     else
         return a;
 }
+/// @}
 } // namespace fn
 
+/// @addtogroup LINAL
+/// @{
+
+/// @brief Rise vector elements to a constant power.
+/// @tparam exp power exponent.
 template <unsigned exp>
 constexpr fn::static_pow_fn<exp> static_pow;
+
+/// @brief Select the smallest corresponding elements of two vectors or numbers.
 constexpr fn::min_fn             min;
+
+/// @brief Select the biggest corresponding elements of two vectors or numbers.
 constexpr fn::max_fn             max;
 
 /// @brief Downsample floating point value to integer value with maximum integer
 /// equal to 1.0 of floating point value.
-template <typename Integer>
-constexpr fn::downsample_fn<Integer> downsample;
+template <typename Int>
+constexpr fn::downsample_fn<Int> downsample;
 
 MK_FN_OBJ(dot)
 MK_FN_OBJ(cross)
@@ -1874,6 +1886,8 @@ MAKE_BINARY_OP(greater, operator>)
 MAKE_BINARY_OP(less, operator<)
 MAKE_BINARY_OP(greater_equal, operator>=)
 MAKE_BINARY_OP(less_equal, operator<=)
+
+/// @}
 } // namespace lucid
 
 #undef MAKE_BINARY_OP

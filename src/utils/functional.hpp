@@ -26,7 +26,7 @@
         }                                             \
     };                                                \
     }                                                 \
-    static constexpr fn::NAME##_fn NAME{};
+    constexpr fn::NAME##_fn NAME{};
 
 #define MK_FN_OBJ(FUNC) MK_NAMED_FN_OBJ(FUNC, FUNC)
 
@@ -43,7 +43,10 @@ struct ComposeOp
         RHS rhs;
 
         constexpr Invoker() noexcept {}
-        constexpr Invoker(const Invoker& other) noexcept : lhs(other.lhs), rhs(other.rhs) {}
+        constexpr Invoker(const Invoker& other) noexcept :
+            lhs(other.lhs), rhs(other.rhs)
+        {
+        }
         constexpr Invoker(Invoker&& other) noexcept :
             lhs(std::move(other.lhs)), rhs(std::move(other.rhs))
         {
@@ -95,7 +98,8 @@ struct fold_wrapper
     BinaryOp    op;
     LeftOperand operand;
 
-    constexpr fold_wrapper(BinaryOp _op, const LeftOperand& _operand) : op(_op), operand(_operand)
+    constexpr fold_wrapper(BinaryOp _op, const LeftOperand& _operand) :
+        op(_op), operand(_operand)
     {
     }
 
@@ -107,8 +111,11 @@ struct fold_wrapper
     constexpr decltype(auto)
     operator%(const fold_wrapper<BinaryOp, RightOperand>& rhs) const noexcept
     {
-        return fold_wrapper<BinaryOp, std::invoke_result_t<BinaryOp, LeftOperand, RightOperand>>(
-            op, op(operand, rhs.operand));
+        return fold_wrapper<
+            BinaryOp,
+            std::invoke_result_t<BinaryOp, LeftOperand, RightOperand>>(
+            op,
+            op(operand, rhs.operand));
     }
 };
 
@@ -128,8 +135,8 @@ struct maybe_apply_helper<std::pair<T1, T2>>
     static constexpr bool is_tuple = true;
 
     template <typename F>
-    static constexpr bool is_invocable =
-        std::is_invocable_v<F, T1, T2> || std::is_nothrow_invocable_v<F, T1, T2>;
+    static constexpr bool is_invocable = std::is_invocable_v<F, T1, T2> ||
+                                         std::is_nothrow_invocable_v<F, T1, T2>;
 };
 
 template <typename... Ts>
@@ -214,7 +221,9 @@ template <typename BinaryOp, typename Init, typename... Args>
 constexpr decltype(auto)
 fold(BinaryOp&& op, Init&& init, Args&&... args) noexcept
 {
-    return (detail::fold_wrapper(op, init) % ... % detail::fold_wrapper(op, args)).operand;
+    return (detail::fold_wrapper(op, init) % ... %
+            detail::fold_wrapper(op, args))
+        .operand;
 }
 
 // compose(a, b, c) = a(b(c()))
@@ -229,7 +238,8 @@ template <typename BinaryF>
 constexpr decltype(auto)
 flip(BinaryF f) noexcept
 {
-    return [=](auto&& rhs, auto&& lhs) constexpr { return std::invoke(f, lhs, rhs); };
+    return [=](auto&& rhs, auto&& lhs) constexpr
+    { return std::invoke(f, lhs, rhs); };
 }
 
 template <std::size_t Idx, typename Head, typename... Tail>
