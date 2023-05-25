@@ -820,7 +820,7 @@ matrix_test(RandomEngine& g, const size_t num_tests) noexcept
                         Matrix<T, N, M, array>(generate<MN>(divdist, g)) *
                             sign_gen());
         },
-        transpose ^ dot,
+        transpose | dot,
         [&](const auto& testing, const auto& feed) noexcept
         {
             const auto& ab_t   = testing;

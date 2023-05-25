@@ -68,7 +68,7 @@
         }                                                                 \
         template <typename Rhs>                                           \
         constexpr decltype(auto)                                          \
-        operator^(const Rhs& rhs) const noexcept                          \
+        operator|(const Rhs& rhs) const noexcept                          \
         {                                                                 \
             return compose(*this, rhs);                                   \
         }                                                                 \
@@ -124,7 +124,7 @@
         }                                                                \
         template <typename Rhs>                                          \
         constexpr decltype(auto)                                         \
-        operator^(const Rhs& rhs) const noexcept                         \
+        operator|(const Rhs& rhs) const noexcept                         \
         {                                                                \
             return compose(*this, rhs);                                  \
         }                                                                \
@@ -175,7 +175,7 @@
         }                                              \
         template <typename Rhs>                        \
         constexpr decltype(auto)                       \
-        operator^(const Rhs& rhs) const noexcept       \
+        operator|(const Rhs& rhs) const noexcept       \
         {                                              \
             return compose(*this, rhs);                \
         }                                              \
@@ -212,7 +212,7 @@
         }                                              \
         template <typename Rhs>                        \
         constexpr decltype(auto)                       \
-        operator^(const Rhs& rhs) const noexcept       \
+        operator|(const Rhs& rhs) const noexcept       \
         {                                              \
             return compose(*this, rhs);                \
         }                                              \
@@ -1247,7 +1247,7 @@ struct multiplies_fn
     }
     template <typename Rhs>
     constexpr decltype(auto)
-    operator^(const Rhs& rhs) const noexcept
+    operator|(const Rhs& rhs) const noexcept
     {
         return compose(*this, rhs);
     }
@@ -1483,7 +1483,7 @@ struct static_pow_fn
 
     template <typename Rhs>
     constexpr decltype(auto)
-    operator^(const Rhs& rhs) const noexcept
+    operator|(const Rhs& rhs) const noexcept
     {
         return compose(*this, rhs);
     }
@@ -1513,7 +1513,7 @@ struct min_fn
 
     template <typename Rhs>
     constexpr decltype(auto)
-    operator^(const Rhs& rhs) const noexcept
+    operator|(const Rhs& rhs) const noexcept
     {
         return compose(*this, rhs);
     }
@@ -1543,7 +1543,7 @@ struct max_fn
 
     template <typename Rhs>
     constexpr decltype(auto)
-    operator^(const Rhs& rhs) const noexcept
+    operator|(const Rhs& rhs) const noexcept
     {
         return compose(*this, rhs);
     }
@@ -1574,7 +1574,7 @@ struct downsample_fn
 
     template <typename Rhs>
     constexpr decltype(auto)
-    operator^(const Rhs& rhs) const noexcept
+    operator|(const Rhs& rhs) const noexcept
     {
         return compose(*this, rhs);
     }

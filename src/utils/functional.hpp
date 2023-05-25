@@ -20,7 +20,7 @@
         }                                             \
         template <typename Rhs>                       \
         constexpr decltype(auto)                      \
-        operator^(const Rhs& rhs) const noexcept      \
+        operator|(const Rhs& rhs) const noexcept      \
         {                                             \
             return compose(*this, rhs);               \
         }                                             \
