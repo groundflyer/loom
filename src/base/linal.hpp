@@ -17,7 +17,8 @@
 #include <type_traits>
 #include <utility>
 
-// Generates code for arithmetic binary operators for both Vector and Matrix.
+/// @brief Generate code for arithmetic binary operators of lucid::Vector and
+/// lucid::Matrix.
 #define MAKE_BINARY_OP(FUNC, OP)                                          \
     namespace fn                                                          \
     {                                                                     \
@@ -97,6 +98,7 @@
         return FUNC(lhs, rhs);                                            \
     }
 
+/// @brief Generate code for unary operators of lucid::Vector and lucid::Matrix.
 #define MAKE_UNARY_OP(FUNC, OP)                                          \
     namespace fn                                                         \
     {                                                                    \
@@ -151,6 +153,7 @@
         return FUNC(lhs);                                                \
     }
 
+/// @brief Generate code for lucid::Vector'ised analogue of @p FUNC.
 #define VEC_NAMED_FN_OBJ(NAME, FUNC)                   \
     namespace fn                                       \
     {                                                  \
@@ -183,8 +186,11 @@
     }                                                  \
     constexpr fn::NAME##_fn NAME{};
 
+/// @brief Same as VEC_NAMED_FN_OBJ, but @p FUNC as the @p NAME.
 #define VEC_FN_OBJ(FUNC) VEC_NAMED_FN_OBJ(FUNC, FUNC)
 
+/// @brief Same as VEC_FN_OBJ, but when
+/// static_math analogue of @p FUNC is also available.
 #define VEC_NAMED_FN_OBJ_SMATH(FUNC)                   \
     namespace fn                                       \
     {                                                  \
@@ -1127,7 +1133,8 @@ flat_ref(const Matrix<T, M, N, Container>& m) noexcept
 }
 
 /// @brief Apply function @p f to corresponding elements of input vectors @p vs.
-/// @return Vector containing results of application @p f to the elements of input.
+/// @return Vector containing results of application @p f to the elements of
+/// input.
 /// @p f accepts as many arguments as the number of input vectors @p vs.
 /// @p Vectors must be of the same dimensionality.
 template <typename F, typename... Vectors>
@@ -1161,7 +1168,8 @@ reduce(BinaryOperation                binary_op,
     return init;
 }
 
-/// @brief Efficient shortcut for @code{.cpp} reduce(binary_op2, transform(binary_op1, a, b), init) @endcode
+/// @brief Efficient shortcut for @code{.cpp} reduce(binary_op2,
+/// transform(binary_op1, a, b), init) @endcode
 /// @param binary_op1 operator for transform.
 /// @param binary_op2 operator for reduce.
 template <typename T1,
@@ -1446,7 +1454,8 @@ avg(const Vector<T, N, Container>& a) noexcept
 }
 
 /// @brief Roll vector elements.
-/// @param shift the number of places which elements are shifted. The sign defines the direction, i.e. (-) to the left otherwise to the right.
+/// @param shift the number of places which elements are shifted. The sign
+/// defines the direction, i.e. (-) to the left otherwise to the right.
 template <typename T,
           std::size_t N,
           template <typename, std::size_t>
@@ -1549,7 +1558,8 @@ struct max_fn
     }
 };
 
-template <typename Int> requires std::is_integral_v<Int>
+template <typename Int>
+    requires std::is_integral_v<Int>
 struct downsample_fn
 {
     template <typename Float>
@@ -1608,7 +1618,7 @@ det(const Matrix<T, M, M, Container>& m) noexcept
     return detail::det_impl(m, std::make_index_sequence<fac(M)>{});
 }
 
-/// @brief Contructs minor matrix by removing @p I row, @p J column.
+/// @brief Contructs minor matrix by removing @p I row and @p J column.
 /// @tparam I row to remove.
 /// @tparam J column to remove.
 template <std::size_t I,
@@ -1619,7 +1629,8 @@ template <std::size_t I,
           template <typename, std::size_t>
           typename Container>
 constexpr Matrix<T, M - 1, N - 1, std::array>
-minor_matrix(const Matrix<T, M, N, Container>& m) noexcept requires (I < M || J < N)
+minor_matrix(const Matrix<T, M, N, Container>& m) noexcept
+    requires(I < M || J < N)
 {
     return std::make_from_tuple<Matrix<T, M - 1, N - 1, std::array>>(
         detail::minor_matrix_impl<I, J>(m, std::make_index_sequence<M - 1>{}));
@@ -1712,10 +1723,10 @@ template <unsigned exp>
 constexpr fn::static_pow_fn<exp> static_pow;
 
 /// @brief Select the smallest corresponding elements of two vectors or numbers.
-constexpr fn::min_fn             min;
+constexpr fn::min_fn min;
 
 /// @brief Select the biggest corresponding elements of two vectors or numbers.
-constexpr fn::max_fn             max;
+constexpr fn::max_fn max;
 
 /// @brief Downsample floating point value to integer value with maximum integer
 /// equal to 1.0 of floating point value.

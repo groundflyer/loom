@@ -1,12 +1,16 @@
 // -*- C++ -*-
-// functional.hpp
-//
+/// @file functional.hpp
+/// @brief Utilities for functional programming.
 
 #pragma once
 
 #include <functional>
 #include <type_traits>
 
+/// @brief Declare a composable functional object using @p FUNC as its
+/// implementation.
+/// @param NAME used as variable name.
+/// @param FUNC will be called internally.
 #define MK_NAMED_FN_OBJ(NAME, FUNC)                   \
     namespace fn                                      \
     {                                                 \
@@ -28,6 +32,7 @@
     }                                                 \
     constexpr fn::NAME##_fn NAME{};
 
+/// @brief Same as MK_NAMED_FN_OBJ, but @p FUNC is also used as the name.
 #define MK_FN_OBJ(FUNC) MK_NAMED_FN_OBJ(FUNC, FUNC)
 
 namespace lucid
@@ -163,7 +168,7 @@ struct identity_fn
 
     template <typename Rhs>
     constexpr decltype(auto)
-    operator^(const Rhs& rhs) const noexcept
+    operator|(const Rhs& rhs) const noexcept
     {
         return compose(*this, rhs);
     }
@@ -184,7 +189,7 @@ struct maker_fn
 
     template <typename Rhs>
     constexpr decltype(auto)
-    operator^(const Rhs& rhs) const noexcept
+    operator|(const Rhs& rhs) const noexcept
     {
         return compose(*this, rhs);
     }
@@ -202,21 +207,27 @@ struct tuple_maker_fn
 
     template <typename Rhs>
     constexpr decltype(auto)
-    operator^(const Rhs& rhs) const noexcept
+    operator|(const Rhs& rhs) const noexcept
     {
         return compose(*this, rhs);
     }
 };
 } // namespace fn
 
-inline constexpr fn::identity_fn identity;
+/// @brief Identity function, i.e. it returns its argument.
+constexpr fn::identity_fn identity;
 
+/// @brief Builds an object of type @p T from provided arguments.
+/// @tparam T class to build object of.
+/// @tparam list_init if true uses list initialisation.
 template <typename T, bool list_init = false>
-inline constexpr fn::maker_fn<T, list_init> maker;
+constexpr fn::maker_fn<T, list_init> maker;
 
+/// @brief Functional object wrapper around std::make_from_tuple.
 template <typename T>
-inline constexpr fn::tuple_maker_fn<T> tuple_maker;
+constexpr fn::tuple_maker_fn<T> tuple_maker;
 
+/// @brief Accumulate @p args with @p op.
 template <typename BinaryOp, typename Init, typename... Args>
 constexpr decltype(auto)
 fold(BinaryOp&& op, Init&& init, Args&&... args) noexcept
@@ -226,7 +237,7 @@ fold(BinaryOp&& op, Init&& init, Args&&... args) noexcept
         .operand;
 }
 
-// compose(a, b, c) = a(b(c()))
+/// @brief Compose functions, e.g. compose(a, b, c) = a(b(c())).
 template <typename... Fs>
 constexpr decltype(auto)
 compose(Fs&&... fs)
@@ -234,6 +245,8 @@ compose(Fs&&... fs)
     return fold(detail::ComposeOp{}, std::forward<Fs>(fs)...);
 }
 
+/// @brief Create a functional object that takes its two arguments in the
+/// reverse order of @p f.
 template <typename BinaryF>
 constexpr decltype(auto)
 flip(BinaryF f) noexcept
@@ -242,18 +255,20 @@ flip(BinaryF f) noexcept
     { return std::invoke(f, lhs, rhs); };
 }
 
-template <std::size_t Idx, typename Head, typename... Tail>
+/// @brief Get the @p Ith argument.
+template <std::size_t I, typename Head, typename... Tail>
 constexpr decltype(auto)
 select(Head&& head, Tail&&... tail) noexcept
+    requires(I <= sizeof...(tail))
 {
-    static_assert(Idx <= sizeof...(tail), "Index is too big");
-
-    if constexpr(Idx == 0ul)
+    if constexpr(I == 0ul)
         return head;
     else
-        return select<Idx - 1ul>(tail...);
+        return select<I - 1ul>(tail...);
 }
 
+/// @brief Invoke @p f with @p arg treating @p arg as tuple of arguments if
+/// possible.
 template <typename F, typename Arg>
 constexpr decltype(auto)
 maybe_apply(F&& f, Arg&& arg)
@@ -262,6 +277,6 @@ maybe_apply(F&& f, Arg&& arg)
     if constexpr(helper::is_tuple && helper::template is_invocable<F>)
         return std::apply(f, arg);
     else
-        return f(std::forward<Arg>(arg));
+        return std::invoke(f, arg);
 }
 } // namespace lucid
