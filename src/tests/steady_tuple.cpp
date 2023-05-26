@@ -35,7 +35,8 @@ struct B
 int
 main()
 {
-    int                       ret = 0;
+    int ret = 0;
+
     lucid::steady_tuple<A, B> t1(lucid::uniform_init, 34, 0.5f);
     const A&                  a1 = t1.template get<0>();
     const B&                  b1 = t1.template get<1>();
@@ -59,5 +60,6 @@ main()
     const B&                  b3 = t3.template get<B>();
     ret += a3.a != b3.a;
     ret += a3.b != b3.b;
+
     return ret;
 }

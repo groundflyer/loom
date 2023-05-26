@@ -1,5 +1,6 @@
 // -*- C++ -*-
 /// @file steady_tuple.hpp
+/// @brief Tuple for non-default-constructible objects.
 
 #pragma once
 
@@ -100,6 +101,14 @@ class steady_tuple_impl<std::index_sequence<Idxs...>, Ts...> :
     {
     }
 };
+
+template <typename F, typename Tuple, std::size_t... I>
+constexpr decltype(auto)
+apply_impl(F&& f, Tuple&& tuple, std::index_sequence<I...>) noexcept(
+    noexcept(std::invoke(std::forward<F>(f), tuple.template get<I>()...)))
+{
+    return std::invoke(std::forward<F>(f), tuple.template get<I>()...);
+}
 } // namespace detail
 
 /// @brief Tuple class template
@@ -191,4 +200,32 @@ class steady_tuple
             .get();
     }
 };
+
+template <typename Tuple>
+struct tuple_size;
+
+template <typename... Ts>
+struct tuple_size<steady_tuple<Ts...>> :
+    std::integral_constant<std::size_t, sizeof...(Ts)>
+{
+};
+
+/// @brief The number of elements in steady_tuple.
+template <typename Tuple>
+inline constexpr std::size_t tuple_size_v = tuple_size<Tuple>::value;
+
+/// @brief std::apply analogue for steady_tuple.
+template <typename F, typename Tuple>
+constexpr decltype(auto)
+apply(F&& f, Tuple&& tuple) noexcept(noexcept(detail::apply_impl(
+    std::forward<F>(f),
+    std::forward<Tuple>(tuple),
+    std::make_index_sequence<tuple_size_v<std::decay_t<Tuple>>>{})))
+{
+    return detail::apply_impl(
+        std::forward<F>(f),
+        std::forward<Tuple>(tuple),
+        std::make_index_sequence<tuple_size_v<std::decay_t<Tuple>>>{});
+}
+
 } // namespace lucid

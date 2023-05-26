@@ -1,6 +1,6 @@
 // -*- C++ -*-
-// seq.hpp
-//
+/// @file tuple.hpp
+/// @brief Auxiliary functions to work with tuples.
 
 #pragma once
 
@@ -34,7 +34,7 @@ visit_impl(const std::size_t case_,
 {
     if(Idx == case_)
         return std::invoke(std::forward<Visitor>(visitor),
-                           std::get<Idx>(tuple));
+                           std::get<Idx>(std::forward<Tuple>(tuple)));
 
     if constexpr(Idx < std::tuple_size_v<std::decay_t<Tuple>> - 1)
         return visit_impl<Idx + 1>(case_,
@@ -62,20 +62,6 @@ array_cat_impl(const std::array<T, N1>& first,
                std::index_sequence<Is...>) noexcept
 {
     return std::array<T, N1 + N2>{array_cat_idx<Is>(first, second)...};
-}
-
-template <typename F, typename Tuple, std::size_t... I>
-constexpr decltype(auto)
-apply_impl(F&& f, Tuple&& tuple, std::index_sequence<I...>) noexcept
-{
-    return std::invoke(f, tuple.template get<I>()...);
-}
-
-template <typename F, typename Tuple, std::size_t... I>
-constexpr decltype(auto)
-apply_impl(F&& f, Tuple& tuple, std::index_sequence<I...>) noexcept
-{
-    return std::invoke(f, tuple.template get<I>()...);
 }
 
 template <typename F, typename Tuple, std::size_t... I>
@@ -142,7 +128,7 @@ constexpr decltype(auto)
 visit(const std::size_t case_,
       Visitor&&         visitor,
       Tuple&&           tuple,
-      Default&&         defval)
+      Default&&         defval) noexcept
 {
     return detail::visit_impl<0>(case_,
                                  std::forward<Visitor>(visitor),
@@ -191,33 +177,18 @@ repeat_to_array(const T& value) noexcept
                          repeat_to_array<(N - 1)>(value));
 }
 
-/// @brief Make an array of size @p N consisting of elements made by applying @p
-/// g to @p args.
+/// @brief Make an array of size @p N consisting of elements
+/// made by applying @p g to @p args.
 template <size_t N, typename G, typename... Args>
 constexpr std::array<std::invoke_result_t<G, Args...>, N>
 generate(G&& g, Args&&... args) noexcept
 {
     std::array<std::invoke_result_t<G, Args...>, N> ret{};
 
-    for(auto& v: ret) v = std::invoke(g, args...);
+    for(auto& v: ret)
+        v = std::invoke(std::forward<G>(g), std::forward<Args>(args)...);
 
     return ret;
-}
-
-template <typename F, typename... Ts, template <typename...> typename Tuple>
-constexpr decltype(auto)
-apply(F&& f, Tuple<Ts...>&& tuple)
-{
-    return detail::apply_impl(f,
-                              std::forward<Tuple<Ts...>>(tuple),
-                              std::index_sequence_for<Ts...>{});
-}
-
-template <typename F, typename... Ts, template <typename...> typename Tuple>
-constexpr decltype(auto)
-apply(F&& f, Tuple<Ts...>& tuple) noexcept
-{
-    return detail::apply_impl(f, tuple, std::index_sequence_for<Ts...>{});
 }
 
 /// @brief Invoke @p F on every element of @p tuple.
