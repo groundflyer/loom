@@ -412,7 +412,7 @@ using repeat = typename detail::repeat<N, Ts...>::type;
 
 /// @brief Length of type_sequence.
 template <typename List>
-constexpr std::size_t length = detail::length<List>::value;
+inline constexpr std::size_t length = detail::length<List>::value;
 
 /// @brief Extract the @p Ith class from @p List.
 template <std::size_t I, typename List>
@@ -432,11 +432,11 @@ using tail = typename detail::tail<List>::type;
 
 /// @brief Check whether @p T occur in @p List.
 template <typename T, typename List>
-constexpr bool elem = detail::elem<T, List>::value;
+inline constexpr bool elem = detail::elem<T, List>::value;
 
 /// @brief The index of the first element which is the same as @p T.
 template <typename T, typename List>
-constexpr std::size_t index = detail::index<T, List>::value;
+inline constexpr std::size_t index = detail::index<T, List>::value;
 
 /// @brief std::index_sequence for @p List.
 template <typename List>
@@ -489,7 +489,7 @@ using concat = foldr<join, type_sequence<>, List>;
 
 /// @brief Check whether the classes of @p List are the same.
 template <typename List>
-constexpr bool same = detail::same<List>::value;
+inline constexpr bool same = detail::same<List>::value;
 
 /// @brief Considering the classes of type_sequence @p Fs as functions
 /// get the list of return types by applying the functions to
@@ -502,7 +502,7 @@ using result_of = typename detail::result_of<Fs, Args...>;
 
 /// @brief Check if there are duplicates in @p List.
 template <typename List>
-constexpr bool has_duplicates = detail::has_duplicates<List>::value;
+inline constexpr bool has_duplicates = detail::has_duplicates<List>::value;
 
 /// @brief Filter @p List elements with @p F.
 ///
@@ -512,7 +512,7 @@ using filter = typename detail::filter<F, List>::type;
 
 /// @brief Check if @p List is empty.
 template <typename List>
-constexpr bool empty = length<List> == 0;
+inline constexpr bool empty = length<List> == 0;
 
 /// @brief Invoke @p f with each class of @p List as template parameter.
 template <typename F, typename... Ts>
@@ -810,19 +810,19 @@ using append = nappend<List, 1, Val>;
 
 /// @brief Length of an std::integer_sequence.
 template <typename List>
-constexpr std::size_t length = detail::length<List>::value;
+inline constexpr std::size_t length = detail::length<List>::value;
 
 /// @brief Extract the @p Ith elementh from @p List.
 template <std::size_t I, typename List>
-constexpr auto at = detail::at<I, List>::value;
+inline constexpr auto at = detail::at<I, List>::value;
 
 /// @brief Extract the first element from @p List.
 template <typename List>
-constexpr auto head = at<0, List>;
+inline constexpr auto head = at<0, List>;
 
 /// @brief Extract the last element from @p List.
 template <typename List>
-constexpr auto last = at<length<List> - 1, List>;
+inline constexpr auto last = at<length<List> - 1, List>;
 
 /// @brief Extract the elements after the head of @p list as type_sequence.
 template <typename List>
@@ -830,11 +830,11 @@ using tail = typename detail::tail<List>::type;
 
 /// @brief Check whether @p X occur in @p List.
 template <auto X, typename List>
-constexpr bool elem = detail::elem<X, List>::value;
+inline constexpr bool elem = detail::elem<X, List>::value;
 
 /// @brief The index of the first element which equals @p X.
 template <auto X, typename List>
-constexpr std::size_t index = detail::index<X, List>::value;
+inline constexpr std::size_t index = detail::index<X, List>::value;
 
 /// @brief std::index_sequence for @p List.
 template <typename List>
@@ -858,15 +858,15 @@ using drop = typename detail::drop<N, List>::type;
 
 /// @brief Convert std::integer_sequence into C array.
 template <typename List>
-constexpr auto array = detail::array<List>::value;
+inline constexpr auto array = detail::array<List>::value;
 
 /// @brief Convert std::integer_sequence into std::array.
 template <typename List>
-constexpr auto stdarray = detail::stdarray<List>::value;
+inline constexpr auto stdarray = detail::stdarray<List>::value;
 
 /// @brief Check if there are duplicates in @p List.
 template <typename List>
-constexpr bool has_duplicates = detail::has_duplicates<List>::value;
+inline constexpr bool has_duplicates = detail::has_duplicates<List>::value;
 
 template <std::size_t N, std::size_t I>
 struct lehmer_code_impl

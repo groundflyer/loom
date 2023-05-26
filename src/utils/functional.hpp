@@ -30,7 +30,7 @@
         }                                             \
     };                                                \
     }                                                 \
-    constexpr fn::NAME##_fn NAME{};
+    inline constexpr fn::NAME##_fn NAME{};
 
 /// @brief Same as MK_NAMED_FN_OBJ, but @p FUNC is also used as the name.
 #define MK_FN_OBJ(FUNC) MK_NAMED_FN_OBJ(FUNC, FUNC)
@@ -215,17 +215,17 @@ struct tuple_maker_fn
 } // namespace fn
 
 /// @brief Identity function, i.e. it returns its argument.
-constexpr fn::identity_fn identity;
+inline constexpr fn::identity_fn identity;
 
 /// @brief Builds an object of type @p T from provided arguments.
 /// @tparam T class to build object of.
 /// @tparam list_init if true uses list initialisation.
 template <typename T, bool list_init = false>
-constexpr fn::maker_fn<T, list_init> maker;
+inline constexpr fn::maker_fn<T, list_init> maker;
 
 /// @brief Functional object wrapper around std::make_from_tuple.
 template <typename T>
-constexpr fn::tuple_maker_fn<T> tuple_maker;
+inline constexpr fn::tuple_maker_fn<T> tuple_maker;
 
 /// @brief Accumulate @p args with @p op.
 template <typename BinaryOp, typename Init, typename... Args>

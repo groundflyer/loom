@@ -132,7 +132,7 @@
         }                                                                \
     };                                                                   \
     }                                                                    \
-    static constexpr fn::FUNC##_fn FUNC{};                               \
+    inline constexpr fn::FUNC##_fn FUNC{};                               \
     template <typename T,                                                \
               std::size_t N,                                             \
               template <typename, std::size_t>                           \
@@ -184,7 +184,7 @@
         }                                              \
     };                                                 \
     }                                                  \
-    constexpr fn::NAME##_fn NAME{};
+    inline constexpr fn::NAME##_fn NAME{};
 
 /// @brief Same as VEC_NAMED_FN_OBJ, but @p FUNC as the @p NAME.
 #define VEC_FN_OBJ(FUNC) VEC_NAMED_FN_OBJ(FUNC, FUNC)
@@ -224,7 +224,7 @@
         }                                              \
     };                                                 \
     }                                                  \
-    constexpr fn::FUNC##_fn FUNC{};
+    inline constexpr fn::FUNC##_fn FUNC{};
 
 namespace lucid
 {
@@ -1720,18 +1720,18 @@ inverse(const Matrix<T, M, M, Container>& a) noexcept
 /// @brief Rise vector elements to a constant power.
 /// @tparam exp power exponent.
 template <unsigned exp>
-constexpr fn::static_pow_fn<exp> static_pow;
+inline constexpr fn::static_pow_fn<exp> static_pow;
 
 /// @brief Select the smallest corresponding elements of two vectors or numbers.
-constexpr fn::min_fn min;
+inline constexpr fn::min_fn min;
 
 /// @brief Select the biggest corresponding elements of two vectors or numbers.
-constexpr fn::max_fn max;
+inline constexpr fn::max_fn max;
 
 /// @brief Downsample floating point value to integer value with maximum integer
 /// equal to 1.0 of floating point value.
 template <typename Int>
-constexpr fn::downsample_fn<Int> downsample;
+inline constexpr fn::downsample_fn<Int> downsample;
 
 MK_FN_OBJ(dot)
 MK_FN_OBJ(cross)
