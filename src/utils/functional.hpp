@@ -212,6 +212,15 @@ struct tuple_maker_fn
         return compose(*this, rhs);
     }
 };
+
+struct sink_fn
+{
+    template <typename... Ts>
+    constexpr void
+    operator()(Ts&&...) const noexcept
+    {
+    }
+};
 } // namespace fn
 
 /// @brief Identity function, i.e. it returns its argument.
@@ -226,6 +235,9 @@ inline constexpr fn::maker_fn<T, list_init> maker;
 /// @brief Functional object wrapper around std::make_from_tuple.
 template <typename T>
 inline constexpr fn::tuple_maker_fn<T> tuple_maker;
+
+/// @brief Doesn't do anything.
+inline constexpr fn::sink_fn sink;
 
 /// @brief Accumulate @p args with @p op.
 template <typename BinaryOp, typename Init, typename... Args>
