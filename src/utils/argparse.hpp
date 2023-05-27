@@ -237,7 +237,8 @@ struct FewArgumentsException
     std::string_view keyword;
 };
 
-/// @brief Thrown when parser encounters a value while expecting a -(-)key.
+/// @brief Thrown when parser encounters a value while expecting a key
+/// or a keyword.
 struct UnexpectedValue
 {
     std::string_view value;
@@ -247,6 +248,8 @@ struct HelpRequest
 {
 };
 
+/// @brief Defines requirements for callables to convert
+/// std::string_view to a value.
 template <typename T>
 concept Converter = std::is_invocable_v<T, std::string_view> && !
 std::is_void_v<std::invoke_result_t<T, std::string_view>>;
@@ -316,7 +319,7 @@ class ArgsRange : public ranges::view_facade<ArgsRange>
     }
 };
 
-/// @brief Holds pointer to an argument of an option.
+/// @brief Holds pointer to words with values for an option.
 template <Converter C, std::size_t nvals>
 class Binding
 {
@@ -480,7 +483,7 @@ class Binding<C, -1ul>
     }
 };
 
-/// @brief Holds pointer to positional argument.
+/// @brief Holds pointer to words with values for a positional argument.
 template <Converter C, std::size_t nvals>
 class PositionalBinding
 {
@@ -616,7 +619,7 @@ struct Option<Key, Keyword, C, -1ul>
     }
 };
 
-/// @brief Describes positional argument.
+/// @brief Describes a positional argument.
 template <Converter C, std::size_t nvals>
 struct Positional
 {
@@ -694,7 +697,7 @@ option(C                             converter,
     return {converter, def_val, doc, var};
 }
 
-/// @brief Create a multi-field, one that has @p N fields to set.
+/// @brief Create a multi-field Option with constant size of fields.
 /// @tparam Key ASCII character for Unix style argument setting.
 /// @tparam s string for GNU style argument setting.
 /// @tparam N the number of fields.
@@ -772,7 +775,7 @@ option_list(C                      converter,
 }
 
 /// @brief Create a flag option, i.e. one that holds a boolean value
-/// so it doesn't require argument when being set.
+/// thus not requiring an argument when being set.
 template <char Key, StringLiteral s>
 consteval Option<Key, wrap_string<s>, detail::FlagConverter, 1ul>
 flag(const bool def_val, const std::string_view doc) noexcept
@@ -844,16 +847,17 @@ tokenize(const Key key, const std::tuple<Options...>) noexcept
     return detail::tokenize_impl<0ul, Options...>(key);
 }
 
-template <typename Bindings, typename Options>
-struct ParseResults;
-
 /// @brief Holds results of parsing.
+template <typename Bindings, typename Options>
+class ParseResults;
+
 template <typename OptBindings, typename PosBindings, typename Options>
-struct ParseResults<std::pair<OptBindings, PosBindings>, Options>
+class ParseResults<std::pair<OptBindings, PosBindings>, Options>
 {
     OptBindings opt_bindings;
     PosBindings pos_bindings;
 
+  public:
     constexpr ParseResults(const std::pair<OptBindings, PosBindings>& _bindings,
                            const Options&) noexcept :
         opt_bindings(_bindings.first),
@@ -885,10 +889,11 @@ struct ParseResults<std::pair<OptBindings, PosBindings>, Options>
 
 /// @brief Holds results of parsing when positionals are not defined.
 template <typename... OptBindings, typename Options>
-struct ParseResults<std::tuple<OptBindings...>, Options>
+class ParseResults<std::tuple<OptBindings...>, Options>
 {
     std::tuple<OptBindings...> opt_bindings;
 
+  public:
     constexpr ParseResults(const std::tuple<OptBindings...>& _bindings,
                            const Options&) noexcept :
         opt_bindings(_bindings)
@@ -918,6 +923,7 @@ template <typename... OptBindings, typename Options>
 ParseResults(const std::tuple<OptBindings...>&, const Options&)
     -> ParseResults<std::tuple<OptBindings...>, Options>;
 
+/// @brief Set @p token'th binding value to @p word.
 template <typename... Bindings, typename Word>
 constexpr auto
 set_binding(std::tuple<Bindings...>& bindings,
@@ -928,21 +934,27 @@ set_binding(std::tuple<Bindings...>& bindings,
         token,
         [&](auto& binding) noexcept { binding.set(word); },
         bindings,
-        []() noexcept {});
+        sink);
 }
 
+// next structs corresponds to word patterns we encounter during parsing
+
+/// @brief Corresponds to a "-k" (specialized with char)
+/// and "--keyword" (specialized with std::string_view) word patterns.
 template <typename KeyType>
 struct Key
 {
     KeyType value;
 };
 
+/// @brief Corresponds to "--keyword=value" word pattern.
 struct KeywordValue
 {
     std::string_view keyword;
     std::string_view value;
 };
 
+/// @brief Corresponds to any word that doesn't start with '-'
 struct Value
 {
     char** data;
@@ -954,16 +966,25 @@ struct Value
     }
 };
 
+/// @brief Corresponds to "-abc..." word pattern, where "bc..."
+/// could be keys or a value.
 struct KeyCharSeq
 {
     std::string_view seq;
 };
 
+/// @brief Corresponds to "-k" pattern.
 using KeyChar = Key<char>;
+
+/// @brief Corresponds to "--keyword" pattern.
 using Keyword = Key<std::string_view>;
+
+/// @brief ADT for parsed word.
 using ParsedWord =
     std::variant<KeyChar, KeyCharSeq, Keyword, KeywordValue, Value>;
 
+/// @brief Match patterns in string @p data to serialize it to corresponding
+/// data type.
 ParsedWord
 arg_case(char** data) noexcept
 {
@@ -1005,6 +1026,7 @@ arg_case(char** data) noexcept
     return ret;
 }
 
+/// @brief Generate Binding's from options.
 template <typename... Options>
 constexpr auto
 make_bindings(const std::tuple<Options...>& options) noexcept
@@ -1014,6 +1036,8 @@ make_bindings(const std::tuple<Options...>& options) noexcept
                       options);
 }
 
+/// @brief Updates parser's state processing data from matched patterns
+/// on encountered words.
 template <typename OptDesc, typename PosDesc>
 class Visitor
 {
@@ -1112,6 +1136,8 @@ class Visitor
     Visitor&
     operator=(const Visitor&) = delete;
 
+    /// @brief Check if there is a hanging option, i.e. the option keyword
+    /// has encountered, but the option value has not.
     std::string_view
     check_opt() const noexcept
     {
@@ -1122,6 +1148,7 @@ class Visitor
         return "";
     }
 
+    /// @brief Check if there are unset positional arguments.
     bool
     check_pos() const noexcept
     {
@@ -1137,7 +1164,7 @@ class Visitor
             return opt_state.bindings;
     }
 
-    // just "-k"
+    /// @brief Processes "-k" and "--keyword" patterns.
     template <typename T>
     constexpr void
     operator()(const Key<T>& key)
@@ -1148,15 +1175,12 @@ class Visitor
 
         // is flag
         if(new_nvals == 0ul)
-
             set_flag(new_token);
-
         else
-
             reclaim_opt_later(new_token, new_nvals);
     }
 
-    // --keyword=value
+    /// @brief Processes KeywordValue.
     constexpr void
     operator()(const KeywordValue& keyval)
     {
@@ -1170,7 +1194,7 @@ class Visitor
         reset_opt();
     }
 
-    // just "value"
+    /// @brief Processes Value.
     constexpr void
     operator()(const Value& value)
     {
@@ -1213,7 +1237,7 @@ class Visitor
                 std::mem_fn(&Visitor::reset_opt));
     }
 
-    // -abcd where "bcd" could be keys or a value
+    /// @brief Processes KeyCharSeq.
     constexpr void
     operator()(const KeyCharSeq& value)
     {
@@ -1259,6 +1283,8 @@ class Visitor
     }
 };
 
+/// @brief Attempt to put a newline if the desired line width reached.
+/// @return current column.
 std::size_t
 try_newline(const std::size_t line_width,
             const std::size_t margin,
@@ -1274,6 +1300,8 @@ try_newline(const std::size_t line_width,
     return column;
 }
 
+/// @brief Prints @p var in angle brackets.
+/// @return current column.
 template <typename O>
 std::size_t
 print_var(const O&,
@@ -1296,6 +1324,8 @@ print_var(const O&,
     return column;
 }
 
+/// @brief Print one or more variables in angle brackets.
+/// @return current column.
 template <bool t, typename O, typename LB>
 std::size_t
 print_vars(const O&    option,
@@ -1318,7 +1348,7 @@ print_vars(const O&    option,
     return column;
 }
 
-/// @brief Prints help message to @p file.
+/// @brief Prints formatted help message to @p file.
 template <typename... Options, typename... Positionals>
 void
 show_help(std::string_view                  program_name,
@@ -1508,6 +1538,7 @@ show_help(std::string_view                  program_name,
     }
 }
 
+/// @brief Beautify program name from argv[0].
 std::string_view
 make_program_name(std::string_view argv0) noexcept
 {
@@ -1633,6 +1664,7 @@ parse(const std::tuple<Options...>&     options,
     return ParseResults(visitor.get_bindings(), options);
 }
 
+/// @brief Parse command line arguments when no positional arguments required.
 template <typename... Options, typename ErrorHandler = StandardErrorHandler>
 auto
 parse(const std::tuple<Options...>& options,
