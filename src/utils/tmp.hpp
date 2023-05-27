@@ -43,17 +43,18 @@ struct type_sequence
 
 /// @brief Wraps char[@p N].
 template <size_t _N>
-struct StringLiteral
+class StringLiteral
 {
     // cut off null terminator
     static constexpr std::size_t N = _N - 1;
 
+    char value[N]{};
+
+  public:
     constexpr StringLiteral(const char (&str)[_N])
     {
         for(std::size_t i = 0; i < N; ++i) value[i] = str[i];
     }
-
-    char value[N]{};
 
     constexpr char
     operator[](const std::size_t i) const
