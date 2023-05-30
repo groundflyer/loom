@@ -22,7 +22,8 @@ namespace lucid
 /// or a static constexpr member @p value.
 ///
 /// The templates are hidden in the @p detail namespace,
-/// while type aliases and variable templates are visible.
+/// while type aliases and variable templates are visible
+/// in lucid namespace.
 /// @{
 
 /// @brief Compile-time string.
@@ -92,11 +93,6 @@ template <StringLiteral s>
 using sl2cs =
     typename detail::sl2cs_impl<s, std::make_index_sequence<s.size()>>::type;
 /// @}
-
-/// @defgroup Typelist Typelist
-/// @brief List operations on type sequences.
-/// @ingroup TMP
-/// @{
 
 namespace typelist
 {
@@ -170,10 +166,9 @@ struct at<0, type_sequence<T, Ts...>>
 };
 
 template <std::size_t I, typename T, typename... Ts>
+    requires(I < length<type_sequence<T, Ts...>>::value)
 struct at<I, type_sequence<T, Ts...>>
 {
-    static_assert(I < length<type_sequence<T, Ts...>>::value,
-                  "Index out of range");
     using type = typename at<I - 1, type_sequence<Ts...>>::type;
 };
 
@@ -195,25 +190,21 @@ struct elem<T, type_sequence<Ts...>>
     static constexpr bool value = (false || ... || std::is_same_v<T, Ts>);
 };
 
-template <std::size_t idx, typename Sought, typename T, typename... Ts>
-constexpr std::size_t
-index_impl() noexcept
-{
-    if constexpr(std::is_same_v<Sought, T>)
-        return idx;
-    else if constexpr(sizeof...(Ts) > 0ul)
-        return index_impl<idx + 1, Sought, Ts...>();
-    else
-        static_assert(sizeof...(Ts) > 0ul, "Type not found.");
-}
-
-template <typename T, typename List>
+template <std::size_t I, typename S, typename List>
 struct index;
 
-template <typename T, typename H, typename... Ts>
-struct index<T, type_sequence<H, Ts...>>
+template <std::size_t I, typename S>
+struct index<I, S, type_sequence<>>
 {
-    static constexpr std::size_t value = index_impl<0, T, H, Ts...>();
+    static constexpr std::size_t value = -1ul;
+};
+
+template <std::size_t I, typename S, typename T, typename... Ts>
+struct index<I, S, type_sequence<T, Ts...>>
+{
+    static constexpr std::size_t value =
+        std::is_same_v<S, T> ? I :
+                               index<I + 1ul, S, type_sequence<Ts...>>::value;
 };
 
 template <template <typename, typename> typename F, typename Acc, typename List>
@@ -271,10 +262,9 @@ struct take<1, type_sequence<T, Ts...>>
 };
 
 template <std::size_t N, typename T, typename... Ts>
+    requires(N <= length<type_sequence<T, Ts...>>::value)
 struct take<N, type_sequence<T, Ts...>>
 {
-    static_assert(N <= length<type_sequence<T, Ts...>>::value);
-
     using type =
         typename cons<T,
                       typename take<N - 1, type_sequence<Ts...>>::type>::type;
@@ -290,10 +280,9 @@ struct drop<1, type_sequence<T, Ts...>>
 };
 
 template <std::size_t N, typename T, typename... Ts>
+    requires(N <= length<type_sequence<T, Ts...>>::value)
 struct drop<N, type_sequence<T, Ts...>>
 {
-    static_assert(N <= length<type_sequence<T, Ts...>>::value);
-
     using type = typename drop<N - 1, type_sequence<Ts...>>::type;
 };
 
@@ -428,6 +417,11 @@ struct lookup<T, type_sequence<type_sequence<Key, Value>, Ts...>>
 };
 } // namespace detail
 
+/// @defgroup Typelist Typelist
+/// @brief List operations on type sequences.
+/// @ingroup TMP
+/// @{
+
 /// @brief Convert a class template @p Source into type_sequence.
 template <typename Source>
 using from = typename detail::from<Source>::type;
@@ -452,9 +446,9 @@ using append = join<List, type_sequence<T>>;
 template <std::size_t N, typename... Ts>
 using repeat = typename detail::repeat<N, Ts...>::type;
 
-/// @brief Length of type_sequence.
+/// @brief Number of types in @p List.
 template <typename List>
-constexpr std::size_t length = detail::length<List>::value;
+inline constexpr std::size_t length = detail::length<List>::value;
 
 /// @brief Extract the @p Ith class from @p List.
 template <std::size_t I, typename List>
@@ -474,11 +468,12 @@ using tail = typename detail::tail<List>::type;
 
 /// @brief Check whether @p T occur in @p List.
 template <typename T, typename List>
-constexpr bool elem = detail::elem<T, List>::value;
+inline constexpr bool elem = detail::elem<T, List>::value;
 
-/// @brief The index of the first element which is the same as @p T.
+/// @brief The index of the first occurence of type @p T.
+/// If there is no such type, the value is -1ul.
 template <typename T, typename List>
-constexpr std::size_t index = detail::index<T, List>::value;
+inline constexpr std::size_t index = detail::index<0ul, T, List>::value;
 
 /// @brief std::index_sequence for @p List.
 template <typename List>
@@ -531,7 +526,7 @@ using concat = foldr<join, type_sequence<>, List>;
 
 /// @brief Check whether the classes of @p List are the same.
 template <typename List>
-constexpr bool same = detail::same<List>::value;
+inline constexpr bool same = detail::same<List>::value;
 
 /// @brief Considering the classes of type_sequence @p Fs as functions
 /// get the list of return types by applying the functions to
@@ -544,7 +539,7 @@ using result_of = typename detail::result_of<Fs, Args...>;
 
 /// @brief Check if there are duplicates in @p List.
 template <typename List>
-constexpr bool has_duplicates = detail::has_duplicates<List>::value;
+inline constexpr bool has_duplicates = detail::has_duplicates<List>::value;
 
 /// @brief Remove duplicate elements from @p List.
 template <typename List>
@@ -566,7 +561,7 @@ using lookup = typename detail::lookup<Key, Map>::type;
 
 /// @brief Check if @p List is empty.
 template <typename List>
-constexpr bool empty = length<List> == 0;
+inline constexpr bool empty = length<List> == 0;
 
 /// @brief Invoke @p f with each class of @p List as template parameter.
 template <typename F, typename... Ts>
@@ -582,10 +577,6 @@ for_each(F f, type_sequence<Ts...>) noexcept((true &&
 
 namespace intlist
 {
-/// @defgroup Intlist Intlist
-/// @brief Compile-time list operations on std::integer_sequence.
-/// @ingroup TMP
-/// @{
 namespace detail
 {
 template <auto Val, typename List>
@@ -656,10 +647,9 @@ struct at<0, std::integer_sequence<Int, Head, Vals...>>
 };
 
 template <std::size_t I, typename Int, Int Head, Int... Vals>
+    requires(I < length<std::integer_sequence<Int, Head, Vals...>>::value)
 struct at<I, std::integer_sequence<Int, Head, Vals...>>
 {
-    static_assert(I < length<std::integer_sequence<Int, Head, Vals...>>::value,
-                  "Index out of range");
     static constexpr Int value =
         at<I - 1, std::integer_sequence<Int, Vals...>>::value;
 };
@@ -682,25 +672,21 @@ struct elem<V, std::integer_sequence<Int, Is...>>
     static constexpr bool value = (false || ... || (V == Is));
 };
 
-template <std::size_t idx, typename Int, Int S, Int X, Int... Is>
-constexpr std::size_t
-index_impl() noexcept
-{
-    if constexpr(S == X)
-        return idx;
-    else if constexpr(sizeof...(Is) > 0ul)
-        return index_impl<idx + 1, Int, S, Is...>();
-    else
-        static_assert(sizeof...(Is) > 0ul, "Type not found.");
-}
-
-template <auto Val, typename List>
+template <std::size_t I, auto S, typename List>
 struct index;
 
-template <typename Int, Int Val, Int... Is>
-struct index<Val, std::integer_sequence<Int, Is...>>
+template <std::size_t I, typename Int, Int S>
+struct index<I, S, std::integer_sequence<Int>>
 {
-    static constexpr std::size_t value = index_impl<0, Int, Val, Is...>();
+    static constexpr std::size_t value = -1ul;
+};
+
+template <std::size_t I, typename Int, Int S, Int X, Int... Xs>
+struct index<I, S, std::integer_sequence<Int, X, Xs...>>
+{
+    static constexpr std::size_t value =
+        S == X ? I :
+                 index<I + 1ul, S, std::integer_sequence<Int, Xs...>>::value;
 };
 
 template <typename List>
@@ -744,10 +730,9 @@ struct take<1, std::integer_sequence<Int, I, Is...>>
 };
 
 template <std::size_t N, typename Int, Int I, Int... Is>
+    requires(N <= length<std::integer_sequence<Int, I, Is...>>::value)
 struct take<N, std::integer_sequence<Int, I, Is...>>
 {
-    static_assert(N <= length<std::integer_sequence<Int, I, Is...>>::value);
-
     using type = typename cons<
         I,
         typename take<N - 1, std::integer_sequence<Int, Is...>>::type>::type;
@@ -763,10 +748,9 @@ struct drop<1, std::integer_sequence<Int, I, Is...>>
 };
 
 template <std::size_t N, typename Int, Int I, Int... Is>
+    requires(N <= length<std::integer_sequence<Int, I, Is...>>::value)
 struct drop<N, std::integer_sequence<Int, I, Is...>>
 {
-    static_assert(N <= length<std::integer_sequence<Int, I, Is...>>::value);
-
     using type = typename drop<N - 1, std::integer_sequence<Int, Is...>>::type;
 };
 
@@ -854,6 +838,11 @@ struct nub<std::integer_sequence<Int, X, Xs...>>
 };
 } // namespace detail
 
+/// @defgroup Intlist Intlist
+/// @brief Compile-time list operations on std::integer_sequence.
+/// @ingroup TMP
+/// @{
+
 /// @brief Add integer value @p Val to the beginning of @p List.
 template <auto Val, typename List>
 using cons = typename detail::cons<Val, List>::type;
@@ -888,19 +877,19 @@ using append = nappend<List, 1, Val>;
 
 /// @brief Length of an std::integer_sequence.
 template <typename List>
-constexpr std::size_t length = detail::length<List>::value;
+inline constexpr std::size_t length = detail::length<List>::value;
 
 /// @brief Extract the @p Ith elementh from @p List.
 template <std::size_t I, typename List>
-constexpr auto at = detail::at<I, List>::value;
+inline constexpr auto at = detail::at<I, List>::value;
 
 /// @brief Extract the first element from @p List.
 template <typename List>
-constexpr auto head = at<0, List>;
+inline constexpr auto head = at<0, List>;
 
 /// @brief Extract the last element from @p List.
 template <typename List>
-constexpr auto last = at<length<List> - 1, List>;
+inline constexpr auto last = at<length<List> - 1, List>;
 
 /// @brief Extract the elements after the head of @p list as type_sequence.
 template <typename List>
@@ -908,11 +897,12 @@ using tail = typename detail::tail<List>::type;
 
 /// @brief Check whether @p X occur in @p List.
 template <auto X, typename List>
-constexpr bool elem = detail::elem<X, List>::value;
+inline constexpr bool elem = detail::elem<X, List>::value;
 
-/// @brief The index of the first element which equals @p X.
+/// @brief The index of the first occurence of @p X.
+/// If there is no @p X in @p List the value is -1ul.
 template <auto X, typename List>
-constexpr std::size_t index = detail::index<X, List>::value;
+inline constexpr std::size_t index = detail::index<0ul, X, List>::value;
 
 /// @brief std::index_sequence for @p List.
 template <typename List>
@@ -936,15 +926,15 @@ using drop = typename detail::drop<N, List>::type;
 
 /// @brief Convert std::integer_sequence into C array.
 template <typename List>
-constexpr auto array = detail::array<List>::value;
+inline constexpr auto array = detail::array<List>::value;
 
 /// @brief Convert std::integer_sequence into std::array.
 template <typename List>
-constexpr auto stdarray = detail::stdarray<List>::value;
+inline constexpr auto stdarray = detail::stdarray<List>::value;
 
 /// @brief Check if there are duplicates in @p List.
 template <typename List>
-constexpr bool has_duplicates = detail::has_duplicates<List>::value;
+inline constexpr bool has_duplicates = detail::has_duplicates<List>::value;
 
 /// @brief Remove duplicate elements from @p List.
 template <typename List>
@@ -1002,10 +992,9 @@ template <typename Idxs, typename FacNum>
 using lehmer_perm = typename lehmer_perm_impl<Idxs, FacNum>::type;
 
 template <std::size_t N, std::size_t L>
+    requires(N < fac(L))
 struct nlperm_impl
 {
-    static_assert(N < fac(L), "N should be less than (L!)");
-
   private:
     using _lehmer_code                = lehmer_code<N>;
     static constexpr std::size_t diff = L - length<_lehmer_code>;
