@@ -414,6 +414,30 @@ struct lookup<T, type_sequence<type_sequence<Key, Value>, Ts...>>
                            Value,
                            typename lookup<T, type_sequence<Ts...>>::type>;
 };
+
+template <typename D, typename Ms, typename Rs, typename Xs>
+struct split;
+
+template <typename D, typename Ms, typename Rs>
+struct split<D, Ms, Rs, type_sequence<>>
+{
+    using type = typename join<Ms, type_sequence<Rs>>::type;
+};
+
+template <typename D, typename Ms, typename Rs, typename X, typename... Xs>
+struct split<D, Ms, Rs, type_sequence<X, Xs...>>
+{
+    using type = std::conditional_t<
+        std::is_same_v<D, X>,
+        typename split<D,
+                       typename join<Ms, type_sequence<Rs>>::type,
+                       type_sequence<>,
+                       type_sequence<Xs...>>::type,
+        typename split<D,
+                       Ms,
+                       typename join<Rs, type_sequence<X>>::type,
+                       type_sequence<Xs...>>::type>;
+};
 } // namespace detail
 
 /// @defgroup Typelist Typelist
@@ -561,6 +585,15 @@ using lookup = typename detail::lookup<Key, Map>::type;
 /// @brief Check if @p List is empty.
 template <typename List>
 inline constexpr bool empty = length<List> == 0;
+
+/// @brief Split typelist into sublists with a delimeter.
+///
+/// The resulting type is type_sequence<type_sequence<...>...>.
+template <typename Delimeter, typename List>
+using split =
+    del<type_sequence<>,
+        typename detail::
+            split<Delimeter, type_sequence<>, type_sequence<>, List>::type>;
 
 /// @brief Invoke @p f with each class of @p List as template parameter.
 template <typename F, typename... Ts>
