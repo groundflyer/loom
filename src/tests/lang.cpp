@@ -26,11 +26,22 @@ struct StoreConstant
 template <typename To, typename From>
 struct Copy
 {
+    using to   = To;
+    using from = From;
 };
 
-template <typename Name>
+template <StringLiteral Name>
 struct Label
 {
+    using name = sl2cs<Name>;
+};
+
+template <typename Var, typename Mapping>
+    requires(std::is_integral_v<typename Var::type>)
+struct Jump
+{
+    using var     = Var;
+    using mapping = Mapping;
 };
 
 template <typename Type, StringLiteral Name>
@@ -74,6 +85,18 @@ struct is_store_const
 
 template <typename To, typename F>
 struct is_store_const<StoreConstant<To, F>>
+{
+    static constexpr bool value = true;
+};
+
+template <typename T>
+struct is_label
+{
+    static constexpr bool value = false;
+};
+
+template <StringLiteral s>
+struct is_label<Label<s>>
 {
     static constexpr bool value = true;
 };
@@ -156,8 +179,8 @@ template <typename T>
 class access_wrapper
 {
     template <std::same_as<T> T1>
-    static constexpr T&
-    ref(T& val) noexcept
+    constexpr T1&
+    operator()(T1& val) const noexcept
     {
         return val;
     }
@@ -167,8 +190,8 @@ template <typename... Ts>
 class access_wrapper<Union<Ts...>>
 {
     template <typename T>
-    static constexpr T&
-    ref(Union<Ts...>& un) noexcept
+    constexpr T&
+    operator()(Union<Ts...>& un) const noexcept
     {
         return un.template ref<T>();
     }
@@ -222,7 +245,8 @@ class type_table
     {
         using var_name = typename Var::name;
         using wrapper  = detail::access_wrapper<tl::lookup<var_name, table>>;
-        return wrapper::template ref<var_type<var_name>>(
+        constexpr wrapper  op;
+        return op.template operator()<var_type<var_name>>(
             std::get<var_index<var_name>>(cont));
     }
 };
@@ -232,18 +256,27 @@ struct compile_instructions
 {
 };
 
-template <typename StoreConstCommand, typename Table>
-struct const_set
+template <typename Table>
+class const_set
 {
-    using var       = typename StoreConstCommand::var;
-    using action    = typename StoreConstCommand::action;
     using container = typename Table::container;
 
-    static constexpr action func{};
+    container& cont;
 
+  public:
+    const_set() = delete;
+
+    // constexpr const_set(const const_set& other) noexcept : cont(other.cont)
+    // {}
+    explicit constexpr const_set(container& c) noexcept : cont(c) {}
+
+    template <typename StoreConstCommand>
     constexpr void
-    operator()(container& cont) const noexcept
+    operator()() const noexcept
     {
+        using var    = typename StoreConstCommand::var;
+        using action = typename StoreConstCommand::action;
+        constexpr action func{};
         Table::template access<var>(cont) = func();
     }
 };
@@ -253,10 +286,13 @@ struct init
 {
     using constants = tl::filter<detail::is_store_const, Commands>;
 
+    using cs = const_set<Table>;
+
     template <typename Container>
     constexpr void
     operator()(Container& container) noexcept
     {
+        tl::for_each(cs(container), constants{});
     }
 };
 
@@ -271,9 +307,14 @@ struct Program
     using vars =
         tl::join<tl::join<InVars, OutVars>, tl::map<get_storing_var, stores>>;
 
+    /// @brief List of lists of commands.
+    using cells = tl::split_with<detail::is_label, Commands>;
+
     using vars_info = type_table<vars>;
     using var_names = typename vars_info::names;
     using var_types = typename vars_info::types;
+
+    using initializer = init<Commands, vars_info>;
 };
 
 #define MK_CONSTANT(TYPE, VALUE) \
@@ -292,10 +333,11 @@ struct Add
 template <typename T>
 class increment
 {
-    using val      = Variable<T, "val">;
-    using one      = Variable<T, "one">;
-    using commands = type_sequence<StoreConstant<one, MK_CONSTANT(T, 1)>,
-                                   ComputeStore<val, Add<T>, val, one>>;
+    using val = Variable<T, "val">;
+    using one = Variable<T, "one">;
+    using commands =
+        type_sequence<StoreConstant<one, std::integral_constant<T, 1>>,
+                      ComputeStore<val, Add<T>, val, one>>;
 
     using inputs  = type_sequence<val>;
     using outputs = type_sequence<val>;
