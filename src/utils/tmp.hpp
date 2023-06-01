@@ -302,31 +302,6 @@ struct zip<type_sequence<X, Xs...>, type_sequence<Y, Ys...>>
         typename zip<type_sequence<Xs...>, type_sequence<Ys...>>::type>::type;
 };
 
-template <typename T, typename List>
-struct del;
-
-template <typename T>
-struct del<T, type_sequence<>>
-{
-    using type = type_sequence<>;
-};
-
-template <typename T, typename X>
-struct del<T, type_sequence<X>>
-{
-    using type = std::
-        conditional_t<std::is_same_v<T, X>, type_sequence<>, type_sequence<X>>;
-};
-
-template <typename T, typename X, typename... Xs>
-struct del<T, type_sequence<X, Xs...>>
-{
-    using type = std::conditional_t<
-        std::is_same_v<T, X>,
-        typename del<T, type_sequence<Xs...>>::type,
-        typename cons<X, typename del<T, type_sequence<Xs...>>::type>::type>;
-};
-
 template <typename List>
 struct same;
 
@@ -348,8 +323,8 @@ struct result_of<type_sequence<Fs...>, Args...>
 template <typename List>
 struct has_duplicates;
 
-template <typename T>
-struct has_duplicates<type_sequence<T>>
+template <>
+struct has_duplicates<type_sequence<>>
 {
     static constexpr bool value = false;
 };
@@ -362,22 +337,37 @@ struct has_duplicates<type_sequence<T, Ts...>>
         elem<T, ts>::value || has_duplicates<ts>::value;
 };
 
-template <template <typename> typename F, typename List>
+template <template <typename> typename P, typename List>
 struct filter;
 
-template <template <typename> typename F, typename T>
-struct filter<F, type_sequence<T>>
+template <template <typename> typename P>
+struct filter<P, type_sequence<>>
 {
-    using type =
-        std::conditional_t<F<T>::value, type_sequence<T>, type_sequence<>>;
+    using type = type_sequence<>;
 };
 
-template <template <typename> typename F, typename T, typename... Ts>
-struct filter<F, type_sequence<T, Ts...>>
+template <template <typename> typename P, typename T, typename... Ts>
+struct filter<P, type_sequence<T, Ts...>>
 {
-    using rest = typename filter<F, type_sequence<Ts...>>::type;
+    using rest = typename filter<P, type_sequence<Ts...>>::type;
     using type =
-        std::conditional_t<F<T>::value, typename cons<T, rest>::type, rest>;
+        std::conditional_t<P<T>::value, typename cons<T, rest>::type, rest>;
+};
+
+template <typename T, typename U>
+struct is_not_same
+{
+    static constexpr bool value = !std::is_same_v<T, U>;
+};
+
+template <typename T, typename List>
+class del
+{
+    template <typename Elem>
+    using f = is_not_same<T, Elem>;
+
+  public:
+    using type = typename filter<f, List>::type;
 };
 
 template <typename List>
@@ -415,28 +405,39 @@ struct lookup<T, type_sequence<type_sequence<Key, Value>, Ts...>>
                            typename lookup<T, type_sequence<Ts...>>::type>;
 };
 
-template <typename D, typename Ms, typename Rs, typename Xs>
-struct split;
+template <template <typename> typename P, typename Ms, typename Rs, typename Xs>
+struct split_with;
 
-template <typename D, typename Ms, typename Rs>
-struct split<D, Ms, Rs, type_sequence<>>
+template <template <typename> typename P, typename Ms, typename Rs>
+struct split_with<P, Ms, Rs, type_sequence<>>
 {
     using type = typename join<Ms, type_sequence<Rs>>::type;
 };
 
-template <typename D, typename Ms, typename Rs, typename X, typename... Xs>
-struct split<D, Ms, Rs, type_sequence<X, Xs...>>
+template <template <typename> typename P, typename Ms, typename Rs, typename X, typename... Xs>
+struct split_with<P, Ms, Rs, type_sequence<X, Xs...>>
 {
     using type = std::conditional_t<
-        std::is_same_v<D, X>,
-        typename split<D,
+        P<X>::value,
+        typename split_with<P,
                        typename join<Ms, type_sequence<Rs>>::type,
                        type_sequence<>,
                        type_sequence<Xs...>>::type,
-        typename split<D,
+        typename split_with<P,
                        Ms,
                        typename join<Rs, type_sequence<X>>::type,
                        type_sequence<Xs...>>::type>;
+};
+
+template <typename D, typename List>
+class split
+{
+    template <typename U>
+    using eq = std::is_same<D, U>;
+
+  public:
+    using type =
+        typename split_with<eq, type_sequence<>, type_sequence<>, List>::type;
 };
 } // namespace detail
 
@@ -568,11 +569,14 @@ inline constexpr bool has_duplicates = detail::has_duplicates<List>::value;
 template <typename List>
 using nub = typename detail::nub<List>::type;
 
-/// @brief Filter @p List elements with @p F.
+/// @brief Filter @p List elements with a predicate @p P.
 ///
-/// @tparam F must have static constexpr bool value member.
-template <template <typename> typename F, typename List>
-using filter = typename detail::filter<F, List>::type;
+/// @tparam P must have static constexpr bool value member.
+///
+/// The resulting type_sequence contains elements that
+/// satisfy P, i.e. P<T>::value == true.
+template <template <typename> typename P, typename List>
+using filter = typename detail::filter<P, List>::type;
 
 /// @brief Lookup a key @p Key in association list @p Map.
 ///
@@ -586,6 +590,18 @@ using lookup = typename detail::lookup<Key, Map>::type;
 template <typename List>
 inline constexpr bool empty = length<List> == 0;
 
+/// @brief Split typelist into sublists with a predicate.
+///
+/// @tparam P has static constexpr member @p value.
+///
+/// The delimeter elements are such that satisfy predicate @p P,
+/// i.e. P<T>::value == true.
+template <template <typename> typename P, typename List>
+using split_with =
+    del<type_sequence<>,
+        typename detail::split_with<P, type_sequence<>, type_sequence<>, List>::
+            type>;
+
 /// @brief Split typelist into sublists with a delimeter.
 ///
 /// The resulting type is type_sequence<type_sequence<...>...>.
@@ -593,7 +609,7 @@ template <typename Delimeter, typename List>
 using split =
     del<type_sequence<>,
         typename detail::
-            split<Delimeter, type_sequence<>, type_sequence<>, List>::type>;
+            split<Delimeter, List>::type>;
 
 /// @brief Invoke @p f with each class of @p List as template parameter.
 template <typename F, typename... Ts>
