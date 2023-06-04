@@ -64,6 +64,8 @@ using splittest2 = type_sequence<type_sequence<int, float>,
 static_assert(
     is_same_v<reverse<testlist1>, type_sequence<char, float, int, bool>>);
 static_assert(is_same_v<take<2, testlist1>, type_sequence<bool, int>>);
+static_assert(is_same_v<take<length<testlist1> - 1, testlist1>,
+                        type_sequence<bool, int, float>>);
 static_assert(is_same_v<drop<2, testlist1>, type_sequence<float, char>>);
 static_assert(elem<float, testlist1>);
 static_assert(!elem<long, testlist1>);

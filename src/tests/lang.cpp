@@ -14,6 +14,9 @@ namespace tl = typelist;
 template <typename To, typename Op, typename... Args>
 struct ComputeStore
 {
+    using var    = To;
+    using action = Op;
+    using args   = type_sequence<Args...>;
 };
 
 template <typename To, typename Constant>
@@ -36,12 +39,22 @@ struct Label
     using name = sl2cs<Name>;
 };
 
+struct EndLabel
+{
+};
+
 template <typename Var, typename Mapping>
     requires(std::is_integral_v<typename Var::type>)
-struct Jump
+struct ConditionalJump
 {
     using var     = Var;
     using mapping = Mapping;
+};
+
+template <typename Target>
+struct AlwaysJump
+{
+    using target = Target;
 };
 
 template <typename Type, StringLiteral Name>
@@ -51,6 +64,8 @@ struct Variable
     using name = sl2cs<Name>;
 };
 
+namespace lucid::detail
+{
 template <typename T>
 struct does_store
 {
@@ -75,8 +90,6 @@ struct does_store<Copy<Ts...>>
     static constexpr bool value = true;
 };
 
-namespace lucid::detail
-{
 template <typename T>
 struct is_store_const
 {
@@ -99,6 +112,37 @@ template <StringLiteral s>
 struct is_label<Label<s>>
 {
     static constexpr bool value = true;
+};
+
+template <>
+struct is_label<EndLabel>
+{
+    static constexpr bool value = true;
+};
+
+template <typename T>
+struct is_jump
+{
+    static constexpr bool value = false;
+};
+
+template <typename... Ts>
+struct is_jump<AlwaysJump<Ts...>>
+{
+    static constexpr bool value = true;
+};
+
+template <typename... Ts>
+struct is_jump<ConditionalJump<Ts...>>
+{
+    static constexpr bool value = true;
+};
+
+template <typename T>
+struct is_cell
+{
+    static constexpr bool value =
+        tl::length<T> >= 2 && is_jump<tl::last<T>>::value;
 };
 
 template <typename T>
@@ -204,6 +248,12 @@ using get_storing_var = typename detail::get_storing_var<Command>::type;
 template <typename Vars>
 using get_var_names = typename detail::get_var_names<Vars>::type;
 
+template <typename Command>
+inline constexpr bool is_jump = detail::is_jump<Command>::value;
+
+template <typename T>
+concept Cell = detail::is_cell<T>::value;
+
 template <typename Vars>
 class type_table
 {
@@ -251,48 +301,86 @@ class type_table
     }
 };
 
-template <typename Commands, typename TypeTable>
-struct compile_instructions
+template <typename Command, typename TypeTable>
+struct instruction;
+
+template <typename To, typename From, typename TypeTable>
+struct instruction<Copy<To, From>, TypeTable>
 {
+    using container = typename TypeTable::container;
+
+    constexpr void
+    operator()(container& cont) const noexcept
+    {
+        TypeTable::template access<To>(cont) =
+            TypeTable::template access<From>(cont);
+    }
 };
 
-template <typename Table>
-class const_set
+template <typename To, typename Op, typename... Args, typename TypeTable>
+struct instruction<ComputeStore<To, Op, Args...>, TypeTable>
 {
-    using container = typename Table::container;
+    using container = typename TypeTable::container;
 
-    container& cont;
+    static constexpr Op op;
 
-  public:
-    const_set() = delete;
-
-    // constexpr const_set(const const_set& other) noexcept : cont(other.cont)
-    // {}
-    explicit constexpr const_set(container& c) noexcept : cont(c) {}
-
-    template <typename StoreConstCommand>
     constexpr void
-    operator()() const noexcept
+    operator()(container& cont) const noexcept
     {
-        using var    = typename StoreConstCommand::var;
-        using action = typename StoreConstCommand::action;
-        constexpr action func{};
+        TypeTable::template access<To>(cont) =
+            std::invoke(op, TypeTable::template access<Args>(cont)...);
+    }
+};
+
+template <Cell C, typename TypeTable>
+struct cell_instructions
+{
+    template <typename Command>
+    using compiled = instruction<Command, TypeTable>;
+
+    using instructions = tl::map<compiled, C>;
+
+    using modifiers = tl::take<tl::length<instructions> - 1, instructions>;
+    using jumper    = tl::last<instructions>;
+
+    template <typename Container>
+    constexpr auto
+    operator()(Container& container) noexcept
+    {
+        tl::unroll(modifiers{}, container);
+        return std::invoke(jumper{}, std::forward<Container>(container));
+    }
+};
+
+template <typename StoreConstCommand, typename Table>
+struct set_constant
+{
+    using var    = typename StoreConstCommand::var;
+    using action = typename StoreConstCommand::action;
+    static constexpr action func{};
+
+    template <typename Container>
+    constexpr void
+    operator()(Container& cont) const noexcept
+    {
         Table::template access<var>(cont) = func();
     }
 };
 
 template <typename Commands, typename Table>
-struct init
+struct init_constants
 {
-    using constants = tl::filter<detail::is_store_const, Commands>;
+    template <typename StoreConstCommand>
+    using make_f = set_constant<StoreConstCommand, Table>;
 
-    using cs = const_set<Table>;
+    using instructions =
+        tl::map<make_f, tl::filter<detail::is_store_const, Commands>>;
 
     template <typename Container>
     constexpr void
     operator()(Container& container) noexcept
     {
-        tl::for_each(cs(container), constants{});
+        tl::unroll(instructions{}, container);
     }
 };
 
@@ -301,7 +389,7 @@ template <typename InVars, typename OutVars, typename Commands>
 struct Program
 {
     /// @brief Only commands that store values to a variable.
-    using stores = tl::filter<does_store, Commands>;
+    using stores = tl::filter<detail::does_store, Commands>;
 
     /// @brief Variables that have stored values to.
     using vars =
@@ -314,7 +402,7 @@ struct Program
     using var_names = typename vars_info::names;
     using var_types = typename vars_info::types;
 
-    using initializer = init<Commands, vars_info>;
+    using initializer = init_constants<Commands, vars_info>;
 };
 
 #define MK_CONSTANT(TYPE, VALUE) \
@@ -337,7 +425,8 @@ class increment
     using one = Variable<T, "one">;
     using commands =
         type_sequence<StoreConstant<one, std::integral_constant<T, 1>>,
-                      ComputeStore<val, Add<T>, val, one>>;
+                      ComputeStore<val, std::plus<T>, val, one>,
+                      AlwaysJump<EndLabel>>;
 
     using inputs  = type_sequence<val>;
     using outputs = type_sequence<val>;
