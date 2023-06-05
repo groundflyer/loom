@@ -97,24 +97,6 @@ namespace typelist
 {
 namespace detail
 {
-template <typename Source>
-struct from;
-
-template <template <typename...> typename Source, typename... Ts>
-struct from<Source<Ts...>>
-{
-    using type = type_sequence<Ts...>;
-};
-
-template <typename Source, template <typename...> typename Target>
-struct to;
-
-template <template <typename...> typename Target, typename... Ts>
-struct to<type_sequence<Ts...>, Target>
-{
-    using type = Target<Ts...>;
-};
-
 template <typename T, typename List>
 struct cons;
 
@@ -439,20 +421,41 @@ class split
     using type =
         typename split_with<eq, type_sequence<>, type_sequence<>, List>::type;
 };
+
+template <typename Source>
+struct from;
+
+template <template <typename...> typename Source, typename... Ts>
+struct from<Source<Ts...>>
+{
+    using type = type_sequence<Ts...>;
+};
+
+template <typename Source, template <typename...> typename Target>
+struct to;
+
+template <template <typename...> typename Target, typename... Ts>
+struct to<type_sequence<Ts...>, Target>
+{
+    using type = Target<Ts...>;
+};
+
+template <typename List>
+struct to_integer_seq;
+
+template <typename IntConst, typename... ICs>
+struct to_integer_seq<type_sequence<IntConst, ICs...>>
+{
+    using type = std::integer_sequence<typename IntConst::value_type,
+                                       IntConst::value,
+                                       ICs::value...>;
+};
 } // namespace detail
 
 /// @defgroup Typelist Typelist
 /// @brief List operations on type sequences.
 /// @ingroup TMP
 /// @{
-
-/// @brief Convert a class template @p Source into type_sequence.
-template <typename Source>
-using from = typename detail::from<Source>::type;
-
-/// @brief Convert type_sequence @p Source to @p Target class template.
-template <typename Source, template <typename...> typename Target>
-using to = typename detail::to<Source, Target>::type;
 
 /// @brief Add class @p T to the beginning of type_sequence @p List.
 template <typename T, typename List>
@@ -607,9 +610,23 @@ using split_with =
 /// The resulting type is type_sequence<type_sequence<...>...>.
 template <typename Delimeter, typename List>
 using split =
-    del<type_sequence<>,
-        typename detail::
-            split<Delimeter, List>::type>;
+    del<type_sequence<>, typename detail::split<Delimeter, List>::type>;
+
+/// @brief Convert a class template @p Source into type_sequence.
+template <typename Source>
+using from = typename detail::from<Source>::type;
+
+/// @brief Convert type_sequence @p Source to @p Target class template.
+template <typename Source, template <typename...> typename Target>
+using to = typename detail::to<Source, Target>::type;
+
+/// @brief Convert type_sequence of std::integer_sequence into a single
+/// std::integer_sequence.
+///
+/// The value type of the first element is used as the value type for the
+/// resulting std::integer_sequence.
+template <typename List>
+using to_integer_sequence = typename detail::to_integer_seq<List>::type;
 
 /// @brief Invoke @p f with each class of @p List as template parameter.
 template <typename F, typename... Ts>

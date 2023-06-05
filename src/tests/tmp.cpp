@@ -15,6 +15,11 @@ using testlist3 = integer_sequence<int, 1, 2, 1, 3, 4, 3, 4, 2, 1>;
 template <int val>
 using int_constant = integral_constant<int, val>;
 
+using testlist1_ts = type_sequence<int_constant<1>,
+                                   int_constant<2>,
+                                   int_constant<3>,
+                                   int_constant<4>>;
+
 static_assert(is_same_v<reverse<testlist1>, integer_sequence<int, 4, 3, 2, 1>>);
 static_assert(
     is_same_v<nappend<integer_sequence<int, 1, 2, 3, 4>, 3, 0>, testlist2>);
@@ -28,10 +33,7 @@ static_assert(is_same_v<del<3, integer_sequence<int, 3, 1, 2, 3, 4, 3, 3>>,
 static_assert(
     is_same_v<map_f<decltype([](int i) { return i + 20; }), testlist1>,
               integer_sequence<int, 21, 22, 23, 24>>);
-static_assert(
-    is_same_v<
-        map_t<int_constant, integer_sequence<int, 1, 2, 3>>,
-        type_sequence<int_constant<1>, int_constant<2>, int_constant<3>>>);
+static_assert(is_same_v<map_t<int_constant, testlist1>, testlist1_ts>);
 static_assert(!has_duplicates<testlist1>);
 static_assert(has_duplicates<testlist2>);
 static_assert(is_same_v<testlist1, nub<testlist3>>);
@@ -102,6 +104,8 @@ static_assert(is_same_v<testlist4nub, nub<testlist4>>);
 static_assert(is_same_v<lookup<float, testmap>, double>);
 static_assert(is_void_v<lookup<long*, testmap>>);
 static_assert(is_same_v<split<bool, splitest1>, splittest2>);
+static_assert(
+    is_same_v<to_integer_sequence<intlist::testlist1_ts>, intlist::testlist1>);
 } // namespace lucid::typelist
 
 int
