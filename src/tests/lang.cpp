@@ -10,6 +10,9 @@
 using namespace lucid;
 
 namespace tl = typelist;
+namespace il = intlist;
+
+using index_t = unsigned int;
 
 template <typename To, typename Op, typename... Args>
 struct ComputeStore
@@ -43,12 +46,12 @@ struct EndLabel
 {
 };
 
-template <typename Var, typename Mapping>
+template <typename Var, typename Labels>
     requires(std::is_integral_v<typename Var::type>)
 struct ConditionalJump
 {
-    using var     = Var;
-    using mapping = Mapping;
+    using var    = Var;
+    using labels = Labels;
 };
 
 template <typename Target>
@@ -255,7 +258,7 @@ template <typename T>
 concept Cell = detail::is_cell<T>::value;
 
 template <typename Vars>
-class type_table
+class var_table
 {
     template <typename Name>
     using infer_var_type = typename detail::collected_type<
@@ -384,25 +387,67 @@ struct init_constants
     }
 };
 
+template <typename J, typename LabelMap, typename VarTable>
+struct jumper;
+
+template <typename Target, typename LabelMap, typename VarTable>
+struct jumper<AlwaysJump<Target>, LabelMap, VarTable>
+{
+    using type = typename tl::lookup<Target, LabelMap>::value_type;
+    static constexpr type value = type::value;
+
+    template <typename Container>
+    constexpr type
+    operator()(const Container&) const noexcept
+    {
+        return value;
+    }
+};
+
+template <typename Var, typename Labels, typename LabelMap, typename VarTable>
+struct jumper<ConditionalJump<Var, Labels>, LabelMap, VarTable>
+{
+    template <typename L>
+    using jump_idx = tl::lookup<L, LabelMap>;
+
+    using jump_idxs = tl::to_integer_sequence<tl::map<jump_idx, Labels>>;
+
+    static constexpr auto table = il::array<jump_idxs>;
+
+    template <typename Container>
+    constexpr auto
+    operator()(const Container& container) const noexcept
+    {
+        return table[VarTable::template access<Var>(container)];
+    }
+};
+
 /// @brief Basic program representation.
-template <typename InVars, typename OutVars, typename Commands>
+template <typename InVars, typename OutVars, typename Statements>
 struct Program
 {
     /// @brief Only commands that store values to a variable.
-    using stores = tl::filter<detail::does_store, Commands>;
+    using stores = tl::filter<detail::does_store, Statements>;
 
     /// @brief Variables that have stored values to.
     using vars =
         tl::join<tl::join<InVars, OutVars>, tl::map<get_storing_var, stores>>;
 
     /// @brief List of lists of commands.
-    using cells = tl::split_with<detail::is_label, Commands>;
+    using cells = tl::split_with<detail::is_label, Statements>;
 
-    using vars_info = type_table<vars>;
+    template <index_t i>
+    using index_constant = std::integer_sequence<index_t, i>;
+
+    using labels      = tl::filter<detail::is_label, Statements>;
+    using labels_idxs = std::make_index_sequence<tl::length<labels>>;
+    using labelmap    = tl::zip<labels, il::map_t<index_constant, labels_idxs>>;
+
+    using vars_info = var_table<vars>;
     using var_names = typename vars_info::names;
     using var_types = typename vars_info::types;
 
-    using initializer = init_constants<Commands, vars_info>;
+    using initializer = init_constants<Statements, vars_info>;
 };
 
 #define MK_CONSTANT(TYPE, VALUE) \
