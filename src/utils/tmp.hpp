@@ -763,10 +763,11 @@ struct reverse<std::integer_sequence<Int, x, xs...>>
 };
 
 template <typename F, typename List>
-struct map;
+struct map_f;
 
 template <typename F, typename Int, Int... Is>
-struct map<F, std::integer_sequence<Int, Is...>>
+    requires(std::is_integral_v<std::invoke_result_t<F, Int>>)
+struct map_f<F, std::integer_sequence<Int, Is...>>
 {
   private:
     static constexpr F f{};
@@ -774,6 +775,15 @@ struct map<F, std::integer_sequence<Int, Is...>>
 
   public:
     using type = std::integer_sequence<R, f(Is)...>;
+};
+
+template <template <auto> typename F, typename List>
+struct map_t;
+
+template <typename Int, template <Int> typename F, Int... Is>
+struct map_t<F, std::integer_sequence<Int, Is...>>
+{
+    using type = type_sequence<F<Is>...>;
 };
 
 template <std::size_t N, typename List>
@@ -921,7 +931,14 @@ using reverse = typename detail::reverse<List>::type;
 /// @f$\mathrm{F}(\mathrm{I}) \rightarrow \mathrm{T}@f$,
 /// The resulting type @f$\mathrm{T}@f$ must be integer.
 template <typename F, typename List>
-using map = typename detail::map<F, List>::type;
+using map_f = typename detail::map_f<F, List>::type;
+
+/// @brief Make types from elements of @p List by
+/// specializing template class F with the values.
+///
+/// The resulting type is type_sequence<F<Int>...>.
+template <template <auto> typename F, typename List>
+using map_t = typename detail::map_t<F, List>::type;
 
 /// @brief Add @p Val @p N times to the end of @p List.
 template <typename List, std::size_t N, auto Val>

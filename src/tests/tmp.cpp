@@ -12,6 +12,9 @@ using testlist1 = integer_sequence<int, 1, 2, 3, 4>;
 using testlist2 = integer_sequence<int, 1, 2, 3, 4, 0, 0, 0>;
 using testlist3 = integer_sequence<int, 1, 2, 1, 3, 4, 3, 4, 2, 1>;
 
+template <int val>
+using int_constant = integral_constant<int, val>;
+
 static_assert(is_same_v<reverse<testlist1>, integer_sequence<int, 4, 3, 2, 1>>);
 static_assert(
     is_same_v<nappend<integer_sequence<int, 1, 2, 3, 4>, 3, 0>, testlist2>);
@@ -22,8 +25,13 @@ static_assert(!elem<5, testlist1>);
 static_assert(index<2, testlist1> == 1);
 static_assert(is_same_v<del<3, integer_sequence<int, 3, 1, 2, 3, 4, 3, 3>>,
                         integer_sequence<int, 1, 2, 4>>);
-static_assert(is_same_v<map<decltype([](int i) { return i + 20; }), testlist1>,
-                        integer_sequence<int, 21, 22, 23, 24>>);
+static_assert(
+    is_same_v<map_f<decltype([](int i) { return i + 20; }), testlist1>,
+              integer_sequence<int, 21, 22, 23, 24>>);
+static_assert(
+    is_same_v<
+        map_t<int_constant, integer_sequence<int, 1, 2, 3>>,
+        type_sequence<int_constant<1>, int_constant<2>, int_constant<3>>>);
 static_assert(!has_duplicates<testlist1>);
 static_assert(has_duplicates<testlist2>);
 static_assert(is_same_v<testlist1, nub<testlist3>>);
