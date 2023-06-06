@@ -5,14 +5,14 @@
 #include <utils/union.hpp>
 
 #include <concepts>
+#include <cstdint>
+#include <limits>
 #include <tuple>
 
 using namespace lucid;
 
 namespace tl = typelist;
 namespace il = intlist;
-
-using index_t = unsigned int;
 
 template <typename To, typename Op, typename... Args>
 struct ComputeStore
@@ -243,6 +243,18 @@ class access_wrapper<Union<Ts...>>
         return un.template ref<T>();
     }
 };
+
+template <std::size_t NMax, typename List>
+struct index_type
+{
+    template <typename T>
+    struct p
+    {
+        static constexpr bool value = NMax < std::numeric_limits<T>::max();
+    };
+
+    using type = tl::find<p, List>;
+};
 } // namespace lucid::detail
 
 template <typename Command>
@@ -254,17 +266,27 @@ using get_var_names = typename detail::get_var_names<Vars>::type;
 template <typename Command>
 inline constexpr bool is_jump = detail::is_jump<Command>::value;
 
+template <std::size_t NMax,
+          typename List = type_sequence<std::uint_fast8_t,
+                                        std::uint_fast16_t,
+                                        std::uint_fast32_t,
+                                        std::uint_fast64_t>>
+using index_type = typename detail::index_type<NMax, List>;
+
 template <typename T>
 concept Cell = detail::is_cell<T>::value;
 
-template <typename Vars>
-class var_table
+template <typename Vars, typename LabelMap>
+class VarTable
 {
     template <typename Name>
     using infer_var_type = typename detail::collected_type<
         typename detail::collect_types<Name, Vars>::type>::type;
 
   public:
+    /// @brief Cell Pointer variable is always first in @p Vars.
+    using cp = tl::head<Vars>;
+
     /// @brief Unique variable names.
     using names = tl::nub<get_var_names<Vars>>;
 
@@ -291,6 +313,10 @@ class var_table
     /// @brief Class to store values of the variables.
     using container = tl::to<types, std::tuple>;
 
+    /// @brief Maps labels to integers,
+    /// i.e. type_sequence<type_sequence<Label, std::integer_constant>...>
+    using labelmap = LabelMap;
+
     /// @brief Access a variable in a container.
     template <typename Var>
     static std::add_lvalue_reference_t<typename Var::type>
@@ -304,54 +330,86 @@ class var_table
     }
 };
 
-template <typename Command, typename TypeTable>
+template <typename Command, typename VarTable>
 struct instruction;
 
-template <typename To, typename From, typename TypeTable>
-struct instruction<Copy<To, From>, TypeTable>
+template <typename To, typename From, typename VarTable>
+struct instruction<Copy<To, From>, VarTable>
 {
-    using container = typename TypeTable::container;
+    using container = typename VarTable::container;
 
     constexpr void
     operator()(container& cont) const noexcept
     {
-        TypeTable::template access<To>(cont) =
-            TypeTable::template access<From>(cont);
+        VarTable::template access<To>(cont) =
+            VarTable::template access<From>(cont);
     }
 };
 
-template <typename To, typename Op, typename... Args, typename TypeTable>
-struct instruction<ComputeStore<To, Op, Args...>, TypeTable>
+template <typename To, typename Op, typename... Args, typename VarTable>
+struct instruction<ComputeStore<To, Op, Args...>, VarTable>
 {
-    using container = typename TypeTable::container;
+    using container = typename VarTable::container;
 
     static constexpr Op op;
 
     constexpr void
     operator()(container& cont) const noexcept
     {
-        TypeTable::template access<To>(cont) =
-            std::invoke(op, TypeTable::template access<Args>(cont)...);
+        VarTable::template access<To>(cont) =
+            std::invoke(op, VarTable::template access<Args>(cont)...);
     }
 };
 
-template <Cell C, typename TypeTable>
+template <typename Target, typename VarTable>
+struct instruction<AlwaysJump<Target>, VarTable>
+{
+    using labelmap = typename VarTable::labelmap;
+    using type     = typename tl::lookup<Target, labelmap>::value_type;
+    static constexpr type value = type::value;
+
+    template <typename Container>
+    constexpr void
+    operator()(Container& container) const noexcept
+    {
+        VarTable::template access<typename VarTable::cp>(container) = value;
+    }
+};
+
+template <typename Var, typename Labels, typename VarTable>
+struct instruction<ConditionalJump<Var, Labels>, VarTable>
+{
+    using labelmap = typename VarTable::labelmap;
+
+    template <typename L>
+    using jump_idx = tl::lookup<L, labelmap>;
+
+    using jump_idxs = tl::to_integer_sequence<tl::map<jump_idx, Labels>>;
+
+    static constexpr auto table = il::array<jump_idxs>;
+
+    template <typename Container>
+    constexpr void
+    operator()(const Container& container) const noexcept
+    {
+        VarTable::template access<typename VarTable::cp>(container) =
+            table[VarTable::template access<Var>(container)];
+    }
+};
+
+template <Cell C, typename VarTable>
 struct cell_instructions
 {
     template <typename Command>
-    using compiled = instruction<Command, TypeTable>;
+    using compiled = instruction<Command, VarTable>;
 
     using instructions = tl::map<compiled, C>;
 
-    using modifiers = tl::take<tl::length<instructions> - 1, instructions>;
-    using jumper    = tl::last<instructions>;
-
     template <typename Container>
-    constexpr auto
+    constexpr void
     operator()(Container& container) noexcept
     {
-        tl::unroll(modifiers{}, container);
-        return std::invoke(jumper{}, std::forward<Container>(container));
+        tl::unroll(instructions{}, container);
     }
 };
 
@@ -387,41 +445,6 @@ struct init_constants
     }
 };
 
-template <typename J, typename LabelMap, typename VarTable>
-struct jumper;
-
-template <typename Target, typename LabelMap, typename VarTable>
-struct jumper<AlwaysJump<Target>, LabelMap, VarTable>
-{
-    using type = typename tl::lookup<Target, LabelMap>::value_type;
-    static constexpr type value = type::value;
-
-    template <typename Container>
-    constexpr type
-    operator()(const Container&) const noexcept
-    {
-        return value;
-    }
-};
-
-template <typename Var, typename Labels, typename LabelMap, typename VarTable>
-struct jumper<ConditionalJump<Var, Labels>, LabelMap, VarTable>
-{
-    template <typename L>
-    using jump_idx = tl::lookup<L, LabelMap>;
-
-    using jump_idxs = tl::to_integer_sequence<tl::map<jump_idx, Labels>>;
-
-    static constexpr auto table = il::array<jump_idxs>;
-
-    template <typename Container>
-    constexpr auto
-    operator()(const Container& container) const noexcept
-    {
-        return table[VarTable::template access<Var>(container)];
-    }
-};
-
 /// @brief Basic program representation.
 template <typename InVars, typename OutVars, typename Statements>
 struct Program
@@ -436,18 +459,24 @@ struct Program
     /// @brief List of lists of commands.
     using cells = tl::split_with<detail::is_label, Statements>;
 
+    using labels = tl::filter<detail::is_label, Statements>;
+
+    static constexpr std::size_t num_cells = tl::length<labels>;
+
+    using index_t = index_type<num_cells>;
+
     template <index_t i>
     using index_constant = std::integer_sequence<index_t, i>;
 
-    using labels      = tl::filter<detail::is_label, Statements>;
-    using labels_idxs = std::make_index_sequence<tl::length<labels>>;
+    using labels_idxs = std::make_index_sequence<num_cells>;
     using labelmap    = tl::zip<labels, il::map_t<index_constant, labels_idxs>>;
 
-    using vars_info = var_table<vars>;
-    using var_names = typename vars_info::names;
-    using var_types = typename vars_info::types;
+    /// @brief Cell Pointer variable.
+    using cp = Variable<index_t, "CP">;
 
-    using initializer = init_constants<Statements, vars_info>;
+    using var_table = VarTable<tl::cons<cp, vars>, labelmap>;
+
+    using initializer = init_constants<Statements, var_table>;
 };
 
 #define MK_CONSTANT(TYPE, VALUE) \
