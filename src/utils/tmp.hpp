@@ -658,7 +658,7 @@ for_each(F f, type_sequence<Ts...>) noexcept((...&& noexcept(f.template
     (..., f.template operator()<Ts>());
 }
 
-/// @brief Invoke every functional object in @p list on @p args.
+/// @brief Invoke every functional object in a typelist with @p args.
 template <typename... Fs, typename... Args>
 constexpr void
 unroll(type_sequence<Fs...>, Args&&... args) noexcept
