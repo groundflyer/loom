@@ -382,6 +382,24 @@ struct lookup<T, type_sequence<type_sequence<Key, Value>, Ts...>>
                            typename lookup<T, type_sequence<Ts...>>::type>;
 };
 
+template <template <typename> typename P, typename List>
+struct find;
+
+template <template <typename> typename P>
+struct find<P, type_sequence<>>
+{
+    using type = void;
+};
+
+template <template <typename> typename P, typename T, typename... Ts>
+struct find<P, type_sequence<T, Ts...>>
+{
+    using type =
+        std::conditional_t<P<T>::value,
+                           T,
+                           typename find<P, type_sequence<Ts...>>::type>;
+};
+
 template <template <typename> typename P, typename Ms, typename Rs, typename Xs>
 struct split_with;
 
@@ -583,6 +601,14 @@ using filter = typename detail::filter<P, List>::type;
 /// If @p Key not found the resulting type is void.
 template <typename Key, typename Map>
 using lookup = typename detail::lookup<Key, Map>::type;
+
+/// @brief Get the leftmost type from @p List matching predicate @p P.
+///
+/// @tparam P must have static constexpr bool value member.
+///
+/// If there is no type matching @p P the resulting type is void.
+template <template <typename> typename P, typename List>
+using find = typename detail::find<P, List>::type;
 
 /// @brief Check if @p List is empty.
 template <typename List>

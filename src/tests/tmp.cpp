@@ -106,6 +106,8 @@ static_assert(is_same_v<filter<std::is_integral, testlist1>,
 static_assert(is_same_v<testlist4nub, nub<testlist4>>);
 static_assert(is_same_v<lookup<float, testmap>, double>);
 static_assert(is_void_v<lookup<long*, testmap>>);
+static_assert(is_same_v<find<is_floating_point, testlist1>, float>);
+static_assert(is_void_v<find<is_pointer, testlist1>>);
 static_assert(is_same_v<split<bool, splitest1>, splittest2>);
 static_assert(
     is_same_v<to_integer_sequence<intlist::testlist1_ts>, intlist::testlist1>);
