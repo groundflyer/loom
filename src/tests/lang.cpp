@@ -60,6 +60,8 @@ struct AlwaysJump
     using target = Target;
 };
 
+using End = AlwaysJump<EndLabel>;
+
 template <typename Type, StringLiteral Name>
 struct Variable
 {
@@ -366,13 +368,16 @@ struct instruction<AlwaysJump<Target>, VarTable>
 {
     using labelmap = typename VarTable::labelmap;
     using type     = typename tl::lookup<Target, labelmap>::value_type;
+    using cp       = typename VarTable::cp;
+    using cp_t     = typename cp::type;
+
     static constexpr type value = type::value;
 
     template <typename Container>
     constexpr void
     operator()(Container& container) const noexcept
     {
-        VarTable::template access<typename VarTable::cp>(container) = value;
+        VarTable::template access<cp>(container) = static_cast<cp_t>(value);
     }
 };
 
@@ -380,6 +385,8 @@ template <typename Var, typename Labels, typename VarTable>
 struct instruction<ConditionalJump<Var, Labels>, VarTable>
 {
     using labelmap = typename VarTable::labelmap;
+    using cp       = typename VarTable::cp;
+    using cp_t     = typename cp::type;
 
     template <typename L>
     using jump_idx = tl::lookup<L, labelmap>;
@@ -392,8 +399,8 @@ struct instruction<ConditionalJump<Var, Labels>, VarTable>
     constexpr void
     operator()(const Container& container) const noexcept
     {
-        VarTable::template access<typename VarTable::cp>(container) =
-            table[VarTable::template access<Var>(container)];
+        VarTable::template access<cp>(container) =
+            static_cast<cp_t>(table[VarTable::template access<Var>(container)]);
     }
 };
 
@@ -469,7 +476,9 @@ struct Program
     using index_constant = std::integer_sequence<index_t, i>;
 
     using labels_idxs = std::make_index_sequence<num_cells>;
-    using labelmap    = tl::zip<labels, il::map_t<index_constant, labels_idxs>>;
+    using labelmap    = tl::cons<
+        type_sequence<EndLabel, std::integral_constant<index_t, index_t{-1}>>,
+        tl::zip<labels, il::map_t<index_constant, labels_idxs>>>;
 
     /// @brief Cell Pointer variable.
     using cp = Variable<index_t, "CP">;
@@ -500,7 +509,7 @@ class increment
     using commands =
         type_sequence<StoreConstant<one, std::integral_constant<T, 1>>,
                       ComputeStore<val, std::plus<T>, val, one>,
-                      AlwaysJump<EndLabel>>;
+                      End>;
 
     using inputs  = type_sequence<val>;
     using outputs = type_sequence<val>;
