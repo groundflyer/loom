@@ -290,7 +290,7 @@ struct same;
 template <typename T, typename... Ts>
 struct same<type_sequence<T, Ts...>>
 {
-    static constexpr bool value = (true && ... && std::is_same_v<T, Ts>);
+    static constexpr bool value = std::conjunction_v<std::is_same<T, Ts>...>;
 };
 
 template <typename List, typename... Args>
@@ -336,17 +336,11 @@ struct filter<P, type_sequence<T, Ts...>>
         std::conditional_t<P<T>::value, typename cons<T, rest>::type, rest>;
 };
 
-template <typename T, typename U>
-struct is_not_same
-{
-    static constexpr bool value = !std::is_same_v<T, U>;
-};
-
 template <typename T, typename List>
-class del
+class purge
 {
     template <typename Elem>
-    using f = is_not_same<T, Elem>;
+    using f = std::negation<std::is_same<T, Elem>>;
 
   public:
     using type = typename filter<f, List>::type;
@@ -366,7 +360,8 @@ struct nub<type_sequence<T, Ts...>>
 {
     using type = typename cons<
         T,
-        typename nub<typename del<T, type_sequence<Ts...>>::type>::type>::type;
+        typename nub<typename purge<T, type_sequence<Ts...>>::type>::type>::
+        type;
 };
 
 template <typename T, typename Map>
@@ -526,7 +521,7 @@ using map = typename detail::map<F, List>::type;
 ///
 /// Does nothing if there is no @p T in @p List.
 template <typename T, typename List>
-using del = typename detail::del<T, List>::type;
+using purge = typename detail::purge<T, List>::type;
 
 /// @brief Prefix of @p List of length @p N.
 ///
@@ -601,16 +596,16 @@ inline constexpr bool empty = length<List> == 0;
 /// i.e. P<T>::value == true.
 template <template <typename> typename P, typename List>
 using split_with =
-    del<type_sequence<>,
-        typename detail::split_with<P, type_sequence<>, type_sequence<>, List>::
-            type>;
+    purge<type_sequence<>,
+          typename detail::
+              split_with<P, type_sequence<>, type_sequence<>, List>::type>;
 
 /// @brief Split typelist into sublists with a delimeter.
 ///
 /// The resulting type is type_sequence<type_sequence<...>...>.
 template <typename Delimeter, typename List>
 using split =
-    del<type_sequence<>, typename detail::split<Delimeter, List>::type>;
+    purge<type_sequence<>, typename detail::split<Delimeter, List>::type>;
 
 /// @brief Convert a class template @p Source into type_sequence.
 template <typename Source>
@@ -631,8 +626,7 @@ using to_integer_sequence = typename detail::to_integer_seq<List>::type;
 /// @brief Invoke @p f with each class of @p List as template parameter.
 template <typename F, typename... Ts>
 constexpr void
-for_each(F f, type_sequence<Ts...>) noexcept((true &&
-                                              ...&& noexcept(f.template
+for_each(F f, type_sequence<Ts...>) noexcept((...&& noexcept(f.template
                                                              operator()<Ts>())))
 {
     (..., f.template operator()<Ts>());
@@ -838,16 +832,16 @@ struct drop<N, std::integer_sequence<Int, I, Is...>>
 };
 
 template <auto Val, typename List>
-struct del;
+struct purge;
 
 template <typename Int, Int Val>
-struct del<Val, std::integer_sequence<Int>>
+struct purge<Val, std::integer_sequence<Int>>
 {
     using type = std::integer_sequence<Int>;
 };
 
 template <typename Int, Int Last, Int Val>
-struct del<Val, std::integer_sequence<Int, Last>>
+struct purge<Val, std::integer_sequence<Int, Last>>
 {
     using type = std::conditional_t<Last == Val,
                                     std::integer_sequence<Int>,
@@ -855,7 +849,7 @@ struct del<Val, std::integer_sequence<Int, Last>>
 };
 
 template <typename Int, Int Val, Int Head, Int... Rest>
-struct del<Val, std::integer_sequence<Int, Head, Rest...>>
+struct purge<Val, std::integer_sequence<Int, Head, Rest...>>
 {
   private:
     using rest = std::integer_sequence<Int, Rest...>;
@@ -863,8 +857,8 @@ struct del<Val, std::integer_sequence<Int, Head, Rest...>>
   public:
     using type = std::conditional_t<
         Head == Val,
-        typename del<Val, rest>::type,
-        typename cons<Head, typename del<Val, rest>::type>::type>;
+        typename purge<Val, rest>::type,
+        typename cons<Head, typename purge<Val, rest>::type>::type>;
 };
 
 template <typename List>
@@ -916,8 +910,8 @@ struct nub<std::integer_sequence<Int, X, Xs...>>
 {
     using type = typename cons<
         X,
-        typename nub<typename del<X, std::integer_sequence<Int, Xs...>>::type>::
-            type>::type;
+        typename nub<typename purge<X, std::integer_sequence<Int, Xs...>>::
+                         type>::type>::type;
 };
 } // namespace detail
 
@@ -1000,7 +994,7 @@ using indicies = std::make_index_sequence<length<List>>;
 
 /// @brief Make std::integer_sequence without @p X.
 template <auto X, typename List>
-using del = typename detail::del<X, List>::type;
+using purge = typename detail::purge<X, List>::type;
 
 /// @brief Prefix of @p List of length @p N.
 ///
@@ -1065,7 +1059,7 @@ struct lehmer_perm_impl<Idxs, std::index_sequence<Head, Rest...>>
   public:
     using type =
         cons<elem,
-             typename lehmer_perm_impl<del<elem, Idxs>,
+             typename lehmer_perm_impl<purge<elem, Idxs>,
                                        std::index_sequence<Rest...>>::type>;
 };
 

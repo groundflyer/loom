@@ -28,7 +28,7 @@ static_assert(is_same_v<drop<2, testlist1>, integer_sequence<int, 3, 4>>);
 static_assert(elem<2, testlist1>);
 static_assert(!elem<5, testlist1>);
 static_assert(index<2, testlist1> == 1);
-static_assert(is_same_v<del<3, integer_sequence<int, 3, 1, 2, 3, 4, 3, 3>>,
+static_assert(is_same_v<purge<3, integer_sequence<int, 3, 1, 2, 3, 4, 3, 3>>,
                         integer_sequence<int, 1, 2, 4>>);
 static_assert(
     is_same_v<map_f<decltype([](int i) { return i + 20; }), testlist1>,
@@ -80,6 +80,8 @@ static_assert(is_same_v<drop<2, testlist1>, type_sequence<float, char>>);
 static_assert(elem<float, testlist1>);
 static_assert(!elem<long, testlist1>);
 static_assert(index<float, testlist1> == 2);
+static_assert(!same<testlist1>);
+static_assert(same<type_sequence<int, int, int>>);
 static_assert(is_same_v<zip<testlist2, testlist3>,
                         type_sequence<type_sequence<double, long>,
                                       type_sequence<unsigned, size_t>,
@@ -95,7 +97,8 @@ static_assert(is_same_v<concat<type_sequence<testlist1, testlist2, testlist3>>,
                                       long,
                                       size_t,
                                       unsigned char>>);
-static_assert(is_same_v<del<int, testlist4>, type_sequence<bool, float, char>>);
+static_assert(
+    is_same_v<purge<int, testlist4>, type_sequence<bool, float, char>>);
 static_assert(has_duplicates<testlist4>);
 static_assert(!has_duplicates<testlist1>);
 static_assert(is_same_v<filter<std::is_integral, testlist1>,
