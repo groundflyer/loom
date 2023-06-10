@@ -295,7 +295,7 @@ class VarTable
     /// @brief Aggregated unique types of variables we use to hold actual
     /// values.
     ///
-    /// std::tuple<types...> is used as the container.
+    /// std::tuple<types...> is used as the memory.
     ///
     /// If there are few different types corresponding to a single variable,
     /// lucid::Union used to hold values of the variable.
@@ -304,31 +304,31 @@ class VarTable
     /// @brief Variable name to type dictionary.
     using table = tl::zip<names, types>;
 
-    /// @brief Index of a variable in the container.
+    /// @brief Index of a variable in the memory.
     template <typename Name>
     static constexpr std::size_t var_index = tl::index<Name, names>;
 
-    /// @brief Type of a variable stored in the container.
+    /// @brief Type of a variable stored in the memory.
     template <typename Name>
     using var_type = tl::lookup<Name, table>;
 
     /// @brief Class to store values of the variables.
-    using container = tl::to<types, std::tuple>;
+    using memory = tl::to<types, std::tuple>;
 
     /// @brief Maps labels to integers,
     /// i.e. type_sequence<type_sequence<Label, std::integer_constant>...>
     using labelmap = LabelMap;
 
-    /// @brief Access a variable in a container.
+    /// @brief Access a variable in a memory.
     template <typename Var>
     static std::add_lvalue_reference_t<typename Var::type>
-    access(container& cont) noexcept
+    access(memory& mem) noexcept
     {
         using var_name = typename Var::name;
         using wrapper  = detail::access_wrapper<tl::lookup<var_name, table>>;
         constexpr wrapper  op;
         return op.template operator()<var_type<var_name>>(
-            std::get<var_index<var_name>>(cont));
+            std::get<var_index<var_name>>(mem));
     }
 };
 
@@ -338,28 +338,28 @@ struct instruction;
 template <typename To, typename From, typename VarTable>
 struct instruction<Copy<To, From>, VarTable>
 {
-    using container = typename VarTable::container;
+    using memory = typename VarTable::memory;
 
     constexpr void
-    operator()(container& cont) const noexcept
+    operator()(memory& mem) const noexcept
     {
-        VarTable::template access<To>(cont) =
-            VarTable::template access<From>(cont);
+        VarTable::template access<To>(mem) =
+            VarTable::template access<From>(mem);
     }
 };
 
 template <typename To, typename Op, typename... Args, typename VarTable>
 struct instruction<ComputeStore<To, Op, Args...>, VarTable>
 {
-    using container = typename VarTable::container;
+    using memory = typename VarTable::memory;
 
     static constexpr Op op;
 
     constexpr void
-    operator()(container& cont) const noexcept
+    operator()(memory& mem) const noexcept
     {
-        VarTable::template access<To>(cont) =
-            std::invoke(op, VarTable::template access<Args>(cont)...);
+        VarTable::template access<To>(mem) =
+            std::invoke(op, VarTable::template access<Args>(mem)...);
     }
 };
 
@@ -373,11 +373,11 @@ struct instruction<AlwaysJump<Target>, VarTable>
 
     static constexpr type value = type::value;
 
-    template <typename Container>
+    template <typename Memory>
     constexpr void
-    operator()(Container& container) const noexcept
+    operator()(Memory& memory) const noexcept
     {
-        VarTable::template access<cp>(container) = static_cast<cp_t>(value);
+        VarTable::template access<cp>(memory) = static_cast<cp_t>(value);
     }
 };
 
@@ -395,12 +395,12 @@ struct instruction<ConditionalJump<Var, Labels>, VarTable>
 
     static constexpr auto table = il::array<jump_idxs>;
 
-    template <typename Container>
+    template <typename Memory>
     constexpr void
-    operator()(const Container& container) const noexcept
+    operator()(const Memory& memory) const noexcept
     {
-        VarTable::template access<cp>(container) =
-            static_cast<cp_t>(table[VarTable::template access<Var>(container)]);
+        VarTable::template access<cp>(memory) =
+            static_cast<cp_t>(table[VarTable::template access<Var>(memory)]);
     }
 };
 
@@ -412,11 +412,11 @@ struct cell_instructions
 
     using instructions = tl::map<compiled, C>;
 
-    template <typename Container>
+    template <typename Memory>
     constexpr void
-    operator()(Container& container) noexcept
+    operator()(Memory& memory) noexcept
     {
-        tl::unroll(instructions{}, container);
+        tl::unroll(instructions{}, memory);
     }
 };
 
@@ -427,11 +427,11 @@ struct set_constant
     using action = typename StoreConstCommand::action;
     static constexpr action func{};
 
-    template <typename Container>
+    template <typename Memory>
     constexpr void
-    operator()(Container& cont) const noexcept
+    operator()(Memory& mem) const noexcept
     {
-        Table::template access<var>(cont) = func();
+        Table::template access<var>(mem) = func();
     }
 };
 
@@ -444,11 +444,11 @@ struct init_constants
     using instructions =
         tl::map<make_f, tl::filter<detail::is_store_const, Commands>>;
 
-    template <typename Container>
+    template <typename Memory>
     constexpr void
-    operator()(Container& container) noexcept
+    operator()(Memory& memory) noexcept
     {
-        tl::unroll(instructions{}, container);
+        tl::unroll(instructions{}, memory);
     }
 };
 
