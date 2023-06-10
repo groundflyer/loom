@@ -437,7 +437,7 @@ struct set_constant
 };
 
 template <typename Commands>
-struct init_constants
+struct const_setter
 {
     using instructions =
         tl::map<set_constant, tl::filter<detail::is_store_const, Commands>>;
@@ -467,16 +467,41 @@ struct input_setter<type_sequence<InputVars...>>
     }
 };
 
+template <typename OutputVars>
+struct output_getter;
+
+template <typename OutputVar>
+struct output_getter<type_sequence<OutputVar>>
+{
+    template <typename _Memory>
+    constexpr auto
+    operator()(const _Memory& mem) const noexcept
+    {
+        return mem.template get<OutputVar>();
+    }
+};
+
+template <typename... OutputVars>
+struct output_getter<type_sequence<OutputVars...>>
+{
+    template <typename _Memory>
+    constexpr auto
+    operator()(const _Memory& mem) const noexcept
+    {
+        return std::tuple{mem.template get<OutputVars>()...};
+    }
+};
+
 /// @brief Basic program representation.
-template <typename InVars, typename OutVars, typename Statements>
+template <typename InputVars, typename OutputVars, typename Statements>
 class Program
 {
     /// @brief Only commands that store values to a variable.
     using stores = tl::filter<detail::does_store, Statements>;
 
     /// @brief Variables that have stored values to.
-    using vars =
-        tl::join<tl::join<InVars, OutVars>, tl::map<get_storing_var, stores>>;
+    using vars = tl::join<tl::join<InputVars, OutputVars>,
+                          tl::map<get_storing_var, stores>>;
 
     /// @brief List of lists of commands.
     using cells = tl::split_with<detail::is_label, Statements>;
@@ -503,8 +528,10 @@ class Program
 
   public:
     using memory            = typename VarTable<tl::cons<cp, vars>>::memory;
-    using const_initializer = init_constants<Statements>;
+    using const_initializer = const_setter<Statements>;
     using compiled_cells    = tl::to<tl::map<cell_compiler, cells>, std::tuple>;
+    using in_setter         = input_setter<InputVars>;
+    using out_getter        = output_getter<OutputVars>;
 };
 
 #define MK_CONSTANT(TYPE, VALUE) \
