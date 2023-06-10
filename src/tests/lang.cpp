@@ -278,7 +278,46 @@ using index_type = typename detail::index_type<NMax, List>;
 template <typename T>
 concept Cell = detail::is_cell<T>::value;
 
-template <typename Vars, typename LabelMap>
+template <typename VarTypes,
+          typename VarNames,
+          typename VarMap,
+          typename CP,
+          template <typename...> typename Container = std::tuple>
+class Memory
+{
+    using Data = tl::to<VarTypes, Container>;
+    Data m_data;
+
+    /// @brief Type of a variable stored in the memory.
+    template <typename Name>
+    using var_type = tl::lookup<Name, VarMap>;
+
+    /// @brief Index of a variable.
+    template <typename Name>
+    static constexpr std::size_t var_index = tl::index<Name, VarNames>;
+
+  public:
+    /// @brief Access a variable.
+    template <typename Var>
+    std::add_lvalue_reference_t<typename Var::type>
+    get() noexcept
+    {
+        using var_name = typename Var::name;
+        using wrapper  = detail::access_wrapper<tl::lookup<var_name, VarMap>>;
+        constexpr wrapper  op;
+        return op.template operator()<var_type<var_name>>(
+            std::get<var_index<var_name>>(m_data));
+    }
+
+    /// @brief Access cell pointer.
+    std::add_lvalue_reference_t<typename CP::type>
+    cp() noexcept
+    {
+        return get<CP>();
+    }
+};
+
+template <typename Vars>
 class VarTable
 {
     template <typename Name>
@@ -304,123 +343,85 @@ class VarTable
     /// @brief Variable name to type dictionary.
     using table = tl::zip<names, types>;
 
-    /// @brief Index of a variable in the memory.
-    template <typename Name>
-    static constexpr std::size_t var_index = tl::index<Name, names>;
-
-    /// @brief Type of a variable stored in the memory.
-    template <typename Name>
-    using var_type = tl::lookup<Name, table>;
-
     /// @brief Class to store values of the variables.
-    using memory = tl::to<types, std::tuple>;
-
-    /// @brief Maps labels to integers,
-    /// i.e. type_sequence<type_sequence<Label, std::integer_constant>...>
-    using labelmap = LabelMap;
-
-    /// @brief Access a variable in a memory.
-    template <typename Var>
-    static std::add_lvalue_reference_t<typename Var::type>
-    access(memory& mem) noexcept
-    {
-        using var_name = typename Var::name;
-        using wrapper  = detail::access_wrapper<tl::lookup<var_name, table>>;
-        constexpr wrapper  op;
-        return op.template operator()<var_type<var_name>>(
-            std::get<var_index<var_name>>(mem));
-    }
+    using memory = Memory<types, names, table, cp>;
 };
 
-template <typename Command, typename VarTable>
+template <typename Command, typename LabelMap>
 struct instruction;
 
-template <typename To, typename From, typename VarTable>
-struct instruction<Copy<To, From>, VarTable>
+template <typename To, typename From, typename LabelMap>
+struct instruction<Copy<To, From>, LabelMap>
 {
-    using memory = typename VarTable::memory;
-
+    template <typename _Memory>
     constexpr void
-    operator()(memory& mem) const noexcept
+    operator()(_Memory& mem) const noexcept
     {
-        VarTable::template access<To>(mem) =
-            VarTable::template access<From>(mem);
+        mem.template get<To>() = mem.template get<From>();
     }
 };
 
-template <typename To, typename Op, typename... Args, typename VarTable>
-struct instruction<ComputeStore<To, Op, Args...>, VarTable>
+template <typename To, typename Op, typename... Args, typename LabelMap>
+struct instruction<ComputeStore<To, Op, Args...>, LabelMap>
 {
-    using memory = typename VarTable::memory;
-
     static constexpr Op op;
 
+    template <typename _Memory>
     constexpr void
-    operator()(memory& mem) const noexcept
+    operator()(_Memory& mem) const noexcept
     {
-        VarTable::template access<To>(mem) =
-            std::invoke(op, VarTable::template access<Args>(mem)...);
+        mem.template get<To>() = std::invoke(op, mem.template get<Args>()...);
     }
 };
 
-template <typename Target, typename VarTable>
-struct instruction<AlwaysJump<Target>, VarTable>
+template <typename Target, typename LabelMap>
+struct instruction<AlwaysJump<Target>, LabelMap>
 {
-    using labelmap = typename VarTable::labelmap;
-    using type     = typename tl::lookup<Target, labelmap>::value_type;
-    using cp       = typename VarTable::cp;
-    using cp_t     = typename cp::type;
+    using type = typename tl::lookup<Target, LabelMap>::value_type;
 
-    static constexpr type value = type::value;
-
-    template <typename Memory>
+    template <typename _Memory>
     constexpr void
-    operator()(Memory& memory) const noexcept
+    operator()(_Memory& memory) const noexcept
     {
-        VarTable::template access<cp>(memory) = static_cast<cp_t>(value);
+        memory.cp() = type::value;
     }
 };
 
-template <typename Var, typename Labels, typename VarTable>
-struct instruction<ConditionalJump<Var, Labels>, VarTable>
+template <typename Var, typename Labels, typename LabelMap>
+struct instruction<ConditionalJump<Var, Labels>, LabelMap>
 {
-    using labelmap = typename VarTable::labelmap;
-    using cp       = typename VarTable::cp;
-    using cp_t     = typename cp::type;
-
     template <typename L>
-    using jump_idx = tl::lookup<L, labelmap>;
+    using jump_idx = tl::lookup<L, LabelMap>;
 
     using jump_idxs = tl::to_integer_sequence<tl::map<jump_idx, Labels>>;
 
     static constexpr auto table = il::array<jump_idxs>;
 
-    template <typename Memory>
+    template <typename _Memory>
     constexpr void
-    operator()(const Memory& memory) const noexcept
+    operator()(_Memory& memory) const noexcept
     {
-        VarTable::template access<cp>(memory) =
-            static_cast<cp_t>(table[VarTable::template access<Var>(memory)]);
+        memory.cp() = table[memory.template get<Var>()];
     }
 };
 
-template <Cell C, typename VarTable>
+template <Cell C, typename LabelMap>
 struct cell_instructions
 {
     template <typename Command>
-    using compiled = instruction<Command, VarTable>;
+    using compiled = instruction<Command, LabelMap>;
 
     using instructions = tl::map<compiled, C>;
 
-    template <typename Memory>
+    template <typename _Memory>
     constexpr void
-    operator()(Memory& memory) noexcept
+    operator()(_Memory& memory) noexcept
     {
         tl::unroll(instructions{}, memory);
     }
 };
 
-template <typename StoreConstCommand, typename Table>
+template <typename StoreConstCommand>
 struct set_constant
 {
     using var    = typename StoreConstCommand::var;
@@ -431,30 +432,44 @@ struct set_constant
     constexpr void
     operator()(Memory& mem) const noexcept
     {
-        Table::template access<var>(mem) = func();
+        mem.template get<var>() = func();
     }
 };
 
-template <typename Commands, typename Table>
+template <typename Commands>
 struct init_constants
 {
-    template <typename StoreConstCommand>
-    using make_f = set_constant<StoreConstCommand, Table>;
-
     using instructions =
-        tl::map<make_f, tl::filter<detail::is_store_const, Commands>>;
+        tl::map<set_constant, tl::filter<detail::is_store_const, Commands>>;
 
-    template <typename Memory>
+    template <typename _Memory>
     constexpr void
-    operator()(Memory& memory) noexcept
+    operator()(_Memory& memory) noexcept
     {
         tl::unroll(instructions{}, memory);
     }
 };
 
+template <typename InputVars>
+struct input_setter;
+
+template <typename... InputVars>
+struct input_setter<type_sequence<InputVars...>>
+{
+    template <typename _Memory, typename... Args>
+    constexpr void
+    operator()(_Memory& mem, const Args&... args) const noexcept
+    {
+        const auto setter =
+            [&mem]<typename Var>(const auto& arg) constexpr noexcept
+        { mem.template get<Var>() = arg; };
+        (..., setter.template operator()<InputVars>(args));
+    }
+};
+
 /// @brief Basic program representation.
 template <typename InVars, typename OutVars, typename Statements>
-struct Program
+class Program
 {
     /// @brief Only commands that store values to a variable.
     using stores = tl::filter<detail::does_store, Statements>;
@@ -483,9 +498,13 @@ struct Program
     /// @brief Cell Pointer variable.
     using cp = Variable<index_t, "CP">;
 
-    using var_table = VarTable<tl::cons<cp, vars>, labelmap>;
+    template <Cell C>
+    using cell_compiler = cell_instructions<C, labelmap>;
 
-    using initializer = init_constants<Statements, var_table>;
+  public:
+    using memory            = typename VarTable<tl::cons<cp, vars>>::memory;
+    using const_initializer = init_constants<Statements>;
+    using compiled_cells    = tl::to<tl::map<cell_compiler, cells>, std::tuple>;
 };
 
 #define MK_CONSTANT(TYPE, VALUE) \
