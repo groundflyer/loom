@@ -34,6 +34,8 @@ static_assert(
     is_same_v<map_f<decltype([](int i) { return i + 20; }), testlist1>,
               integer_sequence<int, 21, 22, 23, 24>>);
 static_assert(is_same_v<map_t<int_constant, testlist1>, testlist1_ts>);
+static_assert(
+    is_same_v<map_t<int_constant, integer_sequence<int>>, type_sequence<>>);
 static_assert(!has_duplicates<testlist1>);
 static_assert(has_duplicates<testlist2>);
 static_assert(is_same_v<testlist1, nub<testlist3>>);
