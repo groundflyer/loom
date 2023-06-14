@@ -225,7 +225,7 @@ struct collected_type<type_sequence<Ts...>>
 };
 
 template <typename T>
-class access_wrapper
+struct access_wrapper
 {
     template <std::same_as<T> T1>
     constexpr T1&
@@ -236,7 +236,7 @@ class access_wrapper
 };
 
 template <typename... Ts>
-class access_wrapper<Union<Ts...>>
+struct access_wrapper<Union<Ts...>>
 {
     template <typename T>
     constexpr T&
@@ -273,7 +273,7 @@ template <std::size_t NMax,
                                         std::uint_fast16_t,
                                         std::uint_fast32_t,
                                         std::uint_fast64_t>>
-using index_type = typename detail::index_type<NMax, List>;
+using index_type = typename detail::index_type<NMax, List>::type;
 
 template <typename T>
 concept Cell = detail::is_cell<T>::value;
@@ -364,7 +364,7 @@ struct instruction<Copy<To, From>, LabelMap>
 template <typename To, typename Op, typename... Args, typename LabelMap>
 struct instruction<ComputeStore<To, Op, Args...>, LabelMap>
 {
-    static constexpr Op op;
+    static constexpr Op op{};
 
     template <typename _Memory>
     constexpr void
@@ -405,7 +405,7 @@ struct instruction<ConditionalJump<Var, Labels>, LabelMap>
     }
 };
 
-template <Cell C, typename LabelMap>
+template <typename C, typename LabelMap>
 struct cell_instructions
 {
     template <typename Command>
@@ -415,7 +415,7 @@ struct cell_instructions
 
     template <typename _Memory>
     constexpr void
-    operator()(_Memory& memory) noexcept
+    operator()(_Memory& memory) const noexcept
     {
         tl::unroll(instructions{}, memory);
     }
@@ -444,7 +444,7 @@ struct const_setter
 
     template <typename _Memory>
     constexpr void
-    operator()(_Memory& memory) noexcept
+    operator()(_Memory& memory) const noexcept
     {
         tl::unroll(instructions{}, memory);
     }
@@ -475,7 +475,7 @@ struct output_getter<type_sequence<OutputVar>>
 {
     template <typename _Memory>
     constexpr auto
-    operator()(const _Memory& mem) const noexcept
+    operator()(_Memory& mem) const noexcept
     {
         return mem.template get<OutputVar>();
     }
@@ -486,11 +486,37 @@ struct output_getter<type_sequence<OutputVars...>>
 {
     template <typename _Memory>
     constexpr auto
-    operator()(const _Memory& mem) const noexcept
+    operator()(_Memory& mem) const noexcept
     {
         return std::tuple{mem.template get<OutputVars>()...};
     }
 };
+
+template <typename _Program>
+class SingleCellEvaluator
+{
+    static constexpr typename _Program::init          init{};
+    static constexpr tl::head<typename _Program::ops> op{};
+    static constexpr typename _Program::setter        setter{};
+    static constexpr typename _Program::getter        getter{};
+
+    typename _Program::memory mem;
+
+  public:
+    constexpr SingleCellEvaluator() { init(mem); }
+
+    template <typename... Args>
+    constexpr auto
+    operator()(const Args&... args) noexcept
+    {
+        setter(mem, args...);
+        op(mem);
+        return getter(mem);
+    }
+};
+
+template <unsigned long i>
+using index_constant = std::integral_constant<unsigned long, i>;
 
 /// @brief Basic program representation.
 template <typename InputVars, typename OutputVars, typename Statements>
@@ -503,35 +529,43 @@ class Program
     using vars = tl::join<tl::join<InputVars, OutputVars>,
                           tl::map<get_storing_var, stores>>;
 
+    // filter out constant statements
+    template <typename C>
+    using f        = std::negation<detail::is_store_const<C>>;
+    using commands = tl::filter<f, Statements>;
+
     /// @brief List of lists of commands.
-    using cells = tl::split_with<detail::is_label, Statements>;
+    using cells = tl::split_with<detail::is_label, commands>;
 
-    using labels = tl::filter<detail::is_label, Statements>;
+    using labels = tl::filter<detail::is_label, commands>;
 
-    static constexpr std::size_t num_cells = tl::length<labels>;
+    static constexpr std::size_t num_cells   = tl::length<labels>;
+    static constexpr bool        is_singular = num_cells == 1;
 
     using index_t = index_type<num_cells>;
 
-    template <index_t i>
-    using index_constant = std::integer_sequence<index_t, i>;
-
     using labels_idxs = std::make_index_sequence<num_cells>;
     using labelmap    = tl::cons<
-        type_sequence<EndLabel, std::integral_constant<index_t, index_t{-1}>>,
+        type_pair<EndLabel,
+                  std::integral_constant<index_t, static_cast<index_t>(-1)>>,
         tl::zip<labels, il::map_t<index_constant, labels_idxs>>>;
 
     /// @brief Cell Pointer variable.
     using cp = Variable<index_t, "CP">;
 
-    template <Cell C>
+    template <typename C>
     using cell_compiler = cell_instructions<C, labelmap>;
 
+    // singlular cell optimizations:
+    // don't add cell pointer
+    using all_vars = std::conditional_t<is_singular, vars, tl::cons<cp, vars>>;
+
   public:
-    using memory            = typename VarTable<tl::cons<cp, vars>>::memory;
-    using const_initializer = const_setter<Statements>;
-    using compiled_cells    = tl::to<tl::map<cell_compiler, cells>, std::tuple>;
-    using in_setter         = input_setter<InputVars>;
-    using out_getter        = output_getter<OutputVars>;
+    using memory = typename VarTable<all_vars>::memory;
+    using init   = const_setter<Statements>;
+    using ops    = tl::map<cell_compiler, cells>;
+    using setter = input_setter<InputVars>;
+    using getter = output_getter<OutputVars>;
 };
 
 #define MK_CONSTANT(TYPE, VALUE) \
@@ -554,14 +588,19 @@ class increment
     using one = Variable<T, "one">;
     using commands =
         type_sequence<StoreConstant<one, std::integral_constant<T, 1>>,
-                      ComputeStore<val, std::plus<T>, val, one>,
-                      End>;
+                      ComputeStore<val, std::plus<T>, val, one>>;
 
     using inputs  = type_sequence<val>;
     using outputs = type_sequence<val>;
 
   public:
     using program = Program<inputs, outputs, commands>;
+    using eval    = SingleCellEvaluator<program>;
 };
 
-int main(/*int argc, char* argv[]*/) { return 0; }
+int main(/*int argc, char* argv[]*/)
+{
+    typename increment<int>::eval p;
+    int                           ret = p(-1);
+    return ret;
+}
