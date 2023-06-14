@@ -515,9 +515,6 @@ class SingleCellEvaluator
     }
 };
 
-template <unsigned long i>
-using index_constant = std::integral_constant<unsigned long, i>;
-
 /// @brief Basic program representation.
 template <typename InputVars, typename OutputVars, typename Statements>
 class Program
@@ -543,6 +540,9 @@ class Program
     static constexpr bool        is_singular = num_cells == 1;
 
     using index_t = index_type<num_cells>;
+
+    template <index_t i>
+    using index_constant = std::integral_constant<index_t, i>;
 
     using labels_idxs = std::make_index_sequence<num_cells>;
     using labelmap    = tl::cons<

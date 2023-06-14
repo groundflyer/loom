@@ -856,7 +856,7 @@ struct map_f<F, std::integer_sequence<Int, Is...>>
 template <template <auto> typename F, typename List>
 struct map_t;
 
-template <typename Int, template <Int> typename F, Int... Is>
+template <typename Int, template <auto> typename F, Int... Is>
 struct map_t<F, std::integer_sequence<Int, Is...>>
 {
     using type = type_sequence<F<Is>...>;
