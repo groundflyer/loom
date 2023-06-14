@@ -541,8 +541,9 @@ class Program
 
     using index_t = index_type<num_cells>;
 
-    template <index_t i>
-    using index_constant = std::integral_constant<index_t, i>;
+    template <auto i>
+    using index_constant =
+        std::integral_constant<index_t, static_cast<index_t>(i)>;
 
     using labels_idxs = std::make_index_sequence<num_cells>;
     using labelmap    = tl::cons<
