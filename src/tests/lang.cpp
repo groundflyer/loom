@@ -361,6 +361,19 @@ struct instruction<Copy<To, From>, LabelMap>
     }
 };
 
+template <typename To, typename Constant, typename LabelMap>
+struct instruction<StoreConstant<To, Constant>, LabelMap>
+{
+    static constexpr Constant func{};
+
+    template <typename _Memory>
+    constexpr void
+    operator()(_Memory& mem) const noexcept
+    {
+        mem.template get<To>() = func();
+    }
+};
+
 template <typename To, typename Op, typename... Args, typename LabelMap>
 struct instruction<ComputeStore<To, Op, Args...>, LabelMap>
 {
@@ -421,35 +434,6 @@ struct cell_instructions
     }
 };
 
-template <typename StoreConstCommand>
-struct set_constant
-{
-    using var    = typename StoreConstCommand::var;
-    using action = typename StoreConstCommand::action;
-    static constexpr action func{};
-
-    template <typename Memory>
-    constexpr void
-    operator()(Memory& mem) const noexcept
-    {
-        mem.template get<var>() = func();
-    }
-};
-
-template <typename Commands>
-struct const_setter
-{
-    using instructions =
-        tl::map<set_constant, tl::filter<detail::is_store_const, Commands>>;
-
-    template <typename _Memory>
-    constexpr void
-    operator()(_Memory& memory) const noexcept
-    {
-        tl::unroll(instructions{}, memory);
-    }
-};
-
 template <typename InputVars>
 struct input_setter;
 
@@ -493,17 +477,13 @@ struct output_getter<type_sequence<OutputVars...>>
 };
 
 template <typename _Program>
-class SingleCellEvaluator
+struct SingleCellEvaluator
 {
-    static constexpr typename _Program::init          init{};
     static constexpr tl::head<typename _Program::ops> op{};
     static constexpr typename _Program::setter        setter{};
     static constexpr typename _Program::getter        getter{};
 
     typename _Program::memory mem;
-
-  public:
-    constexpr SingleCellEvaluator() { init(mem); }
 
     template <typename... Args>
     constexpr auto
@@ -526,15 +506,10 @@ class Program
     using vars = tl::join<tl::join<InputVars, OutputVars>,
                           tl::map<get_storing_var, stores>>;
 
-    // filter out constant statements
-    template <typename C>
-    using f        = std::negation<detail::is_store_const<C>>;
-    using commands = tl::filter<f, Statements>;
-
     /// @brief List of lists of commands.
-    using cells = tl::split_with<detail::is_label, commands>;
+    using cells = tl::split_with<detail::is_label, Statements>;
 
-    using labels = tl::filter<detail::is_label, commands>;
+    using labels = tl::filter<detail::is_label, Statements>;
 
     static constexpr std::size_t num_cells   = tl::length<labels>;
     static constexpr bool        is_singular = num_cells == 1;
@@ -563,7 +538,6 @@ class Program
 
   public:
     using memory = typename VarTable<all_vars>::memory;
-    using init   = const_setter<Statements>;
     using ops    = tl::map<cell_compiler, cells>;
     using setter = input_setter<InputVars>;
     using getter = output_getter<OutputVars>;
@@ -571,16 +545,6 @@ class Program
 
 #define MK_CONSTANT(TYPE, VALUE) \
     decltype([]() constexpr noexcept -> TYPE { return VALUE; })
-
-template <typename T>
-struct Add
-{
-    constexpr T
-    operator()(const T& a, const T& b) const noexcept
-    {
-        return a + b;
-    }
-};
 
 template <typename T>
 class increment
