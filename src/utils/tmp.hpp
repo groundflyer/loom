@@ -35,6 +35,10 @@ template <typename... Ts>
 struct type_sequence
 {
 };
+
+/// @brief Pair of types
+template <typename A, typename B>
+using type_pair = type_sequence<A, B>;
 /// @}
 
 /// @defgroup CTString Compile-time string
@@ -267,21 +271,47 @@ struct drop<N, type_sequence<T, Ts...>>
     using type = typename drop<N - 1, type_sequence<Ts...>>::type;
 };
 
-template <typename List1, typename List2>
-struct zip;
+template <template <typename, typename> typename F,
+          typename List1,
+          typename List2>
+struct zip_with;
 
-template <typename X, typename Y>
-struct zip<type_sequence<X>, type_sequence<Y>>
+template <template <typename, typename> typename F, typename X, typename Y>
+struct zip_with<F, type_sequence<X>, type_sequence<Y>>
 {
-    using type = type_sequence<type_sequence<X, Y>>;
+    using type = type_sequence<F<X, Y>>;
 };
 
-template <typename X, typename Y, typename... Xs, typename... Ys>
-struct zip<type_sequence<X, Xs...>, type_sequence<Y, Ys...>>
+template <template <typename, typename> typename F, typename X>
+struct zip_with<F, type_sequence<X>, type_sequence<>>
 {
-    using type = typename cons<
-        type_sequence<X, Y>,
-        typename zip<type_sequence<Xs...>, type_sequence<Ys...>>::type>::type;
+    using type = type_sequence<>;
+};
+
+template <template <typename, typename> typename F, typename Y>
+struct zip_with<F, type_sequence<>, type_sequence<Y>>
+{
+    using type = type_sequence<>;
+};
+
+template <template <typename, typename> typename F>
+struct zip_with<F, type_sequence<>, type_sequence<>>
+{
+    using type = type_sequence<>;
+};
+
+template <template <typename, typename> typename F,
+          typename X,
+          typename Y,
+          typename... Xs,
+          typename... Ys>
+struct zip_with<F, type_sequence<X, Xs...>, type_sequence<Y, Ys...>>
+{
+    using type =
+        typename cons<F<X, Y>,
+                      typename zip_with<F,
+                                        type_sequence<Xs...>,
+                                        type_sequence<Ys...>>::type>::type;
 };
 
 template <typename List>
@@ -374,7 +404,7 @@ struct lookup<T, type_sequence<>>
 };
 
 template <typename T, typename Key, typename Value, typename... Ts>
-struct lookup<T, type_sequence<type_sequence<Key, Value>, Ts...>>
+struct lookup<T, type_sequence<type_pair<Key, Value>, Ts...>>
 {
     using type =
         std::conditional_t<std::is_same_v<T, Key>,
@@ -553,12 +583,21 @@ using take = typename detail::take<N, List>::type;
 template <std::size_t N, typename List>
 using drop = typename detail::drop<N, List>::type;
 
-/// @brief Make list of pairs type_sequence<type_sequence<X, Y>...> of
+/// @brief Generalization of zip. Zips with the meta-function
+/// given as the first argument, instead of type_pair.
+///
+/// If one input list is shorter than the other,
+/// excess elements of the longer list are discarded.
+template <template <typename, typename> typename F, typename Xs, typename Ys>
+using zip_with = typename detail::zip_with<F, Xs, Ys>::type;
+
+/// @brief Make list of pairs type_sequence<type_pair<X, Y>...> of
 /// corresponding types from lists @p Xs and @p Ys.
 ///
-/// @p Xs and @p Ys must be of the same length.
+/// If one input list is shorter than the other,
+/// excess elements of the longer list are discarded.
 template <typename Xs, typename Ys>
-using zip = typename detail::zip<Xs, Ys>::type;
+using zip = zip_with<type_pair, Xs, Ys>;
 
 /// @brief The concatenation of all the elements of a list @p List of lists.
 template <typename List>

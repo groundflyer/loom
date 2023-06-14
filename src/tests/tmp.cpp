@@ -83,9 +83,13 @@ static_assert(index<float, testlist1> == 2);
 static_assert(!same<testlist1>);
 static_assert(same<type_sequence<int, int, int>>);
 static_assert(is_same_v<zip<testlist2, testlist3>,
-                        type_sequence<type_sequence<double, long>,
-                                      type_sequence<unsigned, size_t>,
-                                      type_sequence<short, unsigned char>>>);
+                        type_sequence<type_pair<double, long>,
+                                      type_pair<unsigned, size_t>,
+                                      type_pair<short, unsigned char>>>);
+static_assert(is_same_v<zip<testlist1, testlist2>,
+                        type_sequence<type_pair<bool, double>,
+                                      type_pair<int, unsigned>,
+                                      type_pair<float, short>>>);
 static_assert(is_same_v<concat<type_sequence<testlist1, testlist2, testlist3>>,
                         type_sequence<bool,
                                       int,
