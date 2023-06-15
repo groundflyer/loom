@@ -6,6 +6,7 @@
 
 #include <concepts>
 #include <cstdint>
+#include <iostream>
 #include <limits>
 #include <tuple>
 
@@ -497,7 +498,7 @@ struct SingleCellEvaluator
 
 /// @brief Basic program representation.
 template <typename InputVars, typename OutputVars, typename Statements>
-class Program
+struct Program
 {
     /// @brief Only commands that store values to a variable.
     using stores = tl::filter<detail::does_store, Statements>;
@@ -511,8 +512,7 @@ class Program
 
     using labels = tl::filter<detail::is_label, Statements>;
 
-    static constexpr std::size_t num_cells   = tl::length<labels>;
-    static constexpr bool        is_singular = num_cells == 1;
+    static constexpr std::size_t num_cells = tl::length<cells>;
 
     using index_t = index_type<num_cells>;
 
@@ -532,22 +532,20 @@ class Program
     template <typename C>
     using cell_compiler = cell_instructions<C, labelmap>;
 
-    // singlular cell optimizations:
-    // don't add cell pointer
+    static constexpr bool is_singular = num_cells == 1;
+    // singlular cell optimizations: don't add cell pointer
     using all_vars = std::conditional_t<is_singular, vars, tl::cons<cp, vars>>;
-
-  public:
-    using memory = typename VarTable<all_vars>::memory;
-    using ops    = tl::map<cell_compiler, cells>;
-    using setter = input_setter<InputVars>;
-    using getter = output_getter<OutputVars>;
+    using memory   = typename VarTable<all_vars>::memory;
+    using ops      = tl::map<cell_compiler, cells>;
+    using setter   = input_setter<InputVars>;
+    using getter   = output_getter<OutputVars>;
 };
 
 #define MK_CONSTANT(TYPE, VALUE) \
     decltype([]() constexpr noexcept -> TYPE { return VALUE; })
 
 template <typename T>
-class increment
+struct increment
 {
     using val = Variable<T, "val">;
     using one = Variable<T, "one">;
@@ -557,15 +555,14 @@ class increment
 
     using inputs  = type_sequence<val>;
     using outputs = type_sequence<val>;
-
-  public:
     using program = Program<inputs, outputs, commands>;
     using eval    = SingleCellEvaluator<program>;
 };
 
 int main(/*int argc, char* argv[]*/)
 {
-    typename increment<int>::eval p;
-    int                           ret = p(-1);
+    using incr_int = increment<int>;
+    typename incr_int::eval p;
+    int                     ret = p(-1);
     return ret;
 }
