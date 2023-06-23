@@ -559,6 +559,50 @@ struct increment
     using eval    = SingleCellEvaluator<program>;
 };
 
+// T factorial(T i):
+//     T c = i - 1
+//     while c != 0:
+//         i *= c
+//         c -= 1
+//     return i
+//
+// input: ax
+// outupt: ax
+//
+// o = 1
+// z = 0
+// cx = ax - 1
+// loop:
+// ax = ax * cx
+// cx = cx - 1
+// cmp = cx == 0
+// jump: cmp: 0 -> loop, 1 -> end
+template <typename T>
+struct factorial
+{
+    using ax   = Variable<T, "ax">; // accumulator
+    using cx   = Variable<T, "cx">; // counter
+    using one  = Variable<T, "one">;
+    using zero = Variable<T, "zero">;
+    using cmp  = Variable<bool, "cmp">;
+    using loop = Label<"loop">;
+
+    using commands =
+        type_sequence<StoreConstant<one, std::integral_constant<T, 1>>,
+                      StoreConstant<zero, std::integral_constant<T, 0>>,
+                      ComputeStore<cx, std::minus<T>, ax, one>,
+                      loop,
+                      ComputeStore<ax, std::multiplies<T>, ax, cx>,
+                      ComputeStore<cx, std::minus<T>, cx, one>,
+                      ComputeStore<cmp, std::equal_to<T>, cx, zero>,
+                      ConditionalJump<cmp, type_sequence<loop, EndLabel>>>;
+
+    using inputs  = type_sequence<ax>;
+    using outputs = type_sequence<ax>;
+
+    using program = Program<inputs, outputs, commands>;
+};
+
 int main(/*int argc, char* argv[]*/)
 {
     using incr_int = increment<int>;
