@@ -118,6 +118,11 @@ static_assert(is_void_v<find<is_pointer, testlist1>>);
 static_assert(is_same_v<split<bool, splitest1>, splittest2>);
 static_assert(
     is_same_v<to_integer_sequence<intlist::testlist1_ts>, intlist::testlist1>);
+static_assert(
+    is_same_v<enumerate<testlist2>,
+              type_sequence<type_pair<integral_constant<size_t, 0>, double>,
+                            type_pair<integral_constant<size_t, 1>, unsigned>,
+                            type_pair<integral_constant<size_t, 2>, short>>>);
 } // namespace lucid::typelist
 
 int

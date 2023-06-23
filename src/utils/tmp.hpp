@@ -36,7 +36,7 @@ struct type_sequence
 {
 };
 
-/// @brief Pair of types
+/// @brief Pair of types.
 template <typename A, typename B>
 using type_pair = type_sequence<A, B>;
 /// @}
@@ -159,6 +159,12 @@ struct at<I, type_sequence<T, Ts...>>
 
 template <typename List>
 struct tail;
+
+template <>
+struct tail<type_sequence<>>
+{
+    using type = type_sequence<>;
+};
 
 template <typename T, typename... Ts>
 struct tail<type_sequence<T, Ts...>>
@@ -1160,4 +1166,30 @@ template <std::size_t N, std::size_t L>
 using nlperm = typename nlperm_impl<N, L>::type;
 /// @}
 } // namespace intlist
+
+namespace typelist
+{
+namespace detail
+{
+template <typename List>
+struct enumerate
+{
+    template <std::size_t i>
+    using index_type = std::integral_constant<std::size_t, i>;
+
+    using type = typelist::zip<
+        intlist::map_t<index_type,
+                       std::make_index_sequence<typelist::length<List>>>,
+        List>;
+};
+} // namespace detail
+
+/// @ingroup Typelist
+/// @brief Create list of pairs of an type's index in the
+/// @p List and the type itself, i. e. [(0, a), (1, b)...]
+///
+/// Type of index is std::integer_constant<std::size_t, ...>
+template <typename List>
+using enumerate = typename detail::enumerate<List>::type;
+} // namespace typelist
 } // namespace lucid
