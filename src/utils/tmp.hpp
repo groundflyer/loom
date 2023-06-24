@@ -1171,25 +1171,25 @@ namespace typelist
 {
 namespace detail
 {
-template <typename List>
+template <typename List, typename Index>
 struct enumerate
 {
-    template <std::size_t i>
-    using index_type = std::integral_constant<std::size_t, i>;
+    template <Index i>
+    using index_type = std::integral_constant<Index, i>;
 
     using type = typelist::zip<
+        List,
         intlist::map_t<index_type,
-                       std::make_index_sequence<typelist::length<List>>>,
-        List>;
+                       std::make_index_sequence<typelist::length<List>>>>;
 };
 } // namespace detail
 
 /// @ingroup Typelist
-/// @brief Create list of pairs of an type's index in the
-/// @p List and the type itself, i. e. [(0, a), (1, b)...]
+/// @brief Enumerate types in @p List with indicies of type @p Index
+/// @f$[(T_0, 0), (T_1, 1), ... (T_n, n)]@f$
 ///
-/// Type of index is std::integer_constant<std::size_t, ...>
-template <typename List>
-using enumerate = typename detail::enumerate<List>::type;
+/// Type of the index member is std::integer_constant<Index, value>
+template <typename List, typename Index = std::size_t>
+using enumerate = typename detail::enumerate<List, Index>::type;
 } // namespace typelist
 } // namespace lucid

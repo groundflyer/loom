@@ -120,9 +120,9 @@ static_assert(
     is_same_v<to_integer_sequence<intlist::testlist1_ts>, intlist::testlist1>);
 static_assert(
     is_same_v<enumerate<testlist2>,
-              type_sequence<type_pair<integral_constant<size_t, 0>, double>,
-                            type_pair<integral_constant<size_t, 1>, unsigned>,
-                            type_pair<integral_constant<size_t, 2>, short>>>);
+              type_sequence<type_pair<double, integral_constant<size_t, 0>>,
+                            type_pair<unsigned, integral_constant<size_t, 1>>,
+                            type_pair<short, integral_constant<size_t, 2>>>>);
 } // namespace lucid::typelist
 
 int
