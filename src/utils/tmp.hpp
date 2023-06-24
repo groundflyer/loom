@@ -150,8 +150,13 @@ struct at<0, type_sequence<T, Ts...>>
     using type = T;
 };
 
+template <std::size_t I>
+struct at<I, type_sequence<>>
+{
+    using type = void;
+};
+
 template <std::size_t I, typename T, typename... Ts>
-    requires(I < length<type_sequence<T, Ts...>>::value)
 struct at<I, type_sequence<T, Ts...>>
 {
     using type = typename at<I - 1, type_sequence<Ts...>>::type;
@@ -527,6 +532,8 @@ template <typename List>
 inline constexpr std::size_t length = detail::length<List>::value;
 
 /// @brief Extract the @p Ith class from @p List.
+///
+/// If @p List is too short, the resulting type is void.
 template <std::size_t I, typename List>
 using at = typename detail::at<I, List>::type;
 
