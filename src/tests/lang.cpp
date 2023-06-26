@@ -2,6 +2,7 @@
 // lang.cpp
 
 #include <utils/tmp.hpp>
+#include <utils/tuple.hpp>
 #include <utils/union.hpp>
 
 #include <concepts>
@@ -47,6 +48,10 @@ struct EndLabel
 {
 };
 
+struct StartLabel
+{
+};
+
 template <typename Var, typename Labels>
     requires(std::is_integral_v<typename Var::type>)
 struct ConditionalJump
@@ -61,7 +66,7 @@ struct AlwaysJump
     using target = Target;
 };
 
-using End = AlwaysJump<EndLabel>;
+using EndJump = AlwaysJump<EndLabel>;
 
 template <typename Type, StringLiteral Name>
 struct Variable
@@ -122,6 +127,12 @@ struct is_label<Label<s>>
 
 template <>
 struct is_label<EndLabel>
+{
+    static constexpr bool value = true;
+};
+
+template <>
+struct is_label<StartLabel>
 {
     static constexpr bool value = true;
 };
@@ -258,6 +269,30 @@ struct index_type
 
     using type = tl::find<p, List>;
 };
+
+template <typename Cells, typename Labels>
+struct ensure_last_jump
+{
+    template <typename CellIdx>
+    struct f_impl
+    {
+        using cell = fst_t<CellIdx>;
+
+        // is either label of the next cell or if there is none ending label
+        using next_label =
+            choice_t<tl::at<(snd_t<CellIdx>::value + 1), Labels>, EndLabel>;
+
+        using type =
+            std::conditional_t<is_jump<tl::last<cell>>::value,
+                               cell,
+                               tl::append<AlwaysJump<next_label>, cell>>;
+    };
+
+    template <typename CellIdx>
+    using f = typename f_impl<CellIdx>::type;
+
+    using type = tl::map<f, tl::enumerate<Cells>>;
+};
 } // namespace lucid::detail
 
 template <typename Command>
@@ -266,9 +301,8 @@ using get_storing_var = typename detail::get_storing_var<Command>::type;
 template <typename Vars>
 using get_var_names = typename detail::get_var_names<Vars>::type;
 
-template <typename Command>
-inline constexpr bool is_jump = detail::is_jump<Command>::value;
-
+/// @brief Selects the smallest unsinged integer type that can hold at least @p
+/// NMax value.
 template <std::size_t NMax,
           typename List = type_sequence<std::uint_fast8_t,
                                         std::uint_fast16_t,
@@ -276,8 +310,10 @@ template <std::size_t NMax,
                                         std::uint_fast64_t>>
 using index_type = typename detail::index_type<NMax, List>::type;
 
-template <typename T>
-concept Cell = detail::is_cell<T>::value;
+/// @brief Ensures that every cell ends with a jump.
+template <typename Cells, typename Labels>
+using ensure_last_jumps =
+    typename detail::ensure_last_jump<Cells, Labels>::type;
 
 template <typename VarTypes,
           typename VarNames,
@@ -391,13 +427,13 @@ struct instruction<ComputeStore<To, Op, Args...>, LabelMap>
 template <typename Target, typename LabelMap>
 struct instruction<AlwaysJump<Target>, LabelMap>
 {
-    using type = typename tl::lookup<Target, LabelMap>::value_type;
+    using constant = typename tl::lookup<Target, LabelMap>;
 
     template <typename _Memory>
     constexpr void
     operator()(_Memory& memory) const noexcept
     {
-        memory.cp() = type::value;
+        memory.cp() = constant::value;
     }
 };
 
@@ -480,9 +516,9 @@ struct output_getter<type_sequence<OutputVars...>>
 template <typename _Program>
 struct SingleCellEvaluator
 {
-    static constexpr tl::head<typename _Program::ops> op{};
-    static constexpr typename _Program::setter        setter{};
-    static constexpr typename _Program::getter        getter{};
+    static constexpr tl::head<typename _Program::cells> cell{};
+    static constexpr typename _Program::setter          setter{};
+    static constexpr typename _Program::getter          getter{};
 
     typename _Program::memory mem;
 
@@ -491,7 +527,35 @@ struct SingleCellEvaluator
     operator()(const Args&... args) noexcept
     {
         setter(mem, args...);
-        op(mem);
+        cell(mem);
+        return getter(mem);
+    }
+};
+
+template <typename _Program>
+struct NormalEvaluator
+{
+    static constexpr typename tl::to<typename _Program::cells, std::tuple>
+                                               cells{};
+    static constexpr typename _Program::setter setter{};
+    static constexpr typename _Program::getter getter{};
+
+    using _Memory = typename _Program::memory;
+    using index_t = typename _Program::index_t;
+
+    _Memory mem;
+
+    template <typename... Args>
+    constexpr auto
+    operator()(const Args&... args) noexcept
+    {
+        setter(mem, args...);
+        while(mem.cp() != static_cast<index_t>(-1))
+            visit(
+                mem.cp(),
+                [&](auto&& cell) constexpr noexcept { cell(mem); },
+                cells,
+                [](auto&&...) constexpr noexcept {});
         return getter(mem);
     }
 };
@@ -508,11 +572,18 @@ struct Program
                           tl::map<get_storing_var, stores>>;
 
     /// @brief List of lists of commands.
-    using cells = tl::split_with<detail::is_label, Statements>;
+    using cells_statements = tl::split_with<detail::is_label, Statements>;
 
-    using labels = tl::filter<detail::is_label, Statements>;
+    using stated_labels = tl::filter<detail::is_label, Statements>;
 
-    static constexpr std::size_t num_cells = tl::length<cells>;
+    static constexpr std::size_t num_cells = tl::length<cells_statements>;
+
+    // Ensure that every cell is labeled.
+    // Only the first label can be skipped, so we just add special label at the
+    // beginning.
+    using labels = std::conditional_t<num_cells == tl::length<stated_labels>,
+                                      stated_labels,
+                                      tl::cons<StartLabel, stated_labels>>;
 
     using index_t = index_type<num_cells>;
 
@@ -520,11 +591,10 @@ struct Program
     using index_constant =
         std::integral_constant<index_t, static_cast<index_t>(i)>;
 
-    using labels_idxs = std::make_index_sequence<num_cells>;
-    using labelmap    = tl::cons<
+    using labelmap = tl::cons<
         type_pair<EndLabel,
                   std::integral_constant<index_t, static_cast<index_t>(-1)>>,
-        tl::zip<labels, il::map_t<index_constant, labels_idxs>>>;
+        tl::enumerate<labels, index_t>>;
 
     /// @brief Cell Pointer variable.
     using cp = Variable<index_t, "CP">;
@@ -533,12 +603,19 @@ struct Program
     using cell_compiler = cell_instructions<C, labelmap>;
 
     static constexpr bool is_singular = num_cells == 1;
-    // singlular cell optimizations: don't add cell pointer
+
+    // singlular cell optimizations:
+    // don't add cell pointer
     using all_vars = std::conditional_t<is_singular, vars, tl::cons<cp, vars>>;
-    using memory   = typename VarTable<all_vars>::memory;
-    using ops      = tl::map<cell_compiler, cells>;
-    using setter   = input_setter<InputVars>;
-    using getter   = output_getter<OutputVars>;
+    // don't check jumps
+    using cells = tl::map<
+        cell_compiler,
+        std::conditional_t<is_singular,
+                           cells_statements,
+                           ensure_last_jumps<cells_statements, labels>>>;
+    using memory = typename VarTable<all_vars>::memory;
+    using setter = input_setter<InputVars>;
+    using getter = output_getter<OutputVars>;
 };
 
 #define MK_CONSTANT(TYPE, VALUE) \
@@ -601,6 +678,8 @@ struct factorial
     using outputs = type_sequence<ax>;
 
     using program = Program<inputs, outputs, commands>;
+
+    using eval = NormalEvaluator<program>;
 };
 
 int main(/*int argc, char* argv[]*/)
@@ -608,5 +687,10 @@ int main(/*int argc, char* argv[]*/)
     using incr_int = increment<int>;
     typename incr_int::eval p;
     int                     ret = p(-1);
+
+    using fac_unsigned = factorial<unsigned>;
+    typename fac_unsigned::eval fac;
+    auto                        fr = fac(4);
+    ret &= fr != 24;
     return ret;
 }
