@@ -39,6 +39,44 @@ struct type_sequence
 /// @brief Pair of types.
 template <typename A, typename B>
 using type_pair = type_sequence<A, B>;
+
+/// @brief Select first non-void type.
+/// If both are void the result type is void.
+template <typename T, typename Alt>
+using choice_t = std::conditional_t<std::is_void_v<T>, Alt, T>;
+
+template <typename TypePair>
+struct fst;
+
+template <typename A, typename B>
+struct fst<type_pair<A, B>>
+{
+    using type = A;
+};
+
+template <typename TypePair>
+struct snd;
+
+template <typename A, typename B>
+struct snd<type_pair<A, B>>
+{
+    using type = B;
+};
+
+/// @brief Extract the first type of @p Pair.
+///
+/// It is basically the same as typelist::head, but ensures
+/// that the number of elements in type_sequence @p Pair is
+/// exactly two.
+template <typename Pair>
+using fst_t = typename fst<Pair>::type;
+
+/// @brief Extract the second type of @p Pair.
+///
+/// Same as typelist::last, but guarantees that type_sequence @p Pair
+/// consists only of two types.
+template <typename Pair>
+using snd_t = typename snd<Pair>::type;
 /// @}
 
 /// @defgroup CTString Compile-time string
@@ -97,6 +135,8 @@ using sl2cs =
     typename detail::sl2cs_impl<s, std::make_index_sequence<s.size()>>::type;
 /// @}
 
+// In this namespace we don't suffix typedefs with _t and values with _v.
+// Same applies to intlist namespace.
 namespace typelist
 {
 namespace detail
