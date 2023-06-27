@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include <utils/functional.hpp>
 #include <utils/tmp.hpp>
 #include <utils/tuple.hpp>
 #include <utils/union.hpp>
@@ -550,7 +551,7 @@ struct NormalEvaluator
                 mem.cp(),
                 [&](auto&& cell) constexpr noexcept { cell(mem); },
                 cells,
-                [](auto&&...) constexpr noexcept {});
+                sink);
         return getter(mem);
     }
 };
