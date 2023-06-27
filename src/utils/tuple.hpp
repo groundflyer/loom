@@ -7,6 +7,7 @@
 #include "functional.hpp"
 #include "tmp.hpp"
 
+#include <concepts>
 #include <variant>
 
 namespace lucid
@@ -25,22 +26,23 @@ enumerate_impl(const Tuple& tuple, std::index_sequence<Ids...>) noexcept
     };
 }
 
-template <std::size_t Idx, typename Visitor, typename Tuple, typename Default>
+template <std::unsigned_integral I,
+          I                      idx,
+          typename Visitor,
+          typename Tuple,
+          typename Default>
 constexpr decltype(auto)
-visit_impl(const std::size_t case_,
-           Visitor&&         visitor,
-           Tuple&&           tuple,
-           Default&&         def)
+visit_impl(const I i, Visitor&& visitor, Tuple&& tuple, Default&& def)
 {
-    if(Idx == case_)
+    if(idx == i)
         return std::invoke(std::forward<Visitor>(visitor),
-                           std::get<Idx>(std::forward<Tuple>(tuple)));
+                           std::get<idx>(std::forward<Tuple>(tuple)));
 
-    if constexpr(Idx < std::tuple_size_v<std::decay_t<Tuple>> - 1)
-        return visit_impl<Idx + 1>(case_,
-                                   std::forward<Visitor>(visitor),
-                                   std::forward<Tuple>(tuple),
-                                   std::forward<Default>(def));
+    if constexpr(idx < std::tuple_size_v<std::decay_t<Tuple>> - 1)
+        return visit_impl<I, idx + 1>(i,
+                                      std::forward<Visitor>(visitor),
+                                      std::forward<Tuple>(tuple),
+                                      std::forward<Default>(def));
     else
         return std::invoke(std::forward<Default>(def));
 }
@@ -112,28 +114,24 @@ enumerate(const std::tuple<Ts...>& tuple) noexcept
     return detail::enumerate_impl(tuple, std::index_sequence_for<Ts...>{});
 }
 
-/// @brief Invoke @p visitor on the @p case_'th element of @p tuple.
+/// @brief Invoke @p visitor on the @p i'th element of @p tuple.
 ///
-/// @return Value of either std::variant comprising of all possible
-/// return types of @p Visitor(Ts)... or a singular type if all the resulting
-/// types of @p Visitor(Ts)... are the same.
-///
-/// @param case_ which @p tuple element to invoke @p visitor on.
+/// @param i which @p tuple element to invoke @p visitor on.
 /// @param visitor callable to invoke. Must be able to take @p tuple elements
 /// as arguments.
 /// @param tuple contains elements to invoke @p visitor on.
-/// @param def is invoked if @p case_ is out of range.
-template <typename Visitor, typename Tuple, typename Default>
+/// @param def function that invoked without arguments if @p i is out of range.
+template <std::unsigned_integral I,
+          typename Visitor,
+          typename Tuple,
+          typename Default>
 constexpr decltype(auto)
-visit(const std::size_t case_,
-      Visitor&&         visitor,
-      Tuple&&           tuple,
-      Default&&         defval) noexcept
+visit(const I i, Visitor&& visitor, Tuple&& tuple, Default&& defval) noexcept
 {
-    return detail::visit_impl<0>(case_,
-                                 std::forward<Visitor>(visitor),
-                                 std::forward<Tuple>(tuple),
-                                 std::forward<Default>(defval));
+    return detail::visit_impl<I, 0>(i,
+                                    std::forward<Visitor>(visitor),
+                                    std::forward<Tuple>(tuple),
+                                    std::forward<Default>(defval));
 }
 
 /// @brief Concatenate arrays.
