@@ -1547,7 +1547,8 @@ make_program_name(std::string_view argv0) noexcept
                                                  argv0.substr(slash_pos + 1);
 }
 
-/// @brief Prints parse errors to stderr.
+/// @brief Prints parse errors to stderr and terminates program with exit
+/// code 1.
 class StandardErrorHandler
 {
     static constexpr std::string_view error_head = "Argument Parsing Error";
@@ -1560,6 +1561,7 @@ class StandardErrorHandler
                    "{}: too few arguments for parameter \"{}\"\n",
                    error_head,
                    ex.keyword);
+        exit(1);
     }
 
     template <typename Key>
@@ -1567,6 +1569,7 @@ class StandardErrorHandler
     operator()(const KeyException<Key>& ex) const noexcept
     {
         fmt::print(stderr, "{}: unknown key \"{}\"\n", error_head, ex.value);
+        exit(1);
     }
 
     void
@@ -1576,6 +1579,7 @@ class StandardErrorHandler
                    "{}: unexpected value \"{}\"\n",
                    error_head,
                    ex.value);
+        exit(1);
     }
 
     void
@@ -1585,12 +1589,14 @@ class StandardErrorHandler
                    "{}: too few arguments for parameter \"{}\"\n",
                    error_head,
                    problem_key);
+        exit(1);
     }
 
     void
     operator()(bool) const noexcept
     {
         fmt::print(stderr, "{}: too few positional arguments\n", error_head);
+        exit(1);
     }
 };
 
@@ -1605,10 +1611,10 @@ parse(const std::tuple<Options...>&     options,
       ErrorHandler&& error_handler = StandardErrorHandler{}) noexcept
 {
     using keychars =
-        intlist::del<detail::missing_keychar, char_sequence<Options::key...>>;
+        intlist::purge<detail::missing_keychar, char_sequence<Options::key...>>;
     using keywords =
-        typelist::del<typename detail::missing_keyword::type,
-                      type_sequence<typename Options::keyword_type...>>;
+        typelist::purge<typename detail::missing_keyword::type,
+                        type_sequence<typename Options::keyword_type...>>;
     static_assert(!intlist::has_duplicates<keychars>, "Keys must be unique");
     static_assert(!typelist::has_duplicates<keywords>, "Keys must be unique");
 
