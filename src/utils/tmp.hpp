@@ -22,7 +22,8 @@ namespace lucid
 /// or a static constexpr member @p value.
 ///
 /// The templates are hidden in the @p detail namespace,
-/// while type aliases and variable templates are visible.
+/// while type aliases and variable templates are visible
+/// in lucid namespace.
 /// @{
 
 /// @brief Compile-time string.
@@ -34,6 +35,48 @@ template <typename... Ts>
 struct type_sequence
 {
 };
+
+/// @brief Pair of types.
+template <typename A, typename B>
+using type_pair = type_sequence<A, B>;
+
+/// @brief Select first non-void type.
+/// If both are void the result type is void.
+template <typename T, typename Alt>
+using choice_t = std::conditional_t<std::is_void_v<T>, Alt, T>;
+
+template <typename TypePair>
+struct fst;
+
+template <typename A, typename B>
+struct fst<type_pair<A, B>>
+{
+    using type = A;
+};
+
+template <typename TypePair>
+struct snd;
+
+template <typename A, typename B>
+struct snd<type_pair<A, B>>
+{
+    using type = B;
+};
+
+/// @brief Extract the first type of @p Pair.
+///
+/// It is basically the same as typelist::head, but ensures
+/// that the number of elements in type_sequence @p Pair is
+/// exactly two.
+template <typename Pair>
+using fst_t = typename fst<Pair>::type;
+
+/// @brief Extract the second type of @p Pair.
+///
+/// Same as typelist::last, but guarantees that type_sequence @p Pair
+/// consists only of two types.
+template <typename Pair>
+using snd_t = typename snd<Pair>::type;
 /// @}
 
 /// @defgroup CTString Compile-time string
@@ -92,33 +135,12 @@ using sl2cs =
     typename detail::sl2cs_impl<s, std::make_index_sequence<s.size()>>::type;
 /// @}
 
-/// @defgroup Typelist Typelist
-/// @brief List operations on type sequences.
-/// @ingroup TMP
-/// @{
-
+// In this namespace we don't suffix typedefs with _t and values with _v.
+// Same applies to intlist namespace.
 namespace typelist
 {
 namespace detail
 {
-template <typename Source>
-struct from;
-
-template <template <typename...> typename Source, typename... Ts>
-struct from<Source<Ts...>>
-{
-    using type = type_sequence<Ts...>;
-};
-
-template <typename Source, template <typename...> typename Target>
-struct to;
-
-template <template <typename...> typename Target, typename... Ts>
-struct to<type_sequence<Ts...>, Target>
-{
-    using type = Target<Ts...>;
-};
-
 template <typename T, typename List>
 struct cons;
 
@@ -168,16 +190,26 @@ struct at<0, type_sequence<T, Ts...>>
     using type = T;
 };
 
+template <std::size_t I>
+struct at<I, type_sequence<>>
+{
+    using type = void;
+};
+
 template <std::size_t I, typename T, typename... Ts>
 struct at<I, type_sequence<T, Ts...>>
 {
-    static_assert(I < length<type_sequence<T, Ts...>>::value,
-                  "Index out of range");
     using type = typename at<I - 1, type_sequence<Ts...>>::type;
 };
 
 template <typename List>
 struct tail;
+
+template <>
+struct tail<type_sequence<>>
+{
+    using type = type_sequence<>;
+};
 
 template <typename T, typename... Ts>
 struct tail<type_sequence<T, Ts...>>
@@ -194,25 +226,21 @@ struct elem<T, type_sequence<Ts...>>
     static constexpr bool value = (false || ... || std::is_same_v<T, Ts>);
 };
 
-template <std::size_t idx, typename Sought, typename T, typename... Ts>
-constexpr std::size_t
-index_impl() noexcept
-{
-    if constexpr(std::is_same_v<Sought, T>)
-        return idx;
-    else if constexpr(sizeof...(Ts) > 0ul)
-        return index_impl<idx + 1, Sought, Ts...>();
-    else
-        static_assert(sizeof...(Ts) > 0ul, "Type not found.");
-}
-
-template <typename T, typename List>
+template <std::size_t I, typename S, typename List>
 struct index;
 
-template <typename T, typename H, typename... Ts>
-struct index<T, type_sequence<H, Ts...>>
+template <std::size_t I, typename S>
+struct index<I, S, type_sequence<>>
 {
-    static constexpr std::size_t value = index_impl<0, T, H, Ts...>();
+    static constexpr std::size_t value = -1ul;
+};
+
+template <std::size_t I, typename S, typename T, typename... Ts>
+struct index<I, S, type_sequence<T, Ts...>>
+{
+    static constexpr std::size_t value =
+        std::is_same_v<S, T> ? I :
+                               index<I + 1ul, S, type_sequence<Ts...>>::value;
 };
 
 template <template <typename, typename> typename F, typename Acc, typename List>
@@ -270,10 +298,9 @@ struct take<1, type_sequence<T, Ts...>>
 };
 
 template <std::size_t N, typename T, typename... Ts>
+    requires(N <= length<type_sequence<T, Ts...>>::value)
 struct take<N, type_sequence<T, Ts...>>
 {
-    static_assert(N <= length<type_sequence<T, Ts...>>::value);
-
     using type =
         typename cons<T,
                       typename take<N - 1, type_sequence<Ts...>>::type>::type;
@@ -289,47 +316,53 @@ struct drop<1, type_sequence<T, Ts...>>
 };
 
 template <std::size_t N, typename T, typename... Ts>
+    requires(N <= length<type_sequence<T, Ts...>>::value)
 struct drop<N, type_sequence<T, Ts...>>
 {
-    static_assert(N <= length<type_sequence<T, Ts...>>::value);
-
     using type = typename drop<N - 1, type_sequence<Ts...>>::type;
 };
 
-template <typename List1, typename List2>
-struct zip;
+template <template <typename, typename> typename F,
+          typename List1,
+          typename List2>
+struct zip_with;
 
-template <typename X, typename Y>
-struct zip<type_sequence<X>, type_sequence<Y>>
+template <template <typename, typename> typename F, typename X, typename Y>
+struct zip_with<F, type_sequence<X>, type_sequence<Y>>
 {
-    using type = type_sequence<type_sequence<X, Y>>;
+    using type = type_sequence<F<X, Y>>;
 };
 
-template <typename X, typename Y, typename... Xs, typename... Ys>
-struct zip<type_sequence<X, Xs...>, type_sequence<Y, Ys...>>
+template <template <typename, typename> typename F, typename X>
+struct zip_with<F, type_sequence<X>, type_sequence<>>
 {
-    using type = typename cons<
-        type_sequence<X, Y>,
-        typename zip<type_sequence<Xs...>, type_sequence<Ys...>>::type>::type;
+    using type = type_sequence<>;
 };
 
-template <typename T, typename List>
-struct del;
-
-template <typename T, typename X>
-struct del<T, type_sequence<X>>
+template <template <typename, typename> typename F, typename Y>
+struct zip_with<F, type_sequence<>, type_sequence<Y>>
 {
-    using type = std::
-        conditional_t<std::is_same_v<T, X>, type_sequence<>, type_sequence<X>>;
+    using type = type_sequence<>;
 };
 
-template <typename T, typename X, typename... Xs>
-struct del<T, type_sequence<X, Xs...>>
+template <template <typename, typename> typename F>
+struct zip_with<F, type_sequence<>, type_sequence<>>
 {
-    using type = std::conditional_t<
-        std::is_same_v<T, X>,
-        typename del<T, type_sequence<Xs...>>::type,
-        typename cons<X, typename del<T, type_sequence<Xs...>>::type>::type>;
+    using type = type_sequence<>;
+};
+
+template <template <typename, typename> typename F,
+          typename X,
+          typename Y,
+          typename... Xs,
+          typename... Ys>
+struct zip_with<F, type_sequence<X, Xs...>, type_sequence<Y, Ys...>>
+{
+    using type =
+        typename cons<F<X, Y>,
+                      typename zip_with<F,
+                                        type_sequence<Xs...>,
+                                        type_sequence<Ys...>>::type>::type;
 };
 
 template <typename List>
@@ -338,7 +371,7 @@ struct same;
 template <typename T, typename... Ts>
 struct same<type_sequence<T, Ts...>>
 {
-    static constexpr bool value = (true && ... && std::is_same_v<T, Ts>);
+    static constexpr bool value = std::conjunction_v<std::is_same<T, Ts>...>;
 };
 
 template <typename List, typename... Args>
@@ -353,8 +386,8 @@ struct result_of<type_sequence<Fs...>, Args...>
 template <typename List>
 struct has_duplicates;
 
-template <typename T>
-struct has_duplicates<type_sequence<T>>
+template <>
+struct has_duplicates<type_sequence<>>
 {
     static constexpr bool value = false;
 };
@@ -367,32 +400,156 @@ struct has_duplicates<type_sequence<T, Ts...>>
         elem<T, ts>::value || has_duplicates<ts>::value;
 };
 
-template <template <typename> typename F, typename List>
+template <template <typename> typename P, typename List>
 struct filter;
 
-template <template <typename> typename F, typename T>
-struct filter<F, type_sequence<T>>
+template <template <typename> typename P>
+struct filter<P, type_sequence<>>
 {
-    using type =
-        std::conditional_t<F<T>::value, type_sequence<T>, type_sequence<>>;
+    using type = type_sequence<>;
 };
 
-template <template <typename> typename F, typename T, typename... Ts>
-struct filter<F, type_sequence<T, Ts...>>
+template <template <typename> typename P, typename T, typename... Ts>
+struct filter<P, type_sequence<T, Ts...>>
 {
-    using rest = typename filter<F, type_sequence<Ts...>>::type;
+    using rest = typename filter<P, type_sequence<Ts...>>::type;
     using type =
-        std::conditional_t<F<T>::value, typename cons<T, rest>::type, rest>;
+        std::conditional_t<P<T>::value, typename cons<T, rest>::type, rest>;
+};
+
+template <typename T, typename List>
+class purge
+{
+    template <typename Elem>
+    using f = std::negation<std::is_same<T, Elem>>;
+
+  public:
+    using type = typename filter<f, List>::type;
+};
+
+template <typename List>
+struct nub;
+
+template <>
+struct nub<type_sequence<>>
+{
+    using type = type_sequence<>;
+};
+
+template <typename T, typename... Ts>
+struct nub<type_sequence<T, Ts...>>
+{
+    using type = typename cons<
+        T,
+        typename nub<typename purge<T, type_sequence<Ts...>>::type>::type>::
+        type;
+};
+
+template <typename T, typename Map>
+struct lookup;
+
+template <typename T>
+struct lookup<T, type_sequence<>>
+{
+    using type = void;
+};
+
+template <typename T, typename Key, typename Value, typename... Ts>
+struct lookup<T, type_sequence<type_pair<Key, Value>, Ts...>>
+{
+    using type =
+        std::conditional_t<std::is_same_v<T, Key>,
+                           Value,
+                           typename lookup<T, type_sequence<Ts...>>::type>;
+};
+
+template <template <typename> typename P, typename List>
+struct find;
+
+template <template <typename> typename P>
+struct find<P, type_sequence<>>
+{
+    using type = void;
+};
+
+template <template <typename> typename P, typename T, typename... Ts>
+struct find<P, type_sequence<T, Ts...>>
+{
+    using type =
+        std::conditional_t<P<T>::value,
+                           T,
+                           typename find<P, type_sequence<Ts...>>::type>;
+};
+
+template <template <typename> typename P, typename Ms, typename Rs, typename Xs>
+struct split_with;
+
+template <template <typename> typename P, typename Ms, typename Rs>
+struct split_with<P, Ms, Rs, type_sequence<>>
+{
+    using type = typename join<Ms, type_sequence<Rs>>::type;
+};
+
+template <template <typename> typename P, typename Ms, typename Rs, typename X, typename... Xs>
+struct split_with<P, Ms, Rs, type_sequence<X, Xs...>>
+{
+    using type = std::conditional_t<
+        P<X>::value,
+        typename split_with<P,
+                       typename join<Ms, type_sequence<Rs>>::type,
+                       type_sequence<>,
+                       type_sequence<Xs...>>::type,
+        typename split_with<P,
+                       Ms,
+                       typename join<Rs, type_sequence<X>>::type,
+                       type_sequence<Xs...>>::type>;
+};
+
+template <typename D, typename List>
+class split
+{
+    template <typename U>
+    using eq = std::is_same<D, U>;
+
+  public:
+    using type =
+        typename split_with<eq, type_sequence<>, type_sequence<>, List>::type;
+};
+
+template <typename Source>
+struct from;
+
+template <template <typename...> typename Source, typename... Ts>
+struct from<Source<Ts...>>
+{
+    using type = type_sequence<Ts...>;
+};
+
+template <typename Source, template <typename...> typename Target>
+struct to;
+
+template <template <typename...> typename Target, typename... Ts>
+struct to<type_sequence<Ts...>, Target>
+{
+    using type = Target<Ts...>;
+};
+
+template <typename List>
+struct to_integer_seq;
+
+template <typename IntConst, typename... ICs>
+struct to_integer_seq<type_sequence<IntConst, ICs...>>
+{
+    using type = std::integer_sequence<typename IntConst::value_type,
+                                       IntConst::value,
+                                       ICs::value...>;
 };
 } // namespace detail
 
-/// @brief Convert a class template @p Source into type_sequence.
-template <typename Source>
-using from = typename detail::from<Source>::type;
-
-/// @brief Convert type_sequence @p Source to @p Target class template.
-template <typename Source, template <typename...> typename Target>
-using to = typename detail::to<Source, Target>::type;
+/// @defgroup Typelist Typelist
+/// @brief List operations on type sequences.
+/// @ingroup TMP
+/// @{
 
 /// @brief Add class @p T to the beginning of type_sequence @p List.
 template <typename T, typename List>
@@ -410,11 +567,13 @@ using append = join<List, type_sequence<T>>;
 template <std::size_t N, typename... Ts>
 using repeat = typename detail::repeat<N, Ts...>::type;
 
-/// @brief Length of type_sequence.
+/// @brief Number of types in @p List.
 template <typename List>
 inline constexpr std::size_t length = detail::length<List>::value;
 
 /// @brief Extract the @p Ith class from @p List.
+///
+/// If @p List is too short, the resulting type is void.
 template <std::size_t I, typename List>
 using at = typename detail::at<I, List>::type;
 
@@ -434,9 +593,10 @@ using tail = typename detail::tail<List>::type;
 template <typename T, typename List>
 inline constexpr bool elem = detail::elem<T, List>::value;
 
-/// @brief The index of the first element which is the same as @p T.
+/// @brief The index of the first occurence of type @p T.
+/// If there is no such type, the value is -1ul.
 template <typename T, typename List>
-inline constexpr std::size_t index = detail::index<T, List>::value;
+inline constexpr std::size_t index = detail::index<0ul, T, List>::value;
 
 /// @brief std::index_sequence for @p List.
 template <typename List>
@@ -462,7 +622,7 @@ using map = typename detail::map<F, List>::type;
 ///
 /// Does nothing if there is no @p T in @p List.
 template <typename T, typename List>
-using del = typename detail::del<T, List>::type;
+using purge = typename detail::purge<T, List>::type;
 
 /// @brief Prefix of @p List of length @p N.
 ///
@@ -476,12 +636,21 @@ using take = typename detail::take<N, List>::type;
 template <std::size_t N, typename List>
 using drop = typename detail::drop<N, List>::type;
 
-/// @brief Make list of pairs type_sequence<type_sequence<X, Y>...> of
+/// @brief Generalization of zip. Zips with the meta-function
+/// given as the first argument, instead of type_pair.
+///
+/// If one input list is shorter than the other,
+/// excess elements of the longer list are discarded.
+template <template <typename, typename> typename F, typename Xs, typename Ys>
+using zip_with = typename detail::zip_with<F, Xs, Ys>::type;
+
+/// @brief Make list of pairs type_sequence<type_pair<X, Y>...> of
 /// corresponding types from lists @p Xs and @p Ys.
 ///
-/// @p Xs and @p Ys must be of the same length.
+/// If one input list is shorter than the other,
+/// excess elements of the longer list are discarded.
 template <typename Xs, typename Ys>
-using zip = typename detail::zip<Xs, Ys>::type;
+using zip = zip_with<type_pair, Xs, Ys>;
 
 /// @brief The concatenation of all the elements of a list @p List of lists.
 template <typename List>
@@ -504,34 +673,95 @@ using result_of = typename detail::result_of<Fs, Args...>;
 template <typename List>
 inline constexpr bool has_duplicates = detail::has_duplicates<List>::value;
 
-/// @brief Filter @p List elements with @p F.
+/// @brief Remove duplicate elements from @p List.
+template <typename List>
+using nub = typename detail::nub<List>::type;
+
+/// @brief Filter @p List elements with a predicate @p P.
 ///
-/// @tparam F must have static constexpr bool value member;
-template <template <typename> typename F, typename List>
-using filter = typename detail::filter<F, List>::type;
+/// @tparam P must have static constexpr bool value member.
+///
+/// The resulting type_sequence contains elements that
+/// satisfy P, i.e. P<T>::value == true.
+template <template <typename> typename P, typename List>
+using filter = typename detail::filter<P, List>::type;
+
+/// @brief Lookup a key @p Key in association list @p Map.
+///
+/// @tparam Map consists of key-value pairs type_sequence<Key, Value>.
+///
+/// If @p Key not found the resulting type is void.
+template <typename Key, typename Map>
+using lookup = typename detail::lookup<Key, Map>::type;
+
+/// @brief Get the leftmost type from @p List matching predicate @p P.
+///
+/// @tparam P must have static constexpr bool value member.
+///
+/// If there is no type matching @p P the resulting type is void.
+template <template <typename> typename P, typename List>
+using find = typename detail::find<P, List>::type;
 
 /// @brief Check if @p List is empty.
 template <typename List>
 inline constexpr bool empty = length<List> == 0;
 
+/// @brief Split typelist into sublists with a predicate.
+///
+/// @tparam P has static constexpr member @p value.
+///
+/// The delimeter elements are such that satisfy predicate @p P,
+/// i.e. P<T>::value == true.
+template <template <typename> typename P, typename List>
+using split_with =
+    purge<type_sequence<>,
+          typename detail::
+              split_with<P, type_sequence<>, type_sequence<>, List>::type>;
+
+/// @brief Split typelist into sublists with a delimeter.
+///
+/// The resulting type is type_sequence<type_sequence<...>...>.
+template <typename Delimeter, typename List>
+using split =
+    purge<type_sequence<>, typename detail::split<Delimeter, List>::type>;
+
+/// @brief Convert a class template @p Source into type_sequence.
+template <typename Source>
+using from = typename detail::from<Source>::type;
+
+/// @brief Convert type_sequence @p Source to @p Target class template.
+template <typename Source, template <typename...> typename Target>
+using to = typename detail::to<Source, Target>::type;
+
+/// @brief Convert type_sequence of std::integer_sequence into a single
+/// std::integer_sequence.
+///
+/// The value type of the first element is used as the value type for the
+/// resulting std::integer_sequence.
+template <typename List>
+using to_integer_sequence = typename detail::to_integer_seq<List>::type;
+
 /// @brief Invoke @p f with each class of @p List as template parameter.
 template <typename F, typename... Ts>
 constexpr void
-for_each(F f, type_sequence<Ts...>) noexcept((true &&
-                                              ...&& noexcept(f.template
+for_each(F f, type_sequence<Ts...>) noexcept((...&& noexcept(f.template
                                                              operator()<Ts>())))
 {
     (..., f.template operator()<Ts>());
+}
+
+/// @brief Invoke every functional object in a typelist with @p args.
+template <typename... Fs, typename... Args>
+constexpr void
+unroll(type_sequence<Fs...>, Args&&... args) noexcept
+{
+    (..., std::invoke(Fs{}, std::forward<Args>(args)...));
 }
 /// @}
 } // namespace typelist
 
 namespace intlist
 {
-/// @defgroup Intlist Intlist
-/// @brief Compile-time list operations on std::integer_sequence.
-/// @ingroup TMP
-/// @{
 namespace detail
 {
 template <auto Val, typename List>
@@ -602,10 +832,9 @@ struct at<0, std::integer_sequence<Int, Head, Vals...>>
 };
 
 template <std::size_t I, typename Int, Int Head, Int... Vals>
+    requires(I < length<std::integer_sequence<Int, Head, Vals...>>::value)
 struct at<I, std::integer_sequence<Int, Head, Vals...>>
 {
-    static_assert(I < length<std::integer_sequence<Int, Head, Vals...>>::value,
-                  "Index out of range");
     static constexpr Int value =
         at<I - 1, std::integer_sequence<Int, Vals...>>::value;
 };
@@ -628,25 +857,21 @@ struct elem<V, std::integer_sequence<Int, Is...>>
     static constexpr bool value = (false || ... || (V == Is));
 };
 
-template <std::size_t idx, typename Int, Int S, Int X, Int... Is>
-constexpr std::size_t
-index_impl() noexcept
-{
-    if constexpr(S == X)
-        return idx;
-    else if constexpr(sizeof...(Is) > 0ul)
-        return index_impl<idx + 1, Int, S, Is...>();
-    else
-        static_assert(sizeof...(Is) > 0ul, "Type not found.");
-}
-
-template <auto Val, typename List>
+template <std::size_t I, auto S, typename List>
 struct index;
 
-template <typename Int, Int Val, Int... Is>
-struct index<Val, std::integer_sequence<Int, Is...>>
+template <std::size_t I, typename Int, Int S>
+struct index<I, S, std::integer_sequence<Int>>
 {
-    static constexpr std::size_t value = index_impl<0, Int, Val, Is...>();
+    static constexpr std::size_t value = -1ul;
+};
+
+template <std::size_t I, typename Int, Int S, Int X, Int... Xs>
+struct index<I, S, std::integer_sequence<Int, X, Xs...>>
+{
+    static constexpr std::size_t value =
+        S == X ? I :
+                 index<I + 1ul, S, std::integer_sequence<Int, Xs...>>::value;
 };
 
 template <typename List>
@@ -667,10 +892,11 @@ struct reverse<std::integer_sequence<Int, x, xs...>>
 };
 
 template <typename F, typename List>
-struct map;
+struct map_f;
 
 template <typename F, typename Int, Int... Is>
-struct map<F, std::integer_sequence<Int, Is...>>
+    requires(std::is_integral_v<std::invoke_result_t<F, Int>>)
+struct map_f<F, std::integer_sequence<Int, Is...>>
 {
   private:
     static constexpr F f{};
@@ -678,6 +904,15 @@ struct map<F, std::integer_sequence<Int, Is...>>
 
   public:
     using type = std::integer_sequence<R, f(Is)...>;
+};
+
+template <template <auto> typename F, typename List>
+struct map_t;
+
+template <typename Int, template <auto> typename F, Int... Is>
+struct map_t<F, std::integer_sequence<Int, Is...>>
+{
+    using type = type_sequence<F<Is>...>;
 };
 
 template <std::size_t N, typename List>
@@ -690,10 +925,9 @@ struct take<1, std::integer_sequence<Int, I, Is...>>
 };
 
 template <std::size_t N, typename Int, Int I, Int... Is>
+    requires(N <= length<std::integer_sequence<Int, I, Is...>>::value)
 struct take<N, std::integer_sequence<Int, I, Is...>>
 {
-    static_assert(N <= length<std::integer_sequence<Int, I, Is...>>::value);
-
     using type = typename cons<
         I,
         typename take<N - 1, std::integer_sequence<Int, Is...>>::type>::type;
@@ -709,18 +943,23 @@ struct drop<1, std::integer_sequence<Int, I, Is...>>
 };
 
 template <std::size_t N, typename Int, Int I, Int... Is>
+    requires(N <= length<std::integer_sequence<Int, I, Is...>>::value)
 struct drop<N, std::integer_sequence<Int, I, Is...>>
 {
-    static_assert(N <= length<std::integer_sequence<Int, I, Is...>>::value);
-
     using type = typename drop<N - 1, std::integer_sequence<Int, Is...>>::type;
 };
 
 template <auto Val, typename List>
-struct del;
+struct purge;
+
+template <typename Int, Int Val>
+struct purge<Val, std::integer_sequence<Int>>
+{
+    using type = std::integer_sequence<Int>;
+};
 
 template <typename Int, Int Last, Int Val>
-struct del<Val, std::integer_sequence<Int, Last>>
+struct purge<Val, std::integer_sequence<Int, Last>>
 {
     using type = std::conditional_t<Last == Val,
                                     std::integer_sequence<Int>,
@@ -728,7 +967,7 @@ struct del<Val, std::integer_sequence<Int, Last>>
 };
 
 template <typename Int, Int Val, Int Head, Int... Rest>
-struct del<Val, std::integer_sequence<Int, Head, Rest...>>
+struct purge<Val, std::integer_sequence<Int, Head, Rest...>>
 {
   private:
     using rest = std::integer_sequence<Int, Rest...>;
@@ -736,8 +975,8 @@ struct del<Val, std::integer_sequence<Int, Head, Rest...>>
   public:
     using type = std::conditional_t<
         Head == Val,
-        typename del<Val, rest>::type,
-        typename cons<Head, typename del<Val, rest>::type>::type>;
+        typename purge<Val, rest>::type,
+        typename cons<Head, typename purge<Val, rest>::type>::type>;
 };
 
 template <typename List>
@@ -774,7 +1013,30 @@ struct has_duplicates<std::integer_sequence<Int, X, Xs...>>
     static constexpr bool value =
         elem<X, xs>::value || has_duplicates<xs>::value;
 };
+
+template <typename List>
+struct nub;
+
+template <typename Int>
+struct nub<std::integer_sequence<Int>>
+{
+    using type = std::integer_sequence<Int>;
+};
+
+template <typename Int, Int X, Int... Xs>
+struct nub<std::integer_sequence<Int, X, Xs...>>
+{
+    using type = typename cons<
+        X,
+        typename nub<typename purge<X, std::integer_sequence<Int, Xs...>>::
+                         type>::type>::type;
+};
 } // namespace detail
+
+/// @defgroup Intlist Intlist
+/// @brief Compile-time list operations on std::integer_sequence.
+/// @ingroup TMP
+/// @{
 
 /// @brief Add integer value @p Val to the beginning of @p List.
 template <auto Val, typename List>
@@ -798,7 +1060,14 @@ using reverse = typename detail::reverse<List>::type;
 /// @f$\mathrm{F}(\mathrm{I}) \rightarrow \mathrm{T}@f$,
 /// The resulting type @f$\mathrm{T}@f$ must be integer.
 template <typename F, typename List>
-using map = typename detail::map<F, List>::type;
+using map_f = typename detail::map_f<F, List>::type;
+
+/// @brief Make types from elements of @p List by
+/// specializing template class F with the values.
+///
+/// The resulting type is type_sequence<F<Int>...>.
+template <template <auto> typename F, typename List>
+using map_t = typename detail::map_t<F, List>::type;
 
 /// @brief Add @p Val @p N times to the end of @p List.
 template <typename List, std::size_t N, auto Val>
@@ -832,9 +1101,10 @@ using tail = typename detail::tail<List>::type;
 template <auto X, typename List>
 inline constexpr bool elem = detail::elem<X, List>::value;
 
-/// @brief The index of the first element which equals @p X.
+/// @brief The index of the first occurence of @p X.
+/// If there is no @p X in @p List the value is -1ul.
 template <auto X, typename List>
-inline constexpr std::size_t index = detail::index<X, List>::value;
+inline constexpr std::size_t index = detail::index<0ul, X, List>::value;
 
 /// @brief std::index_sequence for @p List.
 template <typename List>
@@ -842,7 +1112,7 @@ using indicies = std::make_index_sequence<length<List>>;
 
 /// @brief Make std::integer_sequence without @p X.
 template <auto X, typename List>
-using del = typename detail::del<X, List>::type;
+using purge = typename detail::purge<X, List>::type;
 
 /// @brief Prefix of @p List of length @p N.
 ///
@@ -867,6 +1137,10 @@ inline constexpr auto stdarray = detail::stdarray<List>::value;
 /// @brief Check if there are duplicates in @p List.
 template <typename List>
 inline constexpr bool has_duplicates = detail::has_duplicates<List>::value;
+
+/// @brief Remove duplicate elements from @p List.
+template <typename List>
+using nub = typename detail::nub<List>::type;
 
 template <std::size_t N, std::size_t I>
 struct lehmer_code_impl
@@ -903,7 +1177,7 @@ struct lehmer_perm_impl<Idxs, std::index_sequence<Head, Rest...>>
   public:
     using type =
         cons<elem,
-             typename lehmer_perm_impl<del<elem, Idxs>,
+             typename lehmer_perm_impl<purge<elem, Idxs>,
                                        std::index_sequence<Rest...>>::type>;
 };
 
@@ -920,10 +1194,9 @@ template <typename Idxs, typename FacNum>
 using lehmer_perm = typename lehmer_perm_impl<Idxs, FacNum>::type;
 
 template <std::size_t N, std::size_t L>
+    requires(N < fac(L))
 struct nlperm_impl
 {
-    static_assert(N < fac(L), "N should be less than (L!)");
-
   private:
     using _lehmer_code                = lehmer_code<N>;
     static constexpr std::size_t diff = L - length<_lehmer_code>;
@@ -940,4 +1213,30 @@ template <std::size_t N, std::size_t L>
 using nlperm = typename nlperm_impl<N, L>::type;
 /// @}
 } // namespace intlist
+
+namespace typelist
+{
+namespace detail
+{
+template <typename List, typename Index>
+struct enumerate
+{
+    template <Index i>
+    using index_type = std::integral_constant<Index, i>;
+
+    using type = typelist::zip<
+        List,
+        intlist::map_t<index_type,
+                       std::make_index_sequence<typelist::length<List>>>>;
+};
+} // namespace detail
+
+/// @ingroup Typelist
+/// @brief Enumerate types in @p List with indicies of type @p Index
+/// @f$[(T_0, 0), (T_1, 1), ... (T_n, n)]@f$
+///
+/// Type of the index member is std::integer_constant<Index, value>
+template <typename List, typename Index = std::size_t>
+using enumerate = typename detail::enumerate<List, Index>::type;
+} // namespace typelist
 } // namespace lucid
