@@ -587,6 +587,8 @@ struct Program
                            stated_labels,
                            typelist::cons<StartLabel, stated_labels>>;
 
+    static_assert(typelist::has_duplicates<labels>);
+
     using index_t = index_type_t<num_cells>;
 
     template <auto i>
