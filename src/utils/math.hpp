@@ -25,8 +25,9 @@ const constexpr T Pi_ = T{3.141592653589793};
 
 /// @brief Test whether the value is even.
 template <typename T>
-constexpr typename std::enable_if_t<std::is_integral_v<T>, bool>
+constexpr bool
 is_even(const T val) noexcept
+    requires(std::is_integral_v<T>)
 {
     return val % 2 == 0;
 }
@@ -134,8 +135,8 @@ quadratic(const T a, const T b, const T c) noexcept
 template <typename T>
 constexpr T
 resample(const T s) noexcept
+    requires(std::is_floating_point_v<T>)
 {
-    static_assert(std::is_floating_point_v<T>);
     const T h{0.5};
     return T{2} * (s > h ? s - h : h - s);
 }
