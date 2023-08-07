@@ -8,7 +8,6 @@
 #pragma once
 
 #include "aabb.hpp"
-#include <utils/range.hpp>
 
 namespace lucid
 {
@@ -28,26 +27,31 @@ template <template <typename, std::size_t> typename TriangleContainer,
           template <typename, std::size_t>
           typename RayContainer>
 constexpr Intersection
-intersect(const Ray_<RayContainer>& ray, const Triangle_<TriangleContainer>& prim) noexcept
+intersect(const Ray_<RayContainer>&           ray,
+          const Triangle_<TriangleContainer>& prim) noexcept
 {
-    const auto& [o, d]       = ray;
-    const auto& [v0, v1, v2] = prim;
-    const Vec3 edge1         = v1 - v0;
-    const Vec3 edge2         = v2 - v0;
-    const Vec3 pvec          = cross(d, edge2);
-    const real D             = dot(edge1, pvec);
-    const real invD          = 1_r / D;
-    const Vec3 tvec          = o - v0;
-    const real u             = dot(tvec, pvec) * invD;
-    const Vec3 qvec          = cross(tvec, edge1);
-    const real v             = dot(d, qvec) * invD;
-    const real t             = dot(edge2, qvec) * invD;
-    const bool not_intersected =
-        almost_equal(D, 0_r, 10) || std::signbit(v) || std::signbit(t) || u + v > 1_r;
+    const auto& [o, d]         = ray;
+    const auto& [v0, v1, v2]   = prim;
+    const Vec3 edge1           = v1 - v0;
+    const Vec3 edge2           = v2 - v0;
+    const Vec3 pvec            = cross(d, edge2);
+    const real D               = dot(edge1, pvec);
+    const real invD            = 1_r / D;
+    const Vec3 tvec            = o - v0;
+    const real u               = dot(tvec, pvec) * invD;
+    const Vec3 qvec            = cross(tvec, edge1);
+    const real v               = dot(d, qvec) * invD;
+    const real t               = dot(edge2, qvec) * invD;
+    const bool not_intersected = almost_equal(D, 0_r, 10) || std::signbit(v) ||
+                                 std::signbit(t) || u + v > 1_r;
 
     const bool intersected = range(0_r, 1_r)(u) && !not_intersected;
 
-    return Intersection{intersected, t, Vec2{u, v}};
+    return Intersection{
+        intersected,
+        t,
+        Vec2{u, v}
+    };
 }
 
 /// @brief Compute triangle normal.
@@ -55,7 +59,8 @@ template <template <typename, std::size_t> typename TriangleContainer,
           template <typename, std::size_t>
           typename PosContainer>
 constexpr Vec3
-normal(const Vec3_<PosContainer>&, const Triangle_<TriangleContainer>& prim) noexcept
+normal(const Vec3_<PosContainer>&,
+       const Triangle_<TriangleContainer>& prim) noexcept
 {
     const auto& [v0, v1, v2] = prim;
     const Vec3 edge1         = v1 - v0;
@@ -116,8 +121,9 @@ template <template <typename, std::size_t> typename SContainer,
 constexpr Vec3
 sample(const Vec2_<SContainer>& s, const Triangle_<PContainer>& prim) noexcept
 {
-    return Vec3(std::apply(
-        [&](const auto&... verts) noexcept { return detail::triangle_sample(s, verts...); }, prim));
+    return Vec3(std::apply([&](const auto&... verts) noexcept
+                           { return detail::triangle_sample(s, verts...); },
+                           prim));
 }
 
 /// @brief Compute triangle centroid.
@@ -141,11 +147,12 @@ template <template <typename, std::size_t> typename MatContainer,
           template <typename, std::size_t>
           typename TriangleContainer>
 constexpr Triangle
-apply_transform(const Mat4_<MatContainer>& t, const Triangle_<TriangleContainer>& prim) noexcept
+apply_transform(const Mat4_<MatContainer>&          t,
+                const Triangle_<TriangleContainer>& prim) noexcept
 {
-    return std::apply(
-        [&](const auto&... points) noexcept { return Triangle{apply_transform_p(t, points)...}; },
-        prim);
+    return std::apply([&](const auto&... points) noexcept
+                      { return Triangle{apply_transform_p(t, points)...}; },
+                      prim);
 }
 } // namespace fn
 } // namespace lucid

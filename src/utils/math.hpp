@@ -140,6 +140,44 @@ resample(const T s) noexcept
     return T{2} * (s > h ? s - h : h - s);
 }
 
+template <typename T>
+    requires(std::is_arithmetic_v<T>)
+struct range
+{
+    T lower;
+    T upper;
+
+    constexpr range(const T _lower, const T _upper) :
+        lower(_lower), upper(_upper)
+    {
+    }
+
+    constexpr bool
+    operator()(const T val) const noexcept
+    {
+        return val >= lower && val < upper;
+    }
+};
+
+template <typename T>
+    requires(std::is_arithmetic_v<T>)
+struct inclusive_range
+{
+    T lower;
+    T upper;
+
+    constexpr inclusive_range(const T _lower, const T _upper) :
+        lower(_lower), upper(_upper)
+    {
+    }
+
+    constexpr bool
+    operator()(const T val) const noexcept
+    {
+        return val >= lower && val <= upper;
+    }
+};
+
 namespace fn
 {
 /// @brief Rise a number to a constant power.
@@ -173,7 +211,8 @@ lerp(const T a, const T b, const Bias bias)
 
 /// @brief Compare floating-point values for equality using epsilon.
 ///
-/// The implementation is taken from https://en.cppreference.com/w/cpp/types/numeric_limits/epsilon
+/// The implementation is taken from
+/// https://en.cppreference.com/w/cpp/types/numeric_limits/epsilon
 ///
 /// @param ulp spacing between adjascent numbers (see
 /// https://en.wikipedia.org/wiki/Unit_in_the_last_place). @anchor ulp

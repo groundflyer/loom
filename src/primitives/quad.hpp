@@ -8,7 +8,6 @@
 #pragma once
 
 #include "triangle.hpp"
-#include <utils/range.hpp>
 
 namespace lucid
 {
@@ -30,7 +29,8 @@ template <template <typename, size_t> typename QuadContainer,
           template <typename, size_t>
           typename RayContainer>
 constexpr Intersection
-intersect(const Ray_<RayContainer>& ray, const Quad_<QuadContainer>& prim) noexcept
+intersect(const Ray_<RayContainer>&   ray,
+          const Quad_<QuadContainer>& prim) noexcept
 {
     const auto& [o, d]               = ray;
     const auto& [v00, v01, v11, v10] = prim;
@@ -175,11 +175,12 @@ template <template <typename, size_t> typename MatContainer,
           template <typename, size_t>
           typename QuadContainer>
 constexpr Quad
-apply_transform(const Mat4_<MatContainer>& t, const Quad_<QuadContainer>& prim) noexcept
+apply_transform(const Mat4_<MatContainer>&  t,
+                const Quad_<QuadContainer>& prim) noexcept
 {
-    return std::apply(
-        [&](const auto&... points) noexcept { return Quad{apply_transform_p(t, points)...}; },
-        prim);
+    return std::apply([&](const auto&... points) noexcept
+                      { return Quad{apply_transform_p(t, points)...}; },
+                      prim);
 }
 } // namespace fn
 } // namespace lucid
