@@ -13,6 +13,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <concepts>
 #include <iterator>
 #include <limits>
 #include <type_traits>
@@ -21,19 +22,27 @@
 namespace lucid
 {
 template <typename T>
+concept Arithmetic = std::is_arithmetic_v<T>;
+
+template <typename T>
+concept Integral = std::is_integral_v<T>;
+
+template <typename T>
+concept Real = std::is_floating_point_v<T>;
+
+template <Real T>
 const constexpr T Pi_ = T{3.141592653589793};
 
 /// @brief Test whether the value is even.
-template <typename T>
+template <Integral T>
 constexpr bool
 is_even(const T val) noexcept
-    requires(std::is_integral_v<T>)
 {
     return val % 2 == 0;
 }
 
 /// @brief Return result of @f$(-1)^{a}@f$.
-template <typename T>
+template <Integral T>
 constexpr int
 minus_one_pow(const T a)
 {
@@ -97,7 +106,7 @@ sgn(const Iterable& numbers) noexcept
 }
 
 /// @brief Convert radians to degrees.
-template <typename T>
+template <Real T>
 constexpr T
 degrees(const T _radians)
 {
@@ -105,7 +114,7 @@ degrees(const T _radians)
 }
 
 /// @brief Convert degrees to radians.
-template <typename T>
+template <Real T>
 constexpr T
 radians(const T _degrees)
 {
@@ -114,7 +123,7 @@ radians(const T _degrees)
 
 /// @brief Solve quadratic equation @f$ax^{2} + bx + c@f$ for non-complex cases.
 /// @return pair of bool and the smallest of two positive roots.
-template <typename T>
+template <Real T>
 constexpr std::pair<bool, T>
 quadratic(const T a, const T b, const T c) noexcept
 {
@@ -127,22 +136,21 @@ quadratic(const T a, const T b, const T c) noexcept
         sqrtD = std::sqrt(D);
     const T  x1 = (-b + sqrtD) * factor;
     const T  x2 = (-b - sqrtD) * factor;
-    const T& x  = std::signbit(x1) ? x2 : (std::signbit(x2) ? x1 : std::min(x1, x2));
+    const T& x =
+        std::signbit(x1) ? x2 : (std::signbit(x2) ? x1 : std::min(x1, x2));
     return std::pair{!std::signbit(D * x), x};
 }
 
 /// @brief Resample canonical random point.
-template <typename T>
+template <Real T>
 constexpr T
 resample(const T s) noexcept
-    requires(std::is_floating_point_v<T>)
 {
     const T h{0.5};
     return T{2} * (s > h ? s - h : h - s);
 }
 
-template <typename T>
-    requires(std::is_arithmetic_v<T>)
+template <std::totally_ordered T>
 struct range
 {
     T lower;
@@ -160,8 +168,7 @@ struct range
     }
 };
 
-template <typename T>
-    requires(std::is_arithmetic_v<T>)
+template <std::totally_ordered T>
 struct inclusive_range
 {
     T lower;
@@ -186,7 +193,7 @@ namespace fn
 /// Fast implementation by Alister Chowdhury.
 ///
 /// @tparam exp power exponent.
-template <unsigned exp, typename T>
+template <unsigned exp, Arithmetic T>
 constexpr T
 static_pow(const T value) noexcept
 {
@@ -203,7 +210,7 @@ static_pow(const T value) noexcept
 
 /// @brief Perform linear interpolation between two values.
 /// @param bias interpolation bias.
-template <typename T, typename Bias>
+template <Real T, Real Bias>
 constexpr T
 lerp(const T a, const T b, const Bias bias)
 {
@@ -217,8 +224,8 @@ lerp(const T a, const T b, const Bias bias)
 ///
 /// @param ulp spacing between adjascent numbers (see
 /// https://en.wikipedia.org/wiki/Unit_in_the_last_place). @anchor ulp
-template <typename T, typename ULP>
-constexpr typename std::enable_if_t<std::is_floating_point_v<T>, bool>
+template <Real T, Integral ULP>
+constexpr bool
 almost_equal(const T a, const T b, const ULP ulp)
 {
     // the machine epsilon has to be scaled to the magnitude of the values used
