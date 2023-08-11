@@ -529,7 +529,7 @@ struct SingleCellEvaluator
 };
 
 template <typename _Program>
-struct NormalEvaluator
+struct SimpleEvaluator
 {
     static constexpr typename typelist::to<typename _Program::cells, std::tuple>
                                                cells{};
@@ -557,9 +557,9 @@ struct NormalEvaluator
 };
 
 template <typename _Program>
-using Evaluator = std::conditional_t<_Program::is_singular,
-                                     SingleCellEvaluator<_Program>,
-                                     NormalEvaluator<_Program>>;
+using SequentialEvaluator = std::conditional_t<_Program::is_singular,
+                                               SingleCellEvaluator<_Program>,
+                                               SimpleEvaluator<_Program>>;
 
 /// @brief Basic program representation.
 template <typename InputVars, typename OutputVars, typename Statements>
@@ -587,7 +587,7 @@ struct Program
                            stated_labels,
                            typelist::cons<StartLabel, stated_labels>>;
 
-    static_assert(typelist::has_duplicates<labels>);
+    static_assert(!typelist::has_duplicates<labels>);
 
     using index_t = index_type_t<num_cells>;
 

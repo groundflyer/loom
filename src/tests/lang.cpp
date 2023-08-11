@@ -17,7 +17,7 @@ struct increment
     using inputs  = type_sequence<val>;
     using outputs = type_sequence<val>;
     using program = Program<inputs, outputs, commands>;
-    using eval    = Evaluator<program>;
+    using eval    = SequentialEvaluator<program>;
 };
 
 // T factorial(T i):
@@ -63,7 +63,7 @@ struct factorial
 
     using program = Program<inputs, outputs, commands>;
 
-    using eval = Evaluator<program>;
+    using eval = SequentialEvaluator<program>;
 };
 
 int main(/*int argc, char* argv[]*/)
