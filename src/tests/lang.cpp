@@ -45,7 +45,7 @@ struct factorial
     using cx   = Variable<T, "cx">; // counter
     using one  = Variable<T, "one">;
     using zero = Variable<T, "zero">;
-    using cmp  = Variable<bool, "cmp">;
+    using cmp  = Variable<std::uint32_t, "cmp">;
     using loop = Label<"loop">;
 
     using commands =

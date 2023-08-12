@@ -589,7 +589,7 @@ struct Program
 
     static_assert(!typelist::has_duplicates<labels>);
 
-    using index_t = index_type_t<num_cells>;
+    using index_t = std::uint32_t;
 
     template <auto i>
     using index_constant =
