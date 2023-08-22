@@ -236,11 +236,10 @@ namespace lucid
 /// @tparam T value type. Must be arithmetic.
 /// @tparam N dimensionality.
 /// @tparam Container std::array-like container that used to store the data.
-template <typename T,
+template <Arithmetic  T,
           std::size_t N,
           template <typename, std::size_t>
           typename Container>
-    requires std::is_arithmetic_v<T>
 class Vector
 {
     using Data = Container<T, N>;
@@ -258,8 +257,8 @@ class Vector
     template <std::size_t idx, typename... Ts>
     constexpr void
     unpack(const T& first, const Ts&... other)
+        requires(idx < N)
     {
-        static_assert(idx < N, "Too many elements.");
         m_data[idx] = first;
         if constexpr(sizeof...(other) == 0 && idx < N - 1)
             unpack<idx + 1>(first);
@@ -275,8 +274,8 @@ class Vector
               typename... Ts>
     constexpr void
     unpack(const Vector<T1, N1, Container1>& first, const Ts&... other)
+        requires(idx < N)
     {
-        static_assert(idx < N, "Too many elements.");
         for(std::size_t i = 0; i < std::min(N - idx, N1); ++i)
             m_data[idx + i] = static_cast<T>(first[i]);
         unpack<idx + N1>(other...);
@@ -285,8 +284,8 @@ class Vector
     template <std::size_t idx, typename T1, std::size_t N1, typename... Ts>
     constexpr void
     unpack(const Container<T1, N1>& first, const Ts&... other)
+        requires(idx < N)
     {
-        static_assert(idx < N, "Too many elements.");
         for(std::size_t i = 0; i < std::min(N - idx, N1); ++i)
             m_data[idx + i] = static_cast<T>(first[i]);
         unpack<idx + N1>(other...);
@@ -486,17 +485,17 @@ Vector(Container<T, N>&&) -> Vector<T, N, Container>;
 /// @tparam M number of rows.
 /// @tparam N number of columns.
 /// @tparam Container std::array-like container that used to store the data.
-template <typename T,
+template <Arithmetic  T,
           std::size_t M,
           std::size_t N,
           template <typename, std::size_t>
           typename Container>
-    requires(std::is_arithmetic_v<T> && M > 1 && N > 1)
+    requires(M > 1 && N > 1)
 class Matrix
 {
-    static constexpr std::size_t MN = M * N;
+    static constexpr std::size_t MxN = M * N;
 
-    using Data = Container<T, MN>;
+    using Data = Container<T, MxN>;
     Data m_data{};
 
     static constexpr std::size_t
@@ -523,12 +522,11 @@ class Matrix
     template <std::size_t idx, typename... Ts>
     constexpr void
     unpack(const T& head, Ts&&... tail) noexcept
+        requires(idx < MxN)
     {
-        static_assert(idx < MN, "Too many elements.");
-
         m_data[idx] = head;
 
-        if constexpr(sizeof...(tail) == 0 && idx < MN - 1)
+        if constexpr(sizeof...(tail) == 0 && idx < MxN - 1)
             unpack<idx + 1>(head);
         else
             unpack<idx + 1>(std::forward<Ts>(tail)...);
@@ -536,28 +534,27 @@ class Matrix
 
     // unpack vector arguments
     template <std::size_t idx,
-              std::size_t MN1,
+              std::size_t MxN1,
               template <typename, std::size_t>
               typename Container2,
               typename... Ts>
     constexpr void
-    unpack(const Vector<T, MN1, Container2>& head, Ts&&... tail) noexcept
+    unpack(const Vector<T, MxN1, Container2>& head, Ts&&... tail) noexcept
+        requires(idx < MxN)
     {
-        static_assert(idx < MN, "Too many elements.");
-
-        const constexpr auto end = std::min(MN - idx, MN1);
+        const constexpr auto end = std::min(MxN - idx, MxN1);
 
         for(std::size_t i = 0; i < end; ++i) m_data[idx + i] = head[i];
 
         unpack<idx + end>(std::forward<Ts>(tail)...);
     }
 
-    template <std::size_t idx, std::size_t MN1, typename... Ts>
+    template <std::size_t idx, std::size_t MxN1, typename... Ts>
     constexpr void
-    unpack(const Container<T, MN1>& head, Ts&&... tail) noexcept
+    unpack(const Container<T, MxN1>& head, Ts&&... tail) noexcept
+        requires(idx < MxN)
     {
-        static_assert(idx < MN, "Too many elements.");
-        const constexpr auto end = std::min(MN - idx, MN1);
+        const constexpr auto end = std::min(MxN - idx, MxN1);
         for(std::size_t i = 0; i < end; ++i) m_data[idx + i] = head[i];
         unpack<idx + end>(std::forward<Ts>(tail)...);
     }
@@ -668,29 +665,29 @@ class Matrix
     template <std::size_t I, std::size_t J>
     constexpr const T&
     get() const noexcept
+        requires(I < M || J < N)
     {
-        static_assert(I < M || J < N, "Index out of range");
         return std::get<pos(I, J)>(m_data);
     }
 
     template <std::size_t I, std::size_t J>
     constexpr T&
     get() noexcept
+        requires(I < M || J < N)
     {
-        static_assert(I < M || J < N, "Index out of range");
         return std::get<pos(I, J)>(m_data);
     }
 
     const constexpr T&
     at(const std::size_t i) const noexcept
     {
-        CHECK_INDEX(i, MN);
+        CHECK_INDEX(i, MxN);
         return m_data[i];
     }
     constexpr T&
     at(const std::size_t i) noexcept
     {
-        CHECK_INDEX(i, MN);
+        CHECK_INDEX(i, MxN);
         return m_data[i];
     }
 
@@ -734,14 +731,14 @@ class Matrix
     constexpr Matrix&
     operator+=(const Matrix<T, M, N, Container2>& rhs)
     {
-        for(std::size_t i = 0; i < MN; ++i) at(i) += rhs.at(i);
+        for(std::size_t i = 0; i < MxN; ++i) at(i) += rhs.at(i);
 
         return *this;
     }
     constexpr Matrix&
     operator+=(const T& rhs) noexcept
     {
-        for(std::size_t i = 0; i < MN; ++i) at(i) += rhs;
+        for(std::size_t i = 0; i < MxN; ++i) at(i) += rhs;
 
         return *this;
     }
@@ -750,14 +747,14 @@ class Matrix
     constexpr Matrix&
     operator-=(const Matrix<T, M, N, Container2>& rhs)
     {
-        for(std::size_t i = 0; i < MN; ++i) at(i) -= rhs.at(i);
+        for(std::size_t i = 0; i < MxN; ++i) at(i) -= rhs.at(i);
 
         return *this;
     }
     constexpr Matrix&
     operator-=(const T& rhs) noexcept
     {
-        for(std::size_t i = 0; i < MN; ++i) at(i) -= rhs;
+        for(std::size_t i = 0; i < MxN; ++i) at(i) -= rhs;
 
         return *this;
     }
@@ -765,7 +762,7 @@ class Matrix
     constexpr Matrix&
     operator*=(const T& rhs) noexcept
     {
-        for(std::size_t i = 0; i < MN; ++i) at(i) *= rhs;
+        for(std::size_t i = 0; i < MxN; ++i) at(i) *= rhs;
 
         return *this;
     }
@@ -1558,33 +1555,31 @@ struct max_fn
     }
 };
 
-template <typename Int>
-    requires std::is_integral_v<Int>
+template <Integral Int>
 struct downsample_fn
 {
-    template <typename Float>
-    constexpr std::enable_if_t<std::is_floating_point_v<Float>, Int>
-    operator()(const Float& value) const noexcept
+    template <Real R>
+    constexpr Int
+    operator()(const R& value) const noexcept
     {
-        Float clamped = std::clamp(value, Float{0}, Float{1});
+        R clamped = std::clamp(value, R{0}, R{1});
         clamped *= std::numeric_limits<Int>::max();
         return static_cast<Int>(clamped);
     }
 
-    template <typename Float,
+    template <Real        R,
               std::size_t N,
               template <typename, std::size_t>
               typename Container>
-    constexpr std::enable_if_t<std::is_floating_point_v<Float>,
-                               Vector<Int, N, std::array>>
-    operator()(const Vector<Float, N, Container>& vec) const noexcept
+    constexpr Vector<Int, N, std::array>
+    operator()(const Vector<R, N, Container>& vec) const noexcept
     {
         return transform(*this, vec);
     }
 
     template <typename Rhs>
     constexpr decltype(auto)
-    operator|(const Rhs& rhs) const noexcept
+    operator|(Rhs&& rhs) const noexcept
     {
         return compose(*this, rhs);
     }
