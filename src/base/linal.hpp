@@ -7,13 +7,13 @@
 #include <utils/debug.hpp>
 #include <utils/functional.hpp>
 #include <utils/math.hpp>
-#include <utils/static_span.hpp>
 #include <utils/tmp.hpp>
 
 #include <array>
 #include <functional>
 #include <limits>
 #include <numeric>
+#include <span>
 #include <type_traits>
 #include <utility>
 
@@ -374,14 +374,14 @@ class Vector
     constexpr T&
     get() noexcept
     {
-        return std::get<I>(m_data);
+        return m_data[I];
     }
 
     template <std::size_t I>
     constexpr const T&
     get() const noexcept
     {
-        return std::get<I>(m_data);
+        return m_data[I];
     }
 
     constexpr const T&
@@ -638,31 +638,31 @@ class Matrix
         return *this;
     }
 
-    constexpr decltype(auto)
+    constexpr Vector<const T, N, std::span>
     operator[](const std::size_t i) const noexcept
     {
         CHECK_INDEX(i, M);
-        return Vector(StaticSpan<T, N>(at(i, 0)));
+        return Vector(std::span<const T, N>(&at(i, 0), N));
     }
-    constexpr auto
+    constexpr Vector<T, N, std::span>
     operator[](const std::size_t i) noexcept
     {
         CHECK_INDEX(i, M);
-        return Vector(StaticSpan<T, N>(at(i, 0)));
+        return Vector(std::span<T, N>(&at(i, 0), N));
     }
 
     template <std::size_t I>
-    constexpr auto
+    constexpr Vector<const T, N, std::span>
     get() const noexcept
     {
-        return Vector(StaticSpan<T, N>(std::get<pos(I, 0)>(m_data)));
+        return Vector(std::span<const T, N>(&at(I, 0), N));
     }
 
     template <std::size_t I>
-    constexpr auto
+    constexpr Vector<T, N, std::span>
     get() noexcept
     {
-        return Vector(StaticSpan<T, N>(std::get<pos(I, 0)>(m_data)));
+        return Vector(std::span<T, N>(&at(I, 0), N));
     }
 
     template <std::size_t I, std::size_t J>
@@ -1102,10 +1102,10 @@ template <typename T,
           std::size_t N,
           template <typename, std::size_t>
           typename Container>
-constexpr const Vector<T, N, StaticSpan>
+constexpr Vector<const T, N, std::span>
 ref(const Vector<T, N, Container>& v) noexcept
 {
-    return Vector<T, N, StaticSpan>(StaticSpan<T, N>(v.template get<0>()));
+    return Vector(std::span<const T, N>(v.cbegin(), N));
 }
 
 /// @brief Get matrix view.
@@ -1114,10 +1114,10 @@ template <typename T,
           std::size_t N,
           template <typename, std::size_t>
           typename Container>
-constexpr Matrix<T, M, N, StaticSpan>
+constexpr Matrix<const T, M, N, std::span>
 ref(const Matrix<T, M, N, Container>& m) noexcept
 {
-    return Matrix<T, M, N, StaticSpan>(StaticSpan<T, M * N>(m.at(0)));
+    return Matrix(std::span{m.data()});
 }
 
 /// @brief Unroll matrix @p m to a vector view of size @f$M N@f$.
@@ -1126,10 +1126,10 @@ template <typename T,
           std::size_t N,
           template <typename, std::size_t>
           typename Container>
-constexpr Vector<T, M * N, StaticSpan>
+constexpr Vector<const T, M * N, std::span>
 flat_ref(const Matrix<T, M, N, Container>& m) noexcept
 {
-    return Vector(StaticSpan<T, M * N>(m.at(0)));
+    return Vector(std::span{m.data()});
 }
 
 /// @brief Apply function @p f to corresponding elements of input vectors @p vs.
@@ -1958,8 +1958,19 @@ template <size_t I,
 class tuple_element<I, lucid::Matrix<T, M, N, Container>>
 {
   public:
-    using type = decltype(declval<lucid::Matrix<T, M, N, Container>>()
-                              .template get<I>());
+    using type = lucid::Vector<T, N, std::span>;
+};
+
+template <size_t I,
+          typename T,
+          size_t M,
+          size_t N,
+          template <typename, size_t>
+          typename Container>
+class tuple_element<I, const lucid::Matrix<T, M, N, Container>>
+{
+  public:
+    using type = lucid::Vector<const T, N, std::span>;
 };
 
 template <size_t I,
