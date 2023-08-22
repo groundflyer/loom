@@ -1,6 +1,9 @@
 // -*- C++ -*-
 /// @file linal.hpp
 /// @brief Linar algebra classes and operators.
+/// @note Functions defined in lucid::fn namespace are not for general use.
+/// They provide implementations for functional objects with same names
+/// in lucid namespace.
 
 #pragma once
 
@@ -230,12 +233,15 @@ namespace lucid
 {
 /// @defgroup LINAL Linear Algebra
 /// @brief Linear algebra classes and operators.
+/// @note Functions defined in lucid::fn namespace are not for general use.
+/// They provide implementations for functional objects with same names
+/// in lucid namespace.
 /// @{
 
-/// @brief Generic N-dimensional euclidian vector.
+/// @brief N-dimensional euclidian vector.
 /// @tparam T value type. Must be arithmetic.
 /// @tparam N dimensionality.
-/// @tparam Container std::array-like container that used to store the data.
+/// @tparam Container std::array-like container that holds the data.
 template <Arithmetic  T,
           std::size_t N,
           template <typename, std::size_t>
@@ -296,17 +302,34 @@ class Vector
 
     constexpr Vector(const Vector& rhs) noexcept : m_data(rhs.m_data) {}
 
+    /// @brief Construct Vector from an array.
     explicit constexpr Vector(Data&& rhs) noexcept : m_data(std::move(rhs)) {}
 
     explicit constexpr Vector(const Data& rhs) noexcept : m_data(rhs) {}
 
     explicit constexpr Vector(Data& rhs) noexcept : m_data(rhs) {}
 
+    /// @brief Construct Vector with a single scalar.
+    /// @f$\mathrm{V}(a) = \mathrm{V}(a, a, a\dots)@f$
     explicit constexpr Vector(T&& rhs) noexcept
     {
         for(T& i: m_data) i = rhs;
     }
 
+    /// @brief Universal constructor.
+    /// Constructs Vector from scalars, other vectors or arrays.
+    ///
+    /// Examples:
+    ///
+    /// From scalars:
+    /// @f$\mathrm{V}(a,b,c\dots) = \mathrm{V}(a, b, c\dots)@f$
+    ///
+    /// From an array:
+    /// @f$\mathrm{V}([a,b,c\dots]) = \mathrm{V}(a, b, c\dots)@f$
+    ///
+    /// From a scalar and a smaller vector.
+    /// @f$\mathrm{V}_N(a, \mathrm{V}_{N-1}(b, c\dots)) = \mathrm{V}_{N}(a,
+    /// b, c\dots)@f$
     template <typename... Ts>
     explicit constexpr Vector(const Ts&... rhs) noexcept
     {
@@ -340,16 +363,19 @@ class Vector
     {
         return m_data.begin();
     }
+
     constexpr auto
     end() const noexcept
     {
         return m_data.end();
     }
+
     constexpr auto
     cbegin() const noexcept
     {
         return m_data.cbegin();
     }
+
     constexpr auto
     cend() const noexcept
     {
@@ -362,6 +388,7 @@ class Vector
         CHECK_INDEX(i, N);
         return m_data[i];
     }
+
     constexpr T&
     operator[](const std::size_t i) noexcept
     {
@@ -389,6 +416,7 @@ class Vector
         CHECK_INDEX(i, N);
         return m_data[i];
     }
+
     constexpr T&
     at(const std::size_t i) noexcept
     {
@@ -396,8 +424,16 @@ class Vector
         return m_data[i];
     }
 
+    /// @brief Access the internal container.
     constexpr const Data&
     data() const noexcept
+    {
+        return m_data;
+    }
+
+    /// @brief Access the internal container.
+    constexpr Data&
+    data() noexcept
     {
         return m_data;
     }
@@ -410,6 +446,7 @@ class Vector
 
         return *this;
     }
+
     constexpr Vector&
     operator+=(const T& rhs) noexcept
     {
@@ -426,6 +463,7 @@ class Vector
 
         return *this;
     }
+
     constexpr Vector&
     operator-=(const T& rhs) noexcept
     {
@@ -442,6 +480,7 @@ class Vector
 
         return *this;
     }
+
     constexpr Vector&
     operator*=(const T& rhs) noexcept
     {
@@ -474,13 +513,14 @@ class Vector
     }
 };
 
+/// @brief Template deduction guide for Vector.
 template <typename T,
           std::size_t N,
           template <typename, std::size_t>
           typename Container>
 Vector(Container<T, N>&&) -> Vector<T, N, Container>;
 
-/// @brief Generic row-major matrix of constant size.
+/// @brief Row-major matrix of size @f$M\times N@f$.
 /// @tparam T value type. Must be arithmetic.
 /// @tparam M number of rows.
 /// @tparam N number of columns.
@@ -588,18 +628,67 @@ class Matrix
 
     constexpr Matrix(Matrix&& rhs) noexcept : m_data(std::move(rhs.m_data)) {}
 
-    // single scalar construcor
+    /// @brief Construct Matrix with a scalar.
+    ///
+    /// @f$\mathrm{M}(a) = \mathrm{M}(a, a, a\dots)@f$
     explicit constexpr Matrix(T&& rhs) noexcept
     {
         for(auto& elem: m_data) elem = rhs;
     }
 
+    /// @brief Construct Matrix with an array.
     explicit constexpr Matrix(Data&& rhs) noexcept : m_data(std::move(rhs)) {}
 
     explicit constexpr Matrix(Data& rhs) noexcept : m_data(rhs) {}
 
     explicit constexpr Matrix(const Data& rhs) noexcept : m_data(rhs) {}
 
+    /// @brief Universal constructor.
+    /// Constructs Matrix from scalars, vectors, arrays or other matrices.
+    ///
+    /// From scalars:
+    /// @f$\mathrm{M}(a,b,c\dots) = \mathrm{M}(a, b, c\dots)@f$
+    ///
+    /// From an array:
+    /// @f$\mathrm{M}([a,b,c\dots]) = \mathrm{M}(a, b, c\dots)@f$
+    ///
+    /// From vectors:
+    /// @f$\mathrm{M}_{m,n}(\mathrm{V}_n(a_{1,1},a_{1,2},\dotsc,a_{1,n}),
+    /// \mathrm{V}_n(a_{2,1},a_{2,2},\dotsc,a_{2,n}),\dotsc,
+    /// \mathrm{V}_n(a_{m,1},a_{m,2},\dotsc,a_{m,n})) =
+    /// \begin{pmatrix}
+    /// a_{1,1} & a_{1,2} & \cdots & a_{1,n} \\
+    /// a_{2,1} & a_{2,2} & \cdots & a_{2,n} \\
+    /// \vdots  & \vdots  & \ddots & \vdots  \\
+    /// a_{m,1} & a_{m,2} & \cdots & a_{m,n}
+    /// \end{pmatrix}@f$
+    ///
+    /// From arrays:
+    /// @f$\mathrm{M}_{m,n}([a_{1,1},a_{1,2},\dotsc,a_{1,n}],
+    /// [a_{2,1},a_{2,2},\dotsc,a_{2,n}],\dotsc,
+    /// [a_{m,1},a_{m,2},\dotsc,a_{m,n}]) =
+    /// \begin{pmatrix}
+    /// a_{1,1} & a_{1,2} & \cdots & a_{1,n} \\
+    /// a_{2,1} & a_{2,2} & \cdots & a_{2,n} \\
+    /// \vdots  & \vdots  & \ddots & \vdots  \\
+    /// a_{m,1} & a_{m,2} & \cdots & a_{m,n}
+    /// \end{pmatrix}@f$
+    ///
+    /// From a smaller matrix:
+    /// @f$\mathrm{M}_{m,n}\left(
+    /// \mathrm{M}_{m-1,n-1}
+    /// \begin{pmatrix}
+    /// a_{1,1} & \cdots & a_{1,n-1} \\
+    /// \vdots & \ddots & \vdots \\
+    /// a_{m-1,1} & \cdots & a_{m-1,n-1}
+    /// \end{pmatrix} \right) =
+    /// \begin{pmatrix}
+    /// a_{1,1} & a_{1,2} & \cdots & a_{1,n-1} & \cdots & 0 \\
+    /// \vdots  & \vdots  & \vdots & \vdots & \ddots & \vdots \\
+    /// a_{m-1,1} & a_{m-1,2} & \cdots & a_{m-1,n-1} & \cdots & 0 \\
+    /// \vdots  & \vdots  & \vdots & \vdots & \ddots & \vdots \\
+    /// 0 & 0 & \cdots & 0 & \cdots & 0
+    /// \end{pmatrix}@f$
     template <typename... Ts>
     explicit constexpr Matrix(Ts&&... rhs) noexcept
     {
@@ -641,6 +730,7 @@ class Matrix
         CHECK_INDEX(i, M);
         return Vector(std::span<const T, N>(&at(i, 0), N));
     }
+
     constexpr Vector<T, N, std::span>
     operator[](const std::size_t i) noexcept
     {
@@ -684,6 +774,7 @@ class Matrix
         CHECK_INDEX(i, MxN);
         return m_data[i];
     }
+
     constexpr T&
     at(const std::size_t i) noexcept
     {
@@ -698,6 +789,7 @@ class Matrix
         CHECK_INDEX(j, N);
         return m_data[pos(i, j)];
     }
+
     constexpr T&
     at(const std::size_t i, const std::size_t j) noexcept
     {
@@ -711,16 +803,19 @@ class Matrix
     {
         return m_data.begin();
     }
+
     constexpr auto
     end() const noexcept
     {
         return m_data.end();
     }
+
     constexpr decltype(auto)
     cbegin() const noexcept
     {
         return m_data.cbegin();
     }
+
     constexpr decltype(auto)
     cend() const noexcept
     {
@@ -735,6 +830,7 @@ class Matrix
 
         return *this;
     }
+
     constexpr Matrix&
     operator+=(const T& rhs) noexcept
     {
@@ -751,6 +847,7 @@ class Matrix
 
         return *this;
     }
+
     constexpr Matrix&
     operator-=(const T& rhs) noexcept
     {
@@ -767,12 +864,21 @@ class Matrix
         return *this;
     }
 
-    const constexpr Data&
+    /// @brief Access the internal container.
+    constexpr const Data&
     data() const noexcept
     {
         return m_data;
     }
 
+    /// @brief Access the internal container.
+    constexpr Data&
+    data() noexcept
+    {
+        return m_data;
+    }
+
+    /// @brief Create identity matrix.
     static constexpr Matrix
     identity()
     {
@@ -1117,7 +1223,7 @@ ref(const Matrix<T, M, N, Container>& m) noexcept
     return Matrix(std::span{m.data()});
 }
 
-/// @brief Unroll matrix @p m to a vector view of size @f$M N@f$.
+/// @brief Get vector view of size @f$M\times N@f$ of matrix @p m.
 template <typename T,
           std::size_t M,
           std::size_t N,
@@ -1130,10 +1236,10 @@ flat_ref(const Matrix<T, M, N, Container>& m) noexcept
 }
 
 /// @brief Apply function @p f to corresponding elements of input vectors @p vs.
+/// @param f accepts as many arguments as the number of input vectors @p vs.
+/// @param Vectors must be of the same dimensionality.
 /// @return Vector containing results of application @p f to the elements of
 /// input.
-/// @p f accepts as many arguments as the number of input vectors @p vs.
-/// @p Vectors must be of the same dimensionality.
 template <typename F, typename... Vectors>
 constexpr auto
 transform(const F& f, const Vectors&... vs) noexcept
@@ -1165,10 +1271,12 @@ reduce(BinaryOperation                binary_op,
     return init;
 }
 
-/// @brief Efficient shortcut for @code{.cpp} reduce(binary_op2,
-/// transform(binary_op1, a, b), init) @endcode
+/// @brief Efficient shortcut for consequent binary transform and reduce.
 /// @param binary_op1 operator for transform.
 /// @param binary_op2 operator for reduce.
+///
+/// @code{.cpp} reduce(binary_op2, transform(binary_op1, a, b), init);
+/// @endcode
 template <typename T1,
           typename T2,
           std::size_t N,
@@ -1192,10 +1300,11 @@ transform_reduce(BinaryOperation1                 binary_op1,
     return init;
 }
 
-/// @brief Efficient shortcut for
-/// @code{.cpp} reduce(binary_op, transform(unary_op, a), init) @endcode
+/// @brief Efficient shortcut for consequent unary transform and reduce.
 /// @param unary_op operator for transform.
 /// @param binary_op operator for reduce.
+///
+/// @code{.cpp} reduce(binary_op, transform(unary_op, a), init); @endcode
 template <typename T,
           std::size_t N,
           template <typename, std::size_t>
@@ -1319,16 +1428,15 @@ dot(const Matrix<T, M1, N1, Container1>& lhs,
     return ret;
 }
 
-/// @brief Implements efficient generic N-dimensional cross product.
+/// @brief N-dimensional cross product.
 ///
 /// The alogrithm:
 /// @code{.cpp}
-/// Vector<T, N, std::array> ret;
+/// Vector<T, N, std::array> ret{0};
 /// for(std::size_t i = 0; i < N; ++i)
 ///     for(std::size_t j = 0; j < N; ++j)
 ///         for(std::size_t k = 0; k < N; ++k)
-///             ret[i] += sgn(std::array<std::size_t, 3>{i, j, k}) * a[j] *
-///             b[k];
+///             ret[i] += sgn({i, j, k}) * a[j] * b[k];
 /// @endcode
 template <typename T,
           std::size_t N,
@@ -1395,7 +1503,7 @@ distance(const Vector<T, N, Container1>& a,
     return length(a - b);
 }
 
-/// @brief Sum of all vector elements.
+/// @brief Sum of vector elements.
 template <typename T,
           std::size_t N,
           template <typename, std::size_t>
@@ -1406,7 +1514,7 @@ sum(const Vector<T, N, Container>& a) noexcept
     return reduce(std::plus<T>(), a, T{0});
 }
 
-/// @brief Product of all vector elements.
+/// @brief Product of vector elements.
 template <typename T,
           std::size_t N,
           template <typename, std::size_t>
@@ -1428,7 +1536,7 @@ all(const Vector<T, N, Container>& a) noexcept
     return reduce(std::logical_and<bool>(), a, true);
 }
 
-/// @brief Test whether any vector element evaluates to true.
+/// @brief Test if at least one vector element evaluates to true.
 template <typename T,
           std::size_t N,
           template <typename, std::size_t>
@@ -1439,7 +1547,7 @@ any(const Vector<T, N, Container>& a) noexcept
     return reduce(std::logical_or<bool>(), a, false);
 }
 
-/// @brief Compute average of all vector elements.
+/// @brief Average of vector elements.
 template <typename T,
           std::size_t N,
           template <typename, std::size_t>
@@ -1452,17 +1560,17 @@ avg(const Vector<T, N, Container>& a) noexcept
 
 /// @brief Roll vector elements.
 /// @param shift the number of places which elements are shifted. The sign
-/// defines the direction, i.e. (-) to the left otherwise to the right.
+/// defines the direction, i.e. (-) to the left, otherwise - to the right.
 template <typename T,
           std::size_t N,
           template <typename, std::size_t>
           typename Container>
 constexpr Vector<T, N, std::array>
-roll(const Vector<T, N, Container>& v, const std::size_t shift) noexcept
+roll(const Vector<T, N, Container>& v, const int shift) noexcept
 {
     Vector<T, N, std::array> ret{};
 
-    for(std::size_t i = 0; i < N; ++i) ret[i] = v[(i - shift) % N];
+    for(int i = 0; i < N; ++i) ret[i] = v[(i - shift) % N];
 
     return ret;
 }
