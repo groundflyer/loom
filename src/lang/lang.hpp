@@ -10,10 +10,11 @@
 #include <utils/union.hpp>
 
 #include <cstdint>
-#include <limits>
 
 namespace lucid
 {
+using index_t = std::uint32_t;
+
 template <typename To, typename Op, typename... Args>
 struct ComputeStore
 {
@@ -51,7 +52,7 @@ struct StartLabel
 };
 
 template <typename Var, typename Labels>
-    requires(std::is_integral_v<typename Var::type>)
+    requires(std::is_same_v<typename Var::type, std::uint32_t>)
 struct Jump
 {
     using var    = Var;
@@ -260,18 +261,6 @@ struct access_wrapper<Union<Ts...>>
     }
 };
 
-template <std::size_t NMax, typename List>
-struct index_type
-{
-    template <typename T>
-    struct p
-    {
-        static constexpr bool value = NMax < std::numeric_limits<T>::max();
-    };
-
-    using type = typelist::find<p, List>;
-};
-
 template <typename Cells, typename Labels>
 struct ensure_last_jumps
 {
@@ -300,15 +289,6 @@ struct ensure_last_jumps
 /// @brief Ensures that every cell ends with a jump.
 template <typename Cells, typename Labels>
 using ensure_last_jumps_t = typename ensure_last_jumps<Cells, Labels>::type;
-
-/// @brief Selects the smallest unsinged integer type that can hold at least @p
-/// NMax value.
-template <std::size_t NMax,
-          typename List = type_sequence<std::uint_fast8_t,
-                                        std::uint_fast16_t,
-                                        std::uint_fast32_t,
-                                        std::uint_fast64_t>>
-using index_type_t = typename index_type<NMax, List>::type;
 
 template <typename VarTypes,
           typename VarNames,
@@ -537,7 +517,6 @@ struct SimpleEvaluator
     static constexpr typename _Program::getter getter{};
 
     using _Memory = typename _Program::memory;
-    using index_t = typename _Program::index_t;
 
     _Memory mem;
 
@@ -588,8 +567,6 @@ struct Program
                            typelist::cons<StartLabel, stated_labels>>;
 
     static_assert(!typelist::has_duplicates<labels>);
-
-    using index_t = std::uint32_t;
 
     template <auto i>
     using index_constant =
