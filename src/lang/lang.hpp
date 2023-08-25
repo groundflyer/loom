@@ -13,7 +13,8 @@
 
 namespace lucid
 {
-using index_t = std::uint32_t;
+using index_t                    = std::uint32_t;
+static constexpr index_t end_pos = static_cast<index_t>(-1);
 
 template <typename To, typename Op, typename... Args>
 struct ComputeStore
@@ -525,7 +526,7 @@ struct SimpleEvaluator
     operator()(const Args&... args) noexcept
     {
         setter(mem, args...);
-        while(mem.cp() != static_cast<index_t>(-1))
+        while(mem.cp() != end_pos)
             visit(
                 mem.cp(),
                 [&](auto&& cell) constexpr noexcept { cell(mem); },
