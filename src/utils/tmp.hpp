@@ -742,12 +742,13 @@ template <typename List>
 using to_integer_sequence = typename detail::to_integer_seq<List>::type;
 
 /// @brief Invoke @p f with each class of @p List as template parameter.
-template <typename F, typename... Ts>
+template <typename F, typename... Ts, typename... Args>
 constexpr void
-for_each(F f, type_sequence<Ts...>) noexcept((...&& noexcept(f.template
-                                                             operator()<Ts>())))
+for_each(F&& f, type_sequence<Ts...>, Args&&... args) noexcept(
+    (...&& noexcept(f.template
+                    operator()<Ts>(std::forward<Args>(args)...))))
 {
-    (..., f.template operator()<Ts>());
+    (..., f.template operator()<Ts>(std::forward<Args>(args)...));
 }
 
 /// @brief Invoke every functional object in a typelist with @p args.
