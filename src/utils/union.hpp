@@ -10,10 +10,9 @@ namespace lucid
 {
 /// @brief Generic unsafe union.
 template <typename... Ts>
-    requires(true && ... &&
-             (std::is_trivially_default_constructible_v<Ts> &&
-              std::is_trivially_copy_assignable_v<Ts> &&
-              std::is_trivially_destructible_v<Ts>))
+    requires(... && (std::is_trivially_default_constructible_v<Ts> &&
+                     std::is_trivially_copy_assignable_v<Ts> &&
+                     std::is_trivially_destructible_v<Ts>))
 class Union
 {
     using Data = std::aligned_union_t<0, Ts...>;

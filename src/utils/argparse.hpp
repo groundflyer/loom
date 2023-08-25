@@ -186,7 +186,7 @@ template <char... cs>
 struct keyword_ok_impl<char_sequence<cs...>>
 {
     static constexpr bool value =
-        (true && ... && (is_alphadigit(cs) || cs == '-' || cs == '_'));
+        (... && (is_alphadigit(cs) || cs == '-' || cs == '_'));
 };
 
 // Lazy man's flag converter

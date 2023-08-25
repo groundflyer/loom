@@ -240,13 +240,11 @@ inline constexpr fn::tuple_maker_fn<T> tuple_maker;
 inline constexpr fn::sink_fn sink;
 
 /// @brief Accumulate @p args with @p op.
-template <typename BinaryOp, typename Init, typename... Args>
+template <typename BinaryOp, typename... Args>
 constexpr decltype(auto)
-fold(BinaryOp&& op, Init&& init, Args&&... args) noexcept
+fold(BinaryOp&& op, Args&&... args) noexcept
 {
-    return (detail::fold_wrapper(op, init) % ... %
-            detail::fold_wrapper(op, args))
-        .operand;
+    return (... % detail::fold_wrapper(op, args)).operand;
 }
 
 /// @brief Compose functions, e.g. compose(a, b, c) = a(b(c())).

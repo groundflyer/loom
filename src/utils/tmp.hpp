@@ -223,7 +223,7 @@ struct elem;
 template <typename T, typename... Ts>
 struct elem<T, type_sequence<Ts...>>
 {
-    static constexpr bool value = (false || ... || std::is_same_v<T, Ts>);
+    static constexpr bool value = std::disjunction_v<std::is_same<T, Ts>...>;
 };
 
 template <std::size_t I, typename S, typename List>
@@ -854,7 +854,7 @@ struct elem;
 template <typename Int, Int V, Int... Is>
 struct elem<V, std::integer_sequence<Int, Is...>>
 {
-    static constexpr bool value = (false || ... || (V == Is));
+    static constexpr bool value = (... || (V == Is));
 };
 
 template <std::size_t I, auto S, typename List>

@@ -32,8 +32,7 @@ template <typename A, typename B, size_t... I>
 constexpr bool
 assert_tuples(A&& a, B&& b, std::index_sequence<I...>) noexcept
 {
-    return (false || ... ||
-            not_equal<I>(std::forward<A>(a), std::forward<B>(b)));
+    return (... || not_equal<I>(std::forward<A>(a), std::forward<B>(b)));
 }
 
 /// @brief Test lucid::Vector.
@@ -401,8 +400,7 @@ vector_bool_test(RandomEngine& g, const size_t num_tests) noexcept
         [](const Vector<bool, N, array>& feed) noexcept { return any(feed); },
         [](const bool testing, const Vector<bool, N, array>& feed) noexcept
         {
-            return testing != apply([](auto... vals)
-                                    { return (false || ... || vals); },
+            return testing != apply([](auto... vals) { return (... || vals); },
                                     feed.data());
         });
 
@@ -414,8 +412,7 @@ vector_bool_test(RandomEngine& g, const size_t num_tests) noexcept
         [](const Vector<bool, N, array>& feed) noexcept { return all(feed); },
         [](const bool testing, const Vector<bool, N, array>& feed) noexcept
         {
-            return testing != apply([](auto... vals)
-                                    { return (true && ... && vals); },
+            return testing != apply([](auto... vals) { return (... && vals); },
                                     feed.data());
         });
 
