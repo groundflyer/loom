@@ -745,16 +745,35 @@ using to_integer_sequence = typename detail::to_integer_seq<List>::type;
 template <typename F, typename... Ts, typename... Args>
 constexpr void
 for_each(F&& f, type_sequence<Ts...>, Args&&... args) noexcept(
-    (...&& noexcept(f.template
-                    operator()<Ts>(std::forward<Args>(args)...))))
+    (...&& noexcept(f.template operator()<Ts>(std::forward<Args>(args)...))))
 {
     (..., f.template operator()<Ts>(std::forward<Args>(args)...));
+}
+
+/// @brief Invoke @p f with each class of @p List as template parameter
+/// and collect results in a @p Tuple if @p List consist of more then one
+/// element.
+template <template <typename...> typename Tuple,
+          typename F,
+          typename... Ts,
+          typename... Args>
+constexpr decltype(auto)
+collect(F&& f, type_sequence<Ts...>, Args&&... args) noexcept(
+    (...&& noexcept(f.template operator()<Ts>(std::forward<Args>(args)...))))
+{
+    if constexpr(sizeof...(Ts) > 1)
+        return Tuple<std::remove_cvref_t<decltype(f.template operator()<Ts>(
+            std::forward<Args>(args)...))>...>{
+            f.template operator()<Ts>(std::forward<Args>(args)...)...};
+    else
+        return f.template operator()<Ts...>(std::forward<Args>(args)...);
 }
 
 /// @brief Invoke every functional object in a typelist with @p args.
 template <typename... Fs, typename... Args>
 constexpr void
-unroll(type_sequence<Fs...>, Args&&... args) noexcept
+unroll(type_sequence<Fs...>, Args&&... args) noexcept(
+    (...&& noexcept(std::invoke(Fs{}, std::forward<Args>(args)...))))
 {
     (..., std::invoke(Fs{}, std::forward<Args>(args)...));
 }
