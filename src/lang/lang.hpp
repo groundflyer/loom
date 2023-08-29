@@ -14,7 +14,10 @@
 namespace lucid
 {
 using index_t                    = std::uint32_t;
-static constexpr index_t end_pos = static_cast<index_t>(-1);
+constexpr inline index_t end_pos = static_cast<index_t>(-1);
+
+#define MK_CONSTANT(TYPE, VALUE) \
+    decltype([]() constexpr noexcept -> TYPE { return VALUE; })
 
 template <typename To, typename Op, typename... Args>
 struct ComputeStore
@@ -291,266 +294,15 @@ struct ensure_last_jumps
 template <typename Cells, typename Labels>
 using ensure_last_jumps_t = typename ensure_last_jumps<Cells, Labels>::type;
 
-template <typename VarTypes,
-          typename VarNames,
-          typename VarMap,
-          typename CP,
-          template <typename...> typename Container = std::tuple>
-class Memory
-{
-    using Data = typelist::to<VarTypes, Container>;
-    Data m_data;
-
-    /// @brief Type of a variable stored in the memory.
-    template <typename Name>
-    using var_type = typelist::lookup<Name, VarMap>;
-
-    /// @brief Index of a variable.
-    template <typename Name>
-    static constexpr std::size_t var_index = typelist::index<Name, VarNames>;
-
-  public:
-    /// @brief Access a variable.
-    template <typename Var>
-    std::add_lvalue_reference_t<typename Var::type>
-    get() noexcept
-    {
-        using var_name = typename Var::name;
-        using wrapper  = access_wrapper<typelist::lookup<var_name, VarMap>>;
-        constexpr wrapper  op;
-        return op.template operator()<var_type<var_name>>(
-            std::get<var_index<var_name>>(m_data));
-    }
-
-    /// @brief Access cell pointer.
-    std::add_lvalue_reference_t<typename CP::type>
-    cp() noexcept
-    {
-        return get<CP>();
-    }
-};
-
-template <typename Vars>
-class VarTable
-{
-    template <typename Name>
-    using infer_var_type =
-        typename collected_type<typename collect_types<Name, Vars>::type>::type;
-
-  public:
-    /// @brief Cell Pointer variable is always first in @p Vars.
-    using cp = typelist::head<Vars>;
-
-    /// @brief Unique variable names.
-    using names = typelist::nub<get_var_names_t<Vars>>;
-
-    /// @brief Aggregated unique types of variables we use to hold actual
-    /// values.
-    ///
-    /// std::tuple<types...> is used as the memory.
-    ///
-    /// If there are few different types corresponding to a single variable,
-    /// lucid::Union used to hold values of the variable.
-    using types = typelist::map<infer_var_type, names>;
-
-    /// @brief Variable name to type dictionary.
-    using table = typelist::zip<names, types>;
-
-    /// @brief Class to store values of the variables.
-    using memory = Memory<types, names, table, cp>;
-};
-
-template <typename Command, typename LabelMap>
-struct instruction;
-
-template <typename To, typename From, typename LabelMap>
-struct instruction<Copy<To, From>, LabelMap>
-{
-    template <typename _Memory>
-    constexpr void
-    operator()(_Memory& mem) const noexcept
-    {
-        mem.template get<To>() = mem.template get<From>();
-    }
-};
-
-template <typename To, typename Constant, typename LabelMap>
-struct instruction<StoreConstant<To, Constant>, LabelMap>
-{
-    static constexpr Constant func{};
-
-    template <typename _Memory>
-    constexpr void
-    operator()(_Memory& mem) const noexcept
-    {
-        mem.template get<To>() = func();
-    }
-};
-
-template <typename To, typename Op, typename... Args, typename LabelMap>
-struct instruction<ComputeStore<To, Op, Args...>, LabelMap>
-{
-    static constexpr Op op{};
-
-    template <typename _Memory>
-    constexpr void
-    operator()(_Memory& mem) const noexcept
-    {
-        mem.template get<To>() = std::invoke(op, mem.template get<Args>()...);
-    }
-};
-
-template <typename Target, typename LabelMap>
-struct instruction<AlwaysJump<Target>, LabelMap>
-{
-    using constant = typename typelist::lookup<Target, LabelMap>;
-
-    template <typename _Memory>
-    constexpr void
-    operator()(_Memory& memory) const noexcept
-    {
-        memory.cp() = constant::value;
-    }
-};
-
-template <typename Var, typename Labels, typename LabelMap>
-struct instruction<Jump<Var, Labels>, LabelMap>
-{
-    template <typename L>
-    using jump_idx = typelist::lookup<L, LabelMap>;
-
-    using jump_idxs =
-        typelist::to_integer_sequence<typelist::map<jump_idx, Labels>>;
-
-    static constexpr auto table = intlist::array<jump_idxs>;
-
-    template <typename _Memory>
-    constexpr void
-    operator()(_Memory& memory) const noexcept
-    {
-        memory.cp() = table[memory.template get<Var>()];
-    }
-};
-
-template <typename C, typename LabelMap>
-struct cell_instructions
-{
-    template <typename Command>
-    using compiled = instruction<Command, LabelMap>;
-
-    using instructions = typelist::map<compiled, C>;
-
-    template <typename _Memory>
-    constexpr void
-    operator()(_Memory& memory) const noexcept
-    {
-        typelist::unroll(instructions{}, memory);
-    }
-};
-
-template <typename InputVars>
-struct input_setter;
-
-template <typename... InputVars>
-struct input_setter<type_sequence<InputVars...>>
-{
-    template <typename _Memory, typename... Args>
-    constexpr void
-    operator()(_Memory& mem, const Args&... args) const noexcept
-    {
-        const auto setter =
-            [&mem]<typename Var>(const auto& arg) constexpr noexcept
-        { mem.template get<Var>() = arg; };
-        (..., setter.template operator()<InputVars>(args));
-    }
-};
-
-template <typename OutputVars>
-struct output_getter;
-
-template <typename OutputVar>
-struct output_getter<type_sequence<OutputVar>>
-{
-    template <typename _Memory>
-    constexpr auto
-    operator()(_Memory& mem) const noexcept
-    {
-        return mem.template get<OutputVar>();
-    }
-};
-
-template <typename... OutputVars>
-struct output_getter<type_sequence<OutputVars...>>
-{
-    template <typename _Memory>
-    constexpr auto
-    operator()(_Memory& mem) const noexcept
-    {
-        return std::tuple{mem.template get<OutputVars>()...};
-    }
-};
-
-template <typename _Program>
-struct SingleCellEvaluator
-{
-    static constexpr typelist::head<typename _Program::cells> cell{};
-    static constexpr typename _Program::setter                setter{};
-    static constexpr typename _Program::getter                getter{};
-
-    typename _Program::memory mem;
-
-    template <typename... Args>
-    constexpr auto
-    operator()(const Args&... args) noexcept
-    {
-        setter(mem, args...);
-        cell(mem);
-        return getter(mem);
-    }
-};
-
-template <typename _Program>
-struct SimpleEvaluator
-{
-    static constexpr typename typelist::to<typename _Program::cells, std::tuple>
-                                               cells{};
-    static constexpr typename _Program::setter setter{};
-    static constexpr typename _Program::getter getter{};
-
-    using _Memory = typename _Program::memory;
-
-    _Memory mem;
-
-    template <typename... Args>
-    constexpr auto
-    operator()(const Args&... args) noexcept
-    {
-        setter(mem, args...);
-        while(mem.cp() != end_pos)
-            visit(
-                mem.cp(),
-                [&](auto&& cell) constexpr noexcept { cell(mem); },
-                cells,
-                sink);
-        return getter(mem);
-    }
-};
-
-template <typename _Program>
-using SequentialEvaluator = std::conditional_t<_Program::is_singular,
-                                               SingleCellEvaluator<_Program>,
-                                               SimpleEvaluator<_Program>>;
-
-/// @brief Basic program representation.
+/// @brief Program representation.
 template <typename InputVars, typename OutputVars, typename Statements>
-struct Program
+class Program
 {
-    /// @brief Only commands that store values to a variable.
-    using stores = typelist::filter<does_store, Statements>;
-
     /// @brief Variables that have stored values to.
-    using vars = typelist::join<typelist::join<InputVars, OutputVars>,
-                                typelist::map<get_storing_var_t, stores>>;
+    using stated_vars =
+        typelist::join<typelist::join<InputVars, OutputVars>,
+                       typelist::map<get_storing_var_t,
+                                     typelist::filter<does_store, Statements>>>;
 
     /// @brief List of lists of commands.
     using cells_statements = typelist::split_with<is_label, Statements>;
@@ -558,6 +310,10 @@ struct Program
     using stated_labels = typelist::filter<is_label, Statements>;
 
     static constexpr std::size_t num_cells = typelist::length<cells_statements>;
+
+  public:
+    using input_vars  = InputVars;
+    using output_vars = OutputVars;
 
     // Ensure that every cell is labeled.
     // Only the first label can be skipped, so we just add special label at the
@@ -569,10 +325,6 @@ struct Program
 
     static_assert(!typelist::has_duplicates<labels>);
 
-    template <auto i>
-    using index_constant =
-        std::integral_constant<index_t, static_cast<index_t>(i)>;
-
     using labelmap = typelist::cons<
         type_pair<EndLabel,
                   std::integral_constant<index_t, static_cast<index_t>(-1)>>,
@@ -581,26 +333,29 @@ struct Program
     /// @brief Cell Pointer variable.
     using cp = Variable<index_t, "CP">;
 
-    template <typename C>
-    using cell_compiler = cell_instructions<C, labelmap>;
+    static constexpr bool singular = num_cells == 1;
 
-    static constexpr bool is_singular = num_cells == 1;
+    using variables = std::
+        conditional_t<singular, stated_vars, typelist::cons<cp, stated_vars>>;
 
-    // singlular cell optimizations:
-    // don't add cell pointer
-    using all_vars =
-        std::conditional_t<is_singular, vars, typelist::cons<cp, vars>>;
-    // don't check jumps
-    using cells = typelist::map<
-        cell_compiler,
-        std::conditional_t<is_singular,
+    /// @brief Names of registers.
+    using reg_names = typelist::nub<get_var_names_t<variables>>;
+
+    template <typename Name>
+    using infer_reg_type = typename collected_type<
+        typename collect_types<Name, variables>::type>::type;
+
+    /// @brief Aggregated unique types of registers we use to hold actual
+    /// values.
+    ///
+    /// If there are few different types corresponding to the same name,
+    /// lucid::Union used to hold values of the register.
+    using reg_types = typelist::map<infer_reg_type, reg_names>;
+
+    // don't check jumps for singular program.
+    using cells =
+        std::conditional_t<singular,
                            cells_statements,
-                           ensure_last_jumps_t<cells_statements, labels>>>;
-    using memory = typename VarTable<all_vars>::memory;
-    using setter = input_setter<InputVars>;
-    using getter = output_getter<OutputVars>;
+                           ensure_last_jumps_t<cells_statements, labels>>;
 };
-
-#define MK_CONSTANT(TYPE, VALUE) \
-    decltype([]() constexpr noexcept -> TYPE { return VALUE; })
 } // namespace lucid

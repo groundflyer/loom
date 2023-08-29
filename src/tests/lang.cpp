@@ -1,6 +1,7 @@
 // -*- C++ -*-
 // lang.cpp
 
+#include <lang/bse.hpp>
 #include <lang/lang.hpp>
 
 using namespace lucid;
@@ -17,7 +18,7 @@ struct increment
     using inputs  = type_sequence<val>;
     using outputs = type_sequence<val>;
     using program = Program<inputs, outputs, commands>;
-    using eval    = SequentialEvaluator<program>;
+    using eval    = basic_scalar_evaluator_t<program>;
 };
 
 // T factorial(T i):
@@ -63,7 +64,7 @@ struct factorial
 
     using program = Program<inputs, outputs, commands>;
 
-    using eval = SequentialEvaluator<program>;
+    using eval = basic_scalar_evaluator_t<program>;
 };
 
 int main(/*int argc, char* argv[]*/)
