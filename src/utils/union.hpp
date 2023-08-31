@@ -6,6 +6,9 @@
 
 #include <utils/tmp.hpp>
 
+#include <algorithm>
+#include <cstddef>
+
 namespace lucid
 {
 /// @brief Generic unsafe union.
@@ -15,9 +18,7 @@ template <typename... Ts>
                      std::is_trivially_destructible_v<Ts>))
 class Union
 {
-    using Data = std::aligned_union_t<0, Ts...>;
-
-    Data m_data;
+    alignas(Ts...) std::byte m_data[std::max({sizeof(Ts)...})];
 
     template <typename T>
     static constexpr bool has = typelist::elem<T, type_sequence<Ts...>>;
