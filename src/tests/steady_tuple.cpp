@@ -61,5 +61,13 @@ main()
     ret += a3.a != b3.a;
     ret += a3.b != b3.b;
 
+    int                              i1 = 3;
+    char                             c1 = 'c';
+    lucid::steady_tuple<int&, char&> t4(i1, c1);
+    t4.template get<0>() += 5;
+    t4.template get<1>() = 'f';
+    ret += i1 != 8;
+    ret += c1 != 'f';
+
     return ret;
 }

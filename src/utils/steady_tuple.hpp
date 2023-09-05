@@ -120,8 +120,8 @@ class steady_tuple
     using Idxs  = typelist::indicies<Types>;
     using Data  = detail::steady_tuple_impl<Idxs, Ts...>;
 
-    static constexpr Types types;
-    static constexpr Idxs  idxs;
+    static constexpr Types types{};
+    static constexpr Idxs  idxs{};
 
     Data data;
 
