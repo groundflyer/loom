@@ -75,13 +75,17 @@ for_each_impl(F&& f, Tuple&& tuple, std::index_sequence<I...>)
 } // namespace detail
 
 // @brief Apply @p op to every element of @p tuple and return result as a tuple.
-template <typename UnaryOp, typename... Ts>
+template <template <typename...> typename ResultTuple = std::tuple,
+          typename UnaryOp,
+          typename InputTuple>
 constexpr decltype(auto)
-map_tuple(UnaryOp&& op, const std::tuple<Ts...>& tuple) noexcept
+map_tuple(UnaryOp&& op, InputTuple&& tuple) noexcept
 {
-    return std::apply([op](const Ts&... args) noexcept
-                      { return std::tuple{op(args)...}; },
-                      tuple);
+    return std::apply(
+        [op = std::move(op)]<typename... Ts>(Ts&&... args) noexcept
+        -> ResultTuple<std::invoke_result_t<UnaryOp, Ts>...>
+        { return {std::invoke(std::move(op), std::forward<Ts>(args))...}; },
+        std::forward<InputTuple>(tuple));
 }
 
 /// @brief Left-assotiative fold of a @p tuple.
