@@ -29,20 +29,31 @@ class steady_tuple_leaf
   public:
     steady_tuple_leaf()                         = delete;
     steady_tuple_leaf(const steady_tuple_leaf&) = delete;
-    steady_tuple_leaf(steady_tuple_leaf&&)      = delete;
     steady_tuple_leaf&
     operator=(const steady_tuple_leaf&) = delete;
-    steady_tuple_leaf&
-    operator=(steady_tuple_leaf&&) = delete;
+
+    constexpr steady_tuple_leaf(steady_tuple_leaf&& other) noexcept :
+        value(std::move(other.value))
+    {
+    }
+
+    constexpr steady_tuple_leaf&
+    operator=(steady_tuple_leaf&& other) noexcept
+    {
+        value = std::move(other.value);
+        return *this;
+    }
 
     template <typename ArgsTuple>
-    constexpr steady_tuple_leaf(std::piecewise_construct_t, ArgsTuple&& args) :
+    constexpr steady_tuple_leaf(std::piecewise_construct_t,
+                                ArgsTuple&& args) noexcept :
         value(std::make_from_tuple<T>(std::forward<ArgsTuple>(args)))
     {
     }
 
     template <typename... Args>
-    constexpr steady_tuple_leaf(Args&&... args) : value(args...)
+    constexpr steady_tuple_leaf(Args&&... args) noexcept :
+        value(std::forward<Args>(args)...)
     {
     }
 
@@ -66,38 +77,48 @@ template <std::size_t... Idxs, typename... Ts>
 class steady_tuple_impl<std::index_sequence<Idxs...>, Ts...> :
     public steady_tuple_leaf<Idxs, Ts>...
 {
+    template <std::size_t I, typename T>
+    constexpr void
+    assign(steady_tuple_leaf<I, T>&& other) noexcept
+    {
+        static_cast<steady_tuple_leaf<I, T>&>(*this) = std::move(other);
+    }
+
   public:
     steady_tuple_impl()                         = delete;
     steady_tuple_impl(const steady_tuple_impl&) = delete;
-    steady_tuple_impl(steady_tuple_impl&&)      = delete;
     steady_tuple_impl&
     operator=(const steady_tuple_impl&) = delete;
-    steady_tuple_impl&
-    operator=(steady_tuple_impl&&) = delete;
 
-    template <std::size_t... LeafIdxs, typename... LeafTs, typename... ValueTs>
-    constexpr steady_tuple_impl(std::index_sequence<LeafIdxs...>,
-                                type_sequence<LeafTs...>,
-                                ValueTs&&... values) noexcept :
-        steady_tuple_leaf<LeafIdxs, LeafTs>(values)...
+    constexpr steady_tuple_impl(steady_tuple_impl&& other) noexcept :
+        steady_tuple_leaf<Idxs, Ts>(
+            std::move(static_cast<steady_tuple_leaf<Idxs, Ts>&&>(other)))...
     {
     }
 
-    template <std::size_t... LeafIdxs, typename... LeafTs, typename... ValueTs>
-    constexpr steady_tuple_impl(std::index_sequence<LeafIdxs...>,
-                                type_sequence<LeafTs...>,
-                                std::piecewise_construct_t _pc,
-                                ValueTs&&... values) noexcept :
-        steady_tuple_leaf<LeafIdxs, LeafTs>(_pc, values)...
+    constexpr steady_tuple_impl&
+    operator=(steady_tuple_impl&& other) noexcept
+    {
+        (..., assign<Idxs, Ts>(std::move(other)));
+        return *this;
+    }
+
+    template <typename... ValueTs>
+    constexpr steady_tuple_impl(ValueTs&&... values) noexcept :
+        steady_tuple_leaf<Idxs, Ts>(std::forward<ValueTs>(values))...
     {
     }
 
-    template <std::size_t... LeafIdxs, typename... LeafTs, typename... ValueTs>
-    constexpr steady_tuple_impl(std::index_sequence<LeafIdxs...>,
-                                type_sequence<LeafTs...>,
-                                uniform_init_t,
+    template <typename... ValueTs>
+    constexpr steady_tuple_impl(std::piecewise_construct_t _pc,
                                 ValueTs&&... values) noexcept :
-        steady_tuple_leaf<LeafIdxs, LeafTs>(values...)...
+        steady_tuple_leaf<Idxs, Ts>(_pc, std::forward<ValueTs>(values))...
+    {
+    }
+
+    template <typename... ValueTs>
+    constexpr steady_tuple_impl(uniform_init_t, ValueTs&&... values) noexcept :
+        steady_tuple_leaf<Idxs, Ts>(std::forward<ValueTs>(values)...)...
     {
     }
 };
@@ -112,7 +133,7 @@ apply_impl(F&& f, Tuple&& tuple, std::index_sequence<I...>) noexcept(
 } // namespace detail
 
 /// @brief Tuple class template
-/// for objects that aren't default-, copy- or move-constructible.
+/// for objects that aren't default- or copy-constructible.
 template <typename... Ts>
 class steady_tuple
 {
@@ -120,19 +141,18 @@ class steady_tuple
     using Idxs  = typelist::indicies<Types>;
     using Data  = detail::steady_tuple_impl<Idxs, Ts...>;
 
-    static constexpr Types types{};
-    static constexpr Idxs  idxs{};
-
     Data data;
 
   public:
     steady_tuple()                    = delete;
     steady_tuple(const steady_tuple&) = delete;
-    steady_tuple(steady_tuple&&)      = delete;
     steady_tuple&
     operator=(const steady_tuple&) = delete;
-    steady_tuple&
-    operator=(steady_tuple&&) = delete;
+
+    constexpr steady_tuple(steady_tuple&& other) noexcept :
+        data(std::move(other.data))
+    {
+    }
 
     /// @brief Constructs all the containing objects in place from @p args.
     ///
@@ -149,8 +169,16 @@ class steady_tuple
     /// tuples and should be unpacked for constructing corresponding objects,
     /// i. e. uses std::make_from_tuple to construct the objects.
     template <typename... Args>
-    constexpr steady_tuple(Args&&... args) : data(idxs, types, args...)
+    constexpr steady_tuple(Args&&... args) noexcept :
+        data(std::forward<Args>(args)...)
     {
+    }
+
+    constexpr steady_tuple&
+    operator=(steady_tuple&& other) noexcept
+    {
+        data = std::move(other.data);
+        return *this;
     }
 
     /// @brief Access an underlying object by index @p I.
