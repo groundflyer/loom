@@ -6,15 +6,13 @@
 
 #include "lang.hpp"
 
-namespace lucid
-{
-namespace detail
+namespace lucid::bse
 {
 template <typename RegTypes,
           typename RegNames,
           typename CP,
           template <typename...> typename Container = std::tuple>
-class BasicScalarMemory
+class Memory
 {
     using Data = typelist::to<RegTypes, Container>;
 
@@ -38,7 +36,7 @@ class BasicScalarMemory
     get() noexcept
     {
         using var_name = typename Var::name;
-        constexpr access_wrapper<typelist::lookup<var_name, table>> op;
+        constexpr access_wrapper<typelist::lookup<var_name, table>> op{};
 
         return op.template operator()<var_type<var_name>>(
             std::get<var_index<var_name>>(m_data));
@@ -167,7 +165,6 @@ struct output_getter
             OutputVars{});
     }
 };
-} // namespace detail
 
 template <typename _Program>
 class basic_scalar_evaluator
@@ -180,16 +177,14 @@ class basic_scalar_evaluator
     using cp        = typename _Program::cp;
 
     template <typename C>
-    using compile_cell = detail::compile_cell<C, labelmap>;
+    using compile_cell = compile_cell<C, labelmap>;
 
     using compiled_cells = typelist::map<compile_cell, cells>;
 
-    static constexpr detail::input_setter<typename _Program::input_vars>
-        setter{};
-    static constexpr detail::output_getter<typename _Program::output_vars>
-        getter{};
+    static constexpr input_setter<typename _Program::input_vars>   setter{};
+    static constexpr output_getter<typename _Program::output_vars> getter{};
 
-    using memory = detail::BasicScalarMemory<reg_types, reg_names, cp>;
+    using memory = Memory<reg_types, reg_names, cp>;
 
     struct single_cell_evaluator
     {
@@ -236,5 +231,5 @@ class basic_scalar_evaluator
 };
 
 template <typename _Program>
-using basic_scalar_evaluator_t = typename basic_scalar_evaluator<_Program>::type;
-} // namespace lucid
+using evaluator = typename basic_scalar_evaluator<_Program>::type;
+} // namespace lucid::bse

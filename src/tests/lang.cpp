@@ -18,7 +18,7 @@ struct increment
     using inputs  = type_sequence<val>;
     using outputs = type_sequence<val>;
     using program = Program<inputs, outputs, commands>;
-    using eval    = basic_scalar_evaluator_t<program>;
+    using eval    = bse::evaluator<program>;
 };
 
 // T factorial(T i):
@@ -64,7 +64,7 @@ struct factorial
 
     using program = Program<inputs, outputs, commands>;
 
-    using eval = basic_scalar_evaluator_t<program>;
+    using eval = bse::evaluator<program>;
 };
 
 int main(/*int argc, char* argv[]*/)
