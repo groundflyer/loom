@@ -255,5 +255,34 @@ apply(F&& f, Tuple&& tuple) noexcept(noexcept(detail::apply_impl(
         std::forward<Tuple>(tuple),
         std::make_index_sequence<tuple_size_v<std::decay_t<Tuple>>>{});
 }
-
 } // namespace lucid
+
+namespace std
+{
+template <typename... Ts>
+class tuple_size<lucid::steady_tuple<Ts...>> :
+    public integral_constant<size_t, sizeof...(Ts)>
+{
+};
+
+template <size_t I, typename... Ts>
+class tuple_element<I, lucid::steady_tuple<Ts...>>
+{
+  public:
+    using type = lucid::typelist::at<I, lucid::type_sequence<Ts...>>;
+};
+
+template <size_t I, typename... Ts>
+constexpr decltype(auto)
+get(const lucid::steady_tuple<Ts...>& t) noexcept
+{
+    return t.template get<I>();
+}
+
+template <size_t I, typename... Ts>
+constexpr decltype(auto)
+get(lucid::steady_tuple<Ts...>& t) noexcept
+{
+    return t.template get<I>();
+}
+} // namespace std

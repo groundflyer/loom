@@ -98,5 +98,11 @@ main()
     ret += t6.template get<1>().a != 7l;
     ret += t6.template get<1>().b != 8;
 
+    auto& [a6, b6] = t6;
+    ret += a6.a != 5;
+    ret += a6.b != 6ul;
+    ret += b6.a != 7l;
+    ret += b6.b != 8;
+
     return ret;
 }
