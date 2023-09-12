@@ -20,7 +20,7 @@ constexpr inline index_t end_pos = static_cast<index_t>(-1);
     decltype([]() constexpr noexcept -> TYPE { return VALUE; })
 
 template <typename To, typename Op, typename... Args>
-struct ComputeStore
+struct Compute
 {
     using var    = To;
     using action = Op;
@@ -28,7 +28,7 @@ struct ComputeStore
 };
 
 template <typename To, typename Constant>
-struct StoreConstant
+struct Store
 {
     using var    = To;
     using action = Constant;
@@ -56,20 +56,20 @@ struct StartLabel
 };
 
 template <typename Var, typename Labels>
-    requires(std::is_same_v<typename Var::type, std::uint32_t>)
-struct Jump
+    requires(std::is_same_v<typename Var::type, index_t>)
+struct ParmJump
 {
     using var    = Var;
     using labels = Labels;
 };
 
 template <typename Target>
-struct AlwaysJump
+struct Jump
 {
     using target = Target;
 };
 
-using EndJump = AlwaysJump<EndLabel>;
+using EndJump = Jump<EndLabel>;
 
 template <typename Type, StringLiteral Name>
 struct Variable
@@ -85,13 +85,13 @@ struct does_store
 };
 
 template <typename... Ts>
-struct does_store<ComputeStore<Ts...>>
+struct does_store<Compute<Ts...>>
 {
     static constexpr bool value = true;
 };
 
 template <typename... Ts>
-struct does_store<StoreConstant<Ts...>>
+struct does_store<Store<Ts...>>
 {
     static constexpr bool value = true;
 };
@@ -109,7 +109,7 @@ struct is_store_const
 };
 
 template <typename To, typename F>
-struct is_store_const<StoreConstant<To, F>>
+struct is_store_const<Store<To, F>>
 {
     static constexpr bool value = true;
 };
@@ -145,13 +145,13 @@ struct is_jump
 };
 
 template <typename... Ts>
-struct is_jump<AlwaysJump<Ts...>>
+struct is_jump<Jump<Ts...>>
 {
     static constexpr bool value = true;
 };
 
 template <typename... Ts>
-struct is_jump<Jump<Ts...>>
+struct is_jump<ParmJump<Ts...>>
 {
     static constexpr bool value = true;
 };
@@ -167,13 +167,13 @@ template <typename T>
 struct get_storing_var;
 
 template <typename Variable, typename... Ts>
-struct get_storing_var<ComputeStore<Variable, Ts...>>
+struct get_storing_var<Compute<Variable, Ts...>>
 {
     using type = Variable;
 };
 
 template <typename Variable, typename F>
-struct get_storing_var<StoreConstant<Variable, F>>
+struct get_storing_var<Store<Variable, F>>
 {
     using type = Variable;
 };
@@ -281,7 +281,7 @@ struct ensure_last_jumps
         using type =
             std::conditional_t<is_jump<typelist::last<cell>>::value,
                                cell,
-                               typelist::append<AlwaysJump<next_label>, cell>>;
+                               typelist::append<Jump<next_label>, cell>>;
     };
 
     template <typename CellIdx>

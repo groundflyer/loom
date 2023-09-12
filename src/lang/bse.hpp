@@ -51,10 +51,10 @@ class Memory
 };
 
 template <typename Command, typename LabelMap>
-struct instruction;
+struct eval_instruction;
 
 template <typename To, typename From, typename LabelMap>
-struct instruction<Copy<To, From>, LabelMap>
+struct eval_instruction<Copy<To, From>, LabelMap>
 {
     template <typename _Memory>
     constexpr void
@@ -65,7 +65,7 @@ struct instruction<Copy<To, From>, LabelMap>
 };
 
 template <typename To, typename Constant, typename LabelMap>
-struct instruction<StoreConstant<To, Constant>, LabelMap>
+struct eval_instruction<Store<To, Constant>, LabelMap>
 {
     static constexpr Constant func{};
 
@@ -78,20 +78,18 @@ struct instruction<StoreConstant<To, Constant>, LabelMap>
 };
 
 template <typename To, typename Op, typename... Args, typename LabelMap>
-struct instruction<ComputeStore<To, Op, Args...>, LabelMap>
+struct eval_instruction<Compute<To, Op, Args...>, LabelMap>
 {
-    static constexpr Op op{};
-
     template <typename _Memory>
     constexpr void
     operator()(_Memory& mem) const noexcept
     {
-        mem.template get<To>() = std::invoke(op, mem.template get<Args>()...);
+        mem.template get<To>() = std::invoke(Op{}, mem.template get<Args>()...);
     }
 };
 
 template <typename Target, typename LabelMap>
-struct instruction<AlwaysJump<Target>, LabelMap>
+struct eval_instruction<Jump<Target>, LabelMap>
 {
     using constant = typename typelist::lookup<Target, LabelMap>;
 
@@ -99,12 +97,12 @@ struct instruction<AlwaysJump<Target>, LabelMap>
     constexpr void
     operator()(_Memory& memory) const noexcept
     {
-        memory.cp() = constant::value;
+        memory.cp() = std::invoke(constant{});
     }
 };
 
 template <typename Var, typename Labels, typename LabelMap>
-struct instruction<Jump<Var, Labels>, LabelMap>
+struct eval_instruction<ParmJump<Var, Labels>, LabelMap>
 {
     template <typename L>
     using jump_idx = typelist::lookup<L, LabelMap>;
@@ -126,7 +124,7 @@ template <typename Cell, typename LabelMap>
 struct compile_cell
 {
     template <typename Command>
-    using compiled = instruction<Command, LabelMap>;
+    using compiled = eval_instruction<Command, LabelMap>;
 
     using instructions = typelist::map<compiled, Cell>;
 
@@ -159,7 +157,7 @@ struct output_getter
     constexpr decltype(auto)
     operator()(_Memory& mem) const noexcept
     {
-        return typelist::collect<std::tuple>(
+        return typelist::maybe_collect<std::tuple>(
             [&mem]<typename Var>() constexpr noexcept
             { return mem.template get<Var>(); },
             OutputVars{});

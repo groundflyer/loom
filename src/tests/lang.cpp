@@ -9,11 +9,10 @@ using namespace lucid;
 template <typename T>
 struct increment
 {
-    using val = Variable<T, "val">;
-    using one = Variable<T, "one">;
-    using commands =
-        type_sequence<StoreConstant<one, std::integral_constant<T, 1>>,
-                      ComputeStore<val, std::plus<T>, val, one>>;
+    using val      = Variable<T, "val">;
+    using one      = Variable<T, "one">;
+    using commands = type_sequence<Store<one, std::integral_constant<T, 1>>,
+                                   Compute<val, std::plus<T>, val, one>>;
 
     using inputs  = type_sequence<val>;
     using outputs = type_sequence<val>;
@@ -50,14 +49,14 @@ struct factorial
     using loop = Label<"loop">;
 
     using commands =
-        type_sequence<StoreConstant<one, std::integral_constant<T, 1>>,
-                      StoreConstant<zero, std::integral_constant<T, 0>>,
-                      ComputeStore<cx, std::minus<T>, ax, one>,
+        type_sequence<Store<one, std::integral_constant<T, 1>>,
+                      Store<zero, std::integral_constant<T, 0>>,
+                      Compute<cx, std::minus<T>, ax, one>,
                       loop,
-                      ComputeStore<ax, std::multiplies<T>, ax, cx>,
-                      ComputeStore<cx, std::minus<T>, cx, one>,
-                      ComputeStore<cmp, std::equal_to<T>, cx, zero>,
-                      Jump<cmp, type_sequence<loop, EndLabel>>>;
+                      Compute<ax, std::multiplies<T>, ax, cx>,
+                      Compute<cx, std::minus<T>, cx, one>,
+                      Compute<cmp, std::equal_to<T>, cx, zero>,
+                      ParmJump<cmp, type_sequence<loop, EndLabel>>>;
 
     using inputs  = type_sequence<ax>;
     using outputs = type_sequence<ax>;
