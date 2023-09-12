@@ -34,7 +34,7 @@ class Union
     }
 
     template <typename T>
-    constexpr explicit operator T() noexcept
+    constexpr explicit operator T() const noexcept
         requires(has<T>)
     {
         return ref<T>();

@@ -252,6 +252,13 @@ struct access_wrapper
     {
         return val;
     }
+
+    template <std::same_as<T> T1>
+    constexpr const T1&
+    operator()(const T1& val) const noexcept
+    {
+        return val;
+    }
 };
 
 template <typename... Ts>
@@ -260,6 +267,13 @@ struct access_wrapper<Union<Ts...>>
     template <typename T>
     constexpr T&
     operator()(Union<Ts...>& un) const noexcept
+    {
+        return un.template ref<T>();
+    }
+
+    template <typename T>
+    constexpr const T&
+    operator()(const Union<Ts...>& un) const noexcept
     {
         return un.template ref<T>();
     }
