@@ -2,7 +2,11 @@
 // lang.cpp
 
 #include <lang/bse.hpp>
+#include <lang/bve.hpp>
 #include <lang/lang.hpp>
+
+#include <array>
+#include <initializer_list>
 
 using namespace lucid;
 
@@ -17,7 +21,6 @@ struct increment
     using inputs  = type_sequence<val>;
     using outputs = type_sequence<val>;
     using program = Program<inputs, outputs, commands>;
-    using eval    = bse::evaluator<program>;
 };
 
 // T factorial(T i):
@@ -62,19 +65,29 @@ struct factorial
     using outputs = type_sequence<ax>;
 
     using program = Program<inputs, outputs, commands>;
-
-    using eval = bse::evaluator<program>;
 };
+
+template <typename T>
+using ar4 = std::array<T, 4>;
 
 int main(/*int argc, char* argv[]*/)
 {
     using incr_int = increment<int>;
-    typename incr_int::eval p;
-    int                     ret = p(-1);
+    bse::evaluator<incr_int::program> p;
+    int                               ret = p(-1);
+
+    bve::evaluator<incr_int::program, ar4, typename incr_int::one> pv;
+    ret += !std::ranges::all_of(pv(0),
+                                [](const auto i) constexpr noexcept
+                                { return i == 1; });
+
+    auto v1 = {0, 1, 2, 3};
+    auto v2 = {1, 2, 3, 4};
+    ret += !std::ranges::equal(pv(v1), v2);
 
     using fac_unsigned = factorial<unsigned>;
-    typename fac_unsigned::eval fac;
-    auto                        fr = fac(4);
+    bse::evaluator<fac_unsigned::program> fac;
+    auto                                  fr = fac(4);
     ret += fr != 24;
     return ret;
 }
