@@ -776,34 +776,33 @@ option_list(C                      converter,
 
 /// @brief Create a flag option, i.e. one that holds a boolean value
 /// thus not requiring an argument when being set.
-template <char Key, StringLiteral s>
-consteval Option<Key, wrap_string<s>, detail::FlagConverter, 1ul>
+template <char          Key,
+          StringLiteral s,
+          Converter     _FlagConverter = detail::FlagConverter>
+consteval Option<Key, wrap_string<s>, _FlagConverter, 1ul>
 flag(const bool def_val, const std::string_view doc) noexcept
 {
     CHECK_KEYCHAR;
     CHECK_KEYWORD;
-    return {detail::FlagConverter{}, def_val, doc, ""};
+    return {_FlagConverter{}, def_val, doc, ""};
 }
 
 /// @brief Shortcut to create a flag option without keyword.
-template <char Key>
-consteval Option<Key, detail::missing_keyword, detail::FlagConverter, 1ul>
+template <char Key, Converter _FlagConverter = detail::FlagConverter>
+consteval Option<Key, detail::missing_keyword, _FlagConverter, 1ul>
 flag(const bool def_val, const std::string_view doc) noexcept
 {
     CHECK_KEYCHAR;
-    return {detail::FlagConverter{}, def_val, doc, ""};
+    return {_FlagConverter{}, def_val, doc, ""};
 }
 
 /// @brief Shortcut to create a flag option without character key.
-template <StringLiteral s>
-consteval Option<detail::missing_keychar,
-                 wrap_string<s>,
-                 detail::FlagConverter,
-                 1ul>
+template <StringLiteral s, Converter _FlagConverter = detail::FlagConverter>
+consteval Option<detail::missing_keychar, wrap_string<s>, _FlagConverter, 1ul>
 flag(const bool def_val, const std::string_view doc) noexcept
 {
     CHECK_KEYWORD;
-    return {detail::FlagConverter{}, def_val, doc, ""};
+    return {_FlagConverter{}, def_val, doc, ""};
 }
 
 #undef CHECK_KEYCHAR
