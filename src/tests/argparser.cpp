@@ -8,6 +8,8 @@
 #include <string>
 #include <vector>
 
+#include <fmt/ranges.h>
+
 using namespace lucid;
 using namespace lucid::argparse;
 
@@ -133,10 +135,11 @@ main(int argc, char* argv[])
     int        ret = 0;
     ArgsRange  args(argc, argv);
     const auto results = parse(options, positionals, args);
-    fmt::print("a = {}\n", results.get_opt<'a'>());
-    fmt::print("argonaft = {}\n", results.get_opt<"argonaft">());
-    fmt::print("f = {}\n", results.get_opt<'f'>());
-    fmt::print("flag = {}\n", results.get_opt<"flag">());
+    fmt::print("argonaft/a = {}\n", results.get_opt<"argonaft">());
+    fmt::print("f/flag = {}\n", results.get_opt<'f'>());
+    fmt::print("F/Flag = {}\n", results.get_opt<"Flag">());
+    fmt::print("twoval = {}\n", results.get_opt<"two-val">());
+    fmt::print("multival = {}\n", results.get_opt<'m'>());
     const std::array<std::string_view, 2> pos1 = results.get_pos<0>();
     fmt::print("pos1 = {}, {}\n", pos1[0], pos1[1]);
     fmt::print("pos2 = {}\n", results.get_pos<1>());

@@ -1089,14 +1089,6 @@ class Visitor
             return false;
     }
 
-    void
-    reset_opt() noexcept
-    {
-        opt_state.token  = -1ul;
-        opt_state.remain = 0ul;
-        is_pos           = pos_not_set();
-    }
-
     template <typename Key>
     constexpr std::pair<std::size_t, std::size_t>
     key_info(const Key key)
@@ -1134,6 +1126,18 @@ class Visitor
     Visitor(Visitor&&)      = delete;
     Visitor&
     operator=(const Visitor&) = delete;
+
+    void
+    reset_opt()
+    {
+        if(!(opt_state.remain == -1ul || opt_state.remain == 0))
+            throw FewArgumentsException{
+                get_keyword(opt_state.token, opt_state.desc)};
+
+        opt_state.token  = -1ul;
+        opt_state.remain = 0ul;
+        is_pos           = pos_not_set();
+    }
 
     /// @brief Check if there is a hanging option, i.e. the option keyword
     /// has encountered, but the option value has not.
@@ -1197,9 +1201,8 @@ class Visitor
     constexpr void
     operator()(const Value& value)
     {
-        auto state_update = [&](auto&       state,
-                                const auto& token_check,
-                                const auto& reset) constexpr
+        auto state_update =
+            [&](auto& state, auto&& token_check, auto&& reset) constexpr
         {
             if(token_check(state.token)) throw UnexpectedValue{value.string()};
 
@@ -1630,7 +1633,10 @@ parse(const std::tuple<Options...>&     options,
         if(word == "-h" || word == "--help") throw HelpRequest{};
 
         if(word == "--")
+        {
             only_values = true;
+            visitor.reset_opt();
+        }
         else
             std::visit(visitor, only_values ? Value{data} : arg_case(data));
     };
