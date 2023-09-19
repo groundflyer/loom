@@ -13,9 +13,6 @@ namespace lucid
 {
 /// @brief Generic unsafe union.
 template <typename... Ts>
-    requires(... && (std::is_trivially_default_constructible_v<Ts> &&
-                     std::is_trivially_copy_assignable_v<Ts> &&
-                     std::is_trivially_destructible_v<Ts>))
 class Union
 {
     alignas(Ts...) std::byte m_data[std::max({sizeof(Ts)...})];

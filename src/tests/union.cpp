@@ -7,6 +7,9 @@ using namespace std;
 
 using Test = Union<bool, int, unsigned, float, double>;
 
+static_assert(std::is_copy_assignable_v<Test> &&
+              std::is_copy_constructible_v<Test>);
+
 int
 main()
 {
