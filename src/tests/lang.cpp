@@ -76,6 +76,14 @@ int main(/*int argc, char* argv[]*/)
     bse::evaluator<incr_int::program> p;
     int                               ret = p(-1);
 
+    using iar4mem =
+        typename bve::basic_vector_evaluator<incr_int::program,
+                                             ar4,
+                                             typename incr_int::one>::memory;
+    static_assert(std::ranges::random_access_range<iar4mem>);
+    static_assert(
+        std::indirectly_writable<iar4mem::iterator, iar4mem::value_type>);
+    static_assert(std::sortable<iar4mem::iterator>);
     bve::evaluator<incr_int::program, ar4, typename incr_int::one> pv;
     ret += !std::ranges::all_of(pv(0),
                                 [](const auto i) constexpr noexcept

@@ -65,17 +65,83 @@ class Memory
         Data*       p_data = nullptr;
         std::size_t m_pos{};
 
+        template <std::size_t Idx>
+        constexpr void
+        copy_val(proxy_row rhs) const noexcept
+        {
+            std::get<Idx>(*p_data)[m_pos] = std::get<Idx>(*rhs.p_data)[m_pos];
+        }
+
+        template <std::size_t... Idxs>
+        constexpr void
+        copy_values(proxy_row rhs, std::index_sequence<Idxs...>) const noexcept
+        {
+            (..., copy_val<Idxs>(rhs));
+        }
+
       public:
-        proxy_row() = delete;
+        constexpr proxy_row() noexcept {}
+
+        constexpr proxy_row(const proxy_row& other) noexcept :
+            p_data(other.p_data), m_pos(other.m_pos)
+        {
+        }
+
+        constexpr proxy_row(proxy_row&& other) noexcept :
+            p_data(other.p_data), m_pos(other.m_pos)
+        {
+        }
 
         constexpr proxy_row(Data* data, const std::size_t pos) noexcept :
             p_data(data), m_pos(pos)
         {
         }
 
+        constexpr proxy_row&
+        operator=(const proxy_row& other) noexcept
+        {
+            p_data = other.p_data;
+            m_pos  = other.m_pos;
+
+            copy_values(other, typelist::indicies<RegNames>{});
+        }
+
+        constexpr proxy_row&
+        operator=(proxy_row&& other) noexcept
+        {
+            p_data = other.p_data;
+            m_pos  = other.m_pos;
+
+            copy_values(other, typelist::indicies<RegNames>{});
+        }
+
+        // const move assignment due to questionable requirement in
+        // std::indirectly_writeable
+        // https://github.com/ericniebler/stl2/issues/381
+        // similar issue
+        // https://github.com/ericniebler/stl2/issues/642
+        constexpr proxy_row&
+        operator=(proxy_row&& other) const noexcept
+        {
+            p_data = other.p_data;
+            m_pos  = other.m_pos;
+        }
+
+        constexpr bool
+        operator==(const proxy_row rhs) const noexcept
+        {
+            return cp() == rhs.cp();
+        }
+
+        constexpr std::strong_ordering
+        operator<=>(const proxy_row rhs) const noexcept
+        {
+            return cp() <=> rhs.cp();
+        }
+
         template <typename Var>
         constexpr std::add_lvalue_reference_t<typename Var::type>
-        get() noexcept
+        get() const noexcept
         {
             using var_name = typename Var::name;
             constexpr access_wrapper<typelist::lookup<var_name, vec_table>> op;
@@ -86,7 +152,7 @@ class Memory
 
         /// @brief Access cell pointer.
         constexpr std::add_lvalue_reference_t<typename CP::type>
-        cp() noexcept
+        cp() const noexcept
         {
             return get<CP>();
         }
@@ -135,9 +201,9 @@ class Memory
         }
 
         constexpr bool
-        operator==(std::default_sentinel_t) noexcept
+        operator==(const _iterator& rhs) const noexcept
         {
-            return m_pos == m_size;
+            return m_pos == rhs.m_pos;
         }
 
         constexpr std::strong_ordering
@@ -146,20 +212,8 @@ class Memory
             return m_pos <=> rhs.m_pos;
         }
 
-        constexpr std::strong_ordering
-        operator<=>(const _iterator& rhs) noexcept
-        {
-            return m_pos <=> rhs.m_pos;
-        }
-
         constexpr value_type
         operator*() const noexcept
-        {
-            return proxy_row(p_data, m_pos);
-        }
-
-        constexpr value_type
-        operator*() noexcept
         {
             return proxy_row(p_data, m_pos);
         }
@@ -200,10 +254,10 @@ class Memory
             return _iterator(p_data, m_pos + rhs, m_size);
         }
 
-        constexpr _iterator
-        operator+(difference_type rhs) noexcept
+        constexpr difference_type
+        operator+(_iterator rhs) const noexcept
         {
-            return _iterator(p_data, m_pos + rhs, m_size);
+            return m_pos + rhs.m_pos;
         }
 
         constexpr _iterator&
@@ -219,10 +273,10 @@ class Memory
             return _iterator(p_data, m_pos - rhs, m_size);
         }
 
-        constexpr _iterator
-        operator-(difference_type rhs) noexcept
+        constexpr difference_type
+        operator-(_iterator rhs) const noexcept
         {
-            return _iterator(p_data, m_pos - rhs, m_size);
+            return m_pos - rhs.m_pos;
         }
 
         constexpr _iterator&
@@ -238,22 +292,16 @@ class Memory
             return proxy_row(p_data, m_pos + n);
         }
 
-        constexpr value_type
-        operator[](difference_type n) noexcept
-        {
-            return proxy_row(p_data, m_pos + n);
-        }
-
         constexpr std::size_t
         count() const noexcept
         {
             return m_size - m_pos;
         }
 
-        constexpr std::size_t
-        count() noexcept
+        friend _iterator
+        operator+(difference_type n, _iterator j) noexcept
         {
-            return m_size - m_pos;
+            return _iterator(j.p_data, n + j.m_pos, j.m_size);
         }
     };
 
@@ -523,7 +571,7 @@ template <typename _Program,
           template <typename>
           typename _Vector,
           typename SizeLookupVar = typename _Program::cp>
-class basic_vector_evaluator
+struct basic_vector_evaluator
 {
     using labelmap  = typename _Program::labelmap;
     using cells     = typename _Program::cells;
@@ -540,12 +588,12 @@ class basic_vector_evaluator
     static constexpr input_setter<typename _Program::input_vars>   setter{};
     static constexpr output_getter<typename _Program::output_vars> getter{};
 
-  public:
-    struct type
+    using memory = Memory<reg_types, reg_names, cp, _Vector, SizeLookupVar>;
+
+    struct single_cell_evaluator
     {
         static constexpr typelist::head<compiled_cells> cell{};
 
-        using memory = Memory<reg_types, reg_names, cp, _Vector, SizeLookupVar>;
         memory mem;
 
         template <typename... Args>
@@ -557,6 +605,9 @@ class basic_vector_evaluator
             return getter(mem);
         }
     };
+
+  public:
+    using type = single_cell_evaluator;
 };
 
 template <typename _Program,
