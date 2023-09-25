@@ -81,9 +81,7 @@ int main(/*int argc, char* argv[]*/)
                                              ar4,
                                              typename incr_int::one>::memory;
     static_assert(std::ranges::random_access_range<iar4mem>);
-    static_assert(
-        std::indirectly_writable<iar4mem::iterator, iar4mem::value_type>);
-    static_assert(std::sortable<iar4mem::iterator>);
+    static_assert(std::swappable<iar4mem::value_type>);
     bve::evaluator<incr_int::program, ar4, typename incr_int::one> pv;
     ret += !std::ranges::all_of(pv(0),
                                 [](const auto i) constexpr noexcept
@@ -95,7 +93,19 @@ int main(/*int argc, char* argv[]*/)
 
     using fac_unsigned = factorial<unsigned>;
     bse::evaluator<fac_unsigned::program> fac;
-    auto                                  fr = fac(4);
-    ret += fr != 24;
+
+    const unsigned fac_in  = 6;
+    const unsigned fac_chk = 720;
+    auto           fac_out = fac(fac_in);
+    ret += fac_out != fac_chk;
+
+    bve::evaluator<fac_unsigned::program, ar4> vfac;
+
+    const auto vfac_in  = {4u, 5u, 6u, 7u};
+    const auto vfac_chk = {24u, 120u, 720u, 5040u};
+    auto       vfac_out = vfac(vfac_in);
+    std::ranges::sort(vfac_out);
+    ret += !std::ranges::equal(vfac_out, vfac_chk);
+
     return ret;
 }

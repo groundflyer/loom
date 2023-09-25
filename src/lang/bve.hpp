@@ -8,6 +8,12 @@
 
 #include <utils/functional.hpp>
 
+#include <range/v3/range/operations.hpp>
+#include <range/v3/view/chunk_by.hpp>
+#include <range/v3/view/filter.hpp>
+
+#include <fmt/core.h>
+
 #include <algorithm>
 #include <compare>
 #include <ranges>
@@ -62,69 +68,74 @@ class Memory
 
     class proxy_row
     {
-        Data*       p_data = nullptr;
-        std::size_t m_pos{};
+        Data&       m_data;
+        std::size_t m_pos;
 
         template <std::size_t Idx>
         constexpr void
-        copy_val(proxy_row rhs) const noexcept
+        copy_val(proxy_row rhs) noexcept
         {
-            std::get<Idx>(*p_data)[m_pos] = std::get<Idx>(*rhs.p_data)[m_pos];
+            std::get<Idx>(m_data)[m_pos] = std::get<Idx>(rhs.m_data)[rhs.m_pos];
         }
 
         template <std::size_t... Idxs>
         constexpr void
-        copy_values(proxy_row rhs, std::index_sequence<Idxs...>) const noexcept
+        copy_values(proxy_row rhs, std::index_sequence<Idxs...>) noexcept
         {
             (..., copy_val<Idxs>(rhs));
         }
 
+        template <std::size_t Idx>
+        constexpr static void
+        swap_val(proxy_row a, proxy_row b) noexcept
+        {
+            std::swap(std::get<Idx>(a.m_data)[a.m_pos],
+                      std::get<Idx>(b.m_data)[b.m_pos]);
+        }
+
+        template <std::size_t... Idxs>
+        constexpr static void
+        swap_values(proxy_row a,
+                    proxy_row b,
+                    std::index_sequence<Idxs...>) noexcept
+        {
+            (..., swap_val<Idxs>(a, b));
+        }
+
       public:
-        constexpr proxy_row() noexcept {}
+        proxy_row() = delete;
 
         constexpr proxy_row(const proxy_row& other) noexcept :
-            p_data(other.p_data), m_pos(other.m_pos)
+            m_data(other.m_data), m_pos(other.m_pos)
         {
         }
 
         constexpr proxy_row(proxy_row&& other) noexcept :
-            p_data(other.p_data), m_pos(other.m_pos)
+            m_data(other.m_data), m_pos(other.m_pos)
         {
         }
 
-        constexpr proxy_row(Data* data, const std::size_t pos) noexcept :
-            p_data(data), m_pos(pos)
+        constexpr proxy_row(Data& data, const std::size_t pos) noexcept :
+            m_data(data), m_pos(pos)
         {
-        }
-
-        constexpr proxy_row&
-        operator=(const proxy_row& other) noexcept
-        {
-            p_data = other.p_data;
-            m_pos  = other.m_pos;
-
-            copy_values(other, typelist::indicies<RegNames>{});
         }
 
         constexpr proxy_row&
-        operator=(proxy_row&& other) noexcept
+        operator=(const proxy_row& rhs) noexcept
         {
-            p_data = other.p_data;
-            m_pos  = other.m_pos;
+            copy_values(rhs, typelist::indicies<RegNames>{});
+            m_pos = rhs.m_pos;
 
-            copy_values(other, typelist::indicies<RegNames>{});
+            return *this;
         }
 
-        // const move assignment due to questionable requirement in
-        // std::indirectly_writeable
-        // https://github.com/ericniebler/stl2/issues/381
-        // similar issue
-        // https://github.com/ericniebler/stl2/issues/642
         constexpr proxy_row&
-        operator=(proxy_row&& other) const noexcept
+        operator=(proxy_row&& rhs) noexcept
         {
-            p_data = other.p_data;
-            m_pos  = other.m_pos;
+            copy_values(rhs, typelist::indicies<RegNames>{});
+            m_pos = rhs.m_pos;
+
+            return *this;
         }
 
         constexpr bool
@@ -147,7 +158,7 @@ class Memory
             constexpr access_wrapper<typelist::lookup<var_name, vec_table>> op;
 
             return op.template operator()<vec_type<var_name>>(
-                std::get<var_index<var_name>>(*p_data))[m_pos];
+                std::get<var_index<var_name>>(m_data))[m_pos];
         }
 
         /// @brief Access cell pointer.
@@ -155,6 +166,30 @@ class Memory
         cp() const noexcept
         {
             return get<CP>();
+        }
+
+        void
+        print() const noexcept
+        {
+            typelist::for_each(
+                [&]<typename name>() noexcept
+                {
+                    constexpr access_wrapper<typelist::lookup<name, vec_table>>
+                                   op;
+                    decltype(auto) val = op.template operator()<vec_type<name>>(
+                        std::get<var_index<name>>(m_data))[m_pos];
+                    const std::string_view varname(intlist::array<name>,
+                                                   intlist::length<name>);
+                    fmt::print("{} = {}; ", varname, val);
+                },
+                RegNames{});
+            fmt::print("\n");
+        }
+
+        friend void
+        swap(proxy_row a, proxy_row b) noexcept
+        {
+            swap_values(a, b, typelist::indicies<RegNames>{});
         }
     };
 
@@ -192,6 +227,18 @@ class Memory
             m_pos  = rhs.m_pos;
             m_size = rhs.m_size;
             p_data = rhs.p_data;
+
+            return *this;
+        }
+
+        constexpr _iterator&
+        operator=(_iterator&& rhs) noexcept
+        {
+            m_pos  = rhs.m_pos;
+            m_size = rhs.m_size;
+            p_data = rhs.p_data;
+
+            return *this;
         }
 
         constexpr bool
@@ -215,7 +262,7 @@ class Memory
         constexpr value_type
         operator*() const noexcept
         {
-            return proxy_row(p_data, m_pos);
+            return proxy_row(*p_data, m_pos);
         }
 
         constexpr _iterator&
@@ -289,7 +336,7 @@ class Memory
         constexpr value_type
         operator[](difference_type n) const noexcept
         {
-            return proxy_row(p_data, m_pos + n);
+            return proxy_row(*p_data, m_pos + n);
         }
 
         constexpr std::size_t
@@ -438,6 +485,18 @@ class Memory
     }
 };
 
+template <typename T>
+struct is_mem
+{
+    static constexpr bool value = false;
+};
+
+template <typename... Ts>
+struct is_mem<Memory<Ts...>>
+{
+    static constexpr bool value = true;
+};
+
 template <typename Command, typename LabelMap>
 struct eval_instruction;
 
@@ -446,21 +505,35 @@ struct eval_instruction<Copy<To, From>, LabelMap>
 {
     template <typename _Memory>
     constexpr void
-    operator()(_Memory& mem) const noexcept
+    operator()(_Memory&& mem) const noexcept
     {
-        std::ranges::copy(mem.template column<From>(),
-                          mem.template column<To>().begin());
+        if constexpr(is_mem<_Memory>::value)
+            std::ranges::copy(mem.template column<From>(),
+                              mem.template column<To>().begin());
+        else
+            std::ranges::for_each(std::forward<_Memory>(mem),
+                                  [](auto row) constexpr noexcept {
+                                      row.template get<To>() =
+                                          row.template get<From>();
+                                  });
     }
 };
 
 template <typename To, typename Constant, typename LabelMap>
 struct eval_instruction<Store<To, Constant>, LabelMap>
 {
+    static constexpr Constant f{};
+
     template <typename _Memory>
     constexpr void
-    operator()(_Memory& mem) const noexcept
+    operator()(_Memory&& mem) const noexcept
     {
-        std::ranges::generate(mem.template column<To>(), Constant{});
+        if constexpr(is_mem<_Memory>::value)
+            std::ranges::generate(mem.template column<To>(), f);
+        else
+            std::ranges::for_each(std::forward<_Memory>(mem),
+                                  [](auto row) constexpr noexcept
+                                  { row.template get<To>() = std::invoke(f); });
     }
 };
 
@@ -469,9 +542,9 @@ struct eval_instruction<Compute<To, Op, Args...>, LabelMap>
 {
     template <typename _Memory>
     constexpr void
-    operator()(_Memory& mem) const noexcept
+    operator()(_Memory&& mem) const noexcept
     {
-        std::ranges::for_each(mem,
+        std::ranges::for_each(std::forward<_Memory>(mem),
                               [](auto row) constexpr noexcept {
                                   row.template get<To>() =
                                       std::invoke(Op{},
@@ -484,12 +557,18 @@ template <typename Target, typename LabelMap>
 struct eval_instruction<Jump<Target>, LabelMap>
 {
     using constant = typename typelist::lookup<Target, LabelMap>;
+    static constexpr constant f{};
 
     template <typename _Memory>
     constexpr void
-    operator()(_Memory& mem) const noexcept
+    operator()(_Memory&& mem) const noexcept
     {
-        std::ranges::fill(mem.cp(), std::invoke(constant{}));
+        if constexpr(is_mem<_Memory>::value)
+            std::ranges::fill(mem.cp(), std::invoke(f));
+        else
+            std::ranges::for_each(std::forward<_Memory>(mem),
+                                  [](auto row) constexpr noexcept
+                                  { row.cp() = std::invoke(f); });
     }
 };
 
@@ -506,13 +585,11 @@ struct eval_instruction<ParmJump<Var, Labels>, LabelMap>
 
     template <typename _Memory>
     constexpr void
-    operator()(_Memory& mem) const noexcept
+    operator()(_Memory&& mem) const noexcept
     {
-        std::ranges::for_each(
-            mem,
-            [](auto row) noexcept
-            { row.cp() = table[row.template get<Var>()]; },
-            mem);
+        std::ranges::for_each(std::forward<_Memory>(mem),
+                              [](auto row) noexcept
+                              { row.cp() = table[row.template get<Var>()]; });
     }
 };
 
@@ -606,8 +683,47 @@ struct basic_vector_evaluator
         }
     };
 
+    struct evaluator
+    {
+        static constexpr typename typelist::to<compiled_cells, std::tuple>
+            cells{};
+
+        memory mem;
+
+        template <typename... Args>
+        constexpr auto
+        operator()(Args&&... args) noexcept
+        {
+            setter(mem, std::forward<Args>(args)...);
+
+            while(mem.cp()[0] != end_pos)
+            {
+                std::ranges::for_each(
+                    ranges::views::filter(mem,
+                                          [](auto row) constexpr noexcept
+                                          { return row.cp() != end_pos; }) |
+                        ranges::views::chunk_by(
+                            [](auto a, auto b) constexpr noexcept
+                            { return a.cp() == b.cp(); }),
+                    [](auto grp) constexpr noexcept
+                    {
+                        visit(
+                            ranges::front(grp).cp(),
+                            [&](auto& cell) constexpr noexcept { cell(grp); },
+                            cells,
+                            sink);
+                    });
+
+                std::sort(mem.begin(), mem.end());
+            }
+
+            return getter(mem);
+        }
+    };
+
   public:
-    using type = single_cell_evaluator;
+    using type = std::
+        conditional_t<_Program::singular, single_cell_evaluator, evaluator>;
 };
 
 template <typename _Program,
