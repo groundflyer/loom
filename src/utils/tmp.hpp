@@ -401,6 +401,24 @@ struct has_duplicates<type_sequence<T, Ts...>>
 };
 
 template <template <typename> typename P, typename List>
+struct all;
+
+template <template <typename> typename P, typename... Ts>
+struct all<P, type_sequence<Ts...>>
+{
+    static constexpr bool value = std::conjunction_v<P<Ts>...>;
+};
+
+template <template <typename> typename P, typename List>
+struct any;
+
+template <template <typename> typename P, typename... Ts>
+struct any<P, type_sequence<Ts...>>
+{
+    static constexpr bool value = std::disjunction_v<P<Ts>...>;
+};
+
+template <template <typename> typename P, typename List>
 struct filter;
 
 template <template <typename> typename P>
@@ -672,6 +690,20 @@ using result_of = typename detail::result_of<Fs, Args...>;
 /// @brief Check if there are duplicates in @p List.
 template <typename List>
 inline constexpr bool has_duplicates = detail::has_duplicates<List>::value;
+
+/// @brief Determines whether all elements of the @p List satisfy the predicate
+/// @p P.
+///
+/// @tparam P must have static constexpr bool value member.
+template <template <typename> typename P, typename List>
+inline constexpr bool all = detail::all<P, List>::value;
+
+/// @brief Determines whether any element of the @p List satisfy the predicate
+/// @p P.
+///
+/// @tparam P must have static constexpr bool value member.
+template <template <typename> typename P, typename List>
+inline constexpr bool any = detail::any<P, List>::value;
 
 /// @brief Remove duplicate elements from @p List.
 template <typename List>
