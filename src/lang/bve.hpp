@@ -39,7 +39,6 @@ using vector_union_t = typename vector_union<T, Vector>::type;
 
 template <typename RegTypes,
           typename RegNames,
-          typename CP,
           template <typename>
           typename Vector,
           typename SizeLookupVar                    = CP,
@@ -655,7 +654,6 @@ struct basic_vector_evaluator
     using vars      = typename _Program::variables;
     using reg_names = typename _Program::reg_names;
     using reg_types = typename _Program::reg_types;
-    using cp        = typename _Program::cp;
 
     template <typename C>
     using compile_cell = compile_cell<C, labelmap>;
@@ -665,7 +663,7 @@ struct basic_vector_evaluator
     static constexpr input_setter<typename _Program::input_vars>   setter{};
     static constexpr output_getter<typename _Program::output_vars> getter{};
 
-    using memory = Memory<reg_types, reg_names, cp, _Vector, SizeLookupVar>;
+    using memory = Memory<reg_types, reg_names, _Vector, SizeLookupVar>;
 
     struct single_cell_evaluator
     {
@@ -729,7 +727,7 @@ struct basic_vector_evaluator
 template <typename _Program,
           template <typename>
           typename _Vector,
-          typename SizeLookupVar = typename _Program::cp>
+          typename SizeLookupVar = CP>
 using evaluator =
     typename basic_vector_evaluator<_Program, _Vector, SizeLookupVar>::type;
 } // namespace lucid::bve

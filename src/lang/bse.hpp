@@ -10,7 +10,6 @@ namespace lucid::bse
 {
 template <typename RegTypes,
           typename RegNames,
-          typename CP,
           template <typename...> typename Container = std::tuple>
 class Memory
 {
@@ -172,7 +171,6 @@ class basic_scalar_evaluator
     using vars      = typename _Program::variables;
     using reg_names = typename _Program::reg_names;
     using reg_types = typename _Program::reg_types;
-    using cp        = typename _Program::cp;
 
     template <typename C>
     using compile_cell = compile_cell<C, labelmap>;
@@ -182,7 +180,7 @@ class basic_scalar_evaluator
     static constexpr input_setter<typename _Program::input_vars>   setter{};
     static constexpr output_getter<typename _Program::output_vars> getter{};
 
-    using memory = Memory<reg_types, reg_names, cp>;
+    using memory = Memory<reg_types, reg_names>;
 
     struct single_cell_evaluator
     {

@@ -30,39 +30,39 @@ struct increment
 //         c -= 1
 //     return i
 //
-// input: ax
-// outupt: ax
+// input: a
+// outupt: a
 //
 // o = 1
 // z = 0
-// cx = ax - 1
+// c = a - 1
 // loop:
-// ax = ax * cx
-// cx = cx - 1
-// cmp = cx == 0
+// a = a * c
+// c = c - 1
+// cmp = c == 0
 // jump: cmp: 0 -> loop, 1 -> end
 template <typename T>
 struct factorial
 {
-    using ax   = Variable<T, "ax">; // accumulator
-    using cx   = Variable<T, "cx">; // counter
+    using a    = Variable<T, "a">; // accumulator
+    using c    = Variable<T, "c">; // counter
     using one  = Variable<T, "one">;
     using zero = Variable<T, "zero">;
-    using cmp  = Variable<std::uint32_t, "cmp">;
+    using cmp  = Variable<index_t, "cmp">;
     using loop = Label<"loop">;
 
     using commands =
         type_sequence<Store<one, std::integral_constant<T, 1>>,
                       Store<zero, std::integral_constant<T, 0>>,
-                      Compute<cx, std::minus<T>, ax, one>,
+                      Compute<c, std::minus<T>, a, one>,
                       loop,
-                      Compute<ax, std::multiplies<T>, ax, cx>,
-                      Compute<cx, std::minus<T>, cx, one>,
-                      Compute<cmp, std::equal_to<T>, cx, zero>,
+                      Compute<a, std::multiplies<T>, a, c>,
+                      Compute<c, std::minus<T>, c, one>,
+                      Compute<cmp, std::equal_to<T>, c, zero>,
                       ParmJump<cmp, type_sequence<loop, EndLabel>>>;
 
-    using inputs  = type_sequence<ax>;
-    using outputs = type_sequence<ax>;
+    using inputs  = type_sequence<a>;
+    using outputs = type_sequence<a>;
 
     using program = Program<inputs, outputs, commands>;
 };

@@ -10,6 +10,7 @@
 #include <utils/union.hpp>
 
 #include <cstdint>
+#include <limits>
 
 namespace lucid
 {
@@ -19,7 +20,29 @@ constexpr inline index_t end_pos = static_cast<index_t>(-1);
 #define MK_CONSTANT(TYPE, VALUE) \
     decltype([]() constexpr noexcept -> TYPE { return VALUE; })
 
+template <typename Type, StringLiteral Name>
+    requires(std::is_integral_v<Type> || std::is_floating_point_v<Type>)
+struct Variable
+{
+    using type = Type;
+    using name = sl2cs<Name>;
+};
+
+template <typename _Variable>
+using vartype = typename _Variable::type;
+
+template <typename _Variable>
+using varname = typename _Variable::name;
+
+/// @brief Cell Pointer.
+using CP = Variable<index_t, "CP">;
+
+template <typename... _Vars>
+inline constexpr bool not_cp =
+    !(... || std::is_same_v<varname<CP>, varname<_Vars>>);
+
 template <typename To, typename Op, typename... Args>
+    requires(not_cp<To, Args...>)
 struct Compute
 {
     using var    = To;
@@ -28,6 +51,7 @@ struct Compute
 };
 
 template <typename To, typename Constant>
+    requires(not_cp<To>)
 struct Store
 {
     using var    = To;
@@ -35,6 +59,7 @@ struct Store
 };
 
 template <typename To, typename From>
+    requires(not_cp<To, From>)
 struct Copy
 {
     using to   = To;
@@ -55,8 +80,33 @@ struct StartLabel
 {
 };
 
+template <typename T>
+struct is_label
+{
+    static constexpr bool value = false;
+};
+
+template <StringLiteral s>
+struct is_label<Label<s>>
+{
+    static constexpr bool value = true;
+};
+
+template <>
+struct is_label<EndLabel>
+{
+    static constexpr bool value = true;
+};
+
+template <>
+struct is_label<StartLabel>
+{
+    static constexpr bool value = true;
+};
+
 template <typename Var, typename Labels>
-    requires(std::is_same_v<typename Var::type, index_t>)
+    requires(std::is_same_v<vartype<Var>, index_t> &&
+             typelist::all<is_label, Labels>)
 struct ParmJump
 {
     using var    = Var;
@@ -64,19 +114,13 @@ struct ParmJump
 };
 
 template <typename Target>
+    requires(is_label<Target>::value)
 struct Jump
 {
     using target = Target;
 };
 
 using EndJump = Jump<EndLabel>;
-
-template <typename Type, StringLiteral Name>
-struct Variable
-{
-    using type = Type;
-    using name = sl2cs<Name>;
-};
 
 template <typename T>
 struct does_store
@@ -110,30 +154,6 @@ struct is_store_const
 
 template <typename To, typename F>
 struct is_store_const<Store<To, F>>
-{
-    static constexpr bool value = true;
-};
-
-template <typename T>
-struct is_label
-{
-    static constexpr bool value = false;
-};
-
-template <StringLiteral s>
-struct is_label<Label<s>>
-{
-    static constexpr bool value = true;
-};
-
-template <>
-struct is_label<EndLabel>
-{
-    static constexpr bool value = true;
-};
-
-template <>
-struct is_label<StartLabel>
 {
     static constexpr bool value = true;
 };
@@ -338,19 +358,18 @@ class Program
                            typelist::cons<StartLabel, stated_labels>>;
 
     static_assert(!typelist::has_duplicates<labels>);
+    // for future separate sorting
+    // static_assert(num_cells < std::numeric_limits<std::uint16_t>::max());
 
     using labelmap = typelist::cons<
         type_pair<EndLabel,
                   std::integral_constant<index_t, static_cast<index_t>(-1)>>,
         typelist::enumerate<labels, index_t>>;
 
-    /// @brief Cell Pointer variable.
-    using cp = Variable<index_t, "CP">;
-
     static constexpr bool singular = num_cells == 1;
 
     using variables = std::
-        conditional_t<singular, stated_vars, typelist::cons<cp, stated_vars>>;
+        conditional_t<singular, stated_vars, typelist::cons<CP, stated_vars>>;
 
     /// @brief Names of registers.
     using reg_names = typelist::nub<get_var_names_t<variables>>;
@@ -359,8 +378,7 @@ class Program
     using infer_reg_type = typename collected_type<
         typename collect_types<Name, variables>::type>::type;
 
-    /// @brief Aggregated unique types of registers we use to hold actual
-    /// values.
+    /// @brief Registers types.
     ///
     /// If there are few different types corresponding to the same name,
     /// lucid::Union used to hold values of the register.
