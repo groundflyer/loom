@@ -52,19 +52,19 @@ class Memory
 template <typename Command, typename LabelMap>
 struct eval_instruction;
 
-template <typename To, typename From, typename LabelMap>
-struct eval_instruction<Copy<To, From>, LabelMap>
+template <typename Dst, typename Src, typename LabelMap>
+struct eval_instruction<Copy<Dst, Src>, LabelMap>
 {
     template <typename _Memory>
     constexpr void
     operator()(_Memory& mem) const noexcept
     {
-        mem.template get<To>() = mem.template get<From>();
+        mem.template get<Dst>() = mem.template get<Src>();
     }
 };
 
-template <typename To, typename Constant, typename LabelMap>
-struct eval_instruction<Store<To, Constant>, LabelMap>
+template <typename Dst, typename Constant, typename LabelMap>
+struct eval_instruction<Store<Dst, Constant>, LabelMap>
 {
     static constexpr Constant func{};
 
@@ -72,18 +72,19 @@ struct eval_instruction<Store<To, Constant>, LabelMap>
     constexpr void
     operator()(_Memory& mem) const noexcept
     {
-        mem.template get<To>() = func();
+        mem.template get<Dst>() = func();
     }
 };
 
-template <typename To, typename Op, typename... Args, typename LabelMap>
-struct eval_instruction<Compute<To, Op, Args...>, LabelMap>
+template <typename Dst, typename Op, typename... Args, typename LabelMap>
+struct eval_instruction<Compute<Dst, Op, Args...>, LabelMap>
 {
     template <typename _Memory>
     constexpr void
     operator()(_Memory& mem) const noexcept
     {
-        mem.template get<To>() = std::invoke(Op{}, mem.template get<Args>()...);
+        mem.template get<Dst>() =
+            std::invoke(Op{}, mem.template get<Args>()...);
     }
 };
 
@@ -104,6 +105,7 @@ template <typename Var, typename Labels, typename LabelMap>
 struct eval_instruction<ParmJump<Var, Labels>, LabelMap>
 {
     template <typename L>
+        requires(typelist::elem<L, typelist::map<fst_t, LabelMap>>)
     using jump_idx = typelist::lookup<L, LabelMap>;
 
     using jump_idxs =

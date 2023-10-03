@@ -499,27 +499,27 @@ struct is_mem<Memory<Ts...>>
 template <typename Command, typename LabelMap>
 struct eval_instruction;
 
-template <typename To, typename From, typename LabelMap>
-struct eval_instruction<Copy<To, From>, LabelMap>
+template <typename Dst, typename Src, typename LabelMap>
+struct eval_instruction<Copy<Dst, Src>, LabelMap>
 {
     template <typename _Memory>
     constexpr void
     operator()(_Memory&& mem) const noexcept
     {
         if constexpr(is_mem<_Memory>::value)
-            std::ranges::copy(mem.template column<From>(),
-                              mem.template column<To>().begin());
+            std::ranges::copy(mem.template column<Src>(),
+                              mem.template column<Dst>().begin());
         else
             std::ranges::for_each(std::forward<_Memory>(mem),
                                   [](auto row) constexpr noexcept {
-                                      row.template get<To>() =
-                                          row.template get<From>();
+                                      row.template get<Dst>() =
+                                          row.template get<Src>();
                                   });
     }
 };
 
-template <typename To, typename Constant, typename LabelMap>
-struct eval_instruction<Store<To, Constant>, LabelMap>
+template <typename Dst, typename Constant, typename LabelMap>
+struct eval_instruction<Store<Dst, Constant>, LabelMap>
 {
     static constexpr Constant f{};
 
@@ -528,16 +528,17 @@ struct eval_instruction<Store<To, Constant>, LabelMap>
     operator()(_Memory&& mem) const noexcept
     {
         if constexpr(is_mem<_Memory>::value)
-            std::ranges::generate(mem.template column<To>(), f);
+            std::ranges::generate(mem.template column<Dst>(), f);
         else
             std::ranges::for_each(std::forward<_Memory>(mem),
-                                  [](auto row) constexpr noexcept
-                                  { row.template get<To>() = std::invoke(f); });
+                                  [](auto row) constexpr noexcept {
+                                      row.template get<Dst>() = std::invoke(f);
+                                  });
     }
 };
 
-template <typename To, typename Op, typename... Args, typename LabelMap>
-struct eval_instruction<Compute<To, Op, Args...>, LabelMap>
+template <typename Dst, typename Op, typename... Args, typename LabelMap>
+struct eval_instruction<Compute<Dst, Op, Args...>, LabelMap>
 {
     template <typename _Memory>
     constexpr void
@@ -545,7 +546,7 @@ struct eval_instruction<Compute<To, Op, Args...>, LabelMap>
     {
         std::ranges::for_each(std::forward<_Memory>(mem),
                               [](auto row) constexpr noexcept {
-                                  row.template get<To>() =
+                                  row.template get<Dst>() =
                                       std::invoke(Op{},
                                                   row.template get<Args>()...);
                               });
