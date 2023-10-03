@@ -13,14 +13,12 @@ using namespace lucid;
 template <typename T>
 struct increment
 {
-    using val      = Variable<T, "val">;
-    using one      = Variable<T, "one">;
-    using commands = type_sequence<Store<one, std::integral_constant<T, 1>>,
-                                   Compute<val, std::plus<T>, val, one>>;
+    using val = Variable<T, "val">;
 
-    using inputs  = type_sequence<val>;
-    using outputs = type_sequence<val>;
-    using program = Program<inputs, outputs, commands>;
+    TBEGIN1(program, val)
+        CONST(T, 1)
+        , TADD(val, val, 1)
+    TEND1(val)
 };
 
 // T factorial(T i):
@@ -31,7 +29,7 @@ struct increment
 //     return i
 //
 // input: a
-// outupt: a
+// output: a
 //
 // o = 1
 // z = 0
@@ -44,27 +42,18 @@ struct increment
 template <typename T>
 struct factorial
 {
-    using a    = Variable<T, "a">; // accumulator
-    using c    = Variable<T, "c">; // counter
-    using one  = Variable<T, "one">;
-    using zero = Variable<T, "zero">;
-    using cmp  = Variable<index_t, "cmp">;
-    using loop = Label<"loop">;
+    using a = Variable<T, "a">; // accumulator
 
-    using commands =
-        type_sequence<Store<one, std::integral_constant<T, 1>>,
-                      Store<zero, std::integral_constant<T, 0>>,
-                      Compute<c, std::minus<T>, a, one>,
-                      loop,
-                      Compute<a, std::multiplies<T>, a, c>,
-                      Compute<c, std::minus<T>, c, one>,
-                      Compute<cmp, std::equal_to<T>, c, zero>,
-                      ParmJump<cmp, type_sequence<loop, EndLabel>>>;
-
-    using inputs  = type_sequence<a>;
-    using outputs = type_sequence<a>;
-
-    using program = Program<inputs, outputs, commands>;
+    TBEGIN1(program, a)
+        CONST(T, 1)
+        , CONST(T, 0)
+        , TSUB(c, a, 1)
+        , LABEL(loop)
+        , TMUL(a, a, c)
+        , TSUB(c, c, 1)
+        , TEQ(cmp, c, 0)
+        , PJMP2(cmp, loop, END)
+    TEND1(a)
 };
 
 template <typename T>
@@ -79,10 +68,10 @@ int main(/*int argc, char* argv[]*/)
     using iar4mem =
         typename bve::basic_vector_evaluator<incr_int::program,
                                              ar4,
-                                             typename incr_int::one>::memory;
+                                             typename incr_int::val>::memory;
     static_assert(std::ranges::random_access_range<iar4mem>);
     static_assert(std::swappable<iar4mem::value_type>);
-    bve::evaluator<incr_int::program, ar4, typename incr_int::one> pv;
+    bve::evaluator<incr_int::program, ar4, typename incr_int::val> pv;
     ret += !std::ranges::all_of(pv(0),
                                 [](const auto i) constexpr noexcept
                                 { return i == 1; });

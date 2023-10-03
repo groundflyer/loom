@@ -17,9 +17,6 @@ namespace lucid
 using index_t                    = std::uint32_t;
 constexpr inline index_t end_pos = static_cast<index_t>(-1);
 
-#define MK_CONSTANT(TYPE, VALUE) \
-    decltype([]() constexpr noexcept -> TYPE { return VALUE; })
-
 template <typename Type, StringLiteral Name>
     requires(std::is_integral_v<Type> || std::is_floating_point_v<Type>)
 struct Variable
@@ -41,29 +38,29 @@ template <typename... _Vars>
 inline constexpr bool not_cp =
     !(... || std::is_same_v<varname<CP>, varname<_Vars>>);
 
-template <typename To, typename Op, typename... Args>
-    requires(not_cp<To, Args...>)
+template <typename Dst, typename Op, typename... Args>
+    requires(not_cp<Dst, Args...>)
 struct Compute
 {
-    using var    = To;
+    using var    = Dst;
     using action = Op;
     using args   = type_sequence<Args...>;
 };
 
-template <typename To, typename Constant>
-    requires(not_cp<To>)
+template <typename Dst, typename Constant>
+    requires(not_cp<Dst>)
 struct Store
 {
-    using var    = To;
+    using var    = Dst;
     using action = Constant;
 };
 
-template <typename To, typename From>
-    requires(not_cp<To, From>)
+template <typename Dst, typename Src>
+    requires(not_cp<Dst, Src>)
 struct Copy
 {
-    using to   = To;
-    using from = From;
+    using dst = Dst;
+    using src = Src;
 };
 
 template <StringLiteral Name>
@@ -72,13 +69,8 @@ struct Label
     using name = sl2cs<Name>;
 };
 
-struct EndLabel
-{
-};
-
-struct StartLabel
-{
-};
+using EndLabel   = Label<"END">;
+using StartLabel = Label<"START">;
 
 template <typename T>
 struct is_label
@@ -88,18 +80,6 @@ struct is_label
 
 template <StringLiteral s>
 struct is_label<Label<s>>
-{
-    static constexpr bool value = true;
-};
-
-template <>
-struct is_label<EndLabel>
-{
-    static constexpr bool value = true;
-};
-
-template <>
-struct is_label<StartLabel>
 {
     static constexpr bool value = true;
 };
@@ -152,8 +132,8 @@ struct is_store_const
     static constexpr bool value = false;
 };
 
-template <typename To, typename F>
-struct is_store_const<Store<To, F>>
+template <typename Dst, typename F>
+struct is_store_const<Store<Dst, F>>
 {
     static constexpr bool value = true;
 };
@@ -198,8 +178,8 @@ struct get_storing_var<Store<Variable, F>>
     using type = Variable;
 };
 
-template <typename Variable, typename From>
-struct get_storing_var<Copy<Variable, From>>
+template <typename Variable, typename Src>
+struct get_storing_var<Copy<Variable, Src>>
 {
     using type = Variable;
 };
@@ -329,7 +309,7 @@ template <typename Cells, typename Labels>
 using ensure_last_jumps_t = typename ensure_last_jumps<Cells, Labels>::type;
 
 /// @brief Program representation.
-template <typename InputVars, typename OutputVars, typename Statements>
+template <typename InputVars, typename Statements, typename OutputVars>
 class Program
 {
     /// @brief Variables that have stored values to.
@@ -362,8 +342,7 @@ class Program
     // static_assert(num_cells < std::numeric_limits<std::uint16_t>::max());
 
     using labelmap = typelist::cons<
-        type_pair<EndLabel,
-                  std::integral_constant<index_t, static_cast<index_t>(-1)>>,
+        type_pair<EndLabel, std::integral_constant<index_t, end_pos>>,
         typelist::enumerate<labels, index_t>>;
 
     static constexpr bool singular = num_cells == 1;
@@ -390,4 +369,81 @@ class Program
                            cells_statements,
                            ensure_last_jumps_t<cells_statements, labels>>;
 };
+
+#define VAR(TYPE, NAME) Variable<TYPE, #NAME>
+#define TVAR(NAME)      VAR(T, NAME)
+
+#define BEGIN(NAME, ...) \
+    using NAME = Program < type_sequence<__VA_ARGS__>, type_sequence <
+#define END(...) >, type_sequence < __VA_ARGS__ >> ;
+
+#define TBEGIN1(NAME, VAR) \
+    using NAME = Program < type_sequence<TVAR(VAR)>, type_sequence <
+#define TBEGIN2(NAME, VAR1, VAR2)                                 \
+    using NAME = Program < type_sequence<TVAR(VAR1), TVAR(VAR2)>, \
+          type_sequence <
+
+#define TEND1(VAR)        >, type_sequence < TVAR(VAR) >> ;
+#define TEND2(VAR1, VAR2) >, type_sequence < TVAR(VAR1), TVAR(VAR2) >> ;
+
+#define LABEL(NAME) Label<#NAME>
+
+#define JMP(TARGET) Jump<Label<#TARGET>>
+
+#define PJMPN(VAR, ...) \
+    ParmJump<Variable<index_t, #VAR>, type_sequence<__VA_ARGS__>>
+
+#define PJMP2(VAR, L1, L2) \
+    ParmJump<Variable<index_t, #VAR>, type_pair<LABEL(L1), LABEL(L2)>>
+
+#define PJMP3(VAR, L1, L2, L3)        \
+    ParmJump<Variable<index_t, #VAR>, \
+             type_sequence<LABEL(L1), LABEL(L2), LABEL(L3)>>
+
+#define CONST(TYPE, VALUE)        \
+    Store<Variable<TYPE, #VALUE>, \
+          decltype([]() constexpr noexcept -> TYPE { return VALUE; })>
+
+#define BINOP(OP, TYPE, DST, A, B) \
+    Compute<Variable<TYPE, #DST>,  \
+            OP<TYPE>,              \
+            Variable<TYPE, #A>,    \
+            Variable<TYPE, #B>>
+
+#define UNOP(OP, TYPE, DST, VAR) \
+    Compute<Variable<TYPE, #DST>, OP<TYPE>, Variable<TYPE, #VAR>>
+
+#define CMP(OP, TYPE, DST, A, B)     \
+    Compute<Variable<index_t, #DST>, \
+            OP<TYPE>,                \
+            Variable<TYPE, #A>,      \
+            Variable<TYPE, #B>>
+
+#define ADD(...)  BINOP(std::plus, __VA_ARGS__)
+#define SUB(...)  BINOP(std::minus, __VA_ARGS__)
+#define MUL(...)  BINOP(std::multiplies, __VA_ARGS__)
+#define DIV(...)  BINOP(std::divides, __VA_ARGS__)
+#define MOD(...)  BINOP(std::modulus, __VA_ARGS__)
+#define NEG(...)  UNOP(std::negate, __VA_ARGS__)
+
+#define EQ(...)   CMP(std::equal_to, __VA_ARGS__)
+#define NEQ(...)  CMP(std::not_equal_to, __VA_ARGS__)
+#define GT(...)   CMP(std::greater, __VA_ARGS__)
+#define LT(...)   CMP(std::less, __VA_ARGS__)
+#define GE(...)   CMP(std::greater_equal, __VA_ARGS__)
+#define LE(...)   CMP(std::less_equal, __VA_ARGS__)
+
+#define TADD(...) ADD(T, __VA_ARGS__)
+#define TSUB(...) SUB(T, __VA_ARGS__)
+#define TMUL(...) MUL(T, __VA_ARGS__)
+#define TDIV(...) DIV(T, __VA_ARGS__)
+#define TMOD(...) MOD(T, __VA_ARGS__)
+#define TNEG(...) NEG(T, __VA_ARGS__)
+
+#define TEQ(...)  EQ(T, __VA_ARGS__)
+#define TNEQ(...) NEQ(T, __VA_ARGS__)
+#define TGT(...)  GT(T, __VA_ARGS__)
+#define TLT(...)  LT(T, __VA_ARGS__)
+#define TGE(...)  GE(T, __VA_ARGS__)
+#define TLE(...)  LE(T, __VA_ARGS__)
 } // namespace lucid
