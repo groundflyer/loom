@@ -5,7 +5,6 @@
 #pragma once
 
 #include <array>
-#include <string_view>
 #include <type_traits>
 #include <utility>
 
@@ -25,10 +24,6 @@ namespace lucid
 /// while type aliases and variable templates are visible
 /// in lucid namespace.
 /// @{
-
-/// @brief Compile-time string.
-template <char... Cs>
-using char_sequence = std::integer_sequence<char, Cs...>;
 
 /// @brief Sequence of types.
 template <typename... Ts>
@@ -77,62 +72,6 @@ using fst_t = typename fst<Pair>::type;
 /// consists only of two types.
 template <typename Pair>
 using snd_t = typename snd<Pair>::type;
-/// @}
-
-/// @defgroup CTString Compile-time string
-/// @brief Converting string literals into char_sequence at compile time.
-/// @ingroup TMP
-/// @{
-
-/// @brief Wraps char[@p N].
-template <size_t _N>
-struct StringLiteral
-{
-    // cut off null terminator
-    static constexpr std::size_t N = _N - 1;
-
-    constexpr StringLiteral(const char (&str)[_N])
-    {
-        for(std::size_t i = 0; i < N; ++i) value[i] = str[i];
-    }
-
-    char value[N]{};
-
-    constexpr char
-    operator[](const std::size_t i) const
-    {
-        return value[i];
-    }
-
-    constexpr std::size_t
-    size() const
-    {
-        return N;
-    }
-
-    constexpr std::string_view
-    view() const
-    {
-        return std::string_view(value, N);
-    }
-};
-
-namespace detail
-{
-template <StringLiteral s, typename Idxs>
-struct sl2cs_impl;
-
-template <StringLiteral s, std::size_t... Idxs>
-struct sl2cs_impl<s, std::index_sequence<Idxs...>>
-{
-    using type = char_sequence<s[Idxs]...>;
-};
-} // namespace detail
-
-/// @brief Convert StringLiteral into char_sequence.
-template <StringLiteral s>
-using sl2cs =
-    typename detail::sl2cs_impl<s, std::make_index_sequence<s.size()>>::type;
 /// @}
 
 // In this namespace we don't suffix typedefs with _t and values with _v.
@@ -508,19 +447,23 @@ struct split_with<P, Ms, Rs, type_sequence<>>
     using type = typename join<Ms, type_sequence<Rs>>::type;
 };
 
-template <template <typename> typename P, typename Ms, typename Rs, typename X, typename... Xs>
+template <template <typename> typename P,
+          typename Ms,
+          typename Rs,
+          typename X,
+          typename... Xs>
 struct split_with<P, Ms, Rs, type_sequence<X, Xs...>>
 {
     using type = std::conditional_t<
         P<X>::value,
         typename split_with<P,
-                       typename join<Ms, type_sequence<Rs>>::type,
-                       type_sequence<>,
-                       type_sequence<Xs...>>::type,
+                            typename join<Ms, type_sequence<Rs>>::type,
+                            type_sequence<>,
+                            type_sequence<Xs...>>::type,
         typename split_with<P,
-                       Ms,
-                       typename join<Rs, type_sequence<X>>::type,
-                       type_sequence<Xs...>>::type>;
+                            Ms,
+                            typename join<Rs, type_sequence<X>>::type,
+                            type_sequence<Xs...>>::type>;
 };
 
 template <typename D, typename List>

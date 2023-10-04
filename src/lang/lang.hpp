@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include <utils/char.hpp>
 #include <utils/functional.hpp>
 #include <utils/tmp.hpp>
 #include <utils/tuple.hpp>
@@ -386,19 +387,23 @@ class Program
 #define TEND1(VAR)        >, type_sequence < TVAR(VAR) >> ;
 #define TEND2(VAR1, VAR2) >, type_sequence < TVAR(VAR1), TVAR(VAR2) >> ;
 
-#define LABEL(NAME) Label<#NAME>
+#define LABEL(NAME)       Label<#NAME>
 
-#define JMP(TARGET) Jump<Label<#TARGET>>
+#define JMP(TARGET)       Jump<Label<#TARGET>>
 
 #define PJMPN(VAR, ...) \
     ParmJump<Variable<index_t, #VAR>, type_sequence<__VA_ARGS__>>
 
-#define PJMP2(VAR, L1, L2) \
-    ParmJump<Variable<index_t, #VAR>, type_pair<LABEL(L1), LABEL(L2)>>
+#define PJMP2(VAR, L1, L2)                                    \
+    ParmJump < Variable<index_t, #VAR>, type_pair < LABEL(L1) \
+    , LABEL(L2)                                               \
+    >>
 
-#define PJMP3(VAR, L1, L2, L3)        \
-    ParmJump<Variable<index_t, #VAR>, \
-             type_sequence<LABEL(L1), LABEL(L2), LABEL(L3)>>
+#define PJMP3(VAR, L1, L2, L3)                                    \
+    ParmJump < Variable<index_t, #VAR>, type_sequence < LABEL(L1) \
+    , LABEL(L2)                                                   \
+    , LABEL(L3)                                                   \
+    >>
 
 #define CONST(TYPE, VALUE)        \
     Store<Variable<TYPE, #VALUE>, \

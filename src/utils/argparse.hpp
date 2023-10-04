@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include <utils/char.hpp>
 #include <utils/tmp.hpp>
 #include <utils/tuple.hpp>
 
@@ -30,32 +31,6 @@ namespace lucid::argparse
 /// @defgroup ArgParse ArgParse
 /// @brief Zero-cost, Unix/GNU style command line arguments parser.
 /// @{
-
-constexpr bool
-is_alpha_upper(char c) noexcept
-{
-    return c > 64 && c <= 90;
-}
-constexpr bool
-is_alpha_lower(char c) noexcept
-{
-    return c > 96 && c <= 122;
-}
-constexpr bool
-is_alpha(char c) noexcept
-{
-    return is_alpha_lower(c) || is_alpha_upper(c);
-}
-constexpr bool
-is_digit(char c) noexcept
-{
-    return c > 47 && c <= 57;
-}
-constexpr bool
-is_alphadigit(char c) noexcept
-{
-    return is_alpha(c) || is_digit(c);
-}
 
 namespace detail
 {
@@ -251,8 +226,8 @@ struct HelpRequest
 /// @brief Defines requirements for callables to convert
 /// std::string_view to a value.
 template <typename T>
-concept Converter = std::is_invocable_v<T, std::string_view> && !
-std::is_void_v<std::invoke_result_t<T, std::string_view>>;
+concept Converter = std::is_invocable_v<T, std::string_view> &&
+                    !std::is_void_v<std::invoke_result_t<T, std::string_view>>;
 
 /// @brief Make a pair of StringLiteral and a char_sequence.
 template <StringLiteral s>

@@ -1,0 +1,183 @@
+// -*- C++ -*-
+/// @file char.hpp
+/// @brief Utilities for working with characters and strings
+
+#pragma once
+
+#include "math.hpp"
+
+#include <static_math/cmath.h>
+
+#include <optional>
+#include <string_view>
+#include <type_traits>
+
+namespace lucid
+{
+/// @defgroup CTString Compile-time string
+/// @brief Converting string literals into char_sequence at compile time.
+/// @ingroup TMP
+/// @{
+
+/// @brief Wraps char[@p N].
+template <std::size_t _N>
+struct StringLiteral
+{
+    // cut off null terminator
+    static constexpr std::size_t N = _N - 1;
+
+    constexpr StringLiteral(const char (&str)[_N])
+    {
+        for(std::size_t i = 0; i < N; ++i) value[i] = str[i];
+    }
+
+    char value[N]{};
+
+    constexpr char
+    operator[](const std::size_t i) const
+    {
+        return value[i];
+    }
+
+    constexpr std::size_t
+    size() const
+    {
+        return N;
+    }
+
+    constexpr std::string_view
+    view() const
+    {
+        return std::string_view(value, N);
+    }
+};
+
+/// @brief Compile-time string.
+template <char... Cs>
+using char_sequence = std::integer_sequence<char, Cs...>;
+
+namespace detail
+{
+template <StringLiteral s, typename Idxs>
+struct sl2cs_impl;
+
+template <StringLiteral s, std::size_t... Idxs>
+struct sl2cs_impl<s, std::index_sequence<Idxs...>>
+{
+    using type = char_sequence<s[Idxs]...>;
+};
+} // namespace detail
+
+/// @brief Convert StringLiteral into char_sequence.
+template <StringLiteral s>
+using sl2cs =
+    typename detail::sl2cs_impl<s, std::make_index_sequence<s.size()>>::type;
+/// @}
+
+constexpr bool
+is_alpha_upper(char c) noexcept
+{
+    return inclusive_range('A', 'Z')(c);
+}
+constexpr bool
+is_alpha_lower(char c) noexcept
+{
+    return inclusive_range('a', 'z')(c);
+}
+constexpr bool
+is_alpha(char c) noexcept
+{
+    return is_alpha_lower(c) || is_alpha_upper(c);
+}
+constexpr bool
+is_digit(char c) noexcept
+{
+    return inclusive_range('0', '9')(c);
+}
+constexpr bool
+is_alphadigit(char c) noexcept
+{
+    return is_alpha(c) || is_digit(c);
+}
+
+constexpr char
+lower(char c) noexcept
+{
+    if(is_alpha_upper(c)) return c + 32;
+
+    return c;
+}
+
+constexpr char
+upper(char c) noexcept
+{
+    if(is_alpha_lower(c)) return c - 32;
+
+    return c;
+}
+
+constexpr bool
+is_abcdef_upper(char c) noexcept
+{
+    return inclusive_range('A', 'F')(c);
+}
+
+constexpr bool
+is_abcdef_lower(char c) noexcept
+{
+    return inclusive_range('a', 'f')(c);
+}
+
+constexpr bool
+is_abcdef(char c) noexcept
+{
+    return is_abcdef_upper(c) || is_abcdef_lower(c);
+}
+
+template <Integral T, int Base>
+constexpr std::optional<T>
+c2i(char c) noexcept
+{
+    if constexpr(Base == 16)
+    {
+        if(is_abcdef_lower(c)) return static_cast<T>(c - 87);
+        if(is_abcdef_upper(c)) return static_cast<T>(c - 55);
+    }
+
+    if(is_digit(c)) return static_cast<T>(c - 48);
+
+    return {};
+}
+
+template <Integral T, T Base = 10>
+consteval std::optional<T>
+s2i(std::string_view s) noexcept
+{
+    T ret{};
+    T sign = 1;
+
+    if(s.starts_with('-'))
+    {
+        sign = -1;
+        s    = s.substr(1);
+    }
+
+    if constexpr(Base == 2)
+        if(s.starts_with("0b") || s.starts_with("0B")) s = s.substr(2);
+
+    if constexpr(Base == 16)
+        if(s.starts_with("0x") || s.starts_with("0X")) s = s.substr(2);
+
+    T deg = 0;
+    for(auto it = s.crbegin(); it != s.crend(); ++it)
+    {
+        const auto o = c2i<T, Base>(*it);
+        if(!o) return {};
+
+        ret += o.value() * smath::pow(Base, deg);
+        ++deg;
+    }
+
+    return ret * sign;
+}
+} // namespace lucid
