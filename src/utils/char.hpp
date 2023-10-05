@@ -149,33 +149,107 @@ c2i(char c) noexcept
     return {};
 }
 
-template <Integral T, T Base = 10>
-consteval std::optional<T>
-s2i(std::string_view s) noexcept
+template <typename T>
+consteval std::pair<T, std::string_view>
+parse_sign(std::string_view s) noexcept
 {
-    T ret{};
-    T sign = 1;
+    T sign = static_cast<T>(1);
 
-    if(s.starts_with('-'))
+    if(s.starts_with('-') || s.starts_with('+'))
     {
-        sign = -1;
-        s    = s.substr(1);
+        if(s.starts_with('-')) sign *= static_cast<T>(-1);
+        s = s.substr(1);
     }
 
+    return {sign, s};
+}
+
+/// @brief constexpr analogue of std::stoi
+template <Integral T, T Base = 10>
+consteval std::optional<T>
+s2i(std::string_view word) noexcept
+{
+    auto [sign, s] = parse_sign<T>(word);
+
+    if(s.empty()) return {};
+
     if constexpr(Base == 2)
-        if(s.starts_with("0b") || s.starts_with("0B")) s = s.substr(2);
+        if(s.length() > 2 && (s.starts_with("0b") || s.starts_with("0B")))
+            s = s.substr(2);
 
     if constexpr(Base == 16)
-        if(s.starts_with("0x") || s.starts_with("0X")) s = s.substr(2);
+        if(s.length() > 2 && (s.starts_with("0x") || s.starts_with("0X")))
+            s = s.substr(2);
 
-    T deg = 0;
+    T ret = 0;
+    T exp = 0;
     for(auto it = s.crbegin(); it != s.crend(); ++it)
     {
         const auto o = c2i<T, Base>(*it);
         if(!o) return {};
 
-        ret += o.value() * smath::pow(Base, deg);
-        ++deg;
+        ret += o.value() * smath::pow(Base, exp);
+        ++exp;
+    }
+
+    return ret * sign;
+}
+
+/// @brief constexpr analogue of std::stof.
+template <Real T>
+consteval std::optional<T>
+s2f(std::string_view word) noexcept
+{
+    auto [sign, s] = parse_sign<T>(word);
+
+    if(s.empty()) return {};
+
+    const std::size_t sep_pos = s.find('.');
+    const std::size_t ep1     = s.find('e');
+    const std::size_t ep2     = s.find('E');
+    const std::size_t exp_pos = std::min(ep1, ep2);
+
+    const bool has_sep = sep_pos != std::string_view::npos;
+    const bool has_exp = exp_pos != std::string_view::npos;
+
+    std::string_view int_part =
+        has_sep ? s.substr(0, sep_pos) : (has_exp ? s.substr(0, exp_pos) : s);
+
+    std::string_view frac_part =
+        has_sep ? (has_exp ? s.substr(sep_pos + 1, exp_pos - sep_pos - 1) :
+                             s.substr(sep_pos + 1)) :
+                  "";
+
+    std::string_view exp_part = has_exp ? s.substr(exp_pos + 1) : "";
+
+    T ret{};
+
+    if(!int_part.empty())
+    {
+        const auto oi = s2i<long>(int_part);
+        if(!oi.has_value()) return {};
+
+        ret = static_cast<T>(oi.value());
+    }
+
+    if(!frac_part.empty())
+    {
+        const auto oi = s2i<long>(frac_part);
+        if(!oi.has_value()) return {};
+
+        const auto frac =
+            oi.value() * smath::pow(static_cast<T>(10),
+                                    -static_cast<int>(frac_part.length()));
+
+        ret += frac;
+    }
+
+    if(!exp_part.empty())
+    {
+        const auto oi = s2i<long>(exp_part);
+        if(!oi.has_value()) return {};
+
+        ret *= smath::pow(static_cast<T>(10), oi.value());
     }
 
     return ret * sign;
