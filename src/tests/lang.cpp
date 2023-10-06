@@ -16,8 +16,7 @@ struct increment
     using val = Variable<T, "val">;
 
     TBEGIN1(program, val)
-        CONST(T, 1)
-        , TADD(val, val, 1)
+        TADD(val, val, 1)
     TEND1(val)
 };
 
@@ -31,8 +30,6 @@ struct increment
 // input: a
 // output: a
 //
-// o = 1
-// z = 0
 // c = a - 1
 // loop:
 // a = a * c
@@ -45,9 +42,7 @@ struct factorial
     using a = Variable<T, "a">; // accumulator
 
     TBEGIN1(program, a)
-        CONST(T, 1)
-        , CONST(T, 0)
-        , TSUB(c, a, 1)
+        TSUB(c, a, 1)
         , LABEL(loop)
         , TMUL(a, a, c)
         , TSUB(c, c, 1)

@@ -22,8 +22,9 @@ template <typename Type, StringLiteral Name>
     requires(std::is_integral_v<Type> || std::is_floating_point_v<Type>)
 struct Variable
 {
-    using type = Type;
-    using name = sl2cs<Name>;
+    using type                                 = Type;
+    using name                                 = sl2cs<Name>;
+    static constexpr std::string_view nameview = Name.view();
 };
 
 template <typename _Variable>
@@ -31,6 +32,9 @@ using vartype = typename _Variable::type;
 
 template <typename _Variable>
 using varname = typename _Variable::name;
+
+template <typename _Variable>
+constexpr inline std::string_view varview = _Variable::nameview;
 
 /// @brief Cell Pointer.
 using CP = Variable<index_t, "CP">;
@@ -46,14 +50,6 @@ struct Compute
     using var    = Dst;
     using action = Op;
     using args   = type_sequence<Args...>;
-};
-
-template <typename Dst, typename Constant>
-    requires(not_cp<Dst>)
-struct Store
-{
-    using var    = Dst;
-    using action = Constant;
 };
 
 template <typename Dst, typename Src>
@@ -116,25 +112,7 @@ struct does_store<Compute<Ts...>>
 };
 
 template <typename... Ts>
-struct does_store<Store<Ts...>>
-{
-    static constexpr bool value = true;
-};
-
-template <typename... Ts>
 struct does_store<Copy<Ts...>>
-{
-    static constexpr bool value = true;
-};
-
-template <typename T>
-struct is_store_const
-{
-    static constexpr bool value = false;
-};
-
-template <typename Dst, typename F>
-struct is_store_const<Store<Dst, F>>
 {
     static constexpr bool value = true;
 };
@@ -169,12 +147,6 @@ struct get_storing_var;
 
 template <typename Variable, typename... Ts>
 struct get_storing_var<Compute<Variable, Ts...>>
-{
-    using type = Variable;
-};
-
-template <typename Variable, typename F>
-struct get_storing_var<Store<Variable, F>>
 {
     using type = Variable;
 };
@@ -280,6 +252,46 @@ struct access_wrapper<Union<Ts...>>
     }
 };
 
+template <typename _Variable>
+consteval std::optional<vartype<_Variable>>
+parse_literal() noexcept
+{
+    constexpr std::string_view s = varview<_Variable>;
+    using type                   = vartype<_Variable>;
+
+    if constexpr(std::is_integral_v<vartype<_Variable>>)
+    {
+        if constexpr(s.starts_with("0x") || s.starts_with("0X"))
+            return s2i<type, 16>(s);
+        else if constexpr((s.starts_with("0b") || s.starts_with("0B")))
+            return s2i<type, 2>(s);
+        else
+            return s2i<type>(s);
+    }
+    else
+        return s2f<type>(s);
+}
+
+template <typename _Variable>
+struct is_literal
+{
+    static constexpr bool value = parse_literal<_Variable>().has_value();
+};
+
+template <typename _Variable>
+inline constexpr bool is_literal_v = is_literal<_Variable>::value;
+
+template <typename _Variable, typename _Memory>
+constexpr decltype(auto)
+get_value(_Memory&& mem) noexcept
+{
+    constexpr auto ov = parse_literal<_Variable>();
+    if constexpr(ov.has_value())
+        return static_cast<vartype<_Variable>>(ov.value());
+    else
+        return std::forward<_Memory>(mem).template get<_Variable>();
+}
+
 template <typename Cells, typename Labels>
 struct ensure_last_jumps
 {
@@ -318,6 +330,8 @@ class Program
         typelist::join<typelist::join<InputVars, OutputVars>,
                        typelist::map<get_storing_var_t,
                                      typelist::filter<does_store, Statements>>>;
+
+    static_assert(!typelist::any<is_literal, stated_vars>);
 
     /// @brief List of lists of commands.
     using cells_statements = typelist::split_with<is_label, Statements>;
@@ -404,10 +418,6 @@ class Program
     , LABEL(L2)                                                   \
     , LABEL(L3)                                                   \
     >>
-
-#define CONST(TYPE, VALUE)        \
-    Store<Variable<TYPE, #VALUE>, \
-          decltype([]() constexpr noexcept -> TYPE { return VALUE; })>
 
 #define BINOP(OP, TYPE, DST, A, B) \
     Compute<Variable<TYPE, #DST>,  \

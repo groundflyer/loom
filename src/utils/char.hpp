@@ -165,7 +165,7 @@ parse_sign(std::string_view s) noexcept
 }
 
 /// @brief constexpr analogue of std::stoi
-template <Integral T, T Base = 10>
+template <Integral T = int, T Base = 10>
 consteval std::optional<T>
 s2i(std::string_view word) noexcept
 {
@@ -196,7 +196,7 @@ s2i(std::string_view word) noexcept
 }
 
 /// @brief constexpr analogue of std::stof.
-template <Real T>
+template <Real T = float>
 consteval std::optional<T>
 s2f(std::string_view word) noexcept
 {

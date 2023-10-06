@@ -513,26 +513,7 @@ struct eval_instruction<Copy<Dst, Src>, LabelMap>
             std::ranges::for_each(std::forward<_Memory>(mem),
                                   [](auto row) constexpr noexcept {
                                       row.template get<Dst>() =
-                                          row.template get<Src>();
-                                  });
-    }
-};
-
-template <typename Dst, typename Constant, typename LabelMap>
-struct eval_instruction<Store<Dst, Constant>, LabelMap>
-{
-    static constexpr Constant f{};
-
-    template <typename _Memory>
-    constexpr void
-    operator()(_Memory&& mem) const noexcept
-    {
-        if constexpr(is_mem<_Memory>::value)
-            std::ranges::generate(mem.template column<Dst>(), f);
-        else
-            std::ranges::for_each(std::forward<_Memory>(mem),
-                                  [](auto row) constexpr noexcept {
-                                      row.template get<Dst>() = std::invoke(f);
+                                          get_value<Src>(row);
                                   });
     }
 };
@@ -548,7 +529,7 @@ struct eval_instruction<Compute<Dst, Op, Args...>, LabelMap>
                               [](auto row) constexpr noexcept {
                                   row.template get<Dst>() =
                                       std::invoke(Op{},
-                                                  row.template get<Args>()...);
+                                                  get_value<Args>(row)...);
                               });
     }
 };

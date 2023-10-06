@@ -59,20 +59,7 @@ struct eval_instruction<Copy<Dst, Src>, LabelMap>
     constexpr void
     operator()(_Memory& mem) const noexcept
     {
-        mem.template get<Dst>() = mem.template get<Src>();
-    }
-};
-
-template <typename Dst, typename Constant, typename LabelMap>
-struct eval_instruction<Store<Dst, Constant>, LabelMap>
-{
-    static constexpr Constant func{};
-
-    template <typename _Memory>
-    constexpr void
-    operator()(_Memory& mem) const noexcept
-    {
-        mem.template get<Dst>() = func();
+        mem.template get<Dst>() = get_value<Src>(mem);
     }
 };
 
@@ -83,8 +70,7 @@ struct eval_instruction<Compute<Dst, Op, Args...>, LabelMap>
     constexpr void
     operator()(_Memory& mem) const noexcept
     {
-        mem.template get<Dst>() =
-            std::invoke(Op{}, mem.template get<Args>()...);
+        mem.template get<Dst>() = std::invoke(Op{}, get_value<Args>(mem)...);
     }
 };
 
