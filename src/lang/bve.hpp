@@ -15,6 +15,7 @@
 #include <fmt/core.h>
 
 #include <algorithm>
+#include <array>
 #include <compare>
 #include <ranges>
 
@@ -39,12 +40,13 @@ using vector_union_t = typename vector_union<T, Vector>::type;
 
 template <typename RegTypes,
           typename RegNames,
-          template <typename>
-          typename Vector,
-          typename SizeLookupVar                    = CP,
+          std::size_t Size,
           template <typename...> typename Container = std::tuple>
 class Memory
 {
+    template <typename T>
+    using Vector = std::array<T, Size>;
+
     template <typename T>
     using f = vector_union_t<T, Vector>;
 
@@ -196,7 +198,6 @@ class Memory
     {
         Data*       p_data = nullptr;
         std::size_t m_pos{};
-        std::size_t m_size{};
 
       public:
         using difference_type = std::ptrdiff_t;
@@ -204,19 +205,16 @@ class Memory
 
         constexpr _iterator() noexcept = default;
 
-        constexpr _iterator(Data*       data,
-                            std::size_t pos,
-                            std::size_t size) noexcept :
-            p_data(data),
-            m_pos(pos), m_size(size)
+        constexpr _iterator(Data* data, std::size_t pos) noexcept :
+            p_data(data), m_pos(pos)
         {
         }
         constexpr _iterator(const _iterator& other) noexcept :
-            p_data(other.p_data), m_pos(other.m_pos), m_size(other.m_size)
+            p_data(other.p_data), m_pos(other.m_pos)
         {
         }
         constexpr _iterator(_iterator&& other) noexcept :
-            p_data(other.p_data), m_pos(other.m_pos), m_size(other.m_size)
+            p_data(other.p_data), m_pos(other.m_pos)
         {
         }
 
@@ -224,7 +222,6 @@ class Memory
         operator=(const _iterator& rhs) noexcept
         {
             m_pos  = rhs.m_pos;
-            m_size = rhs.m_size;
             p_data = rhs.p_data;
 
             return *this;
@@ -234,7 +231,6 @@ class Memory
         operator=(_iterator&& rhs) noexcept
         {
             m_pos  = rhs.m_pos;
-            m_size = rhs.m_size;
             p_data = rhs.p_data;
 
             return *this;
@@ -243,7 +239,7 @@ class Memory
         constexpr bool
         operator==(std::default_sentinel_t) const noexcept
         {
-            return m_pos == m_size;
+            return m_pos == Size;
         }
 
         constexpr bool
@@ -297,7 +293,7 @@ class Memory
         constexpr _iterator
         operator+(difference_type rhs) const noexcept
         {
-            return _iterator(p_data, m_pos + rhs, m_size);
+            return _iterator(p_data, m_pos + rhs);
         }
 
         constexpr difference_type
@@ -316,7 +312,7 @@ class Memory
         constexpr _iterator
         operator-(difference_type rhs) const noexcept
         {
-            return _iterator(p_data, m_pos - rhs, m_size);
+            return _iterator(p_data, m_pos - rhs);
         }
 
         constexpr difference_type
@@ -341,7 +337,7 @@ class Memory
         constexpr std::size_t
         count() const noexcept
         {
-            return m_size - m_pos;
+            return Size - m_pos;
         }
 
         friend _iterator
@@ -364,13 +360,13 @@ class Memory
     constexpr iterator
     begin() const noexcept
     {
-        return iterator(&m_data, 0ul, size());
+        return iterator(&m_data, 0ul);
     }
 
     constexpr iterator
     begin() noexcept
     {
-        return iterator(&m_data, 0ul, size());
+        return iterator(&m_data, 0ul);
     }
 
     constexpr iterator
@@ -382,13 +378,13 @@ class Memory
     constexpr iterator
     end() const noexcept
     {
-        return iterator(&m_data, size(), size());
+        return iterator(&m_data, size());
     }
 
     constexpr iterator
     end() noexcept
     {
-        return iterator(&m_data, size(), size());
+        return iterator(&m_data, size());
     }
 
     constexpr iterator
@@ -400,13 +396,13 @@ class Memory
     constexpr std::size_t
     size() const noexcept
     {
-        return column<SizeLookupVar>().size();
+        return Size;
     }
 
     constexpr std::size_t
     size() noexcept
     {
-        return column<SizeLookupVar>().size();
+        return Size;
     }
 
     /// @brief Access a column.
@@ -625,10 +621,7 @@ struct output_getter
     }
 };
 
-template <typename _Program,
-          template <typename>
-          typename _Vector,
-          typename SizeLookupVar = typename _Program::cp>
+template <typename _Program, std::size_t VectorSize>
 struct basic_vector_evaluator
 {
     using labelmap  = typename _Program::labelmap;
@@ -645,7 +638,7 @@ struct basic_vector_evaluator
     static constexpr input_setter<typename _Program::input_vars>   setter{};
     static constexpr output_getter<typename _Program::output_vars> getter{};
 
-    using memory = Memory<reg_types, reg_names, _Vector, SizeLookupVar>;
+    using memory = Memory<reg_types, reg_names, VectorSize>;
 
     struct single_cell_evaluator
     {
@@ -706,10 +699,6 @@ struct basic_vector_evaluator
         conditional_t<_Program::singular, single_cell_evaluator, evaluator>;
 };
 
-template <typename _Program,
-          template <typename>
-          typename _Vector,
-          typename SizeLookupVar = CP>
-using evaluator =
-    typename basic_vector_evaluator<_Program, _Vector, SizeLookupVar>::type;
+template <typename _Program, std::size_t VectorSize>
+using evaluator = typename basic_vector_evaluator<_Program, VectorSize>::type;
 } // namespace lucid::bve

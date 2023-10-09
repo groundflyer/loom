@@ -5,6 +5,9 @@
 #include <lang/bve.hpp>
 #include <lang/lang.hpp>
 
+#include <fmt/core.h>
+#include <fmt/ranges.h>
+
 #include <array>
 #include <initializer_list>
 
@@ -51,29 +54,30 @@ struct factorial
     TEND1(a)
 };
 
-template <typename T>
-using ar4 = std::array<T, 4>;
-
 int main(/*int argc, char* argv[]*/)
 {
     using incr_int = increment<int>;
     bse::evaluator<incr_int::program> p;
     int                               ret = p(-1);
 
+    auto ok = [&](std::string_view name) noexcept
+    { fmt::print("{} : {}\n", name, ret == 0 ? "OK" : "FAIL"); };
+    ok("increment bse");
+
     using iar4mem =
-        typename bve::basic_vector_evaluator<incr_int::program,
-                                             ar4,
-                                             typename incr_int::val>::memory;
+        typename bve::basic_vector_evaluator<incr_int::program, 4>::memory;
     static_assert(std::ranges::random_access_range<iar4mem>);
     static_assert(std::swappable<iar4mem::value_type>);
-    bve::evaluator<incr_int::program, ar4, typename incr_int::val> pv;
+    bve::evaluator<incr_int::program, 4> pv;
     ret += !std::ranges::all_of(pv(0),
                                 [](const auto i) constexpr noexcept
                                 { return i == 1; });
+    ok("increment bve single input");
 
     auto v1 = {0, 1, 2, 3};
     auto v2 = {1, 2, 3, 4};
     ret += !std::ranges::equal(pv(v1), v2);
+    ok("increment bve multi input");
 
     using fac_unsigned = factorial<unsigned>;
     bse::evaluator<fac_unsigned::program> fac;
@@ -82,14 +86,21 @@ int main(/*int argc, char* argv[]*/)
     const unsigned fac_chk = 720;
     auto           fac_out = fac(fac_in);
     ret += fac_out != fac_chk;
+    ok("fac bse");
 
-    bve::evaluator<fac_unsigned::program, ar4> vfac;
+    bve::evaluator<fac_unsigned::program, 4> vfac;
+
+    static_assert(std::is_swappable_v<
+                  bve::basic_vector_evaluator<fac_unsigned::program,
+                                              4>::memory::value_type>);
 
     const auto vfac_in  = {4u, 5u, 6u, 7u};
     const auto vfac_chk = {24u, 120u, 720u, 5040u};
     auto       vfac_out = vfac(vfac_in);
     std::ranges::sort(vfac_out);
     ret += !std::ranges::equal(vfac_out, vfac_chk);
+    ok("fac bve");
+    fmt::print("vfac_out = {}\n", vfac_out);
 
     return ret;
 }
