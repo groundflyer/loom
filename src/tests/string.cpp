@@ -1,6 +1,6 @@
 // -*- C++ -*-
 // char.cpp
-#include <utils/char.hpp>
+#include <utils/string.hpp>
 
 using namespace lucid;
 

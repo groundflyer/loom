@@ -1,6 +1,6 @@
 // -*- C++ -*-
-/// @file char.hpp
-/// @brief Utilities for working with characters and strings
+/// @file string.hpp
+/// @brief Utilities for working with strings.
 
 #pragma once
 
@@ -195,7 +195,7 @@ s2i(std::string_view word) noexcept
     return ret * sign;
 }
 
-/// @brief constexpr analogue of std::stof.
+/// @brief Inaccurate constexpr analogue of std::stof.
 template <Real T = float>
 consteval std::optional<T>
 s2f(std::string_view word) noexcept
