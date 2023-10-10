@@ -352,9 +352,9 @@ class Memory
     using iterator   = _iterator;
 
     constexpr proxy_row
-    operator[](const std::size_t n) const noexcept
+    operator[](const std::size_t n) noexcept
     {
-        return proxy_row(&m_data, n);
+        return proxy_row(m_data, n);
     }
 
     constexpr iterator
@@ -687,7 +687,14 @@ struct basic_vector_evaluator
                             sink);
                     });
 
+#ifdef _LIBCPP_VERSION
                 std::sort(mem.begin(), mem.end());
+#else
+                // libstdc++ std::sort doesn't use swap internally
+                for(std::size_t i = 1; i < mem.size(); ++i)
+                    for(std::size_t j = i; j > 0 && mem[j - 1] > mem[j]; --j)
+                        swap(mem[j], mem[j - 1]);
+#endif
             }
 
             return getter(mem);

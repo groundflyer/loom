@@ -12,6 +12,12 @@
 #include <memory_resource>
 #include <span>
 
+#ifdef __clang__
+#define _REINIT [[clang::reinitializes]]
+#else
+#define _REINIT
+#endif
+
 namespace lucid
 {
 /// @brief Generic unsafe union.
@@ -91,7 +97,7 @@ class UnionVector
     static constexpr std::size_t m =
         detail::max_helper<alignment, Types>::value;
 
-    [[clang::reinitializes]] constexpr void
+    _REINIT constexpr void
     reinit() noexcept
     {
         m_count = 0;
