@@ -4,19 +4,14 @@
 
 #pragma once
 
-#include <utils/tmp.hpp>
+#include "debug.hpp"
+#include "tmp.hpp"
 
 #include <algorithm>
 #include <cstddef>
 #include <memory>
 #include <memory_resource>
 #include <span>
-
-#ifdef __clang__
-#define _REINIT [[clang::reinitializes]]
-#else
-#define _REINIT
-#endif
 
 namespace lucid
 {
@@ -77,8 +72,10 @@ struct max_helper<n, type_sequence<Ts...>>
 /// @brief Unsafe union of vectors.
 ///
 /// UnionVector holds a contigous memory segment and provides a typed view to
-/// it. The number of elements of each type in type_sequence @p Types is always
-/// equal and accsible via @p count().
+/// it.
+///
+/// The number of elements of each type in type_sequence @p Types is always
+/// equal and accesible via @p count().
 ///
 /// @tparam Types type_sequence<Ts...>.
 template <typename Types,
