@@ -130,12 +130,12 @@ template <std::unsigned_integral I,
           typename Tuple,
           typename Default>
 constexpr decltype(auto)
-visit(const I i, Visitor&& visitor, Tuple&& tuple, Default&& defval) noexcept
+visit(const I i, Visitor&& visitor, Tuple&& tuple, Default&& def) noexcept
 {
     return detail::visit_impl<I, 0>(i,
                                     std::forward<Visitor>(visitor),
                                     std::forward<Tuple>(tuple),
-                                    std::forward<Default>(defval));
+                                    std::forward<Default>(def));
 }
 
 /// @brief Concatenate arrays.

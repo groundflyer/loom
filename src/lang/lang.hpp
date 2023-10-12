@@ -41,7 +41,7 @@ using CP = Variable<index_t, "CP">;
 
 template <typename... _Vars>
 inline constexpr bool not_cp =
-    !(... || std::is_same_v<varname<CP>, varname<_Vars>>);
+    !(std::conjunction_v<std::is_same<varname<CP>, varname<_Vars>>...>);
 
 template <typename Dst, typename Op, typename... Args>
     requires(not_cp<Dst, Args...>)

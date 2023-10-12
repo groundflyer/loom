@@ -134,7 +134,7 @@ is_abcdef(char c) noexcept
     return is_abcdef_upper(c) || is_abcdef_lower(c);
 }
 
-template <Integral T, int Base>
+template <std::integral T, int Base>
 constexpr std::optional<T>
 c2i(char c) noexcept
 {
@@ -165,7 +165,7 @@ parse_sign(std::string_view s) noexcept
 }
 
 /// @brief constexpr analogue of std::stoi
-template <Integral T = int, T Base = 10>
+template <std::integral T = int, T Base = 10>
 consteval std::optional<T>
 s2i(std::string_view word) noexcept
 {
@@ -196,7 +196,7 @@ s2i(std::string_view word) noexcept
 }
 
 /// @brief Inaccurate constexpr analogue of std::stof.
-template <Real T = float>
+template <std::floating_point T = float>
 consteval std::optional<T>
 s2f(std::string_view word) noexcept
 {

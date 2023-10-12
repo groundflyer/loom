@@ -21,20 +21,11 @@
 
 namespace lucid
 {
-template <typename T>
-concept Arithmetic = std::is_arithmetic_v<T>;
-
-template <typename T>
-concept Integral = std::is_integral_v<T>;
-
-template <typename T>
-concept Real = std::is_floating_point_v<T>;
-
-template <Real T>
-const constexpr T Pi_ = T{3.141592653589793};
+template <std::floating_point T>
+inline constexpr T Pi_ = T{3.141592653589793};
 
 /// @brief Test whether the value is even.
-template <Integral T>
+template <std::integral T>
 constexpr bool
 is_even(const T val) noexcept
 {
@@ -42,7 +33,7 @@ is_even(const T val) noexcept
 }
 
 /// @brief Return result of @f$(-1)^{a}@f$.
-template <Integral T>
+template <std::integral T>
 constexpr int
 minus_one_pow(const T a)
 {
@@ -106,7 +97,7 @@ sgn(const Iterable& numbers) noexcept
 }
 
 /// @brief Convert radians to degrees.
-template <Real T>
+template <std::floating_point T>
 constexpr T
 degrees(const T _radians)
 {
@@ -114,7 +105,7 @@ degrees(const T _radians)
 }
 
 /// @brief Convert degrees to radians.
-template <Real T>
+template <std::floating_point T>
 constexpr T
 radians(const T _degrees)
 {
@@ -123,7 +114,7 @@ radians(const T _degrees)
 
 /// @brief Solve quadratic equation @f$ax^{2} + bx + c@f$ for non-complex cases.
 /// @return pair of bool and the smallest of two positive roots.
-template <Real T>
+template <std::floating_point T>
 constexpr std::pair<bool, T>
 quadratic(const T a, const T b, const T c) noexcept
 {
@@ -142,7 +133,7 @@ quadratic(const T a, const T b, const T c) noexcept
 }
 
 /// @brief Resample canonical random point.
-template <Real T>
+template <std::floating_point T>
 constexpr T
 resample(const T s) noexcept
 {
@@ -190,10 +181,8 @@ namespace fn
 {
 /// @brief Rise a number to a constant power.
 ///
-/// Fast implementation by Alister Chowdhury.
-///
 /// @tparam exp power exponent.
-template <unsigned exp, Arithmetic T>
+template <unsigned exp, typename T>
 constexpr T
 static_pow(const T value) noexcept
 {
@@ -210,7 +199,7 @@ static_pow(const T value) noexcept
 
 /// @brief Perform linear interpolation between two values.
 /// @param bias interpolation bias.
-template <Real T, Real Bias>
+template <std::floating_point T, std::floating_point Bias>
 constexpr T
 lerp(const T a, const T b, const Bias bias)
 {
@@ -224,7 +213,7 @@ lerp(const T a, const T b, const Bias bias)
 ///
 /// @param ulp spacing between adjascent numbers (see
 /// https://en.wikipedia.org/wiki/Unit_in_the_last_place). @anchor ulp
-template <Real T, Integral ULP>
+template <std::floating_point T, std::integral ULP>
 constexpr bool
 almost_equal(const T a, const T b, const ULP ulp)
 {
