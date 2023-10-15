@@ -10,7 +10,6 @@
 #include <algorithm>
 #include <cstddef>
 #include <memory>
-#include <memory_resource>
 #include <span>
 
 namespace lucid
@@ -59,13 +58,13 @@ class Union
 
 namespace detail
 {
-template <std::size_t n, typename List>
+template <typename List>
 struct max_helper;
 
-template <std::size_t n, typename... Ts>
-struct max_helper<n, type_sequence<Ts...>>
+template <typename... Ts>
+struct max_helper<type_sequence<Ts...>>
 {
-    static constexpr std::size_t value = std::max({n, sizeof(Ts)...});
+    static constexpr std::size_t value = std::max({sizeof(Ts)...});
 };
 } // namespace detail
 
@@ -78,9 +77,7 @@ struct max_helper<n, type_sequence<Ts...>>
 /// equal and accesible via @p count().
 ///
 /// @tparam Types type_sequence<Ts...>.
-template <typename Types,
-          typename Allocator    = std::pmr::polymorphic_allocator<std::byte>,
-          std::size_t alignment = alignof(std::max_align_t)>
+template <typename Types, typename Allocator = std::allocator<std::byte>>
     requires(typelist::all<std::is_default_constructible, Types>)
 class UnionVector
 {
@@ -91,8 +88,7 @@ class UnionVector
     template <typename T>
     static constexpr bool has = typelist::elem<T, Types>;
 
-    static constexpr std::size_t m =
-        detail::max_helper<alignment, Types>::value;
+    static constexpr std::size_t m = detail::max_helper<Types>::value;
 
     _REINIT constexpr void
     reinit() noexcept
@@ -104,14 +100,13 @@ class UnionVector
     constexpr void
     allocate() noexcept
     {
-        p_data = reinterpret_cast<std::byte*>(
-            m_alloc.allocate_bytes(size(), alignment));
+        p_data = reinterpret_cast<std::byte*>(m_alloc.allocate(size()));
     }
 
     constexpr void
     deallocate() noexcept
     {
-        if(p_data) m_alloc.deallocate_bytes(p_data, size(), alignment);
+        if(p_data) m_alloc.deallocate(p_data, size());
     }
 
   public:
