@@ -37,11 +37,11 @@ template <typename _Variable>
 constexpr inline std::string_view varview = _Variable::nameview;
 
 /// @brief Cell Pointer.
-using CP = Variable<index_t, "CP">;
+using _CP = Variable<index_t, "CP">;
 
 template <typename... _Vars>
 inline constexpr bool not_cp =
-    !(std::conjunction_v<std::is_same<varname<CP>, varname<_Vars>>...>);
+    !(std::conjunction_v<std::is_same<varname<_CP>, varname<_Vars>>...>);
 
 template <typename Dst, typename Op, typename... Args>
     requires(not_cp<Dst, Args...>)
@@ -363,7 +363,7 @@ class Program
     static constexpr bool singular = num_cells == 1;
 
     using variables = std::
-        conditional_t<singular, stated_vars, typelist::cons<CP, stated_vars>>;
+        conditional_t<singular, stated_vars, typelist::cons<_CP, stated_vars>>;
 
     /// @brief Names of registers.
     using reg_names = typelist::nub<get_var_names_t<variables>>;

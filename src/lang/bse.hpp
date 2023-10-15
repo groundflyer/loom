@@ -42,10 +42,10 @@ class Memory
     }
 
     /// @brief Access cell pointer.
-    std::add_lvalue_reference_t<typename CP::type>
+    std::add_lvalue_reference_t<typename _CP::type>
     cp() noexcept
     {
-        return get<CP>();
+        return get<_CP>();
     }
 };
 

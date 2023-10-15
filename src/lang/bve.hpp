@@ -21,22 +21,22 @@
 
 namespace lucid::bve
 {
-template <typename T, template <typename> typename Vector>
-struct vector_union
+template <typename T, template <typename> typename Array>
+struct array_union
 {
-    using type = Vector<T>;
+    using type = Array<T>;
 };
 
-template <template <typename> typename Vector, typename... Ts>
-struct vector_union<Union<Ts...>, Vector>
+template <template <typename> typename Array, typename... Ts>
+struct array_union<Union<Ts...>, Array>
 {
-    using type = Union<Vector<Ts>...>;
+    using type = Union<Array<Ts>...>;
 };
 
-/// @brief If @p T is Union type the resulting type is Union of vectors,
-/// otherwise it's just @p Vector of @p T.
-template <typename T, template <typename> typename Vector>
-using vector_union_t = typename vector_union<T, Vector>::type;
+/// @brief If @p T is Union type the resulting type is Union of arrays,
+/// otherwise it's just @p Array of @p T.
+template <typename T, template <typename> typename Array>
+using array_union_t = typename array_union<T, Array>::type;
 
 template <typename RegTypes,
           typename RegNames,
@@ -45,10 +45,10 @@ template <typename RegTypes,
 class Memory
 {
     template <typename T>
-    using Vector = std::array<T, Size>;
+    using Array = std::array<T, Size>;
 
     template <typename T>
-    using f = vector_union_t<T, Vector>;
+    using f = array_union_t<T, Array>;
 
     using VecTypes = typelist::map<f, RegTypes>;
 
@@ -57,11 +57,11 @@ class Memory
     /// @brief Variable name to column dictionary.
     using vec_table = typelist::zip<RegNames, VecTypes>;
 
-    /// @brief Type of a column/vector.
+    /// @brief Type of a column/array.
     template <typename Name>
     using vec_type = typelist::lookup<Name, vec_table>;
 
-    /// @brief Index of a column/vector.
+    /// @brief Index of a column/array.
     template <typename Name>
     static constexpr std::size_t var_index = typelist::index<Name, RegNames>;
 
@@ -163,10 +163,10 @@ class Memory
         }
 
         /// @brief Access cell pointer.
-        constexpr std::add_lvalue_reference_t<typename CP::type>
+        constexpr std::add_lvalue_reference_t<typename _CP::type>
         cp() const noexcept
         {
-            return get<CP>();
+            return get<_CP>();
         }
 
         void
@@ -221,8 +221,8 @@ class Memory
         constexpr _iterator&
         operator=(const _iterator& rhs) noexcept
         {
-            m_pos  = rhs.m_pos;
             p_data = rhs.p_data;
+            m_pos  = rhs.m_pos;
 
             return *this;
         }
@@ -230,8 +230,8 @@ class Memory
         constexpr _iterator&
         operator=(_iterator&& rhs) noexcept
         {
-            m_pos  = rhs.m_pos;
             p_data = rhs.p_data;
+            m_pos  = rhs.m_pos;
 
             return *this;
         }
@@ -358,45 +358,15 @@ class Memory
     }
 
     constexpr iterator
-    begin() const noexcept
-    {
-        return iterator(&m_data, 0ul);
-    }
-
-    constexpr iterator
     begin() noexcept
     {
         return iterator(&m_data, 0ul);
     }
 
     constexpr iterator
-    cbegin() const noexcept
-    {
-        return begin();
-    }
-
-    constexpr iterator
-    end() const noexcept
-    {
-        return iterator(&m_data, size());
-    }
-
-    constexpr iterator
     end() noexcept
     {
         return iterator(&m_data, size());
-    }
-
-    constexpr iterator
-    cend() const noexcept
-    {
-        return end();
-    }
-
-    constexpr std::size_t
-    size() const noexcept
-    {
-        return Size;
     }
 
     constexpr std::size_t
@@ -407,7 +377,7 @@ class Memory
 
     /// @brief Access a column.
     template <typename Var>
-    constexpr Vector<typename Var::type>&
+    constexpr Array<typename Var::type>&
     column() noexcept
     {
         using var_name = typename Var::name;
@@ -418,35 +388,10 @@ class Memory
     }
 
     /// @brief Access cell pointers column.
-    constexpr Vector<typename CP::type>&
+    constexpr Array<typename _CP::type>&
     cp() noexcept
     {
-        return column<CP>();
-    }
-
-    /// @brief Access a column.
-    template <typename Var>
-    constexpr const Vector<typename Var::type>&
-    column() const noexcept
-    {
-        using var_name = typename Var::name;
-        constexpr access_wrapper<typelist::lookup<var_name, vec_table>> op{};
-
-        return op.template operator()<vec_type<var_name>>(
-            std::get<var_index<var_name>>(m_data));
-    }
-
-    /// @brief Access cell pointers column.
-    constexpr const Vector<typename CP::type>&
-    cp() const noexcept
-    {
-        return column<CP>();
-    }
-
-    constexpr friend iterator
-    begin(const Memory& m) noexcept
-    {
-        return m.begin();
+        return column<_CP>();
     }
 
     constexpr friend iterator
@@ -456,27 +401,9 @@ class Memory
     }
 
     constexpr friend std::default_sentinel_t
-    end(const Memory&) noexcept
-    {
-        return std::default_sentinel;
-    }
-
-    constexpr friend std::default_sentinel_t
     end(Memory&) noexcept
     {
         return std::default_sentinel;
-    }
-
-    constexpr friend std::size_t
-    size(const Memory& m) noexcept
-    {
-        return m.size();
-    }
-
-    constexpr friend std::size_t
-    size(Memory& m) noexcept
-    {
-        return m.size();
     }
 };
 
@@ -621,7 +548,7 @@ struct output_getter
     }
 };
 
-template <typename _Program, std::size_t VectorSize>
+template <typename _Program, std::size_t ArraySize>
 struct basic_vector_evaluator
 {
     using labelmap  = typename _Program::labelmap;
@@ -638,7 +565,7 @@ struct basic_vector_evaluator
     static constexpr input_setter<typename _Program::input_vars>   setter{};
     static constexpr output_getter<typename _Program::output_vars> getter{};
 
-    using memory = Memory<reg_types, reg_names, VectorSize>;
+    using memory = Memory<reg_types, reg_names, ArraySize>;
 
     struct single_cell_evaluator
     {
@@ -706,6 +633,6 @@ struct basic_vector_evaluator
         conditional_t<_Program::singular, single_cell_evaluator, evaluator>;
 };
 
-template <typename _Program, std::size_t VectorSize>
-using evaluator = typename basic_vector_evaluator<_Program, VectorSize>::type;
+template <typename _Program, std::size_t ArraySize>
+using evaluator = typename basic_vector_evaluator<_Program, ArraySize>::type;
 } // namespace lucid::bve
