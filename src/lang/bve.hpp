@@ -7,6 +7,7 @@
 #include "lang.hpp"
 
 #include <utils/functional.hpp>
+#include <utils/tuple.hpp>
 
 #include <range/v3/range/operations.hpp>
 #include <range/v3/view/chunk_by.hpp>
@@ -72,35 +73,11 @@ class Memory
         Data&       m_data;
         std::size_t m_pos;
 
-        template <std::size_t Idx>
         constexpr void
-        copy_val(proxy_row rhs) noexcept
+        copy_values(proxy_row rhs) noexcept
         {
-            std::get<Idx>(m_data)[m_pos] = std::get<Idx>(rhs.m_data)[rhs.m_pos];
-        }
-
-        template <std::size_t... Idxs>
-        constexpr void
-        copy_values(proxy_row rhs, std::index_sequence<Idxs...>) noexcept
-        {
-            (..., copy_val<Idxs>(rhs));
-        }
-
-        template <std::size_t Idx>
-        constexpr static void
-        swap_val(proxy_row a, proxy_row b) noexcept
-        {
-            std::swap(std::get<Idx>(a.m_data)[a.m_pos],
-                      std::get<Idx>(b.m_data)[b.m_pos]);
-        }
-
-        template <std::size_t... Idxs>
-        constexpr static void
-        swap_values(proxy_row a,
-                    proxy_row b,
-                    std::index_sequence<Idxs...>) noexcept
-        {
-            (..., swap_val<Idxs>(a, b));
+            lucid::for_each([&](auto& c) noexcept { c[m_pos] = c[rhs.m_pos]; },
+                            m_data);
         }
 
       public:
@@ -124,7 +101,7 @@ class Memory
         constexpr proxy_row&
         operator=(const proxy_row& rhs) noexcept
         {
-            copy_values(rhs, typelist::indicies<RegNames>{});
+            copy_values(rhs);
             m_pos = rhs.m_pos;
 
             return *this;
@@ -133,7 +110,7 @@ class Memory
         constexpr proxy_row&
         operator=(proxy_row&& rhs) noexcept
         {
-            copy_values(rhs, typelist::indicies<RegNames>{});
+            copy_values(rhs);
             m_pos = rhs.m_pos;
 
             return *this;
@@ -190,7 +167,9 @@ class Memory
         friend void
         swap(proxy_row a, proxy_row b) noexcept
         {
-            swap_values(a, b, typelist::indicies<RegNames>{});
+            lucid::for_each([&](auto& c) noexcept
+                            { std::swap(c[a.m_pos], c[b.m_pos]); },
+                            a.m_data);
         }
     };
 

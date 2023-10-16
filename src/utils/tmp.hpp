@@ -561,7 +561,7 @@ inline constexpr std::size_t index = detail::index<0ul, T, List>::value;
 
 /// @brief std::index_sequence for @p List.
 template <typename List>
-using indicies = std::make_index_sequence<length<List>>;
+using indices = std::make_index_sequence<length<List>>;
 
 /// @brief Left-associative fold of a type_sequence @p List.
 template <template <typename, typename> typename F, typename Acc, typename List>
@@ -1106,7 +1106,7 @@ inline constexpr std::size_t index = detail::index<0ul, X, List>::value;
 
 /// @brief std::index_sequence for @p List.
 template <typename List>
-using indicies = std::make_index_sequence<length<List>>;
+using indices = std::make_index_sequence<length<List>>;
 
 /// @brief Make std::integer_sequence without @p X.
 template <auto X, typename List>
@@ -1230,7 +1230,7 @@ struct enumerate
 } // namespace detail
 
 /// @ingroup Typelist
-/// @brief Enumerate types in @p List with indicies of type @p Index
+/// @brief Enumerate types in @p List with indices of type @p Index
 /// @f$[(T_0, 0), (T_1, 1), ... (T_n, n)]@f$
 ///
 /// Type of the index member is std::integer_constant<Index, value>

@@ -138,7 +138,7 @@ template <typename... Ts>
 class steady_tuple
 {
     using Types = type_sequence<Ts...>;
-    using Idxs  = typelist::indicies<Types>;
+    using Idxs  = typelist::indices<Types>;
     using Data  = detail::steady_tuple_impl<Idxs, Ts...>;
 
     Data data;

@@ -49,7 +49,7 @@ visit_impl(const I i, Visitor&& visitor, Tuple&& tuple, Default&& def)
 
 template <std::size_t I, typename T, std::size_t N1, std::size_t N2>
 constexpr decltype(auto)
-array_cat_idx(const std::array<T, N1>& first, const std::array<T, N2>& second)
+array_cat_idx(const std::array<T, N1>& first, const std::array<T, N2>& second) noexcept
 {
     if constexpr(I < N1)
         return std::get<I>(first);
@@ -66,11 +66,23 @@ array_cat_impl(const std::array<T, N1>& first,
     return std::array<T, N1 + N2>{array_cat_idx<Is>(first, second)...};
 }
 
-template <typename F, typename Tuple, std::size_t... I>
+template <typename F, typename Tuple, typename... Args, std::size_t... I>
 constexpr void
-for_each_impl(F&& f, Tuple&& tuple, std::index_sequence<I...>)
+for_each_impl(
+    F&&     f,
+    Tuple&& tuple,
+    Args&&... args,
+    std::index_sequence<
+        I...>) noexcept(std::
+                            disjunction_v<std::is_nothrow_invocable<
+                                F,
+                                std::tuple_element_t<I, std::decay_t<Tuple>>,
+                                std::decay_t<Args>...>...>)
 {
-    (..., std::invoke(std::forward<F>(f), std::get<I>(tuple)));
+    (...,
+     std::invoke(std::forward<F>(f),
+                 std::get<I>(tuple),
+                 std::forward<Args>(args)...));
 }
 } // namespace detail
 
@@ -79,11 +91,11 @@ template <template <typename...> typename ResultTuple = std::tuple,
           typename UnaryOp,
           typename InputTuple>
 constexpr decltype(auto)
-map_tuple(UnaryOp&& op, InputTuple&& tuple) noexcept
+map_tuple(UnaryOp&& op, InputTuple&& tuple)
 {
     return std::apply(
-        [op = std::move(op)]<typename... Ts>(Ts&&... args) noexcept
-        -> ResultTuple<std::invoke_result_t<UnaryOp, Ts>...>
+        [op = std::move(op)]<typename... Ts>(
+            Ts&&... args) -> ResultTuple<std::invoke_result_t<UnaryOp, Ts>...>
         { return {std::invoke(std::move(op), std::forward<Ts>(args))...}; },
         std::forward<InputTuple>(tuple));
 }
@@ -91,11 +103,9 @@ map_tuple(UnaryOp&& op, InputTuple&& tuple) noexcept
 /// @brief Left-assotiative fold of a @p tuple.
 template <typename BinaryOp, typename T, typename... Ts>
 constexpr decltype(auto)
-fold_tuple(BinaryOp&&               op,
-           const T&                 init,
-           const std::tuple<Ts...>& tuple) noexcept
+fold_tuple(BinaryOp&& op, const T& init, const std::tuple<Ts...>& tuple)
 {
-    return std::apply([&](const Ts&... args) noexcept
+    return std::apply([&](const Ts&... args)
                       { return fold(op, init, args...); },
                       tuple);
 }
@@ -103,10 +113,9 @@ fold_tuple(BinaryOp&&               op,
 /// @brief Left-assotiative fold of a non-empty @p tuple.
 template <typename BinaryOp, typename Tuple>
 constexpr decltype(auto)
-fold_tuple(BinaryOp&& op, const Tuple& tuple) noexcept
+fold_tuple(BinaryOp&& op, const Tuple& tuple)
 {
-    return std::apply([&](const auto&... args) noexcept
-                      { return fold(op, args...); },
+    return std::apply([&](const auto&... args) { return fold(op, args...); },
                       tuple);
 }
 
@@ -124,13 +133,13 @@ enumerate(const std::tuple<Ts...>& tuple) noexcept
 /// @param visitor callable to invoke. Must be able to take @p tuple elements
 /// as arguments.
 /// @param tuple contains elements to invoke @p visitor on.
-/// @param def function that invoked without arguments if @p i is out of range.
+/// @param def function that invoked without arguments if @p i out of range.
 template <std::unsigned_integral I,
           typename Visitor,
           typename Tuple,
           typename Default>
 constexpr decltype(auto)
-visit(const I i, Visitor&& visitor, Tuple&& tuple, Default&& def) noexcept
+visit(const I i, Visitor&& visitor, Tuple&& tuple, Default&& def)
 {
     return detail::visit_impl<I, 0>(i,
                                     std::forward<Visitor>(visitor),
@@ -193,14 +202,20 @@ generate(G&& g, Args&&... args) noexcept
     return ret;
 }
 
+#define _FOR_EACH_EXP                \
+    detail::for_each_impl(           \
+        std::forward<F>(f),          \
+        std::forward<Tuple>(tuple),  \
+        std::forward<Args>(args)..., \
+        std::make_index_sequence<std::tuple_size_v<std::decay_t<Tuple>>>{})
+
 /// @brief Invoke @p F on every element of @p tuple.
-template <typename F, typename Tuple>
+template <typename F, typename Tuple, typename... Args>
 constexpr void
-for_each(F&& f, Tuple&& tuple)
+for_each(F&& f, Tuple&& tuple, Args&&... args) noexcept(noexcept(_FOR_EACH_EXP))
 {
-    detail::for_each_impl(
-        std::forward<F>(f),
-        std::forward<Tuple>(tuple),
-        std::make_index_sequence<std::tuple_size_v<std::decay_t<Tuple>>>{});
+    _FOR_EACH_EXP;
 }
+
+#undef _FOR_EACH_EXP
 } // namespace lucid
