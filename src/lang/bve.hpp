@@ -236,7 +236,7 @@ class Memory
         constexpr value_type
         operator*() const noexcept
         {
-            return proxy_row(*p_data, m_pos);
+            return {*p_data, m_pos};
         }
 
         constexpr _iterator&
@@ -272,7 +272,7 @@ class Memory
         constexpr _iterator
         operator+(difference_type rhs) const noexcept
         {
-            return _iterator(p_data, m_pos + rhs);
+            return {p_data, m_pos + rhs};
         }
 
         constexpr difference_type
@@ -291,7 +291,7 @@ class Memory
         constexpr _iterator
         operator-(difference_type rhs) const noexcept
         {
-            return _iterator(p_data, m_pos - rhs);
+            return {p_data, m_pos - rhs};
         }
 
         constexpr difference_type
@@ -310,7 +310,7 @@ class Memory
         constexpr value_type
         operator[](difference_type n) const noexcept
         {
-            return proxy_row(*p_data, m_pos + n);
+            return {*p_data, m_pos + n};
         }
 
         constexpr std::size_t
@@ -333,19 +333,19 @@ class Memory
     constexpr proxy_row
     operator[](const std::size_t n) noexcept
     {
-        return proxy_row(m_data, n);
+        return {m_data, n};
     }
 
     constexpr iterator
     begin() noexcept
     {
-        return iterator(&m_data, 0ul);
+        return {&m_data, 0ul};
     }
 
     constexpr iterator
     end() noexcept
     {
-        return iterator(&m_data, size());
+        return {&m_data, size()};
     }
 
     constexpr std::size_t
@@ -597,6 +597,7 @@ struct basic_vector_evaluator
                 std::sort(mem.begin(), mem.end());
 #else
                 // libstdc++ std::sort doesn't use swap internally
+                // so we sort it manually
                 for(std::size_t i = 1; i < mem.size(); ++i)
                     for(std::size_t j = i; j > 0 && mem[j - 1] > mem[j]; --j)
                         swap(mem[j], mem[j - 1]);
