@@ -11,7 +11,7 @@
 /// implementation.
 /// @param NAME used as variable name.
 /// @param FUNC will be called internally.
-#define MK_NAMED_FN_OBJ(NAME, FUNC)                   \
+#define DEF_NAMED_FN_OBJ(NAME, FUNC)                  \
     namespace fn                                      \
     {                                                 \
     struct NAME##_fn                                  \
@@ -32,8 +32,8 @@
     }                                                 \
     inline constexpr fn::NAME##_fn NAME{};
 
-/// @brief Same as MK_NAMED_FN_OBJ, but @p FUNC is also used as the name.
-#define MK_FN_OBJ(FUNC) MK_NAMED_FN_OBJ(FUNC, FUNC)
+/// @brief Same as DEF_NAMED_FN_OBJ, but @p FUNC is also used as the name.
+#define DEF_FN_OBJ(FUNC) DEF_NAMED_FN_OBJ(FUNC, FUNC)
 
 namespace lucid
 {

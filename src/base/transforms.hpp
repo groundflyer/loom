@@ -154,14 +154,14 @@ basis_matrix(const Vec3_<Container>& z) noexcept
 }
 } // namespace fn
 
-MK_FN_OBJ(make_normal)
-MK_FN_OBJ(apply_transform)
-MK_FN_OBJ(apply_transform_p)
-MK_FN_OBJ(apply_transform_n)
-MK_FN_OBJ(translate)
-MK_FN_OBJ(scale)
-MK_FN_OBJ(rotate)
-MK_FN_OBJ(look_at)
-MK_FN_OBJ(basis)
-MK_FN_OBJ(basis_matrix)
+DEF_FN_OBJ(make_normal)
+DEF_FN_OBJ(apply_transform)
+DEF_FN_OBJ(apply_transform_p)
+DEF_FN_OBJ(apply_transform_n)
+DEF_FN_OBJ(translate)
+DEF_FN_OBJ(scale)
+DEF_FN_OBJ(rotate)
+DEF_FN_OBJ(look_at)
+DEF_FN_OBJ(basis)
+DEF_FN_OBJ(basis_matrix)
 } // namespace lucid

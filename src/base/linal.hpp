@@ -22,7 +22,7 @@
 
 /// @brief Generate code for arithmetic binary operators of lucid::Vector and
 /// lucid::Matrix.
-#define MAKE_BINARY_OP(FUNC, OP)                                          \
+#define DEF_BINARY_OP(FUNC, OP)                                           \
     namespace fn                                                          \
     {                                                                     \
     struct FUNC##_fn                                                      \
@@ -102,7 +102,7 @@
     }
 
 /// @brief Generate code for unary operators of lucid::Vector and lucid::Matrix.
-#define MAKE_UNARY_OP(FUNC, OP)                                          \
+#define DEF_UNARY_OP(FUNC, OP)                                           \
     namespace fn                                                         \
     {                                                                    \
     struct FUNC##_fn                                                     \
@@ -242,10 +242,11 @@ namespace lucid
 /// @tparam T value type. Must be arithmetic.
 /// @tparam N dimensionality.
 /// @tparam Container std::array-like container that holds the data.
-template <Arithmetic  T,
+template <typename T,
           std::size_t N,
           template <typename, std::size_t>
           typename Container>
+    requires(std::is_arithmetic_v<T>)
 class Vector
 {
     using Data = Container<T, N>;
@@ -525,12 +526,12 @@ Vector(Container<T, N>&&) -> Vector<T, N, Container>;
 /// @tparam M number of rows.
 /// @tparam N number of columns.
 /// @tparam Container std::array-like container that used to store the data.
-template <Arithmetic  T,
+template <typename T,
           std::size_t M,
           std::size_t N,
           template <typename, std::size_t>
           typename Container>
-    requires(M > 1 && N > 1)
+    requires(M > 1 && N > 1 && std::is_arithmetic_v<T>)
 class Matrix
 {
     static constexpr std::size_t MxN = M * N;
@@ -1084,7 +1085,7 @@ cross_impl_ks(const Vector<T, N, Container1>& a,
               const Vector<T, N, Container2>& b,
               std::index_sequence<Ks...>) noexcept
 {
-    return (T{0} + ... + cross_impl_factor<I, J, Ks>(a, b));
+    return (... + cross_impl_factor<I, J, Ks>(a, b));
 }
 
 template <std::size_t I,
@@ -1100,8 +1101,7 @@ cross_impl_js(const Vector<T, N, Container1>& a,
               const Vector<T, N, Container2>& b,
               std::index_sequence<Js...>) noexcept
 {
-    return (T{0} + ... +
-            cross_impl_ks<I, Js>(a, b, std::make_index_sequence<N>{}));
+    return (... + cross_impl_ks<I, Js>(a, b, std::make_index_sequence<N>{}));
 }
 
 template <std::size_t... Is,
@@ -1180,7 +1180,7 @@ det_elem(const Matrix<T, M, M, Container>& m,
          std::index_sequence<Is...>) noexcept
 {
     constexpr auto _sgn = sgn(intlist::stdarray<Idxs>);
-    return _sgn * (T{1} * ... * m.template get<Is, intlist::at<Is, Idxs>>());
+    return _sgn * (... * m.template get<Is, intlist::at<Is, Idxs>>());
 }
 
 template <std::size_t... Ns,
@@ -1192,7 +1192,7 @@ constexpr T
 det_impl(const Matrix<T, M, M, Container>& m,
          std::index_sequence<Ns...>) noexcept
 {
-    return (T{0} + ... +
+    return (... +
             det_elem<intlist::nlperm<Ns, M>>(m, std::make_index_sequence<M>{}));
 }
 } // namespace detail
@@ -1663,10 +1663,10 @@ struct max_fn
     }
 };
 
-template <Integral Int>
+template <std::integral Int>
 struct downsample_fn
 {
-    template <Real R>
+    template <std::floating_point R>
     constexpr Int
     operator()(const R& value) const noexcept
     {
@@ -1675,8 +1675,8 @@ struct downsample_fn
         return static_cast<Int>(clamped);
     }
 
-    template <Real        R,
-              std::size_t N,
+    template <std::floating_point R,
+              std::size_t         N,
               template <typename, std::size_t>
               typename Container>
     constexpr Vector<Int, N, std::array>
@@ -1836,21 +1836,21 @@ inline constexpr fn::max_fn max;
 template <typename Int>
 inline constexpr fn::downsample_fn<Int> downsample;
 
-MK_FN_OBJ(dot)
-MK_FN_OBJ(cross)
-MK_FN_OBJ(length2)
-MK_FN_OBJ(length)
-MK_FN_OBJ(normalize)
-MK_FN_OBJ(distance)
-MK_FN_OBJ(sum)
-MK_FN_OBJ(product)
-MK_FN_OBJ(all)
-MK_FN_OBJ(any)
-MK_FN_OBJ(avg)
-MK_FN_OBJ(roll)
-MK_FN_OBJ(transpose)
-MK_FN_OBJ(det)
-MK_FN_OBJ(inverse)
+DEF_FN_OBJ(dot)
+DEF_FN_OBJ(cross)
+DEF_FN_OBJ(length2)
+DEF_FN_OBJ(length)
+DEF_FN_OBJ(normalize)
+DEF_FN_OBJ(distance)
+DEF_FN_OBJ(sum)
+DEF_FN_OBJ(product)
+DEF_FN_OBJ(all)
+DEF_FN_OBJ(any)
+DEF_FN_OBJ(avg)
+DEF_FN_OBJ(roll)
+DEF_FN_OBJ(transpose)
+DEF_FN_OBJ(det)
+DEF_FN_OBJ(inverse)
 
 template <typename T,
           std::size_t N,
@@ -1989,23 +1989,23 @@ operator*(const Matrix<T, M, N, Container>& m, const T& s) noexcept
     return ret;
 }
 
-MAKE_UNARY_OP(negate, operator-)
-MAKE_UNARY_OP(logical_not, operator!)
-MAKE_BINARY_OP(plus, operator+)
-MAKE_BINARY_OP(minus, operator-)
-MAKE_BINARY_OP(divides, operator/)
-MAKE_BINARY_OP(equal_to, operator==)
-MAKE_BINARY_OP(not_equal_to, operator!=)
-MAKE_BINARY_OP(greater, operator>)
-MAKE_BINARY_OP(less, operator<)
-MAKE_BINARY_OP(greater_equal, operator>=)
-MAKE_BINARY_OP(less_equal, operator<=)
+DEF_UNARY_OP(negate, operator-)
+DEF_UNARY_OP(logical_not, operator!)
+DEF_BINARY_OP(plus, operator+)
+DEF_BINARY_OP(minus, operator-)
+DEF_BINARY_OP(divides, operator/)
+DEF_BINARY_OP(equal_to, operator==)
+DEF_BINARY_OP(not_equal_to, operator!=)
+DEF_BINARY_OP(greater, operator>)
+DEF_BINARY_OP(less, operator<)
+DEF_BINARY_OP(greater_equal, operator>=)
+DEF_BINARY_OP(less_equal, operator<=)
 
 /// @}
 } // namespace lucid
 
-#undef MAKE_BINARY_OP
-#undef MAKE_UNARY_OP
+#undef DEF_BINARY_OP
+#undef DEF_UNARY_OP
 #undef VEC_NAMED_FN_OBJ
 #undef VEC_FN_OBJ
 #undef VEC_NAMED_FN_OBJ_SMATH
