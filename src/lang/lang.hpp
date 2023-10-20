@@ -53,7 +53,7 @@ struct Compute
 };
 
 template <typename Dst, typename Src>
-    requires(not_cp<Dst, Src>)
+    requires(not_cp<Dst, Src> && std::is_same_v<vartype<Dst>, vartype<Src>>)
 struct Copy
 {
     using dst = Dst;
@@ -249,6 +249,20 @@ struct access_wrapper<Union<Ts...>>
     operator()(const Union<Ts...>& un) const noexcept
     {
         return un.template ref<T>();
+    }
+
+    template <typename T, typename A>
+    constexpr std::span<T>
+    operator()(UnionVector<type_sequence<Ts...>, A>& uv) const noexcept
+    {
+        return uv.template view<T>();
+    }
+
+    template <typename T, typename A>
+    constexpr std::span<T>
+    operator()(const UnionVector<type_sequence<Ts...>, A>& uv) const noexcept
+    {
+        return uv.template view<T>();
     }
 };
 
