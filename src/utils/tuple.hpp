@@ -12,7 +12,6 @@
 
 namespace lucid
 {
-
 namespace detail
 {
 template <typename Tuple, std::size_t... Ids>
@@ -49,7 +48,8 @@ visit_impl(const I i, Visitor&& visitor, Tuple&& tuple, Default&& def)
 
 template <std::size_t I, typename T, std::size_t N1, std::size_t N2>
 constexpr decltype(auto)
-array_cat_idx(const std::array<T, N1>& first, const std::array<T, N2>& second) noexcept
+array_cat_idx(const std::array<T, N1>& first,
+              const std::array<T, N2>& second) noexcept
 {
     if constexpr(I < N1)
         return std::get<I>(first);
@@ -84,6 +84,42 @@ for_each_impl(
                  std::get<I>(tuple),
                  std::forward<Args>(args)...));
 }
+
+template <typename T>
+struct maybe_apply_helper
+{
+    static constexpr bool is_tuple = false;
+
+    template <typename F>
+    static constexpr bool is_nothrow = std::is_nothrow_invocable_v<F, T>;
+
+    template <typename F>
+    static constexpr bool is_invocable = std::is_invocable_v<F, T>;
+};
+
+template <typename T1, typename T2>
+struct maybe_apply_helper<std::pair<T1, T2>>
+{
+    static constexpr bool is_tuple = true;
+
+    template <typename F>
+    static constexpr bool is_nothrow = std::is_nothrow_invocable_v<F, T1, T2>;
+
+    template <typename F>
+    static constexpr bool is_invocable = std::is_invocable_v<F, T1, T2>;
+};
+
+template <typename... Ts>
+struct maybe_apply_helper<std::tuple<Ts...>>
+{
+    static constexpr bool is_tuple = true;
+
+    template <typename F>
+    static constexpr bool is_nothrow = std::is_nothrow_invocable_v<F, Ts...>;
+
+    template <typename F>
+    static constexpr bool is_invocable = std::is_invocable_v<F, Ts...>;
+};
 } // namespace detail
 
 // @brief Apply @p op to every element of @p tuple and return result as a tuple.
@@ -218,4 +254,18 @@ for_each(F&& f, Tuple&& tuple, Args&&... args) noexcept(noexcept(_FOR_EACH_EXP))
 }
 
 #undef _FOR_EACH_EXP
+
+/// @brief Invoke @p f with elements of @p mt as arguments if
+/// possible otherwise just pass @p mt directly to @p f.
+template <typename F, typename MaybeTuple>
+constexpr decltype(auto)
+maybe_apply(F&& f, MaybeTuple&& mt) noexcept(
+    detail::maybe_apply_helper<std::decay_t<MaybeTuple>>::is_nothrow)
+{
+    using helper = detail::maybe_apply_helper<std::decay_t<MaybeTuple>>;
+    if constexpr(helper::is_tuple && helper::template is_invocable<F>)
+        return std::apply(std::forward<F>(f), std::forward<MaybeTuple>(mt));
+    else
+        return std::invoke(std::forward<F>(f), std::forward<MaybeTuple>(mt));
+}
 } // namespace lucid

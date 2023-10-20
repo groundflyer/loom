@@ -123,36 +123,6 @@ struct fold_wrapper
             op(operand, rhs.operand));
     }
 };
-
-template <typename T>
-struct maybe_apply_helper
-{
-    static constexpr bool is_tuple = false;
-
-    template <typename F>
-    static constexpr bool is_invocable =
-        std::is_invocable_v<F, T> || std::is_nothrow_invocable_v<F, T>;
-};
-
-template <typename T1, typename T2>
-struct maybe_apply_helper<std::pair<T1, T2>>
-{
-    static constexpr bool is_tuple = true;
-
-    template <typename F>
-    static constexpr bool is_invocable = std::is_invocable_v<F, T1, T2> ||
-                                         std::is_nothrow_invocable_v<F, T1, T2>;
-};
-
-template <typename... Ts>
-struct maybe_apply_helper<std::tuple<Ts...>>
-{
-    static constexpr bool is_tuple = true;
-
-    template <typename F>
-    static constexpr bool is_invocable =
-        std::is_invocable_v<F, Ts...> || std::is_nothrow_invocable_v<F, Ts...>;
-};
 } // namespace detail
 
 namespace fn
@@ -275,18 +245,5 @@ select(Head&& head, Tail&&... tail) noexcept
         return head;
     else
         return select<I - 1ul>(tail...);
-}
-
-/// @brief Invoke @p f with @p arg treating @p arg as tuple of arguments if
-/// possible.
-template <typename F, typename Arg>
-constexpr decltype(auto)
-maybe_apply(F&& f, Arg&& arg)
-{
-    using helper = detail::maybe_apply_helper<std::decay_t<Arg>>;
-    if constexpr(helper::is_tuple && helper::template is_invocable<F>)
-        return std::apply(f, arg);
-    else
-        return std::invoke(f, arg);
 }
 } // namespace lucid
