@@ -8,6 +8,8 @@
 #include <type_traits>
 #include <utility>
 
+#include <static_math/cmath.h>
+
 #include "math.hpp"
 
 namespace lucid
@@ -725,13 +727,12 @@ for_each(F&& f, type_sequence<Ts...>, Args&&... args) noexcept(
     (..., f.template operator()<Ts>(std::forward<Args>(args)...));
 }
 
-/// @brief Invoke @p f with each class of @p list as template parameter
-/// and collect results in a @p Tuple if @p list consists of two or more
-/// elements.
+/// @brief Invoke @p f with each class of @p list as template parameter,
+/// and @p args as function parameters.
 ///
-/// @return @p Tuple of elements if there are >1 elements in @p list
+/// @return @p Tuple of elements if there are more than one elements in @p list
 /// otherwise singular value.
-template <template <typename...> typename Tuple,
+template <template <typename...> typename Tuple = std::tuple,
           typename F,
           typename... Ts,
           typename... Args>
@@ -751,7 +752,7 @@ maybe_collect(F&& f, type_sequence<Ts...> /*list*/, Args&&... args) noexcept(
 template <typename... Fs, typename... Args>
 constexpr void
 unroll(type_sequence<Fs...> /*list*/, Args&&... args) noexcept(
-    (...&& noexcept(std::invoke(Fs{}, std::forward<Args>(args)...))))
+    std::conjunction_v<std::is_nothrow_invocable<Fs, Args...>...>)
 {
     (..., std::invoke(Fs{}, std::forward<Args>(args)...));
 }
@@ -1209,6 +1210,13 @@ struct nlperm_impl
 /// of an index sequence of length @p L.
 template <std::size_t N, std::size_t L>
 using nlperm = typename nlperm_impl<N, L>::type;
+
+/// @brief First N numbers of power of two series.
+template <std::size_t N>
+using powerof2s =
+    map_f<decltype([](std::size_t i) constexpr noexcept -> std::size_t
+                   { return smath::pow(2, i); }),
+          std::make_index_sequence<N>>;
 /// @}
 } // namespace intlist
 

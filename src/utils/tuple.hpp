@@ -74,7 +74,7 @@ for_each_impl(
     Args&&... args,
     std::index_sequence<
         I...>) noexcept(std::
-                            disjunction_v<std::is_nothrow_invocable<
+                            conjunction_v<std::is_nothrow_invocable<
                                 F,
                                 std::tuple_element_t<I, std::decay_t<Tuple>>,
                                 std::decay_t<Args>...>...>)
