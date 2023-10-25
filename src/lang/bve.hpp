@@ -39,10 +39,7 @@ struct array_union<Union<Ts...>, Array>
 template <typename T, template <typename> typename Array>
 using array_union_t = typename array_union<T, Array>::type;
 
-template <typename RegTypes,
-          typename RegNames,
-          std::size_t Size,
-          template <typename...> typename Container = std::tuple>
+template <typename RegTypes, typename RegNames, std::size_t Size>
 class Memory
 {
     template <typename T>
@@ -51,20 +48,9 @@ class Memory
     template <typename T>
     using f = array_union_t<T, Array>;
 
-    using VecTypes = typelist::map<f, RegTypes>;
+    using helper = MemoryHelper<RegTypes, RegNames, std::tuple, f, f>;
 
-    using Data = typelist::to<VecTypes, Container>;
-
-    /// @brief Variable name to column dictionary.
-    using vec_table = typelist::zip<RegNames, VecTypes>;
-
-    /// @brief Type of a column/array.
-    template <typename Name>
-    using vec_type = typelist::lookup<Name, vec_table>;
-
-    /// @brief Index of a column/array.
-    template <typename Name>
-    static constexpr std::size_t var_index = typelist::index<Name, RegNames>;
+    using Data = helper::data;
 
     Data m_data;
 
@@ -129,39 +115,23 @@ class Memory
         }
 
         template <typename Var>
-        constexpr std::add_lvalue_reference_t<typename Var::type>
+        constexpr std::add_lvalue_reference_t<vartype<Var>>
         get() const noexcept
         {
-            using var_name = typename Var::name;
-            constexpr access_wrapper<typelist::lookup<var_name, vec_table>> op;
+            return helper::template get<Var>(m_data)[m_pos];
+            // using var_name = typename Var::name;
+            // constexpr access_wrapper<typelist::lookup<var_name, vec_table>>
+            // op;
 
-            return op.template operator()<vec_type<var_name>>(
-                std::get<var_index<var_name>>(m_data))[m_pos];
+            // return op.template operator()<vec_type<var_name>>(
+            //     std::get<var_index<var_name>>(m_data))[m_pos];
         }
 
         /// @brief Access cell pointer.
-        constexpr std::add_lvalue_reference_t<typename _CP::type>
+        constexpr std::add_lvalue_reference_t<vartype<_CP>>
         cp() const noexcept
         {
             return get<_CP>();
-        }
-
-        void
-        print() const noexcept
-        {
-            typelist::for_each(
-                [&]<typename name>() noexcept
-                {
-                    constexpr access_wrapper<typelist::lookup<name, vec_table>>
-                                   op;
-                    decltype(auto) val = op.template operator()<vec_type<name>>(
-                        std::get<var_index<name>>(m_data))[m_pos];
-                    const std::string_view varname(intlist::array<name>,
-                                                   intlist::length<name>);
-                    fmt::print("{} = {}; ", varname, val);
-                },
-                RegNames{});
-            fmt::print("\n");
         }
 
         friend void
@@ -356,21 +326,17 @@ class Memory
 
     /// @brief Access a column.
     template <typename Var>
-    constexpr Array<typename Var::type>&
-    column() noexcept
+    constexpr Array<vartype<Var>>&
+    get() noexcept
     {
-        using var_name = typename Var::name;
-        constexpr access_wrapper<typelist::lookup<var_name, vec_table>> op{};
-
-        return op.template operator()<vec_type<var_name>>(
-            std::get<var_index<var_name>>(m_data));
+        return helper::template get<Var>(m_data);
     }
 
     /// @brief Access cell pointers column.
-    constexpr Array<typename _CP::type>&
+    constexpr Array<vartype<_CP>>&
     cp() noexcept
     {
-        return column<_CP>();
+        return get<_CP>();
     }
 
     constexpr friend iterator
@@ -412,8 +378,8 @@ struct compile_cell
         operator()(_Memory&& mem) const noexcept
         {
             if constexpr(is_mem<_Memory>::value)
-                std::ranges::copy(mem.template column<Src>(),
-                                  mem.template column<Dst>().begin());
+                std::ranges::copy(mem.template get<Src>(),
+                                  mem.template get<Dst>().begin());
             else
                 std::ranges::for_each(std::forward<_Memory>(mem),
                                       [](auto row) constexpr noexcept {
@@ -500,7 +466,7 @@ struct input_setter
         typelist::for_each(
             [&mem]<typename Var, typename T>(const T& value) constexpr noexcept
             {
-                std::ranges::range auto& column = mem.template column<Var>();
+                std::ranges::range auto& column = mem.template get<Var>();
                 if constexpr(std::ranges::range<T>)
                     std::ranges::copy(value, column.begin());
                 else
@@ -520,7 +486,7 @@ struct output_getter
     {
         return typelist::maybe_collect<std::tuple>(
             [&mem]<typename Var>() constexpr noexcept
-            { return std::views::all(mem.template column<Var>()); },
+            { return std::views::all(mem.template get<Var>()); },
             OutputVars{});
     }
 };

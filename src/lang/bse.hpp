@@ -8,41 +8,26 @@
 
 namespace lucid::bse
 {
-template <typename RegTypes,
-          typename RegNames,
-          template <typename...> typename Container = std::tuple>
+template <typename RegTypes, typename RegNames>
 class Memory
 {
-    using Data = typelist::to<RegTypes, Container>;
+    using helper = MemoryHelper<RegTypes, RegNames>;
+
+    using Data = helper::data;
 
     Data m_data;
-
-    /// @brief Variable name to type dictionary.
-    using table = typelist::zip<RegNames, RegTypes>;
-
-    /// @brief Type of a variable stored in the memory.
-    template <typename Name>
-    using var_type = typelist::lookup<Name, table>;
-
-    /// @brief Index of a variable.
-    template <typename Name>
-    static constexpr std::size_t var_index = typelist::index<Name, RegNames>;
 
   public:
     /// @brief Access a variable.
     template <typename Var>
-    std::add_lvalue_reference_t<typename Var::type>
+    std::add_lvalue_reference_t<vartype<Var>>
     get() noexcept
     {
-        using var_name = typename Var::name;
-        constexpr access_wrapper<typelist::lookup<var_name, table>> op{};
-
-        return op.template operator()<var_type<var_name>>(
-            std::get<var_index<var_name>>(m_data));
+        return helper::template get<Var>(m_data);
     }
 
     /// @brief Access cell pointer.
-    std::add_lvalue_reference_t<typename _CP::type>
+    std::add_lvalue_reference_t<vartype<_CP>>
     cp() noexcept
     {
         return get<_CP>();

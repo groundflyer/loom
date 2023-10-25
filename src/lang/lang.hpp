@@ -266,6 +266,37 @@ struct access_wrapper<Union<Ts...>>
     }
 };
 
+template <typename RegTypes,
+          typename RegNames,
+          template <typename...> typename Container = std::tuple,
+          template <typename> typename RegProj      = identity_t,
+          template <typename> typename AccProj      = identity_t>
+struct MemoryHelper
+{
+    using types = typelist::map<RegProj, RegTypes>;
+    using table = typelist::zip<RegNames, types>;
+    using data  = typelist::to<types, Container>;
+
+    template <typename Name>
+    static constexpr std::size_t regindex = typelist::index<Name, RegNames>;
+
+    template <typename Name>
+    using regtype = typelist::lookup<Name, table>;
+
+    template <typename Var>
+    using access = access_wrapper<typelist::lookup<varname<Var>, table>>;
+
+    template <typename Var>
+    static constexpr decltype(auto)
+    get(data& _data) noexcept
+    {
+        constexpr access<Var> op{};
+
+        return op.template operator()<AccProj<vartype<Var>>>(
+            std::get<regindex<varname<Var>>>(_data));
+    }
+};
+
 template <typename _Variable>
 consteval std::optional<vartype<_Variable>>
 parse_literal() noexcept
