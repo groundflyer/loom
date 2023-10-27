@@ -83,7 +83,7 @@ struct is_label<Label<s>>
 
 template <typename Var, typename Labels>
     requires(std::is_same_v<vartype<Var>, index_t> &&
-             typelist::all<is_label, Labels>)
+             typelist::all<is_label, Labels> && typelist::length<Labels> >= 2)
 struct ParmJump
 {
     using var    = Var;
@@ -296,6 +296,28 @@ struct MemoryHelper
             std::get<regindex<varname<Var>>>(_data));
     }
 };
+
+template <typename _ParmJump, typename LabelMap>
+struct parm_jump_helper;
+
+template <typename Var, typename Labels, typename LabelMap>
+struct parm_jump_helper<ParmJump<Var, Labels>, LabelMap>
+{
+    template <typename L>
+        requires(typelist::elem<L, typelist::map<fst_t, LabelMap>>)
+    using jump_idx = typelist::lookup<L, LabelMap>;
+
+    using jump_idxs =
+        typelist::to_integer_sequence<typelist::map<jump_idx, Labels>>;
+
+    static constexpr auto table = intlist::array<jump_idxs>;
+};
+
+template <typename _ParmJump, typename LabelMap>
+using pjmp_idxs = typename parm_jump_helper<_ParmJump, LabelMap>::jump_idxs;
+
+template <typename _ParmJump, typename LabelMap>
+constexpr inline auto pjmp_arr = parm_jump_helper<_ParmJump, LabelMap>::table;
 
 template <typename _Variable>
 consteval std::optional<vartype<_Variable>>

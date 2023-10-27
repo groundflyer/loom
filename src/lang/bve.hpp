@@ -427,13 +427,7 @@ struct compile_cell
     template <typename Var, typename Labels>
     struct eval_instruction<ParmJump<Var, Labels>>
     {
-        template <typename L>
-        using jump_idx = typelist::lookup<L, LabelMap>;
-
-        using jump_idxs =
-            typelist::to_integer_sequence<typelist::map<jump_idx, Labels>>;
-
-        static constexpr auto table = intlist::array<jump_idxs>;
+        static constexpr auto table = pjmp_arr<ParmJump<Var, Labels>, LabelMap>;
 
         template <typename _Memory>
         constexpr void

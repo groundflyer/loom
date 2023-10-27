@@ -715,7 +715,7 @@ using from = typename detail::from<Source>::type;
 template <typename Source, template <typename...> typename Target>
 using to = typename detail::to<Source, Target>::type;
 
-/// @brief Convert type_sequence of std::integer_sequence into a single
+/// @brief Convert type_sequence of std::integer_constant into a
 /// std::integer_sequence.
 ///
 /// The value type of the first element is used as the value type for the
