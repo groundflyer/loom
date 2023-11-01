@@ -512,6 +512,15 @@ struct to_integer_seq<type_sequence<IntConst, ICs...>>
                                        IntConst::value,
                                        ICs::value...>;
 };
+
+template <typename List>
+struct max_sizeof;
+
+template <typename... Ts>
+struct max_sizeof<type_sequence<Ts...>>
+{
+    static constexpr std::size_t value = std::max({sizeof(Ts)...});
+};
 } // namespace detail
 
 /// @defgroup Typelist Typelist
@@ -731,6 +740,10 @@ for_each(F&& f, type_sequence<Ts...>, Args&&... args) noexcept(
 {
     (..., f.template operator()<Ts>(std::forward<Args>(args)...));
 }
+
+/// @brief Size of the biggest type in the list.
+template <typename List>
+constexpr inline std::size_t max_sizeof = detail::max_sizeof<List>::value;
 
 /// @brief Invoke @p f with each class of @p list as template parameter,
 /// and @p args as function parameters.
@@ -1217,11 +1230,10 @@ template <std::size_t N, std::size_t L>
 using nlperm = typename nlperm_impl<N, L>::type;
 
 /// @brief First N numbers of power of two series.
-template <std::size_t N>
-using powerof2s =
-    map_f<decltype([](std::size_t i) constexpr noexcept -> std::size_t
-                   { return smath::pow(2, i); }),
-          std::make_index_sequence<N>>;
+template <auto N>
+using powerof2s = map_f<decltype([](auto i) constexpr noexcept -> decltype(N)
+                                 { return smath::pow(2u, i); }),
+                        std::make_index_sequence<N>>;
 /// @}
 } // namespace intlist
 
