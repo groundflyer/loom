@@ -461,7 +461,7 @@ struct input_setter
             [&mem]<typename Var, typename T>(const T& value) constexpr noexcept
             {
                 std::ranges::range auto& column = mem.template get<Var>();
-                if constexpr(std::ranges::range<T>)
+                if constexpr(std::ranges::input_range<T>)
                     std::ranges::copy(value, column.begin());
                 else
                     std::ranges::fill(column, value);
