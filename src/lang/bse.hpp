@@ -38,58 +38,9 @@ template <typename Cell, typename LabelMap>
 struct compile_cell
 {
     template <typename Command>
-    struct eval_instruction;
+    using eval = simple_eval<LabelMap>::template eval<Command>;
 
-    template <typename Dst, typename Src>
-    struct eval_instruction<Copy<Dst, Src>>
-    {
-        template <typename _Memory>
-        constexpr void
-        operator()(_Memory& mem) const noexcept
-        {
-            mem.template get<Dst>() = get_value<Src>(mem);
-        }
-    };
-
-    template <typename Dst, typename Op, typename... Args>
-    struct eval_instruction<Compute<Dst, Op, Args...>>
-    {
-        template <typename _Memory>
-        constexpr void
-        operator()(_Memory& mem) const noexcept
-        {
-            mem.template get<Dst>() =
-                std::invoke(Op{}, get_value<Args>(mem)...);
-        }
-    };
-
-    template <typename Target>
-    struct eval_instruction<Jump<Target>>
-    {
-        using constant = typename typelist::lookup<Target, LabelMap>;
-
-        template <typename _Memory>
-        constexpr void
-        operator()(_Memory& memory) const noexcept
-        {
-            memory.cp() = std::invoke(constant{});
-        }
-    };
-
-    template <typename Var, typename Labels>
-    struct eval_instruction<ParmJump<Var, Labels>>
-    {
-        static constexpr auto table = pjmp_arr<ParmJump<Var, Labels>, LabelMap>;
-
-        template <typename _Memory>
-        constexpr void
-        operator()(_Memory& memory) const noexcept
-        {
-            memory.cp() = table[memory.template get<Var>()];
-        }
-    };
-
-    using instructions = typelist::map<eval_instruction, Cell>;
+    using instructions = typelist::map<eval, Cell>;
 
     template <typename _Memory>
     constexpr void

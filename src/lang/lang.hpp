@@ -319,6 +319,63 @@ using pjmp_idxs = typename parm_jump_helper<_ParmJump, LabelMap>::jump_idxs;
 template <typename _ParmJump, typename LabelMap>
 constexpr inline auto pjmp_arr = parm_jump_helper<_ParmJump, LabelMap>::table;
 
+template <typename LabelMap>
+struct simple_eval
+{
+    template <typename Command>
+    struct eval;
+
+    template <typename Dst, typename Src>
+    struct eval<Copy<Dst, Src>>
+    {
+        template <typename _Memory>
+        constexpr void
+        operator()(_Memory& mem) const noexcept
+        {
+            mem.template get<Dst>() = get_value<Src>(mem);
+        }
+    };
+
+    template <typename Dst, typename Op, typename... Args>
+    struct eval<Compute<Dst, Op, Args...>>
+    {
+        template <typename _Memory>
+        constexpr void
+        operator()(_Memory& mem) const noexcept
+        {
+            mem.template get<Dst>() =
+                std::invoke(Op{}, get_value<Args>(mem)...);
+        }
+    };
+
+    template <typename Target>
+    struct eval<Jump<Target>>
+    {
+        using constant = typename typelist::lookup<Target, LabelMap>;
+        static constexpr index_t value = constant::value;
+
+        template <typename _Memory>
+        constexpr void
+        operator()(_Memory& memory) const noexcept
+        {
+            memory.cp() = value;
+        }
+    };
+
+    template <typename Var, typename Labels>
+    struct eval<ParmJump<Var, Labels>>
+    {
+        static constexpr auto table = pjmp_arr<ParmJump<Var, Labels>, LabelMap>;
+
+        template <typename _Memory>
+        constexpr void
+        operator()(_Memory& memory) const noexcept
+        {
+            memory.cp() = table[memory.template get<Var>()];
+        }
+    };
+};
+
 template <typename _Variable>
 consteval std::optional<vartype<_Variable>>
 parse_literal() noexcept
