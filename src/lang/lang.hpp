@@ -43,7 +43,7 @@ template <typename... _Vars>
 inline constexpr bool not_cp =
     !(std::conjunction_v<std::is_same<varname<_CP>, varname<_Vars>>...>);
 
-template <typename Dst, typename Op, typename... Args>
+template <typename Op, typename Dst, typename... Args>
     requires(not_cp<Dst, Args...>)
 struct Compute
 {
@@ -145,10 +145,10 @@ struct is_cell
 template <typename T>
 struct get_storing_var;
 
-template <typename Variable, typename... Ts>
-struct get_storing_var<Compute<Variable, Ts...>>
+template <typename Op, typename Dst, typename... Ts>
+struct get_storing_var<Compute<Op, Dst, Ts...>>
 {
-    using type = Variable;
+    using type = Dst;
 };
 
 template <typename Variable, typename Src>
@@ -319,61 +319,74 @@ using pjmp_idxs = typename parm_jump_helper<_ParmJump, LabelMap>::jump_idxs;
 template <typename _ParmJump, typename LabelMap>
 constexpr inline auto pjmp_arr = parm_jump_helper<_ParmJump, LabelMap>::table;
 
-template <typename LabelMap>
-struct simple_eval
+template <typename Command, typename LabelMap>
+struct standard_eval;
+
+template <typename Dst, typename Src, typename LabelMap>
+struct standard_eval<Copy<Dst, Src>, LabelMap>
+{
+    template <typename _Memory>
+    constexpr void
+    operator()(_Memory& mem) const noexcept
+    {
+        mem.template get<Dst>() = get_value<Src>(mem);
+    }
+};
+
+template <typename Dst, typename Op, typename... Args, typename LabelMap>
+struct standard_eval<Compute<Op, Dst, Args...>, LabelMap>
+{
+    template <typename _Memory>
+    constexpr void
+    operator()(_Memory& mem) const noexcept
+    {
+        mem.template get<Dst>() = std::invoke(Op{}, get_value<Args>(mem)...);
+    }
+};
+
+template <typename Target, typename LabelMap>
+struct standard_eval<Jump<Target>, LabelMap>
+{
+    using constant = typename typelist::lookup<Target, LabelMap>;
+    static constexpr index_t value = constant::value;
+
+    template <typename _Memory>
+    constexpr void
+    operator()(_Memory& memory) const noexcept
+    {
+        memory.cp() = value;
+    }
+};
+
+template <typename Var, typename Labels, typename LabelMap>
+struct standard_eval<ParmJump<Var, Labels>, LabelMap>
+{
+    static constexpr auto table = pjmp_arr<ParmJump<Var, Labels>, LabelMap>;
+
+    template <typename _Memory>
+    constexpr void
+    operator()(_Memory& memory) const noexcept
+    {
+        memory.cp() = table[memory.template get<Var>()];
+    }
+};
+
+template <typename Cell,
+          typename LabelMap,
+          template <typename, typename> typename Eval = standard_eval>
+struct standard_compiler
 {
     template <typename Command>
-    struct eval;
+    using eval = Eval<Command, LabelMap>;
 
-    template <typename Dst, typename Src>
-    struct eval<Copy<Dst, Src>>
+    using instructions = typelist::map<eval, Cell>;
+
+    template <typename _Memory>
+    constexpr void
+    operator()(_Memory&& memory) const noexcept
     {
-        template <typename _Memory>
-        constexpr void
-        operator()(_Memory& mem) const noexcept
-        {
-            mem.template get<Dst>() = get_value<Src>(mem);
-        }
-    };
-
-    template <typename Dst, typename Op, typename... Args>
-    struct eval<Compute<Dst, Op, Args...>>
-    {
-        template <typename _Memory>
-        constexpr void
-        operator()(_Memory& mem) const noexcept
-        {
-            mem.template get<Dst>() =
-                std::invoke(Op{}, get_value<Args>(mem)...);
-        }
-    };
-
-    template <typename Target>
-    struct eval<Jump<Target>>
-    {
-        using constant = typename typelist::lookup<Target, LabelMap>;
-        static constexpr index_t value = constant::value;
-
-        template <typename _Memory>
-        constexpr void
-        operator()(_Memory& memory) const noexcept
-        {
-            memory.cp() = value;
-        }
-    };
-
-    template <typename Var, typename Labels>
-    struct eval<ParmJump<Var, Labels>>
-    {
-        static constexpr auto table = pjmp_arr<ParmJump<Var, Labels>, LabelMap>;
-
-        template <typename _Memory>
-        constexpr void
-        operator()(_Memory& memory) const noexcept
-        {
-            memory.cp() = table[memory.template get<Var>()];
-        }
-    };
+        typelist::unroll(instructions{}, std::forward<_Memory>(memory));
+    }
 };
 
 template <typename _Variable>
@@ -544,17 +557,17 @@ class Program
     >>
 
 #define BINOP(OP, TYPE, DST, A, B) \
-    Compute<Variable<TYPE, #DST>,  \
-            OP<TYPE>,              \
+    Compute<OP<TYPE>,              \
+            Variable<TYPE, #DST>,  \
             Variable<TYPE, #A>,    \
             Variable<TYPE, #B>>
 
 #define UNOP(OP, TYPE, DST, VAR) \
-    Compute<Variable<TYPE, #DST>, OP<TYPE>, Variable<TYPE, #VAR>>
+    Compute<OP<TYPE>, Variable<TYPE, #DST>, Variable<TYPE, #VAR>>
 
 #define CMP(OP, TYPE, DST, A, B)     \
-    Compute<Variable<index_t, #DST>, \
-            OP<TYPE>,                \
+    Compute<OP<TYPE>,                \
+            Variable<index_t, #DST>, \
             Variable<TYPE, #A>,      \
             Variable<TYPE, #B>>
 

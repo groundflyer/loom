@@ -34,22 +34,6 @@ class Memory
     }
 };
 
-template <typename Cell, typename LabelMap>
-struct compile_cell
-{
-    template <typename Command>
-    using eval = simple_eval<LabelMap>::template eval<Command>;
-
-    using instructions = typelist::map<eval, Cell>;
-
-    template <typename _Memory>
-    constexpr void
-    operator()(_Memory& memory) const noexcept
-    {
-        typelist::unroll(instructions{}, memory);
-    }
-};
-
 template <typename InputVars>
 struct input_setter
 {
@@ -88,7 +72,7 @@ class basic_scalar_evaluator
     using reg_types = typename _Program::reg_types;
 
     template <typename C>
-    using compile_cell = compile_cell<C, labelmap>;
+    using compile_cell = standard_compiler<C, labelmap>;
 
     using compiled_cells = typelist::map<compile_cell, cells>;
 

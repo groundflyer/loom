@@ -364,89 +364,75 @@ struct is_mem<Memory<Ts...>>
     static constexpr bool value = true;
 };
 
-template <typename Cell, typename LabelMap>
-struct compile_cell
+template <typename Command, typename LabelMap>
+struct array_eval;
+
+template <typename Dst, typename Src, typename LabelMap>
+struct array_eval<Copy<Dst, Src>, LabelMap>
 {
-    template <typename Command>
-    struct eval_instruction;
-
-    template <typename Dst, typename Src>
-    struct eval_instruction<Copy<Dst, Src>>
+    template <typename _Memory>
+    constexpr void
+    operator()(_Memory&& mem) const noexcept
     {
-        template <typename _Memory>
-        constexpr void
-        operator()(_Memory&& mem) const noexcept
-        {
-            if constexpr(is_mem<_Memory>::value)
-                std::ranges::copy(mem.template get<Src>(),
-                                  mem.template get<Dst>().begin());
-            else
-                std::ranges::for_each(std::forward<_Memory>(mem),
-                                      [](auto row) constexpr noexcept {
-                                          row.template get<Dst>() =
-                                              get_value<Src>(row);
-                                      });
-        }
-    };
-
-    template <typename Dst, typename Op, typename... Args>
-    struct eval_instruction<Compute<Dst, Op, Args...>>
-    {
-        template <typename _Memory>
-        constexpr void
-        operator()(_Memory&& mem) const noexcept
-        {
+        if constexpr(is_mem<_Memory>::value)
+            std::ranges::copy(mem.template get<Src>(),
+                              mem.template get<Dst>().begin());
+        else
             std::ranges::for_each(std::forward<_Memory>(mem),
                                   [](auto row) constexpr noexcept {
                                       row.template get<Dst>() =
-                                          std::invoke(Op{},
-                                                      get_value<Args>(row)...);
+                                          get_value<Src>(row);
                                   });
-        }
-    };
+    }
+};
 
-    template <typename Target>
-    struct eval_instruction<Jump<Target>>
+template <typename Op, typename Dst, typename... Args, typename LabelMap>
+struct array_eval<Compute<Op, Dst, Args...>, LabelMap>
+{
+    template <typename _Memory>
+    constexpr void
+    operator()(_Memory&& mem) const noexcept
     {
-        using constant = typename typelist::lookup<Target, LabelMap>;
-        static constexpr constant f{};
+        std::ranges::for_each(std::forward<_Memory>(mem),
+                              [](auto row) constexpr noexcept {
+                                  row.template get<Dst>() =
+                                      std::invoke(Op{},
+                                                  get_value<Args>(row)...);
+                              });
+    }
+};
 
-        template <typename _Memory>
-        constexpr void
-        operator()(_Memory&& mem) const noexcept
-        {
-            if constexpr(is_mem<_Memory>::value)
-                std::ranges::fill(mem.cp(), std::invoke(f));
-            else
-                std::ranges::for_each(std::forward<_Memory>(mem),
-                                      [](auto row) constexpr noexcept
-                                      { row.cp() = std::invoke(f); });
-        }
-    };
-
-    template <typename Var, typename Labels>
-    struct eval_instruction<ParmJump<Var, Labels>>
-    {
-        static constexpr auto table = pjmp_arr<ParmJump<Var, Labels>, LabelMap>;
-
-        template <typename _Memory>
-        constexpr void
-        operator()(_Memory&& mem) const noexcept
-        {
-            std::ranges::for_each(std::forward<_Memory>(mem),
-                                  [](auto row) noexcept {
-                                      row.cp() = table[row.template get<Var>()];
-                                  });
-        }
-    };
-
-    using instructions = typelist::map<eval_instruction, Cell>;
+template <typename Target, typename LabelMap>
+struct array_eval<Jump<Target>, LabelMap>
+{
+    using constant = typename typelist::lookup<Target, LabelMap>;
+    static constexpr constant f{};
 
     template <typename _Memory>
     constexpr void
-    operator()(_Memory& memory) const noexcept
+    operator()(_Memory&& mem) const noexcept
     {
-        typelist::unroll(instructions{}, memory);
+        if constexpr(is_mem<_Memory>::value)
+            std::ranges::fill(mem.cp(), std::invoke(f));
+        else
+            std::ranges::for_each(std::forward<_Memory>(mem),
+                                  [](auto row) constexpr noexcept
+                                  { row.cp() = std::invoke(f); });
+    }
+};
+
+template <typename Var, typename Labels, typename LabelMap>
+struct array_eval<ParmJump<Var, Labels>, LabelMap>
+{
+    static constexpr auto table = pjmp_arr<ParmJump<Var, Labels>, LabelMap>;
+
+    template <typename _Memory>
+    constexpr void
+    operator()(_Memory&& mem) const noexcept
+    {
+        std::ranges::for_each(std::forward<_Memory>(mem),
+                              [](auto row) noexcept
+                              { row.cp() = table[row.template get<Var>()]; });
     }
 };
 
@@ -495,7 +481,7 @@ struct basic_vector_evaluator
     using reg_types = typename _Program::reg_types;
 
     template <typename C>
-    using compile_cell = compile_cell<C, labelmap>;
+    using compile_cell = standard_compiler<C, labelmap, array_eval>;
 
     using compiled_cells = typelist::map<compile_cell, cells>;
 
