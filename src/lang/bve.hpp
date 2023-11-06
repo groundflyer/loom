@@ -119,12 +119,6 @@ class Memory
         get() const noexcept
         {
             return helper::template get<Var>(m_data)[m_pos];
-            // using var_name = typename Var::name;
-            // constexpr access_wrapper<typelist::lookup<var_name, vec_table>>
-            // op;
-
-            // return op.template operator()<vec_type<var_name>>(
-            //     std::get<var_index<var_name>>(m_data))[m_pos];
         }
 
         /// @brief Access cell pointer.
@@ -446,7 +440,8 @@ struct input_setter
         typelist::for_each(
             [&mem]<typename Var, typename T>(const T& value) constexpr noexcept
             {
-                std::ranges::range auto& column = mem.template get<Var>();
+                std::ranges::range decltype(auto) column =
+                    mem.template get<Var>();
                 if constexpr(std::ranges::input_range<T>)
                     std::ranges::copy(value, column.begin());
                 else

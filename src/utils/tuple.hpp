@@ -484,7 +484,8 @@ for_each(F&& f, Tuple&& tuple, Args&&... args) noexcept(noexcept(_FOR_EACH_EXP))
 template <typename F, typename MaybeTuple>
 constexpr decltype(auto)
 maybe_apply(F&& f, MaybeTuple&& mt) noexcept(
-    detail::maybe_apply_helper<std::decay_t<MaybeTuple>>::is_nothrow)
+    detail::maybe_apply_helper<std::decay_t<MaybeTuple>>::template is_nothrow<
+        F>)
 {
     using helper = detail::maybe_apply_helper<std::decay_t<MaybeTuple>>;
     if constexpr(helper::is_tuple && helper::template is_invocable<F>)

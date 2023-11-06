@@ -4,6 +4,7 @@
 #include <lang/bse.hpp>
 #include <lang/bve.hpp>
 #include <lang/lang.hpp>
+#include <lang/simd.hpp>
 
 #include <fmt/core.h>
 #include <fmt/ranges.h>
@@ -101,6 +102,15 @@ int main(/*int argc, char* argv[]*/)
     ret += !std::ranges::equal(vfac_out, vfac_chk);
     ok("fac bve");
     fmt::print("vfac_out = {}\n", vfac_out);
+
+    using incf = increment<float>;
+    using simd_incf_t =
+        simd::simd_evaluator<incf::program>::single_cell_evaluator;
+    simd_incf_t simd_incf_eval{};
+    auto        simd_ret = simd_incf_eval(1024, -1.f);
+    ret += !std::ranges::all_of(simd_ret,
+                                [](const auto i) noexcept { return i == 0.f; });
+    ok("simd incf");
 
     return ret;
 }
