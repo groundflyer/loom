@@ -39,8 +39,9 @@ static_assert(
 static_assert(!has_duplicates<testlist1>);
 static_assert(has_duplicates<testlist2>);
 static_assert(is_same_v<testlist1, nub<testlist3>>);
-static_assert(
-    is_same_v<powerof2s<5u>, std::integer_sequence<unsigned, 1, 2, 4, 8, 16>>);
+constexpr inline unsigned five = 5u;
+static_assert(is_same_v<powerof2s<five>,
+                        std::integer_sequence<unsigned, 1, 2, 4, 8, 16>>);
 
 using lcnt = lehmer_code<463>;
 using lcnv = index_sequence<3, 4, 1, 0, 1, 0>;

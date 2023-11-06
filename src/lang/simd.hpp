@@ -8,6 +8,7 @@
 #include "lang.hpp"
 
 #include <utils/debug.hpp>
+#include <utils/tmp.hpp>
 
 #include <cstdlib>
 #include <memory>
@@ -104,6 +105,255 @@ template <typename T,
           typename Allocator>
 using vector_union_t = typename vector_union<T, Vector, Allocator>::type;
 
+template <typename Data, typename Helper>
+class _proxy_row
+{
+    Data&   m_data;
+    fsize_t m_pos;
+
+    void
+    copy_values(_proxy_row rhs) noexcept
+    {
+        over(m_data, [&](auto& c) noexcept { c[m_pos] = c[rhs.m_pos]; });
+    }
+
+  public:
+    _proxy_row() = delete;
+
+    _proxy_row(const _proxy_row& other) noexcept :
+        m_data(other.m_data), m_pos(other.m_pos)
+    {
+    }
+
+    _proxy_row(_proxy_row&& other) noexcept :
+        m_data(other.m_data), m_pos(other.m_pos)
+    {
+    }
+
+    _proxy_row(Data& data, const fsize_t pos) noexcept :
+        m_data(data), m_pos(pos)
+    {
+    }
+
+    _proxy_row&
+    operator=(const _proxy_row& rhs) noexcept
+    {
+        copy_values(rhs);
+        m_pos = rhs.m_pos;
+
+        return *this;
+    }
+
+    _proxy_row&
+    operator=(_proxy_row&& rhs) noexcept
+    {
+        copy_values(rhs);
+        m_pos = rhs.m_pos;
+
+        return *this;
+    }
+
+    bool
+    operator==(const _proxy_row rhs) const noexcept
+    {
+        return cp() == rhs.cp();
+    }
+
+    std::strong_ordering
+    operator<=>(const _proxy_row rhs) const noexcept
+    {
+        return cp() <=> rhs.cp();
+    }
+
+    template <typename Var>
+    std::add_lvalue_reference_t<vartype<Var>>
+    get() noexcept
+    {
+        return Helper::template get<Var>(m_data)[m_pos];
+    }
+
+    std::add_lvalue_reference_t<vartype<_CP>>
+    cp() noexcept
+    {
+        return get<_CP>();
+    }
+
+    friend void
+    swap(_proxy_row a, _proxy_row b) noexcept
+    {
+        over(a.m_data,
+             [&](auto& c) noexcept { std::swap(c[a.m_pos], c[b.m_pos]); });
+    }
+};
+
+template <typename Data, typename Helper, fsize_t N>
+class _proxy_view
+{
+    Data&   m_data;
+    fsize_t m_pos;
+
+    fsize_t
+    shift(fsize_t p) const noexcept
+    {
+        return m_pos + p;
+    }
+
+  public:
+    _proxy_view() = delete;
+    _proxy_view&
+    operator=(const _proxy_view& rhs) = delete;
+    _proxy_view&
+    operator=(_proxy_view&&) = delete;
+
+    _proxy_view(const _proxy_view& other) noexcept :
+        m_data(other.m_data), m_pos(other.m_pos)
+    {
+    }
+    _proxy_view(_proxy_view&& other) noexcept :
+        m_data(other.m_data), m_pos(other.m_pos){};
+
+    _proxy_view(Data& data, fsize_t pos) noexcept : m_data(data), m_pos(pos) {}
+
+    _proxy_row<Data, Helper>
+    operator[](const fsize_t n) noexcept
+    {
+        return {m_data, shift(n)};
+    }
+
+    template <fsize_t N2>
+        requires(N2 <= N)
+    _proxy_view<Data, Helper, N2>
+    view(const fsize_t pos = 0) noexcept
+    {
+        return {m_data, shift(pos)};
+    }
+
+    _proxy_view<Data, Helper, dynamic_extent>
+    view(const fsize_t pos, const fsize_t ext) noexcept
+    {
+        return {m_data, shift(pos), ext};
+    }
+
+    _proxy_view<Data, Helper, dynamic_extent>
+    view(const fsize_t pos = 0) noexcept
+    {
+        fsize_t np = shift(pos);
+        return {m_data, np, size() - np};
+    }
+
+    template <typename Var>
+    std::span<vartype<Var>, N>
+    get() noexcept
+    {
+        return std::span<vartype<Var>, N>(
+            std::addressof(Helper::template get<Var>(m_data)[m_pos]),
+            N);
+    }
+
+    std::span<vartype<_CP>, N>
+    cp() noexcept
+    {
+        return get<_CP>();
+    }
+
+    constexpr fsize_t
+    size() const noexcept
+    {
+        return N;
+    }
+};
+
+template <typename Data, typename Helper>
+class _proxy_view<Data, Helper, dynamic_extent>
+{
+    Data&   m_data;
+    fsize_t m_pos;
+    fsize_t m_ext;
+
+    fsize_t
+    shift(fsize_t p) const noexcept
+    {
+        return m_pos + p;
+    }
+
+  public:
+    _proxy_view() = delete;
+    _proxy_view&
+    operator=(const _proxy_view& rhs) = delete;
+    _proxy_view&
+    operator=(_proxy_view&&) = delete;
+
+    _proxy_view(const _proxy_view& other) noexcept :
+        m_data(other.m_data), m_pos(other.m_pos), m_ext(other.m_ext)
+    {
+    }
+    _proxy_view(_proxy_view&& other) noexcept :
+        m_data(other.m_data), m_pos(other.m_pos), m_ext(other.m_ext){};
+
+    _proxy_view(Data& data, fsize_t pos, fsize_t ext) noexcept :
+        m_data(data), m_pos(pos), m_ext(ext)
+    {
+    }
+
+    _proxy_row<Data, Helper>
+    operator[](const fsize_t n) noexcept
+    {
+        return {m_data, shift(n)};
+    }
+
+    template <fsize_t N>
+    _proxy_view<Data, Helper, N>
+    view(const fsize_t pos) noexcept
+    {
+        return {m_data, shift(pos)};
+    }
+
+    _proxy_view<Data, Helper, dynamic_extent>
+    view(const fsize_t pos, const fsize_t ext) noexcept
+    {
+        return {m_data, shift(pos), ext};
+    }
+
+    _proxy_view<Data, Helper, dynamic_extent>
+    view(const fsize_t pos = 0) noexcept
+    {
+        fsize_t np = shift(pos);
+        return {m_data, np, size() - np};
+    }
+
+    template <typename Var>
+    std::span<vartype<Var>, std::dynamic_extent>
+    get() noexcept
+    {
+        return {std::addressof(Helper::template get<Var>(m_data))[m_pos],
+                m_ext};
+    }
+
+    std::span<vartype<_CP>, std::dynamic_extent>
+    cp() noexcept
+    {
+        return get<_CP>();
+    }
+
+    fsize_t
+    size() const noexcept
+    {
+        return m_ext - m_pos;
+    }
+};
+
+template <typename _ProxyView>
+struct _proxy_view_extent;
+
+template <typename Data, typename Helper, fsize_t N>
+struct _proxy_view_extent<_proxy_view<Data, Helper, N>>
+{
+    static constexpr fsize_t value = N;
+};
+
+template <typename _ProxyView>
+constexpr inline fsize_t pv_extent = _proxy_view_extent<_ProxyView>::value;
+
 template <typename RegTypes,
           typename RegNames,
           fsize_t alignment                              = simd_alignment,
@@ -129,6 +379,11 @@ class Memory
 
     Data m_data;
 
+    template <fsize_t N>
+    using proxy_view = _proxy_view<Data, helper, N>;
+
+    using proxy_row = _proxy_row<Data, helper>;
+
     /// @brief Helper static function to run over columns of data.
     template <typename F>
     static void
@@ -136,244 +391,6 @@ class Memory
     {
         lucid::for_each(std::forward<F>(f), data);
     }
-
-    class proxy_row
-    {
-        Data&   m_data;
-        fsize_t m_pos;
-
-        void
-        copy_values(proxy_row rhs) noexcept
-        {
-            over(m_data, [&](auto& c) noexcept { c[m_pos] = c[rhs.m_pos]; });
-        }
-
-      public:
-        proxy_row() = delete;
-
-        proxy_row(const proxy_row& other) noexcept :
-            m_data(other.m_data), m_pos(other.m_pos)
-        {
-        }
-
-        proxy_row(proxy_row&& other) noexcept :
-            m_data(other.m_data), m_pos(other.m_pos)
-        {
-        }
-
-        proxy_row(Data& data, const fsize_t pos) noexcept :
-            m_data(data), m_pos(pos)
-        {
-        }
-
-        proxy_row&
-        operator=(const proxy_row& rhs) noexcept
-        {
-            copy_values(rhs);
-            m_pos = rhs.m_pos;
-
-            return *this;
-        }
-
-        proxy_row&
-        operator=(proxy_row&& rhs) noexcept
-        {
-            copy_values(rhs);
-            m_pos = rhs.m_pos;
-
-            return *this;
-        }
-
-        bool
-        operator==(const proxy_row rhs) const noexcept
-        {
-            return cp() == rhs.cp();
-        }
-
-        std::strong_ordering
-        operator<=>(const proxy_row rhs) const noexcept
-        {
-            return cp() <=> rhs.cp();
-        }
-
-        template <typename Var>
-        std::add_lvalue_reference_t<vartype<Var>>
-        get() noexcept
-        {
-            return helper::template get<Var>(m_data)[m_pos];
-        }
-
-        std::add_lvalue_reference_t<vartype<_CP>>
-        cp() noexcept
-        {
-            return get<_CP>();
-        }
-
-        friend void
-        swap(proxy_row a, proxy_row b) noexcept
-        {
-            over(a.m_data,
-                 [&](auto& c) noexcept { std::swap(c[a.m_pos], c[b.m_pos]); });
-        }
-    };
-
-    template <fsize_t N>
-    class proxy_view
-    {
-        Data&   m_data;
-        fsize_t m_pos;
-
-        fsize_t
-        shift(fsize_t p) const noexcept
-        {
-            return m_pos + p;
-        }
-
-      public:
-        proxy_view() = delete;
-        proxy_view&
-        operator=(const proxy_view& rhs) = delete;
-        proxy_view&
-        operator=(proxy_view&&) = delete;
-
-        proxy_view(const proxy_view& other) noexcept :
-            m_data(other.m_data), m_pos(other.m_pos)
-        {
-        }
-        proxy_view(proxy_view&& other) noexcept :
-            m_data(other.m_data), m_pos(other.m_pos){};
-
-        proxy_view(Data& data, fsize_t pos) noexcept : m_data(data), m_pos(pos)
-        {
-        }
-
-        proxy_row
-        operator[](const fsize_t n) noexcept
-        {
-            return {m_data, shift(n)};
-        }
-
-        template <fsize_t N2>
-            requires(N2 <= N)
-        proxy_view<N2>
-        view(const fsize_t pos = 0) noexcept
-        {
-            return {m_data, shift(pos)};
-        }
-
-        proxy_view<dynamic_extent>
-        view(const fsize_t pos, const fsize_t ext) noexcept
-        {
-            return {m_data, shift(pos), ext};
-        }
-
-        proxy_view<dynamic_extent>
-        view(const fsize_t pos = 0) noexcept
-        {
-            fsize_t np = shift(pos);
-            return {m_data, np, size() - np};
-        }
-
-        template <typename Var>
-        std::span<vartype<Var>, N>
-        get() noexcept
-        {
-            return std::span<vartype<Var>, N>(
-                std::addressof(helper::template get<Var>(m_data)[m_pos]),
-                N);
-        }
-
-        std::span<vartype<_CP>, N>
-        cp() noexcept
-        {
-            return get<_CP>();
-        }
-
-        constexpr fsize_t
-        size() const noexcept
-        {
-            return N;
-        }
-    };
-
-    template <>
-    class proxy_view<dynamic_extent>
-    {
-        Data&   m_data;
-        fsize_t m_pos;
-        fsize_t m_ext;
-
-        fsize_t
-        shift(fsize_t p) const noexcept
-        {
-            return m_pos + p;
-        }
-
-      public:
-        proxy_view() = delete;
-        proxy_view&
-        operator=(const proxy_view& rhs) = delete;
-        proxy_view&
-        operator=(proxy_view&&) = delete;
-
-        proxy_view(const proxy_view& other) noexcept :
-            m_data(other.m_data), m_pos(other.m_pos), m_ext(other.m_ext)
-        {
-        }
-        proxy_view(proxy_view&& other) noexcept :
-            m_data(other.m_data), m_pos(other.m_pos), m_ext(other.m_ext){};
-
-        proxy_view(Data& data, fsize_t pos, fsize_t ext) noexcept :
-            m_data(data), m_pos(pos), m_ext(ext)
-        {
-        }
-
-        proxy_row
-        operator[](const fsize_t n) noexcept
-        {
-            return {m_data, shift(n)};
-        }
-
-        template <fsize_t N>
-        proxy_view<N>
-        view(const fsize_t pos) noexcept
-        {
-            return {m_data, shift(pos)};
-        }
-
-        proxy_view<dynamic_extent>
-        view(const fsize_t pos, const fsize_t ext) noexcept
-        {
-            return {m_data, shift(pos), ext};
-        }
-
-        proxy_view<dynamic_extent>
-        view(const fsize_t pos = 0) noexcept
-        {
-            fsize_t np = shift(pos);
-            return {m_data, np, size() - np};
-        }
-
-        template <typename Var>
-        std::span<vartype<Var>, std::dynamic_extent>
-        get() noexcept
-        {
-            return {std::addressof(helper::template get<Var>(m_data))[m_pos],
-                    m_ext};
-        }
-
-        std::span<vartype<_CP>, std::dynamic_extent>
-        cp() noexcept
-        {
-            return get<_CP>();
-        }
-
-        fsize_t
-        size() const noexcept
-        {
-            return m_ext - m_pos;
-        }
-    };
 
     class _iterator : public std::contiguous_iterator_tag
     {
@@ -808,13 +825,10 @@ struct native_vertical_compiler
 
     struct var_loader
     {
-        template <typename Var,
-                  template <fsize_t>
-                  typename _ProxyView,
-                  fsize_t W>
-            requires(W == native_vector_width<vartype<Var>>)
+        template <typename Var, typename _ProxyView>
+            requires(pv_extent<_ProxyView> == native_vector_width<vartype<Var>>)
         native_vector<vartype<Var>>
-        operator()(_ProxyView<W> view) const noexcept
+        operator()(_ProxyView view) const noexcept
         {
             constexpr auto l = parse_literal<Var>();
             if constexpr(l.has_value())
@@ -834,10 +848,11 @@ struct native_vertical_compiler
     {
         using T = vartype<Dst>;
 
-        template <template <fsize_t> typename _ProxyView, fsize_t W>
-            requires(W == native_instruction_width<Copy<Dst, Src>>)
+        template <typename _ProxyView>
+            requires(pv_extent<_ProxyView> ==
+                     native_instruction_width<Copy<Dst, Src>>)
         void
-        operator()(_ProxyView<W> view) const noexcept
+        operator()(_ProxyView view) const noexcept
         {
             T* dst = view.template get<Dst>().data();
             _store(loader.template operator()<Src>(), dst);
@@ -850,10 +865,11 @@ struct native_vertical_compiler
         using constant = typename typelist::lookup<Target, LabelMap>;
         static constexpr index_t target = constant{}();
 
-        template <template <fsize_t> typename _ProxyView, fsize_t W>
-            requires(W == native_instruction_width<Jump<Target>>)
+        template <typename _ProxyView>
+            requires(pv_extent<_ProxyView> ==
+                     native_instruction_width<Jump<Target>>)
         void
-        operator()(_ProxyView<W> view) const noexcept
+        operator()(_ProxyView view) const noexcept
         {
             index_t* dst = view.cp().data();
             IdxVec   t   = broadcast(target);
@@ -867,10 +883,11 @@ struct native_vertical_compiler
         using T         = vartype<Dst>;
         using vector_op = remap_op_t<Op>;
 
-        template <template <fsize_t> typename _ProxyView, fsize_t W>
-            requires(W == native_instruction_width<Compute<Op, Dst, Args...>>)
+        template <typename _ProxyView>
+            requires(pv_extent<_ProxyView> ==
+                     native_instruction_width<Compute<Op, Dst, Args...>>)
         void
-        operator()(_ProxyView<W> view) const noexcept
+        operator()(_ProxyView view) const noexcept
         {
             T*   dst = view.template get<Dst>().data();
             auto vars =
@@ -918,10 +935,10 @@ struct native_vertical_compiler
         using idxs = pjmp_idxs<ParmJump<Var, Labels>, LabelMap>;
         static constexpr shuffler<idxs> op{};
 
-        template <template <fsize_t> typename _ProxyView, fsize_t W>
-            requires(W == iw)
+        template <typename _ProxyView>
+            requires(pv_extent<_ProxyView> == iw)
         void
-        operator()(_ProxyView<W> view) const noexcept
+        operator()(_ProxyView view) const noexcept
         {
             index_t* dst = view.cp().data();
             index_t* src = view.template get<Var>().data();
@@ -938,15 +955,14 @@ struct native_vertical_compiler
         using bulk_sizes =
             intlist::map_f<decltype([](int n) constexpr noexcept -> int
                                     { return n * stride; }),
-                           intlist::reverse<intlist::powerof2s<static_cast<int>(
-                               bulk_number)>>>;
+                           intlist::reverse<intlist::powerof2s<bulk_number>>>;
 
-        template <template <fsize_t> typename _MemoryView, fsize_t view_size>
-            requires(view_size % stride == 0)
+        template <typename _MemoryView>
+            requires(pv_extent<_MemoryView> % stride == 0)
         static void
-        run_view(_MemoryView<view_size> view) noexcept
+        run_view(_MemoryView view) noexcept
         {
-            for(fsize_t i = 0; i < view_size; i += stride)
+            for(fsize_t i = 0; i < pv_extent<_MemoryView>; i += stride)
                 v_eval(view.template view<stride>(i));
         }
 
@@ -956,7 +972,7 @@ struct native_vertical_compiler
         {
             for(fsize_t i = 0; i < num_bulks; i += bulk_stride)
                 run_view(mem.template view<bulk_stride>(i));
-        };
+        }
 
         template <typename _MemoryView, int first, int... rest>
         static fsize_t
@@ -988,7 +1004,7 @@ struct native_vertical_compiler
             if(r)
                 for(fsize_t i = mem.size() - r; i < mem.size(); ++i)
                     s_eval(mem[i]);
-        };
+        }
     };
 
     using instructions = typelist::map<vertical_runner, Cell>;

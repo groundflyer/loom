@@ -915,7 +915,7 @@ struct map_f<F, std::integer_sequence<Int, Is...>>
     using R = std::invoke_result_t<F, Int>;
 
   public:
-    using type = std::integer_sequence<R, f(Is)...>;
+    using type = std::integer_sequence<R, std::invoke(f, Is)...>;
 };
 
 template <template <auto> typename F, typename List>
@@ -1042,6 +1042,16 @@ struct nub<std::integer_sequence<Int, X, Xs...>>
         X,
         typename nub<typename purge<X, std::integer_sequence<Int, Xs...>>::
                          type>::type>::type;
+};
+
+template <std::integral auto N>
+struct powersof2s
+{
+    template <std::integral auto i>
+    using f = std::integral_constant<decltype(N), smath::pow(2, i)>;
+
+    using type = typelist::to_integer_sequence<
+        typename map_t<f, std::make_index_sequence<N>>::type>;
 };
 } // namespace detail
 
@@ -1225,10 +1235,8 @@ template <std::size_t N, std::size_t L>
 using nlperm = typename nlperm_impl<N, L>::type;
 
 /// @brief First N numbers of power of two series.
-template <auto N>
-using powerof2s = map_f<decltype([](auto i) constexpr noexcept -> decltype(N)
-                                 { return smath::pow(2u, i); }),
-                        std::make_index_sequence<N>>;
+template <std::integral auto N>
+using powerof2s = typename detail::powersof2s<N>::type;
 /// @}
 } // namespace intlist
 
