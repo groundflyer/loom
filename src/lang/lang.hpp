@@ -269,8 +269,8 @@ struct access_wrapper<Union<Ts...>>
 template <typename RegTypes,
           typename RegNames,
           template <typename...> typename Container = std::tuple,
-          template <typename> typename RegProj      = identity_t,
-          template <typename> typename AccProj      = identity_t>
+          template <typename> typename RegProj      = std::type_identity_t,
+          template <typename> typename AccProj      = std::type_identity_t>
 struct MemoryHelper
 {
     using types = typelist::map<RegProj, RegTypes>;
@@ -319,76 +319,6 @@ using pjmp_idxs = typename parm_jump_helper<_ParmJump, LabelMap>::jump_idxs;
 template <typename _ParmJump, typename LabelMap>
 constexpr inline auto pjmp_arr = parm_jump_helper<_ParmJump, LabelMap>::table;
 
-template <typename Command, typename LabelMap>
-struct standard_eval;
-
-template <typename Dst, typename Src, typename LabelMap>
-struct standard_eval<Copy<Dst, Src>, LabelMap>
-{
-    template <typename _Memory>
-    constexpr void
-    operator()(_Memory& mem) const noexcept
-    {
-        mem.template get<Dst>() = get_value<Src>(mem);
-    }
-};
-
-template <typename Dst, typename Op, typename... Args, typename LabelMap>
-struct standard_eval<Compute<Op, Dst, Args...>, LabelMap>
-{
-    template <typename _Memory>
-    constexpr void
-    operator()(_Memory& mem) const noexcept
-    {
-        mem.template get<Dst>() = std::invoke(Op{}, get_value<Args>(mem)...);
-    }
-};
-
-template <typename Target, typename LabelMap>
-struct standard_eval<Jump<Target>, LabelMap>
-{
-    using constant = typename typelist::lookup<Target, LabelMap>;
-    static constexpr index_t value = constant::value;
-
-    template <typename _Memory>
-    constexpr void
-    operator()(_Memory& memory) const noexcept
-    {
-        memory.cp() = value;
-    }
-};
-
-template <typename Var, typename Labels, typename LabelMap>
-struct standard_eval<ParmJump<Var, Labels>, LabelMap>
-{
-    static constexpr auto table = pjmp_arr<ParmJump<Var, Labels>, LabelMap>;
-
-    template <typename _Memory>
-    constexpr void
-    operator()(_Memory& memory) const noexcept
-    {
-        memory.cp() = table[memory.template get<Var>()];
-    }
-};
-
-template <typename Cell,
-          typename LabelMap,
-          template <typename, typename> typename Eval = standard_eval>
-struct standard_compiler
-{
-    template <typename Command>
-    using eval = Eval<Command, LabelMap>;
-
-    using instructions = typelist::map<eval, Cell>;
-
-    template <typename _Memory>
-    constexpr void
-    operator()(_Memory&& memory) const noexcept
-    {
-        typelist::unroll(instructions{}, std::forward<_Memory>(memory));
-    }
-};
-
 template <typename _Variable>
 consteval std::optional<vartype<_Variable>>
 parse_literal() noexcept
@@ -428,6 +358,79 @@ get_value(_Memory&& mem) noexcept
     else
         return std::forward<_Memory>(mem).template get<_Variable>();
 }
+
+template <typename Command, typename LabelMap>
+struct standard_eval;
+
+template <typename Dst, typename Src, typename LabelMap>
+struct standard_eval<Copy<Dst, Src>, LabelMap>
+{
+    template <typename _Memory>
+    constexpr void
+    operator()(_Memory&& mem) const noexcept
+    {
+        std::forward<_Memory>(mem).template get<Dst>() =
+            get_value<Src>(std::forward<_Memory>(mem));
+    }
+};
+
+template <typename Dst, typename Op, typename... Args, typename LabelMap>
+struct standard_eval<Compute<Op, Dst, Args...>, LabelMap>
+{
+    template <typename _Memory>
+    constexpr void
+    operator()(_Memory&& mem) const noexcept
+    {
+        std::forward<_Memory>(mem).template get<Dst>() =
+            std::invoke(Op{}, get_value<Args>(std::forward<_Memory>(mem))...);
+    }
+};
+
+template <typename Target, typename LabelMap>
+struct standard_eval<Jump<Target>, LabelMap>
+{
+    using constant = typename typelist::lookup<Target, LabelMap>;
+    static constexpr index_t value = constant::value;
+
+    template <typename _Memory>
+    constexpr void
+    operator()(_Memory&& mem) const noexcept
+    {
+        std::forward<_Memory>(mem).cp() = value;
+    }
+};
+
+template <typename Var, typename Labels, typename LabelMap>
+struct standard_eval<ParmJump<Var, Labels>, LabelMap>
+{
+    static constexpr auto table = pjmp_arr<ParmJump<Var, Labels>, LabelMap>;
+
+    template <typename _Memory>
+    constexpr void
+    operator()(_Memory&& mem) const noexcept
+    {
+        std::forward<_Memory>(mem).cp() =
+            table[std::forward<_Memory>(mem).template get<Var>()];
+    }
+};
+
+template <typename Cell,
+          typename LabelMap,
+          template <typename, typename> typename Eval = standard_eval>
+struct standard_compiler
+{
+    template <typename Command>
+    using eval = Eval<Command, LabelMap>;
+
+    using instructions = typelist::map<eval, Cell>;
+
+    template <typename _Memory>
+    constexpr void
+    operator()(_Memory&& memory) const noexcept
+    {
+        typelist::unroll(instructions{}, std::forward<_Memory>(memory));
+    }
+};
 
 template <typename Cells, typename Labels>
 struct ensure_last_jumps

@@ -74,11 +74,6 @@ using fst_t = typename fst<Pair>::type;
 /// consists only of two types.
 template <typename Pair>
 using snd_t = typename snd<Pair>::type;
-
-/// @brief Identity meta-function for types, i.e. the resulting type is the
-/// argument itself.
-template <typename T>
-using identity_t = T;
 /// @}
 
 // In this namespace we don't suffix typedefs with _t and values with _v.
