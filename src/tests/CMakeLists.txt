@@ -30,3 +30,4 @@ target_link_libraries(test_viewport PUBLIC ${GL_LIBS})
 target_compile_definitions(test_viewport PUBLIC ${GL_DEFS})
 
 # target_compile_options(test_lang PUBLIC $<$<CONFIG:Release>:-save-temps>)
+# target_compile_options(test_lang PUBLIC $<$<CONFIG:RelWithDebInfo>:-save-temps>)

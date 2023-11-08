@@ -1,7 +1,7 @@
 #!/bin/bash
 
 showhelp() {
-    echo "Usage: $0 [-h] [-t] [-b] [-d] [-e] [-a] [-c] [-clang]"
+    echo "Usage: $0 [-h] [-t] [-b] [-d] [-e] [-a] [-c] [-clang] [-D]"
     echo -e "\t-t\tbuild and run tests"
     echo -e "\t-b\tbuild and run benchmarks"
     echo -e "\t-d\tbuild documentation"
@@ -9,6 +9,7 @@ showhelp() {
     echo -e "\t-a\tbuild all, then run benchmarks and tests"
     echo -e "\t-c\trun cmake only, don't build"
     echo -e "\t-clang\tuse clang"
+    echo -e "\t-D\tbuild RelWithDebInfo"
     echo -e "\t-h\tshow this help message and exit"
 }
 
@@ -41,6 +42,11 @@ enable_benchmarks() {
 enable_docs() {
     CMAKE_ARGS+=(-DBUILD_DOC=ON)
     TARGETS+=(doc)
+}
+
+enable_debug() {
+    CMAKE_ARGS+=(-DCMAKE_BUILD_TYPE=RelWithDebInfo)
+    BUILD_DIR+=_dbg
 }
 
 use_clang() {
@@ -100,6 +106,9 @@ for key in $@; do
             ;;
         -clang)
             use_clang
+            ;;
+        -D)
+            enable_debug
             ;;
         -h)
             showhelp

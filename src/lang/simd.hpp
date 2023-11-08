@@ -64,8 +64,8 @@ class AlignedAllocator
     pointer
     allocate(fsize_t n)
     {
-        void* p =
-            std::aligned_alloc(alignment, align_to<alignment>(sizeof(T) * n));
+        const fsize_t an = align_to<alignment>(sizeof(T) * n);
+        void*         p  = std::aligned_alloc(alignment, an);
         if(!p) throw std::bad_alloc();
 
         return static_cast<pointer>(p);
@@ -195,6 +195,7 @@ class _proxy_view
     fsize_t
     shift(fsize_t p) const noexcept
     {
+        CHECK_INDEX(p, N);
         return m_pos + p;
     }
 
@@ -225,20 +226,21 @@ class _proxy_view
     _proxy_view<Data, Helper, N2>
     view(const fsize_t pos = 0) noexcept
     {
+        ASSERT(N2 <= N - pos, "Extent too big");
         return {m_data, shift(pos)};
     }
 
     _proxy_view<Data, Helper, dynamic_extent>
     view(const fsize_t pos, const fsize_t ext) noexcept
     {
+        ASSERT(ext <= size() - pos, "Extent too big");
         return {m_data, shift(pos), ext};
     }
 
     _proxy_view<Data, Helper, dynamic_extent>
     view(const fsize_t pos = 0) noexcept
     {
-        fsize_t np = shift(pos);
-        return {m_data, np, size() - np};
+        return view(pos, size() - pos);
     }
 
     template <typename Var>
@@ -273,6 +275,7 @@ class _proxy_view<Data, Helper, dynamic_extent>
     fsize_t
     shift(fsize_t p) const noexcept
     {
+        CHECK_INDEX(p, m_ext);
         return m_pos + p;
     }
 
@@ -311,14 +314,15 @@ class _proxy_view<Data, Helper, dynamic_extent>
     _proxy_view<Data, Helper, dynamic_extent>
     view(const fsize_t pos, const fsize_t ext) noexcept
     {
+        ASSERT(ext <= size() - pos, "Extent too big");
         return {m_data, shift(pos), ext};
     }
 
     _proxy_view<Data, Helper, dynamic_extent>
     view(const fsize_t pos = 0) noexcept
     {
-        fsize_t np = shift(pos);
-        return {m_data, np, size() - np};
+        CHECK_INDEX(pos, size());
+        return view(pos, size() - pos);
     }
 
     template <typename Var>
@@ -338,7 +342,7 @@ class _proxy_view<Data, Helper, dynamic_extent>
     fsize_t
     size() const noexcept
     {
-        return m_ext - m_pos;
+        return m_ext;
     }
 };
 
@@ -532,6 +536,7 @@ class Memory
         value_type
         operator[](difference_type n) const noexcept
         {
+            CHECK_INDEX(n, count());
             return {*p_data, m_pos + n};
         }
 
@@ -565,26 +570,31 @@ class Memory
     proxy_row
     operator[](const fsize_t n) noexcept
     {
+        CHECK_INDEX(n, size());
         return {m_data, n};
     }
 
     template <fsize_t N>
     proxy_view<N>
-    view(const fsize_t pos) noexcept
+    view(const fsize_t pos = 0) noexcept
     {
+        CHECK_INDEX(pos, size() - N);
         return {m_data, pos};
     }
 
     proxy_view<dynamic_extent>
     view(const fsize_t pos, const fsize_t ext) noexcept
     {
+        CHECK_INDEX(pos, size());
+        ASSERT(ext <= size() - pos, "Extent too big");
         return {m_data, pos, ext};
     }
 
     proxy_view<dynamic_extent>
     view(const fsize_t pos = 0) noexcept
     {
-        return {m_data, pos, size() - pos};
+        CHECK_INDEX(pos, size());
+        return view(pos, size() - pos);
     }
 
     iterator
@@ -953,12 +963,13 @@ struct native_vertical_compiler
         static constexpr eval<C> v_eval{};
         static constexpr standard_eval<C, LabelMap> s_eval{};
         using bulk_sizes =
-            intlist::map_f<decltype([](int n) constexpr noexcept -> int
+            intlist::map_f<decltype([](fsize_t n) constexpr noexcept -> fsize_t
                                     { return n * stride; }),
                            intlist::reverse<intlist::powerof2s<bulk_number>>>;
 
         template <typename _MemoryView>
-            requires(pv_extent<_MemoryView> % stride == 0)
+            requires(pv_extent<_MemoryView> % stride == 0 &&
+                     pv_extent<_MemoryView> != dynamic_extent)
         static void
         run_view(_MemoryView view) noexcept
         {
@@ -970,40 +981,39 @@ struct native_vertical_compiler
         static void
         run_bulk(_MemoryView mem, fsize_t num_bulks) noexcept
         {
-            for(fsize_t i = 0; i < num_bulks; i += bulk_stride)
+            for(fsize_t i = 0; i < num_bulks * bulk_stride; i += bulk_stride)
                 run_view(mem.template view<bulk_stride>(i));
         }
 
-        template <typename _MemoryView, int first, int... rest>
-        static fsize_t
-        dispatch_bulks(_MemoryView mem,
-                       std::integer_sequence<int, first, rest...>) noexcept
+        template <typename _MemoryView, fsize_t bulk_stride, fsize_t... rest>
+        static void
+        dispatch_bulks(
+            _MemoryView mem,
+            std::integer_sequence<fsize_t, bulk_stride, rest...>) noexcept
         {
-            const int        s  = mem.size();
-            const std::div_t qr = std::div(s, first);
-            const fsize_t    q  = qr.quot;
-            const fsize_t    r  = qr.rem;
+            const fsize_t s = mem.size();
+            const fsize_t q = s / bulk_stride;
+            const fsize_t r = s % bulk_stride;
 
-            if(q) run_bulk<first>(mem, q);
+            if(q) run_bulk<bulk_stride>(mem, q);
 
             // reminder is zero - nothing left
-            if(!r) return r;
+            if(!r) return;
 
             if constexpr(sizeof...(rest))
-                return dispatch_bulks(mem.view(s - r, r),
-                                      std::integer_sequence<int, rest...>{});
+                return dispatch_bulks(
+                    mem.view(s - r),
+                    std::integer_sequence<fsize_t, rest...>{});
 
-            return r;
+            // eval remains sequentially
+            for(fsize_t i = mem.size() - r; i < mem.size(); ++i) s_eval(mem[i]);
         }
 
         template <typename _MemoryView>
         void
         operator()(_MemoryView mem) const noexcept
         {
-            const fsize_t r = dispatch_bulks(mem, bulk_sizes{});
-            if(r)
-                for(fsize_t i = mem.size() - r; i < mem.size(); ++i)
-                    s_eval(mem[i]);
+            dispatch_bulks(mem, bulk_sizes{});
         }
     };
 

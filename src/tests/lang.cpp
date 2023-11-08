@@ -107,9 +107,10 @@ int main(/*int argc, char* argv[]*/)
     using simd_incf_t =
         simd::simd_evaluator<incf::program>::single_cell_evaluator;
     simd_incf_t simd_incf_eval{};
-    auto        simd_ret = simd_incf_eval(1024, -1.f);
+    auto        simd_ret = simd_incf_eval(19999, -1.f);
     ret += !std::ranges::all_of(simd_ret,
                                 [](const auto i) noexcept { return i == 0.f; });
+    // fmt::print("simd incf out = {}\n", simd_ret);
     ok("simd incf");
 
     return ret;
