@@ -461,6 +461,18 @@ struct ensure_last_jumps
 template <typename Cells, typename Labels>
 using ensure_last_jumps_t = typename ensure_last_jumps<Cells, Labels>::type;
 
+template <typename T>
+struct same_size_union
+{
+    static constexpr bool value = true;
+};
+
+template <typename T, typename... Ts>
+struct same_size_union<Union<T, Ts...>>
+{
+    static constexpr bool value = (... && (sizeof(T) == sizeof(Ts)));
+};
+
 /// @brief Program representation.
 template <typename InputVars, typename Statements, typename OutputVars>
 class Program
@@ -493,8 +505,6 @@ class Program
                            typelist::cons<StartLabel, stated_labels>>;
 
     static_assert(!typelist::has_duplicates<labels>);
-    // for future separate sorting
-    // static_assert(num_cells < std::numeric_limits<std::uint16_t>::max());
 
     using labelmap = typelist::cons<
         type_pair<EndLabel, std::integral_constant<index_t, end_pos>>,
@@ -504,6 +514,7 @@ class Program
 
     using variables = std::
         conditional_t<singular, stated_vars, typelist::cons<_CP, stated_vars>>;
+    static_assert(typelist::all<same_size_union, variables>);
 
     /// @brief Names of registers.
     using reg_names = typelist::nub<get_var_names_t<variables>>;
