@@ -269,8 +269,7 @@ struct access_wrapper<Union<Ts...>>
 template <typename RegTypes,
           typename RegNames,
           template <typename...> typename Container = std::tuple,
-          template <typename> typename RegProj      = std::type_identity_t,
-          template <typename> typename AccProj      = std::type_identity_t>
+          template <typename> typename RegProj      = std::type_identity_t>
 struct MemoryHelper
 {
     using types = typelist::map<RegProj, RegTypes>;
@@ -292,7 +291,7 @@ struct MemoryHelper
     {
         constexpr access<Var> op{};
 
-        return op.template operator()<AccProj<vartype<Var>>>(
+        return op.template operator()<RegProj<vartype<Var>>>(
             std::get<regindex<varname<Var>>>(_data));
     }
 };

@@ -373,7 +373,7 @@ class Memory
     template <typename T>
     using f = vector_union_t<T, _Vector, Allocator>;
 
-    using helper = MemoryHelper<RegTypes, RegNames, std::tuple, f, f>;
+    using helper = MemoryHelper<RegTypes, RegNames, std::tuple, f>;
 
     using VecTypes = typelist::map<f, RegTypes>;
 

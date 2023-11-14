@@ -48,7 +48,7 @@ class Memory
     template <typename T>
     using f = array_union_t<T, Array>;
 
-    using helper = MemoryHelper<RegTypes, RegNames, std::tuple, f, f>;
+    using helper = MemoryHelper<RegTypes, RegNames, std::tuple, f>;
 
     using Data = helper::data;
 
