@@ -86,13 +86,23 @@ int main(/*int argc, char* argv[]*/)
     ret += !std::ranges::equal(vfac_out, vfac_chk);
     ok("fac bve");
 
-    using incf        = increment<float>;
-    using simd_incf_t = simd::simd_evaluator<incf>::single_cell_evaluator;
-    simd_incf_t simd_incf_eval{};
-    auto        simd_ret = simd_incf_eval(19999, -1.f);
-    ret += !std::ranges::all_of(simd_ret,
+    using incf    = increment<float>;
+    using incf_se = simd::evaluator<incf>;
+    incf_se simd_incf_eval{};
+    auto    incf_se_ret = simd_incf_eval(19999, -1.f);
+    ret += !std::ranges::all_of(incf_se_ret,
                                 [](const auto i) noexcept { return i == 0.f; });
     ok("simd incf");
+
+    using facf    = factorial<float>;
+    using facf_se = simd::evaluator<facf>;
+    facf_se facf_se_eval{};
+    auto    facf_se_ret = facf_se_eval(100, 4.f);
+    ret += !std::ranges::all_of(facf_se_ret,
+                                [](const float i) constexpr noexcept
+                                { return fn::almost_equal(i, 5040.f, 100); });
+    ok("simd facf");
+    fmt::print("facf_ret = {}\n", facf_se_ret);
 
     return ret;
 }
