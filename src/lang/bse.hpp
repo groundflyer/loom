@@ -67,7 +67,6 @@ class basic_scalar_evaluator
 {
     using labelmap  = typename _Program::labelmap;
     using cells     = typename _Program::cells;
-    using vars      = typename _Program::variables;
     using reg_names = typename _Program::reg_names;
     using reg_types = typename _Program::reg_types;
 
