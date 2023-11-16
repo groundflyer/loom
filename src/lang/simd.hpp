@@ -10,6 +10,10 @@
 #include <utils/debug.hpp>
 #include <utils/tmp.hpp>
 
+#ifndef NDEBUG
+#include <fmt/core.h>
+#endif
+
 #include <cstdlib>
 #include <memory>
 #include <new>
@@ -105,14 +109,6 @@ template <typename T,
           typename Allocator>
 using vector_union_t = typename vector_union<T, Vector, Allocator>::type;
 
-    /// @brief Helper static function to run over columns of data.
-template <typename Data, typename F>
-void
-over(Data& data, F&& f)
-{
-    lucid::for_each(std::forward<F>(f), data);
-}
-
 template <typename Data, typename Helper>
 class _proxy_row
 {
@@ -122,7 +118,8 @@ class _proxy_row
     void
     copy_values(_proxy_row rhs) noexcept
     {
-        over(m_data, [&](auto& c) noexcept { c[m_pos] = c[rhs.m_pos]; });
+        lucid::for_each([&](auto& c) noexcept { c[m_pos] = c[rhs.m_pos]; },
+                        m_data);
     }
 
   public:
@@ -189,8 +186,18 @@ class _proxy_row
     friend void
     swap(_proxy_row a, _proxy_row b) noexcept
     {
-        over(a.m_data,
-             [&](auto& c) noexcept { std::swap(c[a.m_pos], c[b.m_pos]); });
+        lucid::for_each([&](auto& c) noexcept
+                        { std::swap(c[a.m_pos], c[b.m_pos]); },
+                        a.m_data);
+    }
+
+    friend void
+    print(_proxy_row p, unsigned char a = 10) noexcept
+    {
+        lucid::for_each([&](auto& c) noexcept
+                        { fmt::print("{:>{}} |", c[p.m_pos], a); },
+                        p.m_data);
+        fmt::print("\n");
     }
 };
 
@@ -314,7 +321,7 @@ class _proxy_view<Data, Helper, dynamic_extent>
 
     template <fsize_t N>
     _proxy_view<Data, Helper, N>
-    view(const fsize_t pos) const  noexcept
+    view(const fsize_t pos) const noexcept
     {
         return {m_data, shift(pos)};
     }
@@ -632,7 +639,7 @@ class Memory
     void
     resize(fsize_t new_size)
     {
-        over(m_data, [&](auto& c) noexcept { c.resize(new_size); });
+        lucid::for_each([&](auto& c) noexcept { c.resize(new_size); }, m_data);
     }
 
     friend iterator
@@ -749,7 +756,7 @@ template <fsize_t A, fsize_t W, typename T, fsize_t... Is>
 packed_vector<T, W>
 load_impl(T* src, std::index_sequence<Is...>) noexcept
 {
-    src                  = std::assume_aligned<A, T>(src);
+    src                     = std::assume_aligned<A, T>(src);
     packed_vector<T, W> ret = {src[Is]...};
     return ret;
 }
@@ -774,9 +781,7 @@ template <fsize_t A, fsize_t W, typename T>
 packed_vector<T, W>
 load(T* src) noexcept
 {
-    return detail::load_impl<A, W>(
-        src,
-        std::make_index_sequence<W>{});
+    return detail::load_impl<A, W>(src, std::make_index_sequence<W>{});
 }
 
 /// @brief Store values from packed vector into aligned memory location @p dst.
@@ -786,9 +791,7 @@ void
 store(packed_vector<T, W> src, T* dst) noexcept
 {
     dst = std::assume_aligned<A, T>(dst);
-    detail::store_impl(src,
-                       dst,
-                       std::make_index_sequence<W>{});
+    detail::store_impl(src, dst, std::make_index_sequence<W>{});
 }
 
 /// @brief Broadcast a value to all elements of the resulting packed vector.
@@ -796,9 +799,7 @@ template <fsize_t W, typename T>
 constexpr packed_vector<T, W>
 broadcast(T v) noexcept
 {
-    return detail::broadcast_impl<W>(
-        v,
-        std::make_index_sequence<W>{});
+    return detail::broadcast_impl<W>(v, std::make_index_sequence<W>{});
 }
 
 template <fsize_t W, typename Op>
@@ -915,9 +916,9 @@ struct eval;
 template <typename Dst, typename Src, typename LabelMap, fsize_t alignment>
 struct eval<Copy<Dst, Src>, LabelMap, alignment>
 {
-    using T        = vartype<Dst>;
+    using T                    = vartype<Dst>;
     static constexpr fsize_t w = native_instruction_width<Copy<Dst, Src>>;
-    using loader_t = var_loader<alignment, w>;
+    using loader_t             = var_loader<alignment, w>;
     static constexpr loader_t loader{};
 
     template <typename _ProxyView>
@@ -935,14 +936,14 @@ struct eval<Jump<Target>, LabelMap, alignment>
 {
     using constant = typename typelist::lookup<Target, LabelMap>;
     static constexpr index_t target = constant{}();
-    static constexpr fsize_t w = native_instruction_width<Jump<Target>>;
+    static constexpr fsize_t w      = native_instruction_width<Jump<Target>>;
 
     template <typename _ProxyView>
         requires(pv_extent<_ProxyView> == w)
     void
     operator()(_ProxyView view) const noexcept
     {
-        index_t*               dst = view.cp().data();
+        index_t*                  dst = view.cp().data();
         packed_vector<index_t, w> t   = broadcast<w>(target);
         store<alignment, w>(t, dst);
     }
@@ -955,8 +956,9 @@ template <typename Op,
           fsize_t alignment>
 struct eval<Compute<Op, Dst, Args...>, LabelMap, alignment>
 {
-    using T         = vartype<Dst>;
-    static constexpr fsize_t w = native_instruction_width<Compute<Op, Dst, Args...>>;
+    using T = vartype<Dst>;
+    static constexpr fsize_t w =
+        native_instruction_width<Compute<Op, Dst, Args...>>;
     using vector_op = remap_op_t<w, Op>;
     using loader_t  = var_loader<alignment, w>;
     static constexpr loader_t loader{};
@@ -988,7 +990,7 @@ struct shuffler<std::integer_sequence<index_t, a, b>, w>
     IdxVec
     operator()(IdxVec var) const noexcept
     {
-        return var ? va : vb;
+        return var ? vb : va;
     }
 };
 
@@ -996,7 +998,7 @@ template <index_t... is, fsize_t w>
     requires(sizeof...(is) <= w)
 struct shuffler<std::integer_sequence<index_t, is...>, w>
 {
-    using IdxVec = packed_vector<index_t, w>;
+    using IdxVec                  = packed_vector<index_t, w>;
     static constexpr IdxVec table = {is...};
 
     IdxVec
@@ -1202,12 +1204,12 @@ class memory_chunks : public std::ranges::view_interface<memory_chunks<_Memory>>
         }
     };
 
-public:
+  public:
     memory_chunks() = default;
-    memory_chunks(_Memory& mem) noexcept : m_view(mem.view())
-    {}
+    memory_chunks(_Memory& mem) noexcept : m_view(mem.view()) {}
 
-    _iterator begin() const
+    _iterator
+    begin() const
     {
         return _iterator(m_view);
     }
@@ -1279,7 +1281,12 @@ class simd_evaluator
                 std::ranges::for_each(memory_chunks(mem),
                                       [](auto view) noexcept
                                       {
-                                          visit(view.cp().front(), [&](auto& cell) noexcept { cell(view); }, cells, sink);
+                                          visit(
+                                              view.cp().front(),
+                                              [&](auto& cell) noexcept
+                                              { cell(view); },
+                                              cells,
+                                              sink);
                                       });
 
 #ifdef _LIBCPP_VERSION
@@ -1291,13 +1298,35 @@ class simd_evaluator
                     for(std::size_t j = i; j > 0 && mem[j - 1] > mem[j]; --j)
                         swap(mem[j], mem[j - 1]);
 #endif
+
+#ifndef NDEBUG
+                {
+                    typelist::for_each(
+                        []<typename Name>() noexcept
+                        {
+                            constexpr std::string_view n =
+                                std::string_view(intlist::array<Name>,
+                                                 intlist::length<Name>);
+                            fmt::print("{:>{}} |", n, 10);
+                        },
+                        reg_names{});
+                    fmt::print("\n");
+                    typelist::for_each([]<typename Name>() noexcept
+                                       { fmt::print("{:*>{}} |", '*', 10); },
+                                       reg_names{});
+                    fmt::print("\n");
+                    std::ranges::for_each(mem,
+                                          [](auto p) noexcept
+                                          { print(p, 10); });
+                }
+#endif
             }
 
             return getter(mem);
         }
     };
 
-public:
+  public:
     using type = std::
         conditional_t<_Program::singular, single_cell_evaluator, evaluator>;
 };

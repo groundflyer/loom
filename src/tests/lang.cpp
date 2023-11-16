@@ -97,12 +97,11 @@ int main(/*int argc, char* argv[]*/)
     using facf    = factorial<float>;
     using facf_se = simd::evaluator<facf>;
     facf_se facf_se_eval{};
-    auto    facf_se_ret = facf_se_eval(100, 4.f);
+    auto    facf_se_ret = facf_se_eval(99, 7.f);
     ret += !std::ranges::all_of(facf_se_ret,
                                 [](const float i) constexpr noexcept
                                 { return fn::almost_equal(i, 5040.f, 100); });
     ok("simd facf");
-    fmt::print("facf_ret = {}\n", facf_se_ret);
 
     return ret;
 }
