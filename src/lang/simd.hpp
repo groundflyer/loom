@@ -689,17 +689,19 @@ struct native_instruction_width<Copy<Dst, Src>>
         get_native_vector_width<vartype<Dst>>::value;
 };
 
-template <typename Op, typename Dst, typename... Args>
-struct native_instruction_width<Compute<Op, Dst, Args...>>
+template <typename Op, typename Dst, typename Arg1, typename... Args>
+struct native_instruction_width<Compute<Op, Dst, Arg1, Args...>>
 {
+    // assume on the first argument
+    // floating point comparisons can benefit
 #ifdef __AVX__
     // AVX doesn't have integer operations - fallback to SSE width.
-    using vt                       = vartype<Dst>;
+    using vt                       = vartype<Arg1>;
     static constexpr fsize_t w     = get_native_vector_width<vt>::value;
     static constexpr fsize_t value = std::is_integral_v<vt> ? (w / 2) : w;
 #else
     static constexpr fsize_t value =
-        get_native_vector_width<vartype<Dst>>::value;
+        get_native_vector_width<vartype<Arg1>>::value;
 #endif
 };
 
