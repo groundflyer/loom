@@ -44,7 +44,8 @@ inline constexpr bool not_cp =
     !(std::conjunction_v<std::is_same<varname<_CP>, varname<_Vars>>...>);
 
 template <typename Op, typename Dst, typename... Args>
-    requires(not_cp<Dst, Args...>)
+    requires(not_cp<Dst, Args...> &&
+             std::is_invocable_r_v<vartype<Dst>, Op, vartype<Args>...>)
 struct Compute
 {
     using var    = Dst;
