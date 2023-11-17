@@ -4,6 +4,8 @@
 
 using namespace lucid;
 
+static_assert(std::is_same_v<char_sequence<'t', 'e', 's', 't'>, sl2cs<"test">>);
+
 #define TEST_s2i(T, BASE, VAL) \
     static_assert(s2i<T, BASE>(#VAL).value() == static_cast<T>(VAL))
 
