@@ -8,7 +8,7 @@
 
 namespace lucid::bse
 {
-template <typename RegTypes, typename RegNames>
+template <typename RegTypes, typename RegNames, typename _CP>
 class Memory
 {
     using helper = MemoryHelper<RegTypes, RegNames>;
@@ -69,6 +69,9 @@ class basic_scalar_evaluator
     using cells     = typename _Program::cells;
     using reg_names = typename _Program::reg_names;
     using reg_types = typename _Program::reg_types;
+    using cp        = typename _Program::cp;
+
+    static constexpr auto end_pos = _Program::end_pos;
 
     template <typename C>
     using compile_cell = standard_compiler<C, labelmap>;
@@ -78,7 +81,7 @@ class basic_scalar_evaluator
     static constexpr input_setter<typename _Program::input_vars>   setter{};
     static constexpr output_getter<typename _Program::output_vars> getter{};
 
-    using memory = Memory<reg_types, reg_names>;
+    using memory = Memory<reg_types, reg_names, cp>;
 
     struct single_cell_evaluator
     {

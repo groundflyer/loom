@@ -109,7 +109,7 @@ template <typename T,
           typename Allocator>
 using vector_union_t = typename vector_union<T, Vector, Allocator>::type;
 
-template <typename Data, typename Helper>
+template <typename Data, typename Helper, typename _CP>
 class _proxy_row
 {
     Data&   m_data;
@@ -201,7 +201,7 @@ class _proxy_row
     }
 };
 
-template <typename Data, typename Helper, fsize_t N>
+template <typename Data, typename Helper, typename _CP, fsize_t N>
 class _proxy_view
 {
     Data&   m_data;
@@ -230,7 +230,7 @@ class _proxy_view
 
     _proxy_view(Data& data, fsize_t pos) noexcept : m_data(data), m_pos(pos) {}
 
-    _proxy_row<Data, Helper>
+    _proxy_row<Data, Helper, _CP>
     operator[](const fsize_t n) const noexcept
     {
         return {m_data, shift(n)};
@@ -238,21 +238,21 @@ class _proxy_view
 
     template <fsize_t N2>
         requires(N2 <= N)
-    _proxy_view<Data, Helper, N2>
+    _proxy_view<Data, Helper, _CP, N2>
     view(const fsize_t pos = 0) const noexcept
     {
         ASSERT(N2 <= N - pos, "Extent too big");
         return {m_data, shift(pos)};
     }
 
-    _proxy_view<Data, Helper, dynamic_extent>
+    _proxy_view<Data, Helper, _CP, dynamic_extent>
     view(const fsize_t pos, const fsize_t ext) const noexcept
     {
         ASSERT(ext <= size() - pos, "Extent too big");
         return {m_data, shift(pos), ext};
     }
 
-    _proxy_view<Data, Helper, dynamic_extent>
+    _proxy_view<Data, Helper, _CP, dynamic_extent>
     view(const fsize_t pos = 0) const noexcept
     {
         return view(pos, size() - pos);
@@ -280,8 +280,8 @@ class _proxy_view
     }
 };
 
-template <typename Data, typename Helper>
-class _proxy_view<Data, Helper, dynamic_extent>
+template <typename Data, typename Helper, typename _CP>
+class _proxy_view<Data, Helper, _CP, dynamic_extent>
 {
     Data&   m_data;
     fsize_t m_pos;
@@ -313,27 +313,27 @@ class _proxy_view<Data, Helper, dynamic_extent>
     {
     }
 
-    _proxy_row<Data, Helper>
+    _proxy_row<Data, Helper, _CP>
     operator[](const fsize_t n) const noexcept
     {
         return {m_data, shift(n)};
     }
 
     template <fsize_t N>
-    _proxy_view<Data, Helper, N>
+    _proxy_view<Data, Helper, _CP, N>
     view(const fsize_t pos) const noexcept
     {
         return {m_data, shift(pos)};
     }
 
-    _proxy_view<Data, Helper, dynamic_extent>
+    _proxy_view<Data, Helper, _CP, dynamic_extent>
     view(const fsize_t pos, const fsize_t ext) const noexcept
     {
         ASSERT(ext <= size() - pos, "Extent too big");
         return {m_data, shift(pos), ext};
     }
 
-    _proxy_view<Data, Helper, dynamic_extent>
+    _proxy_view<Data, Helper, _CP, dynamic_extent>
     view(const fsize_t pos = 0) const noexcept
     {
         CHECK_INDEX(pos, size());
@@ -364,8 +364,8 @@ class _proxy_view<Data, Helper, dynamic_extent>
 template <typename _ProxyView>
 struct _proxy_view_extent;
 
-template <typename Data, typename Helper, fsize_t N>
-struct _proxy_view_extent<_proxy_view<Data, Helper, N>>
+template <typename Data, typename Helper, typename _CP, fsize_t N>
+struct _proxy_view_extent<_proxy_view<Data, Helper, _CP, N>>
 {
     static constexpr fsize_t value = N;
 };
@@ -375,6 +375,7 @@ constexpr inline fsize_t pv_extent = _proxy_view_extent<_ProxyView>::value;
 
 template <typename RegTypes,
           typename RegNames,
+          typename _CP,
           fsize_t alignment                              = simd_alignment,
           template <typename, typename> typename _Vector = std::vector>
 class Memory
@@ -399,9 +400,9 @@ class Memory
     Data m_data;
 
     template <fsize_t N>
-    using proxy_view = _proxy_view<Data, helper, N>;
+    using proxy_view = _proxy_view<Data, helper, _CP, N>;
 
-    using proxy_row = _proxy_row<Data, helper>;
+    using proxy_row = _proxy_row<Data, helper, _CP>;
 
     class _iterator : public std::contiguous_iterator_tag
     {
@@ -674,52 +675,56 @@ namespace detail
 {
 template <typename T>
     requires(std::is_floating_point_v<T> || std::is_integral_v<T>)
-struct get_native_vector_width
+struct get_native_vector_extent
 {
     static constexpr fsize_t value = simd_width / 8 / sizeof(T);
 };
 
-template <typename C>
+template <typename C, typename index_t>
 struct native_instruction_width;
 
-template <typename Dst, typename Src>
-struct native_instruction_width<Copy<Dst, Src>>
+template <typename Dst, typename Src, typename index_t>
+struct native_instruction_width<Copy<Dst, Src>, index_t>
 {
     static constexpr fsize_t value =
-        get_native_vector_width<vartype<Dst>>::value;
+        get_native_vector_extent<vartype<Dst>>::value;
 };
 
-template <typename Op, typename Dst, typename Arg1, typename... Args>
-struct native_instruction_width<Compute<Op, Dst, Arg1, Args...>>
+template <typename Op,
+          typename Dst,
+          typename Arg1,
+          typename... Args,
+          typename index_t>
+struct native_instruction_width<Compute<Op, Dst, Arg1, Args...>, index_t>
 {
     // assume on the first argument
     // floating point comparisons can benefit
 #ifdef __AVX__
     // AVX doesn't have integer operations - fallback to SSE width.
     using vt                       = vartype<Arg1>;
-    static constexpr fsize_t w     = get_native_vector_width<vt>::value;
-    static constexpr fsize_t value = std::is_integral_v<vt> ? (w / 2) : w;
+    static constexpr fsize_t n     = get_native_vector_extent<vt>::value;
+    static constexpr fsize_t value = std::is_integral_v<vt> ? (n / 2) : n;
 #else
     static constexpr fsize_t value =
-        get_native_vector_width<vartype<Arg1>>::value;
+        get_native_vector_extent<vartype<Arg1>>::value;
 #endif
 };
 
-template <typename Target>
-struct native_instruction_width<Jump<Target>>
+template <typename Target, typename index_t>
+struct native_instruction_width<Jump<Target>, index_t>
 {
-    static constexpr fsize_t value = get_native_vector_width<index_t>::value;
+    static constexpr fsize_t value = get_native_vector_extent<index_t>::value;
 };
 
-template <typename Var, typename Labels>
-struct native_instruction_width<ParmJump<Var, Labels>>
+template <typename Var, typename Labels, typename index_t>
+struct native_instruction_width<ParmJump<Var, Labels>, index_t>
 {
 #ifdef __AVX__
     // AVX doesn't have integer operations - fallback to SSE width.
     static constexpr fsize_t value =
-        get_native_vector_width<index_t>::value / 2;
+        get_native_vector_extent<index_t>::value / 2;
 #else
-    static constexpr fsize_t value = get_native_vector_width<index_t>::value;
+    static constexpr fsize_t value = get_native_vector_extent<index_t>::value;
 #endif
 };
 
@@ -746,169 +751,113 @@ fake_get(T v) noexcept
 } // namespace detail
 
 template <typename T>
-constexpr inline fsize_t native_vector_width =
-    detail::get_native_vector_width<T>::value;
+constexpr inline fsize_t native_vector_extent =
+    detail::get_native_vector_extent<T>::value;
 
 template <typename T>
-using native_vector = packed_vector<T, native_vector_width<T>>;
+using native_vector = packed_vector<T, native_vector_extent<T>>;
 
 namespace detail
 {
-template <fsize_t A, fsize_t W, typename T, fsize_t... Is>
-packed_vector<T, W>
+template <fsize_t A, fsize_t N, typename T, fsize_t... Is>
+packed_vector<T, N>
 load_impl(T* src, std::index_sequence<Is...>) noexcept
 {
     src                     = std::assume_aligned<A, T>(src);
-    packed_vector<T, W> ret = {src[Is]...};
+    packed_vector<T, N> ret = {src[Is]...};
     return ret;
 }
 
-template <fsize_t W, typename T, fsize_t... Is>
-constexpr packed_vector<T, W>
+template <fsize_t N, typename T, fsize_t... Is>
+constexpr packed_vector<T, N>
 broadcast_impl(T v, std::index_sequence<Is...>) noexcept
 {
-    packed_vector<T, W> ret = {fake_get<Is>(v)...};
+    packed_vector<T, N> ret = {fake_get<Is>(v)...};
     return ret;
 }
 } // namespace detail
 
-template <typename C>
+template <typename C, typename index_t>
 constexpr inline fsize_t native_instruction_width =
-    detail::native_instruction_width<C>::value;
+    detail::native_instruction_width<C, index_t>::value;
 
 /// @brief Load @p N values and pack them into vector of width @p N
 /// from aligned memory location @p src.
 /// @tparam A memory alignment.
-template <fsize_t A, fsize_t W, typename T>
-packed_vector<T, W>
+template <fsize_t A, fsize_t N, typename T>
+packed_vector<T, N>
 load(T* src) noexcept
 {
-    return detail::load_impl<A, W>(src, std::make_index_sequence<W>{});
+    return detail::load_impl<A, N>(src, std::make_index_sequence<N>{});
 }
 
 /// @brief Store values from packed vector into aligned memory location @p dst.
 /// @tparam A memory alignment.
-template <fsize_t A, fsize_t W, typename T>
+template <fsize_t A, fsize_t N, typename T>
 void
-store(packed_vector<T, W> src, T* dst) noexcept
+store(packed_vector<T, N> src, T* dst) noexcept
 {
     dst = std::assume_aligned<A, T>(dst);
-    detail::store_impl(src, dst, std::make_index_sequence<W>{});
+    detail::store_impl(src, dst, std::make_index_sequence<N>{});
 }
 
 /// @brief Broadcast a value to all elements of the resulting packed vector.
-template <fsize_t W, typename T>
-constexpr packed_vector<T, W>
+template <fsize_t N, typename T>
+constexpr packed_vector<T, N>
 broadcast(T v) noexcept
 {
-    return detail::broadcast_impl<W>(v, std::make_index_sequence<W>{});
+    return detail::broadcast_impl<N>(v, std::make_index_sequence<N>{});
 }
 
-template <fsize_t W, typename Op>
+template <fsize_t N, typename Op>
 struct remap_op;
 
-template <fsize_t W, typename T>
-struct remap_op<W, std::equal_to<T>>
-{
-    struct type
-    {
-        constexpr packed_vector<index_t, W>
-        operator()(packed_vector<T, W> a, packed_vector<T, W> b) const noexcept
-        {
-            return a == b;
-        }
+#define DEF_REMAP_VEC_CMP(func, op)                          \
+    template <fsize_t N, typename T>                         \
+    struct remap_op<N, func<T>>                              \
+    {                                                        \
+        struct type                                          \
+        {                                                    \
+            constexpr packed_vector<infer_index_t<T>, N>     \
+            operator()(packed_vector<T, N> a,                \
+                       packed_vector<T, N> b) const noexcept \
+            {                                                \
+                return a op b;                               \
+            }                                                \
+        };                                                   \
     };
-};
 
-template <fsize_t W, typename T>
-struct remap_op<W, std::not_equal_to<T>>
-{
-    struct type
-    {
-        constexpr packed_vector<index_t, W>
-        operator()(packed_vector<T, W> a, packed_vector<T, W> b) const noexcept
-        {
-            return a != b;
-        }
-    };
-};
-
-template <fsize_t W, typename T>
-struct remap_op<W, std::greater<T>>
-{
-    struct type
-    {
-        constexpr packed_vector<index_t, W>
-        operator()(packed_vector<T, W> a, packed_vector<T, W> b) const noexcept
-        {
-            return a > b;
-        }
-    };
-};
-
-template <fsize_t W, typename T>
-struct remap_op<W, std::less<T>>
-{
-    struct type
-    {
-        constexpr packed_vector<index_t, W>
-        operator()(packed_vector<T, W> a, packed_vector<T, W> b) const noexcept
-        {
-            return a < b;
-        }
-    };
-};
-
-template <fsize_t W, typename T>
-struct remap_op<W, std::greater_equal<T>>
-{
-    struct type
-    {
-        constexpr packed_vector<index_t, W>
-        operator()(packed_vector<T, W> a, packed_vector<T, W> b) const noexcept
-        {
-            return a >= b;
-        }
-    };
-};
-
-template <fsize_t W, typename T>
-struct remap_op<W, std::less_equal<T>>
-{
-    struct type
-    {
-        constexpr packed_vector<index_t, W>
-        operator()(packed_vector<T, W> a, packed_vector<T, W> b) const noexcept
-        {
-            return a <= b;
-        }
-    };
-};
+DEF_REMAP_VEC_CMP(std::equal_to, ==)
+DEF_REMAP_VEC_CMP(std::not_equal_to, !=)
+DEF_REMAP_VEC_CMP(std::greater, >)
+DEF_REMAP_VEC_CMP(std::less, <)
+DEF_REMAP_VEC_CMP(std::greater_equal, >=)
+DEF_REMAP_VEC_CMP(std::less_equal, <=)
 
 // remaping std::plus, multiply, etc.
 // they work with vector extensions
-template <fsize_t W, typename T, template <typename> typename Op>
-struct remap_op<W, Op<T>>
+template <fsize_t N, typename T, template <typename> typename Op>
+struct remap_op<N, Op<T>>
 {
-    using type = Op<packed_vector<T, W>>;
+    using type = Op<packed_vector<T, N>>;
 };
 
-template <fsize_t W, typename Op>
-using remap_op_t = typename remap_op<W, Op>::type;
+template <fsize_t N, typename Op>
+using remap_op_t = typename remap_op<N, Op>::type;
 
-template <fsize_t alignment, fsize_t W>
+template <fsize_t alignment, fsize_t N>
 struct var_loader
 {
     template <typename Var, typename _ProxyView>
-        requires(pv_extent<_ProxyView> == W)
-    packed_vector<vartype<Var>, W>
+        requires(pv_extent<_ProxyView> == N)
+    packed_vector<vartype<Var>, N>
     operator()(_ProxyView view) const noexcept
     {
         constexpr auto l = parse_literal<Var>();
         if constexpr(l.has_value())
-            return broadcast<W>(l.value());
+            return broadcast<N>(l.value());
         else
-            return load<alignment, W>(view.template get<Var>().data());
+            return load<alignment, N>(view.template get<Var>().data());
     }
 };
 
@@ -918,18 +867,20 @@ struct eval;
 template <typename Dst, typename Src, typename LabelMap, fsize_t alignment>
 struct eval<Copy<Dst, Src>, LabelMap, alignment>
 {
-    using T                    = vartype<Dst>;
-    static constexpr fsize_t w = native_instruction_width<Copy<Dst, Src>>;
-    using loader_t             = var_loader<alignment, w>;
+    using T       = vartype<Dst>;
+    using index_t = get_index_t<LabelMap>;
+    static constexpr fsize_t n =
+        native_instruction_width<Copy<Dst, Src>, index_t>;
+    using loader_t = var_loader<alignment, n>;
     static constexpr loader_t loader{};
 
     template <typename _ProxyView>
-        requires(pv_extent<_ProxyView> == w)
+        requires(pv_extent<_ProxyView> == n)
     void
     operator()(_ProxyView view) const noexcept
     {
         T* dst = view.template get<Dst>().data();
-        store<alignment, w>(loader.template operator()<Src>(), dst);
+        store<alignment, n>(loader.template operator()<Src>(), dst);
     }
 };
 
@@ -937,17 +888,19 @@ template <typename Target, typename LabelMap, fsize_t alignment>
 struct eval<Jump<Target>, LabelMap, alignment>
 {
     using constant = typename typelist::lookup<Target, LabelMap>;
+    using index_t  = get_index_t<LabelMap>;
     static constexpr index_t target = constant{}();
-    static constexpr fsize_t w      = native_instruction_width<Jump<Target>>;
+    static constexpr fsize_t n =
+        native_instruction_width<Jump<Target>, index_t>;
 
     template <typename _ProxyView>
-        requires(pv_extent<_ProxyView> == w)
+        requires(pv_extent<_ProxyView> == n)
     void
     operator()(_ProxyView view) const noexcept
     {
         index_t*                  dst = view.cp().data();
-        packed_vector<index_t, w> t   = broadcast<w>(target);
-        store<alignment, w>(t, dst);
+        packed_vector<index_t, n> t   = broadcast<n>(target);
+        store<alignment, n>(t, dst);
     }
 };
 
@@ -956,38 +909,40 @@ template <typename Op,
           typename... Args,
           typename LabelMap,
           fsize_t alignment>
+    requires(... && (sizeof(vartype<Dst>) == sizeof(vartype<Args>)))
 struct eval<Compute<Op, Dst, Args...>, LabelMap, alignment>
 {
-    using T = vartype<Dst>;
-    static constexpr fsize_t w =
-        native_instruction_width<Compute<Op, Dst, Args...>>;
-    using vector_op = remap_op_t<w, Op>;
-    using loader_t  = var_loader<alignment, w>;
+    using T       = vartype<Dst>;
+    using index_t = get_index_t<LabelMap>;
+    static constexpr fsize_t n =
+        native_instruction_width<Compute<Op, Dst, Args...>, index_t>;
+    using vector_op = remap_op_t<n, Op>;
+    using loader_t  = var_loader<alignment, n>;
     static constexpr loader_t loader{};
 
     template <typename _ProxyView>
-        requires(pv_extent<_ProxyView> == w)
+        requires(pv_extent<_ProxyView> == n)
     void
     operator()(_ProxyView view) const noexcept
     {
         T*   dst = view.template get<Dst>().data();
         auto vars =
             typelist::maybe_collect(loader, type_sequence<Args...>{}, view);
-        packed_vector<T, w> ret = maybe_apply(vector_op{}, vars);
-        store<alignment, w>(ret, dst);
+        packed_vector<T, n> ret = maybe_apply(vector_op{}, vars);
+        store<alignment, n>(ret, dst);
     }
 };
 
-template <typename Idxs, fsize_t w>
+template <typename Idxs, fsize_t n>
 struct shuffler;
 
-template <index_t a, index_t b, fsize_t w>
-struct shuffler<std::integer_sequence<index_t, a, b>, w>
+template <typename index_t, index_t a, index_t b, fsize_t n>
+struct shuffler<std::integer_sequence<index_t, a, b>, n>
 {
-    using IdxVec = packed_vector<index_t, w>;
+    using IdxVec = packed_vector<index_t, n>;
 
-    static constexpr IdxVec va = broadcast<w>(a);
-    static constexpr IdxVec vb = broadcast<w>(b);
+    static constexpr IdxVec va = broadcast<n>(a);
+    static constexpr IdxVec vb = broadcast<n>(b);
 
     IdxVec
     operator()(IdxVec var) const noexcept
@@ -996,11 +951,11 @@ struct shuffler<std::integer_sequence<index_t, a, b>, w>
     }
 };
 
-template <index_t... is, fsize_t w>
-    requires(sizeof...(is) <= w)
-struct shuffler<std::integer_sequence<index_t, is...>, w>
+template <typename index_t, index_t... is, fsize_t n>
+    requires(sizeof...(is) <= n)
+struct shuffler<std::integer_sequence<index_t, is...>, n>
 {
-    using IdxVec                  = packed_vector<index_t, w>;
+    using IdxVec                  = packed_vector<index_t, n>;
     static constexpr IdxVec table = {is...};
 
     IdxVec
@@ -1013,27 +968,29 @@ struct shuffler<std::integer_sequence<index_t, is...>, w>
 template <typename Var, typename Labels, typename LabelMap, fsize_t alignment>
 struct eval<ParmJump<Var, Labels>, LabelMap, alignment>
 {
-    static constexpr fsize_t w =
-        native_instruction_width<ParmJump<Var, Labels>>;
+    using index_t = get_index_t<LabelMap>;
+    static constexpr fsize_t n =
+        native_instruction_width<ParmJump<Var, Labels>, index_t>;
 
     using idxs = pjmp_idxs<ParmJump<Var, Labels>, LabelMap>;
-    static constexpr shuffler<idxs, w> op{};
+    static constexpr shuffler<idxs, n> op{};
 
     template <typename _ProxyView>
-        requires(pv_extent<_ProxyView> == w)
+        requires(pv_extent<_ProxyView> == n)
     void
     operator()(_ProxyView view) const noexcept
     {
         index_t* dst = view.cp().data();
         index_t* src = view.template get<Var>().data();
-        store<alignment, w>(op(load<alignment, w>(src)), dst);
+        store<alignment, n>(op(load<alignment, n>(src)), dst);
     }
 };
 
 template <typename C, typename LabelMap, fsize_t alignment, fsize_t bulk_number>
 struct vertical_runner
 {
-    static constexpr fsize_t stride = native_instruction_width<C>;
+    using index_t                   = get_index_t<LabelMap>;
+    static constexpr fsize_t stride = native_instruction_width<C, index_t>;
     static constexpr eval<C, LabelMap, alignment> v_eval{};
     static constexpr standard_eval<C, LabelMap>   s_eval{};
     using bulk_sizes =
@@ -1097,6 +1054,7 @@ class memory_chunks : public std::ranges::view_interface<memory_chunks<_Memory>>
 
     proxy_view m_view;
 
+    template <typename index_t>
     static fsize_t
     chunk_size(std::span<index_t> cps) noexcept
     {
@@ -1231,6 +1189,9 @@ class simd_evaluator
     using cells     = typename _Program::cells;
     using reg_names = typename _Program::reg_names;
     using reg_types = typename _Program::reg_types;
+    using cp        = typename _Program::cp;
+
+    static constexpr auto end_pos = _Program::end_pos;
 
     template <typename C, typename LabelMap>
     using simd_eval = vertical_runner<C, LabelMap, simd_alignment, bulk_number>;
@@ -1244,7 +1205,7 @@ class simd_evaluator
     static constexpr bve::output_getter<typename _Program::output_vars>
         getter{};
 
-    using memory = Memory<reg_types, reg_names, simd_alignment>;
+    using memory = Memory<reg_types, reg_names, cp, simd_alignment>;
 
     struct single_cell_evaluator
     {
@@ -1277,7 +1238,7 @@ class simd_evaluator
             mem.resize(n);
             setter(mem, std::forward<Args>(args)...);
 
-            const std::span<index_t> cps = mem.view().cp();
+            const auto cps = mem.view().cp();
             while(cps.front() != end_pos)
             {
                 std::ranges::for_each(memory_chunks(mem),

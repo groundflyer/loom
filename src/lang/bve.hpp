@@ -39,7 +39,7 @@ struct array_union<Union<Ts...>, Array>
 template <typename T, template <typename> typename Array>
 using array_union_t = typename array_union<T, Array>::type;
 
-template <typename RegTypes, typename RegNames, std::size_t Size>
+template <typename RegTypes, typename RegNames, typename _CP, std::size_t Size>
 class Memory
 {
     template <typename T>
@@ -474,6 +474,9 @@ struct basic_vector_evaluator
     using vars      = typename _Program::variables;
     using reg_names = typename _Program::reg_names;
     using reg_types = typename _Program::reg_types;
+    using cp        = typename _Program::cp;
+
+    static constexpr auto end_pos = _Program::end_pos;
 
     template <typename C>
     using compile_cell = standard_compiler<C, labelmap, array_eval>;
@@ -483,7 +486,7 @@ struct basic_vector_evaluator
     static constexpr input_setter<typename _Program::input_vars>   setter{};
     static constexpr output_getter<typename _Program::output_vars> getter{};
 
-    using memory = Memory<reg_types, reg_names, ArraySize>;
+    using memory = Memory<reg_types, reg_names, cp, ArraySize>;
 
     struct single_cell_evaluator
     {

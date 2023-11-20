@@ -11,13 +11,9 @@
 #include <utils/union.hpp>
 
 #include <cstdint>
-#include <limits>
 
 namespace lucid
 {
-using index_t                    = std::uint32_t;
-constexpr inline index_t end_pos = static_cast<index_t>(-1);
-
 template <typename Type, StringLiteral Name>
     requires(std::is_integral_v<Type> || std::is_floating_point_v<Type>)
 struct Variable
@@ -36,12 +32,12 @@ using varname = typename _Variable::name;
 template <typename _Variable>
 constexpr inline std::string_view varview = _Variable::nameview;
 
-/// @brief Cell Pointer.
-using _CP = Variable<index_t, "CP">;
+inline constexpr char _cp_char[] = "CP";
+using _cp_name                   = sl2cs<_cp_char>;
 
 template <typename... _Vars>
 inline constexpr bool not_cp =
-    !(std::conjunction_v<std::is_same<varname<_CP>, varname<_Vars>>...>);
+    !(std::conjunction_v<std::is_same<_cp_name, varname<_Vars>>...>);
 
 template <typename Op, typename Dst, typename... Args>
     requires(not_cp<Dst, Args...> &&
@@ -83,8 +79,7 @@ struct is_label<Label<s>>
 };
 
 template <typename Var, typename Labels>
-    requires(std::is_same_v<vartype<Var>, index_t> &&
-             typelist::all<is_label, Labels> && typelist::length<Labels> >= 2)
+    requires(typelist::all<is_label, Labels> && typelist::length<Labels> >= 2)
 struct ParmJump
 {
     using var    = Var;
@@ -359,11 +354,14 @@ get_value(_Memory&& mem) noexcept
         return std::forward<_Memory>(mem).template get<_Variable>();
 }
 
+template <typename LabelMap>
+using get_index_t = snd_t<typelist::head<LabelMap>>::value_type;
+
 template <typename Command, typename LabelMap>
 struct standard_eval;
 
-template <typename Dst, typename Src, typename LabelMap>
-struct standard_eval<Copy<Dst, Src>, LabelMap>
+template <typename Dst, typename Src, typename _>
+struct standard_eval<Copy<Dst, Src>, _>
 {
     template <typename _Memory>
     constexpr void
@@ -374,8 +372,8 @@ struct standard_eval<Copy<Dst, Src>, LabelMap>
     }
 };
 
-template <typename Dst, typename Op, typename... Args, typename LabelMap>
-struct standard_eval<Compute<Op, Dst, Args...>, LabelMap>
+template <typename Dst, typename Op, typename... Args, typename _>
+struct standard_eval<Compute<Op, Dst, Args...>, _>
 {
     template <typename _Memory>
     constexpr void
@@ -389,8 +387,8 @@ struct standard_eval<Compute<Op, Dst, Args...>, LabelMap>
 template <typename Target, typename LabelMap>
 struct standard_eval<Jump<Target>, LabelMap>
 {
-    using constant = typename typelist::lookup<Target, LabelMap>;
-    static constexpr index_t value = constant::value;
+    using constant              = typename typelist::lookup<Target, LabelMap>;
+    static constexpr auto value = constant::value;
 
     template <typename _Memory>
     constexpr void
@@ -401,6 +399,7 @@ struct standard_eval<Jump<Target>, LabelMap>
 };
 
 template <typename Var, typename Labels, typename LabelMap>
+    requires(std::is_same_v<vartype<Var>, get_index_t<LabelMap>>)
 struct standard_eval<ParmJump<Var, Labels>, LabelMap>
 {
     static constexpr auto table = pjmp_arr<ParmJump<Var, Labels>, LabelMap>;
@@ -473,6 +472,27 @@ struct same_size_union<Union<T, Ts...>>
     static constexpr bool value = (... && (sizeof(T) == sizeof(Ts)));
 };
 
+template <typename T>
+class infer_index
+{
+    template <typename C>
+    struct p
+    {
+        static constexpr bool value = sizeof(C) == sizeof(T);
+    };
+
+  public:
+    using type = typelist::find<p,
+                                type_sequence<std::uint8_t,
+                                              std::uint16_t,
+                                              std::uint32_t,
+                                              std::uint64_t,
+                                              std::uintmax_t>>;
+};
+
+template <typename T>
+using infer_index_t = typename infer_index<T>::type;
+
 /// @brief Program representation.
 template <typename InputVars, typename Statements, typename OutputVars>
 class Program
@@ -495,6 +515,13 @@ class Program
   public:
     using input_vars  = InputVars;
     using output_vars = OutputVars;
+    using index_t     = infer_index_t<vartype<typelist::head<InputVars>>>;
+
+    static_assert(!std::is_void_v<index_t>);
+
+    using cp = Variable<index_t, _cp_char>;
+
+    static constexpr index_t end_pos = -1;
 
     // Ensure that every cell is labeled.
     // Only the first label can be skipped, so we just add special label at the
@@ -513,7 +540,7 @@ class Program
     static constexpr bool singular = num_cells == 1;
 
     using variables = std::
-        conditional_t<singular, stated_vars, typelist::cons<_CP, stated_vars>>;
+        conditional_t<singular, stated_vars, typelist::cons<cp, stated_vars>>;
     static_assert(typelist::all<same_size_union, variables>);
 
     /// @brief Names of registers.
@@ -536,36 +563,38 @@ class Program
                            ensure_last_jumps_t<cells_statements, labels>>;
 };
 
-#define VAR(TYPE, NAME) Variable<TYPE, #NAME>
-#define TVAR(NAME)      VAR(T, NAME)
+#ifndef MAJOR_TYPENAME
+#define MAJOR_TYPENAME T
+#endif
 
-#define BEGIN(NAME, ...) \
-    using NAME = Program < type_sequence<__VA_ARGS__>, type_sequence <
-#define END(...) >, type_sequence < __VA_ARGS__ >> ;
+#define _VAR(TYPE, NAME) Variable<TYPE, #NAME>
+#define VAR(NAME)        _VAR(MAJOR_TYPENAME, NAME)
 
-#define TBEGIN1(NAME, VAR) \
-    using NAME = Program < type_sequence<TVAR(VAR)>, type_sequence <
-#define TBEGIN2(NAME, VAR1, VAR2)                                 \
-    using NAME = Program < type_sequence<TVAR(VAR1), TVAR(VAR2)>, \
-          type_sequence <
+#define BEGIN1(NAME, v) \
+    using NAME = Program < type_sequence<VAR(v)>, type_sequence <
+#define BEGIN2(NAME, a, b) \
+    using NAME = Program < type_sequence<VAR(a), VAR(b)>, type_sequence <
 
-#define TEND1(VAR)        >, type_sequence < TVAR(VAR) >> ;
-#define TEND2(VAR1, VAR2) >, type_sequence < TVAR(VAR1), TVAR(VAR2) >> ;
+#define END1(v)           >, type_sequence < VAR(v) >> ;
+#define END2(a, b)        >, type_sequence < VAR(a), VAR(b) >> ;
 
 #define LABEL(NAME)       Label<#NAME>
 
 #define JMP(TARGET)       Jump<Label<#TARGET>>
 
-#define PJMPN(VAR, ...) \
-    ParmJump<Variable<index_t, #VAR>, type_sequence<__VA_ARGS__>>
+#define PJMPN(varname, ...)                                     \
+    ParmJump<Variable<infer_index_t<MAJOR_TYPENAME>, #varname>, \
+             type_sequence<__VA_ARGS__>>
 
-#define PJMP2(VAR, L1, L2)                                    \
-    ParmJump < Variable<index_t, #VAR>, type_pair < LABEL(L1) \
-    , LABEL(L2)                                               \
+#define PJMP2(varname, L1, L2)                                    \
+    ParmJump < Variable<infer_index_t<MAJOR_TYPENAME>, #varname>, \
+        type_pair < LABEL(L1)                                     \
+    , LABEL(L2)                                                   \
     >>
 
-#define PJMP3(VAR, L1, L2, L3)                                    \
-    ParmJump < Variable<index_t, #VAR>, type_sequence < LABEL(L1) \
+#define PJMP3(varname, L1, L2, L3)                                \
+    ParmJump < Variable<infer_index_t<MAJOR_TYPENAME>, #varname>, \
+        type_sequence < LABEL(L1)                                 \
     , LABEL(L2)                                                   \
     , LABEL(L3)                                                   \
     >>
@@ -579,37 +608,37 @@ class Program
 #define UNOP(OP, TYPE, DST, VAR) \
     Compute<OP<TYPE>, Variable<TYPE, #DST>, Variable<TYPE, #VAR>>
 
-#define CMP(OP, TYPE, DST, A, B)     \
-    Compute<OP<TYPE>,                \
-            Variable<index_t, #DST>, \
-            Variable<TYPE, #A>,      \
+#define CMP(OP, TYPE, DST, A, B)                           \
+    Compute<OP<TYPE>,                                      \
+            Variable<infer_index_t<MAJOR_TYPENAME>, #DST>, \
+            Variable<TYPE, #A>,                            \
             Variable<TYPE, #B>>
 
-#define ADD(...)  BINOP(std::plus, __VA_ARGS__)
-#define SUB(...)  BINOP(std::minus, __VA_ARGS__)
-#define MUL(...)  BINOP(std::multiplies, __VA_ARGS__)
-#define DIV(...)  BINOP(std::divides, __VA_ARGS__)
-#define MOD(...)  BINOP(std::modulus, __VA_ARGS__)
-#define NEG(...)  UNOP(std::negate, __VA_ARGS__)
+#define _ADD(...)  BINOP(std::plus, __VA_ARGS__)
+#define _SUB(...)  BINOP(std::minus, __VA_ARGS__)
+#define _MUL(...)  BINOP(std::multiplies, __VA_ARGS__)
+#define _DIV(...)  BINOP(std::divides, __VA_ARGS__)
+#define _MOD(...)  BINOP(std::modulus, __VA_ARGS__)
+#define _NEG(...)  UNOP(std::negate, __VA_ARGS__)
 
-#define EQ(...)   CMP(std::equal_to, __VA_ARGS__)
-#define NEQ(...)  CMP(std::not_equal_to, __VA_ARGS__)
-#define GT(...)   CMP(std::greater, __VA_ARGS__)
-#define LT(...)   CMP(std::less, __VA_ARGS__)
-#define GE(...)   CMP(std::greater_equal, __VA_ARGS__)
-#define LE(...)   CMP(std::less_equal, __VA_ARGS__)
+#define _EQ(...)   CMP(std::equal_to, __VA_ARGS__)
+#define _NEQ(...)  CMP(std::not_equal_to, __VA_ARGS__)
+#define _GT(...)   CMP(std::greater, __VA_ARGS__)
+#define _LT(...)   CMP(std::less, __VA_ARGS__)
+#define _GE(...)   CMP(std::greater_equal, __VA_ARGS__)
+#define _LE(...)   CMP(std::less_equal, __VA_ARGS__)
 
-#define TADD(...) ADD(T, __VA_ARGS__)
-#define TSUB(...) SUB(T, __VA_ARGS__)
-#define TMUL(...) MUL(T, __VA_ARGS__)
-#define TDIV(...) DIV(T, __VA_ARGS__)
-#define TMOD(...) MOD(T, __VA_ARGS__)
-#define TNEG(...) NEG(T, __VA_ARGS__)
+#define ADD(...)   _ADD(MAJOR_TYPENAME, __VA_ARGS__)
+#define SUB(...)   _SUB(MAJOR_TYPENAME, __VA_ARGS__)
+#define MUL(...)   _MUL(MAJOR_TYPENAME, __VA_ARGS__)
+#define DIV(...)   _DIV(MAJOR_TYPENAME, __VA_ARGS__)
+#define MOD(...)   _MOD(MAJOR_TYPENAME, __VA_ARGS__)
+#define NEG(...)   _NEG(MAJOR_TYPENAME, __VA_ARGS__)
 
-#define TEQ(...)  EQ(T, __VA_ARGS__)
-#define TNEQ(...) NEQ(T, __VA_ARGS__)
-#define TGT(...)  GT(T, __VA_ARGS__)
-#define TLT(...)  LT(T, __VA_ARGS__)
-#define TGE(...)  GE(T, __VA_ARGS__)
-#define TLE(...)  LE(T, __VA_ARGS__)
+#define EQ(...)    _EQ(MAJOR_TYPENAME, __VA_ARGS__)
+#define NEQ(...)   _NEQ(MAJOR_TYPENAME, __VA_ARGS__)
+#define GT(...)    _GT(MAJOR_TYPENAME, __VA_ARGS__)
+#define LT(...)    _LT(MAJOR_TYPENAME, __VA_ARGS__)
+#define GE(...)    _GE(MAJOR_TYPENAME, __VA_ARGS__)
+#define LE(...)    _LE(MAJOR_TYPENAME, __VA_ARGS__)
 } // namespace lucid

@@ -16,9 +16,9 @@ using namespace lucid;
 
 // clang-format off
 template <typename T>
-TBEGIN1(increment, val)
-    TADD(val, val, 1)
-TEND1(val)
+BEGIN1(increment, val)
+    ADD(val, val, 1)
+END1(val)
 
 // T factorial(T i):
 //     T c = i - 1
@@ -37,14 +37,14 @@ TEND1(val)
 // cmp = c == 0
 // jump: cmp: 0 -> loop, 1 -> end
 template <typename T>
-TBEGIN1(factorial, a)
-    TSUB(c, a, 1),
+BEGIN1(factorial, a)
+    SUB(c, a, 1),
     LABEL(loop),
-    TMUL(a, a, c),
-    TSUB(c, c, 1),
-    TEQ(cmp, c, 0),
+    MUL(a, a, c),
+    SUB(c, c, 1),
+    EQ(cmp, c, 0),
     PJMP2(cmp, loop, END)
-TEND1(a)
+END1(a)
 
 int main(/*int argc, char* argv[]*/)
 {
@@ -94,6 +94,14 @@ int main(/*int argc, char* argv[]*/)
                                 [](const auto i) noexcept { return i == 0.f; });
     ok("simd incf");
 
+    using incd    = increment<double>;
+    using incd_se = simd::evaluator<incd>;
+    incd_se simd_incd_eval{};
+    auto    incd_se_ret = simd_incd_eval(19999, -1.f);
+    ret += !std::ranges::all_of(incd_se_ret,
+                                [](const auto i) noexcept { return i == 0.; });
+    ok("simd incd");
+
     using facf    = factorial<float>;
     using facf_se = simd::evaluator<facf>;
     facf_se facf_se_eval{};
@@ -102,6 +110,15 @@ int main(/*int argc, char* argv[]*/)
                                 [](const float i) constexpr noexcept
                                 { return fn::almost_equal(i, 5040.f, 100); });
     ok("simd facf");
+
+    using facd    = factorial<double>;
+    using facd_se = simd::evaluator<facd>;
+    facd_se facd_se_eval{};
+    auto    facd_se_ret = facd_se_eval(99, 7.f);
+    ret += !std::ranges::all_of(facd_se_ret,
+                                [](const double i) constexpr noexcept
+                                { return fn::almost_equal(i, 5040., 100); });
+    ok("simd facd");
 
     return ret;
 }
