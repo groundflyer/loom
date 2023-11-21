@@ -562,83 +562,93 @@ class Program
                            cells_statements,
                            ensure_last_jumps_t<cells_statements, labels>>;
 };
+} // namespace lucid
 
 #ifndef MAJOR_TYPENAME
 #define MAJOR_TYPENAME T
 #endif
 
-#define _VAR(TYPE, NAME) Variable<TYPE, #NAME>
+#define _VAR(TYPE, NAME) lucid::Variable<TYPE, #NAME>
 #define VAR(NAME)        _VAR(MAJOR_TYPENAME, NAME)
 
-#define BEGIN1(NAME, v) \
-    using NAME = Program < type_sequence<VAR(v)>, type_sequence <
-#define BEGIN2(NAME, a, b) \
-    using NAME = Program < type_sequence<VAR(a), VAR(b)>, type_sequence <
+#define BEGIN1(NAME, v)                                         \
+    using NAME = lucid::Program < lucid::type_sequence<VAR(v)>, \
+          lucid::type_sequence <
+#define BEGIN2(NAME, a, b)                                              \
+    using NAME = lucid::Program < lucid::type_sequence<VAR(a), VAR(b)>, \
+          lucid::type_sequence <
 
-#define END1(v)           >, type_sequence < VAR(v) >> ;
-#define END2(a, b)        >, type_sequence < VAR(a), VAR(b) >> ;
+#define END1(v)     >, lucid::type_sequence < VAR(v) >> ;
+#define END2(a, b)  >, lucid::type_sequence < VAR(a), VAR(b) >> ;
 
-#define LABEL(NAME)       Label<#NAME>
+#define LABEL(NAME) lucid::Label<#NAME>
 
-#define JMP(TARGET)       Jump<Label<#TARGET>>
+#define JMP(TARGET) lucid::Jump<Label<#TARGET>>
 
-#define PJMPN(varname, ...)                                     \
-    ParmJump<Variable<infer_index_t<MAJOR_TYPENAME>, #varname>, \
-             type_sequence<__VA_ARGS__>>
+#define MOV(a, b)   lucid::Copy<VAR(a), VAR(b)>
 
-#define PJMP2(varname, L1, L2)                                    \
-    ParmJump < Variable<infer_index_t<MAJOR_TYPENAME>, #varname>, \
-        type_pair < LABEL(L1)                                     \
-    , LABEL(L2)                                                   \
+#define PJMPN(varname, ...)                                              \
+    lucid::ParmJump<                                                     \
+        lucid::Variable<lucid::infer_index_t<MAJOR_TYPENAME>, #varname>, \
+        lucid::type_sequence<__VA_ARGS__>>
+
+#define PJMP2(varname, L1, L2)                                           \
+    lucid::ParmJump <                                                    \
+        lucid::Variable<lucid::infer_index_t<MAJOR_TYPENAME>, #varname>, \
+        lucid::type_pair < LABEL(L1)                                     \
+    , LABEL(L2)                                                          \
     >>
 
-#define PJMP3(varname, L1, L2, L3)                                \
-    ParmJump < Variable<infer_index_t<MAJOR_TYPENAME>, #varname>, \
-        type_sequence < LABEL(L1)                                 \
-    , LABEL(L2)                                                   \
-    , LABEL(L3)                                                   \
+#define PJMP3(varname, L1, L2, L3)                                       \
+    lucid::ParmJump <                                                    \
+        lucid::Variable<lucid::infer_index_t<MAJOR_TYPENAME>, #varname>, \
+        lucid::type_sequence < LABEL(L1)                                 \
+    , LABEL(L2)                                                          \
+    , LABEL(L3)                                                          \
     >>
 
-#define BINOP(OP, TYPE, DST, A, B) \
-    Compute<OP<TYPE>,              \
-            Variable<TYPE, #DST>,  \
-            Variable<TYPE, #A>,    \
-            Variable<TYPE, #B>>
+#define BINOP(OP, TYPE, DST, A, B)              \
+    lucid::Compute<OP<TYPE>,                    \
+                   lucid::Variable<TYPE, #DST>, \
+                   lucid::Variable<TYPE, #A>,   \
+                   lucid::Variable<TYPE, #B>>
 
-#define UNOP(OP, TYPE, DST, VAR) \
-    Compute<OP<TYPE>, Variable<TYPE, #DST>, Variable<TYPE, #VAR>>
+#define UNOP(OP, TYPE, DST, VAR)                \
+    lucid::Compute<OP<TYPE>,                    \
+                   lucid::Variable<TYPE, #DST>, \
+                   lucid::Variable<TYPE, #VAR>>
 
-#define CMP(OP, TYPE, DST, A, B)                           \
-    Compute<OP<TYPE>,                                      \
-            Variable<infer_index_t<MAJOR_TYPENAME>, #DST>, \
-            Variable<TYPE, #A>,                            \
-            Variable<TYPE, #B>>
+#define CMP(OP, TYPE, DST, A, B)                                     \
+    lucid::Compute<                                                  \
+        OP<TYPE>,                                                    \
+        lucid::Variable<lucid::infer_index_t<MAJOR_TYPENAME>, #DST>, \
+        lucid::Variable<TYPE, #A>,                                   \
+        lucid::Variable<TYPE, #B>>
 
-#define _ADD(...)  BINOP(std::plus, __VA_ARGS__)
-#define _SUB(...)  BINOP(std::minus, __VA_ARGS__)
-#define _MUL(...)  BINOP(std::multiplies, __VA_ARGS__)
-#define _DIV(...)  BINOP(std::divides, __VA_ARGS__)
-#define _MOD(...)  BINOP(std::modulus, __VA_ARGS__)
-#define _NEG(...)  UNOP(std::negate, __VA_ARGS__)
+#define _ADD(...) BINOP(std::plus, __VA_ARGS__)
+#define _SUB(...) BINOP(std::minus, __VA_ARGS__)
+#define _MUL(...) BINOP(std::multiplies, __VA_ARGS__)
+#define _DIV(...) BINOP(std::divides, __VA_ARGS__)
+#define _MOD(...) BINOP(std::modulus, __VA_ARGS__)
+#define _NEG(...) UNOP(std::negate, __VA_ARGS__)
 
-#define _EQ(...)   CMP(std::equal_to, __VA_ARGS__)
-#define _NEQ(...)  CMP(std::not_equal_to, __VA_ARGS__)
-#define _GT(...)   CMP(std::greater, __VA_ARGS__)
-#define _LT(...)   CMP(std::less, __VA_ARGS__)
-#define _GE(...)   CMP(std::greater_equal, __VA_ARGS__)
-#define _LE(...)   CMP(std::less_equal, __VA_ARGS__)
+#define _EQ(...)  CMP(std::equal_to, __VA_ARGS__)
+#define _NEQ(...) CMP(std::not_equal_to, __VA_ARGS__)
+#define _GT(...)  CMP(std::greater, __VA_ARGS__)
+#define _LT(...)  CMP(std::less, __VA_ARGS__)
+#define _GE(...)  CMP(std::greater_equal, __VA_ARGS__)
+#define _LE(...)  CMP(std::less_equal, __VA_ARGS__)
 
-#define ADD(...)   _ADD(MAJOR_TYPENAME, __VA_ARGS__)
-#define SUB(...)   _SUB(MAJOR_TYPENAME, __VA_ARGS__)
-#define MUL(...)   _MUL(MAJOR_TYPENAME, __VA_ARGS__)
-#define DIV(...)   _DIV(MAJOR_TYPENAME, __VA_ARGS__)
-#define MOD(...)   _MOD(MAJOR_TYPENAME, __VA_ARGS__)
-#define NEG(...)   _NEG(MAJOR_TYPENAME, __VA_ARGS__)
+#define ADD(...)  _ADD(MAJOR_TYPENAME, __VA_ARGS__)
+#define SUB(...)  _SUB(MAJOR_TYPENAME, __VA_ARGS__)
+#define MUL(...)  _MUL(MAJOR_TYPENAME, __VA_ARGS__)
+#define DIV(...)  _DIV(MAJOR_TYPENAME, __VA_ARGS__)
+#define MOD(...)  _MOD(MAJOR_TYPENAME, __VA_ARGS__)
+#define NEG(...)  _NEG(MAJOR_TYPENAME, __VA_ARGS__)
 
-#define EQ(...)    _EQ(MAJOR_TYPENAME, __VA_ARGS__)
-#define NEQ(...)   _NEQ(MAJOR_TYPENAME, __VA_ARGS__)
-#define GT(...)    _GT(MAJOR_TYPENAME, __VA_ARGS__)
-#define LT(...)    _LT(MAJOR_TYPENAME, __VA_ARGS__)
-#define GE(...)    _GE(MAJOR_TYPENAME, __VA_ARGS__)
-#define LE(...)    _LE(MAJOR_TYPENAME, __VA_ARGS__)
-} // namespace lucid
+#define EQ(...)   _EQ(MAJOR_TYPENAME, __VA_ARGS__)
+#define NEQ(...)  _NEQ(MAJOR_TYPENAME, __VA_ARGS__)
+#define GT(...)   _GT(MAJOR_TYPENAME, __VA_ARGS__)
+#define LT(...)   _LT(MAJOR_TYPENAME, __VA_ARGS__)
+#define GE(...)   _GE(MAJOR_TYPENAME, __VA_ARGS__)
+#define LE(...)   _LE(MAJOR_TYPENAME, __VA_ARGS__)
