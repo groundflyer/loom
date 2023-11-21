@@ -880,7 +880,13 @@ struct eval<Copy<Dst, Src>, LabelMap, alignment>
     operator()(_ProxyView view) const noexcept
     {
         T* dst = view.template get<Dst>().data();
-        store<alignment, n>(loader.template operator()<Src>(), dst);
+        if constexpr(std::is_same_v<vartype<Dst>, vartype<Src>>)
+            store<alignment, n>(loader.template operator()<Src>(view), dst);
+        else
+            store<alignment, n>(
+                __builtin_convertvector(loader.template operator()<Src>(view),
+                                        packed_vector<T, n>),
+                dst);
     }
 };
 
@@ -1264,23 +1270,24 @@ class simd_evaluator
 
 #ifndef NDEBUG
                 {
+                    constexpr unsigned _w = 20;
                     typelist::for_each(
-                        []<typename Name>() noexcept
+                        [_w]<typename Name>() noexcept
                         {
                             constexpr std::string_view n =
                                 std::string_view(intlist::array<Name>,
                                                  intlist::length<Name>);
-                            fmt::print("{:>{}} |", n, 10);
+                            fmt::print("{:>{}} |", n, _w);
                         },
                         reg_names{});
                     fmt::print("\n");
-                    typelist::for_each([]<typename Name>() noexcept
-                                       { fmt::print("{:*>{}} |", '*', 10); },
+                    typelist::for_each([_w]<typename Name>() noexcept
+                                       { fmt::print("{:*>{}} |", '*', _w); },
                                        reg_names{});
                     fmt::print("\n");
                     std::ranges::for_each(mem,
-                                          [](auto p) noexcept
-                                          { print(p, 10); });
+                                          [_w](auto p) noexcept
+                                          { print(p, _w); });
                 }
 #endif
             }

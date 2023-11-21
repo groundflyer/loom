@@ -9,15 +9,16 @@
 #include <fmt/core.h>
 #include <fmt/ranges.h>
 
+#include <algorithm>
 #include <array>
 #include <initializer_list>
-
-using namespace lucid;
+#include <random>
+#include <vector>
 
 // clang-format off
 template <typename T>
 BEGIN1(increment, val)
-    ADD(val, val, 1)
+    TADD(val, val, 1)
 END1(val)
 
 // T factorial(T i):
@@ -36,15 +37,29 @@ END1(val)
 // c = c - 1
 // cmp = c == 0
 // jump: cmp: 0 -> loop, 1 -> end
-template <typename T>
-BEGIN1(factorial, a)
-    SUB(c, a, 1),
+template <std::integral T>
+BEGIN1(factorial_int, a)
+    TSUB(c, a, 1),
     LABEL(loop),
-    MUL(a, a, c),
-    SUB(c, c, 1),
-    EQ(cmp, c, 0),
+    TMUL(a, a, c),
+    TSUB(c, c, 1),
+    TEQ(cmp, c, 0),
     PJMP2(cmp, loop, END)
 END1(a)
+
+template <std::floating_point T>
+BEGIN1(factorial_float, a)
+    MOV(IVAR(c), TVAR(a)),
+    ISUB(c, c, 1),
+    LABEL(loop),
+    MOV(TVAR(ca), IVAR(c)),
+    TMUL(a, a, ca),
+    ISUB(c, c, 1),
+    IEQ(cmp, c, 0),
+    PJMP2(cmp, loop, END)
+END1(a)
+
+using namespace lucid;
 
 int main(/*int argc, char* argv[]*/)
 {
@@ -69,21 +84,28 @@ int main(/*int argc, char* argv[]*/)
     ret += !std::ranges::equal(pv(v1), v2);
     ok("increment bve multi input");
 
-    using fac_unsigned = factorial<unsigned>;
-    bse::evaluator<fac_unsigned> fac;
+    using fac_unsigned = factorial_int<unsigned>;
+    bse::evaluator<fac_unsigned> facu;
+    const unsigned               facu_in  = 6;
+    const unsigned               facu_chk = 720;
+    auto                         facu_out = facu(facu_in);
+    ret += facu_out != facu_chk;
+    ok("facu bse");
 
-    const unsigned fac_in  = 6;
-    const unsigned fac_chk = 720;
-    auto           fac_out = fac(fac_in);
-    ret += fac_out != fac_chk;
-    ok("fac bse");
+    using facf = factorial_float<float>;
+    bse::evaluator<facf> facf_bse;
+    const float          facf_bse_in  = 6;
+    const float          facf_bse_chk = 720;
+    const float          facf_bse_out = facf_bse(facf_bse_in);
+    ret += !fn::almost_equal(facf_bse_out, facf_bse_chk, 100);
+    ok("facf bse");
 
-    bve::evaluator<fac_unsigned, 4> vfac;
-    const auto                      vfac_in  = {4u, 5u, 6u, 7u};
-    const auto                      vfac_chk = {24u, 120u, 720u, 5040u};
-    auto                            vfac_out = vfac(vfac_in);
-    std::ranges::sort(vfac_out);
-    ret += !std::ranges::equal(vfac_out, vfac_chk);
+    bve::evaluator<fac_unsigned, 4> vfacu;
+    const auto                      vfacu_in  = {4u, 5u, 6u, 7u};
+    const auto                      vfacu_chk = {24u, 120u, 720u, 5040u};
+    auto                            vfacu_out = vfacu(vfacu_in);
+    std::ranges::sort(vfacu_out);
+    ret += !std::ranges::equal(vfacu_out, vfacu_chk);
     ok("fac bve");
 
     using incf    = increment<float>;
@@ -102,16 +124,15 @@ int main(/*int argc, char* argv[]*/)
                                 [](const auto i) noexcept { return i == 0.; });
     ok("simd incd");
 
-    using facf    = factorial<float>;
-    using facf_se = simd::evaluator<facf>;
-    facf_se facf_se_eval{};
-    auto    facf_se_ret = facf_se_eval(99, 7.f);
-    ret += !std::ranges::all_of(facf_se_ret,
+    using facf_simd = simd::evaluator<facf>;
+    facf_simd facf_simd_eval{};
+    auto      facf_simd_ret = facf_simd_eval(99, 7.f);
+    ret += !std::ranges::all_of(facf_simd_ret,
                                 [](const float i) constexpr noexcept
                                 { return fn::almost_equal(i, 5040.f, 100); });
     ok("simd facf");
 
-    using facd    = factorial<double>;
+    using facd    = factorial_float<double>;
     using facd_se = simd::evaluator<facd>;
     facd_se facd_se_eval{};
     auto    facd_se_ret = facd_se_eval(99, 7.f);
