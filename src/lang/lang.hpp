@@ -583,24 +583,23 @@ class Program
 #define TVAR(NAME)        VAR(MAJOR_TYPENAME, NAME)
 #define IVAR(NAME)        VAR(IDX_TYPE, NAME)
 
-#define BEGIN1(NAME, v)                                          \
-    using NAME = lucid::Program < lucid::type_sequence<TVAR(v)>, \
+#define BEGIN(NAME, ...)                                             \
+    using NAME = lucid::Program < lucid::type_sequence<__VA_ARGS__>, \
           lucid::type_sequence <
-#define BEGIN2(NAME, a, b)                                                \
-    using NAME = lucid::Program < lucid::type_sequence<TVAR(a), TVAR(b)>, \
-          lucid::type_sequence <
+#define END(...)            >, lucid::type_sequence < __VA_ARGS__ >> ;
 
-#define END1(v)         >, lucid::type_sequence < TVAR(v) >> ;
-#define END2(a, b)      >, lucid::type_sequence < TVAR(a), TVAR(b) >> ;
+#define TBEGIN1(NAME, v)    BEGIN(NAME, TVAR(v))
+#define TBEGIN2(NAME, a, b) BEGIN(NAME, TVAR(a), TVAR(b))
+#define TEND1(v)            END(TVAR(v))
+#define TEND2(a, b)         END(TVAR(a), TVAR(b))
 
-#define LABEL(NAME) lucid::Label<#NAME>
+#define MOV(a, b)           lucid::Copy<a, b>
+#define TMOV(a, b)          MOV(TVAR(a), TVAR(b))
 
-#define JMP(TARGET) lucid::Jump<Label<#TARGET>>
-
-#define MOV(a, b)       lucid::Copy<a, b>
-#define TMOV(a, b)      MOV(TVAR(a), TVAR(b))
-
-#define CAST(a, b)      lucid::Cast<a, b>
+#define LABEL(NAME)         lucid::Label<#NAME>
+#define JMP(TARGET)             \
+    lucid::Jump < LABEL(TARGET) \
+    >
 
 #define PJMPN(varname, ...)                              \
     lucid::ParmJump<lucid::Variable<IDX_TYPE, #varname>, \

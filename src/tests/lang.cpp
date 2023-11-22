@@ -9,17 +9,14 @@
 #include <fmt/core.h>
 #include <fmt/ranges.h>
 
-#include <algorithm>
 #include <array>
 #include <initializer_list>
-#include <random>
-#include <vector>
 
 // clang-format off
 template <typename T>
-BEGIN1(increment, val)
+TBEGIN1(increment, val)
     TADD(val, val, 1)
-END1(val)
+TEND1(val)
 
 // T factorial(T i):
 //     T c = i - 1
@@ -38,17 +35,17 @@ END1(val)
 // cmp = c == 0
 // jump: cmp: 0 -> loop, 1 -> end
 template <std::integral T>
-BEGIN1(factorial_int, a)
+TBEGIN1(factorial_int, a)
     TSUB(c, a, 1),
     LABEL(loop),
     TMUL(a, a, c),
     TSUB(c, c, 1),
     TEQ(cmp, c, 0),
     PJMP2(cmp, loop, END)
-END1(a)
+TEND1(a)
 
 template <std::floating_point T>
-BEGIN1(factorial_float, a)
+TBEGIN1(factorial_float, a)
     MOV(IVAR(c), TVAR(a)),
     ISUB(c, c, 1),
     LABEL(loop),
@@ -57,7 +54,7 @@ BEGIN1(factorial_float, a)
     ISUB(c, c, 1),
     IEQ(cmp, c, 0),
     PJMP2(cmp, loop, END)
-END1(a)
+TEND1(a)
 
 using namespace lucid;
 
@@ -130,7 +127,7 @@ int main(/*int argc, char* argv[]*/)
     ret += !std::ranges::all_of(facf_simd_ret,
                                 [](const float i) constexpr noexcept
                                 { return fn::almost_equal(i, 5040.f, 100); });
-    ok("simd facf");
+    ok("simd facf1");
 
     using facd    = factorial_float<double>;
     using facd_se = simd::evaluator<facd>;
@@ -139,7 +136,7 @@ int main(/*int argc, char* argv[]*/)
     ret += !std::ranges::all_of(facd_se_ret,
                                 [](const double i) constexpr noexcept
                                 { return fn::almost_equal(i, 5040., 100); });
-    ok("simd facd");
+    ok("simd facd1");
 
     return ret;
 }
