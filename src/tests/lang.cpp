@@ -9,8 +9,15 @@
 #include <fmt/core.h>
 #include <fmt/ranges.h>
 
+#include <range/v3/view/zip.hpp>
+
+#include <algorithm>
 #include <array>
+#include <functional>
 #include <initializer_list>
+#include <random>
+#include <ranges>
+#include <vector>
 
 // clang-format off
 template <typename T>
@@ -137,6 +144,29 @@ int main(/*int argc, char* argv[]*/)
                                 [](const double i) constexpr noexcept
                                 { return fn::almost_equal(i, 5040., 100); });
     ok("simd facd1");
+
+    std::random_device                      r;
+    std::default_random_engine              e{r()};
+    std::uniform_int_distribution<unsigned> dist(10, 100);
+
+    auto generator = [&]() noexcept { return static_cast<float>(dist(e)); };
+    std::vector<float> facf_in;
+    std::vector<float> facf_check;
+    std::size_t        n = 19999;
+    std::ranges::generate_n(std::back_inserter(facf_in), n, generator);
+    std::ranges::transform(facf_in, std::back_inserter(facf_check), facf_bse);
+    std::sort(facf_check.begin(), facf_check.end());
+    auto facf_simd_out = facf_simd_eval(n, facf_in);
+    std::sort(facf_simd_out.begin(), facf_simd_out.end());
+    ret += !std::ranges::all_of(ranges::views::zip(facf_simd_out, facf_check) |
+                                    std::views::transform(
+                                        [](const auto& ab) noexcept
+                                        {
+                                            const auto [a, b] = ab;
+                                            return fn::almost_equal(a, b, 100);
+                                        }),
+                                std::identity{});
+    ok("simd facf2");
 
     return ret;
 }
