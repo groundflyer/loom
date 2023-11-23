@@ -587,14 +587,18 @@ class Program
     using NAME = lucid::Program < lucid::type_sequence<__VA_ARGS__>, \
           lucid::type_sequence <
 #define END(...)            >, lucid::type_sequence < __VA_ARGS__ >> ;
-
 #define TBEGIN1(NAME, v)    BEGIN(NAME, TVAR(v))
 #define TBEGIN2(NAME, a, b) BEGIN(NAME, TVAR(a), TVAR(b))
 #define TEND1(v)            END(TVAR(v))
 #define TEND2(a, b)         END(TVAR(a), TVAR(b))
+#define IBEGIN1(NAME, v)    BEGIN(NAME, IVAR(v))
+#define IBEGIN2(NAME, a, b) BEGIN(NAME, IVAR(a), IVAR(b))
+#define IEND1(v)            END(IVAR(v))
+#define IEND2(a, b)         END(IVAR(a), IVAR(b))
 
 #define MOV(a, b)           lucid::Copy<a, b>
 #define TMOV(a, b)          MOV(TVAR(a), TVAR(b))
+#define IMOV(a, b)          MOV(IVAR(a), IVAR(b))
 
 #define LABEL(NAME)         lucid::Label<#NAME>
 #define JMP(TARGET)             \
