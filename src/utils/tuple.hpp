@@ -200,54 +200,50 @@ for_each_impl(
                  std::forward<Args>(args)...));
 }
 
-template <typename T>
-struct maybe_apply_helper
+template <typename F, typename T, template <typename...> typename M>
+struct is_applicable
 {
-    static constexpr bool is_tuple = false;
-
-    template <typename F>
-    static constexpr bool is_nothrow = std::is_nothrow_invocable_v<F, T>;
-
-    template <typename F>
-    static constexpr bool is_invocable = std::is_invocable_v<F, T>;
+    static constexpr bool value = false;
 };
 
-template <typename... Ts>
-struct maybe_apply_helper<steady_tuple<Ts...>>
+template <typename F, template <typename...> typename M, typename... Ts>
+struct is_applicable<F, steady_tuple<Ts...>, M>
 {
-    static constexpr bool is_tuple = true;
-
-    template <typename F>
-    static constexpr bool is_nothrow = std::is_nothrow_invocable_v<F, Ts...>;
-
-    template <typename F>
-    static constexpr bool is_invocable = std::is_invocable_v<F, Ts...>;
+    static constexpr bool value = M<F, Ts...>::value;
 };
 
-template <typename T1, typename T2>
-struct maybe_apply_helper<std::pair<T1, T2>>
+template <typename F, template <typename...> typename M, typename... Ts>
+struct is_applicable<F, std::tuple<Ts...>, M>
 {
-    static constexpr bool is_tuple = true;
-
-    template <typename F>
-    static constexpr bool is_nothrow = std::is_nothrow_invocable_v<F, T1, T2>;
-
-    template <typename F>
-    static constexpr bool is_invocable = std::is_invocable_v<F, T1, T2>;
+    static constexpr bool value = M<F, Ts...>::value;
 };
 
-template <typename... Ts>
-struct maybe_apply_helper<std::tuple<Ts...>>
+template <typename F,
+          template <typename...>
+          typename M,
+          typename T1,
+          typename T2>
+struct is_applicable<F, std::pair<T1, T2>, M>
 {
-    static constexpr bool is_tuple = true;
-
-    template <typename F>
-    static constexpr bool is_nothrow = std::is_nothrow_invocable_v<F, Ts...>;
-
-    template <typename F>
-    static constexpr bool is_invocable = std::is_invocable_v<F, Ts...>;
+    static constexpr bool value = M<F, T1, T2>::value;
 };
 } // namespace detail
+
+template <typename F, typename T>
+inline constexpr bool is_applicable_v =
+    detail::is_applicable<F, T, std::is_invocable>::value;
+
+template <typename F, typename T>
+inline constexpr bool is_nothrow_applicable_v =
+    detail::is_applicable<F, T, std::is_nothrow_invocable>::value;
+
+template <typename F, typename T>
+inline constexpr bool is_maybe_nothrow_applicable_v =
+    (is_applicable_v<F, T> && is_nothrow_applicable_v<F, T>) ||
+    (std::is_invocable_v<F, T> && std::is_nothrow_invocable_v<F, T>);
+
+template <typename F, typename T>
+concept maybe_applicable = is_applicable_v<F, T> || std::is_invocable_v<F, T>;
 
 /// @brief Tuple class template
 /// for objects that aren't default- or copy-constructible.
@@ -483,12 +479,9 @@ for_each(F&& f, Tuple&& tuple, Args&&... args) noexcept(noexcept(_FOR_EACH_EXP))
 /// possible otherwise just pass @p mt directly to @p f.
 template <typename F, typename MaybeTuple>
 constexpr decltype(auto)
-maybe_apply(F&& f, MaybeTuple&& mt) noexcept(
-    detail::maybe_apply_helper<std::decay_t<MaybeTuple>>::template is_nothrow<
-        F>)
+maybe_apply(F&& f, MaybeTuple&& mt)
 {
-    using helper = detail::maybe_apply_helper<std::decay_t<MaybeTuple>>;
-    if constexpr(helper::is_tuple && helper::template is_invocable<F>)
+    if constexpr(is_applicable_v<F, std::decay_t<MaybeTuple>>)
         return std::apply(std::forward<F>(f), std::forward<MaybeTuple>(mt));
     else
         return std::invoke(std::forward<F>(f), std::forward<MaybeTuple>(mt));
