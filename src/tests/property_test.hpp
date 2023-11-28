@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include <utils/functional.hpp>
+#include <utils/tuple.hpp>
 
 #include <fmt/format.h>
 
@@ -18,10 +18,12 @@
 /// @param n Number of runs.
 /// @param threshold Ratio of runs allowed to fail.
 /// @param property_name Label to display.
-/// @param generator Callable that generates a unique value each time its called.
-/// @param testing Function that takes the output of @p generator and returns some value.
-/// @param property Function that takes the outputs of @p generator and @p testing and asserts them
-/// returning bool.
+/// @param generator Callable that generates a unique value each time its
+/// called.
+/// @param testing Function that takes the output of @p generator and returns
+/// some value.
+/// @param property Function that takes the outputs of @p generator and @p
+/// testing and asserts them returning bool.
 /// @returns true if test failed otherwise false.
 ///
 /// Simplified approach to property-based testing.
@@ -75,9 +77,17 @@ test_property(const std::size_t n,
     static const constexpr char GREEN[] = "\033[32m";
     static const constexpr char RESET[] = "\033[0m";
     if(ret)
-        fmt::print("{}FAIL{} {:.3f}% {}\n", RED, RESET, error * 100, property_name);
+        fmt::print("{}FAIL{} {:.3f}% {}\n",
+                   RED,
+                   RESET,
+                   error * 100,
+                   property_name);
     else
-        fmt::print("{}OK{} {:.3f}% {}\n", GREEN, RESET, error * 100, property_name);
+        fmt::print("{}OK{} {:.3f}% {}\n",
+                   GREEN,
+                   RESET,
+                   error * 100,
+                   property_name);
 
     return ret > 0;
 }
