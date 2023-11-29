@@ -177,8 +177,6 @@ struct inclusive_range
     }
 };
 
-namespace fn
-{
 /// @brief Rise a number to a constant power.
 ///
 /// @tparam exp power exponent.
@@ -235,5 +233,4 @@ almost_equal(const T a, const T b, const ULP ulp)
     return amb <= std::numeric_limits<T>::epsilon() * apb * ulp ||
            amb < std::numeric_limits<T>::min();
 }
-} // namespace fn
 } // namespace lucid

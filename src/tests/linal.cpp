@@ -131,8 +131,8 @@ vector_test(RandomEngine& g, const size_t num_tests) noexcept
     {
         if constexpr(is_floating_point_v<T>)
         {
-            return any(!almost_equal(a, b, 200)) || !all(lucid::isfinite(a)) ||
-                   !all(lucid::isfinite(b));
+            return any(!almost_equal_vec(a, b, 200)) ||
+                   !all(lucid::isfinite(a)) || !all(lucid::isfinite(b));
         }
         else
             return any(a != b);
@@ -474,7 +474,7 @@ matrix_test(RandomEngine& g, const size_t num_tests) noexcept
         if constexpr(is_floating_point_v<T>)
         {
             const constexpr unsigned ULP = 5;
-            return any(!almost_equal(flat_ref(a), flat_ref(b), ULP)) ||
+            return any(!almost_equal_vec(flat_ref(a), flat_ref(b), ULP)) ||
                    !all(lucid::isfinite(flat_ref(a))) ||
                    !all(lucid::isfinite(flat_ref(b)));
         }
@@ -670,7 +670,7 @@ matrix_test(RandomEngine& g, const size_t num_tests) noexcept
                     // equalizing them as ulp is same for all of them
                     const Mat zero = Mat::identity() - feed * testing;
                     const constexpr size_t ulp = static_pow<sizeof(T)>(100ul);
-                    return any(!almost_equal(flat_ref(zero), T{0}, ulp)) ||
+                    return any(!almost_equal_vec(flat_ref(zero), T{0}, ulp)) ||
                            !all(lucid::isfinite(flat_ref(testing)));
                 });
     }

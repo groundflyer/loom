@@ -101,7 +101,7 @@ int main(/*int argc, char* argv[]*/)
     const float          facf_bse_in  = 6;
     const float          facf_bse_chk = 720;
     const float          facf_bse_out = facf_bse(facf_bse_in);
-    ret += !fn::almost_equal(facf_bse_out, facf_bse_chk, 100);
+    ret += !almost_equal(facf_bse_out, facf_bse_chk, 100);
     ok("facf bse");
 
     bve::evaluator<fac_unsigned, 4> vfacu;
@@ -133,7 +133,7 @@ int main(/*int argc, char* argv[]*/)
     auto      facf_simd_ret = facf_simd_eval(99, 7.f);
     ret += !std::ranges::all_of(facf_simd_ret,
                                 [](const float i) constexpr noexcept
-                                { return fn::almost_equal(i, 5040.f, 100); });
+                                { return almost_equal(i, 5040.f, 100); });
     ok("simd facf1");
 
     using facd    = factorial_float<double>;
@@ -142,7 +142,7 @@ int main(/*int argc, char* argv[]*/)
     auto    facd_se_ret = facd_se_eval(99, 7.f);
     ret += !std::ranges::all_of(facd_se_ret,
                                 [](const double i) constexpr noexcept
-                                { return fn::almost_equal(i, 5040., 100); });
+                                { return almost_equal(i, 5040., 100); });
     ok("simd facd1");
 
     std::random_device                      r;
@@ -163,7 +163,7 @@ int main(/*int argc, char* argv[]*/)
                                         [](const auto& ab) noexcept
                                         {
                                             const auto [a, b] = ab;
-                                            return fn::almost_equal(a, b, 100);
+                                            return almost_equal(a, b, 100);
                                         }),
                                 std::identity{});
     ok("simd facf2");

@@ -1323,8 +1323,7 @@ transform_reduce(UnaryOperation                 unary_op,
     return init;
 }
 
-VEC_FN_OBJ(almost_equal)
-VEC_FN_OBJ(lerp)
+VEC_NAMED_FN_OBJ(almost_equal_vec, almost_equal)
 VEC_NAMED_FN_OBJ(isfinite, std::isfinite)
 VEC_NAMED_FN_OBJ(clamp, std::clamp)
 VEC_NAMED_FN_OBJ(minmax, std::minmax)
@@ -1575,34 +1574,6 @@ roll(const Vector<T, N, Container>& v, const int shift) noexcept
     return ret;
 }
 
-template <unsigned exp>
-struct static_pow_fn
-{
-    template <typename T>
-    constexpr T
-    operator()(const T& value) const noexcept
-    {
-        return static_pow<exp>(value);
-    }
-
-    template <typename T,
-              std::size_t N,
-              template <typename, std::size_t>
-              typename Container>
-    constexpr Vector<T, N, Container>
-    operator()(const Vector<T, N, Container>& v) const noexcept
-    {
-        return transform(*this, v);
-    }
-
-    template <typename Rhs>
-    constexpr decltype(auto)
-    operator|(const Rhs& rhs) const noexcept
-    {
-        return compose(*this, rhs);
-    }
-};
-
 struct min_fn
 {
     template <typename T>
@@ -1819,11 +1790,6 @@ inverse(const Matrix<T, M, M, Container>& a) noexcept
 
 /// @addtogroup LINAL
 /// @{
-
-/// @brief Rise vector elements to a constant power.
-/// @tparam exp power exponent.
-template <unsigned exp>
-inline constexpr fn::static_pow_fn<exp> static_pow;
 
 /// @brief Select the smallest corresponding elements of two vectors or numbers.
 inline constexpr fn::min_fn min;
