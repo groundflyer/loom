@@ -49,6 +49,6 @@ SpacesInContainerLiterals: false
 SpacesInParentheses: false
 SpacesInSquareBrackets: false
 Standard: c++20
-MacroBlockBegin: "^T?BEGIN.+$"
-MacroBlockEnd: "^T?END.+$"
+MacroBlockBegin: "[A-Z_]*BEGIN.*$"
+MacroBlockEnd: "[A-Z_]*END.*$"
 StatementMacros: ["LABEL", "JMP", "PJMPN", "PJMP2", "PJMP3", "CONST", "ADD", "SUB", "MUL", "DIV", "MOD", "NEG", "TADD", "TSUB", "TMUL", "TDIV", "TMOD", "TNEG", "EQ", "NEQ", "GT", "LT", "GE", "LE", "TEQ", "TNEQ", "TGT", "TLT", "TGE", "TLE"]
