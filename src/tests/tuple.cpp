@@ -50,49 +50,52 @@ struct B
 
 TESTS_BEGIN
 
-    CHECK("visit modify reference",
-          []() noexcept
-          {
-              TT t{1, 2.f, 3.};
-              lucid::visit(
-                  1ul,
-                  [](auto& v) noexcept { v += 1; },
-                  t,
-                  lucid::sink);
-              return std::get<1>(t) == 3.f;
-          })
+    CHECK_EQ("visit modify reference",
+             3.f,
+             []() noexcept
+             {
+                 TT t{1, 2.f, 3.};
+                 lucid::visit(
+                     1ul,
+                     [](auto& v) noexcept { v += 1; },
+                     t,
+                     lucid::sink);
+                 return std::get<1>(t);
+             })
 
-    CHECK("visit and return",
-          []() noexcept
-          {
-              const TT t2{4, 5.f, 6.};
-              double   v = lucid::visit(
-                  2ul,
-                  [](const auto& v) -> double { return v * 10; },
-                  t2,
-                  []() { return .0; });
-              return v == 60.;
-          })
+    CHECK_EQ("visit and return",
+             60.,
+             []() noexcept
+             {
+                 const TT t2{4, 5.f, 6.};
+                 return lucid::visit(
+                     2ul,
+                     [](const auto& v) -> double { return v * 10; },
+                     t2,
+                     []() { return .0; });
+             })
 
-    CHECK("map tuple to steady_tuple",
-          []() noexcept
-          {
-              std::tuple<std::array<char, 4>, std::array<int, 4>> ta{
-                  {'a', 'b', 'c', 'd'},
-                  {  1,   2,   3,   4}
-              };
-              auto st = lucid::map_tuple<lucid::steady_tuple>(
-                  [](auto& a) -> decltype(auto) { return a[1]; },
-                  ta);
-              st.template get<0>() = 'x';
-              st.template get<1>() += 5;
-              return std::get<0>(ta)[1] == 'x' && std::get<1>(ta)[1] == 7;
-          })
+    CHECK_EQ_PAIR("map tuple to steady_tuple",
+                  'x',
+                  7,
+                  []() noexcept
+                  {
+                      std::tuple<std::array<char, 4>, std::array<int, 4>> ta{
+                          {'a', 'b', 'c', 'd'},
+                          {  1,   2,   3,   4}
+                      };
+                      auto st = lucid::map_tuple<lucid::steady_tuple>(
+                          [](auto& a) -> decltype(auto) { return a[1]; },
+                          ta);
+                      st.template get<0>() = 'x';
+                      st.template get<1>() += 5;
+                      return std::pair{std::get<0>(ta)[1], std::get<1>(ta)[1]};
+                  })
 
     CHECK("steady_tuple uniform_init",
           []() noexcept
           {
-              lucid::steady_tuple<A, B> st1(lucid::uniform_init, 34, 0.5f);
+              lucid::steady_tuple<A, B> st1(lucid::uniform_init, 34, 0);
               const A&                  a1 = st1.template get<0>();
               const B&                  b1 = st1.template get<1>();
               return a1.a == b1.a && a1.b == b1.b;
@@ -102,11 +105,11 @@ TESTS_BEGIN
           []() noexcept
           {
               lucid::steady_tuple<A, B> st2(std::piecewise_construct,
-                                            std::pair(1, 2.f),
-                                            std::pair(3, 4.));
+                                            std::pair(1, 2),
+                                            std::pair(3, 4));
               const A&                  a2 = st2.template get<A>();
               const B&                  b2 = st2.template get<B>();
-              return a2.a == 1 && a2.b == 2.f && b2.a == 3 && b2.b == 4.;
+              return a2.a == 1 && a2.b == 2 && b2.a == 3 && b2.b == 4;
           })
 
     CHECK("steady_tuple uniform_init piecewise_construct",
@@ -114,13 +117,14 @@ TESTS_BEGIN
           {
               lucid::steady_tuple<A, B> st3(lucid::uniform_init,
                                             std::piecewise_construct,
-                                            std::pair(34, 0.5f));
+                                            std::pair(34, 0));
               const A&                  a3 = st3.template get<A>();
               const B&                  b3 = st3.template get<B>();
               return a3.a == b3.a && a3.b == b3.b;
           });
 
-    CHECK("steady_tuple of refs",
+    CHECK_EQ_PAIR("steady_tuple of refs", 8,
+                  'f',
           []() noexcept
           {
               int                              i1 = 3;
@@ -128,7 +132,7 @@ TESTS_BEGIN
               lucid::steady_tuple<int&, char&> st4(i1, c1);
               st4.template get<0>() += 5;
               st4.template get<1>() = 'f';
-              return i1 == 8 && c1 == 'f';
+              return std::pair{i1, c1};
           })
 
     lucid::steady_tuple<A, B> st5(A(1, 2ul), B(3l, 4));

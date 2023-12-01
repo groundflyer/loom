@@ -12,6 +12,7 @@
 #include <fmt/color.h>
 
 #include <concepts>
+#include <functional>
 #include <random>
 #include <ranges>
 #include <string_view>
@@ -59,6 +60,13 @@ check_assertion(std::string_view name, A&& a) noexcept
     return passed;
 }
 
+template <typename F, std::predicate<std::invoke_result_t<F>> A>
+int
+test_and_check(std::string_view name, F&& f, A&& a) noexcept
+{
+    return check_assertion(name, [&]() noexcept { return a(f()); });
+}
+
 template <std::invocable<std::default_random_engine>              G,
           maybe_applicable<std::invoke_result_t<std::decay_t<G>>> T,
           typename V>
@@ -80,6 +88,79 @@ check_suite(unsigned n, TS s) noexcept
     fmt::print("{:>4} {:.3f}% {}\n", _OK(passed), err, s.name);
     return passed;
 }
+
+template <typename T, typename R>
+class matcher
+{
+    T _val;
+    R _r{};
+
+  public:
+    constexpr matcher(T val, R r = R{}) noexcept : _val(val), _r(r) {}
+
+    constexpr bool
+    operator()(const T& test) const noexcept
+    {
+        return std::invoke(_r, _val, test);
+    }
+};
+
+template <typename T1, typename T2, typename R>
+class matcher<std::pair<T1, T2>, R>
+{
+    using value_type = std::pair<T1, T2>;
+    value_type _val;
+    R          _r{};
+
+    constexpr bool
+    operator()(const T1& t1, const T2& t2) const noexcept
+    {
+        return matcher<T1, R>{_val.first, _r}(t1) &&
+               matcher<T2, R>{_val.second}(t2);
+    }
+
+  public:
+    constexpr matcher(const value_type& val, R r = R{}) noexcept :
+        _val(val), _r(r)
+    {
+    }
+
+    constexpr bool
+    operator()(const value_type& test) const noexcept
+    {
+        return operator()(test.first, test.second);
+    }
+};
+
+template <typename... Ts, typename R>
+class matcher<std::tuple<Ts...>, R>
+{
+    using value_type = std::tuple<Ts...>;
+    value_type _val;
+    R          _r{};
+
+    template <typename F, std::size_t... Idxs>
+    constexpr bool
+    match_elems(const value_type& test,
+                std::index_sequence<Idxs...>) const noexcept
+    {
+        return (... && matcher<std::tuple_element_t<Idxs, value_type>, R>{
+                           std::get<Idxs>(_val),
+                           _r}(std::get<Idxs>(test)));
+    }
+
+  public:
+    constexpr matcher(const value_type& val, R r = R{}) noexcept :
+        _val(val), _r(r)
+    {
+    }
+
+    constexpr bool
+    operator()(const value_type& test) const noexcept
+    {
+        return match_elems(test, std::index_sequence_for<Ts...>{});
+    }
+};
 } // namespace lucid::test
 
 #undef _OK
@@ -101,6 +182,15 @@ check_suite(unsigned n, TS s) noexcept
     return ret;                                               \
     }
 
+#define EQUAL(VAL) \
+    lucid::test::matcher<std::decay_t<decltype(VAL)>, std::equal_to<>>(VAL)
+
 #define CHECK(...) \
-    ++total;                 \
+    ++total;       \
     passed += lucid::test::check_assertion(__VA_ARGS__);
+
+#define CHECK_EQ(name, val, ...) \
+    CHECK(name, [&]() noexcept { return EQUAL(val)(__VA_ARGS__()); });
+
+#define CHECK_EQ_PAIR(name, v1, v2, ...) \
+    CHECK_EQ(name, (std::pair{v1, v2}), __VA_ARGS__)
