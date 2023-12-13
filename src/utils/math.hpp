@@ -41,13 +41,14 @@ minus_one_pow(const T a)
 }
 
 /// @brief Compute number factorial.
-constexpr std::size_t
-fac(const std::size_t val) noexcept
+template <std::integral T>
+constexpr T
+fac(const T val) noexcept
 {
-    std::size_t ret{1};
+    T ret{1};
 
     if(val != 0)
-        for(std::size_t i = 1; i <= val; ++i) ret *= i;
+        for(T i = 1; i <= val; ++i) ret *= i;
 
     return ret;
 }

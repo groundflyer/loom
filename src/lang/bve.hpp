@@ -6,6 +6,7 @@
 
 #include "lang.hpp"
 
+#include <utils/debug.hpp>
 #include <utils/functional.hpp>
 #include <utils/tuple.hpp>
 
@@ -13,40 +14,472 @@
 #include <range/v3/view/chunk_by.hpp>
 #include <range/v3/view/filter.hpp>
 
+#ifndef NDEBUG
 #include <fmt/core.h>
+#endif
 
 #include <algorithm>
-#include <array>
 #include <compare>
 #include <ranges>
+#include <span>
+#include <vector>
 
 namespace lucid::bve
 {
-template <typename T, template <typename> typename Array>
-struct array_union
+using fsize_t = std::uint32_t;
+
+constexpr inline fsize_t dynamic_extent = -1;
+
+template <typename T,
+          template <typename, typename>
+          typename Vector,
+          template <typename>
+          typename Allocator>
+struct vector_union
 {
-    using type = Array<T>;
+    using type = Vector<T, Allocator<T>>;
 };
 
-template <template <typename> typename Array, typename... Ts>
-struct array_union<Union<Ts...>, Array>
+template <typename... Ts,
+          template <typename, typename>
+          typename Vector,
+          template <typename>
+          typename Allocator>
+struct vector_union<Union<Ts...>, Vector, Allocator>
 {
-    using type = Union<Array<Ts>...>;
+    using type = UnionVector<type_sequence<Ts...>, Allocator<std::byte>>;
 };
 
-/// @brief If @p T is Union type the resulting type is Union of arrays,
-/// otherwise it's just @p Array of @p T.
-template <typename T, template <typename> typename Array>
-using array_union_t = typename array_union<T, Array>::type;
+template <typename T,
+          template <typename, typename>
+          typename Vector,
+          template <typename>
+          typename Allocator>
+using vector_union_t = typename vector_union<T, Vector, Allocator>::type;
 
-template <typename RegTypes, typename RegNames, typename _CP, std::size_t Size>
+template <typename Data, typename Helper, typename _CP>
+class ProxyRow
+{
+    Data&   m_data;
+    fsize_t m_pos;
+
+    void
+    copy_values(ProxyRow rhs) noexcept
+    {
+        lucid::for_each([&](auto& c) noexcept { c[m_pos] = c[rhs.m_pos]; },
+                        m_data);
+    }
+
+  public:
+    ProxyRow() = delete;
+
+    ProxyRow(const ProxyRow& other) noexcept :
+        m_data(other.m_data), m_pos(other.m_pos)
+    {
+    }
+
+    ProxyRow(ProxyRow&& other) noexcept :
+        m_data(other.m_data), m_pos(other.m_pos)
+    {
+    }
+
+    ProxyRow(Data& data, const fsize_t pos) noexcept : m_data(data), m_pos(pos)
+    {
+    }
+
+    ProxyRow&
+    operator=(const ProxyRow& rhs) noexcept
+    {
+        copy_values(rhs);
+        m_pos = rhs.m_pos;
+
+        return *this;
+    }
+
+    ProxyRow&
+    operator=(ProxyRow&& rhs) noexcept
+    {
+        copy_values(rhs);
+        m_pos = rhs.m_pos;
+
+        return *this;
+    }
+
+    bool
+    operator==(const ProxyRow rhs) const noexcept
+    {
+        return cp() == rhs.cp();
+    }
+
+    std::strong_ordering
+    operator<=>(const ProxyRow rhs) const noexcept
+    {
+        return cp() <=> rhs.cp();
+    }
+
+    template <typename Var>
+    std::add_lvalue_reference_t<vartype<Var>>
+    get() const noexcept
+    {
+        return Helper::template get<Var>(m_data)[m_pos];
+    }
+
+    std::add_lvalue_reference_t<vartype<_CP>>
+    cp() const noexcept
+    {
+        return get<_CP>();
+    }
+
+    friend void
+    swap(ProxyRow a, ProxyRow b) noexcept
+    {
+        lucid::for_each([&](auto& c) noexcept
+                        { std::swap(c[a.m_pos], c[b.m_pos]); },
+                        a.m_data);
+    }
+
+#ifndef NDEBUG
+    friend void
+    print(ProxyRow p, unsigned char a = 10) noexcept
+    {
+        lucid::for_each([&](auto& c) noexcept
+                        { fmt::print("{:>{}} |", c[p.m_pos], a); },
+                        p.m_data);
+        fmt::print("\n");
+    }
+#endif
+};
+
+template <typename Data, typename Helper, typename _CP, fsize_t N>
+class ProxyView
+{
+    Data&   m_data;
+    fsize_t m_pos;
+
+    fsize_t
+    shift(fsize_t p) const noexcept
+    {
+        CHECK_INDEX(p, N);
+        return m_pos + p;
+    }
+
+  public:
+    ProxyView() = delete;
+    ProxyView&
+    operator=(const ProxyView& rhs) = delete;
+    ProxyView&
+    operator=(ProxyView&&) = delete;
+
+    ProxyView(const ProxyView& other) noexcept :
+        m_data(other.m_data), m_pos(other.m_pos)
+    {
+    }
+    ProxyView(ProxyView&& other) noexcept :
+        m_data(other.m_data), m_pos(other.m_pos){};
+
+    ProxyView(Data& data, fsize_t pos) noexcept : m_data(data), m_pos(pos) {}
+
+    ProxyRow<Data, Helper, _CP>
+    operator[](const fsize_t n) const noexcept
+    {
+        return {m_data, shift(n)};
+    }
+
+    template <fsize_t N2>
+        requires(N2 <= N)
+    ProxyView<Data, Helper, _CP, N2>
+    view(const fsize_t pos = 0) const noexcept
+    {
+        ASSERT(N2 <= N - pos, "Extent too big");
+        return {m_data, shift(pos)};
+    }
+
+    ProxyView<Data, Helper, _CP, dynamic_extent>
+    view(const fsize_t pos, const fsize_t ext) const noexcept
+    {
+        ASSERT(ext <= N - pos, "Extent too big");
+        return {m_data, shift(pos), ext};
+    }
+
+    ProxyView<Data, Helper, _CP, dynamic_extent>
+    view(const fsize_t pos = 0) const noexcept
+    {
+        return view(pos, size() - pos);
+    }
+
+    template <typename Var>
+    std::span<vartype<Var>, N>
+    get() const noexcept
+    {
+        return std::span<vartype<Var>, N>(
+            std::addressof(Helper::template get<Var>(m_data)[m_pos]),
+            N);
+    }
+
+    std::span<vartype<_CP>, N>
+    cp() const noexcept
+    {
+        return get<_CP>();
+    }
+
+    constexpr fsize_t
+    size() const noexcept
+    {
+        return N;
+    }
+};
+
+template <typename Data, typename Helper, typename _CP>
+class ProxyView<Data, Helper, _CP, dynamic_extent>
+{
+    Data&   m_data;
+    fsize_t m_pos;
+    fsize_t m_ext;
+
+    fsize_t
+    shift(fsize_t p) const noexcept
+    {
+        CHECK_INDEX(p, size());
+        return m_pos + p;
+    }
+
+  public:
+    ProxyView() = delete;
+    ProxyView&
+    operator=(const ProxyView& rhs) = delete;
+    ProxyView&
+    operator=(ProxyView&&) = delete;
+
+    ProxyView(const ProxyView& other) noexcept :
+        m_data(other.m_data), m_pos(other.m_pos), m_ext(other.m_ext)
+    {
+    }
+    ProxyView(ProxyView&& other) noexcept :
+        m_data(other.m_data), m_pos(other.m_pos), m_ext(other.m_ext){};
+
+    ProxyView(Data& data, fsize_t pos, fsize_t ext) noexcept :
+        m_data(data), m_pos(pos), m_ext(ext)
+    {
+    }
+
+    ProxyRow<Data, Helper, _CP>
+    operator[](const fsize_t n) const noexcept
+    {
+        return {m_data, shift(n)};
+    }
+
+    template <fsize_t N>
+    ProxyView<Data, Helper, _CP, N>
+    view(const fsize_t pos) const noexcept
+    {
+        ASSERT(N <= size() - pos, "Extent too big");
+        return {m_data, shift(pos)};
+    }
+
+    ProxyView<Data, Helper, _CP, dynamic_extent>
+    view(const fsize_t pos, const fsize_t ext) const noexcept
+    {
+        ASSERT(ext <= size() - pos, "Extent too big");
+        return {m_data, shift(pos), ext};
+    }
+
+    ProxyView<Data, Helper, _CP, dynamic_extent>
+    view(const fsize_t pos = 0) const noexcept
+    {
+        return view(pos, size() - pos);
+    }
+
+    template <typename Var>
+    std::span<vartype<Var>, std::dynamic_extent>
+    get() const noexcept
+    {
+        return {std::addressof(Helper::template get<Var>(m_data)[m_pos]),
+                m_ext};
+    }
+
+    std::span<vartype<_CP>, std::dynamic_extent>
+    cp() const noexcept
+    {
+        return get<_CP>();
+    }
+
+    fsize_t
+    size() const noexcept
+    {
+        return m_ext;
+    }
+};
+
+template <typename Data, typename Helper, typename _CP>
+class MemoryIterator : public std::contiguous_iterator_tag
+{
+    Data*   p_data = nullptr;
+    fsize_t m_pos{};
+    fsize_t m_size{};
+
+  public:
+    using difference_type = std::ptrdiff_t;
+    using value_type      = ProxyRow<Data, Helper, _CP>;
+
+    MemoryIterator() noexcept = default;
+
+    MemoryIterator(Data* data, fsize_t pos, fsize_t size) noexcept :
+        p_data(data), m_pos(pos), m_size(size)
+    {
+    }
+    MemoryIterator(const MemoryIterator& other) noexcept :
+        p_data(other.p_data), m_pos(other.m_pos), m_size(other.m_size)
+    {
+    }
+    MemoryIterator(MemoryIterator&& other) noexcept :
+        p_data(other.p_data), m_pos(other.m_pos), m_size(other.m_size)
+    {
+    }
+
+    MemoryIterator&
+    operator=(const MemoryIterator& rhs) noexcept
+    {
+        p_data = rhs.p_data;
+        m_pos  = rhs.m_pos;
+        m_size = rhs.m_size;
+
+        return *this;
+    }
+
+    MemoryIterator&
+    operator=(MemoryIterator&& rhs) noexcept
+    {
+        p_data = rhs.p_data;
+        m_pos  = rhs.m_pos;
+        m_size = rhs.m_size;
+
+        return *this;
+    }
+
+    bool
+    operator==(std::default_sentinel_t) const noexcept
+    {
+        return m_pos == m_size;
+    }
+
+    bool
+    operator==(const MemoryIterator& rhs) const noexcept
+    {
+        return m_pos == rhs.m_pos;
+    }
+
+    std::strong_ordering
+    operator<=>(const MemoryIterator& rhs) const noexcept
+    {
+        return m_pos <=> rhs.m_pos;
+    }
+
+    value_type
+    operator*() const noexcept
+    {
+        return {*p_data, m_pos};
+    }
+
+    MemoryIterator&
+    operator++() noexcept
+    {
+        ++m_pos;
+        return *this;
+    }
+
+    MemoryIterator
+    operator++(int) noexcept
+    {
+        MemoryIterator ret(*this);
+        ++m_pos;
+        return ret;
+    }
+
+    MemoryIterator&
+    operator--() noexcept
+    {
+        --m_pos;
+        return *this;
+    }
+
+    MemoryIterator
+    operator--(int) noexcept
+    {
+        MemoryIterator ret(*this);
+        --m_pos;
+        return ret;
+    }
+
+    MemoryIterator
+    operator+(difference_type rhs) const noexcept
+    {
+        return {p_data, m_pos + static_cast<fsize_t>(rhs), m_size};
+    }
+
+    difference_type
+    operator+(MemoryIterator rhs) const noexcept
+    {
+        return m_pos + rhs.m_pos;
+    }
+
+    MemoryIterator&
+    operator+=(difference_type rhs) noexcept
+    {
+        m_pos += rhs;
+        return *this;
+    }
+
+    MemoryIterator
+    operator-(difference_type rhs) const noexcept
+    {
+        return {p_data, m_pos - rhs, m_size};
+    }
+
+    difference_type
+    operator-(MemoryIterator rhs) const noexcept
+    {
+        return m_pos - rhs.m_pos;
+    }
+
+    MemoryIterator&
+    operator-=(difference_type rhs) noexcept
+    {
+        m_pos -= rhs;
+        return *this;
+    }
+
+    value_type
+    operator[](difference_type n) const noexcept
+    {
+        CHECK_INDEX(n, count());
+        return {*p_data, m_pos + n};
+    }
+
+    fsize_t
+    count() const noexcept
+    {
+        return m_size - m_pos;
+    }
+
+    friend MemoryIterator
+    operator+(difference_type n, MemoryIterator j) noexcept
+    {
+        return {j.p_data, n + j.m_pos, j.m_size};
+    }
+};
+
+template <typename RegTypes,
+          typename RegNames,
+          typename _CP,
+          template <typename, typename> typename _Vector = std::vector,
+          template <typename> typename Allocator         = std::allocator>
 class Memory
 {
     template <typename T>
-    using Array = std::array<T, Size>;
+    using Vector = _Vector<T, Allocator<T>>;
 
     template <typename T>
-    using f = array_union_t<T, Array>;
+    using f = vector_union_t<T, _Vector, Allocator>;
 
     using helper = MemoryHelper<RegTypes, RegNames, std::tuple, f>;
 
@@ -54,334 +487,130 @@ class Memory
 
     Data m_data;
 
-    class proxy_row
-    {
-        Data&       m_data;
-        std::size_t m_pos;
-
-        constexpr void
-        copy_values(proxy_row rhs) noexcept
-        {
-            lucid::for_each([&](auto& c) noexcept { c[m_pos] = c[rhs.m_pos]; },
-                            m_data);
-        }
-
-      public:
-        proxy_row() = delete;
-
-        constexpr proxy_row(const proxy_row& other) noexcept :
-            m_data(other.m_data), m_pos(other.m_pos)
-        {
-        }
-
-        constexpr proxy_row(proxy_row&& other) noexcept :
-            m_data(other.m_data), m_pos(other.m_pos)
-        {
-        }
-
-        constexpr proxy_row(Data& data, const std::size_t pos) noexcept :
-            m_data(data), m_pos(pos)
-        {
-        }
-
-        constexpr proxy_row&
-        operator=(const proxy_row& rhs) noexcept
-        {
-            copy_values(rhs);
-            m_pos = rhs.m_pos;
-
-            return *this;
-        }
-
-        constexpr proxy_row&
-        operator=(proxy_row&& rhs) noexcept
-        {
-            copy_values(rhs);
-            m_pos = rhs.m_pos;
-
-            return *this;
-        }
-
-        constexpr bool
-        operator==(const proxy_row rhs) const noexcept
-        {
-            return cp() == rhs.cp();
-        }
-
-        constexpr std::strong_ordering
-        operator<=>(const proxy_row rhs) const noexcept
-        {
-            return cp() <=> rhs.cp();
-        }
-
-        template <typename Var>
-        constexpr std::add_lvalue_reference_t<vartype<Var>>
-        get() const noexcept
-        {
-            return helper::template get<Var>(m_data)[m_pos];
-        }
-
-        /// @brief Access cell pointer.
-        constexpr std::add_lvalue_reference_t<vartype<_CP>>
-        cp() const noexcept
-        {
-            return get<_CP>();
-        }
-
-        friend void
-        swap(proxy_row a, proxy_row b) noexcept
-        {
-            lucid::for_each([&](auto& c) noexcept
-                            { std::swap(c[a.m_pos], c[b.m_pos]); },
-                            a.m_data);
-        }
-    };
-
-    class _iterator : public std::contiguous_iterator_tag
-    {
-        Data*       p_data = nullptr;
-        std::size_t m_pos{};
-
-      public:
-        using difference_type = std::ptrdiff_t;
-        using value_type      = proxy_row;
-
-        constexpr _iterator() noexcept = default;
-
-        constexpr _iterator(Data* data, std::size_t pos) noexcept :
-            p_data(data), m_pos(pos)
-        {
-        }
-        constexpr _iterator(const _iterator& other) noexcept :
-            p_data(other.p_data), m_pos(other.m_pos)
-        {
-        }
-        constexpr _iterator(_iterator&& other) noexcept :
-            p_data(other.p_data), m_pos(other.m_pos)
-        {
-        }
-
-        constexpr _iterator&
-        operator=(const _iterator& rhs) noexcept
-        {
-            p_data = rhs.p_data;
-            m_pos  = rhs.m_pos;
-
-            return *this;
-        }
-
-        constexpr _iterator&
-        operator=(_iterator&& rhs) noexcept
-        {
-            p_data = rhs.p_data;
-            m_pos  = rhs.m_pos;
-
-            return *this;
-        }
-
-        constexpr bool
-        operator==(std::default_sentinel_t) const noexcept
-        {
-            return m_pos == Size;
-        }
-
-        constexpr bool
-        operator==(const _iterator& rhs) const noexcept
-        {
-            return m_pos == rhs.m_pos;
-        }
-
-        constexpr std::strong_ordering
-        operator<=>(const _iterator& rhs) const noexcept
-        {
-            return m_pos <=> rhs.m_pos;
-        }
-
-        constexpr value_type
-        operator*() const noexcept
-        {
-            return {*p_data, m_pos};
-        }
-
-        constexpr _iterator&
-        operator++() noexcept
-        {
-            ++m_pos;
-            return *this;
-        }
-
-        constexpr _iterator
-        operator++(int) noexcept
-        {
-            _iterator ret(*this);
-            ++m_pos;
-            return ret;
-        }
-
-        constexpr _iterator&
-        operator--() noexcept
-        {
-            --m_pos;
-            return *this;
-        }
-
-        constexpr _iterator
-        operator--(int) noexcept
-        {
-            _iterator ret(*this);
-            --m_pos;
-            return ret;
-        }
-
-        constexpr _iterator
-        operator+(difference_type rhs) const noexcept
-        {
-            return {p_data, m_pos + rhs};
-        }
-
-        constexpr difference_type
-        operator+(_iterator rhs) const noexcept
-        {
-            return m_pos + rhs.m_pos;
-        }
-
-        constexpr _iterator&
-        operator+=(difference_type rhs) noexcept
-        {
-            m_pos += rhs;
-            return *this;
-        }
-
-        constexpr _iterator
-        operator-(difference_type rhs) const noexcept
-        {
-            return {p_data, m_pos - rhs};
-        }
-
-        constexpr difference_type
-        operator-(_iterator rhs) const noexcept
-        {
-            return m_pos - rhs.m_pos;
-        }
-
-        constexpr _iterator&
-        operator-=(difference_type rhs) noexcept
-        {
-            m_pos -= rhs;
-            return *this;
-        }
-
-        constexpr value_type
-        operator[](difference_type n) const noexcept
-        {
-            return {*p_data, m_pos + n};
-        }
-
-        constexpr std::size_t
-        count() const noexcept
-        {
-            return Size - m_pos;
-        }
-
-        friend _iterator
-        operator+(difference_type n, _iterator j) noexcept
-        {
-            return _iterator(j.p_data, n + j.m_pos, j.m_size);
-        }
-    };
+    template <fsize_t N>
+    using proxy_view = ProxyView<Data, helper, _CP, N>;
 
   public:
-    using value_type = proxy_row;
-    using iterator   = _iterator;
+    using value_type = bve::ProxyRow<Data, helper, _CP>;
+    using view_type  = proxy_view<dynamic_extent>;
+    using iterator   = bve::MemoryIterator<Data, helper, _CP>;
 
-    constexpr proxy_row
-    operator[](const std::size_t n) noexcept
+    Memory() noexcept = default;
+
+    Memory(const Memory&) = delete;
+    Memory(Memory&&)      = delete;
+
+    Memory&
+    operator=(const Memory&) = delete;
+    Memory&
+    operator=(Memory&&) = delete;
+
+    value_type
+    operator[](const fsize_t n) noexcept
     {
+        CHECK_INDEX(n, size());
         return {m_data, n};
     }
 
-    constexpr iterator
+    template <fsize_t N>
+    proxy_view<N>
+    view(const fsize_t pos = 0) noexcept
+    {
+        CHECK_INDEX(pos, size());
+        ASSERT(N <= size() - pos, "Extent too big");
+        return {m_data, pos};
+    }
+
+    proxy_view<dynamic_extent>
+    view(const fsize_t pos, const fsize_t ext) noexcept
+    {
+        CHECK_INDEX(pos, size());
+        ASSERT(ext <= size() - pos, "Extent too big");
+        return {m_data, pos, ext};
+    }
+
+    proxy_view<dynamic_extent>
+    view(const fsize_t pos = 0) noexcept
+    {
+        CHECK_INDEX(pos, size());
+        return view(pos, size() - pos);
+    }
+
+    iterator
     begin() noexcept
     {
-        return {&m_data, 0ul};
+        return {&m_data, 0ul, size()};
     }
 
-    constexpr iterator
+    iterator
     end() noexcept
     {
-        return {&m_data, size()};
+        return {&m_data, size(), size()};
     }
 
-    constexpr std::size_t
-    size() noexcept
+    fsize_t
+    size() const noexcept
     {
-        return Size;
+        return std::get<0>(m_data).size();
     }
 
-    /// @brief Access a column.
     template <typename Var>
-    constexpr Array<vartype<Var>>&
+    std::span<vartype<Var>>
     get() noexcept
     {
-        return helper::template get<Var>(m_data);
+        return {helper::template get<Var>(m_data).data(), size()};
     }
 
-    /// @brief Access cell pointers column.
-    constexpr Array<vartype<_CP>>&
+    std::span<vartype<_CP>>
     cp() noexcept
     {
         return get<_CP>();
     }
 
-    constexpr friend iterator
+    void
+    resize(fsize_t new_size)
+    {
+        lucid::for_each([&](auto& c) noexcept { c.resize(new_size); }, m_data);
+    }
+
+    friend iterator
     begin(Memory& m) noexcept
     {
         return m.begin();
     }
 
-    constexpr friend std::default_sentinel_t
+    friend std::default_sentinel_t
     end(Memory&) noexcept
     {
         return std::default_sentinel;
     }
-};
 
-template <typename T>
-struct is_mem
-{
-    static constexpr bool value = false;
-};
-
-template <typename... Ts>
-struct is_mem<Memory<Ts...>>
-{
-    static constexpr bool value = true;
+    friend fsize_t
+    size(Memory& m) noexcept
+    {
+        return m.size();
+    }
 };
 
 template <typename Command, typename LabelMap>
-struct array_eval;
+struct vector_eval;
 
 template <typename Dst, typename Src, typename LabelMap>
-struct array_eval<Copy<Dst, Src>, LabelMap>
+struct vector_eval<Copy<Dst, Src>, LabelMap>
 {
     template <typename _Memory>
     constexpr void
     operator()(_Memory&& mem) const noexcept
     {
-        if constexpr(is_mem<_Memory>::value)
-            std::ranges::copy(mem.template get<Src>(),
-                              mem.template get<Dst>().begin());
-        else
-            std::ranges::for_each(std::forward<_Memory>(mem),
-                                  [](auto row) constexpr noexcept {
-                                      row.template get<Dst>() =
-                                          get_value<Src>(row);
-                                  });
+        std::ranges::for_each(std::forward<_Memory>(mem),
+                              [](auto row) constexpr noexcept {
+                                  row.template get<Dst>() = get_value<Src>(row);
+                              });
     }
 };
 
 template <typename Op, typename Dst, typename... Args, typename LabelMap>
-struct array_eval<Compute<Op, Dst, Args...>, LabelMap>
+struct vector_eval<Compute<Op, Dst, Args...>, LabelMap>
 {
     template <typename _Memory>
     constexpr void
@@ -397,7 +626,7 @@ struct array_eval<Compute<Op, Dst, Args...>, LabelMap>
 };
 
 template <typename Target, typename LabelMap>
-struct array_eval<Jump<Target>, LabelMap>
+struct vector_eval<Jump<Target>, LabelMap>
 {
     using constant = typename typelist::lookup<Target, LabelMap>;
     static constexpr constant f{};
@@ -406,17 +635,14 @@ struct array_eval<Jump<Target>, LabelMap>
     constexpr void
     operator()(_Memory&& mem) const noexcept
     {
-        if constexpr(is_mem<_Memory>::value)
-            std::ranges::fill(mem.cp(), std::invoke(f));
-        else
-            std::ranges::for_each(std::forward<_Memory>(mem),
-                                  [](auto row) constexpr noexcept
-                                  { row.cp() = std::invoke(f); });
+        std::ranges::for_each(std::forward<_Memory>(mem),
+                              [](auto row) constexpr noexcept
+                              { row.cp() = std::invoke(f); });
     }
 };
 
 template <typename Var, typename Labels, typename LabelMap>
-struct array_eval<ParmJump<Var, Labels>, LabelMap>
+struct vector_eval<ParmJump<Var, Labels>, LabelMap>
 {
     static constexpr auto table = pjmp_arr<ParmJump<Var, Labels>, LabelMap>;
 
@@ -466,7 +692,7 @@ struct output_getter
     }
 };
 
-template <typename _Program, std::size_t ArraySize>
+template <typename _Program>
 struct basic_vector_evaluator
 {
     using labelmap  = typename _Program::labelmap;
@@ -479,14 +705,14 @@ struct basic_vector_evaluator
     static constexpr auto end_pos = _Program::end_pos;
 
     template <typename C>
-    using compile_cell = standard_compiler<C, labelmap, array_eval>;
+    using compile_cell = standard_compiler<C, labelmap, vector_eval>;
 
     using compiled_cells = typelist::map<compile_cell, cells>;
 
     static constexpr input_setter<typename _Program::input_vars>   setter{};
     static constexpr output_getter<typename _Program::output_vars> getter{};
 
-    using memory = Memory<reg_types, reg_names, cp, ArraySize>;
+    using memory = Memory<reg_types, reg_names, cp>;
 
     struct single_cell_evaluator
     {
@@ -496,11 +722,17 @@ struct basic_vector_evaluator
 
         template <typename... Args>
         constexpr auto
-        operator()(Args&&... args) noexcept
+        operator()(fsize_t n, Args&&... args) noexcept
         {
+            mem.resize(n);
             setter(mem, std::forward<Args>(args)...);
             cell(mem);
             return getter(mem);
+        }
+
+        void
+        reset() noexcept
+        {
         }
     };
 
@@ -513,8 +745,9 @@ struct basic_vector_evaluator
 
         template <typename... Args>
         constexpr auto
-        operator()(Args&&... args) noexcept
+        operator()(fsize_t n, Args&&... args) noexcept
         {
+            mem.resize(n);
             setter(mem, std::forward<Args>(args)...);
 
             while(mem.cp()[0] != end_pos)
@@ -540,13 +773,19 @@ struct basic_vector_evaluator
 #else
                 // libstdc++ std::sort doesn't use swap internally
                 // so we sort it manually
-                for(std::size_t i = 1; i < mem.size(); ++i)
-                    for(std::size_t j = i; j > 0 && mem[j - 1] > mem[j]; --j)
+                for(fsize_t i = 1; i < mem.size(); ++i)
+                    for(fsize_t j = i; j > 0 && mem[j - 1] > mem[j]; --j)
                         swap(mem[j], mem[j - 1]);
 #endif
             }
 
             return getter(mem);
+        }
+
+        void
+        reset() noexcept
+        {
+            std::ranges::fill(mem.cp(), 0);
         }
     };
 
@@ -555,6 +794,6 @@ struct basic_vector_evaluator
         conditional_t<_Program::singular, single_cell_evaluator, evaluator>;
 };
 
-template <typename _Program, std::size_t ArraySize>
-using evaluator = typename basic_vector_evaluator<_Program, ArraySize>::type;
+template <typename _Program>
+using evaluator = typename basic_vector_evaluator<_Program>::type;
 } // namespace lucid::bve

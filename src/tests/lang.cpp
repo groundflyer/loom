@@ -5,6 +5,8 @@
 #include <lang/bve.hpp>
 #include <lang/lang.hpp>
 #include <lang/simd.hpp>
+#include <utils/math.hpp>
+#include <utils/test.hpp>
 
 #include <fmt/core.h>
 #include <fmt/ranges.h>
@@ -64,109 +66,55 @@ TBEGIN1(factorial_float, a)
 TEND1(a)
 
 using namespace lucid;
+using namespace lucid::test;
 
-int main(/*int argc, char* argv[]*/)
+int main(int argc, char* argv[])
 {
     // clang-format on
-    int  ret = 0;
-    auto ok  = [&](std::string_view name) noexcept
-    { fmt::print("{} : {}\n", name, ret == 0 ? "OK" : "FAIL"); };
+    Track       track(argc, argv);
+    RandomState rs;
 
-    using incr_int = increment<int>;
-    bse::evaluator<incr_int> p;
-    ret += p(-1);
-    ok("increment bse");
+    auto int_g = rs.make_gen<int>(2, 10);
+    auto u_g   = rs.make_gen<unsigned>(2, 10);
 
-    bve::evaluator<incr_int, 4> pv;
-    ret += !std::ranges::all_of(pv(0),
-                                [](const auto i) constexpr noexcept
-                                { return i == 1; });
-    ok("increment bve single input");
-
-    auto v1 = {0, 1, 2, 3};
-    auto v2 = {1, 2, 3, 4};
-    ret += !std::ranges::equal(pv(v1), v2);
-    ok("increment bve multi input");
-
+    using incr_int     = increment<int>;
+    using fac_int      = factorial_int<int>;
     using fac_unsigned = factorial_int<unsigned>;
-    bse::evaluator<fac_unsigned> facu;
-    const unsigned               facu_in  = 6;
-    const unsigned               facu_chk = 720;
-    auto                         facu_out = facu(facu_in);
-    ret += facu_out != facu_chk;
-    ok("facu bse");
+    using fac_float    = factorial_float<float>;
 
-    using facf = factorial_float<float>;
-    bse::evaluator<facf> facf_bse;
-    const float          facf_bse_in  = 6;
-    const float          facf_bse_chk = 720;
-    const float          facf_bse_out = facf_bse(facf_bse_in);
-    ret += !almost_equal(facf_bse_out, facf_bse_chk, 100);
-    ok("facf bse");
+    bse::evaluator<incr_int>     bse_ii;
+    bse::evaluator<fac_unsigned> bse_fu;
+    bse::evaluator<fac_int>      bse_fi;
+    bse::evaluator<fac_float>    bse_ff;
 
-    bve::evaluator<fac_unsigned, 4> vfacu;
-    const auto                      vfacu_in  = {4u, 5u, 6u, 7u};
-    const auto                      vfacu_chk = {24u, 120u, 720u, 5040u};
-    auto                            vfacu_out = vfacu(vfacu_in);
-    std::ranges::sort(vfacu_out);
-    ret += !std::ranges::equal(vfacu_out, vfacu_chk);
-    ok("fac bve");
+    bve::evaluator<incr_int>     bve_ii;
+    bve::evaluator<fac_unsigned> bve_fu;
+    bve::evaluator<fac_int>      bve_fi;
 
-    using incf    = increment<float>;
-    using incf_se = simd::evaluator<incf>;
-    incf_se simd_incf_eval{};
-    auto    incf_se_ret = simd_incf_eval(19999, -1.f);
-    ret += !std::ranges::all_of(incf_se_ret,
-                                [](const auto i) noexcept { return i == 0.f; });
-    ok("simd incf");
+    simd::evaluator<incr_int>     simd_ii;
+    simd::evaluator<fac_unsigned> simd_fu;
+    simd::evaluator<fac_int>      simd_fi;
 
-    using incd    = increment<double>;
-    using incd_se = simd::evaluator<incd>;
-    incd_se simd_incd_eval{};
-    auto    incd_se_ret = simd_incd_eval(19999, -1.f);
-    ret += !std::ranges::all_of(incd_se_ret,
-                                [](const auto i) noexcept { return i == 0.; });
-    ok("simd incd");
+    auto val_incr = [](auto i) noexcept { return i + 1; };
+    auto val_fac  = [](auto i) noexcept { return fac(i); };
 
-    using facf_simd = simd::evaluator<facf>;
-    facf_simd facf_simd_eval{};
-    auto      facf_simd_ret = facf_simd_eval(99, 7.f);
-    ret += !std::ranges::all_of(facf_simd_ret,
-                                [](const float i) constexpr noexcept
-                                { return almost_equal(i, 5040.f, 100); });
-    ok("simd facf1");
+    track.parm_test_val_cmp("BSE increment int", int_g, bse_ii, val_incr);
+    track.parm_test_val_cmp("BSE factorial unsigned int", u_g, bse_fu, val_fac);
+    track.parm_test_val_cmp("BSE factorial int", int_g, bse_fi, val_fac);
 
-    using facd    = factorial_float<double>;
-    using facd_se = simd::evaluator<facd>;
-    facd_se facd_se_eval{};
-    auto    facd_se_ret = facd_se_eval(99, 7.f);
-    ret += !std::ranges::all_of(facd_se_ret,
-                                [](const double i) constexpr noexcept
-                                { return almost_equal(i, 5040., 100); });
-    ok("simd facd1");
+    track.fuzzy_parm_test_ulp(
+        "BSE factorial float",
+        0.001,
+        u_g,
+        bse_ff,
+        [&](auto i) noexcept -> float { return fac(i); },
+        10);
 
-    std::random_device                      r;
-    std::default_random_engine              e{r()};
-    std::uniform_int_distribution<unsigned> dist(10, 100);
+    track.parm_range_test_gen("BVE increment", int_g, bve_ii, bse_ii);
+    track.parm_range_test_gen("BVE factorial unsigned", u_g, bve_fu, val_fac);
+    bve_fu.reset();
+    track.parm_range_test("SIMD increment int", int_g, simd_ii, bve_ii);
+    track.parm_range_test("SIMD factorial unsigned", u_g, simd_fu, bve_fu);
 
-    auto generator = [&]() noexcept { return static_cast<float>(dist(e)); };
-    std::vector<float> facf_in;
-    std::vector<float> facf_check;
-    std::size_t        n = 19999;
-    std::ranges::generate_n(std::back_inserter(facf_in), n, generator);
-    std::ranges::transform(facf_in, std::back_inserter(facf_check), facf_bse);
-    std::sort(facf_check.begin(), facf_check.end());
-    auto facf_simd_out = facf_simd_eval(n, facf_in);
-    std::sort(facf_simd_out.begin(), facf_simd_out.end());
-    ret += !std::ranges::all_of(ranges::views::zip(facf_simd_out, facf_check) |
-                                    std::views::transform(
-                                        [](const auto& ab) noexcept
-                                        {
-                                            const auto [a, b] = ab;
-                                            return almost_equal(a, b, 100);
-                                        }),
-                                std::identity{});
-    ok("simd facf2");
-
-    return ret;
+    return track.code();
 }
