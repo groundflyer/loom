@@ -17,6 +17,7 @@ message(STATUS "Build Type: ${CMAKE_BUILD_TYPE}")
 
 # Options
 option(USE_DOUBLE_PRECISION "Use double precision floating-point format" OFF)
+option(USE_NARROW_AVX_INT "Use 128 integer vectors on AVX instead of 256" ON)
 option(BUILD_TESTS "Build tests" OFF)
 option(BUILD_BENCHMARKS "Build benchmarks" OFF)
 option(BUILD_DOC "Build documentation" OFF)
@@ -29,6 +30,10 @@ if(USE_DOUBLE_PRECISION)
   add_definitions(-D_DOUBLE_PRECISION)
 endif()
 message(STATUS "Floating-point format: ${_precision} precision")
+
+if(USE_NARROW_AVX_INT)
+  add_definitions(-DNARROW_AVX_INT)
+endif()
 
 # Check for required compiler features
 include(CxxFeatures)

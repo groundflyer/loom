@@ -1,7 +1,7 @@
 #!/bin/bash
 
 showhelp() {
-    echo "Usage: $0 [-h] [-t] [-b] [-d] [-e] [-a] [-c] [-clang] [-D]"
+    echo "Usage: $0 [-h] [-t] [-b] [-d] [-e] [-a] [-c] [-clang] [-D] [-nai]"
     echo -e "\t-t\tbuild and run tests"
     echo -e "\t-b\tbuild and run benchmarks"
     echo -e "\t-d\tbuild documentation"
@@ -10,6 +10,7 @@ showhelp() {
     echo -e "\t-c\trun cmake only, don't build"
     echo -e "\t-clang\tuse clang"
     echo -e "\t-D\tbuild RelWithDebInfo"
+    echo -e "\t-nai\tnarrow AVX int"
     echo -e "\t-h\tshow this help message and exit"
 }
 
@@ -62,6 +63,10 @@ run_tests() {
     fi
 }
 
+narrow_avx_int() {
+    CMAKE_ARGS+=(-DUSE_NARROW_AVX_INT=OFF)
+}
+
 run_benchmarks() {
     CPUNAME=$(sed "s/[^a-zA-Z0-9]/ /g" <<< `uname -p` | xargs | sed "s/ /_/g")
     COMPILER=${CXX}-`${CXX} --version | head -n1 | cut -f3 -d' '`
@@ -109,6 +114,9 @@ for key in $@; do
             ;;
         -D)
             enable_debug
+            ;;
+        -nai)
+            narrow_avx_int
             ;;
         -h)
             showhelp

@@ -33,13 +33,13 @@ using fsize_t = bve::fsize_t;
 constexpr inline fsize_t dynamic_extent = bve::dynamic_extent;
 
 #if defined(__AVX512F__)
-constexpr inline fsize_t simd_width = 512;
+constexpr inline fsize_t simd_width = 64; // 512
 constexpr inline fsize_t simd_align = 64;
 #elif defined(__AVX2__) || defined(__AVX__)
-constexpr inline fsize_t simd_width = 256;
+constexpr inline fsize_t simd_width = 32; // 256
 constexpr inline fsize_t simd_align = 32;
 #else
-constexpr inline fsize_t simd_width = 128;
+constexpr inline fsize_t simd_width = 16; // 128
 constexpr inline fsize_t simd_align = 16;
 #endif
 
@@ -58,7 +58,7 @@ constexpr inline fsize_t pv_extent = proxy_view_extent<_ProxyView>::value;
 template <typename T>
 struct get_native_vector_align
 {
-#ifdef __AVX__
+#if defined(__AVX__) && defined(NARROW_AVX_INT)
     static constexpr fsize_t value =
         std::is_integral_v<T> ? alignof(T) : simd_align;
 #else
@@ -82,13 +82,15 @@ template <typename T>
 struct get_native_vector_extent
 {
   private:
-#ifdef __AVX__
-    static constexpr fsize_t _width = std::is_integral_v<T> ? 128 : simd_width;
+#if defined(__AVX__) && defined(NARROW_AVX_INT)
+#pragma GCC warning "Using narrow AVX"
+    static constexpr fsize_t _width = std::is_integral_v<T> ? 16 : simd_width;
 #else
+#pragma GCC warning "Using fullwidth AVX"
     static constexpr fsize_t _width = simd_width;
 #endif
   public:
-    static constexpr fsize_t value = _width / 8 / sizeof(T);
+    static constexpr fsize_t value = _width / sizeof(T);
 };
 
 template <typename C, typename index_t>
@@ -577,8 +579,7 @@ class SIMDAlignedAllocator
     pointer
     allocate(fsize_t n)
     {
-        const fsize_t an = align_to(sizeof(T) * n);
-        void*         p  = std::aligned_alloc(align, an);
+        void* p = std::aligned_alloc(align, align_to(sizeof(T) * n));
         if(!p) throw std::bad_alloc();
 
         return static_cast<pointer>(p);
