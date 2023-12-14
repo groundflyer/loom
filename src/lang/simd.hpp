@@ -17,14 +17,13 @@
 
 #include <cstdlib>
 #include <memory>
-#include <new>
-
-#include <emmintrin.h>
 
 #if defined(__clang__)
-#define _SHUFFLE __builtin_shufflevector
+#define _SHUFFLE  __builtin_shufflevector
+#define _FN_ATTRS __attribute__((always_inline, nodebug))
 #elif defined(__GNUG__)
 #define _SHUFFLE __builtin_shuffle
+#define _FN_ATTRS
 #endif
 
 namespace lucid::simd
@@ -34,55 +33,15 @@ using fsize_t = bve::fsize_t;
 constexpr inline fsize_t dynamic_extent = bve::dynamic_extent;
 
 #if defined(__AVX512F__)
-constexpr inline fsize_t simd_width     = 512;
-constexpr inline fsize_t simd_alignment = 64;
+constexpr inline fsize_t simd_width = 512;
+constexpr inline fsize_t simd_align = 64;
 #elif defined(__AVX2__) || defined(__AVX__)
-constexpr inline fsize_t simd_width     = 256;
-constexpr inline fsize_t simd_alignment = 32;
+constexpr inline fsize_t simd_width = 256;
+constexpr inline fsize_t simd_align = 32;
 #else
-constexpr inline fsize_t simd_width     = 128;
-constexpr inline fsize_t simd_alignment = 16;
+constexpr inline fsize_t simd_width = 128;
+constexpr inline fsize_t simd_align = 16;
 #endif
-
-template <fsize_t alignment>
-constexpr fsize_t
-align_to(fsize_t n) noexcept
-{
-    const fsize_t m = n % alignment;
-    return m == 0 ? n : n + alignment - m;
-}
-
-template <typename T, fsize_t alignment>
-class AlignedAllocator
-{
-  public:
-    using value_type = T;
-    using pointer    = T*;
-
-    template <typename U>
-    struct rebind
-    {
-        using other = AlignedAllocator<U, alignment>;
-    };
-
-    AlignedAllocator() noexcept = default;
-
-    pointer
-    allocate(fsize_t n)
-    {
-        const fsize_t an = align_to<alignment>(sizeof(T) * n);
-        void*         p  = std::aligned_alloc(alignment, an);
-        if(!p) throw std::bad_alloc();
-
-        return static_cast<pointer>(p);
-    }
-
-    void
-    deallocate(pointer p, fsize_t)
-    {
-        std::free(p);
-    }
-};
 
 template <typename _ProxyView>
 struct proxy_view_extent;
@@ -96,10 +55,22 @@ struct proxy_view_extent<bve::ProxyView<Data, Helper, _CP, N>>
 template <typename _ProxyView>
 constexpr inline fsize_t pv_extent = proxy_view_extent<_ProxyView>::value;
 
+template <typename T>
+struct get_native_vector_align
+{
+#ifdef __AVX__
+    static constexpr fsize_t value =
+        std::is_integral_v<T> ? alignof(T) : simd_align;
+#else
+    static constexpr fsize_t value  = simd_align;
+#endif
+};
+
 template <typename T, fsize_t N>
 struct get_packed_vector
 {
-    typedef T type __attribute__((vector_size(N * sizeof(T))));
+    typedef T type __attribute__((vector_size(N * sizeof(T)),
+                                  aligned(get_native_vector_align<T>::value)));
 };
 
 template <typename T, fsize_t N>
@@ -108,10 +79,16 @@ using packed_vector = typename get_packed_vector<T, N>::type;
 namespace detail
 {
 template <typename T>
-    requires(std::is_floating_point_v<T> || std::is_integral_v<T>)
 struct get_native_vector_extent
 {
-    static constexpr fsize_t value = simd_width / 8 / sizeof(T);
+  private:
+#ifdef __AVX__
+    static constexpr fsize_t _width = std::is_integral_v<T> ? 128 : simd_width;
+#else
+    static constexpr fsize_t _width = simd_width;
+#endif
+  public:
+    static constexpr fsize_t value = _width / 8 / sizeof(T);
 };
 
 template <typename C, typename index_t>
@@ -131,17 +108,8 @@ template <typename Op,
           typename index_t>
 struct native_instruction_width<Compute<Op, Dst, Arg1, Args...>, index_t>
 {
-    // assume on the first argument
-    // floating point comparisons can benefit
-#ifdef __AVX__
-    // AVX doesn't have integer operations - fallback to SSE width.
-    using vt                       = vartype<Arg1>;
-    static constexpr fsize_t n     = get_native_vector_extent<vt>::value;
-    static constexpr fsize_t value = std::is_integral_v<vt> ? (n / 2) : n;
-#else
     static constexpr fsize_t value =
         get_native_vector_extent<vartype<Arg1>>::value;
-#endif
 };
 
 template <typename Target, typename index_t>
@@ -153,28 +121,8 @@ struct native_instruction_width<Jump<Target>, index_t>
 template <typename Var, typename Labels, typename index_t>
 struct native_instruction_width<ParmJump<Var, Labels>, index_t>
 {
-#ifdef __AVX__
-    // AVX doesn't have integer operations - fallback to SSE width.
-    static constexpr fsize_t value =
-        get_native_vector_extent<index_t>::value / 2;
-#else
     static constexpr fsize_t value = get_native_vector_extent<index_t>::value;
-#endif
 };
-
-template <fsize_t I, typename VT, typename T>
-void
-storei(VT src, T* dst) noexcept
-{
-    dst[I] = src[I];
-}
-
-template <typename VT, typename T, std::size_t... Is>
-void
-store_impl(VT src, T* dst, std::index_sequence<Is...>) noexcept
-{
-    (..., storei<Is>(src, dst));
-}
 
 template <fsize_t, typename T>
 constexpr T
@@ -193,19 +141,6 @@ using native_vector = packed_vector<T, native_vector_extent<T>>;
 
 namespace detail
 {
-template <fsize_t A, fsize_t N, typename T, std::size_t... Is>
-packed_vector<T, N>
-load_impl(T* src, std::index_sequence<Is...>) noexcept
-{
-#ifdef __AVX__
-    // this causes segfault sometimes
-    if constexpr(!std::is_integral_v<T>)
-#endif
-        src = std::assume_aligned<A>(src);
-    packed_vector<T, N> ret = {src[Is]...};
-    return ret;
-}
-
 template <fsize_t N, typename T, std::size_t... Is>
 constexpr packed_vector<T, N>
 broadcast_impl(T v, std::index_sequence<Is...>) noexcept
@@ -222,25 +157,20 @@ constexpr inline fsize_t native_instruction_width =
 /// @brief Load @p N values and pack them into vector of width @p N
 /// from aligned memory location @p src.
 /// @tparam A memory alignment.
-template <fsize_t A, fsize_t N, typename T>
-packed_vector<T, N>
-load(T* src) noexcept
+template <fsize_t N, typename T>
+packed_vector<T, N> _FN_ATTRS
+load(const T* p) noexcept
 {
-    return detail::load_impl<A, N>(src, std::make_index_sequence<N>{});
+    return *(packed_vector<T, N>*)p;
 }
 
 /// @brief Store values from packed vector into aligned memory location @p dst.
 /// @tparam A memory alignment.
-template <fsize_t A, fsize_t N, typename T>
-void
-store(packed_vector<T, N> src, T* dst) noexcept
+template <fsize_t N, typename T>
+void _FN_ATTRS
+store(T* dst, packed_vector<T, N> src) noexcept
 {
-#ifdef __AVX__
-    // this causes segfault sometimes
-    if constexpr(!std::is_integral_v<T>)
-#endif
-        dst = std::assume_aligned<A>(dst);
-    detail::store_impl(src, dst, std::make_index_sequence<N>{});
+    *(packed_vector<T, N>*)dst = src;
 }
 
 /// @brief Broadcast a value to all elements of the resulting packed vector.
@@ -287,7 +217,7 @@ struct remap_op<N, Op<T>>
 template <fsize_t N, typename Op>
 using remap_op_t = typename remap_op<N, Op>::type;
 
-template <fsize_t alignment, fsize_t N>
+template <fsize_t N>
 struct var_loader
 {
     template <typename Var, typename _ProxyView>
@@ -299,21 +229,21 @@ struct var_loader
         if constexpr(l.has_value())
             return broadcast<N>(l.value());
         else
-            return load<alignment, N>(view.template get<Var>().data());
+            return load<N>(view.template get<Var>().data());
     }
 };
 
-template <typename C, typename LabelMap, fsize_t alignment>
+template <typename C, typename LabelMap>
 struct eval;
 
-template <typename Dst, typename Src, typename LabelMap, fsize_t alignment>
-struct eval<Copy<Dst, Src>, LabelMap, alignment>
+template <typename Dst, typename Src, typename LabelMap>
+struct eval<Copy<Dst, Src>, LabelMap>
 {
     using T       = vartype<Dst>;
     using index_t = get_index_t<LabelMap>;
     static constexpr fsize_t n =
         native_instruction_width<Copy<Dst, Src>, index_t>;
-    using loader_t = var_loader<alignment, n>;
+    using loader_t = var_loader<n>;
     static constexpr loader_t loader{};
 
     template <typename _ProxyView>
@@ -323,17 +253,17 @@ struct eval<Copy<Dst, Src>, LabelMap, alignment>
     {
         T* dst = view.template get<Dst>().data();
         if constexpr(std::is_same_v<vartype<Dst>, vartype<Src>>)
-            store<alignment, n>(loader.template operator()<Src>(view), dst);
+            store<n>(dst, loader.template operator()<Src>(view));
         else
-            store<alignment, n>(
+            store<n>(
+                dst,
                 __builtin_convertvector(loader.template operator()<Src>(view),
-                                        packed_vector<T, n>),
-                dst);
+                                        packed_vector<T, n>));
     }
 };
 
-template <typename Target, typename LabelMap, fsize_t alignment>
-struct eval<Jump<Target>, LabelMap, alignment>
+template <typename Target, typename LabelMap>
+struct eval<Jump<Target>, LabelMap>
 {
     using constant = typename typelist::lookup<Target, LabelMap>;
     using index_t  = get_index_t<LabelMap>;
@@ -348,24 +278,20 @@ struct eval<Jump<Target>, LabelMap, alignment>
     {
         index_t*                  dst = view.cp().data();
         packed_vector<index_t, n> t   = broadcast<n>(target);
-        store<alignment, n>(t, dst);
+        store<n>(dst, t);
     }
 };
 
-template <typename Op,
-          typename Dst,
-          typename... Args,
-          typename LabelMap,
-          fsize_t alignment>
+template <typename Op, typename Dst, typename... Args, typename LabelMap>
     requires(... && (sizeof(vartype<Dst>) == sizeof(vartype<Args>)))
-struct eval<Compute<Op, Dst, Args...>, LabelMap, alignment>
+struct eval<Compute<Op, Dst, Args...>, LabelMap>
 {
     using T       = vartype<Dst>;
     using index_t = get_index_t<LabelMap>;
     static constexpr fsize_t n =
         native_instruction_width<Compute<Op, Dst, Args...>, index_t>;
     using vector_op = remap_op_t<n, Op>;
-    using loader_t  = var_loader<alignment, n>;
+    using loader_t  = var_loader<n>;
     static constexpr loader_t loader{};
 
     template <typename _ProxyView>
@@ -377,7 +303,7 @@ struct eval<Compute<Op, Dst, Args...>, LabelMap, alignment>
         auto vars =
             typelist::maybe_collect(loader, type_sequence<Args...>{}, view);
         packed_vector<T, n> ret = maybe_apply(vector_op{}, vars);
-        store<alignment, n>(ret, dst);
+        store<n>(dst, ret);
     }
 };
 
@@ -413,8 +339,8 @@ struct shuffler<std::integer_sequence<index_t, is...>, n>
     }
 };
 
-template <typename Var, typename Labels, typename LabelMap, fsize_t alignment>
-struct eval<ParmJump<Var, Labels>, LabelMap, alignment>
+template <typename Var, typename Labels, typename LabelMap>
+struct eval<ParmJump<Var, Labels>, LabelMap>
 {
     using index_t = get_index_t<LabelMap>;
     static constexpr fsize_t n =
@@ -430,17 +356,17 @@ struct eval<ParmJump<Var, Labels>, LabelMap, alignment>
     {
         index_t* dst = view.cp().data();
         index_t* src = view.template get<Var>().data();
-        store<alignment, n>(op(load<alignment, n>(src)), dst);
+        store<n>(dst, op(load<n>(src)));
     }
 };
 
-template <typename C, typename LabelMap, fsize_t alignment, fsize_t bulk_number>
+template <typename C, typename LabelMap, fsize_t bulk_number>
 struct vertical_runner
 {
     using index_t                   = get_index_t<LabelMap>;
     static constexpr fsize_t stride = native_instruction_width<C, index_t>;
-    static constexpr eval<C, LabelMap, alignment> v_eval{};
-    static constexpr standard_eval<C, LabelMap>   s_eval{};
+    static constexpr eval<C, LabelMap>          v_eval{};
+    static constexpr standard_eval<C, LabelMap> s_eval{};
     using bulk_sizes =
         intlist::map_f<decltype([](fsize_t n) constexpr noexcept -> fsize_t
                                 { return n * stride; }),
@@ -630,6 +556,41 @@ class memory_chunks : public std::ranges::view_interface<memory_chunks<_Memory>>
     }
 };
 
+template <typename T>
+class SIMDAlignedAllocator
+{
+    static constexpr fsize_t align = get_native_vector_align<T>::value;
+
+    static constexpr fsize_t
+    align_to(fsize_t n) noexcept
+    {
+        const fsize_t m = n % align;
+        return m == 0 ? n : n + align - m;
+    }
+
+  public:
+    using value_type = T;
+    using pointer    = T*;
+
+    SIMDAlignedAllocator() noexcept = default;
+
+    pointer
+    allocate(fsize_t n)
+    {
+        const fsize_t an = align_to(sizeof(T) * n);
+        void*         p  = std::aligned_alloc(align, an);
+        if(!p) throw std::bad_alloc();
+
+        return static_cast<pointer>(p);
+    }
+
+    void
+    deallocate(pointer p, fsize_t)
+    {
+        std::free(p);
+    }
+};
+
 template <typename _Program, fsize_t bulk_number>
     requires(bulk_number > 0)
 class simd_evaluator
@@ -640,11 +601,11 @@ class simd_evaluator
     using reg_types = typename _Program::reg_types;
     using cp        = typename _Program::cp;
 
-    static constexpr auto    end_pos   = _Program::end_pos;
-    static constexpr fsize_t alignment = simd_alignment;
+    static constexpr auto    end_pos = _Program::end_pos;
+    static constexpr fsize_t align   = simd_align;
 
     template <typename C, typename LabelMap>
-    using simd_eval = vertical_runner<C, LabelMap, alignment, bulk_number>;
+    using simd_eval = vertical_runner<C, LabelMap, bulk_number>;
 
     template <typename Cell>
     using compile_cell = standard_compiler<Cell, labelmap, simd_eval>;
@@ -655,11 +616,8 @@ class simd_evaluator
     static constexpr bve::output_getter<typename _Program::output_vars>
         getter{};
 
-    template <typename T>
-    using native_aligned_allocator = AlignedAllocator<T, alignment>;
-
     using memory = bve::
-        Memory<reg_types, reg_names, cp, std::vector, native_aligned_allocator>;
+        Memory<reg_types, reg_names, cp, std::vector, SIMDAlignedAllocator>;
 
     struct single_cell_evaluator
     {

@@ -1,6 +1,9 @@
 // -*- C++ -*-
 // lang.cpp
 
+#pragma GCC diagnostic   ignored "-Wignored-attributes"
+#pragma clang diagnostic ignored "-Walign-mismatch"
+
 #include <lang/bse.hpp>
 #include <lang/bve.hpp>
 #include <lang/lang.hpp>
