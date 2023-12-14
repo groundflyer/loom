@@ -19,6 +19,7 @@
 #include <ranges>
 #include <string_view>
 #include <utility>
+#include <vector>
 
 #define _OK(r)             \
     fmt::styled(           \
