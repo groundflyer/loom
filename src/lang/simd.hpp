@@ -83,10 +83,8 @@ struct get_native_vector_extent
 {
   private:
 #if defined(__AVX__) && defined(NARROW_AVX_INT)
-#pragma GCC warning "Using narrow AVX"
     static constexpr fsize_t _width = std::is_integral_v<T> ? 16 : simd_width;
 #else
-#pragma GCC warning "Using fullwidth AVX"
     static constexpr fsize_t _width = simd_width;
 #endif
   public:
@@ -125,13 +123,6 @@ struct native_instruction_width<ParmJump<Var, Labels>, index_t>
 {
     static constexpr fsize_t value = get_native_vector_extent<index_t>::value;
 };
-
-template <fsize_t, typename T>
-constexpr T
-fake_get(T v) noexcept
-{
-    return v;
-}
 } // namespace detail
 
 template <typename T>
@@ -140,17 +131,6 @@ constexpr inline fsize_t native_vector_extent =
 
 template <typename T>
 using native_vector = packed_vector<T, native_vector_extent<T>>;
-
-namespace detail
-{
-template <fsize_t N, typename T, std::size_t... Is>
-constexpr packed_vector<T, N>
-broadcast_impl(T v, std::index_sequence<Is...>) noexcept
-{
-    packed_vector<T, N> ret = {fake_get<Is>(v)...};
-    return ret;
-}
-} // namespace detail
 
 template <typename C, typename index_t>
 constexpr inline fsize_t native_instruction_width =
@@ -178,9 +158,9 @@ store(T* dst, packed_vector<T, N> src) noexcept
 /// @brief Broadcast a value to all elements of the resulting packed vector.
 template <fsize_t N, typename T>
 constexpr packed_vector<T, N>
-broadcast(T v) noexcept
+broadcast(const T v) noexcept
 {
-    return detail::broadcast_impl<N>(v, std::make_index_sequence<N>{});
+    return std::apply(maker<packed_vector<T, N>, true>, repeat_to_tuple<N>(v));
 }
 
 template <fsize_t N, typename Op>

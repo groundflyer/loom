@@ -152,9 +152,9 @@ struct maker_fn
     operator()(Args&&... args) const noexcept
     {
         if constexpr(list_init)
-            return T{args...};
+            return T{std::forward<Args>(args)...};
         else
-            return T(args...);
+            return T(std::forward<Args>(args)...);
     }
 
     template <typename Rhs>
@@ -172,7 +172,7 @@ struct tuple_maker_fn
     constexpr T
     operator()(Tuple&& t) const noexcept
     {
-        return std::make_from_tuple<T>(t);
+        return std::make_from_tuple<T>(std::forward<T>(t));
     }
 
     template <typename Rhs>
