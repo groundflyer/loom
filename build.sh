@@ -10,7 +10,7 @@ showhelp() {
     echo -e "\t-c\trun cmake only, don't build"
     echo -e "\t-clang\tuse clang"
     echo -e "\t-D\tbuild RelWithDebInfo"
-    echo -e "\t-nai\tnarrow AVX int"
+    echo -e "\t-nai\tdisable narrow AVX int"
     echo -e "\t-h\tshow this help message and exit"
 }
 

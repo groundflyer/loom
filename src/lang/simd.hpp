@@ -59,8 +59,7 @@ template <typename T>
 struct get_native_vector_align
 {
 #if defined(__AVX__) && defined(NARROW_AVX_INT)
-    static constexpr fsize_t value =
-        std::is_integral_v<T> ? alignof(T) : simd_align;
+    static constexpr fsize_t value = std::is_integral_v<T> ? 16 : simd_align;
 #else
     static constexpr fsize_t value  = simd_align;
 #endif
@@ -398,9 +397,23 @@ struct vertical_runner
 
     template <typename _MemoryView>
     void
-    operator()(_MemoryView mem) const noexcept
+    operator()(_MemoryView view) const noexcept
     {
-        dispatch_bulks(mem, bulk_sizes{});
+        // ensure that we have aligned access to the view
+        const fsize_t r  = view.offset() % stride;
+        const fsize_t sr = stride - r;
+        const fsize_t vs = view.size();
+        fsize_t       no = std::min(sr, vs);
+        // if reminder doesn't fit SIMD lane we execute it here too
+        if(vs - no < stride) no = vs;
+        // non-aligned rows executed sequentially
+        for(fsize_t i = 0; i < no; ++i) s_eval(view[i]);
+        if(vs == no) return;
+
+        auto new_view = view.view(no);
+        ASSERT(new_view.offset() % stride == 0 || new_view.size() < stride,
+               "Unaligned access");
+        dispatch_bulks(new_view, bulk_sizes{});
     }
 };
 

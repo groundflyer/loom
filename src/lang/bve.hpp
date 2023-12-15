@@ -227,6 +227,12 @@ class ProxyView
     {
         return N;
     }
+
+    fsize_t
+    offset() const noexcept
+    {
+        return m_pos;
+    }
 };
 
 template <typename Data, typename Helper, typename _CP>
@@ -307,6 +313,12 @@ class ProxyView<Data, Helper, _CP, dynamic_extent>
     size() const noexcept
     {
         return m_ext;
+    }
+
+    fsize_t
+    offset() const noexcept
+    {
+        return m_pos;
     }
 };
 
@@ -571,6 +583,12 @@ class Memory
     resize(fsize_t new_size)
     {
         lucid::for_each([&](auto& c) noexcept { c.resize(new_size); }, m_data);
+    }
+
+    fsize_t
+    offset() const noexcept
+    {
+        return 0;
     }
 
     friend iterator
