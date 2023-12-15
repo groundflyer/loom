@@ -1,7 +1,7 @@
 #!/bin/bash
 
 showhelp() {
-    echo "Usage: $0 [-h] [-t] [-b] [-d] [-e] [-a] [-c] [-clang] [-D] [-nai]"
+    echo "Usage: $0 [-h] [-t] [-b] [-d] [-e] [-a] [-c] [-clang] [-D]"
     echo -e "\t-t\tbuild and run tests"
     echo -e "\t-b\tbuild and run benchmarks"
     echo -e "\t-d\tbuild documentation"
@@ -10,7 +10,6 @@ showhelp() {
     echo -e "\t-c\trun cmake only, don't build"
     echo -e "\t-clang\tuse clang"
     echo -e "\t-D\tbuild RelWithDebInfo"
-    echo -e "\t-nai\tdisable narrow AVX int"
     echo -e "\t-h\tshow this help message and exit"
 }
 
@@ -63,8 +62,9 @@ run_tests() {
     fi
 }
 
-narrow_avx_int() {
-    CMAKE_ARGS+=(-DUSE_NARROW_AVX_INT=OFF)
+set_cmake_args_from_envs() {
+    CMAKE_ARGS+=(-DUSE_DOUBLE_PRECISION=${USE_DOUBLE_PRECISION:-OFF})
+    CMAKE_ARGS+=(-DSIMD_NARROW_AVX_INT=${SIMD_NARROW_AVX_INT:-OFF})
 }
 
 run_benchmarks() {
@@ -115,9 +115,6 @@ for key in $@; do
         -D)
             enable_debug
             ;;
-        -nai)
-            narrow_avx_int
-            ;;
         -h)
             showhelp
             exit 0
@@ -135,6 +132,8 @@ if [ $CXX = "clang++" ]; then
 else
     BUILD_DIR+="_gcc"
 fi
+
+set_cmake_args_from_envs
 
 mkdir -p ${BUILD_DIR}
 pushd ${BUILD_DIR}
