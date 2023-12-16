@@ -49,24 +49,6 @@ struct Compute
     using args   = type_sequence<Args...>;
 };
 
-template <typename Dst, typename Src>
-    requires(not_cp<Dst, Src>)
-struct Copy
-{
-    using dst = Dst;
-    using src = Src;
-};
-
-template <typename Dst, typename Src>
-struct _caster
-{
-    constexpr Dst
-    operator()(Src src) const noexcept
-    {
-        return static_cast<Dst>(src);
-    }
-};
-
 template <StringLiteral Name>
 struct Label
 {
@@ -117,12 +99,6 @@ struct does_store<Compute<Ts...>>
     static constexpr bool value = true;
 };
 
-template <typename... Ts>
-struct does_store<Copy<Ts...>>
-{
-    static constexpr bool value = true;
-};
-
 template <typename T>
 struct is_jump
 {
@@ -155,12 +131,6 @@ template <typename Op, typename Dst, typename... Ts>
 struct get_storing_var<Compute<Op, Dst, Ts...>>
 {
     using type = Dst;
-};
-
-template <typename Variable, typename Src>
-struct get_storing_var<Copy<Variable, Src>>
-{
-    using type = Variable;
 };
 
 template <typename Command>
@@ -370,19 +340,7 @@ using get_index_t = snd_t<typelist::head<LabelMap>>::value_type;
 template <typename Command, typename LabelMap>
 struct standard_eval;
 
-template <typename Dst, typename Src, typename _>
-struct standard_eval<Copy<Dst, Src>, _>
-{
-    template <typename _Memory>
-    constexpr void
-    operator()(_Memory&& mem) const noexcept
-    {
-        std::forward<_Memory>(mem).template get<Dst>() =
-            get_value<Src>(std::forward<_Memory>(mem));
-    }
-};
-
-template <typename Dst, typename Op, typename... Args, typename _>
+template <typename Op, typename Dst, typename... Args, typename _>
 struct standard_eval<Compute<Op, Dst, Args...>, _>
 {
     template <typename _Memory>
@@ -596,7 +554,7 @@ class Program
 #define IEND1(v)            END(IVAR(v))
 #define IEND2(a, b)         END(IVAR(a), IVAR(b))
 
-#define MOV(a, b)           lucid::Copy<a, b>
+#define MOV(a, b)           lucid::Compute<std::identity, a, b>
 #define TMOV(a, b)          MOV(TVAR(a), TVAR(b))
 #define IMOV(a, b)          MOV(IVAR(a), IVAR(b))
 

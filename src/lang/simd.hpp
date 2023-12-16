@@ -93,13 +93,6 @@ struct get_native_vector_extent
 template <typename C, typename index_t>
 struct native_instruction_width;
 
-template <typename Dst, typename Src, typename index_t>
-struct native_instruction_width<Copy<Dst, Src>, index_t>
-{
-    static constexpr fsize_t value =
-        get_native_vector_extent<vartype<Dst>>::value;
-};
-
 template <typename Op,
           typename Dst,
           typename Arg1,
@@ -162,16 +155,32 @@ broadcast(const T v) noexcept
     return std::apply(maker<packed_vector<T, N>, true>, repeat_to_tuple<N>(v));
 }
 
-template <fsize_t N, typename Op>
+template <fsize_t N, typename Op, typename Ret, typename... Args>
 struct remap_op;
 
-#define DEF_REMAP_VEC_CMP(func, op)                          \
+template <fsize_t N, typename Dst, typename Src>
+struct remap_op<N, std::identity, Dst, Src>
+{
+    struct type
+    {
+        constexpr packed_vector<Dst, N>
+        operator()(const packed_vector<Src, N> src) noexcept
+        {
+            if constexpr(std::is_same_v<Dst, Src>)
+                return src;
+            else
+                return __builtin_convertvector(src, packed_vector<Dst, N>);
+        }
+    };
+};
+
+#define DEF_REMAP_VEC_BIN(func, op, R)                       \
     template <fsize_t N, typename T>                         \
-    struct remap_op<N, func<T>>                              \
+    struct remap_op<N, func<T>, R, T, T>                     \
     {                                                        \
         struct type                                          \
         {                                                    \
-            constexpr packed_vector<infer_index_t<T>, N>     \
+            constexpr packed_vector<R, N>                    \
             operator()(packed_vector<T, N> a,                \
                        packed_vector<T, N> b) const noexcept \
             {                                                \
@@ -180,6 +189,16 @@ struct remap_op;
         };                                                   \
     };
 
+#define DEF_REMAP_VEC_ARITH(func, op) DEF_REMAP_VEC_BIN(func, op, T)
+#define DEF_REMAP_VEC_CMP(func, op) \
+    DEF_REMAP_VEC_BIN(func, op, infer_index_t<T>)
+
+DEF_REMAP_VEC_ARITH(std::plus, +)
+DEF_REMAP_VEC_ARITH(std::minus, -)
+DEF_REMAP_VEC_ARITH(std::multiplies, *)
+DEF_REMAP_VEC_ARITH(std::divides, /)
+DEF_REMAP_VEC_ARITH(std::modulus, %)
+
 DEF_REMAP_VEC_CMP(std::equal_to, ==)
 DEF_REMAP_VEC_CMP(std::not_equal_to, !=)
 DEF_REMAP_VEC_CMP(std::greater, >)
@@ -187,16 +206,8 @@ DEF_REMAP_VEC_CMP(std::less, <)
 DEF_REMAP_VEC_CMP(std::greater_equal, >=)
 DEF_REMAP_VEC_CMP(std::less_equal, <=)
 
-// remaping std::plus, multiply, etc.
-// they work with vector extensions
-template <fsize_t N, typename T, template <typename> typename Op>
-struct remap_op<N, Op<T>>
-{
-    using type = Op<packed_vector<T, N>>;
-};
-
-template <fsize_t N, typename Op>
-using remap_op_t = typename remap_op<N, Op>::type;
+template <fsize_t N, typename Op, typename Ret, typename... Args>
+using remap_op_t = typename remap_op<N, Op, Ret, Args...>::type;
 
 template <fsize_t N>
 struct var_loader
@@ -216,32 +227,6 @@ struct var_loader
 
 template <typename C, typename LabelMap>
 struct eval;
-
-template <typename Dst, typename Src, typename LabelMap>
-struct eval<Copy<Dst, Src>, LabelMap>
-{
-    using T       = vartype<Dst>;
-    using index_t = get_index_t<LabelMap>;
-    static constexpr fsize_t n =
-        native_instruction_width<Copy<Dst, Src>, index_t>;
-    using loader_t = var_loader<n>;
-    static constexpr loader_t loader{};
-
-    template <typename _ProxyView>
-        requires(pv_extent<_ProxyView> == n)
-    void
-    operator()(_ProxyView view) const noexcept
-    {
-        T* dst = view.template get<Dst>().data();
-        if constexpr(std::is_same_v<vartype<Dst>, vartype<Src>>)
-            store<n>(dst, loader.template operator()<Src>(view));
-        else
-            store<n>(
-                dst,
-                __builtin_convertvector(loader.template operator()<Src>(view),
-                                        packed_vector<T, n>));
-    }
-};
 
 template <typename Target, typename LabelMap>
 struct eval<Jump<Target>, LabelMap>
@@ -271,7 +256,7 @@ struct eval<Compute<Op, Dst, Args...>, LabelMap>
     using index_t = get_index_t<LabelMap>;
     static constexpr fsize_t n =
         native_instruction_width<Compute<Op, Dst, Args...>, index_t>;
-    using vector_op = remap_op_t<n, Op>;
+    using vector_op = remap_op_t<n, Op, vartype<Dst>, vartype<Args>...>;
     using loader_t  = var_loader<n>;
     static constexpr loader_t loader{};
 

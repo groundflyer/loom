@@ -613,20 +613,6 @@ class Memory
 template <typename Command, typename LabelMap>
 struct vector_eval;
 
-template <typename Dst, typename Src, typename LabelMap>
-struct vector_eval<Copy<Dst, Src>, LabelMap>
-{
-    template <typename _Memory>
-    constexpr void
-    operator()(_Memory&& mem) const noexcept
-    {
-        std::ranges::for_each(std::forward<_Memory>(mem),
-                              [](auto row) constexpr noexcept {
-                                  row.template get<Dst>() = get_value<Src>(row);
-                              });
-    }
-};
-
 template <typename Op, typename Dst, typename... Args, typename LabelMap>
 struct vector_eval<Compute<Op, Dst, Args...>, LabelMap>
 {
