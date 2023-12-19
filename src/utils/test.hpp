@@ -151,7 +151,7 @@ class Track
             std::forward<G>(g),
             std::forward<T>(t),
             [&]<typename Tr, typename Gr>(Tr&& tr, Gr&& gr) noexcept
-            { return cmp(std::forward<Gr>(tr), valt(std::forward<Gr>(gr))); });
+            { return cmp(std::forward<Tr>(tr), valt(std::forward<Gr>(gr))); });
     }
 
     template <std::invocable G,
