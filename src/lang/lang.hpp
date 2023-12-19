@@ -195,16 +195,16 @@ struct collected_type<type_sequence<Ts...>>
 template <typename T>
 struct access_wrapper
 {
-    template <std::same_as<T> T1>
-    constexpr T1&
-    operator()(T1& val) const noexcept
+    template <std::same_as<T> T1, typename Val>
+    constexpr Val&
+    operator()(Val& val) const noexcept
     {
         return val;
     }
 
-    template <std::same_as<T> T1>
-    constexpr const T1&
-    operator()(const T1& val) const noexcept
+    template <std::same_as<T> T1, typename Val>
+    constexpr const Val
+    operator()(const Val& val) const noexcept
     {
         return val;
     }
@@ -246,28 +246,25 @@ template <typename RegTypes,
           typename RegNames,
           template <typename...> typename Container = std::tuple,
           template <typename> typename RegProj      = std::type_identity_t>
+    requires(typelist::length<RegTypes> == typelist::length<RegNames>)
 struct MemoryHelper
 {
-    using types = typelist::map<RegProj, RegTypes>;
-    using table = typelist::zip<RegNames, types>;
-    using data  = typelist::to<types, Container>;
+    using table = typelist::zip<RegNames, RegTypes>;
+    using data  = typelist::to<typelist::map<RegProj, RegTypes>, Container>;
 
     template <typename Name>
     static constexpr std::size_t regindex = typelist::index<Name, RegNames>;
 
-    template <typename Name>
-    using regtype = typelist::lookup<Name, table>;
-
     template <typename Var>
-    using access = access_wrapper<typelist::lookup<varname<Var>, table>>;
+    using reg_access = access_wrapper<typelist::lookup<varname<Var>, table>>;
 
     template <typename Var>
     static constexpr decltype(auto)
     get(data& _data) noexcept
     {
-        constexpr access<Var> op{};
+        constexpr reg_access<Var> op{};
 
-        return op.template operator()<RegProj<vartype<Var>>>(
+        return op.template operator()<vartype<Var>>(
             std::get<regindex<varname<Var>>>(_data));
     }
 };
