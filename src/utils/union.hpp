@@ -100,13 +100,13 @@ class UnionVector
     constexpr void
     allocate() noexcept
     {
-        p_data = reinterpret_cast<std::byte*>(m_alloc.allocate(size()));
+        p_data = reinterpret_cast<std::byte*>(m_alloc.allocate(size_bytes()));
     }
 
     constexpr void
     deallocate() noexcept
     {
-        if(p_data) m_alloc.deallocate(p_data, size());
+        if(p_data) m_alloc.deallocate(p_data, size_bytes());
     }
 
   public:
