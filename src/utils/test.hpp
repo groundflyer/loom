@@ -28,6 +28,16 @@
 
 namespace lucid::test
 {
+struct range_val_id
+{
+    template <typename In>
+    constexpr In
+    operator()(unsigned, In&& in) const noexcept
+    {
+        return std::forward<In>(in);
+    }
+};
+
 class Track
 {
     unsigned m_total{};
@@ -154,15 +164,16 @@ class Track
             { return cmp(std::forward<Tr>(tr), valt(std::forward<Gr>(gr))); });
     }
 
-    template <std::invocable G,
+    template <bool           do_sort = true,
+              std::invocable G,
               typename T,
-              typename V,
+              typename V   = range_val_id,
               typename Cmp = decltype(std::ranges::equal)>
     bool
     parm_range_test(std::string_view name,
                     G&&              g,
                     T&&              t,
-                    V&&              v,
+                    V&&              v   = range_val_id{},
                     Cmp              cmp = std::ranges::equal) noexcept
     {
         std::vector<std::invoke_result_t<G>> in;
@@ -174,8 +185,11 @@ class Track
             std::invoke(std::forward<T>(t), m_parm_n, in);
         std::ranges::range auto vr =
             std::invoke(std::forward<V>(v), m_parm_n, in);
-        std::ranges::sort(tr);
-        std::ranges::sort(vr);
+        if constexpr(do_sort)
+        {
+            std::ranges::sort(tr);
+            std::ranges::sort(vr);
+        }
         return status(name, std::invoke(std::forward<Cmp>(cmp), tr, vr));
     }
 
