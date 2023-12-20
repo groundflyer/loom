@@ -78,7 +78,7 @@ int main(int argc, char* argv[])
 
     auto g_int   = rs.make_gen<int>(2, 10);
     auto g_ui    = rs.make_gen<unsigned>(2, 10);
-    auto g_float = rs.make_gen<float>(0.f, 1.f);
+    auto g_float = rs.make_gen<float>();
 
     using incr_int     = increment<int>;
     using fac_int      = factorial_int<int>;

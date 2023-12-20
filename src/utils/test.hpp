@@ -368,10 +368,13 @@ class RandomState
     auto
     make_gen(Args&&... args) noexcept
     {
-        return
-            [&,
-             d = random_dist<T>(std::forward<Args>(args)...)]() mutable noexcept
-        { return d(m_e); };
+        if constexpr(std::is_floating_point_v<T> && !sizeof...(Args))
+            return [&]() noexcept
+            { return std::generate_canonical<T, 10>(m_e); };
+        else
+            return [&,
+                    d = random_dist<T>(std::forward<Args>(
+                        args)...)]() mutable noexcept { return d(m_e); };
     }
 };
 } // namespace lucid::test

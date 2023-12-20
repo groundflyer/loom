@@ -35,8 +35,8 @@ main(int argc, char* argv[])
     auto        bgen         = rs.make_gen<bool>(0.5);
     auto        igen         = rs.make_gen<int>(-10000, 10000);
     auto        ugen         = rs.make_gen<unsigned>(0, 10000);
-    auto        fgen         = rs.make_gen<float>(-1000.f, 1000.f);
-    auto        dgen         = rs.make_gen<double>(-1000., 1000.);
+    auto        fgen         = rs.make_gen<float>();
+    auto        dgen         = rs.make_gen<double>();
     auto        union_assign = [](auto val) noexcept
     {
         UnionTest t;
