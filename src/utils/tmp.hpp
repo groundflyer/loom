@@ -516,6 +516,21 @@ struct max_sizeof<type_sequence<Ts...>>
 {
     static constexpr std::size_t value = std::max({sizeof(Ts)...});
 };
+
+template <typename List>
+struct of_same_size;
+
+template <typename T>
+struct of_same_size<type_sequence<T>>
+{
+    static constexpr bool value = true;
+};
+
+template <typename T, typename... Ts>
+struct of_same_size<type_sequence<T, Ts...>>
+{
+    static constexpr bool value = (... && (sizeof(T) == sizeof(Ts)));
+};
 } // namespace detail
 
 /// @defgroup Typelist Typelist
@@ -727,6 +742,14 @@ using to = typename detail::to<Source, Target>::type;
 template <typename List>
 using to_integer_sequence = typename detail::to_integer_seq<List>::type;
 
+/// @brief Size of the biggest type in the list.
+template <typename List>
+constexpr inline std::size_t max_sizeof = detail::max_sizeof<List>::value;
+
+/// @brief Check if all types in @p List have the same size.
+template <typename List>
+constexpr inline bool of_same_size = detail::of_same_size<List>::value;
+
 /// @brief Invoke @p f with each class of @p List as template parameter.
 template <typename F, typename... Ts, typename... Args>
 constexpr void
@@ -735,10 +758,6 @@ for_each(F&& f, type_sequence<Ts...>, Args&&... args) noexcept(
 {
     (..., f.template operator()<Ts>(std::forward<Args>(args)...));
 }
-
-/// @brief Size of the biggest type in the list.
-template <typename List>
-constexpr inline std::size_t max_sizeof = detail::max_sizeof<List>::value;
 
 /// @brief Invoke @p f with each class of @p list as template parameter,
 /// and @p args as function parameters.

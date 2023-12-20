@@ -431,10 +431,10 @@ struct same_size_union
     static constexpr bool value = true;
 };
 
-template <typename T, typename... Ts>
-struct same_size_union<Union<T, Ts...>>
+template <typename... Ts>
+struct same_size_union<Union<Ts...>>
 {
-    static constexpr bool value = (... && (sizeof(T) == sizeof(Ts)));
+    static constexpr bool value = typelist::of_same_size<type_sequence<Ts...>>;
 };
 
 template <typename T>
