@@ -78,6 +78,13 @@ class ProxyUnion
     constexpr ProxyUnion(ProxyUnion&& other) noexcept : p_data(other.p_data) {}
     constexpr ProxyUnion(std::byte* data) noexcept : p_data(data) {}
 
+    constexpr ProxyUnion&
+    operator=(const ProxyUnion& rhs) noexcept
+    {
+        for(std::size_t i = 0; i < data_size; ++i) p_data[i] = rhs.p_data[i];
+        return *this;
+    }
+
     template <typename T>
     constexpr ProxyUnion&
     operator=(const T& rhs) noexcept
@@ -329,3 +336,13 @@ class UnionVector
     virtual ~UnionVector() { deallocate(); }
 };
 } // namespace lucid
+
+namespace std
+{
+template <typename... Ts>
+void
+swap(lucid::ProxyUnion<Ts...> a, lucid::ProxyUnion<Ts...> b) noexcept
+{
+    return swap(a, b);
+}
+} // namespace std
