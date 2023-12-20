@@ -56,22 +56,87 @@ class Union
     }
 };
 
+template <typename... Ts>
+    requires(std::conjunction_v<std::is_default_constructible<Ts>...> &&
+             typelist::of_same_size<type_sequence<Ts...>>)
+class ProxyUnion
+{
+    using types = type_sequence<Ts...>;
+
+    static constexpr std::size_t data_size = typelist::max_sizeof<types>;
+    std::byte*                   p_data;
+
+    template <typename T>
+    static constexpr bool has = typelist::elem<T, types>;
+
+  public:
+    ProxyUnion() = delete;
+    constexpr ProxyUnion(const ProxyUnion& other) noexcept :
+        p_data(other.p_data)
+    {
+    }
+    constexpr ProxyUnion(ProxyUnion&& other) noexcept : p_data(other.p_data) {}
+    constexpr ProxyUnion(std::byte* data) noexcept : p_data(data) {}
+
+    template <typename T>
+    constexpr ProxyUnion&
+    operator=(const T& rhs) noexcept
+        requires(has<T>)
+    {
+        ref<T>() = rhs;
+        return *this;
+    }
+
+    template <typename T>
+    constexpr explicit operator T() const noexcept
+        requires(has<T>)
+    {
+        return ref<T>();
+    }
+
+    template <typename T>
+    constexpr T&
+    ref() noexcept
+    {
+        return *reinterpret_cast<T*>(p_data);
+    }
+
+    template <typename T>
+    constexpr const T&
+    ref() const noexcept
+    {
+        return *reinterpret_cast<const T*>(p_data);
+    }
+
+    friend void
+    swap(ProxyUnion a, ProxyUnion b) noexcept
+    {
+        for(std::size_t i = 0; i < data_size; ++i)
+            std::swap(a.p_data[i], b.p_data[i]);
+    }
+};
+
 namespace detail
 {
-template <typename List>
-struct max_helper;
-
-template <typename... Ts>
-struct max_helper<type_sequence<Ts...>>
+template <typename I, typename Types>
+struct useless_dep
 {
-    static constexpr std::size_t value = std::max({sizeof(Ts)...});
+    using type = typelist::to<Types, ProxyUnion>;
 };
+
+template <typename I, typename Types>
+using useless_t = useless_dep<I, Types>::type;
 } // namespace detail
 
 /// @brief Unsafe union of vectors.
 ///
 /// UnionVector holds a contigous memory segment and provides a typed view to
 /// it.
+///
+/// Only one type can be accessed at a time as
+/// the segment isn't aligned to common size.
+///
+/// When the integrated @p Types have the same size the operator[] is available.
 ///
 /// The number of elements of each type in type_sequence @p Types is always
 /// equal and accesible via @p count().
@@ -81,14 +146,14 @@ template <typename Types, typename Allocator = std::allocator<std::byte>>
     requires(typelist::all<std::is_default_constructible, Types>)
 class UnionVector
 {
-    std::size_t m_count{};
-    Allocator   m_alloc = Allocator();
-    std::byte*  p_data  = nullptr;
-
     template <typename T>
     static constexpr bool has = typelist::elem<T, Types>;
 
-    static constexpr std::size_t m = detail::max_helper<Types>::value;
+    static constexpr std::size_t m = typelist::max_sizeof<Types>;
+
+    std::size_t m_count{};
+    Allocator   m_alloc = Allocator();
+    std::byte*  p_data  = nullptr;
 
     _REINIT constexpr void
     reinit() noexcept
@@ -189,6 +254,23 @@ class UnionVector
         rhs.reinit();
 
         return *this;
+    }
+
+    // operator[] depends on useless_t so it won't be instantiated if not asked
+    template <std::integral I>
+    constexpr const detail::useless_t<I, Types>
+    operator[](const I i) const noexcept
+    {
+        CHECK_INDEX(i, size());
+        return {p_data + (i * m)};
+    }
+
+    template <std::integral I>
+    constexpr detail::useless_t<I, Types>
+    operator[](const I i) noexcept
+    {
+        CHECK_INDEX(i, size());
+        return {p_data + (i * m)};
     }
 
     constexpr UnionVector&
