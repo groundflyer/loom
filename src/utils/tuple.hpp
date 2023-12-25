@@ -200,6 +200,19 @@ for_each_impl(
                  std::forward<Args>(args)...));
 }
 
+template <typename F, typename Tuple, typename TupleArgs, std::size_t... I>
+constexpr void
+for_each2_impl(F&&         f,
+               Tuple&&     tuple,
+               TupleArgs&& args,
+               std::index_sequence<I...>)
+{
+    (...,
+     std::invoke(std::forward<F>(f),
+                 std::get<I>(std::forward<Tuple>(tuple)),
+                 std::get<I>(std::forward<TupleArgs>(args))));
+}
+
 template <typename F, typename T, template <typename...> typename M>
 struct is_applicable
 {
@@ -227,15 +240,71 @@ struct is_applicable<F, std::pair<T1, T2>, M>
 {
     static constexpr bool value = M<F, T1, T2>::value;
 };
+
+template <template <typename> typename Array, typename T>
+struct maybe_toa
+{
+    using type = Array<T>;
+};
+
+template <template <typename> typename Array, typename T1, typename T2>
+struct maybe_toa<Array, std::pair<T1, T2>>
+{
+    using type = std::pair<Array<T1>, Array<T2>>;
+};
+
+template <template <typename> typename Array, typename... Ts>
+struct maybe_toa<Array, std::tuple<Ts...>>
+{
+    using type = std::tuple<Array<Ts>...>;
+};
+
+template <template <typename> typename Array, typename... Ts>
+struct maybe_toa<Array, steady_tuple<Ts...>>
+{
+    using type = steady_tuple<Array<Ts>...>;
+};
+
+template <typename T>
+struct is_tuple
+{
+    static constexpr bool value = false;
+};
+
+template <typename... Ts>
+struct is_tuple<std::pair<Ts...>>
+{
+    static constexpr bool value = true;
+};
+
+template <typename... Ts>
+struct is_tuple<std::tuple<Ts...>>
+{
+    static constexpr bool value = true;
+};
+
+template <typename... Ts>
+struct is_tuple<steady_tuple<Ts...>>
+{
+    static constexpr bool value = true;
+};
 } // namespace detail
+
+/// @brief Tuple of arrays.
+template <template <typename> typename Array, typename T>
+using maybe_toa = detail::maybe_toa<Array, T>::type;
+
+/// @brief Check if tuple.
+template <typename T>
+inline constexpr bool is_tuple_v = detail::is_tuple<std::decay_t<T>>::value;
 
 template <typename F, typename T>
 inline constexpr bool is_applicable_v =
-    detail::is_applicable<F, T, std::is_invocable>::value;
+    detail::is_applicable<F, std::decay_t<T>, std::is_invocable>::value;
 
 template <typename F, typename T>
 inline constexpr bool is_nothrow_applicable_v =
-    detail::is_applicable<F, T, std::is_nothrow_invocable>::value;
+    detail::is_applicable<F, std::decay_t<T>, std::is_nothrow_invocable>::value;
 
 template <typename F, typename T>
 inline constexpr bool is_maybe_nothrow_applicable_v =
@@ -474,6 +543,20 @@ for_each(F&& f, Tuple&& tuple, Args&&... args) noexcept(noexcept(_FOR_EACH_EXP))
 }
 
 #undef _FOR_EACH_EXP
+
+/// @brief Invoke @p F on every correspondent element of @p tuple and @p args.
+template <typename F, typename Tuple, typename TupleArgs>
+    requires(std::tuple_size_v<std::decay_t<Tuple>> ==
+             std::tuple_size_v<std::decay_t<TupleArgs>>)
+constexpr void
+for_each2(F&& f, Tuple&& tuple, TupleArgs&& args)
+{
+    detail::for_each2_impl(
+        std::forward<F>(f),
+        std::forward<Tuple>(tuple),
+        std::forward<TupleArgs>(args),
+        std::make_index_sequence<std::tuple_size_v<std::decay_t<Tuple>>>{});
+}
 
 /// @brief Invoke @p f with elements of @p mt as arguments if
 /// possible otherwise just pass @p mt directly to @p f.

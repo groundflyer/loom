@@ -55,13 +55,15 @@ template <typename InputVars>
 struct input_setter
 {
     template <typename _Memory, typename... Args>
+        requires(typelist::length<InputVars> == sizeof...(Args))
     constexpr void
     operator()(_Memory& mem, Args&&... args) const noexcept
     {
-        typelist::for_each([&mem]<typename Var>(auto&& arg) constexpr noexcept
-                           { mem.template get<Var>() = arg; },
-                           InputVars{},
-                           std::forward<Args>(args)...);
+        typelist::for_each_arg(
+            [&mem]<typename Var>(auto&& arg) constexpr noexcept
+            { mem.template get<Var>() = arg; },
+            InputVars{},
+            std::forward<Args>(args)...);
     }
 };
 
@@ -156,7 +158,7 @@ class basic_scalar_evaluator
                                        reg_names{});
                     fmt::print("\n");
                     // using namespace std::chrono_literals;
-                    // std::this_thread::sleep_for(1s);
+                    // std::this_thread::sleep_for(100ms);
                 }
 #endif
             }

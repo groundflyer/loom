@@ -577,6 +577,14 @@ class Program
     , LABEL(L3)                                            \
     >>
 
+#define PJMP4(varname, L1, L2, L3, L4)                     \
+    lucid::ParmJump < lucid::Variable<IDX_TYPE, #varname>, \
+        lucid::type_sequence < LABEL(L1)                   \
+    , LABEL(L2)                                            \
+    , LABEL(L3)                                            \
+    , LABEL(L4)                                            \
+    >>
+
 #define BINOP(OP, TYPE, DST, A, B)              \
     lucid::Compute<OP<TYPE>,                    \
                    lucid::Variable<TYPE, #DST>, \

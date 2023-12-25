@@ -667,7 +667,7 @@ struct input_setter
     constexpr void
     operator()(_Memory& mem, Args&&... args) const noexcept
     {
-        typelist::for_each(
+        typelist::for_each_arg(
             [&mem]<typename Var, typename T>(const T& value) constexpr noexcept
             {
                 std::ranges::range decltype(auto) column =
@@ -726,7 +726,7 @@ struct basic_vector_evaluator
 
         template <typename... Args>
         constexpr auto
-        operator()(fsize_t n, Args&&... args) noexcept
+        operator()(const fsize_t n, Args&&... args) noexcept
         {
             mem.resize(n);
             setter(mem, std::forward<Args>(args)...);
@@ -749,7 +749,7 @@ struct basic_vector_evaluator
 
         template <typename... Args>
         constexpr auto
-        operator()(fsize_t n, Args&&... args) noexcept
+        operator()(const fsize_t n, Args&&... args) noexcept
         {
             mem.resize(n);
             setter(mem, std::forward<Args>(args)...);

@@ -38,6 +38,67 @@ struct range_val_id
     }
 };
 
+namespace detail
+{
+template <typename T>
+using def_vec = std::vector<T>;
+
+template <typename T>
+struct multi_pusher
+{
+    void
+    operator()(std::vector<T>& v, const T& gr) const noexcept
+    {
+        v.push_back(gr);
+    }
+};
+
+template <typename T1, typename T2>
+struct multi_pusher<std::pair<T1, T2>>
+{
+    void
+    operator()(std::pair<std::vector<T1>, std::vector<T2>>& vs,
+               const std::pair<T1, T2>&                     grs) const noexcept
+    {
+        vs.first.push_back(grs.first);
+        vs.second.push_back(grs.second);
+    }
+};
+
+template <typename... Ts>
+struct multi_pusher<std::tuple<Ts...>>
+{
+    void
+    operator()(std::tuple<std::vector<Ts>...>& vs,
+               const std::tuple<Ts...>&        grs) const noexcept
+    {
+        for_each2([](auto& v, const auto& gr) noexcept { v.push_back(gr); },
+                  vs,
+                  grs);
+    }
+};
+} // namespace detail
+
+template <typename... ArgRngs,
+          std::invocable<std::ranges::range_value_t<ArgRngs>...> G>
+auto
+multi_gen(const unsigned n, G&& g, ArgRngs&&... args) noexcept
+{
+    using result_t =
+        std::invoke_result_t<G, std::ranges::range_value_t<ArgRngs>...>;
+    maybe_toa<detail::def_vec, result_t>     ret;
+    constexpr detail::multi_pusher<result_t> mp{};
+    if constexpr(is_tuple_v<decltype(ret)>)
+        for_each([n](auto& v) noexcept { v.reserve(n); }, ret);
+    else
+        ret.reserve(n);
+
+    for(unsigned i = 0; i < n; ++i)
+        mp(ret,
+           std::invoke(std::forward<G>(g), std::forward<ArgRngs>(args)[i]...));
+    return ret;
+}
+
 class Track
 {
     unsigned m_total{};
@@ -103,6 +164,7 @@ class Track
                      {argc, argv})
                      .get_opt<'n'>())
     {
+        fmt::print("Number of parametric runs: {}\n", m_parm_n);
     }
 
     template <std::predicate A, typename... Rest>
@@ -150,18 +212,20 @@ class Track
               maybe_applicable<std::invoke_result_t<G>> ValT,
               typename Cmp = std::equal_to<>>
     bool
-    parm_test_val_cmp(std::string_view name,
-                      G&&              g,
-                      T&&              t,
-                      ValT             valt,
-                      Cmp              cmp = Cmp{})
+    parm_test_val(std::string_view name,
+                  G&&              g,
+                  T&&              t,
+                  ValT             valt,
+                  Cmp              cmp = Cmp{})
     {
         return parm_test(
             name,
             std::forward<G>(g),
             std::forward<T>(t),
-            [&]<typename Tr, typename Gr>(Tr&& tr, Gr&& gr) noexcept
-            { return cmp(std::forward<Tr>(tr), valt(std::forward<Gr>(gr))); });
+            [&]<typename Tr, typename Gr>(Tr&& tr, Gr&& gr) noexcept {
+                return cmp(std::forward<Tr>(tr),
+                           maybe_apply(valt, std::forward<Gr>(gr)));
+            });
     }
 
     template <bool           do_sort = true,
@@ -170,21 +234,23 @@ class Track
               typename V   = range_val_id,
               typename Cmp = decltype(std::ranges::equal)>
     bool
-    parm_range_test(std::string_view name,
-                    G&&              g,
-                    T&&              t,
-                    V&&              v   = range_val_id{},
-                    Cmp              cmp = std::ranges::equal) noexcept
+    parm_test_rng(std::string_view name,
+                  G&&              g,
+                  T&&              t,
+                  V&&              v   = range_val_id{},
+                  Cmp              cmp = std::ranges::equal) noexcept
     {
-        std::vector<std::invoke_result_t<G>> in;
-        in.reserve(m_parm_n);
-        std::ranges::generate_n(std::back_inserter(in),
-                                m_parm_n,
-                                std::forward<G>(g));
-        std::ranges::range auto tr =
-            std::invoke(std::forward<T>(t), m_parm_n, in);
-        std::ranges::range auto vr =
-            std::invoke(std::forward<V>(v), m_parm_n, in);
+        auto make_args = [&]() noexcept
+        {
+            auto gr = multi_gen(m_parm_n, std::forward<G>(g));
+            if constexpr(is_tuple_v<decltype(gr)>)
+                return std::tuple_cat(std::tuple{m_parm_n}, gr);
+            else
+                return std::pair{m_parm_n, gr};
+        };
+        const auto              args = make_args();
+        std::ranges::range auto tr   = std::apply(std::forward<T>(t), args);
+        std::ranges::range auto vr   = std::apply(std::forward<V>(v), args);
         if constexpr(do_sort)
         {
             std::ranges::sort(tr);
@@ -198,28 +264,18 @@ class Track
               typename V,
               typename Cmp = decltype(std::ranges::equal)>
     bool
-    parm_range_test_gen(std::string_view name,
-                        G&&              g,
-                        T&&              t,
-                        V&&              v,
-                        Cmp              cmp = std::ranges::equal) noexcept
+    parm_test_rng_sval(std::string_view name,
+                       G&&              g,
+                       T&&              t,
+                       V&&              v,
+                       Cmp              cmp = std::ranges::equal) noexcept
     {
-        return parm_range_test(
+        return parm_test_rng(
             name,
             g,
             t,
-            [&]<std::ranges::range In>(unsigned n, In&& in) noexcept
-            {
-                std::vector<
-                    std::invoke_result_t<std::decay_t<V>,
-                                         std::ranges::range_value_t<In>>>
-                    out;
-                out.reserve(n);
-                std::ranges::transform(std::forward<In>(in),
-                                       std::back_inserter(out),
-                                       v);
-                return out;
-            },
+            [&]<typename... Grs>(unsigned n, Grs&&... grs) noexcept
+            { return multi_gen(n, v, std::forward<Grs>(grs)...); },
             std::forward<Cmp>(cmp));
     }
 
@@ -239,22 +295,23 @@ class Track
               typename ValT,
               typename Cmp = std::equal_to<>>
     bool
-    fuzzy_parm_test_val_cmp(std::string_view name,
-                            double           threshold,
-                            G&&              g,
-                            T&&              t,
-                            ValT             valt,
-                            Cmp              cmp = Cmp{}) noexcept
+    fuzzy_parm_test_val(std::string_view name,
+                        double           threshold,
+                        G&&              g,
+                        T&&              t,
+                        ValT             valt,
+                        Cmp              cmp = Cmp{}) noexcept
     {
         return fuzzy_parm_test(
             name,
             threshold,
             std::forward<G>(g),
             std::forward<T>(t),
-            [&]<typename Tr, typename Gr>(Tr&& tr, Gr&& gr) noexcept {
+            [&]<typename Tr, typename Gr>(Tr&& tr, Gr&& gr) noexcept
+            {
                 return std::invoke(cmp,
                                    std::forward<Tr>(tr),
-                                   valt(std::forward<Gr>(gr)));
+                                   maybe_apply(valt, std::forward<Gr>(gr)));
             });
     }
 
@@ -267,13 +324,13 @@ class Track
                         ValT             valt,
                         const unsigned   ulp) noexcept
     {
-        return fuzzy_parm_test_val_cmp(name,
-                                       threshold,
-                                       std::forward<G>(g),
-                                       std::forward<T>(t),
-                                       valt,
-                                       [&](auto t, auto v) noexcept
-                                       { return almost_equal(t, v, ulp); });
+        return fuzzy_parm_test_val(name,
+                                   threshold,
+                                   std::forward<G>(g),
+                                   std::forward<T>(t),
+                                   valt,
+                                   [&](auto t, auto v) noexcept
+                                   { return almost_equal(t, v, ulp); });
     }
 
     int
@@ -299,11 +356,12 @@ gen_test_val(const unsigned n, G&& g, T&& t, V&& v) noexcept
 {
     return ranges::views::generate_n(std::forward<G>(g), n) |
            std::ranges::views::transform(
-               [&](auto feed) noexcept
+               [&]<typename Feed>(Feed&& feed) noexcept
                {
                    return std::invoke(
                        std::forward<V>(v),
-                       lucid::maybe_apply(std::forward<T>(t), feed),
+                       lucid::maybe_apply(std::forward<T>(t),
+                                          std::forward<Feed>(feed)),
                        feed);
                });
 }

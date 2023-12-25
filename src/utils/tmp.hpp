@@ -759,6 +759,17 @@ for_each(F&& f, type_sequence<Ts...>, Args&&... args) noexcept(
     (..., f.template operator()<Ts>(std::forward<Args>(args)...));
 }
 
+/// @brief Invoke @p f with each class of @p List as template parameter and pass
+/// arguments separately.
+template <typename F, typename... Ts, typename... Args>
+    requires(sizeof...(Ts) == sizeof...(Args))
+constexpr void
+for_each_arg(F&& f, type_sequence<Ts...>, Args&&... args) noexcept(
+    (...&& noexcept(f.template operator()<Ts>(std::forward<Args>(args)))))
+{
+    (..., f.template operator()<Ts>(std::forward<Args>(args)));
+}
+
 /// @brief Invoke @p f with each class of @p list as template parameter,
 /// and @p args as function parameters.
 ///
