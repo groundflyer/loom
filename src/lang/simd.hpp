@@ -130,7 +130,6 @@ constexpr inline fsize_t native_instruction_width =
 
 /// @brief Load @p N values and pack them into vector of width @p N
 /// from aligned memory location @p src.
-/// @tparam A memory alignment.
 template <fsize_t N, typename T>
 packed_vector<T, N> _FN_ATTRS
 load(const T* p) noexcept
@@ -139,7 +138,6 @@ load(const T* p) noexcept
 }
 
 /// @brief Store values from packed vector into aligned memory location @p dst.
-/// @tparam A memory alignment.
 template <fsize_t N, typename T>
 void _FN_ATTRS
 store(T* dst, packed_vector<T, N> src) noexcept
@@ -156,15 +154,15 @@ broadcast(const T v) noexcept
 }
 
 template <fsize_t N, typename Op, typename Ret, typename... Args>
-struct remap_op;
+struct remap_comp;
 
 template <fsize_t N, typename Dst, typename Src>
-struct remap_op<N, std::identity, Dst, Src>
+struct remap_comp<N, std::identity, Dst, Src>
 {
     struct type
     {
         constexpr packed_vector<Dst, N>
-        operator()(const packed_vector<Src, N> src) noexcept
+        operator()(const packed_vector<Src, N> src) const noexcept
         {
             if constexpr(std::is_same_v<Dst, Src>)
                 return src;
@@ -174,40 +172,84 @@ struct remap_op<N, std::identity, Dst, Src>
     };
 };
 
-#define DEF_REMAP_VEC_BIN(func, op, R)                       \
-    template <fsize_t N, typename T>                         \
-    struct remap_op<N, func<T>, R, T, T>                     \
-    {                                                        \
-        struct type                                          \
-        {                                                    \
-            constexpr packed_vector<R, N>                    \
-            operator()(packed_vector<T, N> a,                \
-                       packed_vector<T, N> b) const noexcept \
-            {                                                \
-                return a op b;                               \
-            }                                                \
-        };                                                   \
+template <fsize_t N, typename Dst, typename C, typename T>
+struct remap_comp<N, choice, Dst, C, T, T>
+{
+    struct type
+    {
+        constexpr packed_vector<Dst, N>
+        operator()(const packed_vector<C, N> c,
+                   const packed_vector<T, N> a,
+                   const packed_vector<T, N> b) const noexcept
+        {
+            return c ? a : b;
+        }
+    };
+};
+
+#define DEF_REMAP_VEC_BIN(func, op, R)                             \
+    template <fsize_t N, typename T>                               \
+    struct remap_comp<N, func<T>, R, T, T>                         \
+    {                                                              \
+        struct type                                                \
+        {                                                          \
+            constexpr packed_vector<R, N>                          \
+            operator()(const packed_vector<T, N> a,                \
+                       const packed_vector<T, N> b) const noexcept \
+            {                                                      \
+                return a op b;                                     \
+            }                                                      \
+        };                                                         \
     };
 
-#define DEF_REMAP_VEC_ARITH(func, op) DEF_REMAP_VEC_BIN(func, op, T)
-#define DEF_REMAP_VEC_CMP(func, op) \
+#define DEF_REMAP_VEC_UN(func, op, R)                              \
+    template <fsize_t N, typename T>                               \
+    struct remap_comp<N, func<T>, R, T>                            \
+    {                                                              \
+        struct type                                                \
+        {                                                          \
+            constexpr packed_vector<R, N>                          \
+            operator()(const packed_vector<T, N> a) const noexcept \
+            {                                                      \
+                return op a;                                       \
+            }                                                      \
+        };                                                         \
+    };
+
+#define DEF_REMAP_TVEC_BIN(func, op) DEF_REMAP_VEC_BIN(func, op, T)
+#define DEF_REMAP_IVEC_BIN(func, op) \
     DEF_REMAP_VEC_BIN(func, op, infer_index_t<T>)
 
-DEF_REMAP_VEC_ARITH(std::plus, +)
-DEF_REMAP_VEC_ARITH(std::minus, -)
-DEF_REMAP_VEC_ARITH(std::multiplies, *)
-DEF_REMAP_VEC_ARITH(std::divides, /)
-DEF_REMAP_VEC_ARITH(std::modulus, %)
+#define DEF_REMAP_TVEC_UN(func, op) DEF_REMAP_VEC_UN(func, op, T)
+#define DEF_REMAP_IVEC_UN(func, op) DEF_REMAP_VEC_UN(func, op, infer_index_t<T>)
 
-DEF_REMAP_VEC_CMP(std::equal_to, ==)
-DEF_REMAP_VEC_CMP(std::not_equal_to, !=)
-DEF_REMAP_VEC_CMP(std::greater, >)
-DEF_REMAP_VEC_CMP(std::less, <)
-DEF_REMAP_VEC_CMP(std::greater_equal, >=)
-DEF_REMAP_VEC_CMP(std::less_equal, <=)
+DEF_REMAP_TVEC_BIN(std::plus, +)
+DEF_REMAP_TVEC_BIN(std::minus, -)
+DEF_REMAP_TVEC_BIN(std::multiplies, *)
+DEF_REMAP_TVEC_BIN(std::divides, /)
+DEF_REMAP_TVEC_BIN(std::modulus, %)
+DEF_REMAP_TVEC_UN(std::negate, -)
+
+DEF_REMAP_IVEC_BIN(std::equal_to, ==)
+DEF_REMAP_IVEC_BIN(std::not_equal_to, !=)
+DEF_REMAP_IVEC_BIN(std::greater, >)
+DEF_REMAP_IVEC_BIN(std::less, <)
+DEF_REMAP_IVEC_BIN(std::greater_equal, >=)
+DEF_REMAP_IVEC_BIN(std::less_equal, <=)
+
+DEF_REMAP_IVEC_BIN(std::logical_and, &&)
+DEF_REMAP_IVEC_BIN(std::logical_or, ||)
+DEF_REMAP_IVEC_UN(std::logical_not, !)
+
+#undef DEF_REMAP_IVEC_UN
+#undef DEF_REMAP_TVEC_UN
+#undef DEF_REMAP_IVEC_BIN
+#undef DEF_REMAP_TVEC_BIN
+#undef DEF_REMAP_VEC_UN
+#undef DEF_REMAP_IVEC_BIN
 
 template <fsize_t N, typename Op, typename Ret, typename... Args>
-using remap_op_t = typename remap_op<N, Op, Ret, Args...>::type;
+using remap_comp_t = typename remap_comp<N, Op, Ret, Args...>::type;
 
 template <fsize_t N>
 struct var_loader
@@ -256,7 +298,7 @@ struct eval<Compute<Op, Dst, Args...>, LabelMap>
     using index_t = get_index_t<LabelMap>;
     static constexpr fsize_t n =
         native_instruction_width<Compute<Op, Dst, Args...>, index_t>;
-    using vector_op = remap_op_t<n, Op, vartype<Dst>, vartype<Args>...>;
+    using vector_op = remap_comp_t<n, Op, vartype<Dst>, vartype<Args>...>;
     using loader_t  = var_loader<n>;
     static constexpr loader_t loader{};
 

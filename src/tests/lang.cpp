@@ -91,6 +91,16 @@ BEGIN(jmp4_test, IVAR(i), TVAR(a))
     TDIV(a, a, 2)
 TEND1(a)
 
+// !i && (a > 0.5) ? -a : a
+template <std::floating_point T>
+BEGIN(choice_test, IVAR(i), TVAR(a))
+    ILNOT(i, i),
+    TGT(cmp, a, 0.5),
+    TNEG(ma, a),
+    ILAND(i, i, cmp),
+    TCHOICE(ma, i, ma, a)
+TEND1(ma)
+
 using namespace lucid;
 using namespace lucid::test;
 
@@ -111,6 +121,7 @@ int main(int argc, char* argv[])
     using sut          = simple_union_test<float>;
     using cut          = complex_union_test<float>;
     using jmp4_t       = jmp4_test<float>;
+    using choice_t     = choice_test<float>;
 
     bse::evaluator<incr_int>     bse_ii;
     bse::evaluator<fac_unsigned> bse_fu;
@@ -118,6 +129,7 @@ int main(int argc, char* argv[])
     bse::evaluator<sut>          bse_sut;
     bse::evaluator<cut>          bse_cut;
     bse::evaluator<jmp4_t>       bse_jmp4;
+    bse::evaluator<choice_t>     bse_choice;
 
     bve::evaluator<incr_int>     bve_ii;
     bve::evaluator<fac_unsigned> bve_fu;
@@ -125,6 +137,7 @@ int main(int argc, char* argv[])
     bve::evaluator<sut>          bve_sut;
     bve::evaluator<cut>          bve_cut;
     bve::evaluator<jmp4_t>       bve_jmp4;
+    bve::evaluator<choice_t>     bve_choice;
 
     simd::evaluator<incr_int>     simd_ii;
     simd::evaluator<fac_unsigned> simd_fu;
@@ -132,6 +145,7 @@ int main(int argc, char* argv[])
     simd::evaluator<sut>          simd_sut;
     simd::evaluator<cut>          simd_cut;
     simd::evaluator<jmp4_t>       simd_jmp4;
+    simd::evaluator<choice_t>     simd_choice;
 
     auto val_incr = [](auto i) noexcept { return i + 1; };
     auto val_fac  = [](auto i) noexcept { return fac(i); };
@@ -150,6 +164,8 @@ int main(int argc, char* argv[])
         }
         return a;
     };
+    auto val_choice = [](unsigned i, float a) noexcept
+    { return !i && (a > 0.5) ? -a : a; };
     auto g_j4 = [&]() noexcept { return std::pair{g_u3(), g_float()}; };
 
     track.parm_test_val("BSE increment int", g_int, bse_ii, val_incr);
@@ -158,22 +174,26 @@ int main(int argc, char* argv[])
     track.parm_test_val("BSE simple union", g_float, bse_sut, val_sut);
     track.parm_test_val("BSE complex union", g_float, bse_cut, val_cut);
     track.parm_test_val("BSE jump4", g_j4, bse_jmp4, val_jmp4);
+    track.parm_test_val("BSE choice", g_j4, bse_choice, val_choice);
 
     track.parm_test_rng_sval("BVE increment", g_int, bve_ii, bse_ii);
     track.parm_test_rng_sval("BVE factorial unsigned", g_ui, bve_fu, bse_fu);
     track.parm_test_rng_sval("BVE complex union", g_float, bve_cut, bse_cut);
     track.parm_test_rng_sval("BVE simple union", g_float, bve_sut, bse_sut);
     track.parm_test_rng_sval("BVE jump4", g_j4, bve_jmp4, bse_jmp4);
+    track.parm_test_rng_sval("BVE choice", g_j4, bve_choice, bse_choice);
 
     bve_fu.reset();
     bve_sut.reset();
     bve_cut.reset();
     bve_jmp4.reset();
+    bve_choice.reset();
     track.parm_test_rng("SIMD increment int", g_int, simd_ii, bve_ii);
     track.parm_test_rng("SIMD factorial unsigned", g_ui, simd_fu, bve_fu);
     track.parm_test_rng("SIMD simple union", g_float, simd_sut, bve_sut);
     track.parm_test_rng("SIMD complex union", g_float, simd_cut, bve_cut);
     track.parm_test_rng("SIMD jump4", g_j4, simd_jmp4, bve_jmp4);
+    track.parm_test_rng("SIMD choice", g_j4, simd_choice, bve_choice);
 
     return track.code();
 }

@@ -527,15 +527,25 @@ class Program
                            cells_statements,
                            ensure_last_jumps_t<cells_statements, labels>>;
 };
+
+struct choice
+{
+    template <typename C, typename T>
+    constexpr T
+    operator()(const C c, const T a, const T b) const noexcept
+    {
+        return c ? a : b;
+    }
+};
 } // namespace lucid
 
-#ifndef MAJOR_TYPENAME
-#define MAJOR_TYPENAME T
+#ifndef MAJOR_TYPE
+#define MAJOR_TYPE T
 #endif
 
 #define VAR(TYPE, NAME)   lucid::Variable<TYPE, #NAME>
-#define IDX_TYPE          lucid::infer_index_t<MAJOR_TYPENAME>
-#define TVAR(NAME)        VAR(MAJOR_TYPENAME, NAME)
+#define IDX_TYPE          lucid::infer_index_t<MAJOR_TYPE>
+#define TVAR(NAME)        VAR(MAJOR_TYPE, NAME)
 #define IVAR(NAME)        VAR(IDX_TYPE, NAME)
 
 #define BEGIN(NAME, ...)                                             \
@@ -602,6 +612,13 @@ class Program
                    lucid::Variable<TYPE, #A>, \
                    lucid::Variable<TYPE, #B>>
 
+#define CHOICE(TYPE, DST, C, A, B)                \
+    lucid::Compute<lucid::choice,                 \
+                   lucid::Variable<TYPE, #DST>,   \
+                   lucid::Variable<IDX_TYPE, #C>, \
+                   lucid::Variable<TYPE, #A>,     \
+                   lucid::Variable<TYPE, #B>>
+
 #define ADD(...)   BINOP(std::plus, __VA_ARGS__)
 #define SUB(...)   BINOP(std::minus, __VA_ARGS__)
 #define MUL(...)   BINOP(std::multiplies, __VA_ARGS__)
@@ -616,19 +633,24 @@ class Program
 #define GE(...)    CMP(std::greater_equal, __VA_ARGS__)
 #define LE(...)    CMP(std::less_equal, __VA_ARGS__)
 
-#define TADD(...)  ADD(MAJOR_TYPENAME, __VA_ARGS__)
-#define TSUB(...)  SUB(MAJOR_TYPENAME, __VA_ARGS__)
-#define TMUL(...)  MUL(MAJOR_TYPENAME, __VA_ARGS__)
-#define TDIV(...)  DIV(MAJOR_TYPENAME, __VA_ARGS__)
-#define TMOD(...)  MOD(MAJOR_TYPENAME, __VA_ARGS__)
-#define TNEG(...)  NEG(MAJOR_TYPENAME, __VA_ARGS__)
+// logical ops
+#define LAND(...)             BINOP(std::logical_and, __VA_ARGS__)
+#define LOR(...)              BINOP(std::logical_or, __VA_ARGS__)
+#define LNOT(...)             UNOP(std::logical_not, __VA_ARGS__)
 
-#define TEQ(...)   EQ(MAJOR_TYPENAME, __VA_ARGS__)
-#define TNEQ(...)  NEQ(MAJOR_TYPENAME, __VA_ARGS__)
-#define TGT(...)   GT(MAJOR_TYPENAME, __VA_ARGS__)
-#define TLT(...)   LT(MAJOR_TYPENAME, __VA_ARGS__)
-#define TGE(...)   GE(MAJOR_TYPENAME, __VA_ARGS__)
-#define TLE(...)   LE(MAJOR_TYPENAME, __VA_ARGS__)
+#define TADD(...)  ADD(MAJOR_TYPE, __VA_ARGS__)
+#define TSUB(...)  SUB(MAJOR_TYPE, __VA_ARGS__)
+#define TMUL(...)  MUL(MAJOR_TYPE, __VA_ARGS__)
+#define TDIV(...)  DIV(MAJOR_TYPE, __VA_ARGS__)
+#define TMOD(...)  MOD(MAJOR_TYPE, __VA_ARGS__)
+#define TNEG(...)  NEG(MAJOR_TYPE, __VA_ARGS__)
+
+#define TEQ(...)   EQ(MAJOR_TYPE, __VA_ARGS__)
+#define TNEQ(...)  NEQ(MAJOR_TYPE, __VA_ARGS__)
+#define TGT(...)   GT(MAJOR_TYPE, __VA_ARGS__)
+#define TLT(...)   LT(MAJOR_TYPE, __VA_ARGS__)
+#define TGE(...)   GE(MAJOR_TYPE, __VA_ARGS__)
+#define TLE(...)   LE(MAJOR_TYPE, __VA_ARGS__)
 
 #define IADD(...)  ADD(IDX_TYPE, __VA_ARGS__)
 #define ISUB(...)  SUB(IDX_TYPE, __VA_ARGS__)
@@ -643,3 +665,14 @@ class Program
 #define ILT(...)   LT(IDX_TYPE, __VA_ARGS__)
 #define IGE(...)   GE(IDX_TYPE, __VA_ARGS__)
 #define ILE(...)   LE(IDX_TYPE, __VA_ARGS__)
+
+#define TLAND(...)             LAND(MAJOR_TYPE, __VA_ARGS__)
+#define TLOR(...)              LOR(MAJOR_TYPE, __VA_ARGS__)
+#define TLNOT(...)             LNOT(MAJOR_TYPE, __VA_ARGS__)
+
+#define ILAND(...)             LAND(IDX_TYPE, __VA_ARGS__)
+#define ILOR(...)              LOR(IDX_TYPE, __VA_ARGS__)
+#define ILNOT(...)             LNOT(IDX_TYPE, __VA_ARGS__)
+
+#define TCHOICE(DST, C, A, B) CHOICE(MAJOR_TYPE, DST, C, A, B)
+#define ICHOICE(DST, C, A, B) CHOICE(INDEX_TYPE, DST, C, A, B)
