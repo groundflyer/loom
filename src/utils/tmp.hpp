@@ -479,6 +479,30 @@ class split
         typename split_with<eq, type_sequence<>, type_sequence<>, List>::type;
 };
 
+template <typename List, typename Aggr>
+struct flatten;
+
+template <typename Aggr>
+struct flatten<type_sequence<>, Aggr>
+{
+    using type = Aggr;
+};
+
+template <typename Head, typename... Tail, typename Aggr>
+struct flatten<type_sequence<Head, Tail...>, Aggr>
+{
+    using type =
+        cons<Head, typename flatten<type_sequence<Tail...>, Aggr>::type>::type;
+};
+
+template <typename... Ts, typename... Tail, typename Aggr>
+struct flatten<type_sequence<type_sequence<Ts...>, Tail...>, Aggr>
+{
+    using type =
+        join<typename flatten<type_sequence<Ts...>, type_sequence<>>::type,
+             typename flatten<type_sequence<Tail...>, Aggr>::type>::type;
+};
+
 template <typename Source>
 struct from;
 
@@ -642,6 +666,10 @@ using zip = zip_with<type_pair, Xs, Ys>;
 /// @brief The concatenation of all the elements of a list @p List of lists.
 template <typename List>
 using concat = foldr<join, type_sequence<>, List>;
+
+/// @brief Flatten list that possibly contains lists of arbitrary nesting depth.
+template <typename List>
+using flatten = detail::flatten<List, type_sequence<>>::type;
 
 /// @brief Check whether the classes of @p List are the same.
 template <typename List>

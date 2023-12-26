@@ -75,6 +75,15 @@ using testmap      = type_sequence<type_sequence<char, unsigned char>,
 using splitest1  = type_sequence<bool, int, float, bool, double, unsigned, int>;
 using splittest2 = type_sequence<type_sequence<int, float>,
                                  type_sequence<double, unsigned, int>>;
+#define I(i) std::integral_constant<int, i>
+using flatten_test =
+    type_sequence<I(1),
+                  I(2),
+                  type_sequence<I(3), I(4), type_sequence<I(5), I(6)>, I(7)>,
+                  type_sequence<I(8), I(9)>,
+                  I(10)>;
+using flatten_val =
+    type_sequence<I(1), I(2), I(3), I(4), I(5), I(6), I(7), I(8), I(9), I(10)>;
 
 static_assert(length<testlist1> == 4);
 static_assert(
@@ -126,6 +135,7 @@ static_assert(
               type_sequence<type_pair<double, integral_constant<size_t, 0>>,
                             type_pair<unsigned, integral_constant<size_t, 1>>,
                             type_pair<short, integral_constant<size_t, 2>>>>);
+static_assert(is_same_v<flatten<flatten_test>, flatten_val>);
 } // namespace lucid::typelist
 
 int
