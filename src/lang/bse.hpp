@@ -6,12 +6,6 @@
 
 #include "lang.hpp"
 
-#ifndef NDEBUG
-#include <chrono>
-#include <fmt/core.h>
-#include <thread>
-#endif
-
 namespace lucid::bse
 {
 template <typename RegTypes, typename RegNames, typename _CP>
@@ -38,17 +32,6 @@ class Memory
     {
         return get<_CP>();
     }
-
-#ifndef NDEBUG
-    friend void
-    print(const Memory& m, unsigned char a = 10) noexcept
-    {
-        lucid::for_each([&](const auto& c) noexcept
-                        { fmt::print("{:>{}} |", c, a); },
-                        m.m_data);
-        fmt::print("\n");
-    }
-#endif
 };
 
 template <typename InputVars>
@@ -139,28 +122,6 @@ class basic_scalar_evaluator
                     [&](auto cell) constexpr noexcept { cell(mem); },
                     cells,
                     sink);
-#ifndef NDEBUG
-                {
-                    constexpr unsigned _w = 10;
-                    typelist::for_each(
-                        [_w]<typename Name>() noexcept
-                        {
-                            constexpr std::string_view n =
-                                std::string_view(intlist::array<Name>,
-                                                 intlist::length<Name>);
-                            fmt::print("{:>{}} |", n, _w);
-                        },
-                        reg_names{});
-                    fmt::print("\n");
-                    print(mem, _w);
-                    typelist::for_each([_w]<typename Name>() noexcept
-                                       { fmt::print("{:*>{}} |", '*', _w); },
-                                       reg_names{});
-                    fmt::print("\n");
-                    // using namespace std::chrono_literals;
-                    // std::this_thread::sleep_for(100ms);
-                }
-#endif
             }
             return getter(mem);
         }

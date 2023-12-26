@@ -10,11 +10,6 @@
 #include <utils/debug.hpp>
 #include <utils/tmp.hpp>
 
-#ifndef NDEBUG
-#include <fmt/core.h>
-#include <fmt/ranges.h>
-#endif
-
 #include <cstdlib>
 #include <memory>
 
@@ -693,29 +688,6 @@ class simd_evaluator
                 for(std::size_t i = 1; i < mem.size(); ++i)
                     for(std::size_t j = i; j > 0 && mem[j - 1] > mem[j]; --j)
                         swap(mem[j], mem[j - 1]);
-#endif
-
-#ifndef NDEBUG
-                {
-                    constexpr unsigned _w = 20;
-                    typelist::for_each(
-                        [_w]<typename Name>() noexcept
-                        {
-                            constexpr std::string_view n =
-                                std::string_view(intlist::array<Name>,
-                                                 intlist::length<Name>);
-                            fmt::print("{:>{}} |", n, _w);
-                        },
-                        reg_names{});
-                    fmt::print("\n");
-                    typelist::for_each([_w]<typename Name>() noexcept
-                                       { fmt::print("{:*>{}} |", '*', _w); },
-                                       reg_names{});
-                    fmt::print("\n");
-                    std::ranges::for_each(mem,
-                                          [_w](auto p) noexcept
-                                          { print(p, _w); });
-                }
 #endif
             }
 

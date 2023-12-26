@@ -14,10 +14,6 @@
 #include <range/v3/view/chunk_by.hpp>
 #include <range/v3/view/filter.hpp>
 
-#ifndef NDEBUG
-#include <fmt/core.h>
-#endif
-
 #include <algorithm>
 #include <compare>
 #include <ranges>
@@ -137,17 +133,6 @@ class ProxyRow
                         { std::swap(c[a.m_pos], c[b.m_pos]); },
                         a.m_data);
     }
-
-#ifndef NDEBUG
-    friend void
-    print(ProxyRow p, unsigned char a = 10) noexcept
-    {
-        lucid::for_each([&](auto& c) noexcept
-                        { fmt::print("{:>{}} |", c[p.m_pos], a); },
-                        p.m_data);
-        fmt::print("\n");
-    }
-#endif
 };
 
 template <typename Data, typename Helper, typename _CP, fsize_t N>
