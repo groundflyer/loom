@@ -31,3 +31,7 @@ target_compile_definitions(test_viewport PUBLIC ${GL_DEFS})
 
 target_compile_options(test_lang PUBLIC $<$<CONFIG:RelWithDebInfo>:-save-temps>)
 target_compile_options(test_lang PUBLIC $<$<CONFIG:RelWithDebInfo>:-fverbose-asm>)
+target_compile_options(test_lang PUBLIC $<$<CONFIG:RelWithDebInfo>:-fsanitize=address>)
+target_compile_options(test_lang PUBLIC $<$<CONFIG:RelWithDebInfo>:-fsanitize=alignment>)
+target_link_options(test_lang PUBLIC $<$<CONFIG:RelWithDebInfo>:-fsanitize=address>)
+target_link_options(test_lang PUBLIC $<$<CONFIG:RelWithDebInfo>:-fsanitize=alignment>)

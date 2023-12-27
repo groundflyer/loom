@@ -452,7 +452,7 @@ class memory_chunks : public std::ranges::view_interface<memory_chunks<_Memory>>
     {
         const index_t cp = cps.front();
         fsize_t       i  = 0;
-        while(cps[i] == cp && i < cps.size()) ++i;
+        while(i < cps.size() && cps[i] == cp) ++i;
         return i;
     }
 
