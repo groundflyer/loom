@@ -52,6 +52,8 @@ enable_debug() {
 use_clang() {
     CXX=clang++
     CMAKE_ARGS+=(-DCMAKE_CXX_COMPILER=${CXX})
+    CMAKE_ARGS+=(-DUSE_CUDA=ON)
+    CMAKE_ARGS+=(-DCMAKE_CUDA_ARCHITECTURES=21)
 }
 
 run_tests() {

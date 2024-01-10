@@ -25,6 +25,12 @@ foreach(src ${test_srcs})
   add_dependencies(tests ${name})
 endforeach()
 
+if(USE_CUDA)
+  add_executable(test_cuda cuda.cu)
+  target_link_libraries(test_cuda PUBLIC CUDA::cudart_static)
+  add_dependencies(tests test_cuda)
+endif()
+
 target_include_directories(test_viewport PUBLIC ${OPENGL_INCLUDE_DIR})
 target_link_libraries(test_viewport PUBLIC ${GL_LIBS})
 target_compile_definitions(test_viewport PUBLIC ${GL_DEFS})
