@@ -22,6 +22,7 @@ option(BUILD_BENCHMARKS "Build benchmarks" OFF)
 option(BUILD_DOC "Build documentation" OFF)
 option(ENABLE_IPO "Enable interprocedural optimization" OFF)
 option(SIMD_NARROW_AVX_INT "Use 128 integer vectors on AVX instead of 256" ON)
+option(USE_LIBCXX "Link to libc++ when compiling with Clang" ON)
 option(USE_CUDA "Enable CUDA support" OFF)
 
 # Set floating point precision
@@ -95,8 +96,8 @@ endif()
 
 # CUDA
 if(USE_CUDA)
-  if(NOT (CMAKE_CXX_COMPILER_ID STREQUAL "Clang"))
-    message(SEND_ERROR "CUDA is supported only with Clang")
+  if(NOT ((CMAKE_CXX_COMPILER_ID STREQUAL "Clang") AND USE_LIBCXX))
+    message(SEND_ERROR "CUDA is supported only with Clang and libc++")
   endif()
   find_package(CUDAToolkit 8 REQUIRED)
   set(CMAKE_CUDA_COMPILER ${CMAKE_CXX_COMPILER})
