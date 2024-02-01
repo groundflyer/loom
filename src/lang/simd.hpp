@@ -167,12 +167,12 @@ struct remap_comp<N, std::identity, Dst, Src>
     };
 };
 
-template <fsize_t N, typename Dst, typename C, typename T>
-struct remap_comp<N, choice, Dst, C, T, T>
+template <fsize_t N, typename T, typename C>
+struct remap_comp<N, choice, T, C, T, T>
 {
     struct type
     {
-        constexpr packed_vector<Dst, N>
+        constexpr packed_vector<T, N>
         operator()(const packed_vector<C, N> c,
                    const packed_vector<T, N> a,
                    const packed_vector<T, N> b) const noexcept
