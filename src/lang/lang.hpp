@@ -24,10 +24,10 @@ struct Variable
 };
 
 template <typename _Variable>
-using vartype = typename _Variable::type;
+using vartype = _Variable::type;
 
 template <typename _Variable>
-using varname = typename _Variable::name;
+using varname = _Variable::name;
 
 template <typename _Variable>
 constexpr inline std::string_view varview = _Variable::nameview;
@@ -124,29 +124,38 @@ struct is_cell
         typelist::length<T> >= 2 && is_jump<typelist::last<T>>::value;
 };
 
-template <typename T>
-struct get_storing_var;
+template <typename Command>
+struct command_dst;
 
 template <typename Op, typename Dst, typename... Ts>
-struct get_storing_var<Compute<Op, Dst, Ts...>>
+struct command_dst<Compute<Op, Dst, Ts...>>
 {
     using type = Dst;
 };
 
 template <typename Command>
-using get_storing_var_t = typename get_storing_var<Command>::type;
+using command_dst_t = command_dst<Command>::type;
 
-template <typename Vars>
-struct get_var_names;
-
-template <typename... Vars>
-struct get_var_names<type_sequence<Vars...>>
+template <typename Command>
+struct command_vars
 {
-    using type = type_sequence<typename Vars::name...>;
+    using type = type_sequence<>;
 };
 
-template <typename Vars>
-using get_var_names_t = typename get_var_names<Vars>::type;
+template <typename Op, typename Dst, typename... Args>
+struct command_vars<Compute<Op, Dst, Args...>>
+{
+    using type = typelist::nub<type_sequence<Dst, Args...>>;
+};
+
+template <typename Var, typename... Labels>
+struct command_vars<ParmJump<Var, Labels...>>
+{
+    using type = type_sequence<Var>;
+};
+
+template <typename Command>
+using command_vars_t = command_vars<Command>::type;
 
 template <typename Name, typename VarTypes, typename Vars>
 struct collect;
@@ -160,12 +169,12 @@ struct collect<Name, VarTypes, type_sequence<>>
 template <typename Name, typename VarTypes, typename Var, typename... Vars>
 struct collect<Name, VarTypes, type_sequence<Var, Vars...>>
 {
-    using type = typename collect<
-        Name,
-        std::conditional_t<std::is_same_v<Name, typename Var::name>,
-                           typelist::cons<typename Var::type, VarTypes>,
-                           VarTypes>,
-        type_sequence<Vars...>>::type;
+    using type =
+        collect<Name,
+                std::conditional_t<std::is_same_v<Name, typename Var::name>,
+                                   typelist::cons<typename Var::type, VarTypes>,
+                                   VarTypes>,
+                type_sequence<Vars...>>::type;
 };
 
 template <typename Name, typename Vars>
@@ -180,6 +189,9 @@ class collect_types
                                     collected>;
 };
 
+template <typename Name, typename Vars>
+using collect_types_t = collect_types<Name, Vars>::type;
+
 template <typename VarType>
 struct collected_type
 {
@@ -191,6 +203,16 @@ struct collected_type<type_sequence<Ts...>>
 {
     using type = typelist::to<type_sequence<Ts...>, lucid::Union>;
 };
+
+template <typename Cell>
+struct cell_vars
+{
+    using type =
+        typelist::nub<typelist::concat<typelist::map<command_vars_t, Cell>>>;
+};
+
+template <typename Cell>
+using cell_vars_t = cell_vars<Cell>::type;
 
 template <typename T>
 struct access_wrapper
@@ -286,7 +308,7 @@ struct parm_jump_helper<ParmJump<Var, Labels>, LabelMap>
 };
 
 template <typename _ParmJump, typename LabelMap>
-using pjmp_idxs = typename parm_jump_helper<_ParmJump, LabelMap>::jump_idxs;
+using pjmp_idxs = parm_jump_helper<_ParmJump, LabelMap>::jump_idxs;
 
 template <typename _ParmJump, typename LabelMap>
 constexpr inline auto pjmp_arr = parm_jump_helper<_ParmJump, LabelMap>::table;
@@ -352,8 +374,7 @@ struct standard_eval<Compute<Op, Dst, Args...>, _>
 template <typename Target, typename LabelMap>
 struct standard_eval<Jump<Target>, LabelMap>
 {
-    using constant              = typename typelist::lookup<Target, LabelMap>;
-    static constexpr auto value = constant::value;
+    static constexpr auto value = typelist::lookup<Target, LabelMap>::value;
 
     template <typename _Memory>
     constexpr void
@@ -416,14 +437,14 @@ struct ensure_last_jumps
     };
 
     template <typename CellIdx>
-    using f = typename f_impl<CellIdx>::type;
+    using f = f_impl<CellIdx>::type;
 
     using type = typelist::map<f, typelist::enumerate<Cells>>;
 };
 
 /// @brief Ensures that every cell ends with a jump.
 template <typename Cells, typename Labels>
-using ensure_last_jumps_t = typename ensure_last_jumps<Cells, Labels>::type;
+using ensure_last_jumps_t = ensure_last_jumps<Cells, Labels>::type;
 
 template <typename T>
 struct same_size_union
@@ -456,17 +477,16 @@ class infer_index
 };
 
 template <typename T>
-using infer_index_t = typename infer_index<T>::type;
+using infer_index_t = infer_index<T>::type;
 
 /// @brief Program representation.
 template <typename InputVars, typename Statements, typename OutputVars>
 class Program
 {
     /// @brief Variables that have stored values to.
-    using stated_vars =
-        typelist::join<typelist::join<InputVars, OutputVars>,
-                       typelist::map<get_storing_var_t,
-                                     typelist::filter<does_store, Statements>>>;
+    using stated_vars = typelist::join<
+        typelist::join<InputVars, OutputVars>,
+        typelist::map<command_dst_t, typelist::filter<does_store, Statements>>>;
 
     static_assert(!typelist::any<is_literal, stated_vars>);
 
@@ -509,11 +529,11 @@ class Program
     static_assert(typelist::all<same_size_union, variables>);
 
     /// @brief Names of registers.
-    using reg_names = typelist::nub<get_var_names_t<variables>>;
+    using reg_names = typelist::nub<typelist::map<varname, variables>>;
 
     template <typename Name>
-    using infer_reg_type = typename collected_type<
-        typename collect_types<Name, variables>::type>::type;
+    using infer_reg_type =
+        collected_type<collect_types_t<Name, variables>>::type;
 
     /// @brief Registers types.
     ///

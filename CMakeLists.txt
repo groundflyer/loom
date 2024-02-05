@@ -54,7 +54,6 @@ add_compile_options($<$<CONFIG:RelWithDebInfo>:-march=native>)
 add_compile_options($<$<CONFIG:RelWithDebInfo>:-ffast-math>)
 add_compile_options($<$<CONFIG:RelWithDebInfo>:-O3>)
 add_compile_options($<$<CONFIG:RelWithDebInfo>:-g>)
-add_compile_definitions($<$<CONFIG:RelWithDebInfo>:DEBUG>)
 
 # Link-time optimization
 if(CMAKE_BUILD_TYPE STREQUAL "Release")
@@ -102,6 +101,7 @@ if(USE_CUDA)
   find_package(CUDAToolkit 8 REQUIRED)
   set(CMAKE_CUDA_COMPILER ${CMAKE_CXX_COMPILER})
   enable_language(CUDA)
+  add_compile_definitions($<$<CONFIG:RelWithDebInfo>:DEBUG>)
 endif()
 
 # External includes
