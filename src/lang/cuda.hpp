@@ -37,14 +37,14 @@ cuda_check(cudaError_t) noexcept
         using pointer    = T*;                  \
         name() noexcept  = default;             \
         pointer                                 \
-        allocate(std::size_t n)                 \
+        allocate(unsigned n)                    \
         {                                       \
             pointer ret;                        \
             cuda_check(a(&ret, n * sizeof(T))); \
             return ret;                         \
         }                                       \
         void                                    \
-        deallocate(pointer p, std::size_t)      \
+        deallocate(pointer p, unsigned)         \
         {                                       \
             cuda_check(f(p));                   \
         }                                       \
@@ -61,9 +61,9 @@ DEF_CUDA_ALLOC(HostAllocator, cudaMallocHost, cudaFreeHost)
 template <typename T, typename A>
 class SimpleVector
 {
-    T*          p_data;
-    std::size_t m_n = 0;
-    A           m_alloc;
+    T*       p_data;
+    unsigned m_n = 0;
+    A        m_alloc;
 
     void
     alloc() noexcept
@@ -91,15 +91,12 @@ class SimpleVector
 
     SimpleVector() = default;
     explicit SimpleVector(const A& a) noexcept : m_alloc(a) {}
-    SimpleVector(std::size_t n, const A& a = A()) : m_n(n), m_alloc(a)
-    {
-        alloc();
-    }
+    SimpleVector(unsigned n, const A& a = A()) : m_n(n), m_alloc(a) { alloc(); }
 
     ~SimpleVector() { dealloc(); }
 
     void
-    resize(std::size_t new_size)
+    resize(unsigned new_size)
     {
         if(new_size != m_n)
         {
@@ -109,8 +106,8 @@ class SimpleVector
         }
     }
 
-    __host__ __device__ std::size_t
-                        size() const noexcept
+    __host__ __device__ unsigned
+    size() const noexcept
     {
         return m_n;
     }
@@ -134,7 +131,7 @@ class SimpleVector
     }
 
     __host__ __device__ T&
-    operator[](const std::size_t i) noexcept
+    operator[](const unsigned i) noexcept
     {
         CHECK_INDEX(i, size());
         return p_data[i];
@@ -152,7 +149,7 @@ class SimpleVector
         return v.end();
     }
 
-    __host__ __device__ friend std::size_t
+    __host__ __device__ friend unsigned
     size(SimpleVector& v) noexcept
     {
         return v.size();
@@ -198,9 +195,9 @@ struct remap_comp<choice>
     };
 };
 
-#define DEF_REMAP_BIN(func, op)                 \
+#define DEF_REMAP_BIN(func, op)                    \
     template <typename T>                          \
-    struct remap_comp<func<T>>            \
+    struct remap_comp<func<T>>                     \
     {                                              \
         struct type                                \
         {                                          \
@@ -212,9 +209,9 @@ struct remap_comp<choice>
         };                                         \
     };
 
-#define DEF_REMAP_UN(func, op)       \
+#define DEF_REMAP_UN(func, op)          \
     template <typename T>               \
-    struct remap_comp<func<T>>    \
+    struct remap_comp<func<T>>          \
     {                                   \
         struct type                     \
         {                               \
@@ -250,7 +247,7 @@ DEF_REMAP_UN(std::logical_not, !)
 template <typename Op>
 using remap_comp_t = remap_comp<Op>::type;
 
-template <std::size_t I, typename Head, typename... Args>
+template <unsigned I, typename Head, typename... Args>
 __device__ decltype(auto)
 select_arg(Head& head, Args&... args)
 {
@@ -262,7 +259,7 @@ select_arg(Head& head, Args&... args)
         return select_arg<I - 1>(args...);
 }
 
-template <typename F, typename... Args, std::size_t... Is>
+template <typename F, typename... Args, unsigned... Is>
 __device__ auto
 call_multiselect(F f, std::index_sequence<Is...>, Args&... args)
 {
@@ -355,13 +352,13 @@ struct fake_array
     T val;
 
     __host__ __device__ const T&
-    operator[](std::size_t) const noexcept
+    operator[](unsigned) const noexcept
     {
         return val;
     }
 
     __host__ __device__ T&
-    operator[](std::size_t) noexcept
+    operator[](unsigned) noexcept
     {
         return val;
     }
@@ -381,9 +378,47 @@ struct memory_accessor
     }
 };
 
+/// @brief Current chunk size.
+/// @param size Size of @p cps.
+/// @param cps Cell pointers.
+template <std::integer I>
+__device__ unsigned
+chunk_size(unsigned size, I* cps)
+{
+    const I  cp = *cps;
+    unsigned i  = 0;
+    while(i < size && cps[i] == cp) ++i;
+    return i;
+}
+
+/// @brief Fills in ranges of chunks: @p bgns and @p ends.
+/// @param size size of @p cps.
+/// @param cc cell count, size of @p bgns and @p ends.
+/// @param bgns begin points of ranges.
+/// @param ends end points of ranges.
+/// @param cps cell pointers.
+/// @param ttor terminator constant.
+template <std::integer I>
+__global__ void
+chunk_counter(unsigned size, unsigned cc, I* bgns, I* ends, I* cps, I ttor)
+{
+    unsigned pos = 0;
+    I        cp  = cps[pos];
+    do {
+        const unsigned offset = chunk_size(cps + pos, size - pos);
+        bgns[cp]              = pos;
+        ends[cp]              = pos + offset;
+        pos += offset;
+        cp = cps[pos];
+    } while(pos < size && cp != ttor);
+
+    bgns[cc] = pos;
+    ends[cc] = size;
+}
+
 template <typename CompiledCell, typename... Args>
 __global__ void
-kernel(std::size_t size, CompiledCell cc, Args... args)
+kernel(unsigned size, CompiledCell cc, Args... args)
 {
     const auto index  = blockIdx.x * blockDim.x + threadIdx.x;
     const auto stride = blockDim.x * gridDim.x;
@@ -474,7 +509,8 @@ struct evaluator
     using reg_types = typename _Program::reg_types;
     using cp        = typename _Program::cp;
 
-    static constexpr auto end_pos = _Program::end_pos;
+    static constexpr unsigned num_views = _Program::num_cells + 1;
+    static constexpr auto     end_pos   = _Program::end_pos;
     static constexpr input_setter<typename _Program::input_vars>   setter{};
     static constexpr output_getter<typename _Program::output_vars> getter{};
 
@@ -494,7 +530,7 @@ struct evaluator
 
         template <typename... Args>
         constexpr auto
-        operator()(const std::size_t n, Args&&... args) noexcept
+        operator()(const unsigned n, Args&&... args) noexcept
         {
             mem.resize(n);
             setter(mem, std::forward<Args>(args)...);
