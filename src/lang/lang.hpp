@@ -481,7 +481,7 @@ using infer_index_t = infer_index<T>::type;
 
 /// @brief Program representation.
 template <typename InputVars, typename Statements, typename OutputVars>
-class Program
+struct Program
 {
     /// @brief Variables that have stored values to.
     using stated_vars = typelist::join<
@@ -497,7 +497,6 @@ class Program
 
     static constexpr std::size_t num_cells = typelist::length<cells_statements>;
 
-  public:
     using input_vars  = InputVars;
     using output_vars = OutputVars;
     using index_t     = infer_index_t<vartype<typelist::head<InputVars>>>;

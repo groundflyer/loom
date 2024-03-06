@@ -24,6 +24,7 @@ option(ENABLE_IPO "Enable interprocedural optimization" OFF)
 option(SIMD_NARROW_AVX_INT "Use 128 integer vectors on AVX instead of 256" ON)
 option(USE_LIBCXX "Link to libc++ when compiling with Clang" ON)
 option(USE_CUDA "Enable CUDA support" OFF)
+set(CUDA_BLOCK_SIZE 256 CACHE STRING "Number of threads in a block")
 
 # Set floating point precision
 set(_precision "single")
@@ -101,13 +102,14 @@ if(USE_CUDA)
   find_package(CUDAToolkit 8 REQUIRED)
   set(CMAKE_CUDA_COMPILER ${CMAKE_CXX_COMPILER})
   enable_language(CUDA)
-  add_compile_definitions($<$<CONFIG:RelWithDebInfo>:DEBUG>)
+  add_compile_definitions($<$<AND:$<COMPILE_LANGUAGE:CUDA>,$<CONFIG:RelWithDebInfo>>:DEBUG>)
+  add_compile_definitions($<$<COMPILE_LANGUAGE:CUDA>:CUDA_BLOCK_SIZE=${CUDA_BLOCK_SIZE}>)
 endif()
 
-# External includes
-# Concurrent Queue: concurrentqueue.h
-# static math: static_math
+# range-v3
 find_package(range-v3 REQUIRED)
+
+# External includes
 include_directories(ext/include)
 
 # docs

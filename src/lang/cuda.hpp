@@ -16,38 +16,54 @@
 #include <cassert>
 #include <cstdio>
 void
-cuda_check(cudaError_t r) noexcept
+cuda_check(cudaError_t r, const char* func, int line) noexcept
 {
     if(r != cudaSuccess)
-        std::fprintf(stderr, "CUDA Error: %s", cudaGetErrorString(r));
+        std::fprintf(stderr,
+                     "CUDA Error in %s: %d: %s",
+                     func,
+                     line,
+                     cudaGetErrorString(r));
     assert(r == cudaSuccess);
 }
+
+#define CUDA_CHECK(...) cuda_check(__VA_ARGS__, __PRETTY_FUNCTION__, __LINE__)
+
+#define LAUNCH_KERNEL(KERNEL, NUM_BLOCKS, ...)       \
+    cudaGetLastError();                              \
+    KERNEL<<<NUM_BLOCKS, BLOCK_SIZE>>>(__VA_ARGS__); \
+    cuda_check(cudaPeekAtLastError(), #KERNEL, __LINE__ - 1);
 #else
 void
 cuda_check(cudaError_t) noexcept
 {
 }
+
+#define CUDA_CHECK(...) cuda_check(__VA_ARGS__)
+
+#define LAUNCH_KERNEL(KERNEL, NUM_BLOCKS, ...) \
+    KERNEL<<<NUM_BLOCKS, BLOCK_SIZE>>>(__VA_ARGS__);
 #endif
 
-#define DEF_CUDA_ALLOC(name, a, f)              \
-    template <typename T>                       \
-    struct name                                 \
-    {                                           \
-        using value_type = T;                   \
-        using pointer    = T*;                  \
-        name() noexcept  = default;             \
-        pointer                                 \
-        allocate(unsigned n)                    \
-        {                                       \
-            pointer ret;                        \
-            cuda_check(a(&ret, n * sizeof(T))); \
-            return ret;                         \
-        }                                       \
-        void                                    \
-        deallocate(pointer p, unsigned)         \
-        {                                       \
-            cuda_check(f(p));                   \
-        }                                       \
+#define DEF_CUDA_ALLOC(NAME, MALLOC, FREE)           \
+    template <typename T>                            \
+    struct NAME                                      \
+    {                                                \
+        using value_type = T;                        \
+        using pointer    = T*;                       \
+        NAME() noexcept  = default;                  \
+        pointer                                      \
+        allocate(unsigned n)                         \
+        {                                            \
+            pointer ret;                             \
+            CUDA_CHECK(MALLOC(&ret, n * sizeof(T))); \
+            return ret;                              \
+        }                                            \
+        void                                         \
+        deallocate(pointer p, unsigned)              \
+        {                                            \
+            CUDA_CHECK(FREE(p));                     \
+        }                                            \
     };
 
 namespace lucid::cuda
@@ -56,6 +72,13 @@ DEF_CUDA_ALLOC(DeviceAllocator, cudaMalloc, cudaFree)
 DEF_CUDA_ALLOC(HostAllocator, cudaMallocHost, cudaFreeHost)
 
 #undef DEF_CUDA_ALLOC
+
+#ifdef CUDA_BLOCK_SIZE
+static constexpr unsigned BLOCK_SIZE = CUDA_BLOCK_SIZE;
+static_assert(BLOCK_SIZE % 32 == 0 && BLOCK_SIZE >= 32);
+#else
+static constexpr unsigned BLOCK_SIZE = 256;
+#endif
 
 // std::vector doesn't work with CUDA. We replace it with this.
 template <typename T, typename A>
@@ -259,7 +282,7 @@ select_arg(Head& head, Args&... args)
         return select_arg<I - 1>(args...);
 }
 
-template <typename F, typename... Args, unsigned... Is>
+template <typename F, typename... Args, std::size_t... Is>
 __device__ auto
 call_multiselect(F f, std::index_sequence<Is...>, Args&... args)
 {
@@ -381,7 +404,7 @@ struct memory_accessor
 /// @brief Current chunk size.
 /// @param size Size of @p cps.
 /// @param cps Cell pointers.
-template <std::integer I>
+template <std::integral I>
 __device__ unsigned
 chunk_size(unsigned size, I* cps)
 {
@@ -398,7 +421,7 @@ chunk_size(unsigned size, I* cps)
 /// @param ends end points of ranges.
 /// @param cps cell pointers.
 /// @param ttor terminator constant.
-template <std::integer I>
+template <std::integral I>
 __global__ void
 chunk_counter(unsigned size, unsigned cc, I* bgns, I* ends, I* cps, I ttor)
 {
@@ -425,20 +448,31 @@ kernel(unsigned size, CompiledCell cc, Args... args)
     for(auto i = index; i < size; i += stride) cc(args[i]...);
 }
 
+/// @brief Integral division that rounds the result to the nearest biggest
+/// integral.
+/// @param a divident.
+/// @param b divisor.
+template <std::integral T>
+constexpr T
+ceil_div(const T a, const T b) noexcept
+{
+    return a / b + (a % b != 0);
+}
+
 template <typename CompiledCell, typename _Memory>
 void
-launch_kernel(CompiledCell cc, _Memory& mem, unsigned bs = 256) noexcept
+run_kernel(CompiledCell cc, _Memory& mem) noexcept
 {
     auto data = typelist::maybe_collect(memory_accessor{},
                                         typename CompiledCell::vars{},
                                         mem);
 
-    unsigned nb = mem.size() / bs;
-    if(mem.size() % bs) ++nb;
+    const unsigned num_blocks = ceil_div(mem.size(), BLOCK_SIZE);
 
     auto launcher = [&](auto... args) noexcept
     {
-        if(nb) { kernel<<<nb, bs>>>(mem.size(), cc, args...); }
+        if(num_blocks)
+            LAUNCH_KERNEL(kernel, num_blocks, mem.size(), cc, args...);
         cudaDeviceSynchronize();
     };
 
@@ -465,7 +499,7 @@ struct input_setter
                     std::ranges::fill(buffer, value);
 
                 // now copy to device
-                cuda_check(cudaMemcpy(column.data(),
+                CUDA_CHECK(cudaMemcpy(column.data(),
                                       buffer.data(),
                                       column.size() * sizeof(t),
                                       cudaMemcpyHostToDevice));
@@ -488,7 +522,7 @@ struct output_getter
                 using t     = vartype<Var>;
                 auto column = mem.template get<Var>();
                 SimpleVector<t, HostAllocator<t>> buffer(column.size());
-                cuda_check(cudaMemcpy(buffer.data(),
+                CUDA_CHECK(cudaMemcpy(buffer.data(),
                                       column.data(),
                                       column.size() * sizeof(t),
                                       cudaMemcpyDeviceToHost));
@@ -534,7 +568,7 @@ struct evaluator
         {
             mem.resize(n);
             setter(mem, std::forward<Args>(args)...);
-            launch_kernel(cell, mem);
+            run_kernel(cell, mem);
             return getter(mem);
         }
     };
