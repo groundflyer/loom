@@ -136,26 +136,29 @@ struct command_dst<Compute<Op, Dst, Ts...>>
 template <typename Command>
 using command_dst_t = command_dst<Command>::type;
 
-template <typename Command>
-struct command_vars
-{
-    using type = type_sequence<>;
-};
+template <typename Command, typename CPVar>
+struct command_vars;
 
-template <typename Op, typename Dst, typename... Args>
-struct command_vars<Compute<Op, Dst, Args...>>
+template <typename CPVar, typename Op, typename Dst, typename... Args>
+struct command_vars<Compute<Op, Dst, Args...>, CPVar>
 {
     using type = typelist::nub<type_sequence<Dst, Args...>>;
 };
 
-template <typename Var, typename... Labels>
-struct command_vars<ParmJump<Var, Labels...>>
+template <typename CPVar, typename Target>
+struct command_vars<Jump<Target>, CPVar>
 {
-    using type = type_sequence<Var>;
+    using type = type_sequence<CPVar>;
 };
 
-template <typename Command>
-using command_vars_t = command_vars<Command>::type;
+template <typename CPVar, typename Var, typename... Labels>
+struct command_vars<ParmJump<Var, Labels...>, CPVar>
+{
+    using type = type_sequence<CPVar, Var>;
+};
+
+template <typename Command, typename CPVar>
+using command_vars_t = command_vars<Command, CPVar>::type;
 
 template <typename Name, typename VarTypes, typename Vars>
 struct collect;
@@ -204,15 +207,17 @@ struct collected_type<type_sequence<Ts...>>
     using type = typelist::to<type_sequence<Ts...>, lucid::Union>;
 };
 
-template <typename Cell>
+template <typename Cell, typename CPVar>
 struct cell_vars
 {
-    using type =
-        typelist::nub<typelist::concat<typelist::map<command_vars_t, Cell>>>;
+    template <typename C>
+    using f = command_vars_t<C, CPVar>;
+
+    using type = typelist::nub<typelist::concat<typelist::map<f, Cell>>>;
 };
 
-template <typename Cell>
-using cell_vars_t = cell_vars<Cell>::type;
+template <typename Cell, typename CPVar>
+using cell_vars_t = cell_vars<Cell, CPVar>::type;
 
 template <typename T>
 struct access_wrapper
@@ -484,9 +489,10 @@ template <typename InputVars, typename Statements, typename OutputVars>
 struct Program
 {
     /// @brief Variables that have stored values to.
-    using stated_vars = typelist::join<
+    using stated_vars = typelist::nub<typelist::join<
         typelist::join<InputVars, OutputVars>,
-        typelist::map<command_dst_t, typelist::filter<does_store, Statements>>>;
+        typelist::map<command_dst_t,
+                      typelist::filter<does_store, Statements>>>>;
 
     static_assert(!typelist::any<is_literal, stated_vars>);
 
