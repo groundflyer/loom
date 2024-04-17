@@ -66,14 +66,14 @@ struct snd<type_pair<A, B>>
 /// that the number of elements in type_sequence @p Pair is
 /// exactly two.
 template <typename Pair>
-using fst_t = typename fst<Pair>::type;
+using fst_t = fst<Pair>::type;
 
 /// @brief Extract the second type of @p Pair.
 ///
 /// Same as typelist::last, but guarantees that type_sequence @p Pair
 /// consists only of two types.
 template <typename Pair>
-using snd_t = typename snd<Pair>::type;
+using snd_t = snd<Pair>::type;
 /// @}
 
 // In this namespace we don't suffix typedefs with _t and values with _v.
@@ -103,8 +103,8 @@ struct join<type_sequence<Ts1...>, type_sequence<Ts2...>>
 template <std::size_t N, typename... Ts>
 struct repeat
 {
-    using type = typename join<type_sequence<Ts...>,
-                               typename repeat<N - 1, Ts...>::type>::type;
+    using type =
+        join<type_sequence<Ts...>, typename repeat<N - 1, Ts...>::type>::type;
 };
 
 template <typename... Ts>
@@ -140,7 +140,7 @@ struct at<I, type_sequence<>>
 template <std::size_t I, typename T, typename... Ts>
 struct at<I, type_sequence<T, Ts...>>
 {
-    using type = typename at<I - 1, type_sequence<Ts...>>::type;
+    using type = at<I - 1, type_sequence<Ts...>>::type;
 };
 
 template <typename List>
@@ -199,7 +199,7 @@ template <template <typename, typename> typename F,
           typename... Ts>
 struct foldl<F, Acc, type_sequence<T, Ts...>>
 {
-    using type = typename foldl<F, F<T, Acc>, type_sequence<Ts...>>::type;
+    using type = foldl<F, F<T, Acc>, type_sequence<Ts...>>::type;
 };
 
 template <template <typename, typename> typename F, typename Acc, typename List>
@@ -260,7 +260,7 @@ template <std::size_t N, typename T, typename... Ts>
     requires(N <= length<type_sequence<T, Ts...>>::value)
 struct drop<N, type_sequence<T, Ts...>>
 {
-    using type = typename drop<N - 1, type_sequence<Ts...>>::type;
+    using type = drop<N - 1, type_sequence<Ts...>>::type;
 };
 
 template <template <typename, typename> typename F,
@@ -371,7 +371,7 @@ struct filter<P, type_sequence<>>
 template <template <typename> typename P, typename T, typename... Ts>
 struct filter<P, type_sequence<T, Ts...>>
 {
-    using rest = typename filter<P, type_sequence<Ts...>>::type;
+    using rest = filter<P, type_sequence<Ts...>>::type;
     using type =
         std::conditional_t<P<T>::value, typename cons<T, rest>::type, rest>;
 };
@@ -383,7 +383,7 @@ class purge
     using f = std::negation<std::is_same<T, Elem>>;
 
   public:
-    using type = typename filter<f, List>::type;
+    using type = filter<f, List>::type;
 };
 
 template <typename List>
@@ -398,10 +398,10 @@ struct nub<type_sequence<>>
 template <typename T, typename... Ts>
 struct nub<type_sequence<T, Ts...>>
 {
-    using type = typename cons<
-        T,
-        typename nub<typename purge<T, type_sequence<Ts...>>::type>::type>::
-        type;
+    using type =
+        cons<T,
+             typename nub<
+                 typename purge<T, type_sequence<Ts...>>::type>::type>::type;
 };
 
 template <typename T, typename Map>
@@ -446,7 +446,7 @@ struct split_with;
 template <template <typename> typename P, typename Ms, typename Rs>
 struct split_with<P, Ms, Rs, type_sequence<>>
 {
-    using type = typename join<Ms, type_sequence<Rs>>::type;
+    using type = join<Ms, type_sequence<Rs>>::type;
 };
 
 template <template <typename> typename P,
@@ -564,11 +564,11 @@ struct of_same_size<type_sequence<T, Ts...>>
 
 /// @brief Add class @p T to the beginning of type_sequence @p List.
 template <typename T, typename List>
-using cons = typename detail::cons<T, List>::type;
+using cons = detail::cons<T, List>::type;
 
 /// @brief Concatenate two lists of types.
 template <typename List1, typename List2>
-using join = typename detail::join<List1, List2>::type;
+using join = detail::join<List1, List2>::type;
 
 /// @brief Add class @p T to the end of type_sequence @p List.
 template <typename T, typename List>
@@ -576,7 +576,7 @@ using append = join<List, type_sequence<T>>;
 
 /// @brief Constructs type_sequence repeating classes @p Ts @p N times.
 template <std::size_t N, typename... Ts>
-using repeat = typename detail::repeat<N, Ts...>::type;
+using repeat = detail::repeat<N, Ts...>::type;
 
 /// @brief Number of types in @p List.
 template <typename List>
@@ -586,7 +586,7 @@ inline constexpr std::size_t length = detail::length<List>::value;
 ///
 /// If @p List is too short, the resulting type is void.
 template <std::size_t I, typename List>
-using at = typename detail::at<I, List>::type;
+using at = detail::at<I, List>::type;
 
 /// @brief Extract the first class from @p List.
 template <typename List>
@@ -598,7 +598,7 @@ using last = at<length<List> - 1, List>;
 
 /// @brief Extract the elements after the head of @p list as type_sequence.
 template <typename List>
-using tail = typename detail::tail<List>::type;
+using tail = detail::tail<List>::type;
 
 /// @brief Check whether @p T occur in @p List.
 template <typename T, typename List>
@@ -615,11 +615,11 @@ using indices = std::make_index_sequence<length<List>>;
 
 /// @brief Left-associative fold of a type_sequence @p List.
 template <template <typename, typename> typename F, typename Acc, typename List>
-using foldl = typename detail::foldl<F, Acc, List>::type;
+using foldl = detail::foldl<F, Acc, List>::type;
 
 /// @brief Right-associative fold of a type_sequence @p List.
 template <template <typename, typename> typename F, typename Acc, typename List>
-using foldr = typename detail::foldr<F, Acc, List>::type;
+using foldr = detail::foldr<F, Acc, List>::type;
 
 /// @brief Reverse the order of elements.
 template <typename List>
@@ -627,25 +627,25 @@ using reverse = foldr<append, type_sequence<>, List>;
 
 /// @brief Apply @p F to each element of @p List.
 template <template <typename> typename F, typename List>
-using map = typename detail::map<F, List>::type;
+using map = detail::map<F, List>::type;
 
 /// @brief Remove all occurences of type @p T from @p List.
 ///
 /// Does nothing if there is no @p T in @p List.
 template <typename T, typename List>
-using purge = typename detail::purge<T, List>::type;
+using purge = detail::purge<T, List>::type;
 
 /// @brief Prefix of @p List of length @p N.
 ///
 /// @p N must be less than or equal of length of @p List.
 template <std::size_t N, typename List>
-using take = typename detail::take<N, List>::type;
+using take = detail::take<N, List>::type;
 
 /// @brief Suffix of @p List after the first @p N elements.
 ///
 /// @p N must be less than or equal of length of @p List.
 template <std::size_t N, typename List>
-using drop = typename detail::drop<N, List>::type;
+using drop = detail::drop<N, List>::type;
 
 /// @brief Generalization of zip. Zips with the meta-function
 /// given as the first argument, instead of type_pair.
@@ -653,7 +653,7 @@ using drop = typename detail::drop<N, List>::type;
 /// If one input list is shorter than the other,
 /// excess elements of the longer list are discarded.
 template <template <typename, typename> typename F, typename Xs, typename Ys>
-using zip_with = typename detail::zip_with<F, Xs, Ys>::type;
+using zip_with = detail::zip_with<F, Xs, Ys>::type;
 
 /// @brief Make list of pairs type_sequence<type_pair<X, Y>...> of
 /// corresponding types from lists @p Xs and @p Ys.
@@ -682,7 +682,7 @@ inline constexpr bool same = detail::same<List>::value;
 /// @tparam Fs type_sequence of callable types.
 /// @tparam Args Arguments to apply function from @p Fs to.
 template <typename Fs, typename... Args>
-using result_of = typename detail::result_of<Fs, Args...>;
+using result_of = detail::result_of<Fs, Args...>;
 
 /// @brief Check if there are duplicates in @p List.
 template <typename List>
@@ -704,7 +704,7 @@ inline constexpr bool any = detail::any<P, List>::value;
 
 /// @brief Remove duplicate elements from @p List.
 template <typename List>
-using nub = typename detail::nub<List>::type;
+using nub = detail::nub<List>::type;
 
 /// @brief Filter @p List elements with a predicate @p P.
 ///
@@ -713,7 +713,7 @@ using nub = typename detail::nub<List>::type;
 /// The resulting type_sequence contains elements that
 /// satisfy P, i.e. P<T>::value == true.
 template <template <typename> typename P, typename List>
-using filter = typename detail::filter<P, List>::type;
+using filter = detail::filter<P, List>::type;
 
 /// @brief Lookup a key @p Key in association list @p Map.
 ///
@@ -721,7 +721,7 @@ using filter = typename detail::filter<P, List>::type;
 ///
 /// If @p Key not found the resulting type is void.
 template <typename Key, typename Map>
-using lookup = typename detail::lookup<Key, Map>::type;
+using lookup = detail::lookup<Key, Map>::type;
 
 /// @brief Get the leftmost type from @p List matching predicate @p P.
 ///
@@ -729,7 +729,7 @@ using lookup = typename detail::lookup<Key, Map>::type;
 ///
 /// If there is no type matching @p P the resulting type is void.
 template <template <typename> typename P, typename List>
-using find = typename detail::find<P, List>::type;
+using find = detail::find<P, List>::type;
 
 /// @brief Check if @p List is empty.
 template <typename List>
@@ -756,11 +756,11 @@ using split =
 
 /// @brief Convert a class template @p Source into type_sequence.
 template <typename Source>
-using from = typename detail::from<Source>::type;
+using from = detail::from<Source>::type;
 
 /// @brief Convert type_sequence @p Source to @p Target class template.
 template <typename Source, template <typename...> typename Target>
-using to = typename detail::to<Source, Target>::type;
+using to = detail::to<Source, Target>::type;
 
 /// @brief Convert type_sequence of std::integer_constant into a
 /// std::integer_sequence.
@@ -768,7 +768,7 @@ using to = typename detail::to<Source, Target>::type;
 /// The value type of the first element is used as the value type for the
 /// resulting std::integer_sequence.
 template <typename List>
-using to_integer_sequence = typename detail::to_integer_seq<List>::type;
+using to_integer_sequence = detail::to_integer_seq<List>::type;
 
 /// @brief Size of the biggest type in the list.
 template <typename List>
@@ -879,8 +879,8 @@ struct nappend;
 template <std::size_t N, typename Int, Int Val, Int... Vals>
 struct nappend<std::integer_sequence<Int, Vals...>, N, Val>
 {
-    using type = typename join<std::integer_sequence<Int, Vals...>,
-                               typename repeat<N, Int, Val>::type>::type;
+    using type = join<std::integer_sequence<Int, Vals...>,
+                      typename repeat<N, Int, Val>::type>::type;
 };
 
 template <typename List>
@@ -998,9 +998,9 @@ template <std::size_t N, typename Int, Int I, Int... Is>
     requires(N <= length<std::integer_sequence<Int, I, Is...>>::value)
 struct take<N, std::integer_sequence<Int, I, Is...>>
 {
-    using type = typename cons<
-        I,
-        typename take<N - 1, std::integer_sequence<Int, Is...>>::type>::type;
+    using type =
+        cons<I, typename take<N - 1, std::integer_sequence<Int, Is...>>::type>::
+            type;
 };
 
 template <std::size_t N, typename List>
@@ -1016,7 +1016,7 @@ template <std::size_t N, typename Int, Int I, Int... Is>
     requires(N <= length<std::integer_sequence<Int, I, Is...>>::value)
 struct drop<N, std::integer_sequence<Int, I, Is...>>
 {
-    using type = typename drop<N - 1, std::integer_sequence<Int, Is...>>::type;
+    using type = drop<N - 1, std::integer_sequence<Int, Is...>>::type;
 };
 
 template <auto Val, typename List>
@@ -1096,10 +1096,10 @@ struct nub<std::integer_sequence<Int>>
 template <typename Int, Int X, Int... Xs>
 struct nub<std::integer_sequence<Int, X, Xs...>>
 {
-    using type = typename cons<
-        X,
-        typename nub<typename purge<X, std::integer_sequence<Int, Xs...>>::
-                         type>::type>::type;
+    using type =
+        cons<X,
+             typename nub<typename purge<X, std::integer_sequence<Int, Xs...>>::
+                              type>::type>::type;
 };
 
 template <std::integral auto N>
@@ -1120,38 +1120,38 @@ struct powersof2s
 
 /// @brief Add integer value @p Val to the beginning of @p List.
 template <auto Val, typename List>
-using cons = typename detail::cons<Val, List>::type;
+using cons = detail::cons<Val, List>::type;
 
 /// @brief Concatenate two std::integer_sequence.
 template <typename List1, typename List2>
-using join = typename detail::join<List1, List2>::type;
+using join = detail::join<List1, List2>::type;
 
 /// @brief Constructs std::integer_sequence repeating @p Vals @p N
 /// times.
 template <std::size_t N, typename Int, Int... Vals>
-using repeat = typename detail::repeat<N, Int, Vals...>::type;
+using repeat = detail::repeat<N, Int, Vals...>::type;
 
 /// @brief Reverse the order of the elements in @p List.
 template <typename List>
-using reverse = typename detail::reverse<List>::type;
+using reverse = detail::reverse<List>::type;
 
 /// @brief Apply @p F to each element of @p List.
 ///
 /// @f$\mathrm{F}(\mathrm{I}) \rightarrow \mathrm{T}@f$,
 /// The resulting type @f$\mathrm{T}@f$ must be integer.
 template <typename F, typename List>
-using map_f = typename detail::map_f<F, List>::type;
+using map_f = detail::map_f<F, List>::type;
 
 /// @brief Make types from elements of @p List by
 /// specializing template class F with the values.
 ///
 /// The resulting type is type_sequence<F<Int>...>.
 template <template <auto> typename F, typename List>
-using map_t = typename detail::map_t<F, List>::type;
+using map_t = detail::map_t<F, List>::type;
 
 /// @brief Add @p Val @p N times to the end of @p List.
 template <typename List, std::size_t N, auto Val>
-using nappend = typename detail::nappend<List, N, Val>::type;
+using nappend = detail::nappend<List, N, Val>::type;
 
 /// @brief Add @p Val to the end of @p List.
 template <typename List, auto Val>
@@ -1175,7 +1175,7 @@ inline constexpr auto last = at<length<List> - 1, List>;
 
 /// @brief Extract the elements after the head of @p list as type_sequence.
 template <typename List>
-using tail = typename detail::tail<List>::type;
+using tail = detail::tail<List>::type;
 
 /// @brief Check whether @p X occur in @p List.
 template <auto X, typename List>
@@ -1192,19 +1192,19 @@ using indices = std::make_index_sequence<length<List>>;
 
 /// @brief Make std::integer_sequence without @p X.
 template <auto X, typename List>
-using purge = typename detail::purge<X, List>::type;
+using purge = detail::purge<X, List>::type;
 
 /// @brief Prefix of @p List of length @p N.
 ///
 /// @p N must be less than or equal of length of @p List.
 template <std::size_t N, typename List>
-using take = typename detail::take<N, List>::type;
+using take = detail::take<N, List>::type;
 
 /// @brief Suffix of @p List after the first @p N elements.
 ///
 /// @p N must be less than or equal of length of @p List.
 template <std::size_t N, typename List>
-using drop = typename detail::drop<N, List>::type;
+using drop = detail::drop<N, List>::type;
 
 /// @brief Convert std::integer_sequence into C array.
 template <typename List>
@@ -1220,7 +1220,7 @@ inline constexpr bool has_duplicates = detail::has_duplicates<List>::value;
 
 /// @brief Remove duplicate elements from @p List.
 template <typename List>
-using nub = typename detail::nub<List>::type;
+using nub = detail::nub<List>::type;
 
 template <std::size_t N, std::size_t I>
 struct lehmer_code_impl
@@ -1266,12 +1266,12 @@ struct lehmer_perm_impl<Idxs, std::index_sequence<Head, Rest...>>
 /// See https://en.wikipedia.org/wiki/Factorial_number_system
 /// and https://en.wikipedia.org/wiki/Lehmer_code
 template <std::size_t N>
-using lehmer_code = typename lehmer_code_impl<N, 1>::type;
+using lehmer_code = lehmer_code_impl<N, 1>::type;
 
 /// @brief Generate a permutation of index array @p Idxs from
 /// its factorial representation @p FacNum.
 template <typename Idxs, typename FacNum>
-using lehmer_perm = typename lehmer_perm_impl<Idxs, FacNum>::type;
+using lehmer_perm = lehmer_perm_impl<Idxs, FacNum>::type;
 
 template <std::size_t N, std::size_t L>
     requires(N < fac(L))
@@ -1290,7 +1290,7 @@ struct nlperm_impl
 /// @brief @p Nth permutation in lexicographical order
 /// of an index sequence of length @p L.
 template <std::size_t N, std::size_t L>
-using nlperm = typename nlperm_impl<N, L>::type;
+using nlperm = nlperm_impl<N, L>::type;
 
 /// @brief First N numbers of power of two series.
 template <std::integral auto N>
@@ -1321,6 +1321,6 @@ struct enumerate
 ///
 /// Type of the index member is std::integer_constant<Index, value>
 template <typename List, typename Index = std::size_t>
-using enumerate = typename detail::enumerate<List, Index>::type;
+using enumerate = detail::enumerate<List, Index>::type;
 } // namespace typelist
 } // namespace lucid

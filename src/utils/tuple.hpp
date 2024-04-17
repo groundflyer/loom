@@ -418,11 +418,10 @@ template <template <typename...> typename ResultTuple = std::tuple,
 constexpr decltype(auto)
 map_tuple(UnaryOp&& op, InputTuple&& tuple)
 {
-    return std::apply(
-        [op = std::move(op)]<typename... Ts>(
-            Ts&&... args) -> ResultTuple<std::invoke_result_t<UnaryOp, Ts>...>
-        { return {std::invoke(std::move(op), std::forward<Ts>(args))...}; },
-        std::forward<InputTuple>(tuple));
+    return std::apply([op = std::move(op)]<typename... Ts>(Ts&&... args)
+                          -> ResultTuple<std::invoke_result_t<UnaryOp, Ts>...>
+                      { return {std::invoke(op, std::forward<Ts>(args))...}; },
+                      std::forward<InputTuple>(tuple));
 }
 
 /// @brief Left-assotiative fold of a @p tuple.

@@ -231,8 +231,8 @@ concept Converter = std::is_invocable_v<T, std::string_view> &&
 
 /// @brief Make a pair of StringLiteral and a char_sequence.
 template <StringLiteral s>
-using wrap_string = typename detail::
-    wrap_string_helper<s, std::make_index_sequence<s.size()>>::type;
+using wrap_string =
+    detail::wrap_string_helper<s, std::make_index_sequence<s.size()>>::type;
 
 /// @brief Get the index of an Option with character key @p Key in the list of
 /// @p Options
@@ -535,7 +535,7 @@ struct Option
     using var_type     = std::conditional_t<(nvals > 1),
                                         std::array<std::string_view, nvals>,
                                         std::string_view>;
-    using keyword_type = typename Keyword::type;
+    using keyword_type = Keyword::type;
 
     static constexpr bool is_flag =
         std::is_same_v<bool, value_type> && (nvals == 1ul);
@@ -573,7 +573,7 @@ struct Option<Key, Keyword, C, -1ul>
     static constexpr std::string_view keyword  = Keyword::view;
 
     using value_type   = detail::result_type<C>;
-    using keyword_type = typename Keyword::type;
+    using keyword_type = Keyword::type;
 
     C                converter;
     std::string_view doc;

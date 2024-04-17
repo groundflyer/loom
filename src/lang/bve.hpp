@@ -51,7 +51,7 @@ template <typename T,
           typename Vector,
           template <typename>
           typename Allocator>
-using vector_union_t = typename vector_union<T, Vector, Allocator>::type;
+using vector_union_t = vector_union<T, Vector, Allocator>::type;
 
 template <typename Data, typename Helper, typename _CP>
 class ProxyRow
@@ -617,7 +617,7 @@ struct vector_eval<Compute<Op, Dst, Args...>, LabelMap>
 template <typename Target, typename LabelMap>
 struct vector_eval<Jump<Target>, LabelMap>
 {
-    using constant = typename typelist::lookup<Target, LabelMap>;
+    using constant = typelist::lookup<Target, LabelMap>;
     static constexpr constant f{};
 
     template <typename _Memory>
@@ -684,12 +684,12 @@ struct output_getter
 template <typename _Program>
 struct basic_vector_evaluator
 {
-    using labelmap  = typename _Program::labelmap;
-    using cells     = typename _Program::cells;
-    using vars      = typename _Program::variables;
-    using reg_names = typename _Program::reg_names;
-    using reg_types = typename _Program::reg_types;
-    using cp        = typename _Program::cp;
+    using labelmap  = _Program::labelmap;
+    using cells     = _Program::cells;
+    using vars      = _Program::variables;
+    using reg_names = _Program::reg_names;
+    using reg_types = _Program::reg_types;
+    using cp        = _Program::cp;
 
     static constexpr auto end_pos = _Program::end_pos;
 
@@ -784,5 +784,5 @@ struct basic_vector_evaluator
 };
 
 template <typename _Program>
-using evaluator = typename basic_vector_evaluator<_Program>::type;
+using evaluator = basic_vector_evaluator<_Program>::type;
 } // namespace lucid::bve

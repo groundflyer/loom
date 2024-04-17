@@ -68,7 +68,7 @@ struct get_packed_vector
 };
 
 template <typename T, fsize_t N>
-using packed_vector = typename get_packed_vector<T, N>::type;
+using packed_vector = get_packed_vector<T, N>::type;
 
 namespace detail
 {
@@ -244,7 +244,7 @@ DEF_REMAP_IVEC_UN(std::logical_not, !)
 #undef DEF_REMAP_IVEC_BIN
 
 template <fsize_t N, typename Op, typename Ret, typename... Args>
-using remap_comp_t = typename remap_comp<N, Op, Ret, Args...>::type;
+using remap_comp_t = remap_comp<N, Op, Ret, Args...>::type;
 
 template <fsize_t N>
 struct var_loader
@@ -268,8 +268,8 @@ struct eval;
 template <typename Target, typename LabelMap>
 struct eval<Jump<Target>, LabelMap>
 {
-    using constant = typename typelist::lookup<Target, LabelMap>;
-    using index_t  = get_index_t<LabelMap>;
+    using constant                  = typelist::lookup<Target, LabelMap>;
+    using index_t                   = get_index_t<LabelMap>;
     static constexpr index_t target = constant{}();
     static constexpr fsize_t n =
         native_instruction_width<Jump<Target>, index_t>;
@@ -611,11 +611,11 @@ template <typename _Program, fsize_t bulk_number>
     requires(bulk_number > 0)
 class simd_evaluator
 {
-    using labelmap  = typename _Program::labelmap;
-    using cells     = typename _Program::cells;
-    using reg_names = typename _Program::reg_names;
-    using reg_types = typename _Program::reg_types;
-    using cp        = typename _Program::cp;
+    using labelmap  = _Program::labelmap;
+    using cells     = _Program::cells;
+    using reg_names = _Program::reg_names;
+    using reg_types = _Program::reg_types;
+    using cp        = _Program::cp;
 
     static constexpr auto    end_pos = _Program::end_pos;
     static constexpr fsize_t align   = simd_align;
@@ -654,8 +654,7 @@ class simd_evaluator
 
     struct evaluator
     {
-        static constexpr typename typelist::to<compiled_cells, std::tuple>
-            cells{};
+        static constexpr typelist::to<compiled_cells, std::tuple> cells{};
 
         memory mem;
 
@@ -701,5 +700,5 @@ class simd_evaluator
 };
 
 template <typename _Program, fsize_t bulk_number = 8>
-using evaluator = typename simd_evaluator<_Program, bulk_number>::type;
+using evaluator = simd_evaluator<_Program, bulk_number>::type;
 } // namespace lucid::simd

@@ -67,11 +67,11 @@ struct output_getter
 template <typename _Program>
 class basic_scalar_evaluator
 {
-    using labelmap  = typename _Program::labelmap;
-    using cells     = typename _Program::cells;
-    using reg_names = typename _Program::reg_names;
-    using reg_types = typename _Program::reg_types;
-    using cp        = typename _Program::cp;
+    using labelmap  = _Program::labelmap;
+    using cells     = _Program::cells;
+    using reg_names = _Program::reg_names;
+    using reg_types = _Program::reg_types;
+    using cp        = _Program::cp;
 
     static constexpr auto end_pos = _Program::end_pos;
 
@@ -103,8 +103,7 @@ class basic_scalar_evaluator
 
     struct simple_evaluator
     {
-        static constexpr typename typelist::to<compiled_cells, std::tuple>
-            cells{};
+        static constexpr typelist::to<compiled_cells, std::tuple> cells{};
 
         memory mem;
 
@@ -134,5 +133,5 @@ class basic_scalar_evaluator
 };
 
 template <typename _Program>
-using evaluator = typename basic_scalar_evaluator<_Program>::type;
+using evaluator = basic_scalar_evaluator<_Program>::type;
 } // namespace lucid::bse

@@ -413,7 +413,7 @@ struct random_dist<T>
 } // namespace detail
 
 template <typename T>
-using random_dist = typename detail::random_dist<T>::type;
+using random_dist = detail::random_dist<T>::type;
 
 class RandomState
 {
