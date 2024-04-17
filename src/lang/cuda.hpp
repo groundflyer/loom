@@ -949,8 +949,6 @@ class cuda_evaluator
 
             cp_t* cps = mem.cp().data();
 
-            static_assert(typelist::length<vars> == 4);
-
             LAUNCH_KERNEL(set_constant, n, 0, n, cps, static_cast<cp_t>(0));
             cudaDeviceSynchronize();
 
