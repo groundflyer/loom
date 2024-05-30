@@ -11,6 +11,7 @@ set(test_srcs
   tuple.cpp
   union.cpp
   viewport.cpp
+  test.cpp
 )
 
 add_custom_target(tests)

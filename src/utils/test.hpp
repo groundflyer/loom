@@ -21,23 +21,8 @@
 #include <utility>
 #include <vector>
 
-#define _OK(r)             \
-    fmt::styled(           \
-        r ? "OK" : "FAIL", \
-        fmt::fg(r ? fmt::terminal_color::green : fmt::terminal_color::red))
-
 namespace lucid::test
 {
-struct range_val_id
-{
-    template <typename In>
-    constexpr In
-    operator()(unsigned, In&& in) const noexcept
-    {
-        return std::forward<In>(in);
-    }
-};
-
 namespace detail
 {
 template <typename T>
@@ -77,7 +62,309 @@ struct multi_pusher<std::tuple<Ts...>>
                   grs);
     }
 };
+
+template <typename T>
+struct total_counter_helper
+{
+    static constexpr std::size_t value = 1;
+};
+
+template <typename... Ts>
+struct total_counter_helper<std::tuple<Ts...>>
+{
+    static constexpr std::size_t value =
+        (... + total_counter_helper<std::remove_cvref_t<Ts>>::value);
+};
+
+template <typename T1, typename T2>
+struct total_counter_helper<std::pair<T1, T2>>
+{
+    static constexpr std::size_t value =
+        total_counter_helper<std::remove_cvref_t<T1>>::value +
+        total_counter_helper<std::remove_cvref_t<T2>>::value;
+};
+
+template <typename... Ts>
+struct total_counter_helper<steady_tuple<Ts...>>
+{
+    static constexpr std::size_t value =
+        (... + total_counter_helper<std::remove_cvref_t<Ts>>::value);
+};
+
+template <typename T>
+struct random_dist;
+
+template <>
+struct random_dist<bool>
+{
+    using type = std::bernoulli_distribution;
+};
+
+template <std::integral T>
+struct random_dist<T>
+{
+    using type = std::uniform_int_distribution<T>;
+};
+
+template <std::floating_point T>
+struct random_dist<T>
+{
+    using type = std::uniform_real_distribution<T>;
+};
 } // namespace detail
+
+template <typename Test>
+    requires(std::predicate<Test> ||
+             is_strictly_invocable_rp_v<std::is_floating_point, Test>)
+struct NamedTest
+{
+    Test             test;
+    std::string_view name;
+
+    constexpr NamedTest(Test _t, std::string_view _n) noexcept :
+        test(_t), name(_n)
+    {
+    }
+};
+
+template <typename Test>
+    requires(is_strictly_invocable_rp_v<std::is_floating_point, Test>)
+struct NamedFuzzyTest : NamedTest<Test>
+{
+    std::invoke_result_t<Test> threshold;
+
+    constexpr NamedFuzzyTest(Test                       _t,
+                             std::string_view           _n,
+                             std::invoke_result_t<Test> _thr) noexcept :
+        NamedTest<Test>(_t, _n),
+        threshold(_thr)
+    {
+    }
+};
+
+class Track
+{
+#define _OK(r)               \
+    fmt::styled(             \
+        r ? "PASS" : "FAIL", \
+        fmt::fg(r ? fmt::terminal_color::green : fmt::terminal_color::red))
+
+    static void
+    print_status(std::string_view name, bool p, unsigned l = 0) noexcept
+    {
+        if(l)
+            fmt::print("{:<4} {:>8} {:\u2500<{}} {}\n",
+                       _OK(p),
+                       ' ',
+                       "\u251c",
+                       l,
+                       name);
+        else
+            fmt::print("{:<4} {:>8} {}\n", _OK(p), ' ', name);
+    }
+
+    static void
+    print_status(std::string_view         name,
+                 bool                     p,
+                 std::floating_point auto error,
+                 unsigned                 l = 0) noexcept
+    {
+        const std::floating_point auto e = error * 100;
+
+        if(l)
+            fmt::print("{:<4} {:>7.3f}% {:\u2500<{}} {}\n",
+                       _OK(p),
+                       e,
+                       "\u251c",
+                       l,
+                       name);
+        else
+            fmt::print("{:<4} {:>7.3f}% {}\n", _OK(p), e, name);
+    }
+
+#undef _OK
+
+    static void
+    skip_message(unsigned n) noexcept
+    {
+        using namespace std::literals::string_view_literals;
+
+        fmt::print("{:<4} {:.>8} Skipping {} dependent {}\n",
+                   fmt::styled("SKIP", fmt::fg(fmt::terminal_color::yellow)),
+                   '.',
+                   n,
+                   n > 1 ? "tests"sv : "test"sv);
+    }
+
+    static void
+    check_skip(unsigned c, unsigned t) noexcept
+    {
+        if(c < t) skip_message(t - c);
+    }
+
+    template <typename Test>
+    static auto
+    run_test(Test&& test) noexcept
+    {
+        return std::invoke(std::forward<Test>(test));
+    }
+
+#define RUN_NTEST                        \
+    const bool p = run_test(ntest.test); \
+    print_status(ntest.name, p, l);      \
+    return p
+
+    template <typename Test>
+    static bool
+    run_print(const NamedTest<Test>& ntest, unsigned l = 0) noexcept
+    {
+        RUN_NTEST;
+    }
+
+    template <typename Test>
+    static bool
+    run_print(NamedTest<Test>& ntest, unsigned l = 0) noexcept
+    {
+        RUN_NTEST;
+    }
+
+#undef RUN_NTEST
+
+#define RUN_NFTEST                                \
+    const auto error = run_test(nftest.test);     \
+    const bool p     = error <= nftest.threshold; \
+    print_status(nftest.name, p, error, l);       \
+    return p
+
+    template <typename Test>
+    static bool
+    run_print(const NamedFuzzyTest<Test>& nftest, unsigned l = 0) noexcept
+    {
+        RUN_NFTEST;
+    }
+
+    template <typename Test>
+    static bool
+    run_print(NamedFuzzyTest<Test>& nftest, unsigned l = 0) noexcept
+    {
+        RUN_NFTEST;
+    }
+
+#undef RUN_NFTEST
+
+    unsigned m_total{};
+    unsigned m_passed{};
+
+    template <typename Test>
+    bool
+    run_print_count(Test&& test, unsigned& counter, unsigned l = 0) noexcept
+    {
+        using tt = std::remove_cvref_t<Test>;
+        if constexpr(is_tuple_v<tt>)
+        {
+            constexpr unsigned ltotal = std::tuple_size_v<tt>;
+            const unsigned     lp     = std::apply(
+                [&]<typename... Tests>(Tests&&... tests) noexcept
+                {
+                    return (0u + ... +
+                            static_cast<unsigned>(
+                                run_print_count(std::forward<Tests>(tests),
+                                                counter,
+                                                l)));
+                },
+                std::forward<Test>(test));
+            return lp == ltotal;
+        }
+        else
+        {
+            const bool p = run_print(std::forward<Test>(test), l);
+            counter++;
+            m_passed += p;
+            return p;
+        }
+    }
+
+    template <typename... Tests, std::size_t... Is>
+    bool
+    dep_run(unsigned& counter,
+            std::index_sequence<Is...>,
+            Tests&&... tests) noexcept
+    {
+        return (... &&
+                run_print_count(std::forward<Tests>(tests), counter, Is + 1));
+    }
+
+  public:
+    template <typename Test>
+    bool
+    check(Test&& test) noexcept
+    {
+        const bool p = run_print(std::forward<Test>(test));
+        ++m_total;
+        m_passed += p;
+        return p;
+    }
+
+    template <typename... Tests>
+    bool
+    dep_check(Tests&&... tests) noexcept
+    {
+        constexpr unsigned total =
+            (... +
+             detail::total_counter_helper<std::remove_cvref_t<Tests>>::value);
+        unsigned   counter = 0;
+        const bool ret     = dep_run(counter,
+                                 std::index_sequence_for<Tests...>{},
+                                 std::forward<Tests>(tests)...);
+
+        check_skip(counter, total);
+
+        m_total += total;
+
+        return ret;
+    }
+
+    unsigned
+    passed() const noexcept
+    {
+        return m_passed;
+    }
+
+    unsigned
+    total() const noexcept
+    {
+        return m_total;
+    }
+
+    int
+    ret_code() const noexcept
+    {
+        return m_passed != m_total;
+    }
+
+    void
+    message() const noexcept
+    {
+        fmt::print(fmt::emphasis::bold |
+                       fmt::fg(ret_code() ? fmt::terminal_color::red :
+                                            fmt::terminal_color::green),
+                   "{}/{} TESTS PASSED\n",
+                   m_passed,
+                   m_total);
+    }
+
+    ~Track() { message(); }
+};
+
+struct range_val_id
+{
+    template <typename In>
+    constexpr In
+    operator()(unsigned, In&& in) const noexcept
+    {
+        return std::forward<In>(in);
+    }
+};
 
 template <typename... ArgRngs,
           std::invocable<std::ranges::range_value_t<ArgRngs>...> G>
@@ -98,257 +385,6 @@ multi_gen(const unsigned n, G&& g, ArgRngs&&... args) noexcept
            std::invoke(std::forward<G>(g), std::forward<ArgRngs>(args)[i]...));
     return ret;
 }
-
-class Track
-{
-    unsigned m_total{};
-    unsigned m_passed{};
-    unsigned m_parm_n;
-
-    bool
-    inc(bool p) noexcept
-    {
-        m_passed += p;
-        ++m_total;
-        return p;
-    }
-
-    bool
-    status(std::string_view name, bool p) noexcept
-    {
-        fmt::print("{:<4} {:>8} {}\n", _OK(p), ' ', name);
-        return inc(p);
-    }
-
-    bool
-    fuzzy_status(std::string_view name, double threshold, double error) noexcept
-    {
-        const bool p = error <= threshold;
-        fmt::print("{:<4} {:>7.3f}% {}\n", _OK(p), error * 100., name);
-        return inc(p);
-    }
-
-    template <std::predicate A>
-    bool
-    check(std::string_view name, A&& a) noexcept
-    {
-        return status(name, std::invoke(std::forward<A>(a)));
-    }
-
-    template <typename F, std::predicate<std::invoke_result_t<F>> A>
-    bool
-    test_and_check(std::string_view name, F&& f, A&& a) noexcept
-    {
-        return status(
-            name,
-            std::invoke(compose(std::forward<A>(a), std::forward<F>(f))));
-    }
-
-  public:
-    Track()             = delete;
-    Track(const Track&) = delete;
-    Track(Track&&)      = delete;
-    Track&
-    operator=(const Track&) = delete;
-    Track&
-    operator=(Track&&) = delete;
-
-    Track(int argc, char* argv[]) noexcept :
-        m_parm_n(argparse::parse(
-                     std::tuple{argparse::option<'n', "numruns">(
-                         [](std::string_view word) noexcept
-                         { return std::atoi(word.data()); },
-                         1000,
-                         "Number of runs of parametric tests. Default: 1000",
-                         "N")},
-                     {argc, argv})
-                     .get_opt<'n'>())
-    {
-        fmt::print("Number of parametric runs: {}\n", m_parm_n);
-    }
-
-    template <std::predicate A, typename... Rest>
-    void
-    checks(std::string_view name, A&& a, Rest&&... rest) noexcept
-    {
-        bool r = check(name, std::forward<A>(a));
-        if constexpr(sizeof...(Rest))
-            return r && checks(std::forward<Rest>(rest)...);
-    }
-
-    template <std::predicate<unsigned> A>
-    bool
-    check_n(std::string_view name, A&& a) noexcept
-    {
-        return status(name, std::invoke(std::forward<A>(a), m_parm_n));
-    }
-
-    template <typename F,
-              std::predicate<std::invoke_result_t<F>> A,
-              typename... Rest>
-    bool
-    test_and_checks(std::string_view name,
-                    F&&              f,
-                    A&&              a,
-                    Rest&&... rest) noexcept
-    {
-        bool r = test_and_check(name, std::forward<F>(f), std::forward<A>(a));
-        if constexpr(sizeof...(Rest))
-            return r && test_and_checks(std::forward<Rest>(rest)...);
-    }
-
-    template <typename... GTV>
-    bool
-    parm_test(std::string_view name, GTV&&... gtv) noexcept
-    {
-        return status(name,
-                      std::ranges::all_of(
-                          gen_test_val(m_parm_n, std::forward<GTV>(gtv)...),
-                          std::identity{}));
-    }
-
-    template <std::invocable                            G,
-              maybe_applicable<std::invoke_result_t<G>> T,
-              maybe_applicable<std::invoke_result_t<G>> ValT,
-              typename Cmp = std::equal_to<>>
-    bool
-    parm_test_val(std::string_view name,
-                  G&&              g,
-                  T&&              t,
-                  ValT             valt,
-                  Cmp              cmp = Cmp{})
-    {
-        return parm_test(
-            name,
-            std::forward<G>(g),
-            std::forward<T>(t),
-            [&]<typename Tr, typename Gr>(Tr&& tr, Gr&& gr) noexcept {
-                return cmp(std::forward<Tr>(tr),
-                           maybe_apply(valt, std::forward<Gr>(gr)));
-            });
-    }
-
-    template <bool           do_sort = true,
-              std::invocable G,
-              typename T,
-              typename V   = range_val_id,
-              typename Cmp = decltype(std::ranges::equal)>
-    bool
-    parm_test_rng(std::string_view name,
-                  G&&              g,
-                  T&&              t,
-                  V&&              v   = range_val_id{},
-                  Cmp              cmp = std::ranges::equal) noexcept
-    {
-        auto make_args = [&]() noexcept
-        {
-            auto gr = multi_gen(m_parm_n, std::forward<G>(g));
-            if constexpr(is_tuple_v<decltype(gr)>)
-                return std::tuple_cat(std::tuple{m_parm_n}, gr);
-            else
-                return std::pair{m_parm_n, gr};
-        };
-        const auto              args = make_args();
-        std::ranges::range auto tr   = std::apply(std::forward<T>(t), args);
-        std::ranges::range auto vr   = std::apply(std::forward<V>(v), args);
-        if constexpr(do_sort)
-        {
-            std::ranges::sort(tr);
-            std::ranges::sort(vr);
-        }
-        return status(name, std::invoke(std::forward<Cmp>(cmp), tr, vr));
-    }
-
-    template <std::invocable G,
-              typename T,
-              typename V,
-              typename Cmp = decltype(std::ranges::equal)>
-    bool
-    parm_test_rng_sval(std::string_view name,
-                       G&&              g,
-                       T&&              t,
-                       V&&              v,
-                       Cmp              cmp = std::ranges::equal) noexcept
-    {
-        return parm_test_rng(
-            name,
-            g,
-            t,
-            [&]<typename... Grs>(unsigned n, Grs&&... grs) noexcept
-            { return multi_gen(n, v, std::forward<Grs>(grs)...); },
-            std::forward<Cmp>(cmp));
-    }
-
-    template <typename... GTV>
-    bool
-    fuzzy_parm_test(std::string_view name,
-                    double           threshold,
-                    GTV&&... gtv) noexcept
-    {
-        return fuzzy_status(name,
-                            threshold,
-                            estimate(m_parm_n, std::forward<GTV>(gtv)...));
-    }
-
-    template <typename G,
-              typename T,
-              typename ValT,
-              typename Cmp = std::equal_to<>>
-    bool
-    fuzzy_parm_test_val(std::string_view name,
-                        double           threshold,
-                        G&&              g,
-                        T&&              t,
-                        ValT             valt,
-                        Cmp              cmp = Cmp{}) noexcept
-    {
-        return fuzzy_parm_test(
-            name,
-            threshold,
-            std::forward<G>(g),
-            std::forward<T>(t),
-            [&]<typename Tr, typename Gr>(Tr&& tr, Gr&& gr) noexcept
-            {
-                return std::invoke(cmp,
-                                   std::forward<Tr>(tr),
-                                   maybe_apply(valt, std::forward<Gr>(gr)));
-            });
-    }
-
-    template <typename G, typename T, typename ValT>
-    bool
-    fuzzy_parm_test_ulp(std::string_view name,
-                        double           threshold,
-                        G&&              g,
-                        T&&              t,
-                        ValT             valt,
-                        const unsigned   ulp) noexcept
-    {
-        return fuzzy_parm_test_val(name,
-                                   threshold,
-                                   std::forward<G>(g),
-                                   std::forward<T>(t),
-                                   valt,
-                                   [&](auto t, auto v) noexcept
-                                   { return almost_equal(t, v, ulp); });
-    }
-
-    int
-    code() const noexcept
-    {
-        return m_passed != m_total;
-    }
-
-    ~Track()
-    {
-        fmt::print(fmt::emphasis::bold |
-                       fmt::fg(code() ? fmt::terminal_color::red :
-                                        fmt::terminal_color::green),
-                   "{}/{} TESTS PASSED\n",
-                   m_passed,
-                   m_total);
-    }
-};
 
 template <std::invocable G, typename T, typename V>
 auto
@@ -379,38 +415,138 @@ estimate(const unsigned n, G&& g, T&& t, V&& v) noexcept
                     static_cast<double>(n);
 }
 
-template <typename F = std::equal_to<>, typename A, typename B, typename... Ts>
-bool
-cmp_all(A a, B b, Ts... rest) noexcept
+struct ParmTestMaker
 {
-    bool ret = F{}(a, b);
-    if constexpr(sizeof...(Ts)) ret &= cmp_all(rest...);
-    return ret;
-}
+    unsigned m_num;
 
-namespace detail
-{
-template <typename T>
-struct random_dist;
+    template <std::invocable G, typename T, typename V>
+    auto
+    test(G&& g, T&& t, V&& v) const noexcept
+    {
+        return [&]() noexcept
+        {
+            return std::ranges::all_of(gen_test_val(m_num,
+                                                    std::forward<G>(g),
+                                                    std::forward<T>(t),
+                                                    std::forward<V>(v)),
+                                       std::identity{});
+        };
+    }
 
-template <>
-struct random_dist<bool>
-{
-    using type = std::bernoulli_distribution;
+    template <std::invocable                            G,
+              maybe_applicable<std::invoke_result_t<G>> T,
+              maybe_applicable<std::invoke_result_t<G>> ValT,
+              typename Cmp = std::equal_to<>>
+    auto
+    test_cmp(G&& g, T&& t, ValT valt, Cmp cmp = Cmp{}) const noexcept
+    {
+        return test(std::forward<G>(g),
+                    std::forward<T>(t),
+                    [&, valt, cmp]<typename Tr, typename Gr>(Tr&& tr,
+                                                             Gr&& gr) noexcept {
+                        return cmp(std::forward<Tr>(tr),
+                                   maybe_apply(valt, std::forward<Gr>(gr)));
+                    });
+    }
+
+    template <bool           do_sort = true,
+              std::invocable G,
+              typename T,
+              typename V   = range_val_id,
+              typename Cmp = decltype(std::ranges::equal)>
+    auto
+    rng_cmp(G&& g,
+            T&& t,
+            V&& v   = range_val_id{},
+            Cmp cmp = std::ranges::equal) const noexcept
+    {
+#define LAMBDA_BODY(MY_V)                                                \
+    auto make_args = [&]() noexcept                                      \
+    {                                                                    \
+        const auto gr = multi_gen(m_num, std::forward<G>(g));            \
+        if constexpr(is_tuple_v<decltype(gr)>)                           \
+            return std::tuple_cat(std::tuple{m_num}, gr);                \
+        else                                                             \
+            return std::pair{m_num, gr};                                 \
+    };                                                                   \
+    const auto              args = make_args();                          \
+    std::ranges::range auto tr   = std::apply(std::forward<T>(t), args); \
+    std::ranges::range auto vr   = std::apply(MY_V, args);               \
+    if constexpr(do_sort)                                                \
+    {                                                                    \
+        std::ranges::sort(tr);                                           \
+        std::ranges::sort(vr);                                           \
+    }                                                                    \
+    return std::invoke(cmp, tr, vr)
+
+        if constexpr(std::is_rvalue_reference_v<decltype(v)>)
+            return [&, v = std::move(v), cmp]() noexcept { LAMBDA_BODY(v); };
+        else
+            return [&, cmp]() noexcept { LAMBDA_BODY(std::forward<V>(v)); };
+
+#undef LAMBDA_BODY
+    }
+
+    template <std::invocable G,
+              typename T,
+              typename V,
+              typename Cmp = decltype(std::ranges::equal)>
+    auto
+    rng_sval(G&& g, T&& t, V&& v, Cmp cmp = std::ranges::equal) const noexcept
+    {
+        return rng_cmp(
+            std::forward<G>(g),
+            std::forward<T>(t),
+            [&v]<typename... Grs>(unsigned n, Grs&&... grs) noexcept {
+                return multi_gen(n,
+                                 std::forward<V>(v),
+                                 std::forward<Grs>(grs)...);
+            },
+            cmp);
+    }
+
+    template <std::invocable G, typename T, typename V>
+    auto
+    fuzzy(G&& g, T&& t, V&& v) const noexcept
+    {
+        return [&]() noexcept
+        {
+            return estimate(m_num,
+                            std::forward<G>(g),
+                            std::forward<T>(t),
+                            std::forward<V>(v));
+        };
+    }
+
+    template <typename G,
+              typename T,
+              typename ValT,
+              typename Cmp = std::equal_to<>>
+    auto
+    fuzzy_cmp(G&& g, T&& t, ValT valt, Cmp cmp = Cmp{}) const noexcept
+    {
+        return fuzzy(
+            std::forward<G>(g),
+            std::forward<T>(t),
+            [&, cmp]<typename Tr, typename Gr>(Tr&& tr, Gr&& gr) noexcept
+            {
+                return std::invoke(cmp,
+                                   std::forward<Tr>(tr),
+                                   maybe_apply(valt, std::forward<Gr>(gr)));
+            });
+    }
+
+    template <typename G, typename T, typename ValT>
+    auto
+    fuzzy_ulp(G&& g, T&& t, ValT valt, const unsigned ulp) const noexcept
+    {
+        return fuzzy_cmp(std::forward<G>(g),
+                         std::forward<T>(t),
+                         valt,
+                         [&](auto t, auto v) noexcept
+                         { return almost_equal(t, v, ulp); });
+    }
 };
-
-template <std::integral T>
-struct random_dist<T>
-{
-    using type = std::uniform_int_distribution<T>;
-};
-
-template <std::floating_point T>
-struct random_dist<T>
-{
-    using type = std::uniform_real_distribution<T>;
-};
-} // namespace detail
 
 template <typename T>
 using random_dist = detail::random_dist<T>::type;
@@ -435,6 +571,18 @@ class RandomState
                         args)...)]() mutable noexcept { return d(m_e); };
     }
 };
-} // namespace lucid::test
 
-#undef _OK
+unsigned
+parse_numruns(int argc, char* argv[]) noexcept
+{
+    return argparse::parse(
+               std::tuple{argparse::option<'n', "numruns">(
+                   [](std::string_view word) noexcept
+                   { return std::atoi(word.data()); },
+                   1000,
+                   "Number of runs for parametric tests. Default: 1000",
+                   "N")},
+               {argc, argv})
+        .get_opt<'n'>();
+}
+} // namespace lucid::test

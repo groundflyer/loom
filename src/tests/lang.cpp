@@ -107,8 +107,9 @@ using namespace lucid::test;
 int main(int argc, char* argv[])
 {
     // clang-format on
-    Track       track(argc, argv);
-    RandomState rs;
+    Track               track;
+    const ParmTestMaker tm{parse_numruns(argc, argv)};
+    RandomState         rs;
 
     auto g_int   = rs.make_gen<int>(2, 10);
     auto g_ui    = rs.make_gen<unsigned>(2, 10);
@@ -168,32 +169,50 @@ int main(int argc, char* argv[])
     { return !i && (a > 0.5) ? -a : a; };
     auto g_j4 = [&]() noexcept { return std::pair{g_u3(), g_float()}; };
 
-    track.parm_test_val("BSE increment int", g_int, bse_ii, val_incr);
-    track.parm_test_val("BSE factorial unsigned", g_ui, bse_fu, val_fac);
-    track.parm_test_val("BSE factorial int", g_int, bse_fi, val_fac);
-    track.parm_test_val("BSE simple union", g_float, bse_sut, val_sut);
-    track.parm_test_val("BSE complex union", g_float, bse_cut, val_cut);
-    track.parm_test_val("BSE jump4", g_j4, bse_jmp4, val_jmp4);
-    track.parm_test_val("BSE choice", g_j4, bse_choice, val_choice);
+    track.dep_check(
+        NamedTest(tm.test_cmp(g_int, bse_ii, val_incr), "BSE increment int"),
+        NamedTest(tm.rng_sval(g_int, bve_ii, bse_ii), "BVE increment int"),
+        NamedTest(tm.rng_cmp(g_int, simd_ii, bve_ii), "SIMD increment int"));
 
-    track.parm_test_rng_sval("BVE increment", g_int, bve_ii, bse_ii);
-    track.parm_test_rng_sval("BVE factorial unsigned", g_ui, bve_fu, bse_fu);
-    track.parm_test_rng_sval("BVE complex union", g_float, bve_cut, bse_cut);
-    track.parm_test_rng_sval("BVE simple union", g_float, bve_sut, bse_sut);
-    track.parm_test_rng_sval("BVE jump4", g_j4, bve_jmp4, bse_jmp4);
-    track.parm_test_rng_sval("BVE choice", g_j4, bve_choice, bse_choice);
+#define TEST_RESET_BVE(G, T, V)          \
+    [&]() noexcept                       \
+    {                                    \
+        bool r = tm.rng_sval(G, T, V)(); \
+        T.reset();                       \
+        return r;                        \
+    }
 
-    bve_fu.reset();
-    bve_sut.reset();
-    bve_cut.reset();
-    bve_jmp4.reset();
-    bve_choice.reset();
-    track.parm_test_rng("SIMD increment int", g_int, simd_ii, bve_ii);
-    track.parm_test_rng("SIMD factorial unsigned", g_ui, simd_fu, bve_fu);
-    track.parm_test_rng("SIMD simple union", g_float, simd_sut, bve_sut);
-    track.parm_test_rng("SIMD complex union", g_float, simd_cut, bve_cut);
-    track.parm_test_rng("SIMD jump4", g_j4, simd_jmp4, bve_jmp4);
-    track.parm_test_rng("SIMD choice", g_j4, simd_choice, bve_choice);
+    track.dep_check(std::pair{NamedTest(tm.test_cmp(g_int, bse_fi, val_fac),
+                                        "BSE factorial int"),
+                              NamedTest(tm.test_cmp(g_ui, bse_fu, val_fac),
+                                        "BSE factorial unsigned")},
+                    NamedTest(TEST_RESET_BVE(g_ui, bve_fu, bse_fu),
+                              "BVE factorial unsigned"),
+                    NamedTest(tm.rng_cmp(g_ui, simd_fu, bve_fu),
+                              "SIMD factorial unsigned"));
 
-    return track.code();
+    track.dep_check(
+        NamedTest(tm.test_cmp(g_float, bse_sut, val_sut), "BSE simple union"),
+        NamedTest(TEST_RESET_BVE(g_float, bve_sut, bse_sut),
+                  "BVE simple union"),
+        NamedTest(tm.rng_cmp(g_float, simd_sut, bve_sut), "SIMD simple union"));
+
+    track.dep_check(
+        NamedTest(tm.test_cmp(g_float, bse_cut, val_cut), "BSE complex union"),
+        NamedTest(TEST_RESET_BVE(g_float, bve_cut, bse_cut),
+                  "BVE complex union"),
+        NamedTest(tm.rng_cmp(g_float, simd_cut, bve_cut),
+                  "SIMD complex union"));
+
+    track.dep_check(
+        NamedTest(tm.test_cmp(g_j4, bse_jmp4, val_jmp4), "BSE jump4"),
+        NamedTest(TEST_RESET_BVE(g_j4, bve_jmp4, bse_jmp4), "BVE jump4"),
+        NamedTest(tm.rng_cmp(g_j4, simd_jmp4, bve_jmp4), "SIMD jump4"));
+
+    track.dep_check(
+        NamedTest(tm.test_cmp(g_j4, bse_choice, val_choice), "BSE choice"),
+        NamedTest(TEST_RESET_BVE(g_j4, bve_choice, bse_choice), "BVE choice"),
+        NamedTest(tm.rng_cmp(g_j4, simd_choice, bve_choice), "SIMD choice"));
+
+    return track.ret_code();
 }

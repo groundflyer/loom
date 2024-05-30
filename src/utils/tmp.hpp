@@ -19,7 +19,7 @@ namespace lucid
 ///
 /// Here we define metafunctions as class templates,
 /// where function parameters are template parameters
-/// and the result is a public typedef @p type
+/// and the result is a public typedef member @p type
 /// or a static constexpr member @p value.
 ///
 /// The templates are hidden in the @p detail namespace,
@@ -74,6 +74,18 @@ using fst_t = fst<Pair>::type;
 /// consists only of two types.
 template <typename Pair>
 using snd_t = snd<Pair>::type;
+
+/// @brief Determines whether resultig type of @p F invoked with @p Args
+/// satisfies predicate @p RP.
+///
+/// It's generalized and stricter version of std::is_invocable_v.
+///
+/// @tparam RP predicate meta-function. Must have public static bool member
+/// value.
+template <template <typename> typename RP, typename F, typename... Args>
+inline constexpr bool is_strictly_invocable_rp_v =
+    std::is_invocable_v<F, Args...> &&
+    RP<std::invoke_result_t<F, Args...>>::value;
 /// @}
 
 // In this namespace we don't suffix typedefs with _t and values with _v.
