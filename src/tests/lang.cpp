@@ -4,109 +4,24 @@
 #pragma GCC diagnostic   ignored "-Wignored-attributes"
 #pragma clang diagnostic ignored "-Walign-mismatch"
 
+#include "programs.hpp"
+
+#ifdef USE_CUDA
+#include "cuda.hpp"
+#endif
+
 #include <lang/bse.hpp>
 #include <lang/bve.hpp>
 #include <lang/lang.hpp>
 #include <lang/simd.hpp>
-#include <utils/math.hpp>
 #include <utils/test.hpp>
-
-#include <fmt/core.h>
-#include <fmt/ranges.h>
-
-// clang-format off
-template <typename T>
-TBEGIN1(increment, val)
-    TADD(val, val, 1)
-TEND1(val)
-
-// T factorial(T i):
-//     T c = i - 1
-//     while c != 0:
-//         i *= c
-//         c -= 1
-//     return i
-//
-// input: a
-// output: a
-//
-// c = a - 1
-// loop:
-// a = a * c
-// c = c - 1
-// cmp = c == 0
-// jump: cmp: 0 -> loop, 1 -> end
-template <std::integral T>
-TBEGIN1(factorial_int, a)
-    TSUB(c, a, 1),
-    LABEL(loop),
-    TMUL(a, a, c),
-    TSUB(c, c, 1),
-    TEQ(cmp, c, 0),
-    PJMP2(cmp, loop, END)
-TEND1(a)
-
-template <std::floating_point T>
-TBEGIN1(simple_union_test, i)
-    TMOV(j, i),
-    MOV(IVAR(j), TVAR(j))
-END(IVAR(j))
-
-// i < 0.5 ? 200 : 100
-template <std::floating_point T>
-TBEGIN1(complex_union_test, i)
-    TLT(cmp, i, 0.5),
-    PJMP2(cmp, l0, l1),
-
-    LABEL(l0),
-    MOV(IVAR(i), IVAR(100)),
-    JMP(END),
-
-    LABEL(l1),
-    MOV(IVAR(i), IVAR(200))
-END(IVAR(i))
-
-// case i:
-// 0: a + 10
-// 1: a - 10
-// 2: a * 10
-// 3: a / 10
-template <typename T>
-BEGIN(jmp4_test, IVAR(i), TVAR(a))
-    PJMP4(i, l0, l1, l2, l3),
-
-    LABEL(l0),
-    TADD(a, a, 100),
-    JMP(END),
-
-    LABEL(l1),
-    TSUB(a, a, 50),
-    JMP(END),
-
-    LABEL(l2),
-    TMUL(a, a, 5),
-    JMP(END),
-
-    LABEL(l3),
-    TDIV(a, a, 2)
-TEND1(a)
-
-// !i && (a > 0.5) ? -a : a
-template <std::floating_point T>
-BEGIN(choice_test, IVAR(i), TVAR(a))
-    ILNOT(i, i),
-    TGT(cmp, a, 0.5),
-    TNEG(ma, a),
-    ILAND(i, i, cmp),
-    TCHOICE(ma, i, ma, a)
-TEND1(ma)
 
 using namespace lucid;
 using namespace lucid::test;
 
-int main(int argc, char* argv[])
+int
+main(int argc, char* argv[])
 {
-    // clang-format on
     Track               track;
     const ParmTestMaker tm{parse_numruns(argc, argv)};
     RandomState         rs;
@@ -115,6 +30,7 @@ int main(int argc, char* argv[])
     auto g_ui    = rs.make_gen<unsigned>(2, 10);
     auto g_float = rs.make_gen<float>();
     auto g_u3    = rs.make_gen<unsigned>(0, 3);
+    auto g_j4    = [&]() noexcept { return std::pair{g_u3(), g_float()}; };
 
     using incr_int     = increment<int>;
     using fac_int      = factorial_int<int>;
@@ -148,29 +64,8 @@ int main(int argc, char* argv[])
     simd::evaluator<jmp4_t>       simd_jmp4;
     simd::evaluator<choice_t>     simd_choice;
 
-    auto val_incr = [](auto i) noexcept { return i + 1; };
-    auto val_fac  = [](auto i) noexcept { return fac(i); };
-    auto val_sut  = [](float i) noexcept -> unsigned
-    { return static_cast<unsigned>(i); };
-    auto val_cut = [](float i) noexcept -> unsigned
-    { return i < 0.5 ? 200 : 100; };
-    auto val_jmp4 = [](unsigned i, float a) noexcept
-    {
-        switch(i)
-        {
-        case 0: return a + 100;
-        case 1: return a - 50;
-        case 2: return a * 5;
-        case 3: return a / 2;
-        }
-        return a;
-    };
-    auto val_choice = [](unsigned i, float a) noexcept
-    { return !i && (a > 0.5) ? -a : a; };
-    auto g_j4 = [&]() noexcept { return std::pair{g_u3(), g_float()}; };
-
     track.dep_check(
-        NamedTest(tm.test_cmp(g_int, bse_ii, val_incr), "BSE increment int"),
+        NamedTest(tm.test_cmp(g_int, bse_ii, val_inc), "BSE increment int"),
         NamedTest(tm.rng_sval(g_int, bve_ii, bse_ii), "BVE increment int"),
         NamedTest(tm.rng_cmp(g_int, simd_ii, bve_ii), "SIMD increment int"));
 
@@ -213,6 +108,19 @@ int main(int argc, char* argv[])
         NamedTest(tm.test_cmp(g_j4, bse_choice, val_choice), "BSE choice"),
         NamedTest(TEST_RESET_BVE(g_j4, bve_choice, bse_choice), "BVE choice"),
         NamedTest(tm.rng_cmp(g_j4, simd_choice, bve_choice), "SIMD choice"));
+
+#ifdef USE_CUDA
+    auto cuda_ii = [](unsigned n, const auto& in) noexcept
+    { return cuda_inc(n, in); };
+    auto cuda_fu = [](unsigned n, const auto& in) noexcept
+    { return cuda_fac(n, in); };
+    bve_fu.reset();
+
+    track.check(
+        NamedTest(tm.rng_cmp(g_int, cuda_ii, bve_ii), "CUDA increment int"));
+    track.check(NamedTest(tm.rng_cmp(g_ui, cuda_fu, bve_fu),
+                          "CUDA factorial unsigned"));
+#endif
 
     return track.ret_code();
 }

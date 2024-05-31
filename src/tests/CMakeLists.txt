@@ -27,9 +27,10 @@ foreach(src ${test_srcs})
 endforeach()
 
 if(USE_CUDA)
-  add_executable(test_cuda cuda.cu)
-  target_link_libraries(test_cuda PUBLIC CUDA::cudart_static)
-  add_dependencies(tests test_cuda)
+  target_compile_definitions(test_lang PUBLIC USE_CUDA)
+  # compile cuda tests separately as CUDA doesn't compile with FMT
+  target_sources(test_lang PRIVATE cuda.cu)
+  target_link_libraries(test_lang PRIVATE CUDA::cudart_static)
 endif()
 
 target_include_directories(test_viewport PUBLIC ${OPENGL_INCLUDE_DIR})
