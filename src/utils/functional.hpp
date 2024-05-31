@@ -11,25 +11,26 @@
 /// implementation.
 /// @param NAME used as variable name.
 /// @param FUNC will be called internally.
-#define DEF_NAMED_FN_OBJ(NAME, FUNC)                  \
-    namespace fn                                      \
-    {                                                 \
-    struct NAME##_fn                                  \
-    {                                                 \
-        template <typename... Args>                   \
-        constexpr decltype(auto)                      \
-        operator()(Args&&... args) const noexcept     \
-        {                                             \
-            return FUNC(std::forward<Args>(args)...); \
-        }                                             \
-        template <typename Rhs>                       \
-        constexpr decltype(auto)                      \
-        operator|(const Rhs& rhs) const noexcept      \
-        {                                             \
-            return compose(*this, rhs);               \
-        }                                             \
-    };                                                \
-    }                                                 \
+#define DEF_NAMED_FN_OBJ(NAME, FUNC)                              \
+    namespace fn                                                  \
+    {                                                             \
+    struct NAME##_fn                                              \
+    {                                                             \
+        template <typename... Args>                               \
+        constexpr decltype(auto)                                  \
+        operator()(Args&&... args) const                          \
+            noexcept(noexcept(FUNC(std::forward<Args>(args)...))) \
+        {                                                         \
+            return FUNC(std::forward<Args>(args)...);             \
+        }                                                         \
+        template <typename Rhs>                                   \
+        constexpr decltype(auto)                                  \
+        operator|(const Rhs& rhs) const noexcept                  \
+        {                                                         \
+            return compose(*this, rhs);                           \
+        }                                                         \
+    };                                                            \
+    }                                                             \
     inline constexpr fn::NAME##_fn NAME{};
 
 /// @brief Same as DEF_NAMED_FN_OBJ, but @p FUNC is also used as the name.
