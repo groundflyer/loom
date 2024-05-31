@@ -691,7 +691,7 @@ struct basic_vector_evaluator
     using reg_types = _Program::reg_types;
     using cp        = _Program::cp;
 
-    static constexpr auto end_pos = _Program::end_pos;
+    static constexpr auto halt_pos = _Program::halt_pos;
 
     template <typename C>
     using compile_cell = standard_compiler<C, labelmap, vector_eval>;
@@ -739,12 +739,12 @@ struct basic_vector_evaluator
             mem.resize(n);
             setter(mem, std::forward<Args>(args)...);
 
-            while(mem.cp()[0] != end_pos)
+            while(mem.cp()[0] != halt_pos)
             {
                 std::ranges::for_each(
                     ranges::views::filter(mem,
                                           [](auto row) constexpr noexcept
-                                          { return row.cp() != end_pos; }) |
+                                          { return row.cp() != halt_pos; }) |
                         ranges::views::chunk_by(
                             [](auto a, auto b) constexpr noexcept
                             { return a.cp() == b.cp(); }),

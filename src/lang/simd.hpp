@@ -617,8 +617,8 @@ class simd_evaluator
     using reg_types = _Program::reg_types;
     using cp        = _Program::cp;
 
-    static constexpr auto    end_pos = _Program::end_pos;
-    static constexpr fsize_t align   = simd_align;
+    static constexpr auto    halt_pos = _Program::halt_pos;
+    static constexpr fsize_t align    = simd_align;
 
     template <typename C, typename LabelMap>
     using simd_eval = vertical_runner<C, LabelMap, bulk_number>;
@@ -666,7 +666,7 @@ class simd_evaluator
             setter(mem, std::forward<Args>(args)...);
 
             const auto cps = mem.view().cp();
-            while(cps.front() != end_pos)
+            while(cps.front() != halt_pos)
             {
                 std::ranges::for_each(memory_chunks(mem),
                                       [](auto view) noexcept

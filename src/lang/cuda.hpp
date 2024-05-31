@@ -374,14 +374,14 @@ chunk_counter(gsize_t* bgns,
               gsize_t  N,
               cp_t*    cps,
               gsize_t  cps_size,
-              cp_t     end_pos)
+              cp_t     halt_pos)
 {
     const gsize_t idxl = blockIdx.x * blockDim.x + threadIdx.x;
 
     const cp_t cpl = cps[idxl];
 
     auto get_pos = [&](cp_t p) -> gsize_t
-    { return p == end_pos ? (N - 1) : p; };
+    { return p == halt_pos ? (N - 1) : p; };
 
     if(idxl < cps_size - 1)
     {
@@ -649,9 +649,9 @@ sort(Vars vars, _Memory& mem) noexcept
                 typelist::maybe_collect(memory_accessor{}, vars, mem));
 }
 
-template <gsize_t N, std::unsigned_integral cp_t, cp_t end_pos>
+template <gsize_t N, std::unsigned_integral cp_t, cp_t halt_pos>
 class chunk_ranges :
-    public std::ranges::view_interface<chunk_ranges<N, cp_t, end_pos>>
+    public std::ranges::view_interface<chunk_ranges<N, cp_t, halt_pos>>
 {
     struct range
     {
@@ -787,14 +787,14 @@ class chunk_ranges :
                       N,
                       pd_cps,
                       m_size,
-                      end_pos);
+                      halt_pos);
         cudaDeviceSynchronize();
 
         DEVICE_TO_HOST(ph_bgns, pd_bgns, N);
         DEVICE_TO_HOST(ph_ends, pd_ends, N);
         DEVICE_TO_HOST(ph_cp0, pd_cps, 1);
 
-        const gsize_t dcp = *ph_cp0 == end_pos ? N - 1 : *ph_cp0;
+        const gsize_t dcp = *ph_cp0 == halt_pos ? N - 1 : *ph_cp0;
 
         post_counter<N>(ph_bgns, ph_ends, m_size, dcp);
     }
@@ -903,7 +903,7 @@ class cuda_evaluator
     using vars      = _Program::variables;
 
     static constexpr gsize_t num_chunks = _Program::num_cells + 1;
-    static constexpr auto    end_pos    = _Program::end_pos;
+    static constexpr auto    halt_pos   = _Program::halt_pos;
     static constexpr input_setter<typename _Program::input_vars>   setter{};
     static constexpr output_getter<typename _Program::output_vars> getter{};
 
@@ -934,7 +934,7 @@ class cuda_evaluator
 
     struct evaluator
     {
-        using rngs_t = chunk_ranges<num_chunks, cp_t, end_pos>;
+        using rngs_t = chunk_ranges<num_chunks, cp_t, halt_pos>;
         static constexpr typename typelist::to<compiled_cells, std::tuple>
             cells{};
 

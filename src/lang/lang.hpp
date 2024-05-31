@@ -55,7 +55,7 @@ struct Label
     using name = sl2cs<Name>;
 };
 
-using EndLabel   = Label<"END">;
+using EndLabel   = Label<"HALT">;
 using StartLabel = Label<"START">;
 
 template <typename T>
@@ -511,7 +511,7 @@ struct Program
 
     using cp = Variable<index_t, _cp_char>;
 
-    static constexpr index_t end_pos = -1;
+    static constexpr index_t halt_pos = -1;
 
     // Ensure that every cell is labeled.
     // Only the first label can be skipped, so we just add special label at the
@@ -524,7 +524,7 @@ struct Program
     static_assert(!typelist::has_duplicates<labels>);
 
     using labelmap = typelist::cons<
-        type_pair<EndLabel, std::integral_constant<index_t, end_pos>>,
+        type_pair<EndLabel, std::integral_constant<index_t, halt_pos>>,
         typelist::enumerate<labels, index_t>>;
 
     static constexpr bool singular = num_cells == 1;
@@ -576,7 +576,7 @@ struct choice
 #define BEGIN(NAME, ...)                                             \
     using NAME = lucid::Program < lucid::type_sequence<__VA_ARGS__>, \
           lucid::type_sequence <
-#define END(...)            >, lucid::type_sequence < __VA_ARGS__ >> ;
+#define END(...)            >, lucid::type_sequence < __VA_ARGS__ >>
 #define TBEGIN1(NAME, v)    BEGIN(NAME, TVAR(v))
 #define TBEGIN2(NAME, a, b) BEGIN(NAME, TVAR(a), TVAR(b))
 #define TEND1(v)            END(TVAR(v))

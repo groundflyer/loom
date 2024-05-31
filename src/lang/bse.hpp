@@ -73,7 +73,7 @@ class basic_scalar_evaluator
     using reg_types = _Program::reg_types;
     using cp        = _Program::cp;
 
-    static constexpr auto end_pos = _Program::end_pos;
+    static constexpr auto halt_pos = _Program::halt_pos;
 
     template <typename C>
     using compile_cell = standard_compiler<C, labelmap>;
@@ -114,7 +114,7 @@ class basic_scalar_evaluator
             // reset state when calling multiple times
             mem.cp() = 0;
             setter(mem, args...);
-            while(mem.cp() != end_pos)
+            while(mem.cp() != halt_pos)
             {
                 visit(
                     mem.cp(),
