@@ -159,3 +159,11 @@ DEF_FN_OBJ(val_sut);
 DEF_FN_OBJ(val_cut);
 DEF_FN_OBJ(val_jmp4);
 DEF_FN_OBJ(val_choice);
+
+using incr_int     = increment<int>;
+using fac_int      = factorial_int<int>;
+using fac_unsigned = factorial_int<unsigned>;
+using sut          = simple_union_test<float>;
+using cut          = complex_union_test<float>;
+using jmp4_float   = jmp4_test<float>;
+using choice_float = choice_test<float>;
