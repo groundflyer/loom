@@ -26,6 +26,8 @@ DECL_TEST_FUNC_UNION(cuda_sut)
 DECL_TEST_FUNC_UNION(cuda_cut)
 DECL_TEST_FUNC2(cuda_jmp4)
 DECL_TEST_FUNC2(cuda_choice)
+DECL_TEST_FUNC2(cuda_lshift)
+DECL_TEST_FUNC2(cuda_rshift)
 
 #undef DECL_TEST_FUNC
 #undef DECL_TEST_FUNC2

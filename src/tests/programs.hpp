@@ -90,12 +90,24 @@ TEND1(a);
 // !i && (a > 0.5) ? -a : a
 template <std::floating_point T>
 BEGIN(choice_test, IVAR(i), TVAR(a))
-    ILNOT(i, i),
+    INOT(i, i),
     TGT(cmp, a, 0.5),
     TNEG(ma, a),
-    ILAND(i, i, cmp),
+    IAND(i, i, cmp),
     TCHOICE(ma, i, ma, a)
 TEND1(ma);
+
+// (a << b)
+template <std::integral T>
+TBEGIN2(lshift_test, a, b)
+    LSHFT(a, a, b)
+TEND1(a);
+
+// (a >> b)
+template <std::integral T>
+TBEGIN2(rshift_test, a, b)
+    RSHFT(a, a, b)
+TEND1(a);
 
 // clang-format on
 
@@ -151,6 +163,18 @@ val_choice(unsigned i, float a) noexcept
 {
     return !i && (a > 0.5f) ? -a : a;
 }
+
+constexpr unsigned
+val_lshift(unsigned a, unsigned b) noexcept
+{
+    return a << b;
+}
+
+constexpr unsigned
+val_rshift(unsigned a, unsigned b) noexcept
+{
+    return a >> b;
+}
 } // namespace fn
 
 DEF_FN_OBJ(val_inc);
@@ -159,6 +183,8 @@ DEF_FN_OBJ(val_sut);
 DEF_FN_OBJ(val_cut);
 DEF_FN_OBJ(val_jmp4);
 DEF_FN_OBJ(val_choice);
+DEF_FN_OBJ(val_lshift);
+DEF_FN_OBJ(val_rshift);
 
 using incr_int     = increment<int>;
 using fac_int      = factorial_int<int>;
@@ -167,3 +193,5 @@ using sut          = simple_union_test<float>;
 using cut          = complex_union_test<float>;
 using jmp4_float   = jmp4_test<float>;
 using choice_float = choice_test<float>;
+using lshift_u     = lshift_test<unsigned>;
+using rshift_u     = rshift_test<unsigned>;

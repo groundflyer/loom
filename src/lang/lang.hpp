@@ -553,7 +553,7 @@ struct Program
                            ensure_last_jumps_t<cells_statements, labels>>;
 };
 
-struct choice
+struct choice_op
 {
     template <typename C, typename T>
     constexpr T
@@ -562,16 +562,36 @@ struct choice
         return c ? a : b;
     }
 };
+
+template <std::integral T>
+struct lshift_op
+{
+    constexpr T
+    operator()(const T v, const T s) const noexcept
+    {
+        return v << s;
+    }
+};
+
+template <std::integral T>
+struct rshift_op
+{
+    constexpr T
+    operator()(const T v, const T s) const noexcept
+    {
+        return v >> s;
+    }
+};
 } // namespace lucid
 
 #ifndef MAJOR_TYPE
 #define MAJOR_TYPE T
 #endif
 
-#define VAR(TYPE, NAME)   lucid::Variable<TYPE, #NAME>
-#define IDX_TYPE          lucid::infer_index_t<MAJOR_TYPE>
-#define TVAR(NAME)        VAR(MAJOR_TYPE, NAME)
-#define IVAR(NAME)        VAR(IDX_TYPE, NAME)
+#define VAR(TYPE, NAME) lucid::Variable<TYPE, #NAME>
+#define IDX_TYPE        lucid::infer_index_t<MAJOR_TYPE>
+#define TVAR(NAME)      VAR(MAJOR_TYPE, NAME)
+#define IVAR(NAME)      VAR(IDX_TYPE, NAME)
 
 #define BEGIN(NAME, ...)                                             \
     using NAME = lucid::Program < lucid::type_sequence<__VA_ARGS__>, \
@@ -579,18 +599,26 @@ struct choice
 #define END(...)            >, lucid::type_sequence < __VA_ARGS__ >>
 #define TBEGIN1(NAME, v)    BEGIN(NAME, TVAR(v))
 #define TBEGIN2(NAME, a, b) BEGIN(NAME, TVAR(a), TVAR(b))
-#define TEND1(v)            END(TVAR(v))
-#define TEND2(a, b)         END(TVAR(a), TVAR(b))
+#define TEND1(v) \
+    END          \
+    (TVAR(v))
+#define TEND2(a, b) \
+    END             \
+    (TVAR(a), TVAR(b))
 #define IBEGIN1(NAME, v)    BEGIN(NAME, IVAR(v))
 #define IBEGIN2(NAME, a, b) BEGIN(NAME, IVAR(a), IVAR(b))
-#define IEND1(v)            END(IVAR(v))
-#define IEND2(a, b)         END(IVAR(a), IVAR(b))
+#define IEND1(v) \
+    END          \
+    (IVAR(v))
+#define IEND2(a, b) \
+    END             \
+    (IVAR(a), IVAR(b))
 
-#define MOV(a, b)           lucid::Compute<std::identity, a, b>
-#define TMOV(a, b)          MOV(TVAR(a), TVAR(b))
-#define IMOV(a, b)          MOV(IVAR(a), IVAR(b))
+#define MOV(a, b)   lucid::Compute<std::identity, a, b>
+#define TMOV(a, b)  MOV(TVAR(a), TVAR(b))
+#define IMOV(a, b)  MOV(IVAR(a), IVAR(b))
 
-#define LABEL(NAME)         lucid::Label<#NAME>
+#define LABEL(NAME) lucid::Label<#NAME>
 #define JMP(TARGET)             \
     lucid::Jump < LABEL(TARGET) \
     >
@@ -638,66 +666,68 @@ struct choice
                    lucid::Variable<TYPE, #B>>
 
 #define CHOICE(TYPE, DST, C, A, B)                \
-    lucid::Compute<lucid::choice,                 \
+    lucid::Compute<lucid::choice_op,              \
                    lucid::Variable<TYPE, #DST>,   \
                    lucid::Variable<IDX_TYPE, #C>, \
                    lucid::Variable<TYPE, #A>,     \
                    lucid::Variable<TYPE, #B>>
 
-#define ADD(...)   BINOP(std::plus, __VA_ARGS__)
-#define SUB(...)   BINOP(std::minus, __VA_ARGS__)
-#define MUL(...)   BINOP(std::multiplies, __VA_ARGS__)
-#define DIV(...)   BINOP(std::divides, __VA_ARGS__)
-#define MOD(...)   BINOP(std::modulus, __VA_ARGS__)
-#define NEG(...)   UNOP(std::negate, __VA_ARGS__)
+#define ADD(...)     BINOP(std::plus, __VA_ARGS__)
+#define SUB(...)     BINOP(std::minus, __VA_ARGS__)
+#define MUL(...)     BINOP(std::multiplies, __VA_ARGS__)
+#define DIV(...)     BINOP(std::divides, __VA_ARGS__)
+#define MOD(...)     BINOP(std::modulus, __VA_ARGS__)
+#define NEG(...)     UNOP(std::negate, __VA_ARGS__)
 
-#define EQ(...)    CMP(std::equal_to, __VA_ARGS__)
-#define NEQ(...)   CMP(std::not_equal_to, __VA_ARGS__)
-#define GT(...)    CMP(std::greater, __VA_ARGS__)
-#define LT(...)    CMP(std::less, __VA_ARGS__)
-#define GE(...)    CMP(std::greater_equal, __VA_ARGS__)
-#define LE(...)    CMP(std::less_equal, __VA_ARGS__)
+#define EQ(...)      CMP(std::equal_to, __VA_ARGS__)
+#define NEQ(...)     CMP(std::not_equal_to, __VA_ARGS__)
+#define GT(...)      CMP(std::greater, __VA_ARGS__)
+#define LT(...)      CMP(std::less, __VA_ARGS__)
+#define GE(...)      CMP(std::greater_equal, __VA_ARGS__)
+#define LE(...)      CMP(std::less_equal, __VA_ARGS__)
 
-// logical ops
-#define LAND(...)             BINOP(std::logical_and, __VA_ARGS__)
-#define LOR(...)              BINOP(std::logical_or, __VA_ARGS__)
-#define LNOT(...)             UNOP(std::logical_not, __VA_ARGS__)
+#define LAND(...)    BINOP(std::logical_and, __VA_ARGS__)
+#define LOR(...)     BINOP(std::logical_or, __VA_ARGS__)
+#define LNOT(...)    UNOP(std::logical_not, __VA_ARGS__)
 
-#define TADD(...)  ADD(MAJOR_TYPE, __VA_ARGS__)
-#define TSUB(...)  SUB(MAJOR_TYPE, __VA_ARGS__)
-#define TMUL(...)  MUL(MAJOR_TYPE, __VA_ARGS__)
-#define TDIV(...)  DIV(MAJOR_TYPE, __VA_ARGS__)
-#define TMOD(...)  MOD(MAJOR_TYPE, __VA_ARGS__)
-#define TNEG(...)  NEG(MAJOR_TYPE, __VA_ARGS__)
+#define TADD(...)    ADD(MAJOR_TYPE, __VA_ARGS__)
+#define TSUB(...)    SUB(MAJOR_TYPE, __VA_ARGS__)
+#define TMUL(...)    MUL(MAJOR_TYPE, __VA_ARGS__)
+#define TDIV(...)    DIV(MAJOR_TYPE, __VA_ARGS__)
+#define TMOD(...)    MOD(MAJOR_TYPE, __VA_ARGS__)
+#define TNEG(...)    NEG(MAJOR_TYPE, __VA_ARGS__)
 
-#define TEQ(...)   EQ(MAJOR_TYPE, __VA_ARGS__)
-#define TNEQ(...)  NEQ(MAJOR_TYPE, __VA_ARGS__)
-#define TGT(...)   GT(MAJOR_TYPE, __VA_ARGS__)
-#define TLT(...)   LT(MAJOR_TYPE, __VA_ARGS__)
-#define TGE(...)   GE(MAJOR_TYPE, __VA_ARGS__)
-#define TLE(...)   LE(MAJOR_TYPE, __VA_ARGS__)
+#define TEQ(...)     EQ(MAJOR_TYPE, __VA_ARGS__)
+#define TNEQ(...)    NEQ(MAJOR_TYPE, __VA_ARGS__)
+#define TGT(...)     GT(MAJOR_TYPE, __VA_ARGS__)
+#define TLT(...)     LT(MAJOR_TYPE, __VA_ARGS__)
+#define TGE(...)     GE(MAJOR_TYPE, __VA_ARGS__)
+#define TLE(...)     LE(MAJOR_TYPE, __VA_ARGS__)
 
-#define IADD(...)  ADD(IDX_TYPE, __VA_ARGS__)
-#define ISUB(...)  SUB(IDX_TYPE, __VA_ARGS__)
-#define IMUL(...)  MUL(IDX_TYPE, __VA_ARGS__)
-#define IDIV(...)  DIV(IDX_TYPE, __VA_ARGS__)
-#define IMOD(...)  MOD(IDX_TYPE, __VA_ARGS__)
-#define INEG(...)  NEG(IDX_TYPE, __VA_ARGS__)
+#define IADD(...)    ADD(IDX_TYPE, __VA_ARGS__)
+#define ISUB(...)    SUB(IDX_TYPE, __VA_ARGS__)
+#define IMUL(...)    MUL(IDX_TYPE, __VA_ARGS__)
+#define IDIV(...)    DIV(IDX_TYPE, __VA_ARGS__)
+#define IMOD(...)    MOD(IDX_TYPE, __VA_ARGS__)
+#define INEG(...)    NEG(IDX_TYPE, __VA_ARGS__)
 
-#define IEQ(...)   EQ(IDX_TYPE, __VA_ARGS__)
-#define INEQ(...)  NEQ(IDX_TYPE, __VA_ARGS__)
-#define IGT(...)   GT(IDX_TYPE, __VA_ARGS__)
-#define ILT(...)   LT(IDX_TYPE, __VA_ARGS__)
-#define IGE(...)   GE(IDX_TYPE, __VA_ARGS__)
-#define ILE(...)   LE(IDX_TYPE, __VA_ARGS__)
+#define IEQ(...)     EQ(IDX_TYPE, __VA_ARGS__)
+#define INEQ(...)    NEQ(IDX_TYPE, __VA_ARGS__)
+#define IGT(...)     GT(IDX_TYPE, __VA_ARGS__)
+#define ILT(...)     LT(IDX_TYPE, __VA_ARGS__)
+#define IGE(...)     GE(IDX_TYPE, __VA_ARGS__)
+#define ILE(...)     LE(IDX_TYPE, __VA_ARGS__)
 
-#define TLAND(...)             LAND(MAJOR_TYPE, __VA_ARGS__)
-#define TLOR(...)              LOR(MAJOR_TYPE, __VA_ARGS__)
-#define TLNOT(...)             LNOT(MAJOR_TYPE, __VA_ARGS__)
+#define TAND(...)    LAND(MAJOR_TYPE, __VA_ARGS__)
+#define TOR(...)     LOR(MAJOR_TYPE, __VA_ARGS__)
+#define TNOT(...)    LNOT(MAJOR_TYPE, __VA_ARGS__)
 
-#define ILAND(...)             LAND(IDX_TYPE, __VA_ARGS__)
-#define ILOR(...)              LOR(IDX_TYPE, __VA_ARGS__)
-#define ILNOT(...)             LNOT(IDX_TYPE, __VA_ARGS__)
+#define IAND(...)    LAND(IDX_TYPE, __VA_ARGS__)
+#define IOR(...)     LOR(IDX_TYPE, __VA_ARGS__)
+#define INOT(...)    LNOT(IDX_TYPE, __VA_ARGS__)
 
-#define TCHOICE(DST, C, A, B) CHOICE(MAJOR_TYPE, DST, C, A, B)
-#define ICHOICE(DST, C, A, B) CHOICE(INDEX_TYPE, DST, C, A, B)
+#define TCHOICE(...) CHOICE(MAJOR_TYPE, __VA_ARGS__)
+#define ICHOICE(...) CHOICE(INDEX_TYPE, __VA_ARGS__)
+
+#define LSHFT(...)   BINOP(lucid::lshift_op, IDX_TYPE, __VA_ARGS__)
+#define RSHFT(...)   BINOP(lucid::rshift_op, IDX_TYPE, __VA_ARGS__)

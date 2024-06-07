@@ -168,7 +168,7 @@ struct remap_comp<N, std::identity, Dst, Src>
 };
 
 template <fsize_t N, typename T, typename C>
-struct remap_comp<N, choice, T, C, T, T>
+struct remap_comp<N, choice_op, T, C, T, T>
 {
     struct type
     {
@@ -235,6 +235,9 @@ DEF_REMAP_IVEC_BIN(std::less_equal, <=)
 DEF_REMAP_IVEC_BIN(std::logical_and, &&)
 DEF_REMAP_IVEC_BIN(std::logical_or, ||)
 DEF_REMAP_IVEC_UN(std::logical_not, !)
+
+DEF_REMAP_IVEC_BIN(lshift_op, <<)
+DEF_REMAP_IVEC_BIN(rshift_op, >>)
 
 #undef DEF_REMAP_IVEC_UN
 #undef DEF_REMAP_TVEC_UN
