@@ -57,12 +57,7 @@ main(int argc, char* argv[])
     simd::evaluator<jmp4_float>   simd_jmp4;
     simd::evaluator<choice_float> simd_choice;
 
-    track.dep_check(
-        NamedTest(tm.test_cmp(g_int, bse_ii, val_inc), "BSE increment int"),
-        NamedTest(tm.rng_sval(g_int, bve_ii, bse_ii), "BVE increment int"),
-        NamedTest(tm.rng_cmp(g_int, simd_ii, bve_ii), "SIMD increment int"));
-
-#define TEST_RESET_BVE(G, T, V)          \
+#define TEST_RESET_T(G, T, V)            \
     [&]() noexcept                       \
     {                                    \
         bool r = tm.rng_sval(G, T, V)(); \
@@ -70,73 +65,98 @@ main(int argc, char* argv[])
         return r;                        \
     }
 
-    track.dep_check(std::pair{NamedTest(tm.test_cmp(g_int, bse_fi, val_fac),
-                                        "BSE factorial int"),
-                              NamedTest(tm.test_cmp(g_ui, bse_fu, val_fac),
-                                        "BSE factorial unsigned")},
-                    NamedTest(TEST_RESET_BVE(g_ui, bve_fu, bse_fu),
-                              "BVE factorial unsigned"),
-                    NamedTest(tm.rng_cmp(g_ui, simd_fu, bve_fu),
-                              "SIMD factorial unsigned"));
+#ifdef USE_CUDA
+#define WRAP(NAME) \
+    [](unsigned n, const auto&... in) noexcept { return NAME(n, in...); }
+
+#define WRAP_UNION(NAME)                                             \
+    [](unsigned n, const auto& in) noexcept -> std::vector<unsigned> \
+    { return NAME<unsigned, float>(n, in); }
+
+#define TEST_RESET_V(G, T, V)           \
+    [&]() noexcept                      \
+    {                                   \
+        bool r = tm.rng_cmp(G, T, V)(); \
+        V.reset();                      \
+        return r;                       \
+    }
+
+    auto cuda_ii = WRAP(cuda_inc);
+    auto cuda_fu = WRAP(cuda_fac);
+    auto cuda_su = WRAP_UNION(cuda_sut);
+    auto cuda_cu = WRAP_UNION(cuda_cut);
+    auto cuda_j4 = WRAP(cuda_jmp4);
+    auto cuda_ch = WRAP(cuda_choice);
+
+    // CUDA backend supports only 2^n size
+    tm.m_num = std::bit_floor(tm.m_num);
+
+    auto ft_ii = std::pair{
+        NamedTest(tm.rng_cmp(g_int, simd_ii, bve_ii), "SIMD increment int"),
+        NamedTest(tm.rng_cmp(g_int, cuda_ii, bve_ii), "CUDA increment int")};
+    auto ft_fu = std::pair{NamedTest(TEST_RESET_V(g_ui, simd_fu, bve_fu),
+                                     "SIMD factorial unsigned"),
+                           NamedTest(tm.rng_cmp(g_ui, cuda_fu, bve_fu),
+                                     "CUDA factorial unsigned")};
+    auto ft_su = std::pair{
+        NamedTest(tm.rng_cmp(g_float, simd_sut, bve_sut), "SIMD simple union"),
+        NamedTest(tm.rng_cmp(g_float, cuda_su, bve_sut), "CUDA simple union")};
+    auto ft_cu = std::pair{
+        NamedTest(TEST_RESET_V(g_float, simd_cut, bve_cut),
+                  "SIMD complex union"),
+        NamedTest(tm.rng_cmp(g_float, cuda_cu, bve_cut), "CUDA complex union")};
+    auto ft_j4 = std::pair{
+        NamedTest(TEST_RESET_V(g_j4, simd_jmp4, bve_jmp4), "SIMD jump4"),
+        NamedTest(tm.rng_cmp(g_j4, cuda_j4, bve_jmp4), "CUDA jump4")};
+    auto ft_ch = std::pair{
+        NamedTest(tm.rng_cmp(g_j4, simd_choice, bve_choice), "SIMD choice"),
+        NamedTest(tm.rng_cmp(g_j4, cuda_ch, bve_choice), "CUDA choice")};
+#else
+    auto ft_ii =
+        NamedTest(tm.rng_cmp(g_int, simd_ii, bve_ii), "SIMD increment int");
+    auto ft_fu =
+        NamedTest(tm.rng_cmp(g_ui, simd_fu, bve_fu), "SIMD factorial unsigned");
+    auto ft_su =
+        NamedTest(tm.rng_cmp(g_float, simd_sut, bve_sut), "SIMD simple union");
+    auto ft_cu =
+        NamedTest(tm.rng_cmp(g_float, simd_cut, bve_cut), "SIMD complex union");
+    auto ft_j4 = NamedTest(tm.rng_cmp(g_j4, simd_jmp4, bve_jmp4), "SIMD jump4");
+    auto ft_ch =
+        NamedTest(tm.rng_cmp(g_j4, simd_choice, bve_choice), "SIMD choice");
+#endif
+
+    track.dep_check(
+        NamedTest(tm.test_cmp(g_int, bse_ii, val_inc), "BSE increment int"),
+        NamedTest(tm.rng_sval(g_int, bve_ii, bse_ii), "BVE increment int"),
+        ft_ii);
+
+    track.dep_check(
+        std::pair{
+            NamedTest(tm.test_cmp(g_int, bse_fi, val_fac), "BSE factorial int"),
+            NamedTest(tm.test_cmp(g_ui, bse_fu, val_fac),
+                      "BSE factorial unsigned")},
+        NamedTest(TEST_RESET_T(g_ui, bve_fu, bse_fu), "BVE factorial unsigned"),
+        ft_fu);
 
     track.dep_check(
         NamedTest(tm.test_cmp(g_float, bse_sut, val_sut), "BSE simple union"),
         NamedTest(tm.rng_sval(g_float, bve_sut, bse_sut), "BVE simple union"),
-        NamedTest(tm.rng_cmp(g_float, simd_sut, bve_sut), "SIMD simple union"));
+        ft_su);
 
     track.dep_check(
         NamedTest(tm.test_cmp(g_float, bse_cut, val_cut), "BSE complex union"),
-        NamedTest(TEST_RESET_BVE(g_float, bve_cut, bse_cut),
-                  "BVE complex union"),
-        NamedTest(tm.rng_cmp(g_float, simd_cut, bve_cut),
-                  "SIMD complex union"));
+        NamedTest(TEST_RESET_T(g_float, bve_cut, bse_cut), "BVE complex union"),
+        ft_cu);
 
     track.dep_check(
         NamedTest(tm.test_cmp(g_j4, bse_jmp4, val_jmp4), "BSE jump4"),
-        NamedTest(TEST_RESET_BVE(g_j4, bve_jmp4, bse_jmp4), "BVE jump4"),
-        NamedTest(tm.rng_cmp(g_j4, simd_jmp4, bve_jmp4), "SIMD jump4"));
+        NamedTest(TEST_RESET_T(g_j4, bve_jmp4, bse_jmp4), "BVE jump4"),
+        ft_j4);
 
     track.dep_check(
         NamedTest(tm.test_cmp(g_j4, bse_choice, val_choice), "BSE choice"),
         NamedTest(tm.rng_sval(g_j4, bve_choice, bse_choice), "BVE choice"),
-        NamedTest(tm.rng_cmp(g_j4, simd_choice, bve_choice), "SIMD choice"));
-
-#ifdef USE_CUDA
-
-#define LAMBDA_WRAP(NAME) \
-    [](unsigned n, const auto&... in) noexcept { return NAME(n, in...); }
-
-#define LAMBDA_WRAP_UNION(NAME)                                      \
-    [](unsigned n, const auto& in) noexcept -> std::vector<unsigned> \
-    { return NAME<unsigned, float>(n, in); }
-
-    auto cuda_ii = LAMBDA_WRAP(cuda_inc);
-    auto cuda_fu = LAMBDA_WRAP(cuda_fac);
-    auto cuda_su = LAMBDA_WRAP_UNION(cuda_sut);
-    auto cuda_cu = LAMBDA_WRAP_UNION(cuda_cut);
-    auto cuda_j4 = LAMBDA_WRAP(cuda_jmp4);
-    auto cuda_ch = LAMBDA_WRAP(cuda_choice);
-
-    // CUDA backed supports only 2^n size
-    tm.m_num = std::bit_floor(tm.m_num);
-
-    bve_fu.reset();
-    bve_cut.reset();
-    bve_jmp4.reset();
-
-    track.check(
-        NamedTest(tm.rng_cmp(g_int, cuda_ii, bve_ii), "CUDA increment int"));
-    track.check(NamedTest(tm.rng_cmp(g_ui, cuda_fu, bve_fu),
-                          "CUDA factorial unsigned"));
-    track.check(
-        NamedTest(tm.rng_cmp(g_float, cuda_su, bve_sut), "CUDA simple union"));
-    track.check(
-        NamedTest(tm.rng_cmp(g_float, cuda_cu, bve_cut), "CUDA complex union"));
-    track.check(NamedTest(tm.rng_cmp(g_j4, cuda_j4, bve_jmp4), "CUDA jump4"));
-    track.check(
-        NamedTest(tm.rng_cmp(g_j4, cuda_ch, bve_choice), "CUDA choice"));
-
-#endif
+        ft_ch);
 
     return track.ret_code();
 }
