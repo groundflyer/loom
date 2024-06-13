@@ -14,13 +14,13 @@
 
 namespace lucid
 {
-template <typename Type, StringLiteral Name>
+template <typename Type, typename Name>
     requires(std::is_integral_v<Type> || std::is_floating_point_v<Type>)
 struct Variable
 {
     using type                                 = Type;
-    using name                                 = sl2cs<Name>;
-    static constexpr std::string_view nameview = Name.view();
+    using name                                 = Name;
+    static constexpr std::string_view nameview = cs2sv<Name>;
 };
 
 template <typename _Variable>
@@ -509,7 +509,7 @@ struct Program
 
     static_assert(!std::is_void_v<index_t>);
 
-    using cp = Variable<index_t, _cp_char>;
+    using cp = Variable<index_t, _cp_name>;
 
     static constexpr index_t halt_pos = -1;
 
@@ -588,7 +588,7 @@ struct rshift_op
 #define MAJOR_TYPE T
 #endif
 
-#define VAR(TYPE, NAME) lucid::Variable<TYPE, #NAME>
+#define VAR(TYPE, NAME) lucid::Variable<TYPE, lucid::sl2cs<#NAME>>
 #define IDX_TYPE        lucid::infer_index_t<MAJOR_TYPE>
 #define TVAR(NAME)      VAR(MAJOR_TYPE, NAME)
 #define IVAR(NAME)      VAR(IDX_TYPE, NAME)
@@ -623,54 +623,42 @@ struct rshift_op
     lucid::Jump < LABEL(TARGET) \
     >
 
-#define PJMPN(varname, ...)                              \
-    lucid::ParmJump<lucid::Variable<IDX_TYPE, #varname>, \
-                    lucid::type_sequence<__VA_ARGS__>>
+#define PJMPN(varname, ...) \
+    lucid::ParmJump<VAR(IDX_TYPE, varname), lucid::type_sequence<__VA_ARGS__>>
 
-#define PJMP2(varname, L1, L2)                             \
-    lucid::ParmJump < lucid::Variable<IDX_TYPE, #varname>, \
-        lucid::type_pair < LABEL(L1)                       \
-    , LABEL(L2)                                            \
+#define PJMP2(varname, L1, L2)                                             \
+    lucid::ParmJump < VAR(IDX_TYPE, varname), lucid::type_pair < LABEL(L1) \
+    , LABEL(L2)                                                            \
     >>
 
-#define PJMP3(varname, L1, L2, L3)                         \
-    lucid::ParmJump < lucid::Variable<IDX_TYPE, #varname>, \
-        lucid::type_sequence < LABEL(L1)                   \
-    , LABEL(L2)                                            \
-    , LABEL(L3)                                            \
+#define PJMP3(varname, L1, L2, L3)                                             \
+    lucid::ParmJump < VAR(IDX_TYPE, varname), lucid::type_sequence < LABEL(L1) \
+    , LABEL(L2)                                                                \
+    , LABEL(L3)                                                                \
     >>
 
-#define PJMP4(varname, L1, L2, L3, L4)                     \
-    lucid::ParmJump < lucid::Variable<IDX_TYPE, #varname>, \
-        lucid::type_sequence < LABEL(L1)                   \
-    , LABEL(L2)                                            \
-    , LABEL(L3)                                            \
-    , LABEL(L4)                                            \
+#define PJMP4(varname, L1, L2, L3, L4)                                         \
+    lucid::ParmJump < VAR(IDX_TYPE, varname), lucid::type_sequence < LABEL(L1) \
+    , LABEL(L2)                                                                \
+    , LABEL(L3)                                                                \
+    , LABEL(L4)                                                                \
     >>
 
-#define BINOP(OP, TYPE, DST, A, B)              \
-    lucid::Compute<OP<TYPE>,                    \
-                   lucid::Variable<TYPE, #DST>, \
-                   lucid::Variable<TYPE, #A>,   \
-                   lucid::Variable<TYPE, #B>>
+#define BINOP(OP, TYPE, DST, A, B) \
+    lucid::Compute<OP<TYPE>, VAR(TYPE, DST), VAR(TYPE, A), VAR(TYPE, B)>
 
-#define UNOP(OP, TYPE, DST, V)                  \
-    lucid::Compute<OP<TYPE>,                    \
-                   lucid::Variable<TYPE, #DST>, \
-                   lucid::Variable<TYPE, #V>>
+#define UNOP(OP, TYPE, DST, V) \
+    lucid::Compute<OP<TYPE>, VAR(TYPE, DST), VAR(TYPE, V)>
 
-#define CMP(OP, TYPE, DST, A, B)              \
-    lucid::Compute<OP<TYPE>,                  \
-                   IVAR(DST),                 \
-                   lucid::Variable<TYPE, #A>, \
-                   lucid::Variable<TYPE, #B>>
+#define CMP(OP, TYPE, DST, A, B) \
+    lucid::Compute<OP<TYPE>, IVAR(DST), VAR(TYPE, A), VAR(TYPE, B)>
 
-#define CHOICE(TYPE, DST, C, A, B)                \
-    lucid::Compute<lucid::choice_op,              \
-                   lucid::Variable<TYPE, #DST>,   \
-                   lucid::Variable<IDX_TYPE, #C>, \
-                   lucid::Variable<TYPE, #A>,     \
-                   lucid::Variable<TYPE, #B>>
+#define CHOICE(TYPE, DST, C, A, B)   \
+    lucid::Compute<lucid::choice_op, \
+                   VAR(TYPE, DST),   \
+                   VAR(IDX_TYPE, C), \
+                   VAR(TYPE, A),     \
+                   VAR(TYPE, B)>
 
 #define ADD(...)     BINOP(std::plus, __VA_ARGS__)
 #define SUB(...)     BINOP(std::minus, __VA_ARGS__)

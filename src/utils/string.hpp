@@ -5,6 +5,7 @@
 #pragma once
 
 #include "math.hpp"
+#include "tmp.hpp"
 
 #include <static_math/cmath.h>
 
@@ -72,6 +73,11 @@ struct sl2cs_impl<s, std::index_sequence<Idxs...>>
 template <StringLiteral s>
 using sl2cs =
     typename detail::sl2cs_impl<s, std::make_index_sequence<s.size()>>::type;
+
+/// @brief Convert char_sequence @p S to std::string_view.
+template <typename S>
+inline constexpr std::string_view cs2sv =
+    std::string_view(intlist::array<S>, intlist::length<S>);
 /// @}
 
 constexpr bool
