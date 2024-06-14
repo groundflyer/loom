@@ -448,14 +448,15 @@ bitonic_merge(const unsigned msl,
               const unsigned size,
               Ts... columns)
 {
-    const unsigned i = blockIdx.x * blockDim.x + threadIdx.x;
-    const unsigned p = i / (bl / 2);
-    const unsigned s = p * bl + (i & (bl / 2 - 1));
-    const unsigned e = s + bl / 2;
+    const unsigned i   = blockIdx.x * blockDim.x + threadIdx.x;
+    const unsigned bl2 = bl / 2;
+    const unsigned p   = i / bl2;
+    const unsigned s   = p * bl + (i & (bl2 - 1));
+    const unsigned e   = s + bl2;
     if(e > size) return;
 
-    const unsigned pis = msl / bl;
-    const unsigned msi = p / pis;
+    const unsigned pis = msl / bl; // parts in sequence
+    const unsigned msi = p / pis;  // monotonic sequence index
 
     const bool ascending = (msi & 1) || (msi + 1) * msl >= size;
 
@@ -637,6 +638,8 @@ sort(Vars vars, _Memory& mem) noexcept
 
     auto launcher = [&](auto... columns) noexcept
     {
+        // msl - monotonic sequence length
+        // bl - bitonic length
         for(gsize_t msl = 2; msl <= mem.size(); msl *= 2)
             for(gsize_t bl = msl; bl > 1; bl /= 2)
                 LAUNCH_KERNEL(bitonic_merge,
