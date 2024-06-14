@@ -594,17 +594,6 @@ cell_kernel(gsize_t begin, gsize_t end, CompiledCell cc, Args... args)
     if(i < end) cc(args[i]...);
 }
 
-/// @brief Integral division that rounds the result to the nearest bigger
-/// number.
-/// @param a divident.
-/// @param b divisor.
-template <std::integral T>
-constexpr T
-ceil_div(const T a, const T b) noexcept
-{
-    return a / b + (a % b != 0);
-}
-
 /// @brief Runs kernel of cell @p cc.
 template <typename CompiledCell, typename _Memory>
 void

@@ -24,6 +24,17 @@ namespace lucid
 template <std::floating_point T>
 inline constexpr T Pi_ = T{3.141592653589793};
 
+/// @brief Integral division that rounds the result to the nearest bigger
+/// number.
+/// @param a divident.
+/// @param b divisor.
+template <std::integral T>
+constexpr T
+ceil_div(const T a, const T b) noexcept
+{
+    return a / b + (a % b != 0);
+}
+
 /// @brief Test whether the value is even.
 template <std::integral T>
 constexpr bool
