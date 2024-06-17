@@ -265,64 +265,64 @@ struct var_loader
     }
 };
 
-template <typename C, typename LabelMap>
+template <typename C, typename LabelMap, fsize_t N>
 struct eval;
 
-template <typename Target, typename LabelMap>
-struct eval<Jump<Target>, LabelMap>
+template <typename Target, typename LabelMap, fsize_t N>
+struct eval<Jump<Target>, LabelMap, N>
 {
     using constant                  = typelist::lookup<Target, LabelMap>;
     using index_t                   = get_index_t<LabelMap>;
     static constexpr index_t target = constant{}();
-    static constexpr fsize_t n =
-        native_instruction_width<Jump<Target>, index_t>;
 
     template <typename _ProxyView>
-        requires(pv_extent<_ProxyView> == n)
+        requires(pv_extent<_ProxyView> == N)
     void
     operator()(_ProxyView view) const noexcept
     {
         index_t*                  dst = view.cp().data();
-        packed_vector<index_t, n> t   = broadcast<n>(target);
-        store<n>(dst, t);
+        packed_vector<index_t, N> t   = broadcast<N>(target);
+        store<N>(dst, t);
     }
 };
 
-template <typename Op, typename Dst, typename... Args, typename LabelMap>
+template <typename Op,
+          typename Dst,
+          typename... Args,
+          typename LabelMap,
+          fsize_t N>
     requires(... && (sizeof(vartype<Dst>) == sizeof(vartype<Args>)))
-struct eval<Compute<Op, Dst, Args...>, LabelMap>
+struct eval<Compute<Op, Dst, Args...>, LabelMap, N>
 {
-    using T       = vartype<Dst>;
-    using index_t = get_index_t<LabelMap>;
-    static constexpr fsize_t n =
-        native_instruction_width<Compute<Op, Dst, Args...>, index_t>;
-    using vector_op = remap_comp_t<n, Op, vartype<Dst>, vartype<Args>...>;
-    using loader_t  = var_loader<n>;
+    using T         = vartype<Dst>;
+    using index_t   = get_index_t<LabelMap>;
+    using vector_op = remap_comp_t<N, Op, vartype<Dst>, vartype<Args>...>;
+    using loader_t  = var_loader<N>;
     static constexpr loader_t loader{};
 
     template <typename _ProxyView>
-        requires(pv_extent<_ProxyView> == n)
+        requires(pv_extent<_ProxyView> == N)
     void
     operator()(_ProxyView view) const noexcept
     {
         T*   dst = view.template get<Dst>().data();
         auto vars =
             typelist::maybe_collect(loader, type_sequence<Args...>{}, view);
-        packed_vector<T, n> ret = maybe_apply(vector_op{}, vars);
-        store<n>(dst, ret);
+        packed_vector<T, N> ret = maybe_apply(vector_op{}, vars);
+        store<N>(dst, ret);
     }
 };
 
-template <typename Idxs, fsize_t n>
+template <typename Idxs, fsize_t N>
 struct shuffler;
 
-template <typename index_t, index_t a, index_t b, fsize_t n>
-struct shuffler<std::integer_sequence<index_t, a, b>, n>
+template <typename index_t, index_t a, index_t b, fsize_t N>
+struct shuffler<std::integer_sequence<index_t, a, b>, N>
 {
-    using IdxVec = packed_vector<index_t, n>;
+    using IdxVec = packed_vector<index_t, N>;
 
-    static constexpr IdxVec va = broadcast<n>(a);
-    static constexpr IdxVec vb = broadcast<n>(b);
+    static constexpr IdxVec va = broadcast<N>(a);
+    static constexpr IdxVec vb = broadcast<N>(b);
 
     IdxVec
     operator()(IdxVec var) const noexcept
@@ -331,11 +331,11 @@ struct shuffler<std::integer_sequence<index_t, a, b>, n>
     }
 };
 
-template <typename index_t, index_t... is, fsize_t n>
-    requires(sizeof...(is) <= n)
-struct shuffler<std::integer_sequence<index_t, is...>, n>
+template <typename index_t, index_t... is, fsize_t N>
+    requires(sizeof...(is) <= N)
+struct shuffler<std::integer_sequence<index_t, is...>, N>
 {
-    using IdxVec                  = packed_vector<index_t, n>;
+    using IdxVec                  = packed_vector<index_t, N>;
     static constexpr IdxVec table = {is...};
 
     IdxVec
@@ -345,24 +345,21 @@ struct shuffler<std::integer_sequence<index_t, is...>, n>
     }
 };
 
-template <typename Var, typename Labels, typename LabelMap>
-struct eval<ParmJump<Var, Labels>, LabelMap>
+template <typename Var, typename Labels, typename LabelMap, fsize_t N>
+struct eval<ParmJump<Var, Labels>, LabelMap, N>
 {
     using index_t = get_index_t<LabelMap>;
-    static constexpr fsize_t n =
-        native_instruction_width<ParmJump<Var, Labels>, index_t>;
-
-    using idxs = pjmp_idxs<ParmJump<Var, Labels>, LabelMap>;
-    static constexpr shuffler<idxs, n> op{};
+    using idxs    = pjmp_idxs<ParmJump<Var, Labels>, LabelMap>;
+    static constexpr shuffler<idxs, N> op{};
 
     template <typename _ProxyView>
-        requires(pv_extent<_ProxyView> == n)
+        requires(pv_extent<_ProxyView> == N)
     void
     operator()(_ProxyView view) const noexcept
     {
         index_t* dst = view.cp().data();
         index_t* src = view.template get<Var>().data();
-        store<n>(dst, op(load<n>(src)));
+        store<N>(dst, op(load<N>(src)));
     }
 };
 
@@ -371,7 +368,7 @@ struct vertical_runner
 {
     using index_t                   = get_index_t<LabelMap>;
     static constexpr fsize_t stride = native_instruction_width<C, index_t>;
-    static constexpr eval<C, LabelMap>          v_eval{};
+    static constexpr eval<C, LabelMap, stride>  v_eval{};
     static constexpr standard_eval<C, LabelMap> s_eval{};
     using bulk_sizes =
         intlist::map_f<decltype([](fsize_t n) constexpr noexcept -> fsize_t
