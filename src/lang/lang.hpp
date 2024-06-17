@@ -14,6 +14,10 @@
 
 namespace lucid
 {
+/// @brief Describes a variable.
+///
+/// @tparam Type must be of fundamental type.
+/// @tparam Name must be char_sequence.
 template <typename Type, typename Name>
     requires(std::is_integral_v<Type> || std::is_floating_point_v<Type>)
 struct Variable
@@ -23,22 +27,34 @@ struct Variable
     static constexpr std::string_view nameview = cs2sv<Name>;
 };
 
+/// @brief Get type of a Variable.
 template <typename _Variable>
 using vartype = _Variable::type;
 
+/// @brief Get name of a Variable as char_sequence.
 template <typename _Variable>
 using varname = _Variable::name;
 
+/// @brief Get name of a Variable as std::string_view.
 template <typename _Variable>
 constexpr inline std::string_view varview = _Variable::nameview;
 
+/// @brief Name reserved for Cell Pointer register.
 inline constexpr char _cp_char[] = "CP";
+
+/// @brief char_sequence for _cp_char.
 using _cp_name                   = sl2cs<_cp_char>;
 
+/// @brief Checks that @p _Vars not named _cp_name.
 template <typename... _Vars>
 inline constexpr bool not_cp =
     !(std::conjunction_v<std::is_same<_cp_name, varname<_Vars>>...>);
 
+/// @brief Describes a computation operation.
+///
+/// @tparam Op functional object class that performs actual operation.
+/// @tparam Dst variable result written to.
+/// @tparam Args variables which values used as parameters to @p Op.
 template <typename Op, typename Dst, typename... Args>
     requires(not_cp<Dst, Args...> &&
              std::is_invocable_r_v<vartype<Dst>, Op, vartype<Args>...>)
@@ -49,27 +65,41 @@ struct Compute
     using args   = type_sequence<Args...>;
 };
 
-template <StringLiteral Name>
+/// @brief Describes a label.
+///
+/// @tparam Name name of the label, char_sequence.
+template <typename Name>
 struct Label
 {
-    using name = sl2cs<Name>;
+    using name = Name;
 };
 
-using EndLabel   = Label<"HALT">;
-using StartLabel = Label<"START">;
+/// @brief Special Label jump to halts program.
+using HaltLabel = Label<sl2cs<"HALT">>;
 
+/// @brief Special Label jump to starts program from the beginning.
+using StartLabel = Label<sl2cs<"START">>;
+
+/// @brief Checks if @p T is Label.
 template <typename T>
 struct is_label
 {
     static constexpr bool value = false;
 };
 
-template <StringLiteral s>
-struct is_label<Label<s>>
+template <typename S>
+struct is_label<Label<S>>
 {
     static constexpr bool value = true;
 };
 
+/// @brief Describes a multiway conditional jump.
+///
+/// A label position in @p Labels corresponds to the value that @p Var must hold
+/// to jump to the label.
+///
+/// @tparam Var variable that holds integral value.
+/// @tparam Labels list of labels.
 template <typename Var, typename Labels>
     requires(typelist::all<is_label, Labels> && typelist::length<Labels> >= 2)
 struct ParmJump
@@ -78,14 +108,15 @@ struct ParmJump
     using labels = Labels;
 };
 
+/// @brief Describes non-conditional jump.
+///
+/// @tparam Target Label to jump to.
 template <typename Target>
     requires(is_label<Target>::value)
 struct Jump
 {
     using target = Target;
 };
-
-using EndJump = Jump<EndLabel>;
 
 template <typename T>
 struct does_store
@@ -174,8 +205,8 @@ struct collect<Name, VarTypes, type_sequence<Var, Vars...>>
 {
     using type =
         collect<Name,
-                std::conditional_t<std::is_same_v<Name, typename Var::name>,
-                                   typelist::cons<typename Var::type, VarTypes>,
+                std::conditional_t<std::is_same_v<Name, varname<Var>>,
+                                   typelist::cons<vartype<Var>, VarTypes>,
                                    VarTypes>,
                 type_sequence<Vars...>>::type;
 };
@@ -206,6 +237,19 @@ struct collected_type<type_sequence<Ts...>>
 {
     using type = typelist::to<type_sequence<Ts...>, lucid::Union>;
 };
+
+/// @brief Infers register types merging variables with same names into unions.
+template <typename Vars, typename Names>
+struct infer_reg_types
+{
+    template <typename Name>
+    using f = collected_type<collect_types_t<Name, Vars>>::type;
+
+    using type = typelist::map<f, Names>;
+};
+
+template <typename Vars, typename Names>
+using infer_reg_types_t = infer_reg_types<Vars, Names>::type;
 
 template <typename Cell, typename CPVar>
 struct cell_vars
@@ -433,7 +477,7 @@ struct ensure_last_jumps
         // is either label of the next cell or if there is none ending label
         using next_label =
             choice_t<typelist::at<(snd_t<CellIdx>::value + 1), Labels>,
-                     EndLabel>;
+                     HaltLabel>;
 
         using type =
             std::conditional_t<is_jump<typelist::last<cell>>::value,
@@ -524,7 +568,7 @@ struct Program
     static_assert(!typelist::has_duplicates<labels>);
 
     using labelmap = typelist::cons<
-        type_pair<EndLabel, std::integral_constant<index_t, halt_pos>>,
+        type_pair<HaltLabel, std::integral_constant<index_t, halt_pos>>,
         typelist::enumerate<labels, index_t>>;
 
     static constexpr bool singular = num_cells == 1;
@@ -536,15 +580,11 @@ struct Program
     /// @brief Names of registers.
     using reg_names = typelist::nub<typelist::map<varname, variables>>;
 
-    template <typename Name>
-    using infer_reg_type =
-        collected_type<collect_types_t<Name, variables>>::type;
-
     /// @brief Registers types.
     ///
     /// If there are few different types corresponding to the same name,
     /// lucid::Union used to hold values of the register.
-    using reg_types = typelist::map<infer_reg_type, reg_names>;
+    using reg_types = infer_reg_types_t<variables, reg_names>;
 
     // don't check jumps for singular program.
     using cells =
@@ -618,7 +658,7 @@ struct rshift_op
 #define TMOV(a, b)  MOV(TVAR(a), TVAR(b))
 #define IMOV(a, b)  MOV(IVAR(a), IVAR(b))
 
-#define LABEL(NAME) lucid::Label<#NAME>
+#define LABEL(NAME) lucid::Label<sl2cs<#NAME>>
 #define JMP(TARGET)             \
     lucid::Jump < LABEL(TARGET) \
     >
