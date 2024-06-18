@@ -4,6 +4,8 @@
 
 #include <utils/tmp.hpp>
 
+#include <cstdint>
+
 using namespace std;
 
 namespace lucid::intlist
@@ -61,6 +63,12 @@ static_assert(is_same_v<nlperm<3, L>, pm_seq3>);
 static_assert(is_same_v<nlperm<4, L>, pm_seq4>);
 static_assert(is_same_v<nlperm<5, L>, pm_seq5>);
 } // namespace lucid::intlist
+
+template <typename T>
+struct test_f
+{
+    static constexpr size_t value = sizeof(T);
+};
 
 namespace lucid::typelist
 {
@@ -136,6 +144,11 @@ static_assert(
                             type_pair<unsigned, integral_constant<size_t, 1>>,
                             type_pair<short, integral_constant<size_t, 2>>>>);
 static_assert(is_same_v<flatten<flatten_test>, flatten_val>);
+static_assert(
+    is_same_v<
+        map<test_f,
+            type_sequence<int8_t, int16_t, int32_t, int64_t, float, double>>,
+        integer_sequence<size_t, 1, 2, 4, 8, 4, 8>>);
 } // namespace lucid::typelist
 
 int

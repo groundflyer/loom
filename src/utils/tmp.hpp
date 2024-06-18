@@ -235,6 +235,16 @@ struct foldr<F, Acc, type_sequence<T, Ts...>>
 template <template <typename> typename F, typename List>
 struct map;
 
+template <template <typename> typename F, typename T, typename... Ts>
+    requires(std::is_integral_v<std::remove_cvref_t<decltype(F<T>::value)>>)
+struct map<F, type_sequence<T, Ts...>>
+{
+    using type =
+        std::integer_sequence<std::remove_cvref_t<decltype(F<T>::value)>,
+                              F<T>::value,
+                              F<Ts>::value...>;
+};
+
 template <template <typename> typename F, typename... Ts>
 struct map<F, type_sequence<Ts...>>
 {
@@ -638,6 +648,10 @@ template <typename List>
 using reverse = foldr<append, type_sequence<>, List>;
 
 /// @brief Apply @p F to each element of @p List.
+///
+/// When @p F<T> has static public member @p value of integral type
+/// the result is std::integer_sequence containing these values.
+/// Otherwise - type_sequence.
 template <template <typename> typename F, typename List>
 using map = detail::map<F, List>::type;
 
