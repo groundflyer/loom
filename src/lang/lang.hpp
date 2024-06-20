@@ -43,7 +43,7 @@ constexpr inline std::string_view varview = _Variable::nameview;
 inline constexpr char _cp_char[] = "CP";
 
 /// @brief char_sequence for _cp_char.
-using _cp_name                   = sl2cs<_cp_char>;
+using _cp_name = sl2cs<_cp_char>;
 
 /// @brief Checks that @p _Vars not named _cp_name.
 template <typename... _Vars>
@@ -118,18 +118,20 @@ struct Jump
     using target = Target;
 };
 
+/// @brief Check if @p T is Compute command.
 template <typename T>
-struct does_store
+struct is_compute
 {
     static constexpr bool value = false;
 };
 
 template <typename... Ts>
-struct does_store<Compute<Ts...>>
+struct is_compute<Compute<Ts...>>
 {
     static constexpr bool value = true;
 };
 
+/// @brief Check if @p T is Jump command.
 template <typename T>
 struct is_jump
 {
@@ -148,48 +150,56 @@ struct is_jump<ParmJump<Ts...>>
     static constexpr bool value = true;
 };
 
-template <typename T>
-struct is_cell
-{
-    static constexpr bool value =
-        typelist::length<T> >= 2 && is_jump<typelist::last<T>>::value;
-};
+/// @brief Get the variable @p Instruction stores result to.
+template <typename Instruction, typename CPVar>
+struct stored_var;
 
-template <typename Command>
-struct command_dst;
-
-template <typename Op, typename Dst, typename... Ts>
-struct command_dst<Compute<Op, Dst, Ts...>>
+template <typename CPVar, typename Op, typename Dst, typename... Ts>
+struct stored_var<Compute<Op, Dst, Ts...>, CPVar>
 {
     using type = Dst;
 };
 
-template <typename Command>
-using command_dst_t = command_dst<Command>::type;
+template <typename CPVar, typename Target>
+struct stored_var<Jump<Target>, CPVar>
+{
+    using type = CPVar;
+};
 
-template <typename Command, typename CPVar>
-struct command_vars;
+template <typename CPVar, typename Var, typename... Labels>
+struct stored_var<ParmJump<Var, Labels...>, CPVar>
+{
+    using type = CPVar;
+};
+
+template <typename Instruction, typename CPVar>
+using stored_var_t = stored_var<Instruction, CPVar>::type;
+
+/// @brief Get list of variables used in @p Instruction.
+template <typename Instruction, typename CPVar>
+struct ins_vars;
 
 template <typename CPVar, typename Op, typename Dst, typename... Args>
-struct command_vars<Compute<Op, Dst, Args...>, CPVar>
+struct ins_vars<Compute<Op, Dst, Args...>, CPVar>
 {
-    using type = typelist::nub<type_sequence<Dst, Args...>>;
+    using type = type_sequence<Dst, Args...>;
 };
 
 template <typename CPVar, typename Target>
-struct command_vars<Jump<Target>, CPVar>
+struct ins_vars<Jump<Target>, CPVar>
 {
     using type = type_sequence<CPVar>;
 };
 
 template <typename CPVar, typename Var, typename... Labels>
-struct command_vars<ParmJump<Var, Labels...>, CPVar>
+struct ins_vars<ParmJump<Var, Labels...>, CPVar>
 {
     using type = type_sequence<CPVar, Var>;
 };
 
-template <typename Command, typename CPVar>
-using command_vars_t = command_vars<Command, CPVar>::type;
+/// @brief Get all variables used in @p Instruction.
+template <typename Instruction, typename CPVar>
+using ins_vars_t = ins_vars<Instruction, CPVar>::type;
 
 template <typename Name, typename VarTypes, typename Vars>
 struct collect;
@@ -255,7 +265,7 @@ template <typename Cell, typename CPVar>
 struct cell_vars
 {
     template <typename C>
-    using f = command_vars_t<C, CPVar>;
+    using f = ins_vars_t<C, CPVar>;
 
     using type = typelist::nub<typelist::concat<typelist::map<f, Cell>>>;
 };
@@ -405,7 +415,135 @@ get_value(_Memory&& mem) noexcept
 template <typename LabelMap>
 using get_index_t = snd_t<typelist::head<LabelMap>>::value_type;
 
-template <typename Command, typename LabelMap>
+namespace detail
+{
+template <typename Var>
+struct load_tag
+{
+    using type = Var;
+};
+
+template <typename Var>
+struct store_tag
+{
+    using type = Var;
+};
+
+template <typename Instruction, typename CPVar>
+struct load_store_seq;
+
+template <typename CPVar, typename Op, typename Dst, typename... Args>
+struct load_store_seq<Compute<Op, Dst, Args...>, CPVar>
+{
+    using type = type_sequence<load_tag<Args>..., store_tag<Dst>>;
+};
+
+template <typename CPVar, typename Target>
+struct load_store_seq<Jump<Target>, CPVar>
+{
+    using type = type_sequence<store_tag<CPVar>>;
+};
+
+template <typename CPVar, typename Var, typename... Labels>
+struct load_store_seq<ParmJump<Var, Labels...>, CPVar>
+{
+    using type = type_sequence<load_tag<Var>, store_tag<CPVar>>;
+};
+
+template <typename Instruction, typename CPVar>
+using load_store_seq_t = load_store_seq<Instruction, CPVar>::type;
+
+template <typename Tag, typename Set>
+struct store_set;
+
+template <typename Var, typename Set>
+struct store_set<load_tag<Var>, Set>
+{
+    using type = Set;
+};
+
+template <typename Var, typename Set>
+struct store_set<store_tag<Var>, Set>
+{
+    // save variable name to store set
+    using type = typelist::cons<varname<Var>, Set>;
+};
+
+template <typename Tag, typename Set>
+using store_set_t = store_set<Tag, Set>::type;
+
+template <typename Tag, typename Stores, typename Loads>
+struct load_set;
+
+template <typename Var, typename Stores, typename Loads>
+struct load_set<load_tag<Var>, Stores, Loads>
+{
+    // if variable name in store set don't change load list
+    // otherwise add the variable to the load list
+    using type = std::conditional_t<typelist::elem<varname<Var>, Stores>,
+                                    Loads,
+                                    typelist::cons<Var, Loads>>;
+};
+
+template <typename Var, typename Stores, typename Loads>
+struct load_set<store_tag<Var>, Stores, Loads>
+{
+    using type = Loads;
+};
+
+template <typename Tag, typename Stores, typename Loads>
+using load_set_t = load_set<Tag, Stores, Loads>::type;
+} // namespace detail
+
+/// @brief Select only variables needed to load.
+template <typename Cell, typename CPVar>
+class load_list
+{
+    template <typename Tag>
+    using p = std::negation<is_literal<typename Tag::type>>;
+
+    template <typename C>
+    using f = detail::load_store_seq_t<C, CPVar>;
+
+    using seq = typelist::filter<p, typelist::concat<typelist::map<f, Cell>>>;
+
+    template <typename Acc, typename Tag>
+    struct load_folder
+    {
+        using stores = fst_t<Acc>;
+        using loads  = snd_t<Acc>;
+        using type   = type_pair<detail::store_set_t<Tag, stores>,
+                               detail::load_set_t<Tag, stores, loads>>;
+    };
+
+    template <typename Acc, typename Tag>
+    using load_folder_t = load_folder<Acc, Tag>::type;
+
+  public:
+    using type = typelist::nub<
+        snd_t<typelist::foldl<load_folder_t,
+                              type_pair<type_sequence<>, type_sequence<>>,
+                              seq>>>;
+};
+
+template <typename Cell, typename CPVar>
+using load_list_t = load_list<Cell, CPVar>::type;
+
+/// @brief Select variables to write.
+template <typename Cell, typename CPVar>
+class store_list
+{
+    template <typename I>
+    using f = stored_var<I, CPVar>;
+
+  public:
+    using type = typelist::map<f, Cell>;
+};
+
+template <typename Cell, typename CPVar>
+using store_list_t = store_list<Cell, CPVar>::type;
+
+template <typename Instruction, typename LabelMap>
 struct standard_eval;
 
 template <typename Op, typename Dst, typename... Args, typename _>
@@ -453,8 +591,8 @@ template <typename Cell,
           template <typename, typename> typename Eval = standard_eval>
 struct standard_compiler
 {
-    template <typename Command>
-    using eval = Eval<Command, LabelMap>;
+    template <typename Instruction>
+    using eval = Eval<Instruction, LabelMap>;
 
     using instructions = typelist::map<eval, Cell>;
 
@@ -525,6 +663,7 @@ class infer_index
                                               std::uintmax_t>>;
 };
 
+/// @brief Get unsigned integer type that has the same size as @p T.
 template <typename T>
 using infer_index_t = infer_index<T>::type;
 
@@ -532,11 +671,22 @@ using infer_index_t = infer_index<T>::type;
 template <typename InputVars, typename Statements, typename OutputVars>
 struct Program
 {
+    using input_vars  = InputVars;
+    using output_vars = OutputVars;
+    using index_t     = infer_index_t<vartype<typelist::head<InputVars>>>;
+
+    static_assert(!std::is_void_v<index_t>);
+
+    using cp = Variable<index_t, _cp_name>;
+
+    template <typename C>
+    using command_dst_t = stored_var_t<C, cp>;
+
     /// @brief Variables that have stored values to.
     using stated_vars = typelist::nub<typelist::join<
         typelist::join<InputVars, OutputVars>,
         typelist::map<command_dst_t,
-                      typelist::filter<does_store, Statements>>>>;
+                      typelist::filter<is_compute, Statements>>>>;
 
     static_assert(!typelist::any<is_literal, stated_vars>);
 
@@ -546,14 +696,6 @@ struct Program
     using stated_labels = typelist::filter<is_label, Statements>;
 
     static constexpr std::size_t num_cells = typelist::length<cells_statements>;
-
-    using input_vars  = InputVars;
-    using output_vars = OutputVars;
-    using index_t     = infer_index_t<vartype<typelist::head<InputVars>>>;
-
-    static_assert(!std::is_void_v<index_t>);
-
-    using cp = Variable<index_t, _cp_name>;
 
     static constexpr index_t halt_pos = -1;
 
