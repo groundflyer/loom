@@ -8,7 +8,7 @@
 
 namespace lucid::bse
 {
-template <typename RegTypes, typename RegNames, typename _CP>
+template <typename RegTypes, typename RegNames, typename CPVar>
 class Memory
 {
     using helper = MemoryHelper<RegTypes, RegNames>;
@@ -27,10 +27,10 @@ class Memory
     }
 
     /// @brief Access cell pointer.
-    std::add_lvalue_reference_t<vartype<_CP>>
+    std::add_lvalue_reference_t<vartype<CPVar>>
     cp() noexcept
     {
-        return get<_CP>();
+        return get<CPVar>();
     }
 };
 
