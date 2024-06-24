@@ -360,8 +360,7 @@ struct parm_jump_helper<ParmJump<Var, Labels>, LabelMap>
         requires(typelist::elem<L, typelist::map<fst_t, LabelMap>>)
     using jump_idx = typelist::lookup<L, LabelMap>;
 
-    using jump_idxs =
-        typelist::to_integer_sequence<typelist::map<jump_idx, Labels>>;
+    using jump_idxs = typelist::map<jump_idx, Labels>;
 
     static constexpr auto table = intlist::array<jump_idxs>;
 };
@@ -507,7 +506,7 @@ class load_list
 
     using seq = typelist::filter<p, typelist::concat<typelist::map<f, Cell>>>;
 
-    template <typename Acc, typename Tag>
+    template <typename Tag, typename Acc>
     struct load_folder
     {
         using stores = fst_t<Acc>;
@@ -516,8 +515,8 @@ class load_list
                                detail::load_set_t<Tag, stores, loads>>;
     };
 
-    template <typename Acc, typename Tag>
-    using load_folder_t = load_folder<Acc, Tag>::type;
+    template <typename Tag, typename Acc>
+    using load_folder_t = load_folder<Tag, Acc>::type;
 
   public:
     using type = typelist::nub<
@@ -800,7 +799,7 @@ struct rshift_op
 #define TMOV(a, b)  MOV(TVAR(a), TVAR(b))
 #define IMOV(a, b)  MOV(IVAR(a), IVAR(b))
 
-#define LABEL(NAME) lucid::Label<sl2cs<#NAME>>
+#define LABEL(NAME) lucid::Label<lucid::sl2cs<#NAME>>
 #define JMP(TARGET)             \
     lucid::Jump < LABEL(TARGET) \
     >
