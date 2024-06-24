@@ -4,12 +4,14 @@
 
 #pragma once
 
+#include "bse.hpp"
 #include "bve.hpp"
 #include "lang.hpp"
 
 #include <utils/debug.hpp>
 #include <utils/tmp.hpp>
 
+#include <algorithm>
 #include <cstdlib>
 #include <memory>
 
@@ -41,8 +43,8 @@ constexpr inline fsize_t simd_align = 16;
 template <typename _ProxyView>
 struct proxy_view_extent;
 
-template <typename Data, typename Helper, typename _CP, fsize_t N>
-struct proxy_view_extent<bve::ProxyView<Data, Helper, _CP, N>>
+template <typename Data, typename Helper, typename CPVar, fsize_t N>
+struct proxy_view_extent<bve::ProxyView<Data, Helper, CPVar, N>>
 {
     static constexpr fsize_t value = N;
 };
@@ -70,10 +72,8 @@ struct get_packed_vector
 template <typename T, fsize_t N>
 using packed_vector = get_packed_vector<T, N>::type;
 
-namespace detail
-{
 template <typename T>
-struct get_native_vector_extent
+struct native_vector_extent
 {
   private:
 #if defined(__AVX__) && defined(NARROW_AVX_INT)
@@ -85,7 +85,7 @@ struct get_native_vector_extent
     static constexpr fsize_t value = _width / sizeof(T);
 };
 
-template <typename C, typename index_t>
+template <typename I, typename index_t>
 struct native_instruction_width;
 
 template <typename Op,
@@ -95,33 +95,31 @@ template <typename Op,
           typename index_t>
 struct native_instruction_width<Compute<Op, Dst, Arg1, Args...>, index_t>
 {
-    static constexpr fsize_t value =
-        get_native_vector_extent<vartype<Arg1>>::value;
+    static constexpr fsize_t value = native_vector_extent<vartype<Arg1>>::value;
 };
 
 template <typename Target, typename index_t>
 struct native_instruction_width<Jump<Target>, index_t>
 {
-    static constexpr fsize_t value = get_native_vector_extent<index_t>::value;
+    static constexpr fsize_t value = native_vector_extent<index_t>::value;
 };
 
 template <typename Var, typename Labels, typename index_t>
 struct native_instruction_width<ParmJump<Var, Labels>, index_t>
 {
-    static constexpr fsize_t value = get_native_vector_extent<index_t>::value;
+    static constexpr fsize_t value = native_vector_extent<index_t>::value;
 };
-} // namespace detail
 
 template <typename T>
-constexpr inline fsize_t native_vector_extent =
-    detail::get_native_vector_extent<T>::value;
+constexpr inline fsize_t native_vector_extent_v =
+    native_vector_extent<T>::value;
 
 template <typename T>
-using native_vector = packed_vector<T, native_vector_extent<T>>;
+using native_vector = packed_vector<T, native_vector_extent_v<T>>;
 
-template <typename C, typename index_t>
-constexpr inline fsize_t native_instruction_width =
-    detail::native_instruction_width<C, index_t>::value;
+template <typename I, typename index_t>
+constexpr inline fsize_t native_instruction_width_v =
+    native_instruction_width<I, index_t>::value;
 
 /// @brief Load @p N values and pack them into vector of width @p N
 /// from aligned memory location @p src.
@@ -167,13 +165,13 @@ struct remap_comp<N, std::identity, Dst, Src>
     };
 };
 
-template <fsize_t N, typename T, typename C>
-struct remap_comp<N, choice_op, T, C, T, T>
+template <fsize_t N, typename T, typename I>
+struct remap_comp<N, choice_op, T, I, T, T>
 {
     struct type
     {
         constexpr packed_vector<T, N>
-        operator()(const packed_vector<C, N> c,
+        operator()(const packed_vector<I, N> c,
                    const packed_vector<T, N> a,
                    const packed_vector<T, N> b) const noexcept
         {
@@ -249,6 +247,22 @@ DEF_REMAP_IVEC_BIN(rshift_op, >>)
 template <fsize_t N, typename Op, typename Ret, typename... Args>
 using remap_comp_t = remap_comp<N, Op, Ret, Args...>::type;
 
+template <typename T>
+struct is_pv;
+
+template <typename _ProxyView>
+    requires(pv_extent<_ProxyView> > 0)
+struct is_pv<_ProxyView>
+{
+    static constexpr bool value = true;
+};
+
+template <typename T>
+struct is_pv
+{
+    static constexpr bool value = false;
+};
+
 template <fsize_t N>
 struct var_loader
 {
@@ -263,26 +277,51 @@ struct var_loader
         else
             return load<N>(view.template get<Var>().data());
     }
+
+    template <typename Var, typename _Memory>
+        requires(!is_pv<_Memory>::value)
+    decltype(auto)
+    operator()(_Memory& mem) const noexcept
+    {
+        constexpr auto l = parse_literal<Var>();
+        if constexpr(l.has_value())
+            return broadcast<N>(l.value());
+        else
+            return mem.template get<Var>();
+    }
 };
 
-template <typename C, typename LabelMap, fsize_t N>
-struct eval;
+template <typename I, typename LabelMap, fsize_t N>
+class eval;
 
 template <typename Target, typename LabelMap, fsize_t N>
-struct eval<Jump<Target>, LabelMap, N>
+class eval<Jump<Target>, LabelMap, N>
 {
     using constant                  = typelist::lookup<Target, LabelMap>;
     using index_t                   = get_index_t<LabelMap>;
     static constexpr index_t target = constant{}();
 
+    packed_vector<index_t, N>
+    get() const noexcept
+    {
+        return broadcast<N>(target);
+    }
+
+  public:
     template <typename _ProxyView>
         requires(pv_extent<_ProxyView> == N)
     void
     operator()(_ProxyView view) const noexcept
     {
-        index_t*                  dst = view.cp().data();
-        packed_vector<index_t, N> t   = broadcast<N>(target);
-        store<N>(dst, t);
+        store<N>(view.cp().data(), get());
+    }
+
+    template <typename _Memory>
+        requires(!is_pv<_Memory>::value)
+    void
+    operator()(_Memory& mem) const noexcept
+    {
+        mem.cp() = get();
     }
 };
 
@@ -292,7 +331,7 @@ template <typename Op,
           typename LabelMap,
           fsize_t N>
     requires(... && (sizeof(vartype<Dst>) == sizeof(vartype<Args>)))
-struct eval<Compute<Op, Dst, Args...>, LabelMap, N>
+class eval<Compute<Op, Dst, Args...>, LabelMap, N>
 {
     using T         = vartype<Dst>;
     using index_t   = get_index_t<LabelMap>;
@@ -300,16 +339,31 @@ struct eval<Compute<Op, Dst, Args...>, LabelMap, N>
     using loader_t  = var_loader<N>;
     static constexpr loader_t loader{};
 
+    template <typename _Memory>
+    packed_vector<T, N>
+    compute(_Memory&& mem) const noexcept
+    {
+        auto vars = typelist::maybe_collect(loader,
+                                            type_sequence<Args...>{},
+                                            std::forward<_Memory>(mem));
+        return maybe_apply(vector_op{}, vars);
+    }
+
+  public:
     template <typename _ProxyView>
         requires(pv_extent<_ProxyView> == N)
     void
     operator()(_ProxyView view) const noexcept
     {
-        T*   dst = view.template get<Dst>().data();
-        auto vars =
-            typelist::maybe_collect(loader, type_sequence<Args...>{}, view);
-        packed_vector<T, N> ret = maybe_apply(vector_op{}, vars);
-        store<N>(dst, ret);
+        store<N>(view.template get<Dst>().data(), compute(view));
+    }
+
+    template <typename _Memory>
+        requires(!is_pv<_Memory>::value)
+    void
+    operator()(_Memory& mem) const noexcept
+    {
+        mem.template get<Dst>() = compute(mem);
     }
 };
 
@@ -346,12 +400,13 @@ struct shuffler<std::integer_sequence<index_t, is...>, N>
 };
 
 template <typename Var, typename Labels, typename LabelMap, fsize_t N>
-struct eval<ParmJump<Var, Labels>, LabelMap, N>
+class eval<ParmJump<Var, Labels>, LabelMap, N>
 {
     using index_t = get_index_t<LabelMap>;
     using idxs    = pjmp_idxs<ParmJump<Var, Labels>, LabelMap>;
     static constexpr shuffler<idxs, N> op{};
 
+  public:
     template <typename _ProxyView>
         requires(pv_extent<_ProxyView> == N)
     void
@@ -361,29 +416,57 @@ struct eval<ParmJump<Var, Labels>, LabelMap, N>
         index_t* src = view.template get<Var>().data();
         store<N>(dst, op(load<N>(src)));
     }
+
+    template <typename _Memory>
+        requires(!is_pv<_Memory>::value)
+    void
+    operator()(_Memory& mem) const noexcept
+    {
+        mem.cp() = op(mem.template get<Var>());
+    }
 };
 
-template <typename C, typename LabelMap, fsize_t bulk_number>
-struct vertical_runner
+template <typename SIMDRunner,
+          typename SerialRunner,
+          fsize_t N,
+          fsize_t bulk_number>
+class BulkDispatcher
 {
-    using index_t                   = get_index_t<LabelMap>;
-    static constexpr fsize_t stride = native_instruction_width<C, index_t>;
-    static constexpr eval<C, LabelMap, stride>  v_eval{};
-    static constexpr standard_eval<C, LabelMap> s_eval{};
     using bulk_sizes =
         intlist::map_f<decltype([](fsize_t n) constexpr noexcept -> fsize_t
-                                { return n * stride; }),
+                                { return n * N; }),
                        intlist::reverse<intlist::powerof2s<bulk_number>>>;
 
+    static constexpr bulk_sizes   seq{};
+    static constexpr SIMDRunner   simd_runner{};
+    static constexpr SerialRunner serial_runner{};
+
+    /// @brief Compute aligned offset for the next view.
+    ///
+    /// @param stride SIMD width.
     template <typename _MemoryView>
-        requires(pv_extent<_MemoryView> % stride == 0 &&
+    static fsize_t
+    next_offset(_MemoryView view, fsize_t stride) noexcept
+    {
+        // ensure that we have aligned access to the view
+        const fsize_t r  = view.offset() % stride; // remainder
+        const fsize_t sr = stride - r;
+        const fsize_t vs = view.size();
+        fsize_t       no = std::min(sr, vs); // new offset
+        // if reminder doesn't fit SIMD lane we execute it here too
+        if(vs - no < stride) no = vs;
+        return no;
+    }
+
+    template <typename _MemoryView>
+        requires(pv_extent<_MemoryView> % N == 0 &&
                  pv_extent<_MemoryView> != dynamic_extent)
     static void
     run_bulk(_MemoryView view) noexcept
     {
-        constexpr fsize_t num_views = pv_extent<_MemoryView> / stride;
+        constexpr fsize_t num_views = pv_extent<_MemoryView> / N;
         for(fsize_t i = 0; i < num_views; ++i)
-            v_eval(view.template view<stride>(i * stride));
+            simd_runner(view.template view<N>(i * N));
     }
 
     template <fsize_t bulk_stride, typename _MemoryView>
@@ -395,10 +478,10 @@ struct vertical_runner
     }
 
     template <typename _MemoryView, fsize_t bulk_stride, fsize_t... rest>
-    static void
-    dispatch_bulks(
+    void
+    dispatch(
         _MemoryView view,
-        std::integer_sequence<fsize_t, bulk_stride, rest...>) noexcept
+        std::integer_sequence<fsize_t, bulk_stride, rest...>) const noexcept
     {
         const fsize_t s = view.size();
         const fsize_t q = s / bulk_stride;
@@ -410,34 +493,204 @@ struct vertical_runner
         if(!r) return;
 
         if constexpr(sizeof...(rest))
-            return dispatch_bulks(view.view(s - r),
-                                  std::integer_sequence<fsize_t, rest...>{});
+            return dispatch(view.view(s - r),
+                            std::integer_sequence<fsize_t, rest...>{});
 
-        // evaluate remained sequentially
-        for(fsize_t i = view.size() - r; i < view.size(); ++i) s_eval(view[i]);
+        // execute remained serially
+        for(fsize_t i = view.size() - r; i < view.size(); ++i)
+            serial_runner(view[i]);
     }
 
+  public:
     template <typename _MemoryView>
     void
     operator()(_MemoryView view) const noexcept
     {
-        // ensure that we have aligned access to the view
-        const fsize_t r  = view.offset() % stride;
-        const fsize_t sr = stride - r;
-        const fsize_t vs = view.size();
-        fsize_t       no = std::min(sr, vs);
-        // if reminder doesn't fit SIMD lane we execute it here too
-        if(vs - no < stride) no = vs;
-        // non-aligned rows executed sequentially
-        for(fsize_t i = 0; i < no; ++i) s_eval(view[i]);
-        if(vs == no) return;
+        const fsize_t no = next_offset(view, N);
+        // non-aligned rows executed serially
+        for(fsize_t i = 0; i < no; ++i) serial_runner(view[i]);
+
+        // we have reavhed the end of the view
+        if(view.size() == no) return;
 
         auto new_view = view.view(no);
-        ASSERT(new_view.offset() % stride == 0 || new_view.size() < stride,
+        ASSERT(new_view.offset() % N == 0 || new_view.size() < N,
                "Unaligned access");
-        dispatch_bulks(new_view, bulk_sizes{});
+        dispatch(new_view, seq);
     }
 };
+
+/// @brief Executes a single instruction @p I through the whole view.
+template <typename I, typename LabelMap, typename CPVar, fsize_t bulk_number>
+class make_vertical_instruction_runner
+{
+    static constexpr fsize_t N = native_instruction_width_v<I, vartype<CPVar>>;
+
+  public:
+    using type = BulkDispatcher<eval<I, LabelMap, N>,
+                                standard_eval<I, LabelMap>,
+                                N,
+                                bulk_number>;
+};
+
+template <typename Cell, typename LabelMap, typename CPVar, fsize_t bulk_number>
+class make_vertical_runner
+{
+    template <typename I, typename _LabelMap>
+    using eval =
+        make_vertical_instruction_runner<I, _LabelMap, CPVar, bulk_number>::
+            type;
+
+  public:
+    using type = standard_compiler<Cell, LabelMap, eval>;
+};
+
+template <typename T, fsize_t N>
+struct vectorize_union
+{
+    using type = packed_vector<T, N>;
+};
+
+template <typename... Ts, fsize_t N>
+struct vectorize_union<Union<Ts...>, N>
+{
+    using type = Union<packed_vector<Ts, N>...>;
+};
+
+/// @brief Executes @p Cell as SIMD kernel.
+template <typename Cell, typename LabelMap, typename CPVar, fsize_t bulk_number>
+class make_minikernel_runner
+{
+    template <typename Var>
+    using p = std::negation<is_literal<Var>>;
+
+    using vars    = typelist::filter<p, cell_vars_t<Cell, CPVar>>;
+    using index_t = vartype<CPVar>;
+
+    template <typename I>
+    using f = native_instruction_width<I, index_t>;
+
+    // SIMD width/stride
+    static constexpr fsize_t N =
+        *std::ranges::min_element(intlist::stdarray<typelist::map<f, Cell>>);
+
+    template <typename T>
+    using vec_t = vectorize_union<T, N>::type;
+
+    using reg_names  = typelist::nub<typelist::map<varname, vars>>;
+    using reg_types  = infer_reg_types_t<vars, reg_names>;
+    using simd_types = typelist::map<vec_t, reg_types>;
+
+    using load_vars  = load_list_t<Cell, CPVar>;
+    using store_vars = store_list_t<Cell, CPVar>;
+
+    class SerialRunner
+    {
+        using Kernel  = standard_compiler<Cell, LabelMap>;
+        using Storage = bse::Memory<reg_types, reg_names, CPVar>;
+        static constexpr Kernel scalar_kernel{};
+
+        template <typename _ProxyRow>
+        static Storage
+        load(_ProxyRow row) noexcept
+        {
+            Storage storage;
+            typelist::for_each(
+                []<typename Var>(_ProxyRow row, Storage& storage) noexcept
+                { storage.template get<Var>() = row.template get<Var>(); },
+                load_vars{},
+                row,
+                storage);
+            return storage;
+        }
+
+        template <typename _ProxyRow>
+        static void
+        spill(_ProxyRow row, Storage& storage) noexcept
+        {
+            typelist::for_each(
+                []<typename Var>(_ProxyRow row, Storage& storage) noexcept
+                { row.template get<Var>() = storage.template get<Var>(); },
+                row,
+                storage);
+        }
+
+      public:
+        template <typename _ProxyRow>
+        void
+        operator()(_ProxyRow row) const noexcept
+        {
+            Storage storage = load(row);
+            kernel(storage);
+            spill(row, storage);
+        }
+    };
+
+    class SIMDRunner
+    {
+        template <typename I, typename _LabelMap>
+        using simd_eval = eval<I, _LabelMap, N>;
+
+        using Kernel  = standard_compiler<Cell, LabelMap, simd_eval>;
+        using Storage = bse::Memory<simd_types, reg_names, CPVar>;
+
+        static constexpr Kernel kernel{};
+
+        template <typename _MemoryView>
+            requires(pv_extent<_MemoryView> == N)
+        static Storage
+        load(_MemoryView view) noexcept
+        {
+            Storage storage;
+            typelist::for_each(
+                []<typename Var>(_MemoryView view, Storage& storage) noexcept {
+                    storage.template get<Var>() =
+                        load<N>(view.template get<Var>().data());
+                },
+                load_vars{},
+                view,
+                storage);
+            return storage;
+        }
+
+        template <typename _MemoryView>
+            requires(pv_extent<_MemoryView> == N)
+        static void
+        spill(_MemoryView view, Storage& storage) noexcept
+        {
+            typelist::for_each(
+                []<typename Var>(_MemoryView view, Storage& storage) noexcept {
+                    store<N>(view.template get<Var>().data(),
+                             storage.template get<Var>());
+                },
+                store_vars{},
+                view,
+                storage);
+        }
+
+      public:
+        template <typename _MemoryView>
+            requires(pv_extent<_MemoryView> == N)
+        void
+        operator()(_MemoryView view) const noexcept
+        {
+            Storage storage = load(view);
+            kernel(storage);
+            spill(view, storage);
+        }
+    };
+
+  public:
+    using type = BulkDispatcher<SIMDRunner, SerialRunner, N, bulk_number>;
+};
+
+template <typename Cell, typename LabelMap, typename CPVar, fsize_t bulk_number>
+using vertical_runner =
+    make_vertical_runner<Cell, LabelMap, CPVar, bulk_number>::type;
+
+template <typename Cell, typename LabelMap, typename CPVar, fsize_t bulk_number>
+using minikernel_runner =
+    make_minikernel_runner<Cell, LabelMap, CPVar, bulk_number>::type;
 
 template <typename _Memory>
 class memory_chunks : public std::ranges::view_interface<memory_chunks<_Memory>>
@@ -607,8 +860,7 @@ class SIMDAlignedAllocator
     }
 };
 
-template <typename _Program, fsize_t bulk_number>
-    requires(bulk_number > 0)
+template <typename _Program, template <typename...> typename Runner>
 class simd_evaluator
 {
     using labelmap  = _Program::labelmap;
@@ -620,11 +872,8 @@ class simd_evaluator
     static constexpr auto    halt_pos = _Program::halt_pos;
     static constexpr fsize_t align    = simd_align;
 
-    template <typename C, typename LabelMap>
-    using simd_eval = vertical_runner<C, LabelMap, bulk_number>;
-
     template <typename Cell>
-    using compile_cell = standard_compiler<Cell, labelmap, simd_eval>;
+    using compile_cell = Runner<Cell, labelmap, cp>;
 
     using compiled_cells = typelist::map<compile_cell, cells>;
 
@@ -699,6 +948,22 @@ class simd_evaluator
         conditional_t<_Program::singular, single_cell_evaluator, evaluator>;
 };
 
-template <typename _Program, fsize_t bulk_number = 8>
-using evaluator = simd_evaluator<_Program, bulk_number>::type;
+template <typename _Program, bool use_minikernel, fsize_t bulk_number>
+    requires(bulk_number > 0)
+class choose_evaluator
+{
+    template <typename Cell, typename LabelMap, typename CPVar>
+    using runner = std::conditional_t<
+        use_minikernel,
+        minikernel_runner<Cell, LabelMap, CPVar, bulk_number>,
+        vertical_runner<Cell, LabelMap, CPVar, bulk_number>>;
+
+  public:
+    using type = simd_evaluator<_Program, runner>::type;
+};
+
+template <typename _Program,
+          bool    use_minikernel = false,
+          fsize_t bulk_number    = 8>
+using evaluator = choose_evaluator<_Program, use_minikernel, bulk_number>::type;
 } // namespace lucid::simd
