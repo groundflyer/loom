@@ -186,7 +186,7 @@ main(int argc, char* argv[])
     auto ft_cu = std::pair{tsv_cu, tsk_cu};
     auto ft_j4 = std::pair{tsv_j4, tsk_j4};
     auto ft_ch = std::pair{tsv_ch, tsk_ch};
-    auto ft_ls = std::pair{tsv_ls, tsk_rs};
+    auto ft_ls = std::pair{tsv_ls, tsk_ls};
     auto ft_rs = std::pair{tsv_rs, tsk_rs};
 #endif
 
