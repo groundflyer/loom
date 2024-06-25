@@ -41,7 +41,10 @@ constexpr inline fsize_t simd_align = 16;
 #endif
 
 template <typename _ProxyView>
-struct proxy_view_extent;
+struct proxy_view_extent
+{
+    static constexpr fsize_t value = 1;
+};
 
 template <typename Data, typename Helper, typename CPVar, fsize_t N>
 struct proxy_view_extent<bve::ProxyView<Data, Helper, CPVar, N>>
@@ -247,47 +250,66 @@ DEF_REMAP_IVEC_BIN(rshift_op, >>)
 template <fsize_t N, typename Op, typename Ret, typename... Args>
 using remap_comp_t = remap_comp<N, Op, Ret, Args...>::type;
 
-template <typename T>
-struct is_pv;
-
-template <typename _ProxyView>
-    requires(pv_extent<_ProxyView> > 0)
-struct is_pv<_ProxyView>
+template <typename T, fsize_t N>
+struct vectorize_union
 {
-    static constexpr bool value = true;
+    using type = packed_vector<T, N>;
 };
 
-template <typename T>
-struct is_pv
+template <typename... Ts, fsize_t N>
+struct vectorize_union<Union<Ts...>, N>
 {
-    static constexpr bool value = false;
+    using type = Union<packed_vector<Ts, N>...>;
+};
+
+template <typename RegTypes, typename RegNames, typename CPVar, fsize_t N>
+class KernelMemory
+{
+    template <typename T>
+    using reg_proj = vectorize_union<T, N>::type;
+
+    template <typename T>
+    using vec = packed_vector<T, N>;
+
+    using helper = MemoryHelper<typelist::map<reg_proj, RegTypes>, RegNames>;
+
+    template <typename Var>
+    using vec_var = Variable<vec<vartype<Var>>, varname<Var>>;
+
+    using Data = helper::data;
+
+    Data m_data;
+
+  public:
+    template <typename Var>
+    std::add_lvalue_reference_t<vec<vartype<Var>>>
+    get() noexcept
+    {
+        return helper::template get<vec_var<Var>>(m_data);
+    }
+
+    std::add_lvalue_reference_t<vec<vartype<CPVar>>>
+    cp() noexcept
+    {
+        return get<CPVar>();
+    }
 };
 
 template <fsize_t N>
 struct var_loader
 {
-    template <typename Var, typename _ProxyView>
-        requires(pv_extent<_ProxyView> == N)
-    packed_vector<vartype<Var>, N>
-    operator()(_ProxyView view) const noexcept
-    {
-        constexpr auto l = parse_literal<Var>();
-        if constexpr(l.has_value())
-            return broadcast<N>(l.value());
-        else
-            return load<N>(view.template get<Var>().data());
-    }
-
     template <typename Var, typename _Memory>
-        requires(!is_pv<_Memory>::value)
     decltype(auto)
-    operator()(_Memory& mem) const noexcept
+    operator()(_Memory&& mem) const noexcept
     {
         constexpr auto l = parse_literal<Var>();
         if constexpr(l.has_value())
             return broadcast<N>(l.value());
+        else if constexpr(pv_extent<std::remove_cvref_t<_Memory>> == N)
+            return load<N>(
+                std::forward<_Memory>(mem).template get<Var>().data());
         else
-            return mem.template get<Var>();
+            return std::forward<_Memory>(mem).template get<Var>();
     }
 };
 
@@ -308,20 +330,14 @@ class eval<Jump<Target>, LabelMap, N>
     }
 
   public:
-    template <typename _ProxyView>
-        requires(pv_extent<_ProxyView> == N)
-    void
-    operator()(_ProxyView view) const noexcept
-    {
-        store<N>(view.cp().data(), get());
-    }
-
     template <typename _Memory>
-        requires(!is_pv<_Memory>::value)
     void
-    operator()(_Memory& mem) const noexcept
+    operator()(_Memory&& mem) const noexcept
     {
-        mem.cp() = get();
+        if constexpr(pv_extent<std::remove_cvref_t<_Memory>> == N)
+            store<N>(std::forward<_Memory>(mem).cp().data(), get());
+        else
+            std::forward<_Memory>(mem).cp() = get();
     }
 };
 
@@ -350,20 +366,16 @@ class eval<Compute<Op, Dst, Args...>, LabelMap, N>
     }
 
   public:
-    template <typename _ProxyView>
-        requires(pv_extent<_ProxyView> == N)
-    void
-    operator()(_ProxyView view) const noexcept
-    {
-        store<N>(view.template get<Dst>().data(), compute(view));
-    }
-
     template <typename _Memory>
-        requires(!is_pv<_Memory>::value)
     void
-    operator()(_Memory& mem) const noexcept
+    operator()(_Memory&& mem) const noexcept
     {
-        mem.template get<Dst>() = compute(mem);
+        if constexpr(pv_extent<std::remove_cvref_t<_Memory>> == N)
+            store<N>(std::forward<_Memory>(mem).template get<Dst>().data(),
+                     compute(std::forward<_Memory>(mem)));
+        else
+            std::forward<_Memory>(mem).template get<Dst>() =
+                compute(std::forward<_Memory>(mem));
     }
 };
 
@@ -407,22 +419,20 @@ class eval<ParmJump<Var, Labels>, LabelMap, N>
     static constexpr shuffler<idxs, N> op{};
 
   public:
-    template <typename _ProxyView>
-        requires(pv_extent<_ProxyView> == N)
-    void
-    operator()(_ProxyView view) const noexcept
-    {
-        index_t* dst = view.cp().data();
-        index_t* src = view.template get<Var>().data();
-        store<N>(dst, op(load<N>(src)));
-    }
-
     template <typename _Memory>
-        requires(!is_pv<_Memory>::value)
     void
-    operator()(_Memory& mem) const noexcept
+    operator()(_Memory&& mem) const noexcept
     {
-        mem.cp() = op(mem.template get<Var>());
+        if constexpr(pv_extent<std::remove_cvref_t<_Memory>> == N)
+        {
+            index_t* dst = std::forward<_Memory>(mem).cp().data();
+            index_t* src =
+                std::forward<_Memory>(mem).template get<Var>().data();
+            store<N>(dst, op(load<N>(src)));
+        }
+        else
+            std::forward<_Memory>(mem).cp() =
+                op(std::forward<_Memory>(mem).template get<Var>());
     }
 };
 
@@ -545,18 +555,6 @@ class make_vertical_runner
     using type = standard_compiler<Cell, LabelMap, eval>;
 };
 
-template <typename T, fsize_t N>
-struct vectorize_union
-{
-    using type = packed_vector<T, N>;
-};
-
-template <typename... Ts, fsize_t N>
-struct vectorize_union<Union<Ts...>, N>
-{
-    using type = Union<packed_vector<Ts, N>...>;
-};
-
 /// @brief Executes @p Cell as SIMD kernel.
 template <typename Cell, typename LabelMap, typename CPVar, fsize_t bulk_number>
 class make_minikernel_runner
@@ -574,12 +572,8 @@ class make_minikernel_runner
     static constexpr fsize_t N =
         *std::ranges::min_element(intlist::stdarray<typelist::map<f, Cell>>);
 
-    template <typename T>
-    using vec_t = vectorize_union<T, N>::type;
-
-    using reg_names  = typelist::nub<typelist::map<varname, vars>>;
-    using reg_types  = infer_reg_types_t<vars, reg_names>;
-    using simd_types = typelist::map<vec_t, reg_types>;
+    using reg_names = typelist::nub<typelist::map<varname, vars>>;
+    using reg_types = infer_reg_types_t<vars, reg_names>;
 
     using load_vars  = load_list_t<Cell, CPVar>;
     using store_vars = store_list_t<Cell, CPVar>;
@@ -588,11 +582,11 @@ class make_minikernel_runner
     {
         using Kernel  = standard_compiler<Cell, LabelMap>;
         using Storage = bse::Memory<reg_types, reg_names, CPVar>;
-        static constexpr Kernel scalar_kernel{};
+        static constexpr Kernel kernel{};
 
         template <typename _ProxyRow>
         static Storage
-        load(_ProxyRow row) noexcept
+        alloc(_ProxyRow row) noexcept
         {
             Storage storage;
             typelist::for_each(
@@ -611,6 +605,7 @@ class make_minikernel_runner
             typelist::for_each(
                 []<typename Var>(_ProxyRow row, Storage& storage) noexcept
                 { row.template get<Var>() = storage.template get<Var>(); },
+                store_vars{},
                 row,
                 storage);
         }
@@ -620,7 +615,7 @@ class make_minikernel_runner
         void
         operator()(_ProxyRow row) const noexcept
         {
-            Storage storage = load(row);
+            Storage storage = alloc(row);
             kernel(storage);
             spill(row, storage);
         }
@@ -632,14 +627,14 @@ class make_minikernel_runner
         using simd_eval = eval<I, _LabelMap, N>;
 
         using Kernel  = standard_compiler<Cell, LabelMap, simd_eval>;
-        using Storage = bse::Memory<simd_types, reg_names, CPVar>;
+        using Storage = KernelMemory<reg_types, reg_names, CPVar, N>;
 
         static constexpr Kernel kernel{};
 
         template <typename _MemoryView>
             requires(pv_extent<_MemoryView> == N)
         static Storage
-        load(_MemoryView view) noexcept
+        alloc(_MemoryView view) noexcept
         {
             Storage storage;
             typelist::for_each(
@@ -674,7 +669,7 @@ class make_minikernel_runner
         void
         operator()(_MemoryView view) const noexcept
         {
-            Storage storage = load(view);
+            Storage storage = alloc(view);
             kernel(storage);
             spill(view, storage);
         }

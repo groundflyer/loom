@@ -16,10 +16,9 @@ namespace lucid
 {
 /// @brief Describes a variable.
 ///
-/// @tparam Type must be of fundamental type.
+/// @tparam Type must be of fundamental type or SIMD type.
 /// @tparam Name must be char_sequence.
 template <typename Type, typename Name>
-    requires(std::is_integral_v<Type> || std::is_floating_point_v<Type>)
 struct Variable
 {
     using type                                 = Type;
@@ -533,7 +532,7 @@ template <typename Cell, typename CPVar>
 class store_list
 {
     template <typename I>
-    using f = stored_var<I, CPVar>;
+    using f = stored_var_t<I, CPVar>;
 
   public:
     using type = typelist::map<f, Cell>;
