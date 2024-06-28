@@ -598,7 +598,7 @@ struct standard_compiler
     constexpr void
     operator()(_Memory&& memory) const noexcept
     {
-        typelist::unroll(instructions{}, std::forward<_Memory>(memory));
+        typelist::instantiate(instructions{}, std::forward<_Memory>(memory));
     }
 };
 

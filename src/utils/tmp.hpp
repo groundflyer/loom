@@ -848,7 +848,7 @@ maybe_collect(F&& f, type_sequence<Ts...> /*list*/, Args&&... args) noexcept(
 /// @brief Invoke every functional object in the typelist with @p args.
 template <typename... Fs, typename... Args>
 constexpr void
-unroll(type_sequence<Fs...> /*list*/, Args&&... args) noexcept(
+instantiate(type_sequence<Fs...> /*list*/, Args&&... args) noexcept(
     std::conjunction_v<std::is_nothrow_invocable<Fs, Args...>...>)
 {
     (..., std::invoke(Fs{}, std::forward<Args>(args)...));

@@ -209,7 +209,7 @@ class SimpleVector
 /// @brief Invoke every functional object in the typelist with @p args.
 template <typename... Fs, typename... Args>
 __device__ void
-unroll(type_sequence<Fs...> /*list*/, Args&... args)
+instantiate(type_sequence<Fs...> /*list*/, Args&... args)
 {
     (..., std::invoke(Fs{}, args...));
 }
@@ -541,7 +541,7 @@ struct compiler
     __device__ void
     operator()(Args&... args) const
     {
-        cuda::unroll(instructions{}, args...);
+        cuda::instantiate(instructions{}, args...);
     }
 };
 
