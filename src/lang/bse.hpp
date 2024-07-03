@@ -116,7 +116,7 @@ class basic_scalar_evaluator
             setter(mem, args...);
             while(mem.cp() != halt_pos)
             {
-                visit(
+                visit_at(
                     mem.cp(),
                     [&](auto cell) constexpr noexcept { cell(mem); },
                     cells,

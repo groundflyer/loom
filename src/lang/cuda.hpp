@@ -955,7 +955,7 @@ class cuda_evaluator
                     [&](auto rng) noexcept
                     {
                         auto [cp, bgn, end] = rng;
-                        visit(
+                        visit_at(
                             cp,
                             [&](auto cell) noexcept
                             { run_cell_kernel(cell, mem, bgn, end); },

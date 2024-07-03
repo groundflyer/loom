@@ -750,7 +750,7 @@ struct basic_vector_evaluator
                             { return a.cp() == b.cp(); }),
                     [](auto grp) constexpr noexcept
                     {
-                        visit(
+                        visit_at(
                             ranges::front(grp).cp(),
                             [&](auto& cell) constexpr noexcept { cell(grp); },
                             cells,

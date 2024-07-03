@@ -915,7 +915,7 @@ class simd_evaluator
                 std::ranges::for_each(memory_chunks(mem),
                                       [](auto view) noexcept
                                       {
-                                          visit(
+                                          visit_at(
                                               view.cp().front(),
                                               [&](auto cell) noexcept
                                               { cell(view); },

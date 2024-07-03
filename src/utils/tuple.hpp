@@ -146,17 +146,17 @@ template <std::unsigned_integral I,
           typename Tuple,
           typename Default>
 constexpr decltype(auto)
-visit_impl(const I i, Visitor&& visitor, Tuple&& tuple, Default&& def)
+visit_at_impl(const I i, Visitor&& visitor, Tuple&& tuple, Default&& def)
 {
     if(idx == i)
         return std::invoke(std::forward<Visitor>(visitor),
                            std::get<idx>(std::forward<Tuple>(tuple)));
 
     if constexpr(idx < std::tuple_size_v<std::decay_t<Tuple>> - 1)
-        return visit_impl<I, idx + 1>(i,
-                                      std::forward<Visitor>(visitor),
-                                      std::forward<Tuple>(tuple),
-                                      std::forward<Default>(def));
+        return visit_at_impl<I, idx + 1>(i,
+                                         std::forward<Visitor>(visitor),
+                                         std::forward<Tuple>(tuple),
+                                         std::forward<Default>(def));
     else
         return std::invoke(std::forward<Default>(def));
 }
@@ -463,12 +463,12 @@ template <std::unsigned_integral I,
           typename Tuple,
           typename Default>
 constexpr decltype(auto)
-visit(const I i, Visitor&& visitor, Tuple&& tuple, Default&& def)
+visit_at(const I i, Visitor&& visitor, Tuple&& tuple, Default&& def)
 {
-    return detail::visit_impl<I, 0>(i,
-                                    std::forward<Visitor>(visitor),
-                                    std::forward<Tuple>(tuple),
-                                    std::forward<Default>(def));
+    return detail::visit_at_impl<I, 0>(i,
+                                       std::forward<Visitor>(visitor),
+                                       std::forward<Tuple>(tuple),
+                                       std::forward<Default>(def));
 }
 
 /// @brief Concatenate arrays.
