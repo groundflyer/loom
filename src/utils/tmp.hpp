@@ -853,6 +853,19 @@ instantiate(type_sequence<Fs...> /*list*/, Args&&... args) noexcept(
 {
     (..., std::invoke(Fs{}, std::forward<Args>(args)...));
 }
+
+/// @brief Invoke every functional object @p Fs in the typelist with @p args
+/// until the result is true or control reaches end of the list.
+///
+/// @return true if at least one invocation returns true, otherwise false.
+template <typename... Fs, typename... Args>
+    requires(std::conjunction_v<std::is_invocable_r<bool, Ps, Args...>...>)
+constexpr bool
+first_of(type_sequence<Fs...> /*list*/, Args&&... args) noexcept(
+    std::conjunction_v<std::is_nothrow_invocable<Fs, Args...>...>)
+{
+    return (... || std::invoke(Fs{}, std::forward<Args>(args)...));
+}
 /// @}
 } // namespace typelist
 
