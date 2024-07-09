@@ -4,12 +4,15 @@
 
 #pragma once
 
+#include <utils/debug.hpp>
+#include <utils/functional.hpp>
 #include <utils/string.hpp>
 #include <utils/tmp.hpp>
 #include <utils/tuple.hpp>
 
 #include <array>
 #include <functional>
+#include <ranges>
 #include <string_view>
 #include <tuple>
 #include <type_traits>
@@ -17,7 +20,6 @@
 #include <variant>
 
 #include <range/v3/algorithm/for_each.hpp>
-#include <range/v3/view/facade.hpp>
 #include <range/v3/view/filter.hpp>
 #include <range/v3/view/split.hpp>
 #include <range/v3/view/transform.hpp>
@@ -31,6 +33,13 @@ namespace lucid::argparse
 /// @defgroup ArgParse ArgParse
 /// @brief Zero-cost, Unix/GNU style command line arguments parser.
 /// @{
+
+/// @brief Special value. The exact meaning depends on the context.
+///
+/// In case of tokenization: no token.
+///
+/// In case of option number: indefenite number of options.
+inline constexpr std::size_t npos = -1ul;
 
 namespace detail
 {
@@ -64,7 +73,7 @@ tokenize_impl(const char key) noexcept
     if constexpr(sizeof...(RestOptions) > 0ul)
         return tokenize_impl<Idx + 1, RestOptions...>(key);
     else
-        return -1ul;
+        return npos;
 }
 
 template <std::size_t Idx, typename FirstOption, typename... RestOptions>
@@ -76,7 +85,7 @@ tokenize_impl(const std::string_view keyword) noexcept
     if constexpr(sizeof...(RestOptions) > 0ul)
         return tokenize_impl<Idx + 1, RestOptions...>(keyword);
     else
-        return -1ul;
+        return npos;
 }
 
 template <typename Converter, std::size_t... Idxs>
@@ -262,35 +271,157 @@ template <typename O>
 constexpr bool is_option = !is_flag<O>;
 
 /// @brief Wraps program arguments into a range view.
-class ArgsRange : public ranges::view_facade<ArgsRange>
+class ArgsRange : public std::ranges::view_interface<ArgsRange>
 {
     friend ranges::range_access;
 
-    int    idx   = 0;
-    int    _argc = 0;
-    char** _argv = nullptr;
+    int    m_argc = 0;
+    char** p_argv = nullptr;
 
-    bool
-    equal(ranges::default_sentinel_t) const noexcept
+    class _iterator : public std::random_access_iterator_tag
     {
-        return idx == _argc;
-    }
+        int    m_argc = 0;
+        char** p_argv = nullptr;
+        int    m_pos  = 0;
+
+      public:
+        using difference_type = int;
+        using value_type      = std::string_view;
+
+        _iterator(int argc, char* argv[], int pos = 0) noexcept :
+            m_argc(argc), p_argv(argv), m_pos(pos)
+        {
+        }
+
+        _iterator() noexcept = default;
+
+        bool
+        operator==(std::default_sentinel_t) const noexcept
+        {
+            return m_pos == m_argc;
+        }
+
+        bool
+        operator==(const _iterator& rhs) const noexcept
+        {
+            return m_pos == rhs.m_pos;
+        }
+
+        std::strong_ordering
+        operator<=>(const _iterator& rhs) const noexcept
+        {
+            return m_pos <=> rhs.m_pos;
+        }
+
+        value_type
+        operator*() const noexcept
+        {
+            return {*(p_argv + m_pos)};
+        }
+
+        _iterator&
+        operator++() noexcept
+        {
+            ++m_pos;
+            return *this;
+        }
+
+        _iterator
+        operator++(int) noexcept
+        {
+            _iterator ret(*this);
+            ++m_pos;
+            return ret;
+        }
+
+        _iterator&
+        operator--() noexcept
+        {
+            --m_pos;
+            return *this;
+        }
+
+        _iterator
+        operator--(int) noexcept
+        {
+            _iterator ret(*this);
+            --m_pos;
+            return ret;
+        }
+
+        _iterator
+        operator+(difference_type rhs) const noexcept
+        {
+            return {m_argc, p_argv, m_pos + rhs};
+        }
+
+        difference_type
+        operator+(const _iterator& rhs) const noexcept
+        {
+            return m_pos + rhs.m_pos;
+        }
+
+        _iterator
+        operator-(difference_type rhs) const noexcept
+        {
+            return {m_argc, p_argv, m_pos - rhs};
+        }
+
+        difference_type
+        operator-(const _iterator& rhs) const noexcept
+        {
+            return m_pos - rhs.m_pos;
+        }
+
+        _iterator&
+        operator+=(difference_type rhs) noexcept
+        {
+            m_pos += rhs;
+            return *this;
+        }
+
+        _iterator&
+        operator-=(difference_type rhs) noexcept
+        {
+            m_pos -= rhs;
+            return *this;
+        }
+
+        value_type
+        operator[](difference_type n) const noexcept
+        {
+            CHECK_INDEX(n, m_argc);
+            return {*(p_argv + n)};
+        }
+
+        friend _iterator
+        operator+(difference_type lhs, const _iterator& rhs) noexcept
+        {
+            return {rhs.m_argc, rhs.p_argv, rhs.m_pos + lhs};
+        }
+    };
 
   public:
     ArgsRange() = default;
 
-    ArgsRange(int argc, char* argv[]) noexcept : _argc(argc), _argv(argv) {}
+    ArgsRange(int argc, char* argv[]) noexcept : m_argc(argc), p_argv(argv) {}
 
-    char**
-    read() const noexcept
+    friend _iterator
+    begin(const ArgsRange& r) noexcept
     {
-        return _argv + idx;
+        return {r.m_argc, r.p_argv};
     }
 
-    void
-    next() noexcept
+    friend std::default_sentinel_t
+    end(const ArgsRange&) noexcept
     {
-        ++idx;
+        return std::default_sentinel;
+    }
+
+    friend int
+    size(const ArgsRange& r) noexcept
+    {
+        return r.m_argc;
     }
 };
 
@@ -383,7 +514,7 @@ class Binding<C, 1>
 };
 
 template <Converter C>
-class Binding<C, -1ul>
+class Binding<C, npos>
 {
     class value_range : public ranges::view_facade<value_range>
     {
@@ -565,9 +696,9 @@ struct Option
 };
 
 template <char Key, typename Keyword, Converter C>
-struct Option<Key, Keyword, C, -1ul>
+struct Option<Key, Keyword, C, npos>
 {
-    static constexpr std::size_t      num_vals = -1ul;
+    static constexpr std::size_t      num_vals = npos;
     static constexpr char             key      = Key;
     static constexpr bool             is_flag  = false;
     static constexpr std::string_view keyword  = Keyword::view;
@@ -587,10 +718,10 @@ struct Option<Key, Keyword, C, -1ul>
     {
     }
 
-    constexpr Binding<C, -1ul>
+    constexpr Binding<C, npos>
     binding() const noexcept
     {
-        return Binding<C, -1ul>(converter);
+        return Binding<C, npos>(converter);
     }
 };
 
@@ -598,7 +729,7 @@ struct Option<Key, Keyword, C, -1ul>
 template <Converter C, std::size_t nvals>
 struct Positional
 {
-    using var_type = std::conditional_t<(nvals > 1 && nvals != -1ul),
+    using var_type = std::conditional_t<(nvals > 1 && nvals != npos),
                                         std::array<std::string_view, nvals>,
                                         std::string_view>;
     static constexpr std::size_t num_vals = nvals;
@@ -618,8 +749,8 @@ struct Positional
     constexpr auto
     binding() const noexcept
     {
-        if constexpr(nvals == -1ul)
-            return Binding<C, -1ul>(converter);
+        if constexpr(nvals == npos)
+            return Binding<C, npos>(converter);
         else
             return PositionalBinding<C, nvals>(converter);
     }
@@ -683,7 +814,7 @@ option(C                                            converter,
        const std::string_view                       doc,
        const std::array<std::string_view, N>&       var) noexcept
 {
-    static_assert(N > 1ul && N != -1ul, "Use option without N argument");
+    static_assert(N > 1ul && N != npos, "Use option without N argument");
     CHECK_KEYCHAR;
     CHECK_KEYWORD;
     return {converter, def_val, doc, var};
@@ -697,7 +828,7 @@ option(C                                            converter,
        const std::string_view                       doc,
        const std::array<std::string_view, N>&       var) noexcept
 {
-    static_assert(N > 1ul && N != -1ul, "Use option without N argument");
+    static_assert(N > 1ul && N != npos, "Use option without N argument");
     CHECK_KEYCHAR;
     return {converter, def_val, doc, var};
 }
@@ -710,14 +841,14 @@ option(C                                            converter,
        const std::string_view                       doc,
        const std::array<std::string_view, N>&       var) noexcept
 {
-    static_assert(N > 1ul && N != -1ul, "Use option without N argument");
+    static_assert(N > 1ul && N != npos, "Use option without N argument");
     CHECK_KEYWORD;
     return {converter, def_val, doc, var};
 }
 
 /// @brief Create a list option, one that takes one-or-more values.
 template <char Key, StringLiteral s, Converter C, typename... Args>
-consteval Option<Key, wrap_string<s>, C, -1ul>
+consteval Option<Key, wrap_string<s>, C, npos>
 option_list(C                      converter,
             const std::string_view doc,
             const std::string_view var) noexcept
@@ -729,7 +860,7 @@ option_list(C                      converter,
 
 /// @brief Shorcut to create a list option without keyword.
 template <char Key, Converter C, typename... Args>
-consteval Option<Key, detail::missing_keyword, C, -1ul>
+consteval Option<Key, detail::missing_keyword, C, npos>
 option_list(C                      converter,
             const std::string_view doc,
             const std::string_view var) noexcept
@@ -740,7 +871,7 @@ option_list(C                      converter,
 
 /// @brief Shorcut to create a list option without character key.
 template <StringLiteral s, Converter C, typename... Args>
-consteval Option<detail::missing_keychar, wrap_string<s>, C, -1ul>
+consteval Option<detail::missing_keychar, wrap_string<s>, C, npos>
 option_list(C                      converter,
             const std::string_view doc,
             const std::string_view var) noexcept
@@ -805,7 +936,7 @@ positional(C                                              converter,
 
 /// @brief Create a positional list option.
 template <Converter C>
-consteval Positional<C, -1ul>
+consteval Positional<C, npos>
 positional_list(C&&                    converter,
                 const std::string_view doc,
                 const std::string_view var) noexcept
@@ -897,19 +1028,21 @@ template <typename... OptBindings, typename Options>
 ParseResults(const std::tuple<OptBindings...>&, const Options&)
     -> ParseResults<std::tuple<OptBindings...>, Options>;
 
-/// @brief Set @p token'th binding value to @p word.
+/// @brief Set @p token'th value to @p word.
 template <typename... Bindings, typename Word>
 constexpr auto
-set_binding(std::tuple<Bindings...>& bindings,
-            const std::size_t        token,
-            Word                     word) noexcept
+bind_value(std::tuple<Bindings...>& bindings,
+           const std::size_t        token,
+           Word                     word) noexcept
 {
-    return visit(
+    return visit_at(
         token,
         [&](auto& binding) noexcept { binding.set(word); },
         bindings,
         sink);
 }
+
+// -------------------- Parsing --------------------
 
 // next structs corresponds to word patterns we encounter during parsing
 
@@ -954,12 +1087,11 @@ using KeyChar = Key<char>;
 using Keyword = Key<std::string_view>;
 
 /// @brief ADT for parsed word.
-using ParsedWord =
-    std::variant<KeyChar, KeyCharSeq, Keyword, KeywordValue, Value>;
+using Token = std::variant<KeyChar, KeyCharSeq, Keyword, KeywordValue, Value>;
 
 /// @brief Match patterns in string @p data to serialize it to corresponding
 /// data type.
-ParsedWord
+Token
 arg_case(char** data) noexcept
 {
     std::string_view word{*data};
@@ -967,7 +1099,7 @@ arg_case(char** data) noexcept
 
     while(word[pos] == '-' && pos <= 2ul) ++pos;
 
-    ParsedWord ret = Value{data};
+    Token ret = Value{data};
 
     switch(pos)
     {
@@ -1013,7 +1145,7 @@ make_bindings(const std::tuple<Options...>& options) noexcept
 /// @brief Updates parser's state processing data from matched patterns
 /// on encountered words.
 template <typename OptDesc, typename PosDesc>
-class Visitor
+class ParsingState
 {
     static constexpr std::size_t num_pos = std::tuple_size_v<PosDesc>;
     static constexpr bool        has_pos = num_pos > 0ul;
@@ -1028,12 +1160,25 @@ class Visitor
     detail::State<PosDesc, PosBindings> pos_state;
     bool                                is_pos = has_pos;
 
+  public:
+    constexpr ParsingState(const OptDesc& opt_desc, const PosDesc& pos_desc) :
+        opt_state(opt_desc, npos, 0ul),
+        pos_state(pos_desc, 0ul, get_nvals(0ul, pos_desc))
+    {
+    }
+
+    ParsingState()                    = delete;
+    ParsingState(const ParsingState&) = delete;
+    ParsingState(ParsingState&&)      = delete;
+    ParsingState&
+    operator=(const ParsingState&) = delete;
+
     template <typename... Ts>
     static constexpr std::size_t
-    get_nvals(const std::size_t _token, const std::tuple<Ts...>& desc)
+    get_nvals(const std::size_t _token, const std::tuple<Ts...>& desc) noexcept
     {
         if constexpr(sizeof...(Ts) > 0)
-            return visit(
+            return visit_at(
                 _token,
                 []<typename Desc>(const Desc&) constexpr noexcept
                 { return Desc::num_vals; },
@@ -1047,7 +1192,7 @@ class Visitor
     std::string_view
     get_keyword(std::size_t _token, const Desc& opts_desc) const noexcept
     {
-        return visit(
+        return visit_at(
             _token,
             []<typename Opt>(const Opt&) constexpr noexcept
             { return Opt::keyword; },
@@ -1066,11 +1211,10 @@ class Visitor
 
     template <typename Key>
     constexpr std::pair<std::size_t, std::size_t>
-    key_info(const Key key)
+    key_info(const Key key) const noexcept
     {
-        const std::size_t new_token = tokenize(key, opt_state.desc);
-        const std::size_t new_nvals = get_nvals(new_token, opt_state.desc);
-        return {new_token, new_nvals};
+        const std::size_t token = tokenize(key, opt_state.desc);
+        return {token, get_nvals(token, opt_state.desc)};
     }
 
     constexpr void
@@ -1085,31 +1229,18 @@ class Visitor
     constexpr void
     set_flag(const std::size_t new_token) noexcept
     {
-        set_binding(opt_state.bindings, new_token, "");
+        bind_value(opt_state.bindings, new_token, "");
         reset_opt();
     }
-
-  public:
-    constexpr Visitor(const OptDesc& opt_desc, const PosDesc& pos_desc) :
-        opt_state(opt_desc, -1ul, 0ul),
-        pos_state(pos_desc, 0ul, get_nvals(0ul, pos_desc))
-    {
-    }
-
-    Visitor()               = delete;
-    Visitor(const Visitor&) = delete;
-    Visitor(Visitor&&)      = delete;
-    Visitor&
-    operator=(const Visitor&) = delete;
 
     void
     reset_opt()
     {
-        if(!(opt_state.remain == -1ul || opt_state.remain == 0))
+        if(!(opt_state.remain == npos || opt_state.remain == 0))
             throw FewArgumentsException{
                 get_keyword(opt_state.token, opt_state.desc)};
 
-        opt_state.token  = -1ul;
+        opt_state.token  = npos;
         opt_state.remain = 0ul;
         is_pos           = pos_not_set();
     }
@@ -1119,7 +1250,7 @@ class Visitor
     std::string_view
     check_opt() const noexcept
     {
-        if(opt_state.token != -1ul && opt_state.remain != -1ul &&
+        if(opt_state.token != npos && opt_state.remain != npos &&
            opt_state.remain > 0ul)
             return get_keyword(opt_state.token, opt_state.desc);
 
@@ -1143,20 +1274,20 @@ class Visitor
     }
 
     /// @brief Processes "-k" and "--keyword" patterns.
-    template <typename T>
-    constexpr void
-    operator()(const Key<T>& key)
-    {
-        check_opt();
+    // template <typename T>
+    // constexpr void
+    // operator()(const Key<T>& key)
+    // {
+    //     check_opt();
 
-        const auto [new_token, new_nvals] = key_info(key.value);
+    //     const auto [new_token, new_nvals] = key_info(key.value);
 
-        // is flag
-        if(new_nvals == 0ul)
-            set_flag(new_token);
-        else
-            reclaim_opt_later(new_token, new_nvals);
-    }
+    //     // is flag
+    //     if(new_nvals == 0ul)
+    //         set_flag(new_token);
+    //     else
+    //         reclaim_opt_later(new_token, new_nvals);
+    // }
 
     /// @brief Processes KeywordValue.
     constexpr void
@@ -1168,7 +1299,7 @@ class Visitor
 
         if(new_nvals > 1ul) throw FewArgumentsException{keyval.keyword};
 
-        set_binding(opt_state.bindings, new_token, keyval.value);
+        bind_value(opt_state.bindings, new_token, keyval.value);
         reset_opt();
     }
 
@@ -1184,9 +1315,9 @@ class Visitor
             // we send char** data here because we need
             // to have access to neigbour args
             // in multi arg options
-            set_binding(state.bindings, state.token, value.data);
+            bind_value(state.bindings, state.token, value.data);
 
-            state.remain -= (state.remain != -1ul);
+            state.remain -= (state.remain != npos);
 
             if(state.remain == 0ul) reset(*this);
         };
@@ -1198,7 +1329,7 @@ class Visitor
                     pos_state,
                     [&](std::size_t token) constexpr noexcept
                     { return token >= num_pos; },
-                    [&](Visitor&) constexpr noexcept
+                    [&](ParsingState&) constexpr noexcept
                     {
                         ++pos_state.token;
                         pos_state.remain =
@@ -1210,8 +1341,8 @@ class Visitor
             state_update(
                 opt_state,
                 [&](std::size_t token) constexpr noexcept
-                { return token == -1ul; },
-                std::mem_fn(&Visitor::reset_opt));
+                { return token == npos; },
+                std::mem_fn(&ParsingState::reset_opt));
     }
 
     /// @brief Processes KeyCharSeq.
@@ -1226,7 +1357,7 @@ class Visitor
             const char si                     = seq[i];
             const auto [new_token, new_nvals] = key_info(si);
 
-            if(new_token == -1ul) throw KeyException<char>{si};
+            if(new_token == npos) throw KeyException<char>{si};
 
             if(new_nvals == 1)
             {
@@ -1240,9 +1371,9 @@ class Visitor
                 {
                     // otherwise we bind option's value to the tail of the
                     // string
-                    set_binding(opt_state.bindings,
-                                new_token,
-                                seq.substr(i + 1ul));
+                    bind_value(opt_state.bindings,
+                               new_token,
+                               seq.substr(i + 1ul));
                     break;
                 }
             }
@@ -1259,6 +1390,43 @@ class Visitor
         }
     }
 };
+
+/// @brief Parses "-k" and "--keyword" kind of words.
+template <typename Key>
+struct KeyParser
+{
+    template <typename OptDesc, typename PosDesc>
+    constexpr bool
+    operator()(ParsingState<OptDesc, PosDesc>& state,
+               std::string_view                word) const noexcept
+    {
+        std::size_t token, nvals;
+        if constexpr(std::is_same_v<char, Key>)
+        {
+            // "-k"
+            if(word.size() != 2 || word.front() != '-') return false;
+            std::tie(token, nvals) = state.key_info(word[1]);
+        }
+        else
+        {
+            // "--keyword"
+            if(word.size() <= 4 || word.substr(2) != "--") return false;
+            std::tie(token, nvals) = state.key_info(word.substr(2));
+        }
+
+        if(token == npos) return false;
+
+        // is flag
+        if(nvals == 0ul)
+            state.set_flag(token);
+        else
+            state.reclaim_opt_later(token, nvals);
+
+        return true;
+    }
+};
+
+// -------------------- Printing help --------------------
 
 /// @brief Attempt to put a newline if the desired line width reached.
 /// @return current column.
@@ -1289,7 +1457,7 @@ print_var(const O&,
     fmt::print(file, " <{}", var);
     column += 2 + var.size();
 
-    if constexpr(O::num_vals == -1ul)
+    if constexpr(O::num_vals == npos)
     {
         // is parameter list
         std::fputs("...", file);
@@ -1310,7 +1478,7 @@ print_vars(const O&    option,
            std::size_t column,
            std::FILE*  file) noexcept
 {
-    if constexpr(O::num_vals == -1ul || O::num_vals == 1)
+    if constexpr(O::num_vals == npos || O::num_vals == 1)
     { // option.var is just a string_view
         column = print_var(option, option.var, column, file);
         if constexpr(t) column = line_breaker(column);
@@ -1404,7 +1572,7 @@ show_help(std::string_view                  program_name,
             if constexpr(has_keyword<O>)
                 ret += 4 + O::keyword.size(); // ', --keyword'
 
-            if constexpr(O::num_vals == -1ul)
+            if constexpr(O::num_vals == npos)
                 ret += 6 + option.var.size(); // ' <var...>'
             else if constexpr(O::num_vals > 1)
             {
@@ -1481,7 +1649,7 @@ show_help(std::string_view                  program_name,
             else if constexpr(has_keychar<O> && has_keyword<O>)
                 fmt::print(file, "-{}, --{}", O::key, O::keyword);
 
-            if constexpr(O::num_vals == -1ul)
+            if constexpr(O::num_vals == npos)
                 fmt::print(file, " <{}...>", option.var);
             else if constexpr(O::num_vals > 1)
             {
@@ -1595,17 +1763,28 @@ parse(const std::tuple<Options...>&     options,
     static_assert(!intlist::has_duplicates<keychars>, "Keys must be unique");
     static_assert(!typelist::has_duplicates<keywords>, "Keys must be unique");
 
+    using Error = std::variant<HelpRequest,
+                               FewArgumentsException,
+                               UnexpectedValue,
+                               KeyException<char>,
+                               KeyException<std::string_view>>;
+
     const std::string_view argv0 = {*args.read()};
     args.next();
 
-    Visitor visitor{options, positionals};
+    ParsingState visitor{options, positionals};
+    Error        error;
 
-    auto update = [&visitor, only_values = false](char** data) mutable
+    auto update = [&visitor, &error, only_values = false](char** data) mutable
     {
         std::string_view word{*data};
 
         // very dirty way to stop iteration
-        if(word == "-h" || word == "--help") throw HelpRequest{};
+        if(word == "-h" || word == "--help")
+        {
+            error = HelpRequest{};
+            return false;
+        };
 
         if(word == "--")
         {
@@ -1614,6 +1793,8 @@ parse(const std::tuple<Options...>&     options,
         }
         else
             std::visit(visitor, only_values ? Value{data} : arg_case(data));
+
+        return true;
     };
 
     try
