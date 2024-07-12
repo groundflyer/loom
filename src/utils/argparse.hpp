@@ -88,54 +88,6 @@ tokenize_impl(const std::string_view keyword) noexcept
         return npos;
 }
 
-template <typename Converter, std::size_t... Idxs>
-constexpr auto
-argv2array(char*     argc[],
-           Converter converter,
-           std::index_sequence<Idxs...>) noexcept
-{
-    using value_type = std::array<
-        std::decay_t<std::invoke_result_t<Converter, std::string_view>>,
-        sizeof...(Idxs)>;
-    return value_type{converter(argc[Idxs])...};
-}
-
-// we change state during parsing
-template <typename Desc, typename Bindings>
-struct State
-{
-    const Desc& desc;
-    Bindings    bindings;
-    // option token to store value in
-    std::size_t token;
-    // how many values remain to set
-    std::size_t remain;
-
-    constexpr State(const Desc& _desc,
-                    std::size_t _token,
-                    std::size_t _remain) noexcept :
-        desc(_desc),
-        bindings(make_bindings(_desc)), token(_token), remain(_remain)
-    {
-    }
-
-    State()             = delete;
-    State(const State&) = delete;
-    State(State&&)      = delete;
-    State&
-    operator=(const State&) = delete;
-};
-
-// empty state if we have no positional arguments
-template <>
-struct State<std::tuple<>, void>
-{
-    template <typename... Args>
-    constexpr State(Args&&...) noexcept
-    {
-    }
-};
-
 // Empty class tag type to indicate that there is no keyword defined.
 struct missing_keyword
 {
@@ -270,6 +222,135 @@ constexpr bool is_flag = detail::is_flag<O>::value;
 template <typename O>
 constexpr bool is_option = !is_flag<O>;
 
+class ArgsIterator : public std::random_access_iterator_tag
+{
+    int    m_argc = 0;
+    char** p_argv = nullptr;
+    int    m_pos  = 0;
+
+  public:
+    using difference_type = int;
+    using value_type      = std::string_view;
+
+    ArgsIterator(int argc, char* argv[], int pos = 0) noexcept :
+        m_argc(argc), p_argv(argv), m_pos(pos)
+    {
+    }
+
+    ArgsIterator() noexcept = default;
+
+    bool
+    operator==(std::default_sentinel_t) const noexcept
+    {
+        return m_pos == m_argc;
+    }
+
+    bool
+    operator==(const ArgsIterator& rhs) const noexcept
+    {
+        return m_pos == rhs.m_pos;
+    }
+
+    std::strong_ordering
+    operator<=>(const ArgsIterator& rhs) const noexcept
+    {
+        return m_pos <=> rhs.m_pos;
+    }
+
+    value_type
+    operator*() const noexcept
+    {
+        return {*(p_argv + m_pos)};
+    }
+
+    ArgsIterator&
+    operator++() noexcept
+    {
+        ++m_pos;
+        return *this;
+    }
+
+    ArgsIterator
+    operator++(int) noexcept
+    {
+        ArgsIterator ret(*this);
+        ++m_pos;
+        return ret;
+    }
+
+    ArgsIterator&
+    operator--() noexcept
+    {
+        --m_pos;
+        return *this;
+    }
+
+    ArgsIterator
+    operator--(int) noexcept
+    {
+        ArgsIterator ret(*this);
+        --m_pos;
+        return ret;
+    }
+
+    ArgsIterator
+    operator+(difference_type rhs) const noexcept
+    {
+        return {m_argc, p_argv, m_pos + rhs};
+    }
+
+    difference_type
+    operator+(const ArgsIterator& rhs) const noexcept
+    {
+        return m_pos + rhs.m_pos;
+    }
+
+    ArgsIterator
+    operator-(difference_type rhs) const noexcept
+    {
+        return {m_argc, p_argv, m_pos - rhs};
+    }
+
+    difference_type
+    operator-(const ArgsIterator& rhs) const noexcept
+    {
+        return m_pos - rhs.m_pos;
+    }
+
+    ArgsIterator&
+    operator+=(difference_type rhs) noexcept
+    {
+        m_pos += rhs;
+        return *this;
+    }
+
+    ArgsIterator&
+    operator-=(difference_type rhs) noexcept
+    {
+        m_pos -= rhs;
+        return *this;
+    }
+
+    value_type
+    operator[](difference_type n) const noexcept
+    {
+        CHECK_INDEX(n, m_argc);
+        return {*(p_argv + n)};
+    }
+
+    int
+    count() const noexcept
+    {
+        return m_argc - m_pos;
+    }
+
+    friend ArgsIterator
+    operator+(difference_type lhs, const ArgsIterator& rhs) noexcept
+    {
+        return {rhs.m_argc, rhs.p_argv, rhs.m_pos + lhs};
+    }
+};
+
 /// @brief Wraps program arguments into a range view.
 class ArgsRange : public std::ranges::view_interface<ArgsRange>
 {
@@ -278,135 +359,12 @@ class ArgsRange : public std::ranges::view_interface<ArgsRange>
     int    m_argc = 0;
     char** p_argv = nullptr;
 
-    class _iterator : public std::random_access_iterator_tag
-    {
-        int    m_argc = 0;
-        char** p_argv = nullptr;
-        int    m_pos  = 0;
-
-      public:
-        using difference_type = int;
-        using value_type      = std::string_view;
-
-        _iterator(int argc, char* argv[], int pos = 0) noexcept :
-            m_argc(argc), p_argv(argv), m_pos(pos)
-        {
-        }
-
-        _iterator() noexcept = default;
-
-        bool
-        operator==(std::default_sentinel_t) const noexcept
-        {
-            return m_pos == m_argc;
-        }
-
-        bool
-        operator==(const _iterator& rhs) const noexcept
-        {
-            return m_pos == rhs.m_pos;
-        }
-
-        std::strong_ordering
-        operator<=>(const _iterator& rhs) const noexcept
-        {
-            return m_pos <=> rhs.m_pos;
-        }
-
-        value_type
-        operator*() const noexcept
-        {
-            return {*(p_argv + m_pos)};
-        }
-
-        _iterator&
-        operator++() noexcept
-        {
-            ++m_pos;
-            return *this;
-        }
-
-        _iterator
-        operator++(int) noexcept
-        {
-            _iterator ret(*this);
-            ++m_pos;
-            return ret;
-        }
-
-        _iterator&
-        operator--() noexcept
-        {
-            --m_pos;
-            return *this;
-        }
-
-        _iterator
-        operator--(int) noexcept
-        {
-            _iterator ret(*this);
-            --m_pos;
-            return ret;
-        }
-
-        _iterator
-        operator+(difference_type rhs) const noexcept
-        {
-            return {m_argc, p_argv, m_pos + rhs};
-        }
-
-        difference_type
-        operator+(const _iterator& rhs) const noexcept
-        {
-            return m_pos + rhs.m_pos;
-        }
-
-        _iterator
-        operator-(difference_type rhs) const noexcept
-        {
-            return {m_argc, p_argv, m_pos - rhs};
-        }
-
-        difference_type
-        operator-(const _iterator& rhs) const noexcept
-        {
-            return m_pos - rhs.m_pos;
-        }
-
-        _iterator&
-        operator+=(difference_type rhs) noexcept
-        {
-            m_pos += rhs;
-            return *this;
-        }
-
-        _iterator&
-        operator-=(difference_type rhs) noexcept
-        {
-            m_pos -= rhs;
-            return *this;
-        }
-
-        value_type
-        operator[](difference_type n) const noexcept
-        {
-            CHECK_INDEX(n, m_argc);
-            return {*(p_argv + n)};
-        }
-
-        friend _iterator
-        operator+(difference_type lhs, const _iterator& rhs) noexcept
-        {
-            return {rhs.m_argc, rhs.p_argv, rhs.m_pos + lhs};
-        }
-    };
-
   public:
     ArgsRange() = default;
 
     ArgsRange(int argc, char* argv[]) noexcept : m_argc(argc), p_argv(argv) {}
 
-    friend _iterator
+    friend ArgsIterator
     begin(const ArgsRange& r) noexcept
     {
         return {r.m_argc, r.p_argv};
@@ -431,45 +389,44 @@ class Binding
 {
     using value_type = std::array<detail::result_type<C>, nvals>;
 
-    C           converter;
-    value_type  default_value;
-    char**      words  = nullptr;
-    std::size_t idx    = 0ul;
-    bool        is_set = false;
-
-    constexpr void
-    increment() noexcept
-    {
-        is_set |= idx == (nvals - 1);
-        idx = (idx + 1ul) % nvals;
-    }
+    C            m_converter;
+    value_type   m_default_value;
+    bool         m_is_set = false;
+    ArgsIterator m_iter;
 
   public:
-    constexpr Binding(C _converter, const value_type& value) noexcept :
-        converter(_converter), default_value(value)
+    constexpr Binding(C converter, const value_type& value) noexcept :
+        m_converter(converter), m_default_value(value)
     {
     }
 
+    constexpr void
+    set(ArgsIterator iter) noexcept
+    {
+        m_iter   = iter;
+        m_is_set = true;
+    }
+
+    // sink for tokenize
     constexpr void
     set(std::string_view) noexcept
     {
-        increment();
-    }
-
-    constexpr void
-    set(char** data) noexcept
-    {
-        if(!words) words = data;
-        increment();
     }
 
     constexpr value_type
     operator()() const
+        noexcept(std::is_nothrow_invocable_r_v<value_type, C, std::string_view>)
     {
-        return is_set ? detail::argv2array(words,
-                                           converter,
-                                           std::make_index_sequence<nvals>{}) :
-                        default_value;
+        if(m_is_set)
+        {
+            value_type ret;
+            std::ranges::copy(std::ranges::subrange(m_iter, m_iter + nvals) |
+                                  std::views::transform(m_converter),
+                              ret.begin());
+            return ret;
+        }
+        else
+            return m_default_value;
     }
 };
 
@@ -478,28 +435,28 @@ class Binding<C, 1>
 {
     using value_type = detail::result_type<C>;
 
-    C                converter;
-    value_type       default_value;
-    std::string_view word;
-    bool             is_set = false;
+    C                m_converter;
+    value_type       m_default_value;
+    std::string_view m_word;
+    bool             m_is_set = false;
 
   public:
-    constexpr Binding(C _converter, const value_type& value) noexcept :
-        converter(_converter), default_value(value)
+    constexpr Binding(C converter, const value_type& value) noexcept :
+        m_converter(converter), m_default_value(value)
     {
     }
 
     constexpr void
-    set(std::string_view new_word) noexcept
+    set(std::string_view word) noexcept
     {
-        is_set = true;
-        word   = new_word;
+        m_word   = word;
+        m_is_set = true;
     }
 
+    // sink for tokenize
     constexpr void
-    set(char** new_word) noexcept
+    set(ArgsIterator) noexcept
     {
-        set(*new_word);
     }
 
     constexpr value_type
@@ -507,150 +464,47 @@ class Binding<C, 1>
     {
         if constexpr(std::is_same_v<value_type, bool>)
             // flip default bool value or convert word if it's available
-            return word.empty() ? (default_value ^ is_set) : converter(word);
+            return m_word.empty() ? (m_default_value ^ m_is_set) :
+                                    m_converter(m_word);
         else
-            return is_set ? converter(word) : default_value;
+            return m_is_set ? m_converter(m_word) : m_default_value;
     }
 };
 
 template <Converter C>
 class Binding<C, npos>
 {
-    class value_range : public ranges::view_facade<value_range>
-    {
-        friend ranges::range_access;
-
-        C           converter;
-        char**      data = nullptr;
-        std::size_t size = 0ul;
-        std::size_t idx  = 0ul;
-
-        decltype(auto)
-        read() const
-        {
-            return converter(data[idx]);
-        }
-
-        bool
-        equal(ranges::default_sentinel_t) const noexcept
-        {
-            return idx == size;
-        }
-
-        void
-        next() noexcept
-        {
-            ++idx;
-        }
-
-      public:
-        value_range() = default;
-
-        explicit value_range(C           _converter,
-                             char*       _data[],
-                             std::size_t _size) noexcept :
-            converter(_converter),
-            data(_data), size(_size)
-        {
-        }
-    };
-
-    C           converter;
-    char**      data = nullptr;
-    std::size_t size = 0ul;
-
-    constexpr void
-    increment() noexcept
-    {
-        ++size;
-    }
+    C            m_converter;
+    ArgsIterator m_first;
+    ArgsIterator m_last;
+    bool         m_first_is_set = false;
 
   public:
-    constexpr explicit Binding(C _converter) noexcept : converter(_converter) {}
+    constexpr explicit Binding(C converter) noexcept : m_converter(converter) {}
 
+    constexpr void
+    set(ArgsIterator iter) noexcept
+    {
+        if(m_first_is_set)
+            m_last = iter;
+        else
+        {
+            m_first        = iter;
+            m_first_is_set = true;
+        }
+    }
+
+    // sink for tokenize
     constexpr void
     set(std::string_view) noexcept
     {
-        increment();
     }
 
-    constexpr void
-    set(char** _data) noexcept
-    {
-        if(!data) data = _data;
-
-        increment();
-    }
-
-    constexpr value_range
+    constexpr auto
     operator()() const noexcept
     {
-        return value_range(converter, data, size);
-    }
-};
-
-/// @brief Holds pointer to words with values for a positional argument.
-template <Converter C, std::size_t nvals>
-class PositionalBinding
-{
-    C           converter;
-    char**      words = nullptr;
-    std::size_t idx   = 0ul;
-
-  public:
-    explicit constexpr PositionalBinding(C _converter) noexcept :
-        converter(_converter)
-    {
-    }
-
-    constexpr void
-    set(std::string_view) noexcept
-    {
-        ++idx;
-    }
-
-    constexpr void
-    set(char** data) noexcept
-    {
-        if(!words) words = data;
-        ++idx;
-    }
-
-    constexpr auto
-    operator()() const
-    {
-        return detail::argv2array(words,
-                                  converter,
-                                  std::make_index_sequence<nvals>{});
-    }
-};
-
-template <Converter C>
-class PositionalBinding<C, 1>
-{
-    C                converter;
-    std::string_view word;
-
-  public:
-    explicit constexpr PositionalBinding(C _converter) noexcept :
-        converter(_converter){};
-
-    constexpr void
-    set(std::string_view new_word) noexcept
-    {
-        word = new_word;
-    }
-
-    constexpr void
-    set(char** data) noexcept
-    {
-        set(*data);
-    }
-
-    constexpr auto
-    operator()() const
-    {
-        return converter(word);
+        return std::ranges::subrange(m_first, m_last) |
+               std::views::transform(m_converter);
     }
 };
 
@@ -749,10 +603,7 @@ struct Positional
     constexpr auto
     binding() const noexcept
     {
-        if constexpr(nvals == npos)
-            return Binding<C, npos>(converter);
-        else
-            return PositionalBinding<C, nvals>(converter);
+        return Binding<C, nvals>(converter);
     }
 };
 
@@ -1028,16 +879,16 @@ template <typename... OptBindings, typename Options>
 ParseResults(const std::tuple<OptBindings...>&, const Options&)
     -> ParseResults<std::tuple<OptBindings...>, Options>;
 
-/// @brief Set @p token'th value to @p word.
-template <typename... Bindings, typename Word>
+/// @brief Set @p token'th value.
+template <typename... Bindings, typename Value>
 constexpr auto
 bind_value(std::tuple<Bindings...>& bindings,
            const std::size_t        token,
-           Word                     word) noexcept
+           Value                    value) noexcept
 {
     return visit_at(
         token,
-        [&](auto& binding) noexcept { binding.set(word); },
+        [&](auto& binding) noexcept { binding.set(value); },
         bindings,
         sink);
 }
@@ -1048,89 +899,90 @@ bind_value(std::tuple<Bindings...>& bindings,
 
 /// @brief Corresponds to a "-k" (specialized with char)
 /// and "--keyword" (specialized with std::string_view) word patterns.
-template <typename KeyType>
-struct Key
-{
-    KeyType value;
-};
+// template <typename KeyType>
+// struct Key
+// {
+//     KeyType value;
+// };
 
 /// @brief Corresponds to "--keyword=value" word pattern.
-struct KeywordValue
-{
-    std::string_view keyword;
-    std::string_view value;
-};
+// struct KeywordValue
+// {
+//     std::string_view keyword;
+//     std::string_view value;
+// };
 
 /// @brief Corresponds to any word that doesn't start with '-'
-struct Value
-{
-    char** data;
+// struct Value
+// {
+//     char** data;
 
-    std::string_view
-    string() const noexcept
-    {
-        return *data;
-    }
-};
+//     std::string_view
+//     string() const noexcept
+//     {
+//         return *data;
+//     }
+// };
 
 /// @brief Corresponds to "-abc..." word pattern, where "bc..."
 /// could be keys or a value.
-struct KeyCharSeq
-{
-    std::string_view seq;
-};
+// struct KeyCharSeq
+// {
+//     std::string_view seq;
+// };
 
 /// @brief Corresponds to "-k" pattern.
-using KeyChar = Key<char>;
+// using KeyChar = Key<char>;
 
 /// @brief Corresponds to "--keyword" pattern.
-using Keyword = Key<std::string_view>;
+// using Keyword = Key<std::string_view>;
 
 /// @brief ADT for parsed word.
-using Token = std::variant<KeyChar, KeyCharSeq, Keyword, KeywordValue, Value>;
+// using Token = std::variant<KeyChar, KeyCharSeq, Keyword, KeywordValue,
+// Value>;
 
 /// @brief Match patterns in string @p data to serialize it to corresponding
 /// data type.
-Token
-arg_case(char** data) noexcept
-{
-    std::string_view word{*data};
-    std::size_t      pos = 0ul;
+// Token
+// arg_case(char** data) noexcept
+// {
+//     std::string_view word{*data};
+//     std::size_t      pos = 0ul;
 
-    while(word[pos] == '-' && pos <= 2ul) ++pos;
+//     while(word[pos] == '-' && pos <= 2ul) ++pos;
 
-    Token ret = Value{data};
+//     Token ret = Value{data};
 
-    switch(pos)
-    {
-        // -
-    case 1ul:
-    {
-        if(word.size() > 2ul)
-            // -abcd
-            ret = KeyCharSeq{word.substr(pos)};
-        else
-            // -a
-            ret = KeyChar{word[pos]};
-    }
-    break;
-        // --
-    case 2ul:
-    {
-        const std::size_t eq_pos = word.find('=');
-        if(eq_pos == std::string_view::npos)
-            // --keyword
-            ret = Keyword{word.substr(pos)};
-        else
-            // --keyword=value
-            ret = KeywordValue{word.substr(pos, eq_pos - 2ul),
-                               word.substr(eq_pos + 1ul)};
-    }
-    break;
-    }
+//     switch(pos)
+//     {
+//         // -
+//     case 1ul:
+//     {
+//         if(word.size() > 2ul)
+//             // -abcd
+//             ret = KeyCharSeq{word.substr(pos)};
+//         else
+//             // -a
+//             ret = KeyChar{word[pos]};
+//     }
+//     break;
+//         // --
+//     case 2ul:
+//     {
+//         const std::size_t eq_pos = word.find('=');
+//         if(eq_pos == std::string_view::npos)
+//             // --keyword
+//             ret = Keyword{word.substr(pos)};
+//         else
+//             // --keyword=value
+//             ret = KeywordValue{word.substr(pos, eq_pos - 2ul),
+//                                word.substr(eq_pos + 1ul)};
+//     }
+//     break;
+//     }
 
-    return ret;
-}
+//     return ret;
+// }
 
 /// @brief Generate Binding's from options.
 template <typename... Options>
@@ -1144,285 +996,393 @@ make_bindings(const std::tuple<Options...>& options) noexcept
 
 /// @brief Updates parser's state processing data from matched patterns
 /// on encountered words.
-template <typename OptDesc, typename PosDesc>
-class ParsingState
+// template <typename OptDesc, typename PosDesc>
+// class ParsingState
+// {
+//     static constexpr std::size_t num_pos = std::tuple_size_v<PosDesc>;
+//     static constexpr bool        has_pos = num_pos > 0ul;
+//     using OptBindings =
+//         std::decay_t<decltype(make_bindings(std::declval<OptDesc>()))>;
+//     using PosBindings = std::conditional_t<
+//         has_pos,
+//         std::decay_t<decltype(make_bindings(std::declval<PosDesc>()))>,
+//         void>;
+
+//     detail::State<OptDesc, OptBindings> opt_state;
+//     detail::State<PosDesc, PosBindings> pos_state;
+//     bool                                is_pos = has_pos;
+
+//   public:
+//     constexpr ParsingState(const OptDesc& opt_desc, const PosDesc& pos_desc)
+//     :
+//         opt_state(opt_desc, npos, 0ul),
+//         pos_state(pos_desc, 0ul, get_nvals(0ul, pos_desc))
+//     {
+//     }
+
+//     ParsingState()                    = delete;
+//     ParsingState(const ParsingState&) = delete;
+//     ParsingState(ParsingState&&)      = delete;
+//     ParsingState&
+//     operator=(const ParsingState&) = delete;
+
+/// @brief Get number of expected values for a given token.
+template <typename Options>
+constexpr std::size_t
+get_nvals(const std::size_t token, const Options& opts) noexcept
 {
-    static constexpr std::size_t num_pos = std::tuple_size_v<PosDesc>;
-    static constexpr bool        has_pos = num_pos > 0ul;
-    using OptBindings =
-        std::decay_t<decltype(make_bindings(std::declval<OptDesc>()))>;
-    using PosBindings = std::conditional_t<
-        has_pos,
-        std::decay_t<decltype(make_bindings(std::declval<PosDesc>()))>,
-        void>;
+    return visit_at(
+        token,
+        []<typename Desc>(const Desc&) constexpr noexcept
+        { return Desc::num_vals; },
+        opts,
+        []() constexpr noexcept -> std::size_t
+        { return 0ul; }); // sink value doesn't matter as we don't use the
+                          // function with invalid token
+}
 
-    detail::State<OptDesc, OptBindings> opt_state;
-    detail::State<PosDesc, PosBindings> pos_state;
-    bool                                is_pos = has_pos;
+//     template <typename Desc>
+//     std::string_view
+//     get_keyword(std::size_t _token, const Desc& opts_desc) const noexcept
+//     {
+//         return visit_at(
+//             _token,
+//             []<typename Opt>(const Opt&) constexpr noexcept
+//             { return Opt::keyword; },
+//             opts_desc,
+//             []() constexpr noexcept -> std::string_view { return ""; });
+//     }
 
-  public:
-    constexpr ParsingState(const OptDesc& opt_desc, const PosDesc& pos_desc) :
-        opt_state(opt_desc, npos, 0ul),
-        pos_state(pos_desc, 0ul, get_nvals(0ul, pos_desc))
+//     bool
+//     pos_not_set() const noexcept
+//     {
+//         if constexpr(has_pos)
+//             return pos_state.token < num_pos;
+//         else
+//             return false;
+//     }
+
+//     template <typename Key>
+//     constexpr std::pair<std::size_t, std::size_t>
+//     key_info(const Key key) const noexcept
+//     {
+//         const std::size_t token = tokenize(key, opt_state.desc);
+//         return {token, get_nvals(token, opt_state.desc)};
+//     }
+
+//     constexpr void
+//     reclaim_opt_later(const std::size_t new_token,
+//                       const std::size_t new_nvals) noexcept
+//     {
+//         opt_state.token  = new_token;
+//         opt_state.remain = new_nvals;
+//         is_pos           = false;
+//     }
+
+//     constexpr void
+//     set_flag(const std::size_t new_token) noexcept
+//     {
+//         bind_value(opt_state.bindings, new_token, "");
+//         reset_opt();
+//     }
+
+//     void
+//     reset_opt()
+//     {
+//         if(!(opt_state.remain == npos || opt_state.remain == 0))
+//             throw FewArgumentsException{
+//                 get_keyword(opt_state.token, opt_state.desc)};
+
+//         opt_state.token  = npos;
+//         opt_state.remain = 0ul;
+//         is_pos           = pos_not_set();
+//     }
+
+//     /// @brief Check if there is a hanging option, i.e. the option keyword
+//     /// has encountered, but the option value has not.
+//     std::string_view
+//     check_opt() const noexcept
+//     {
+//         if(opt_state.token != npos && opt_state.remain != npos &&
+//            opt_state.remain > 0ul)
+//             return get_keyword(opt_state.token, opt_state.desc);
+
+//         return "";
+//     }
+
+//     /// @brief Check if there are unset positional arguments.
+//     bool
+//     check_pos() const noexcept
+//     {
+//         return pos_not_set();
+//     }
+
+//     constexpr auto
+//     get_bindings() const
+//     {
+//         if constexpr(has_pos)
+//             return std::pair{opt_state.bindings, pos_state.bindings};
+//         else
+//             return opt_state.bindings;
+//     }
+
+//     /// @brief Processes "-k" and "--keyword" patterns.
+//     // template <typename T>
+//     // constexpr void
+//     // operator()(const Key<T>& key)
+//     // {
+//     //     check_opt();
+
+//     //     const auto [new_token, new_nvals] = key_info(key.value);
+
+//     //     // is flag
+//     //     if(new_nvals == 0ul)
+//     //         set_flag(new_token);
+//     //     else
+//     //         reclaim_opt_later(new_token, new_nvals);
+//     // }
+
+//     /// @brief Processes KeywordValue.
+//     constexpr void
+//     operator()(const KeywordValue& keyval)
+//     {
+//         check_opt();
+
+//         const auto [new_token, new_nvals] = key_info(keyval.keyword);
+
+//         if(new_nvals > 1ul) throw FewArgumentsException{keyval.keyword};
+
+//         bind_value(opt_state.bindings, new_token, keyval.value);
+//         reset_opt();
+//     }
+
+//     /// @brief Processes Value.
+//     constexpr void
+//     operator()(const Value& value)
+//     {
+//         auto state_update =
+//             [&](auto& state, auto&& token_check, auto&& reset) constexpr
+//         {
+//             if(token_check(state.token)) throw
+//             UnexpectedValue{value.string()};
+
+//             // we send char** data here because we need
+//             // to have access to neigbour args
+//             // in multi arg options
+//             bind_value(state.bindings, state.token, value.data);
+
+//             state.remain -= (state.remain != npos);
+
+//             if(state.remain == 0ul) reset(*this);
+//         };
+
+//         if(is_pos)
+//         {
+//             if constexpr(has_pos)
+//                 state_update(
+//                     pos_state,
+//                     [&](std::size_t token) constexpr noexcept
+//                     { return token >= num_pos; },
+//                     [&](ParsingState&) constexpr noexcept
+//                     {
+//                         ++pos_state.token;
+//                         pos_state.remain =
+//                             get_nvals(pos_state.token, pos_state.desc);
+//                         is_pos = pos_not_set();
+//                     });
+//         }
+//         else
+//             state_update(
+//                 opt_state,
+//                 [&](std::size_t token) constexpr noexcept
+//                 { return token == npos; },
+//                 std::mem_fn(&ParsingState::reset_opt));
+//     }
+
+//     /// @brief Processes KeyCharSeq.
+//     constexpr void
+//     operator()(const KeyCharSeq& value)
+//     {
+//         check_opt();
+
+//         const std::string_view seq = value.seq;
+//         for(std::size_t i = 0ul; i < seq.size(); ++i)
+//         {
+//             const char si                     = seq[i];
+//             const auto [new_token, new_nvals] = key_info(si);
+
+//             if(new_token == npos) throw KeyException<char>{si};
+
+//             if(new_nvals == 1)
+//             {
+//                 if(i == seq.size() - 1)
+//                 {
+//                     // if we're at the end of the word
+//                     // store token to reclaim the value later
+//                     reclaim_opt_later(new_token, new_nvals);
+//                 }
+//                 else
+//                 {
+//                     // otherwise we bind option's value to the tail of the
+//                     // string
+//                     bind_value(opt_state.bindings,
+//                                new_token,
+//                                seq.substr(i + 1ul));
+//                     break;
+//                 }
+//             }
+//             else if(new_nvals > 1ul)
+//             {
+//                 throw FewArgumentsException{
+//                     get_keyword(new_token, opt_state.desc)};
+//             }
+//             else
+//             {
+//                 // that's just a flag
+//                 set_flag(new_token);
+//             }
+//         }
+//     }
+// };
+
+// we change state during parsing
+template <typename Desc, typename Bindings>
+struct State
+{
+    const Desc& desc;
+    Bindings    bindings;
+    // option token to store value in
+    std::size_t token;
+    // how many values remain to set
+    std::size_t remain;
+
+    constexpr State(const Desc& _desc,
+                    std::size_t _token,
+                    std::size_t _remain) noexcept :
+        desc(_desc),
+        bindings(make_bindings(_desc)), token(_token), remain(_remain)
     {
     }
 
-    ParsingState()                    = delete;
-    ParsingState(const ParsingState&) = delete;
-    ParsingState(ParsingState&&)      = delete;
-    ParsingState&
-    operator=(const ParsingState&) = delete;
+    State()             = delete;
+    State(const State&) = delete;
+    State(State&&)      = delete;
+    State&
+    operator=(const State&) = delete;
+};
 
-    template <typename... Ts>
-    static constexpr std::size_t
-    get_nvals(const std::size_t _token, const std::tuple<Ts...>& desc) noexcept
+// empty state if we have no positional arguments
+template <>
+struct State<std::tuple<>, void>
+{
+    template <typename... Args>
+    constexpr State(Args&&...) noexcept
     {
-        if constexpr(sizeof...(Ts) > 0)
-            return visit_at(
-                _token,
-                []<typename Desc>(const Desc&) constexpr noexcept
-                { return Desc::num_vals; },
-                desc,
-                []() constexpr noexcept -> std::size_t { return 0ul; });
-        else
-            return 0ul;
-    }
-
-    template <typename Desc>
-    std::string_view
-    get_keyword(std::size_t _token, const Desc& opts_desc) const noexcept
-    {
-        return visit_at(
-            _token,
-            []<typename Opt>(const Opt&) constexpr noexcept
-            { return Opt::keyword; },
-            opts_desc,
-            []() constexpr noexcept -> std::string_view { return ""; });
-    }
-
-    bool
-    pos_not_set() const noexcept
-    {
-        if constexpr(has_pos)
-            return pos_state.token < num_pos;
-        else
-            return false;
-    }
-
-    template <typename Key>
-    constexpr std::pair<std::size_t, std::size_t>
-    key_info(const Key key) const noexcept
-    {
-        const std::size_t token = tokenize(key, opt_state.desc);
-        return {token, get_nvals(token, opt_state.desc)};
-    }
-
-    constexpr void
-    reclaim_opt_later(const std::size_t new_token,
-                      const std::size_t new_nvals) noexcept
-    {
-        opt_state.token  = new_token;
-        opt_state.remain = new_nvals;
-        is_pos           = false;
-    }
-
-    constexpr void
-    set_flag(const std::size_t new_token) noexcept
-    {
-        bind_value(opt_state.bindings, new_token, "");
-        reset_opt();
-    }
-
-    void
-    reset_opt()
-    {
-        if(!(opt_state.remain == npos || opt_state.remain == 0))
-            throw FewArgumentsException{
-                get_keyword(opt_state.token, opt_state.desc)};
-
-        opt_state.token  = npos;
-        opt_state.remain = 0ul;
-        is_pos           = pos_not_set();
-    }
-
-    /// @brief Check if there is a hanging option, i.e. the option keyword
-    /// has encountered, but the option value has not.
-    std::string_view
-    check_opt() const noexcept
-    {
-        if(opt_state.token != npos && opt_state.remain != npos &&
-           opt_state.remain > 0ul)
-            return get_keyword(opt_state.token, opt_state.desc);
-
-        return "";
-    }
-
-    /// @brief Check if there are unset positional arguments.
-    bool
-    check_pos() const noexcept
-    {
-        return pos_not_set();
-    }
-
-    constexpr auto
-    get_bindings() const
-    {
-        if constexpr(has_pos)
-            return std::pair{opt_state.bindings, pos_state.bindings};
-        else
-            return opt_state.bindings;
-    }
-
-    /// @brief Processes "-k" and "--keyword" patterns.
-    // template <typename T>
-    // constexpr void
-    // operator()(const Key<T>& key)
-    // {
-    //     check_opt();
-
-    //     const auto [new_token, new_nvals] = key_info(key.value);
-
-    //     // is flag
-    //     if(new_nvals == 0ul)
-    //         set_flag(new_token);
-    //     else
-    //         reclaim_opt_later(new_token, new_nvals);
-    // }
-
-    /// @brief Processes KeywordValue.
-    constexpr void
-    operator()(const KeywordValue& keyval)
-    {
-        check_opt();
-
-        const auto [new_token, new_nvals] = key_info(keyval.keyword);
-
-        if(new_nvals > 1ul) throw FewArgumentsException{keyval.keyword};
-
-        bind_value(opt_state.bindings, new_token, keyval.value);
-        reset_opt();
-    }
-
-    /// @brief Processes Value.
-    constexpr void
-    operator()(const Value& value)
-    {
-        auto state_update =
-            [&](auto& state, auto&& token_check, auto&& reset) constexpr
-        {
-            if(token_check(state.token)) throw UnexpectedValue{value.string()};
-
-            // we send char** data here because we need
-            // to have access to neigbour args
-            // in multi arg options
-            bind_value(state.bindings, state.token, value.data);
-
-            state.remain -= (state.remain != npos);
-
-            if(state.remain == 0ul) reset(*this);
-        };
-
-        if(is_pos)
-        {
-            if constexpr(has_pos)
-                state_update(
-                    pos_state,
-                    [&](std::size_t token) constexpr noexcept
-                    { return token >= num_pos; },
-                    [&](ParsingState&) constexpr noexcept
-                    {
-                        ++pos_state.token;
-                        pos_state.remain =
-                            get_nvals(pos_state.token, pos_state.desc);
-                        is_pos = pos_not_set();
-                    });
-        }
-        else
-            state_update(
-                opt_state,
-                [&](std::size_t token) constexpr noexcept
-                { return token == npos; },
-                std::mem_fn(&ParsingState::reset_opt));
-    }
-
-    /// @brief Processes KeyCharSeq.
-    constexpr void
-    operator()(const KeyCharSeq& value)
-    {
-        check_opt();
-
-        const std::string_view seq = value.seq;
-        for(std::size_t i = 0ul; i < seq.size(); ++i)
-        {
-            const char si                     = seq[i];
-            const auto [new_token, new_nvals] = key_info(si);
-
-            if(new_token == npos) throw KeyException<char>{si};
-
-            if(new_nvals == 1)
-            {
-                if(i == seq.size() - 1)
-                {
-                    // if we're at the end of the word
-                    // store token to reclaim the value later
-                    reclaim_opt_later(new_token, new_nvals);
-                }
-                else
-                {
-                    // otherwise we bind option's value to the tail of the
-                    // string
-                    bind_value(opt_state.bindings,
-                               new_token,
-                               seq.substr(i + 1ul));
-                    break;
-                }
-            }
-            else if(new_nvals > 1ul)
-            {
-                throw FewArgumentsException{
-                    get_keyword(new_token, opt_state.desc)};
-            }
-            else
-            {
-                // that's just a flag
-                set_flag(new_token);
-            }
-        }
     }
 };
 
-/// @brief Parses "-k" and "--keyword" kind of words.
-template <typename Key>
+template <typename Desc>
+constexpr std::size_t
+tokenize_option(std::string_view word, const Desc& desc) noexcept
+{
+    if(word.size() == 2 && word.front() == '-') return tokenize(word[1], desc);
+
+    if(word.size() >= 4 || word.substr(2) == "--") return tokenize(word, desc);
+
+    return npos;
+}
+
+/// @brief Multi-parm halt condition.
+template <typename Desc>
+constexpr bool
+mp_halt_condition(ArgsIterator iter, const Desc& desc) noexcept
+{
+    return iter == std::default_sentinel || *iter == "--" ||
+           tokenize_option(*iter, desc) != npos;
+}
+
+/// @brief Matches "-k [value...] or --keyword [value...]".
 struct KeyParser
 {
-    template <typename OptDesc, typename PosDesc>
+    template <typename OptDesc,
+              typename OptBindings,
+              typename PosDesc,
+              typename PosBindings,
+              typename Error>
     constexpr bool
-    operator()(ParsingState<OptDesc, PosDesc>& state,
-               std::string_view                word) const noexcept
+    operator()(ArgsIterator&                iter,
+               State<OptDesc, OptBindings>& opt_state,
+               State<PosDesc, PosBindings>& /* pos_state*/,
+               Error& error) const noexcept
     {
-        std::size_t token, nvals;
-        if constexpr(std::is_same_v<char, Key>)
-        {
-            // "-k"
-            if(word.size() != 2 || word.front() != '-') return false;
-            std::tie(token, nvals) = state.key_info(word[1]);
-        }
-        else
-        {
-            // "--keyword"
-            if(word.size() <= 4 || word.substr(2) != "--") return false;
-            std::tie(token, nvals) = state.key_info(word.substr(2));
-        }
+        ArgsIterator           local_iter = iter;
+        const std::string_view word       = *local_iter;
+        const std::size_t      token = tokenize_option(word, opt_state.desc);
 
+        // doesn't match any keys
         if(token == npos) return false;
 
-        // is flag
-        if(nvals == 0ul)
-            state.set_flag(token);
-        else
-            state.reclaim_opt_later(token, nvals);
+        const std::size_t nvals = get_nvals(token, opt_state.desc);
 
-        return true;
+        auto success = [&]() constexpr noexcept
+        {
+            iter = std::next(local_iter);
+            return true;
+        };
+
+        switch(nvals)
+        {
+        // flag
+        case 0:
+        {
+            bind_value(opt_state.bindings, token, "");
+            return success();
+        }
+        // value
+        case 1:
+        {
+            if(local_iter.count() < 1)
+            {
+                error = FewArgumentsException{word};
+                return false;
+            }
+
+            bind_value(opt_state.bindings, token, *std::next(local_iter));
+            return success();
+        }
+        // arbitrary number of values
+        case npos:
+        {
+            if(local_iter.count() < 1)
+            {
+                error = FewArgumentsException{word};
+                return false;
+            }
+
+            ArgsIterator last = std::next(local_iter);
+
+            while(!mp_halt_condition(last, opt_state.desc)) ++last;
+
+            // binding range
+            bind_value(opt_state.bindings, token, local_iter);
+            bind_value(opt_state.bindings, token, last);
+            return success();
+        }
+        // constant number of arguments
+        default:
+        {
+            if(local_iter.count() < nvals)
+            {
+                error = FewArgumentsException{word};
+                return false;
+            }
+
+            bind_value(opt_state.bindings, token, local_iter);
+            return success();
+        }
+        }
+
+        return false;
     }
 };
 
