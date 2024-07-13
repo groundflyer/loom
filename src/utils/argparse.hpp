@@ -10,6 +10,7 @@
 #include <utils/tmp.hpp>
 #include <utils/tuple.hpp>
 
+#include <algorithm>
 #include <array>
 #include <functional>
 #include <ranges>
@@ -19,10 +20,8 @@
 #include <utility>
 #include <variant>
 
-#include <range/v3/algorithm/for_each.hpp>
 #include <range/v3/view/filter.hpp>
 #include <range/v3/view/split.hpp>
-#include <range/v3/view/transform.hpp>
 
 #include <fmt/core.h>
 
@@ -1560,9 +1559,9 @@ show_help(std::string_view                  program_name,
     {
         doc_align();
 
-        ranges::for_each(
+        std::ranges::for_each(
             doc | ranges::views::split(' ') |
-                ranges::views::transform(
+                std::views::transform(
                     [](auto&& rng) {
                         return std::string_view(&*rng.begin(),
                                                 ranges::distance(rng));
@@ -1759,7 +1758,7 @@ parse(const std::tuple<Options...>&     options,
 
     try
     {
-        ranges::for_each(args, update);
+        std::ranges::for_each(args, update);
     }
     catch(const HelpRequest&)
     {
