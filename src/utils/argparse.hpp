@@ -460,6 +460,7 @@ class Binding<C, 1>
 
     constexpr value_type
     operator()() const
+        noexcept(std::is_nothrow_invocable_r_v<value_type, C, std::string_view>)
     {
         if constexpr(std::is_same_v<value_type, bool>)
             // flip default bool value or convert word if it's available
@@ -500,7 +501,8 @@ class Binding<C, npos>
     }
 
     constexpr auto
-    operator()() const noexcept
+    operator()() const
+        noexcept(std::is_nothrow_invocable_v<C, std::string_view>)
     {
         return std::ranges::subrange(m_first, m_last) |
                std::views::transform(m_converter);
