@@ -358,8 +358,6 @@ class ArgsIterator : public std::random_access_iterator_tag
 /// @brief Wraps program arguments into a range view.
 class ArgsRange : public std::ranges::view_interface<ArgsRange>
 {
-    friend ranges::range_access;
-
     int    m_argc = 0;
     char** p_argv = nullptr;
 
@@ -499,12 +497,7 @@ class Binding<C, 1>
     operator()() const
         noexcept(std::is_nothrow_invocable_r_v<value_type, C, std::string_view>)
     {
-        if constexpr(std::is_same_v<value_type, bool>)
-            // flip default bool value or convert word if it's available
-            return m_word.empty() ? (m_default_value ^ m_is_set) :
-                                    m_converter(m_word);
-        else
-            return m_is_set ? m_converter(m_word) : m_default_value;
+        return m_is_set ? m_converter(m_word) : m_default_value;
     }
 };
 
@@ -543,6 +536,67 @@ class Binding<C, npos>
     {
         return std::ranges::subrange(m_first, m_last) |
                std::views::transform(m_converter);
+    }
+};
+
+template <Converter C, std::size_t nvals>
+class ValuelessBinding
+{
+    C            m_converter;
+    ArgsIterator m_iter;
+
+  public:
+    constexpr ValuelessBinding(C converter) noexcept : m_converter(converter) {}
+
+    constexpr void
+    set(ArgsIterator iter) noexcept
+    {
+        m_iter = iter;
+    }
+
+    // sink for tokenize
+    constexpr void
+    set(std::string_view) noexcept
+    {
+    }
+
+    constexpr decltype(auto)
+    operator()() const
+        noexcept(std::is_nothrow_invocable_v<C, std::string_view>)
+    {
+        return std::ranges::subrange(m_iter, m_iter + nvals) |
+               std::views::transform(m_converter);
+    }
+};
+
+template <Converter C>
+class ValuelessBinding<C, 1>
+{
+    using value_type = detail::result_type<C>;
+
+    C                m_converter;
+    std::string_view m_word;
+
+  public:
+    constexpr ValuelessBinding(C converter) noexcept : m_converter(converter) {}
+
+    constexpr void
+    set(std::string_view word) noexcept
+    {
+        m_word = word;
+    }
+
+    // sink for tokenize
+    constexpr void
+    set(ArgsIterator) noexcept
+    {
+    }
+
+    constexpr value_type
+    operator()() const
+        noexcept(std::is_nothrow_invocable_r_v<value_type, C, std::string_view>)
+    {
+        return m_converter(m_word);
     }
 };
 
@@ -641,7 +695,7 @@ struct Positional
     constexpr auto
     binding() const noexcept
     {
-        return Binding<C, nvals>(converter);
+        return ValuelessBinding<C, nvals>(converter);
     }
 };
 
