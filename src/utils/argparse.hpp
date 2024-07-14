@@ -126,15 +126,20 @@ struct keyword_ok_impl<char_sequence<cs...>>
 
 // Lazy man's flag converter
 // converts any word except no, off, false and 0 to true
-struct FlagConverter
+class FlagConverter
 {
+    template <typename... Rest>
+    static constexpr bool
+    any(std::string_view w, Rest... rest) noexcept
+    {
+        return (... || (w == rest));
+    }
+
+  public:
     constexpr bool
     operator()(std::string_view word) const noexcept
     {
-        if(word == "no" || word == "off" || word == "false" || word == "0")
-            return false;
-
-        return true;
+        return any(word, "1", "yes", "YES", "true", "TRUE", "on", "ON");
     }
 };
 
@@ -429,6 +434,38 @@ class Binding
     }
 };
 
+template <>
+class Binding<detail::FlagConverter, 0>
+{
+    static constexpr detail::FlagConverter converter{};
+
+    bool m_flag = false;
+
+  public:
+    constexpr Binding(detail::FlagConverter, bool default_value = false) :
+        m_flag(default_value)
+    {
+    }
+
+    constexpr void
+    set(std::string_view word) noexcept
+    {
+        m_flag = word.empty() ? m_flag ^ true : converter(word);
+    }
+
+    // sink for tokenize
+    constexpr void
+    set(ArgsIterator) noexcept
+    {
+    }
+
+    constexpr bool
+    operator()() noexcept
+    {
+        return m_flag;
+    }
+};
+
 template <Converter C>
 class Binding<C, 1>
 {
@@ -524,9 +561,9 @@ struct Option
     using keyword_type = Keyword::type;
 
     static constexpr bool is_flag =
-        std::is_same_v<bool, value_type> && (nvals == 1ul);
+        std::is_same_v<bool, value_type> && (nvals == 0ul);
     static constexpr char             key      = Key;
-    static constexpr std::size_t      num_vals = is_flag ? 0ul : nvals;
+    static constexpr std::size_t      num_vals = nvals;
     static constexpr std::string_view keyword  = Keyword::view;
 
     C                converter;
@@ -622,9 +659,9 @@ struct Positional
 template <char Key, StringLiteral s, Converter C>
 consteval Option<Key, wrap_string<s>, C, 1ul>
 option(C                             converter,
-       const detail::result_type<C>& def_val,
        const std::string_view        doc,
-       const std::string_view        var) noexcept
+       const std::string_view        var,
+       const detail::result_type<C>& def_val) noexcept
 {
     CHECK_KEYCHAR;
     CHECK_KEYWORD;
@@ -635,9 +672,9 @@ option(C                             converter,
 template <char Key, Converter C>
 consteval Option<Key, detail::missing_keyword, C, 1ul>
 option(C                             converter,
-       const detail::result_type<C>& def_val,
        const std::string_view        doc,
-       const std::string_view        var) noexcept
+       const std::string_view        var,
+       const detail::result_type<C>& def_val) noexcept
 {
     CHECK_KEYCHAR;
     return {converter, def_val, doc, var};
@@ -647,9 +684,9 @@ option(C                             converter,
 template <StringLiteral s, Converter C>
 consteval Option<detail::missing_keychar, wrap_string<s>, C, 1ul>
 option(C                             converter,
-       const detail::result_type<C>& def_val,
        const std::string_view        doc,
-       const std::string_view        var) noexcept
+       const std::string_view        var,
+       const detail::result_type<C>& def_val) noexcept
 {
     CHECK_KEYWORD;
     return {converter, def_val, doc, var};
@@ -662,11 +699,12 @@ option(C                             converter,
 template <char Key, StringLiteral s, std::size_t N, Converter C>
 consteval Option<Key, wrap_string<s>, C, N>
 option(C                                            converter,
-       const std::array<detail::result_type<C>, N>& def_val,
        const std::string_view                       doc,
-       const std::array<std::string_view, N>&       var) noexcept
+       const std::array<std::string_view, N>&       var,
+       const std::array<detail::result_type<C>, N>& def_val) noexcept
 {
-    static_assert(N > 1ul && N != npos, "Use option without N argument");
+    static_assert(N > 1ul, "Use option without N argument");
+    static_assert(N != npos, "Use option_list");
     CHECK_KEYCHAR;
     CHECK_KEYWORD;
     return {converter, def_val, doc, var};
@@ -676,11 +714,12 @@ option(C                                            converter,
 template <char Key, std::size_t N, Converter C>
 consteval Option<Key, detail::missing_keyword, C, N>
 option(C                                            converter,
-       const std::array<detail::result_type<C>, N>& def_val,
        const std::string_view                       doc,
-       const std::array<std::string_view, N>&       var) noexcept
+       const std::array<std::string_view, N>&       var,
+       const std::array<detail::result_type<C>, N>& def_val) noexcept
 {
-    static_assert(N > 1ul && N != npos, "Use option without N argument");
+    static_assert(N > 1ul, "Use option without N argument");
+    static_assert(N != npos, "Use option_list");
     CHECK_KEYCHAR;
     return {converter, def_val, doc, var};
 }
@@ -689,11 +728,12 @@ option(C                                            converter,
 template <StringLiteral s, std::size_t N, Converter C>
 consteval Option<detail::missing_keychar, wrap_string<s>, C, N>
 option(C                                            converter,
-       const std::array<detail::result_type<C>, N>& def_val,
        const std::string_view                       doc,
-       const std::array<std::string_view, N>&       var) noexcept
+       const std::array<std::string_view, N>&       var,
+       const std::array<detail::result_type<C>, N>& def_val) noexcept
 {
-    static_assert(N > 1ul && N != npos, "Use option without N argument");
+    static_assert(N > 1ul, "Use option without N argument");
+    static_assert(N != npos, "Use option_list");
     CHECK_KEYWORD;
     return {converter, def_val, doc, var};
 }
@@ -734,33 +774,34 @@ option_list(C                      converter,
 
 /// @brief Create a flag option, i.e. one that holds a boolean value
 /// thus not requiring an argument when being set.
-template <char          Key,
-          StringLiteral s,
-          Converter     _FlagConverter = detail::FlagConverter>
-consteval Option<Key, wrap_string<s>, _FlagConverter, 1ul>
-flag(const bool def_val, const std::string_view doc) noexcept
+template <char Key, StringLiteral s>
+consteval Option<Key, wrap_string<s>, detail::FlagConverter, 0ul>
+flag(const std::string_view doc, const bool def_val = false) noexcept
 {
     CHECK_KEYCHAR;
     CHECK_KEYWORD;
-    return {_FlagConverter{}, def_val, doc, ""};
+    return {detail::FlagConverter{}, def_val, doc, ""};
 }
 
 /// @brief Shortcut to create a flag option without keyword.
-template <char Key, Converter _FlagConverter = detail::FlagConverter>
-consteval Option<Key, detail::missing_keyword, _FlagConverter, 1ul>
-flag(const bool def_val, const std::string_view doc) noexcept
+template <char Key>
+consteval Option<Key, detail::missing_keyword, detail::FlagConverter, 0ul>
+flag(const std::string_view doc, const bool def_val = false) noexcept
 {
     CHECK_KEYCHAR;
-    return {_FlagConverter{}, def_val, doc, ""};
+    return {detail::FlagConverter{}, def_val, doc, ""};
 }
 
 /// @brief Shortcut to create a flag option without character key.
-template <StringLiteral s, Converter _FlagConverter = detail::FlagConverter>
-consteval Option<detail::missing_keychar, wrap_string<s>, _FlagConverter, 1ul>
-flag(const bool def_val, const std::string_view doc) noexcept
+template <StringLiteral s>
+consteval Option<detail::missing_keychar,
+                 wrap_string<s>,
+                 detail::FlagConverter,
+                 0ul>
+flag(const std::string_view doc, const bool def_val = false) noexcept
 {
     CHECK_KEYWORD;
-    return {_FlagConverter{}, def_val, doc, ""};
+    return {detail::FlagConverter{}, def_val, doc, ""};
 }
 
 #undef CHECK_KEYCHAR
