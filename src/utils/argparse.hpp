@@ -613,6 +613,7 @@ struct Option
                                         std::array<std::string_view, nvals>,
                                         std::string_view>;
     using keyword_type = Keyword::type;
+    using binding_type = Binding<C, nvals>;
 
     static constexpr bool is_flag =
         std::is_same_v<bool, value_type> && (nvals == 0ul);
@@ -634,10 +635,10 @@ struct Option
     {
     }
 
-    constexpr Binding<C, nvals>
+    constexpr binding_type
     binding() const noexcept
     {
-        return Binding<C, nvals>(converter, default_value);
+        return {converter, default_value};
     }
 };
 
@@ -651,6 +652,7 @@ struct Option<Key, Keyword, C, npos>
 
     using value_type   = detail::result_type<C>;
     using keyword_type = Keyword::type;
+    using binding_type = Binding<C, npos>;
 
     C                converter;
     std::string_view doc;
@@ -664,10 +666,10 @@ struct Option<Key, Keyword, C, npos>
     {
     }
 
-    constexpr Binding<C, npos>
+    constexpr binding_type
     binding() const noexcept
     {
-        return Binding<C, npos>(converter);
+        return {converter};
     }
 };
 
@@ -675,9 +677,12 @@ struct Option<Key, Keyword, C, npos>
 template <Converter C, std::size_t nvals>
 struct Positional
 {
-    using var_type = std::conditional_t<(nvals > 1 && nvals != npos),
+    using var_type     = std::conditional_t<(nvals > 1 && nvals != npos),
                                         std::array<std::string_view, nvals>,
                                         std::string_view>;
+    using binding_type = std::conditional_t<nvals == npos,
+                                            Binding<C, nvals>,
+                                            ValuelessBinding<C, nvals>>;
     static constexpr std::size_t num_vals = nvals;
 
     C                converter;
@@ -692,10 +697,10 @@ struct Positional
     {
     }
 
-    constexpr auto
+    constexpr binding_type
     binding() const noexcept
     {
-        return ValuelessBinding<C, nvals>(converter);
+        return {converter};
     }
 };
 
@@ -1081,14 +1086,14 @@ bind_value(std::tuple<Bindings...>& bindings,
 // }
 
 /// @brief Generate Binding's from options.
-template <typename... Options>
-constexpr auto
-make_bindings(const std::tuple<Options...>& options) noexcept
-{
-    return std::apply([](const Options&... options) constexpr noexcept
-                      { return std::tuple{options.binding()...}; },
-                      options);
-}
+// template <typename... Options>
+// constexpr auto
+// make_bindings(const std::tuple<Options...>& options) noexcept
+// {
+//     return std::apply([](const Options&... options) constexpr noexcept
+//                       { return std::tuple{options.binding()...}; },
+//                       options);
+// }
 
 /// @brief Updates parser's state processing data from matched patterns
 /// on encountered words.
@@ -1342,21 +1347,31 @@ get_nvals(const std::size_t token, const Options& opts) noexcept
 // };
 
 // we change state during parsing
-template <typename Desc, typename Bindings>
-struct State
+template <typename Desc>
+class State
 {
+    template <typename T>
+    using f = T::binding_type;
+
+    using Bindings =
+        typelist::to<typelist::map<f, typelist::from<Desc>>, std::tuple>;
+    using Remains = std::array<std::size_t, std::tuple_size_v<Desc>>;
+
+  public:
     const Desc& desc;
     Bindings    bindings;
-    // option token to store value in
-    std::size_t token;
     // how many values remain to set
-    std::size_t remain;
+    Remains remains;
 
-    constexpr State(const Desc& _desc,
-                    std::size_t _token,
-                    std::size_t _remain) noexcept :
+    constexpr State(const Desc& _desc) noexcept :
         desc(_desc),
-        bindings(make_bindings(_desc)), token(_token), remain(_remain)
+        bindings(std::apply([](const auto&... options) constexpr noexcept
+                            { return std::tuple{options.binding()...}; },
+                            _desc)),
+        remains(std::apply([]<typename... Options>(
+                               const Options&...) constexpr noexcept -> Remains
+                           { return {Options::num_vals...}; },
+                           _desc))
     {
     }
 
@@ -1369,7 +1384,7 @@ struct State
 
 // empty state if we have no positional arguments
 template <>
-struct State<std::tuple<>, void>
+struct State<std::tuple<>>
 {
     template <typename... Args>
     constexpr State(Args&&...) noexcept
@@ -1400,15 +1415,11 @@ mp_halt_condition(ArgsIterator iter, const Desc& desc) noexcept
 /// @brief Matches "-k [value...] or --keyword [value...]".
 struct KeyParser
 {
-    template <typename OptDesc,
-              typename OptBindings,
-              typename PosDesc,
-              typename PosBindings,
-              typename Error>
+    template <typename Opt, typename Pos, typename Error>
     constexpr bool
-    operator()(ArgsIterator&                iter,
-               State<OptDesc, OptBindings>& opt_state,
-               State<PosDesc, PosBindings>& /* pos_state*/,
+    operator()(ArgsIterator& iter,
+               State<Opt>&   opt_state,
+               State<Pos>& /* pos_state*/,
                Error& error) const noexcept
     {
         ArgsIterator           local_iter = iter;
