@@ -1398,7 +1398,8 @@ tokenize_option(std::string_view word, const Desc& desc) noexcept
 {
     if(word.size() == 2 && word.front() == '-') return tokenize(word[1], desc);
 
-    if(word.size() >= 4 || word.substr(2) == "--") return tokenize(word, desc);
+    if(word.size() >= 4 || word.substr(0, 2) == "--")
+        return tokenize(word.substr(2), desc);
 
     return npos;
 }
@@ -1463,6 +1464,37 @@ struct HelpParser
         }
         else
             return false;
+    }
+};
+
+/// @brief Matches "--keyword=value".
+struct KeywordValueParser
+{
+    template <typename Opt, typename Pos, typename Error>
+    constexpr bool
+    operator()(ArgsIterator& iter,
+               State<Opt>&   opt_state,
+               State<Pos>& /* pos_state */,
+               Error& error) const noexcept
+    {
+        const std::string_view word = *iter;
+        if(word.size() < 4) return false;
+        if(word.substr(0, 2) != "--") return false;
+        const std::size_t eq_pos = word.find('=');
+        if(eq_pos == std::string_view::npos) return false;
+
+        const std::string_view sub = word.substr(eq_pos);
+        const std::size_t      token =
+            tokenize(word.substr(2, eq_pos - 2), opt_state.desc);
+
+        if(token == npos)
+        {
+            error = KeyException<std::string_view>{sub};
+            return true;
+        }
+
+        bind_value(opt_state.bindings, token, word.substr(eq_pos + 1));
+        return true;
     }
 };
 
