@@ -1462,8 +1462,8 @@ struct HelpParser
             error = HelpRequest{};
             return true;
         }
-        else
-            return false;
+
+        return false;
     }
 };
 
@@ -1523,6 +1523,12 @@ struct KeyParser
             return true;
         };
 
+        auto fail = [&]() constexpr noexcept
+        {
+            error = FewArgumentsException{word};
+            return true;
+        };
+
         switch(nvals)
         {
         // flag
@@ -1534,11 +1540,7 @@ struct KeyParser
         // value
         case 1:
         {
-            if(local_iter.count() < 1)
-            {
-                error = FewArgumentsException{word};
-                return false;
-            }
+            if(local_iter.count() < 1) return fail();
 
             bind_value(opt_state.bindings, token, ++local_iter);
             return success();
@@ -1546,11 +1548,7 @@ struct KeyParser
         // arbitrary number of values
         case npos:
         {
-            if(local_iter.count() < 1)
-            {
-                error = FewArgumentsException{word};
-                return false;
-            }
+            if(local_iter.count() < 1) return fail();
 
             iter = mp_bind(opt_state, token, local_iter);
             return true;
@@ -1558,11 +1556,7 @@ struct KeyParser
         // constant number of arguments
         default:
         {
-            if(local_iter.count() < nvals)
-            {
-                error = FewArgumentsException{word};
-                return false;
-            }
+            if(local_iter.count() < nvals) return fail();
 
             bind_value(opt_state.bindings, token, local_iter);
             local_iter += nvals;
@@ -1598,21 +1592,23 @@ struct PositionalsParser
     {
         const auto [token, rem] = remained_token(pos_state.remains);
 
+        auto fail = [&]() constexpr noexcept
+        {
+            error = FewArgumentsException{*iter};
+            return true;
+        };
+
         // no unset positionals left
         if(token == npos)
         {
             error = UnexpectedValue{*iter};
-            return false;
+            return true;
         }
 
         // arbitrary number of arguments
         if(rem == npos)
         {
-            if(iter.count() < 1)
-            {
-                error = FewArgumentsException{*iter};
-                return false;
-            }
+            if(iter.count() < 1) return fail();
 
             iter = mp_bind(pos_state, token, iter);
 
@@ -1621,11 +1617,7 @@ struct PositionalsParser
         }
 
         // constant number of arguments
-        if(iter.count() < rem)
-        {
-            error = FewArgumentsException{*iter};
-            return false;
-        }
+        if(iter.count() < rem) return fail();
 
         bind_value(pos_state.bindings, token, *iter);
         iter += rem;
