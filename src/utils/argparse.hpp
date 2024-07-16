@@ -1412,6 +1412,60 @@ mp_halt_condition(ArgsIterator iter, const Desc& desc) noexcept
            tokenize_option(*iter, desc) != npos;
 }
 
+template <typename Desc>
+constexpr ArgsIterator
+get_last(ArgsIterator iter, const Desc& desc) noexcept
+{
+    do ++iter;
+    while(!mp_halt_condition(iter, desc));
+    return iter;
+}
+
+template <typename Opt>
+constexpr ArgsIterator
+mp_bind(State<Opt>& state, std::size_t token, ArgsIterator iter) noexcept
+{
+    ArgsIterator last = get_last(iter, state.desc);
+    bind_value(state.bindings, token, iter);
+    bind_value(state.bindings, token, last);
+    return last;
+}
+
+/// @brief Matches "--" and does nothing.
+struct SkipParser
+{
+    template <typename Opt, typename Pos, typename Error>
+    constexpr bool
+    operator()(ArgsIterator& iter,
+               State<Opt>& /* opt_state */,
+               State<Pos>& /* pos_state */,
+               Error&) const noexcept
+    {
+        return *iter == "--";
+    }
+};
+
+/// @brief Matches "-h" or "--help". Reports HelpRequest to @p error on success.
+struct HelpParser
+{
+    template <typename Opt, typename Pos, typename Error>
+    constexpr bool
+    operator()(ArgsIterator& iter,
+               State<Opt>& /* opt_state */,
+               State<Pos>& /* pos_state */,
+               Error& error) const noexcept
+    {
+        const std::string_view word = *iter;
+        if(word == "-h" || word == "--help")
+        {
+            error = HelpRequest{};
+            return true;
+        }
+        else
+            return false;
+    }
+};
+
 /// @brief Matches "-k [value...] or --keyword [value...]".
 struct KeyParser
 {
@@ -1419,7 +1473,7 @@ struct KeyParser
     constexpr bool
     operator()(ArgsIterator& iter,
                State<Opt>&   opt_state,
-               State<Pos>& /* pos_state*/,
+               State<Pos>& /* pos_state */,
                Error& error) const noexcept
     {
         ArgsIterator           local_iter = iter;
@@ -1433,7 +1487,7 @@ struct KeyParser
 
         auto success = [&]() constexpr noexcept
         {
-            iter = std::next(local_iter);
+            iter = local_iter;
             return true;
         };
 
@@ -1443,7 +1497,7 @@ struct KeyParser
         case 0:
         {
             bind_value(opt_state.bindings, token, "");
-            return success();
+            return true;
         }
         // value
         case 1:
@@ -1454,7 +1508,7 @@ struct KeyParser
                 return false;
             }
 
-            bind_value(opt_state.bindings, token, *std::next(local_iter));
+            bind_value(opt_state.bindings, token, ++local_iter);
             return success();
         }
         // arbitrary number of values
@@ -1466,14 +1520,8 @@ struct KeyParser
                 return false;
             }
 
-            ArgsIterator last = std::next(local_iter);
-
-            while(!mp_halt_condition(last, opt_state.desc)) ++last;
-
-            // binding range
-            bind_value(opt_state.bindings, token, local_iter);
-            bind_value(opt_state.bindings, token, last);
-            return success();
+            iter = mp_bind(opt_state, token, local_iter);
+            return true;
         }
         // constant number of arguments
         default:
@@ -1485,11 +1533,72 @@ struct KeyParser
             }
 
             bind_value(opt_state.bindings, token, local_iter);
+            local_iter += nvals;
             return success();
         }
         }
 
         return false;
+    }
+};
+
+template <std::size_t N>
+constexpr std::pair<std::size_t, std::size_t>
+remained_token(const std::array<std::size_t, N>& remains) noexcept
+{
+    for(std::size_t token = 0; token < remains.size(); ++token)
+    {
+        std::size_t rem = remains[token];
+        if(rem) return {token, rem};
+    }
+    return {npos, npos};
+}
+
+/// @brief Matches any remained arguments.
+struct PositionalsParser
+{
+    template <typename Opt, typename Pos, typename Error>
+    constexpr bool
+    operator()(ArgsIterator& iter,
+               State<Opt>& /* opt_state */,
+               State<Pos>& pos_state,
+               Error&      error) const noexcept
+    {
+        const auto [token, rem] = remained_token(pos_state.remains);
+
+        // no unset positionals left
+        if(token == npos)
+        {
+            error = UnexpectedValue{*iter};
+            return false;
+        }
+
+        // arbitrary number of arguments
+        if(rem == npos)
+        {
+            if(iter.count() < 1)
+            {
+                error = FewArgumentsException{*iter};
+                return false;
+            }
+
+            iter = mp_bind(pos_state, token, iter);
+
+            pos_state.remains[token] = 0;
+            return true;
+        }
+
+        // constant number of arguments
+        if(iter.count() < rem)
+        {
+            error = FewArgumentsException{*iter};
+            return false;
+        }
+
+        bind_value(pos_state.bindings, token, *iter);
+        iter += rem;
+        pos_state.remains[token] = 0;
+        return true;
     }
 };
 
