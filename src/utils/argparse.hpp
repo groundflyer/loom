@@ -487,10 +487,11 @@ class Binding<C, 1>
         m_is_set = true;
     }
 
-    // sink for tokenize
     constexpr void
-    set(ArgsIterator) noexcept
+    set(ArgsIterator iter) noexcept
     {
+        m_word   = *iter;
+        m_is_set = true;
     }
 
     constexpr value_type
@@ -1498,6 +1499,57 @@ struct KeywordValueParser
     }
 };
 
+template <typename Opt, typename Error>
+constexpr ArgsIterator
+consume_values(ArgsIterator iter,
+               State<Opt>&  state,
+               Error&       error,
+               std::size_t  token,
+               std::size_t  nvals) noexcept
+{
+    const std::string_view word = *iter;
+
+    auto fail = [&]() constexpr noexcept
+    {
+        error = FewArgumentsException{word};
+        return iter;
+    };
+
+    switch(nvals)
+    {
+    // flag
+    case 0:
+    {
+        bind_value(state.bindings, token, "");
+        return iter;
+    }
+    // value
+    case 1:
+    {
+        if(iter.count() < 1) return fail();
+
+        bind_value(state.bindings, token, ++iter);
+        return iter;
+    }
+    // arbitrary number of values
+    case npos:
+    {
+        if(iter.count() < 1) return fail();
+
+        return mp_bind(state, token, iter);
+    }
+    // constant number of arguments
+    default:
+    {
+        if(iter.count() < static_cast<int>(nvals)) return fail();
+
+        bind_value(state.bindings, token, iter);
+        iter += nvals;
+        return iter;
+    }
+    }
+}
+
 /// @brief Matches "-k [value...] or --keyword [value...]".
 struct KeyParser
 {
@@ -1508,8 +1560,7 @@ struct KeyParser
                State<Pos>& /* pos_state */,
                Error& error) const noexcept
     {
-        ArgsIterator           local_iter = iter;
-        const std::string_view word       = *local_iter;
+        const std::string_view word  = *iter;
         const std::size_t      token = tokenize_option(word, opt_state.desc);
 
         // doesn't match any keys
@@ -1517,51 +1568,57 @@ struct KeyParser
 
         const std::size_t nvals = get_nvals(token, opt_state.desc);
 
-        auto success = [&]() constexpr noexcept
-        {
-            iter = local_iter;
-            return true;
-        };
+        iter = consume_values(iter, opt_state, error, token, nvals);
+        return true;
+    }
+};
 
-        auto fail = [&]() constexpr noexcept
-        {
-            error = FewArgumentsException{word};
-            return true;
-        };
+/// @brief Matches "-abcd [values...]"
+struct KeyCharSeqParser
+{
+    template <typename Opt, typename Pos, typename Error>
+    constexpr bool
+    operator()(ArgsIterator& iter,
+               State<Opt>&   opt_state,
+               State<Pos>& /* pos_state */,
+               Error& error) const noexcept
+    {
+        const std::string_view word = *iter;
+        if(word.size() < 3 || word.front() != '-') return false;
 
-        switch(nvals)
+        for(std::size_t i = 1; i < word.size(); ++i)
         {
-        // flag
-        case 0:
-        {
-            bind_value(opt_state.bindings, token, "");
-            return true;
-        }
-        // value
-        case 1:
-        {
-            if(local_iter.count() < 1) return fail();
+            const std::size_t token = tokenize(word[i], opt_state.desc);
 
-            bind_value(opt_state.bindings, token, ++local_iter);
-            return success();
-        }
-        // arbitrary number of values
-        case npos:
-        {
-            if(local_iter.count() < 1) return fail();
+            if(token == npos)
+            {
+                error = KeyException<char>{word[i]};
+                return true;
+            }
 
-            iter = mp_bind(opt_state, token, local_iter);
-            return true;
-        }
-        // constant number of arguments
-        default:
-        {
-            if(local_iter.count() < nvals) return fail();
+            const std::size_t nvals = get_nvals(token, opt_state.desc);
+            if(nvals == 0) // flag
+                bind_value(opt_state.bindings, token, "");
 
-            bind_value(opt_state.bindings, token, local_iter);
-            local_iter += nvals;
-            return success();
-        }
+            if(nvals == 1)
+            {
+                if(word.size() - i > 1) // not at the end
+                    bind_value(opt_state.bindings, token, word.substr(i + 1));
+                else
+                    iter = consume_values(iter, opt_state, error, token, nvals);
+
+                return true;
+            }
+
+            if(nvals > 1)
+            {
+                if(word.size() - i > 1)
+                    error = FewArgumentsException{word};
+                else
+                    iter = consume_values(iter, opt_state, error, token, nvals);
+
+                return true;
+            }
         }
 
         return false;
@@ -1619,7 +1676,7 @@ struct PositionalsParser
         // constant number of arguments
         if(iter.count() < rem) return fail();
 
-        bind_value(pos_state.bindings, token, *iter);
+        bind_value(pos_state.bindings, token, iter);
         iter += rem;
         pos_state.remains[token] = 0;
         return true;
