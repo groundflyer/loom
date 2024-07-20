@@ -12,6 +12,7 @@
 
 #include <algorithm>
 #include <array>
+#include <bit>
 #include <functional>
 #include <ranges>
 #include <string_view>
@@ -1021,23 +1022,20 @@ class State
 
     using Bindings =
         typelist::to<typelist::map<f, typelist::from<Desc>>, std::tuple>;
-    using Remains = std::array<std::size_t, std::tuple_size_v<Desc>>;
+
+    // which bindings are set
+    // only useful with positionals
+    std::size_t set = 0;
 
   public:
     const Desc& desc;
     Bindings    bindings;
-    // how many values remain to set
-    Remains remains;
 
     constexpr State(const Desc& _desc) noexcept :
         desc(_desc),
         bindings(std::apply([](const auto&... options) constexpr noexcept
                             { return std::tuple{options.binding()...}; },
-                            _desc)),
-        remains(std::apply([]<typename... Options>(
-                               const Options&...) constexpr noexcept -> Remains
-                           { return {Options::num_vals...}; },
-                           _desc))
+                            _desc))
     {
     }
 
@@ -1046,6 +1044,19 @@ class State
     State(State&&)      = delete;
     State&
     operator=(const State&) = delete;
+
+    constexpr std::size_t
+    last_token() const noexcept
+    {
+        const std::size_t token = std::countr_zero(set);
+        return token > std::tuple_size_v<Bindings> ? npos : token;
+    }
+
+    constexpr void
+    set_token(const std::size_t token) noexcept
+    {
+        set |= 1 << token;
+    }
 };
 
 // empty state if we have no positional arguments
@@ -1312,7 +1323,7 @@ struct PositionalsParser
                State<Pos>& pos_state,
                Error&      error) const noexcept
     {
-        const auto [token, rem] = remained_token(pos_state.remains);
+        const std::size_t token = pos_state.last_token();
 
         auto fail = [&]() constexpr noexcept
         {
@@ -1327,23 +1338,25 @@ struct PositionalsParser
             return true;
         }
 
+        const std::size_t nval = get_nvals(token, pos_state.desc);
+
         // arbitrary number of arguments
-        if(rem == npos)
+        if(nval == npos)
         {
             if(iter.count() < 1) return fail();
 
             iter = mp_bind(pos_state, token, iter);
 
-            pos_state.remains[token] = 0;
+            pos_state.set_token(token);
             return true;
         }
 
         // constant number of arguments
-        if(iter.count() < rem) return fail();
+        if(iter.count() < nval) return fail();
 
         bind_value(pos_state.bindings, token, iter);
-        iter += rem;
-        pos_state.remains[token] = 0;
+        iter += nval;
+        pos_state.set_token(token);
         return true;
     }
 };
