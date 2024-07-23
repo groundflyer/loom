@@ -185,10 +185,6 @@ struct UnexpectedValue
     std::string_view value;
 };
 
-struct HelpRequest
-{
-};
-
 /// @brief Defines requirements for callables to convert
 /// std::string_view to a value.
 template <typename T>
@@ -366,6 +362,18 @@ class ArgsRange : public std::ranges::view_interface<ArgsRange>
     ArgsRange() = default;
 
     ArgsRange(int argc, char* argv[]) noexcept : m_argc(argc), p_argv(argv) {}
+
+    ArgsIterator
+    begin() const noexcept
+    {
+        return {m_argc, p_argv};
+    }
+
+    ArgsIterator
+    end() const noexcept
+    {
+        return {m_argc, p_argv, m_argc};
+    }
 
     friend ArgsIterator
     begin(const ArgsRange& r) noexcept
@@ -907,80 +915,106 @@ tokenize(const Key key, const std::tuple<Options...>) noexcept
 }
 
 /// @brief Holds results of parsing.
-template <typename Bindings, typename Options>
-class ParseResults;
-
 template <typename OptBindings, typename PosBindings, typename Options>
-class ParseResults<std::pair<OptBindings, PosBindings>, Options>
+class ParseResults
 {
-    OptBindings opt_bindings;
-    PosBindings pos_bindings;
+    OptBindings m_opt_bindings;
+    PosBindings m_pos_bindings;
 
   public:
-    constexpr ParseResults(const std::pair<OptBindings, PosBindings>& _bindings,
-                           const Options&) noexcept :
-        opt_bindings(_bindings.first),
-        pos_bindings(_bindings.second)
+    constexpr ParseResults(const OptBindings& opt_bindings,
+                           const PosBindings& pos_bindings,
+                           Options) noexcept :
+        m_opt_bindings(opt_bindings),
+        m_pos_bindings(pos_bindings)
     {
     }
 
     template <char Key>
     constexpr decltype(auto)
     get_opt() const
+        noexcept(std::is_nothrow_invocable_v<
+                 std::tuple_element_t<key_index<Key, Options>, OptBindings>>)
     {
-        return std::get<key_index<Key, Options>>(opt_bindings)();
+        return std::get<key_index<Key, Options>>(m_opt_bindings)();
     }
 
     template <StringLiteral s>
     constexpr decltype(auto)
     get_opt() const
+        noexcept(std::is_nothrow_invocable_v<
+                 std::tuple_element_t<keyword_index<sl2cs<s>, Options>,
+                                      OptBindings>>)
     {
-        return std::get<keyword_index<sl2cs<s>, Options>>(opt_bindings)();
+        return std::get<keyword_index<sl2cs<s>, Options>>(m_opt_bindings)();
     }
 
     template <std::size_t Idx>
     constexpr decltype(auto)
-    get_pos() const
+    get_pos() const noexcept(
+        std::is_nothrow_invocable_v<std::tuple_element_t<Idx, PosBindings>>)
     {
-        return std::get<Idx>(pos_bindings)();
+        return std::get<Idx>(m_pos_bindings)();
     }
 };
 
 /// @brief Holds results of parsing when positionals are not defined.
 template <typename... OptBindings, typename Options>
-class ParseResults<std::tuple<OptBindings...>, Options>
+class ParseResults<std::tuple<OptBindings...>, std::tuple<>, Options>
 {
-    std::tuple<OptBindings...> opt_bindings;
+    using OptBindings_t = std::tuple<OptBindings...>;
+
+    OptBindings_t m_opt_bindings;
 
   public:
-    constexpr ParseResults(const std::tuple<OptBindings...>& _bindings,
-                           const Options&) noexcept :
-        opt_bindings(_bindings)
+    constexpr ParseResults(const OptBindings_t& bindings, Options) noexcept :
+        m_opt_bindings(bindings)
     {
     }
 
     template <char Key>
     constexpr decltype(auto)
-    get_opt() const noexcept
+    get_opt() const
+        noexcept(std::is_nothrow_invocable_v<
+                 std::tuple_element_t<key_index<Key, Options>, OptBindings_t>>)
     {
-        return std::get<key_index<Key, Options>>(opt_bindings)();
+        return std::get<key_index<Key, Options>>(m_opt_bindings)();
     }
 
     template <StringLiteral s>
     constexpr decltype(auto)
-    get_opt() const noexcept
+    get_opt() const
+        noexcept(std::is_nothrow_invocable_v<
+                 std::tuple_element_t<keyword_index<sl2cs<s>, Options>,
+                                      OptBindings_t>>)
     {
-        return std::get<keyword_index<sl2cs<s>, Options>>(opt_bindings)();
+        return std::get<keyword_index<sl2cs<s>, Options>>(m_opt_bindings)();
     }
 };
 
-template <typename OptBindings, typename PosBindings, typename Options>
-ParseResults(const std::pair<OptBindings, PosBindings>&, const Options&)
-    -> ParseResults<std::pair<OptBindings, PosBindings>, Options>;
+/// @brief Holds results of parsing when options are not defined.
+template <typename... PosBindings, typename Options>
+class ParseResults<std::tuple<>, std::tuple<PosBindings...>, Options>
+{
+    using PosBindings_t = std::tuple<PosBindings...>;
 
-template <typename... OptBindings, typename Options>
-ParseResults(const std::tuple<OptBindings...>&, const Options&)
-    -> ParseResults<std::tuple<OptBindings...>, Options>;
+    PosBindings_t m_pos_bindings;
+
+  public:
+    constexpr ParseResults(const PosBindings_t& pos_bindings, Options) noexcept
+        :
+        m_pos_bindings(pos_bindings)
+    {
+    }
+
+    template <std::size_t Idx>
+    constexpr decltype(auto)
+    get_pos() const noexcept(
+        std::is_nothrow_invocable_v<std::tuple_element_t<Idx, PosBindings_t>>)
+    {
+        return std::get<Idx>(m_pos_bindings)();
+    }
+};
 
 /// @brief Set @p token'th value.
 template <typename... Bindings, typename Value>
@@ -1033,9 +1067,10 @@ class State
 
     constexpr State(const Desc& _desc) noexcept :
         desc(_desc),
-        bindings(std::apply([](const auto&... options) constexpr noexcept
-                            { return std::tuple{options.binding()...}; },
-                            _desc))
+        bindings(
+            std::apply([](const auto&... options) constexpr noexcept -> Bindings
+                       { return {options.binding()...}; },
+                       _desc))
     {
     }
 
@@ -1059,15 +1094,10 @@ class State
     }
 };
 
-// empty state if we have no positional arguments
-template <>
-struct State<std::tuple<>>
-{
-    template <typename... Args>
-    constexpr State(Args&&...) noexcept
-    {
-    }
-};
+using ErrorState = std::variant<FewArgumentsException,
+                                UnexpectedValue,
+                                KeyException<char>,
+                                KeyException<std::string_view>>;
 
 template <typename Desc>
 constexpr std::size_t
@@ -1109,50 +1139,15 @@ mp_bind(State<Opt>& state, std::size_t token, ArgsIterator iter) noexcept
     return last;
 }
 
-/// @brief Matches "--" and does nothing.
-struct SkipParser
-{
-    template <typename Opt, typename Pos, typename Error>
-    constexpr bool
-    operator()(ArgsIterator& iter,
-               State<Opt>& /* opt_state */,
-               State<Pos>& /* pos_state */,
-               Error&) const noexcept
-    {
-        return *iter == "--";
-    }
-};
-
-/// @brief Matches "-h" or "--help". Reports HelpRequest to @p error on success.
-struct HelpParser
-{
-    template <typename Opt, typename Pos, typename Error>
-    constexpr bool
-    operator()(ArgsIterator& iter,
-               State<Opt>& /* opt_state */,
-               State<Pos>& /* pos_state */,
-               Error& error) const noexcept
-    {
-        const std::string_view word = *iter;
-        if(word == "-h" || word == "--help")
-        {
-            error = HelpRequest{};
-            return true;
-        }
-
-        return false;
-    }
-};
-
 /// @brief Matches "--keyword=value".
 struct KeywordValueParser
 {
-    template <typename Opt, typename Pos, typename Error>
+    template <typename Opt, typename Pos>
     constexpr bool
     operator()(ArgsIterator& iter,
                State<Opt>&   opt_state,
                State<Pos>& /* pos_state */,
-               Error& error) const noexcept
+               ErrorState& error) const noexcept
     {
         const std::string_view word = *iter;
         if(word.size() < 4) return false;
@@ -1175,11 +1170,11 @@ struct KeywordValueParser
     }
 };
 
-template <typename Opt, typename Error>
+template <typename Opt>
 constexpr ArgsIterator
 consume_values(ArgsIterator iter,
                State<Opt>&  state,
-               Error&       error,
+               ErrorState&  error,
                std::size_t  token,
                std::size_t  nvals) noexcept
 {
@@ -1229,12 +1224,12 @@ consume_values(ArgsIterator iter,
 /// @brief Matches "-k [value...] or --keyword [value...]".
 struct KeyParser
 {
-    template <typename Opt, typename Pos, typename Error>
+    template <typename Opt, typename Pos>
     constexpr bool
     operator()(ArgsIterator& iter,
                State<Opt>&   opt_state,
                State<Pos>& /* pos_state */,
-               Error& error) const noexcept
+               ErrorState& error) const noexcept
     {
         const std::string_view word  = *iter;
         const std::size_t      token = tokenize_option(word, opt_state.desc);
@@ -1252,12 +1247,12 @@ struct KeyParser
 /// @brief Matches "-abcd [values...]"
 struct KeyCharSeqParser
 {
-    template <typename Opt, typename Pos, typename Error>
+    template <typename Opt, typename Pos>
     constexpr bool
     operator()(ArgsIterator& iter,
                State<Opt>&   opt_state,
                State<Pos>& /* pos_state */,
-               Error& error) const noexcept
+               ErrorState& error) const noexcept
     {
         const std::string_view word = *iter;
         if(word.size() < 3 || word.front() != '-') return false;
@@ -1301,27 +1296,15 @@ struct KeyCharSeqParser
     }
 };
 
-template <std::size_t N>
-constexpr std::pair<std::size_t, std::size_t>
-remained_token(const std::array<std::size_t, N>& remains) noexcept
-{
-    for(std::size_t token = 0; token < remains.size(); ++token)
-    {
-        std::size_t rem = remains[token];
-        if(rem) return {token, rem};
-    }
-    return {npos, npos};
-}
-
 /// @brief Matches any remained arguments.
 struct PositionalsParser
 {
-    template <typename Opt, typename Pos, typename Error>
+    template <typename Opt, typename Pos>
     constexpr bool
     operator()(ArgsIterator& iter,
                State<Opt>& /* opt_state */,
                State<Pos>& pos_state,
-               Error&      error) const noexcept
+               ErrorState& error) const noexcept
     {
         const std::size_t token = pos_state.last_token();
 
@@ -1680,6 +1663,158 @@ class StandardErrorHandler
     }
 };
 
+template <typename Options, typename Positionals>
+void
+check_help(const Options&     options,
+           const Positionals& positionals,
+           std::string_view   word,
+           std::string_view   argv0) noexcept
+{
+    if(word == "-h" || word == "--help")
+    {
+        show_help(make_program_name(argv0, options, positionals));
+        exit(0);
+    }
+}
+
+bool
+loop_condition(bool              r,
+               ArgsIterator      iter,
+               ArgsRange         args,
+               const ErrorState& error) noexcept
+{
+    return r && iter != std::ranges::end(args) &&
+           error.index() == std::variant_npos;
+}
+
+template <typename Options, typename Positionals>
+class MainParser
+{
+    using Parsers = type_sequence<KeywordValueParser,
+                                  KeyCharSeqParser,
+                                  KeyParser,
+                                  PositionalsParser>;
+
+    static constexpr Parsers           ps{};
+    static constexpr PositionalsParser pp{};
+
+  public:
+    template <typename ErrorHandler>
+    auto
+    operator()(const Options&     options,
+               const Positionals& positionals,
+               ArgsRange          args,
+               ErrorHandler&&     error_handler) const noexcept
+    {
+        State      opt_state{options};
+        State      pos_state{positionals};
+        ErrorState error;
+        bool       r        = true;
+        bool       pos_only = false;
+        auto       iter     = std::ranges::begin(args);
+        while(loop_condition(r, iter, args, error))
+        {
+            const std::string_view word = *iter;
+
+            if(word == "--")
+            {
+                pos_only = true;
+                ++iter;
+                continue;
+            }
+
+            if(pos_only)
+                r = pp(iter, opt_state, pos_state, error);
+            else
+            {
+                check_help(options,
+                           positionals,
+                           word,
+                           *std::ranges::begin(args));
+                r = typelist::first_of(ps, iter, opt_state, pos_state, error);
+            }
+
+            ++iter;
+        }
+
+        std::visit(std::forward<ErrorHandler>(error_handler), error);
+
+        return ParseResults(opt_state.bindings, pos_state.bindings, options);
+    }
+};
+
+template <typename... Options>
+class MainParser<std::tuple<Options...>, std::tuple<>>
+{
+    using Parsers =
+        type_sequence<KeywordValueParser, KeyCharSeqParser, KeyParser>;
+
+    static constexpr Parsers ps{};
+
+  public:
+    template <typename ErrorHandler>
+    auto
+    operator()(const std::tuple<Options...>& options,
+               std::tuple<>                  positionals,
+               ArgsRange                     args,
+               ErrorHandler&&                error_handler) const noexcept
+    {
+        State      opt_state{options};
+        State      pos_state{positionals};
+        ErrorState error;
+        bool       r    = true;
+        auto       iter = std::ranges::begin(args);
+        while(loop_condition(r, iter, args, error))
+        {
+            const std::string_view word = *iter;
+
+            check_help(options, positionals, word, *std::ranges::begin(args));
+            r = typelist::first_of(ps, iter, opt_state, pos_state, error);
+
+            ++iter;
+        }
+
+        std::visit(std::forward<ErrorHandler>(error_handler), error);
+
+        return ParseResults(opt_state.bindings, options);
+    }
+};
+
+template <typename... Positionals>
+class MainParser<std::tuple<>, std::tuple<Positionals...>>
+{
+    static constexpr PositionalsParser pp{};
+
+  public:
+    template <typename ErrorHandler>
+    auto
+    operator()(std::tuple<>                      options,
+               const std::tuple<Positionals...>& positionals,
+               ArgsRange                         args,
+               ErrorHandler&&                    error_handler) const noexcept
+    {
+        State      opt_state{options};
+        State      pos_state{positionals};
+        ErrorState error;
+        bool       r    = true;
+        auto       iter = std::ranges::begin(args);
+        while(loop_condition(r, iter, args, error))
+        {
+            const std::string_view word = *iter;
+
+            check_help(options, positionals, word, *std::ranges::begin(args));
+
+            r = pp(iter, opt_state, pos_state, error);
+
+            ++iter;
+        }
+
+        std::visit(std::forward<ErrorHandler>(error_handler), error);
+
+        return ParseResults(pos_state.bindings, options);
+    }
+};
+
 /// @brief Parse command line arguments.
 template <typename... Options,
           typename... Positionals,
@@ -1688,7 +1823,7 @@ constexpr auto
 parse(const std::tuple<Options...>&     options,
       const std::tuple<Positionals...>& positionals,
       ArgsRange                         args,
-      ErrorHandler&& error_handler = StandardErrorHandler{}) noexcept
+      ErrorHandler&&                    error_handler = ErrorHandler{}) noexcept
 {
     using keychars =
         intlist::purge<detail::missing_keychar, char_sequence<Options::key...>>;
@@ -1698,72 +1833,14 @@ parse(const std::tuple<Options...>&     options,
     static_assert(!intlist::has_duplicates<keychars>, "Keys must be unique");
     static_assert(!typelist::has_duplicates<keywords>, "Keys must be unique");
 
-    using Error = std::variant<HelpRequest,
-                               FewArgumentsException,
-                               UnexpectedValue,
-                               KeyException<char>,
-                               KeyException<std::string_view>>;
+    using parser =
+        MainParser<std::tuple<Options...>, std::tuple<Positionals...>>;
 
-    const std::string_view argv0 = {*args.read()};
-    args.next();
-
-    ParsingState visitor{options, positionals};
-    Error        error;
-
-    auto update = [&visitor, &error, only_values = false](char** data) mutable
-    {
-        std::string_view word{*data};
-
-        // very dirty way to stop iteration
-        if(word == "-h" || word == "--help")
-        {
-            error = HelpRequest{};
-            return false;
-        };
-
-        if(word == "--")
-        {
-            only_values = true;
-            visitor.reset_opt();
-        }
-        else
-            std::visit(visitor, only_values ? Value{data} : arg_case(data));
-
-        return true;
-    };
-
-    try
-    {
-        std::ranges::for_each(args, update);
-    }
-    catch(const HelpRequest&)
-    {
-        show_help(make_program_name(argv0), options, positionals);
-        exit(0);
-    }
-    catch(const FewArgumentsException& ex)
-    {
-        error_handler(ex);
-    }
-    catch(const UnexpectedValue& ex)
-    {
-        error_handler(ex);
-    }
-    catch(const KeyException<char>& ex)
-    {
-        error_handler(ex);
-    }
-    catch(const KeyException<std::string_view>& ex)
-    {
-        error_handler(ex);
-    }
-
-    std::string_view incomplete_option = visitor.check_opt();
-    if(!incomplete_option.empty()) error_handler(incomplete_option);
-
-    if(visitor.check_pos()) error_handler(true);
-
-    return ParseResults(visitor.get_bindings(), options);
+    constexpr parser p{};
+    return p(options,
+             positionals,
+             args,
+             std::forward<ErrorHandler>(error_handler));
 }
 
 /// @brief Parse command line arguments when no positional arguments required.
