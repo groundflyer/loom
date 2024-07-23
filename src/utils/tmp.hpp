@@ -859,7 +859,7 @@ instantiate(type_sequence<Fs...> /*list*/, Args&&... args) noexcept(
 ///
 /// @return true if at least one invocation returns true, otherwise false.
 template <typename... Fs, typename... Args>
-    requires(std::conjunction_v<std::is_invocable_r<bool, Ps, Args...>...>)
+    requires(std::conjunction_v<std::is_invocable_r<bool, Fs, Args...>...>)
 constexpr bool
 first_of(type_sequence<Fs...> /*list*/, Args&&... args) noexcept(
     std::conjunction_v<std::is_nothrow_invocable<Fs, Args...>...>)
