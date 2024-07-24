@@ -21,9 +21,6 @@
 #include <utility>
 #include <variant>
 
-#include <range/v3/view/filter.hpp>
-#include <range/v3/view/split.hpp>
-
 #include <fmt/core.h>
 
 #include <cstdio>
@@ -65,7 +62,7 @@ struct keyword_index<Keyword, std::tuple<Options...>>
 };
 
 template <std::size_t Idx, typename FirstOption, typename... RestOptions>
-constexpr std::size_t
+std::size_t
 tokenize_impl(const char key) noexcept
 {
     if(key == FirstOption::key) return Idx;
@@ -77,7 +74,7 @@ tokenize_impl(const char key) noexcept
 }
 
 template <std::size_t Idx, typename FirstOption, typename... RestOptions>
-constexpr std::size_t
+std::size_t
 tokenize_impl(const std::string_view keyword) noexcept
 {
     if(keyword == FirstOption::keyword) return Idx;
@@ -87,16 +84,6 @@ tokenize_impl(const std::string_view keyword) noexcept
     else
         return npos;
 }
-
-// Empty class tag type to indicate that there is no keyword defined.
-struct missing_keyword
-{
-    using type                             = char_sequence<>;
-    static constexpr std::string_view view = "";
-};
-
-// This character is used to indicate that character key is not defined.
-constexpr inline char missing_keychar = ' ';
 
 template <typename CharSeq, StringLiteral s>
 struct KeywordWrapper
@@ -111,9 +98,9 @@ struct wrap_string_helper
     using type = KeywordWrapper<sl2cs<s>, s>;
 };
 
-template <typename Converter>
+template <typename Reader>
 using result_type =
-    std::decay_t<std::invoke_result_t<Converter, std::string_view>>;
+    std::decay_t<std::invoke_result_t<Reader, std::string_view>>;
 
 template <typename S>
 struct keyword_ok_impl;
@@ -123,44 +110,6 @@ struct keyword_ok_impl<char_sequence<cs...>>
 {
     static constexpr bool value =
         (... && (is_alphadigit(cs) || cs == '-' || cs == '_'));
-};
-
-// Lazy man's flag converter
-// converts any word except no, off, false and 0 to true
-class FlagConverter
-{
-    template <typename... Rest>
-    static constexpr bool
-    any(std::string_view w, Rest... rest) noexcept
-    {
-        return (... || (w == rest));
-    }
-
-  public:
-    constexpr bool
-    operator()(std::string_view word) const noexcept
-    {
-        return any(word, "1", "yes", "YES", "true", "TRUE", "on", "ON");
-    }
-};
-
-template <typename O>
-struct has_keychar
-{
-    static constexpr bool value = O::key != missing_keychar;
-};
-
-template <typename O>
-struct has_keyword
-{
-    static constexpr bool value =
-        !std::is_same_v<typename O::keyword_type, missing_keyword>;
-};
-
-template <typename O>
-struct is_flag
-{
-    static constexpr bool value = O::is_flag && has_keychar<O>::value;
 };
 } // namespace detail
 
@@ -188,8 +137,32 @@ struct UnexpectedValue
 /// @brief Defines requirements for callables to convert
 /// std::string_view to a value.
 template <typename T>
-concept Converter = std::is_invocable_v<T, std::string_view> &&
-                    !std::is_void_v<std::invoke_result_t<T, std::string_view>>;
+concept Reader =
+    std::is_invocable_v<T, std::string_view> &&
+    !(std::is_void_v<std::invoke_result_t<T, std::string_view>> ||
+      std::is_pointer_v<std::invoke_result_t<T, std::string_view>> ||
+      std::is_reference_v<std::invoke_result_t<T, std::string_view>>);
+
+/// @brief Reads a bool value.
+///
+/// "1", "yes", "YES", "true", "TRUE", "on", "ON" - considered to be true,
+/// any other values to be false.
+class FlagReader
+{
+    template <typename... Rest>
+    static bool
+    any(std::string_view w, Rest... rest) noexcept
+    {
+        return (... || (w == rest));
+    }
+
+  public:
+    bool
+    operator()(std::string_view word) const noexcept
+    {
+        return any(word, "1", "yes", "YES", "true", "TRUE", "on", "ON");
+    }
+};
 
 /// @brief Make a pair of StringLiteral and a char_sequence.
 template <StringLiteral s>
@@ -211,17 +184,46 @@ constexpr std::size_t keyword_index =
 template <StringLiteral s>
 constexpr bool keyword_ok = detail::keyword_ok_impl<sl2cs<s>>::value;
 
-template <typename O>
-constexpr bool has_keychar = detail::has_keychar<O>::value;
+// Empty class tag type to indicate that there is no keyword defined.
+struct missing_keyword
+{
+    using type                             = char_sequence<>;
+    static constexpr std::string_view view = "";
+};
+
+// This character is used to indicate that character key is not defined.
+constexpr inline char missing_keychar = ' ';
 
 template <typename O>
-constexpr bool has_keyword = detail::has_keyword<O>::value;
+struct has_keychar
+{
+    static constexpr bool value = O::key != missing_keychar;
+};
 
 template <typename O>
-constexpr bool is_flag = detail::is_flag<O>::value;
+struct has_keyword
+{
+    static constexpr bool value =
+        !std::is_same_v<typename O::keyword_type, missing_keyword>;
+};
 
 template <typename O>
-constexpr bool is_option = !is_flag<O>;
+struct is_flag
+{
+    static constexpr bool value = O::is_flag && has_keychar<O>::value;
+};
+
+template <typename O>
+constexpr bool has_keychar_v = has_keychar<O>::value;
+
+template <typename O>
+constexpr bool has_keyword_v = has_keyword<O>::value;
+
+template <typename O>
+constexpr bool is_flag_v = is_flag<O>::value;
+
+template <typename O>
+constexpr bool is_option = !is_flag_v<O>;
 
 class ArgsIterator : public std::random_access_iterator_tag
 {
@@ -395,23 +397,23 @@ class ArgsRange : public std::ranges::view_interface<ArgsRange>
 };
 
 /// @brief Holds pointer to words with values for an option.
-template <Converter C, std::size_t nvals>
+template <Reader R, std::size_t nvals>
 class Binding
 {
-    using value_type = std::array<detail::result_type<C>, nvals>;
+    using value_type = std::array<detail::result_type<R>, nvals>;
 
-    C            m_converter;
+    R            m_reader;
     value_type   m_default_value;
     bool         m_is_set = false;
     ArgsIterator m_iter;
 
   public:
-    constexpr Binding(C converter, const value_type& value) noexcept :
-        m_converter(converter), m_default_value(value)
+    Binding(R reader, const value_type& value) noexcept :
+        m_reader(reader), m_default_value(value)
     {
     }
 
-    constexpr void
+    void
     set(ArgsIterator iter) noexcept
     {
         m_iter   = iter;
@@ -419,20 +421,20 @@ class Binding
     }
 
     // sink for tokenize
-    constexpr void
+    void
     set(std::string_view) noexcept
     {
     }
 
-    constexpr value_type
+    value_type
     operator()() const
-        noexcept(std::is_nothrow_invocable_r_v<value_type, C, std::string_view>)
+        noexcept(std::is_nothrow_invocable_r_v<value_type, R, std::string_view>)
     {
         if(m_is_set)
         {
             value_type ret;
-            std::ranges::copy(std::ranges::subrange(m_iter, m_iter + nvals) |
-                                  std::views::transform(m_converter),
+            std::ranges::copy(std::views::counted(m_iter, nvals) |
+                                  std::views::transform(m_reader),
                               ret.begin());
             return ret;
         }
@@ -442,87 +444,84 @@ class Binding
 };
 
 template <>
-class Binding<detail::FlagConverter, 0>
+class Binding<FlagReader, 0>
 {
-    static constexpr detail::FlagConverter converter{};
+    static constexpr FlagReader reader{};
 
     bool m_flag = false;
 
   public:
-    constexpr Binding(detail::FlagConverter, bool default_value = false) :
-        m_flag(default_value)
-    {
-    }
+    Binding(FlagReader, bool default_value = false) : m_flag(default_value) {}
 
-    constexpr void
+    void
     set(std::string_view word) noexcept
     {
-        m_flag = word.empty() ? m_flag ^ true : converter(word);
+        m_flag = word.empty() ? m_flag ^ true : reader(word);
     }
 
     // sink for tokenize
-    constexpr void
+    void
     set(ArgsIterator) noexcept
     {
     }
 
-    constexpr bool
-    operator()() noexcept
+    bool
+    operator()() const noexcept
     {
         return m_flag;
     }
 };
 
-template <Converter C>
-class Binding<C, 1>
+template <Reader R>
+class Binding<R, 1>
 {
-    using value_type = detail::result_type<C>;
+    using value_type = detail::result_type<R>;
 
-    C                m_converter;
+    R                m_reader;
     value_type       m_default_value;
     std::string_view m_word;
     bool             m_is_set = false;
 
   public:
-    constexpr Binding(C converter, const value_type& value) noexcept :
-        m_converter(converter), m_default_value(value)
+    Binding(R reader, const value_type& value) noexcept :
+        m_reader(reader), m_default_value(value)
     {
     }
 
-    constexpr void
+    void
     set(std::string_view word) noexcept
     {
         m_word   = word;
         m_is_set = true;
     }
 
-    constexpr void
+    void
     set(ArgsIterator iter) noexcept
     {
         m_word   = *iter;
         m_is_set = true;
     }
 
-    constexpr value_type
+    value_type
     operator()() const
-        noexcept(std::is_nothrow_invocable_r_v<value_type, C, std::string_view>)
+        noexcept(std::is_nothrow_invocable_r_v<value_type, R, std::string_view>)
     {
-        return m_is_set ? m_converter(m_word) : m_default_value;
+        return m_is_set ? m_reader(m_word) : m_default_value;
     }
 };
 
-template <Converter C>
-class Binding<C, npos>
+template <Reader R>
+class Binding<R, npos>
 {
-    C            m_converter;
+    R            m_reader;
     ArgsIterator m_first;
     ArgsIterator m_last;
     bool         m_first_is_set = false;
 
   public:
-    constexpr explicit Binding(C converter) noexcept : m_converter(converter) {}
+    explicit Binding(R reader) noexcept : m_reader(reader) {}
 
-    constexpr void
+    void
     set(ArgsIterator iter) noexcept
     {
         if(m_first_is_set)
@@ -535,86 +534,86 @@ class Binding<C, npos>
     }
 
     // sink for tokenize
-    constexpr void
+    void
     set(std::string_view) noexcept
     {
     }
 
-    constexpr auto
+    auto
     operator()() const
-        noexcept(std::is_nothrow_invocable_v<C, std::string_view>)
+        noexcept(std::is_nothrow_invocable_v<R, std::string_view>)
     {
         return std::ranges::subrange(m_first, m_last) |
-               std::views::transform(m_converter);
+               std::views::transform(m_reader);
     }
 };
 
-template <Converter C, std::size_t nvals>
+template <Reader R, std::size_t nvals>
 class ValuelessBinding
 {
-    C            m_converter;
+    R            m_reader;
     ArgsIterator m_iter;
 
   public:
-    constexpr ValuelessBinding(C converter) noexcept : m_converter(converter) {}
+    ValuelessBinding(R reader) noexcept : m_reader(reader) {}
 
-    constexpr void
+    void
     set(ArgsIterator iter) noexcept
     {
         m_iter = iter;
     }
 
     // sink for tokenize
-    constexpr void
+    void
     set(std::string_view) noexcept
     {
     }
 
-    constexpr decltype(auto)
+    decltype(auto)
     operator()() const
-        noexcept(std::is_nothrow_invocable_v<C, std::string_view>)
+        noexcept(std::is_nothrow_invocable_v<R, std::string_view>)
     {
-        return std::ranges::subrange(m_iter, m_iter + nvals) |
-               std::views::transform(m_converter);
+        return std::views::counted(m_iter, nvals) |
+               std::views::transform(m_reader);
     }
 };
 
-template <Converter C>
-class ValuelessBinding<C, 1>
+template <Reader R>
+class ValuelessBinding<R, 1>
 {
-    using value_type = detail::result_type<C>;
+    using value_type = detail::result_type<R>;
 
-    C                m_converter;
+    R                m_reader;
     std::string_view m_word;
 
   public:
-    constexpr ValuelessBinding(C converter) noexcept : m_converter(converter) {}
+    ValuelessBinding(R reader) noexcept : m_reader(reader) {}
 
-    constexpr void
+    void
     set(std::string_view word) noexcept
     {
         m_word = word;
     }
 
     // sink for tokenize
-    constexpr void
+    void
     set(ArgsIterator) noexcept
     {
     }
 
-    constexpr value_type
+    value_type
     operator()() const
-        noexcept(std::is_nothrow_invocable_r_v<value_type, C, std::string_view>)
+        noexcept(std::is_nothrow_invocable_r_v<value_type, R, std::string_view>)
     {
-        return m_converter(m_word);
+        return m_reader(m_word);
     }
 };
 
 /// @brief Describes an option with multiple fields.
-template <char Key, typename Keyword, Converter C, std::size_t nvals>
+template <char Key, typename Keyword, Reader R, std::size_t nvals>
 struct Option
 {
-    using singular_value_type = detail::result_type<C>;
+    using singular_value_type = detail::result_type<R>;
     using value_type =
         std::conditional_t<(nvals > 1),
                            std::array<singular_value_type, nvals>,
@@ -622,95 +621,95 @@ struct Option
     using var_type     = std::conditional_t<(nvals > 1),
                                         std::array<std::string_view, nvals>,
                                         std::string_view>;
-    using keyword_type = Keyword::type;
-    using binding_type = Binding<C, nvals>;
+    using keyword_type = Keyword;
+    using binding_type = Binding<R, nvals>;
 
     static constexpr bool is_flag =
         std::is_same_v<bool, value_type> && (nvals == 0ul);
     static constexpr char             key      = Key;
     static constexpr std::size_t      num_vals = nvals;
-    static constexpr std::string_view keyword  = Keyword::view;
+    static constexpr std::string_view keyword  = cs2sv<Keyword>;
 
-    C                converter;
+    R                reader;
     value_type       default_value;
     std::string_view doc;
     var_type         var;
 
-    consteval Option(C                      _converter,
+    consteval Option(R                      _reader,
                      const value_type&      _default_value,
                      const std::string_view _doc,
                      const var_type&        _var) noexcept :
-        converter(_converter),
+        reader(_reader),
         default_value(_default_value), doc(_doc), var(_var)
     {
     }
 
-    constexpr binding_type
+    binding_type
     binding() const noexcept
     {
-        return {converter, default_value};
+        return {reader, default_value};
     }
 };
 
-template <char Key, typename Keyword, Converter C>
-struct Option<Key, Keyword, C, npos>
+template <char Key, typename Keyword, Reader R>
+struct Option<Key, Keyword, R, npos>
 {
     static constexpr std::size_t      num_vals = npos;
     static constexpr char             key      = Key;
     static constexpr bool             is_flag  = false;
-    static constexpr std::string_view keyword  = Keyword::view;
+    static constexpr std::string_view keyword  = cs2sv<Keyword>;
 
-    using value_type   = detail::result_type<C>;
-    using keyword_type = Keyword::type;
-    using binding_type = Binding<C, npos>;
+    using value_type   = detail::result_type<R>;
+    using keyword_type = Keyword;
+    using binding_type = Binding<R, npos>;
 
-    C                converter;
+    R                reader;
     std::string_view doc;
     std::string_view var;
 
-    consteval Option(C                      _converter,
+    consteval Option(R                      _reader,
                      const std::string_view _doc,
                      const std::string_view _var) noexcept :
-        converter(_converter),
+        reader(_reader),
         doc(_doc), var(_var)
     {
     }
 
-    constexpr binding_type
+    binding_type
     binding() const noexcept
     {
-        return {converter};
+        return binding_type(reader);
     }
 };
 
 /// @brief Describes a positional argument.
-template <Converter C, std::size_t nvals>
+template <Reader R, std::size_t nvals>
 struct Positional
 {
     using var_type     = std::conditional_t<(nvals > 1 && nvals != npos),
                                         std::array<std::string_view, nvals>,
                                         std::string_view>;
     using binding_type = std::conditional_t<nvals == npos,
-                                            Binding<C, nvals>,
-                                            ValuelessBinding<C, nvals>>;
+                                            Binding<R, nvals>,
+                                            ValuelessBinding<R, nvals>>;
     static constexpr std::size_t num_vals = nvals;
 
-    C                converter;
+    R                reader;
     std::string_view doc;
     var_type         var;
 
-    consteval Positional(C                      _converter,
+    consteval Positional(R                      _reader,
                          const std::string_view _doc,
                          const var_type&        _var) noexcept :
-        converter(_converter),
+        reader(_reader),
         doc(_doc), var(_var)
     {
     }
 
-    constexpr binding_type
+    binding_type
     binding() const noexcept
     {
-        return {converter};
+        return {reader};
     }
 };
 
@@ -725,190 +724,187 @@ struct Positional
 /// @brief Create an option with key @p Key and keyword @p s.
 /// @tparam Key ASCII character for Unix style argument setting.
 /// @tparam s string for GNU style argument setting.
-template <char Key, StringLiteral s, Converter C>
-consteval Option<Key, wrap_string<s>, C, 1ul>
-option(C                             converter,
+template <char Key, StringLiteral s, Reader R>
+consteval Option<Key, sl2cs<s>, R, 1ul>
+option(R                             reader,
        const std::string_view        doc,
        const std::string_view        var,
-       const detail::result_type<C>& def_val) noexcept
+       const detail::result_type<R>& def_val) noexcept
 {
     CHECK_KEYCHAR;
     CHECK_KEYWORD;
-    return {converter, def_val, doc, var};
+    return {reader, def_val, doc, var};
 }
 
 /// @brief Shortcut to create an option without keyword.
-template <char Key, Converter C>
-consteval Option<Key, detail::missing_keyword, C, 1ul>
-option(C                             converter,
+template <char Key, Reader R>
+consteval Option<Key, missing_keyword, R, 1ul>
+option(R                             reader,
        const std::string_view        doc,
        const std::string_view        var,
-       const detail::result_type<C>& def_val) noexcept
+       const detail::result_type<R>& def_val) noexcept
 {
     CHECK_KEYCHAR;
-    return {converter, def_val, doc, var};
+    return {reader, def_val, doc, var};
 }
 
 /// @brief Shorcut to create an option without character key.
-template <StringLiteral s, Converter C>
-consteval Option<detail::missing_keychar, wrap_string<s>, C, 1ul>
-option(C                             converter,
+template <StringLiteral s, Reader R>
+consteval Option<missing_keychar, sl2cs<s>, R, 1ul>
+option(R                             reader,
        const std::string_view        doc,
        const std::string_view        var,
-       const detail::result_type<C>& def_val) noexcept
+       const detail::result_type<R>& def_val) noexcept
 {
     CHECK_KEYWORD;
-    return {converter, def_val, doc, var};
+    return {reader, def_val, doc, var};
 }
 
 /// @brief Create a multi-field Option with constant size of fields.
 /// @tparam Key ASCII character for Unix style argument setting.
 /// @tparam s string for GNU style argument setting.
 /// @tparam N the number of fields.
-template <char Key, StringLiteral s, std::size_t N, Converter C>
-consteval Option<Key, wrap_string<s>, C, N>
-option(C                                            converter,
+template <char Key, StringLiteral s, std::size_t N, Reader R>
+consteval Option<Key, sl2cs<s>, R, N>
+option(R                                            reader,
        const std::string_view                       doc,
        const std::array<std::string_view, N>&       var,
-       const std::array<detail::result_type<C>, N>& def_val) noexcept
+       const std::array<detail::result_type<R>, N>& def_val) noexcept
 {
     static_assert(N > 1ul, "Use option without N argument");
     static_assert(N != npos, "Use option_list");
     CHECK_KEYCHAR;
     CHECK_KEYWORD;
-    return {converter, def_val, doc, var};
+    return {reader, def_val, doc, var};
 }
 
 /// @brief Shortcut to create a multi-field, option without keyword.
-template <char Key, std::size_t N, Converter C>
-consteval Option<Key, detail::missing_keyword, C, N>
-option(C                                            converter,
+template <char Key, std::size_t N, Reader R>
+consteval Option<Key, missing_keyword, R, N>
+option(R                                            reader,
        const std::string_view                       doc,
        const std::array<std::string_view, N>&       var,
-       const std::array<detail::result_type<C>, N>& def_val) noexcept
+       const std::array<detail::result_type<R>, N>& def_val) noexcept
 {
     static_assert(N > 1ul, "Use option without N argument");
     static_assert(N != npos, "Use option_list");
     CHECK_KEYCHAR;
-    return {converter, def_val, doc, var};
+    return {reader, def_val, doc, var};
 }
 
 /// @brief Shorcut to create a multi-field option without character key.
-template <StringLiteral s, std::size_t N, Converter C>
-consteval Option<detail::missing_keychar, wrap_string<s>, C, N>
-option(C                                            converter,
+template <StringLiteral s, std::size_t N, Reader R>
+consteval Option<missing_keychar, sl2cs<s>, R, N>
+option(R                                            reader,
        const std::string_view                       doc,
        const std::array<std::string_view, N>&       var,
-       const std::array<detail::result_type<C>, N>& def_val) noexcept
+       const std::array<detail::result_type<R>, N>& def_val) noexcept
 {
     static_assert(N > 1ul, "Use option without N argument");
     static_assert(N != npos, "Use option_list");
     CHECK_KEYWORD;
-    return {converter, def_val, doc, var};
+    return {reader, def_val, doc, var};
 }
 
 /// @brief Create a list option, one that takes one-or-more values.
-template <char Key, StringLiteral s, Converter C, typename... Args>
-consteval Option<Key, wrap_string<s>, C, npos>
-option_list(C                      converter,
+template <char Key, StringLiteral s, Reader R, typename... Args>
+consteval Option<Key, sl2cs<s>, R, npos>
+option_list(R                      reader,
             const std::string_view doc,
             const std::string_view var) noexcept
 {
     CHECK_KEYCHAR;
     CHECK_KEYWORD;
-    return {converter, doc, var};
+    return {reader, doc, var};
 }
 
 /// @brief Shorcut to create a list option without keyword.
-template <char Key, Converter C, typename... Args>
-consteval Option<Key, detail::missing_keyword, C, npos>
-option_list(C                      converter,
+template <char Key, Reader R, typename... Args>
+consteval Option<Key, missing_keyword, R, npos>
+option_list(R                      reader,
             const std::string_view doc,
             const std::string_view var) noexcept
 {
     CHECK_KEYCHAR;
-    return {converter, doc, var};
+    return {reader, doc, var};
 }
 
 /// @brief Shorcut to create a list option without character key.
-template <StringLiteral s, Converter C, typename... Args>
-consteval Option<detail::missing_keychar, wrap_string<s>, C, npos>
-option_list(C                      converter,
+template <StringLiteral s, Reader R, typename... Args>
+consteval Option<missing_keychar, sl2cs<s>, R, npos>
+option_list(R                      reader,
             const std::string_view doc,
             const std::string_view var) noexcept
 {
     CHECK_KEYWORD;
-    return {converter, doc, var};
+    return {reader, doc, var};
 }
 
 /// @brief Create a flag option, i.e. one that holds a boolean value
 /// thus not requiring an argument when being set.
 template <char Key, StringLiteral s>
-consteval Option<Key, wrap_string<s>, detail::FlagConverter, 0ul>
+consteval Option<Key, sl2cs<s>, FlagReader, 0ul>
 flag(const std::string_view doc, const bool def_val = false) noexcept
 {
     CHECK_KEYCHAR;
     CHECK_KEYWORD;
-    return {detail::FlagConverter{}, def_val, doc, ""};
+    return {FlagReader{}, def_val, doc, ""};
 }
 
 /// @brief Shortcut to create a flag option without keyword.
 template <char Key>
-consteval Option<Key, detail::missing_keyword, detail::FlagConverter, 0ul>
+consteval Option<Key, missing_keyword, FlagReader, 0ul>
 flag(const std::string_view doc, const bool def_val = false) noexcept
 {
     CHECK_KEYCHAR;
-    return {detail::FlagConverter{}, def_val, doc, ""};
+    return {FlagReader{}, def_val, doc, ""};
 }
 
 /// @brief Shortcut to create a flag option without character key.
 template <StringLiteral s>
-consteval Option<detail::missing_keychar,
-                 wrap_string<s>,
-                 detail::FlagConverter,
-                 0ul>
+consteval Option<missing_keychar, sl2cs<s>, FlagReader, 0ul>
 flag(const std::string_view doc, const bool def_val = false) noexcept
 {
     CHECK_KEYWORD;
-    return {detail::FlagConverter{}, def_val, doc, ""};
+    return {FlagReader{}, def_val, doc, ""};
 }
 
 #undef CHECK_KEYCHAR
 #undef CHECK_KEYWORD
 
 /// @brief Create a positional option.
-template <Converter C>
-consteval Positional<C, 1ul>
-positional(C                      converter,
+template <Reader R>
+consteval Positional<R, 1ul>
+positional(R                      reader,
            const std::string_view doc,
            const std::string_view var) noexcept
 {
-    return {converter, doc, var};
+    return {reader, doc, var};
 }
 
 /// @brief Create a multi-field positional option.
-template <std::size_t nvals, Converter C>
-consteval Positional<C, nvals>
-positional(C                                              converter,
+template <std::size_t nvals, Reader R>
+consteval Positional<R, nvals>
+positional(R                                              reader,
            const std::string_view                         doc,
-           const typename Positional<C, nvals>::var_type& var) noexcept
+           const typename Positional<R, nvals>::var_type& var) noexcept
 {
-    return {converter, doc, var};
+    return {reader, doc, var};
 }
 
 /// @brief Create a positional list option.
-template <Converter C>
-consteval Positional<C, npos>
-positional_list(C&&                    converter,
+template <Reader R>
+consteval Positional<R, npos>
+positional_list(R&&                    reader,
                 const std::string_view doc,
                 const std::string_view var) noexcept
 {
-    return {converter, doc, var};
+    return {reader, doc, var};
 }
 
 /// @brief Get a corresponding option index with a key @p key.
 template <typename Key, typename... Options>
-constexpr std::size_t
+std::size_t
 tokenize(const Key key, const std::tuple<Options...>) noexcept
 {
     return detail::tokenize_impl<0ul, Options...>(key);
@@ -922,16 +918,16 @@ class ParseResults
     PosBindings m_pos_bindings;
 
   public:
-    constexpr ParseResults(const OptBindings& opt_bindings,
-                           const PosBindings& pos_bindings,
-                           Options) noexcept :
+    ParseResults(const OptBindings& opt_bindings,
+                 const PosBindings& pos_bindings,
+                 Options) noexcept :
         m_opt_bindings(opt_bindings),
         m_pos_bindings(pos_bindings)
     {
     }
 
     template <char Key>
-    constexpr decltype(auto)
+    decltype(auto)
     get_opt() const
         noexcept(std::is_nothrow_invocable_v<
                  std::tuple_element_t<key_index<Key, Options>, OptBindings>>)
@@ -940,7 +936,7 @@ class ParseResults
     }
 
     template <StringLiteral s>
-    constexpr decltype(auto)
+    decltype(auto)
     get_opt() const
         noexcept(std::is_nothrow_invocable_v<
                  std::tuple_element_t<keyword_index<sl2cs<s>, Options>,
@@ -950,7 +946,7 @@ class ParseResults
     }
 
     template <std::size_t Idx>
-    constexpr decltype(auto)
+    decltype(auto)
     get_pos() const noexcept(
         std::is_nothrow_invocable_v<std::tuple_element_t<Idx, PosBindings>>)
     {
@@ -967,13 +963,13 @@ class ParseResults<std::tuple<OptBindings...>, std::tuple<>, Options>
     OptBindings_t m_opt_bindings;
 
   public:
-    constexpr ParseResults(const OptBindings_t& bindings, Options) noexcept :
+    ParseResults(const OptBindings_t& bindings, Options) noexcept :
         m_opt_bindings(bindings)
     {
     }
 
     template <char Key>
-    constexpr decltype(auto)
+    decltype(auto)
     get_opt() const
         noexcept(std::is_nothrow_invocable_v<
                  std::tuple_element_t<key_index<Key, Options>, OptBindings_t>>)
@@ -982,7 +978,7 @@ class ParseResults<std::tuple<OptBindings...>, std::tuple<>, Options>
     }
 
     template <StringLiteral s>
-    constexpr decltype(auto)
+    decltype(auto)
     get_opt() const
         noexcept(std::is_nothrow_invocable_v<
                  std::tuple_element_t<keyword_index<sl2cs<s>, Options>,
@@ -1001,14 +997,13 @@ class ParseResults<std::tuple<>, std::tuple<PosBindings...>, Options>
     PosBindings_t m_pos_bindings;
 
   public:
-    constexpr ParseResults(const PosBindings_t& pos_bindings, Options) noexcept
-        :
+    ParseResults(const PosBindings_t& pos_bindings, Options) noexcept :
         m_pos_bindings(pos_bindings)
     {
     }
 
     template <std::size_t Idx>
-    constexpr decltype(auto)
+    decltype(auto)
     get_pos() const noexcept(
         std::is_nothrow_invocable_v<std::tuple_element_t<Idx, PosBindings_t>>)
     {
@@ -1018,12 +1013,12 @@ class ParseResults<std::tuple<>, std::tuple<PosBindings...>, Options>
 
 /// @brief Set @p token'th value.
 template <typename... Bindings, typename Value>
-constexpr auto
+void
 bind_value(std::tuple<Bindings...>& bindings,
            const std::size_t        token,
            Value                    value) noexcept
 {
-    return visit_at(
+    visit_at(
         token,
         [&](auto& binding) noexcept { binding.set(value); },
         bindings,
@@ -1034,15 +1029,14 @@ bind_value(std::tuple<Bindings...>& bindings,
 
 /// @brief Get number of expected values for a given token.
 template <typename Options>
-constexpr std::size_t
+std::size_t
 get_nvals(const std::size_t token, const Options& opts) noexcept
 {
     return visit_at(
         token,
-        []<typename Desc>(const Desc&) constexpr noexcept
-        { return Desc::num_vals; },
+        []<typename Desc>(const Desc&) noexcept { return Desc::num_vals; },
         opts,
-        []() constexpr noexcept -> std::size_t
+        []() noexcept -> std::size_t
         { return 0ul; }); // sink value doesn't matter as we don't use the
                           // function with invalid token
 }
@@ -1065,12 +1059,11 @@ class State
     const Desc& desc;
     Bindings    bindings;
 
-    constexpr State(const Desc& _desc) noexcept :
+    State(const Desc& _desc) noexcept :
         desc(_desc),
-        bindings(
-            std::apply([](const auto&... options) constexpr noexcept -> Bindings
-                       { return {options.binding()...}; },
-                       _desc))
+        bindings(std::apply([](const auto&... options) noexcept -> Bindings
+                            { return {options.binding()...}; },
+                            _desc))
     {
     }
 
@@ -1080,48 +1073,55 @@ class State
     State&
     operator=(const State&) = delete;
 
-    constexpr std::size_t
+    std::size_t
     last_token() const noexcept
     {
         const std::size_t token = std::countr_zero(set);
         return token > std::tuple_size_v<Bindings> ? npos : token;
     }
 
-    constexpr void
+    void
     set_token(const std::size_t token) noexcept
     {
         set |= 1 << token;
     }
 };
 
-using ErrorState = std::variant<FewArgumentsException,
-                                UnexpectedValue,
-                                KeyException<char>,
-                                KeyException<std::string_view>>;
+using ErrorState = std::optional<std::variant<FewArgumentsException,
+                                              UnexpectedValue,
+                                              KeyException<char>,
+                                              KeyException<std::string_view>>>;
 
-template <typename Desc>
-constexpr std::size_t
-tokenize_option(std::string_view word, const Desc& desc) noexcept
+template <typename... Options>
+std::size_t
+tokenize_option(std::string_view              word,
+                const std::tuple<Options...>& opts) noexcept
 {
-    if(word.size() == 2 && word.front() == '-') return tokenize(word[1], desc);
+    if(word.size() == 2 && word.front() == '-') return tokenize(word[1], opts);
 
     if(word.size() >= 4 || word.substr(0, 2) == "--")
-        return tokenize(word.substr(2), desc);
+        return tokenize(word.substr(2), opts);
 
     return npos;
 }
 
-/// @brief Multi-parm halt condition.
-template <typename Desc>
-constexpr bool
-mp_halt_condition(ArgsIterator iter, const Desc& desc) noexcept
+bool
+mp_halt_condition(ArgsIterator iter) noexcept
 {
-    return iter == std::default_sentinel || *iter == "--" ||
-           tokenize_option(*iter, desc) != npos;
+    return iter == std::default_sentinel || *iter == "--";
+}
+
+/// @brief Multi-parm halt condition.
+template <typename... Options>
+bool
+mp_halt_condition(ArgsIterator                  iter,
+                  const std::tuple<Options...>& opts) noexcept
+{
+    return mp_halt_condition(iter) || tokenize_option(*iter, opts) != npos;
 }
 
 template <typename Desc>
-constexpr ArgsIterator
+ArgsIterator
 get_last(ArgsIterator iter, const Desc& desc) noexcept
 {
     do ++iter;
@@ -1129,11 +1129,29 @@ get_last(ArgsIterator iter, const Desc& desc) noexcept
     return iter;
 }
 
+ArgsIterator
+get_last(ArgsIterator iter) noexcept
+{
+    do ++iter;
+    while(!mp_halt_condition(iter));
+    return iter;
+}
+
 template <typename Opt>
-constexpr ArgsIterator
-mp_bind(State<Opt>& state, std::size_t token, ArgsIterator iter) noexcept
+ArgsIterator
+opt_mp_bind(State<Opt>& state, std::size_t token, ArgsIterator iter) noexcept
 {
     ArgsIterator last = get_last(iter, state.desc);
+    bind_value(state.bindings, token, iter);
+    bind_value(state.bindings, token, last);
+    return last;
+}
+
+template <typename Pos>
+ArgsIterator
+pos_mp_bind(State<Pos>& state, std::size_t token, ArgsIterator iter) noexcept
+{
+    ArgsIterator last = get_last(iter);
     bind_value(state.bindings, token, iter);
     bind_value(state.bindings, token, last);
     return last;
@@ -1143,7 +1161,7 @@ mp_bind(State<Opt>& state, std::size_t token, ArgsIterator iter) noexcept
 struct KeywordValueParser
 {
     template <typename Opt, typename Pos>
-    constexpr bool
+    bool
     operator()(ArgsIterator& iter,
                State<Opt>&   opt_state,
                State<Pos>& /* pos_state */,
@@ -1171,7 +1189,7 @@ struct KeywordValueParser
 };
 
 template <typename Opt>
-constexpr ArgsIterator
+ArgsIterator
 consume_values(ArgsIterator iter,
                State<Opt>&  state,
                ErrorState&  error,
@@ -1180,7 +1198,7 @@ consume_values(ArgsIterator iter,
 {
     const std::string_view word = *iter;
 
-    auto fail = [&]() constexpr noexcept
+    auto fail = [&]() noexcept
     {
         error = FewArgumentsException{word};
         return iter;
@@ -1207,7 +1225,7 @@ consume_values(ArgsIterator iter,
     {
         if(iter.count() < 1) return fail();
 
-        return mp_bind(state, token, iter);
+        return opt_mp_bind(state, token, iter);
     }
     // constant number of arguments
     default:
@@ -1225,7 +1243,7 @@ consume_values(ArgsIterator iter,
 struct KeyParser
 {
     template <typename Opt, typename Pos>
-    constexpr bool
+    bool
     operator()(ArgsIterator& iter,
                State<Opt>&   opt_state,
                State<Pos>& /* pos_state */,
@@ -1248,7 +1266,7 @@ struct KeyParser
 struct KeyCharSeqParser
 {
     template <typename Opt, typename Pos>
-    constexpr bool
+    bool
     operator()(ArgsIterator& iter,
                State<Opt>&   opt_state,
                State<Pos>& /* pos_state */,
@@ -1300,7 +1318,7 @@ struct KeyCharSeqParser
 struct PositionalsParser
 {
     template <typename Opt, typename Pos>
-    constexpr bool
+    bool
     operator()(ArgsIterator& iter,
                State<Opt>& /* opt_state */,
                State<Pos>& pos_state,
@@ -1308,7 +1326,7 @@ struct PositionalsParser
     {
         const std::size_t token = pos_state.last_token();
 
-        auto fail = [&]() constexpr noexcept
+        auto fail = [&]() noexcept
         {
             error = FewArgumentsException{*iter};
             return true;
@@ -1328,14 +1346,14 @@ struct PositionalsParser
         {
             if(iter.count() < 1) return fail();
 
-            iter = mp_bind(pos_state, token, iter);
+            iter = pos_mp_bind(pos_state, token, iter);
 
             pos_state.set_token(token);
             return true;
         }
 
         // constant number of arguments
-        if(iter.count() < nval) return fail();
+        if(iter.count() < static_cast<int>(nval)) return fail();
 
         bind_value(pos_state.bindings, token, iter);
         iter += nval;
@@ -1425,13 +1443,11 @@ show_help(std::string_view                  program_name,
     const std::size_t margin1 = 7 + program_name.size();
     std::size_t       column  = margin1;
 
-    const auto try_newline1 =
-        [margin1, file](std::size_t column) constexpr noexcept
+    const auto try_newline1 = [margin1, file](std::size_t column) noexcept
     { return try_newline(line_width, margin1, column, file); };
 
     // print flags key characters first, e.g. [-fLaGs]
-    using flag_opts =
-        typelist::filter<detail::is_flag, type_sequence<Options...>>;
+    using flag_opts = typelist::filter<is_flag, type_sequence<Options...>>;
     if constexpr(!typelist::empty<flag_opts>)
     {
         std::fputs(" [-", file);
@@ -1449,16 +1465,16 @@ show_help(std::string_view                  program_name,
 
     // print options short descriptions, e.g. [-o var] or [--option var]
     lucid::for_each(
-        [&]<typename O>(const O& option) constexpr noexcept
+        [&]<typename O>(const O& option) noexcept
         {
             if constexpr(is_option<O>)
             {
-                if constexpr(has_keychar<O>)
+                if constexpr(has_keychar_v<O>)
                 {
                     fmt::print(file, " [-{}", O::key);
                     column += 4;
                 }
-                else if constexpr(has_keyword<O>)
+                else if constexpr(has_keyword_v<O>)
                 {
                     fmt::print(file, " [--{}", O::keyword);
                     column += 4 + O::keyword.size();
@@ -1473,21 +1489,21 @@ show_help(std::string_view                  program_name,
 
     // print positionals short description
     lucid::for_each(
-        [&](const auto& p) constexpr noexcept
+        [&](const auto& p) noexcept
         { column = print_vars<true>(p, try_newline1, column, file); },
         positionals);
 
     std::fputs("\n\nOptions:\n", file);
 
     constexpr std::size_t short_margin = 2;
-    const auto shift = []<typename O>(const O& option) constexpr noexcept
+    const auto            shift = []<typename O>(const O& option) noexcept
     {
         std::size_t ret = 0;
 
-        if constexpr(is_option<O> || is_flag<O>)
+        if constexpr(is_option<O> || is_flag_v<O>)
         {
             ret += 2; // '-k'
-            if constexpr(has_keyword<O>)
+            if constexpr(has_keyword_v<O>)
                 ret += 4 + O::keyword.size(); // ', --keyword'
 
             if constexpr(O::num_vals == npos)
@@ -1504,7 +1520,7 @@ show_help(std::string_view                  program_name,
         return ret;
     };
     const std::size_t doc_margin =
-        fold_tuple([](const auto& o1, const auto& o2) constexpr noexcept
+        fold_tuple([](const auto& o1, const auto& o2) noexcept
                    { return std::max(o1, o2); },
                    map_tuple(shift, options)) +
         short_margin + 1;
@@ -1519,14 +1535,14 @@ show_help(std::string_view                  program_name,
         doc_align();
 
         std::ranges::for_each(
-            doc | ranges::views::split(' ') |
+            doc | std::views::split(' ') |
                 std::views::transform(
                     [](auto&& rng) {
                         return std::string_view(&*rng.begin(),
-                                                ranges::distance(rng));
+                                                std::ranges::distance(rng));
                     }) |
-                ranges::views::filter([](std::string_view w) noexcept
-                                      { return !w.empty(); }),
+                std::views::filter([](std::string_view w) noexcept
+                                   { return !w.empty(); }),
             [&column, doc_align, file](std::string_view w) noexcept
             {
                 if(column + w.size() <= line_width)
@@ -1560,11 +1576,11 @@ show_help(std::string_view                  program_name,
         {
             opt_align();
 
-            if constexpr(has_keychar<O> && !has_keyword<O>)
+            if constexpr(has_keychar_v<O> && !has_keyword_v<O>)
                 fmt::print(file, "-{}", O::key);
-            else if constexpr(!has_keychar<O> && has_keyword<O>)
+            else if constexpr(!has_keychar_v<O> && has_keyword_v<O>)
                 fmt::print(file, "    --{}", O::keyword);
-            else if constexpr(has_keychar<O> && has_keyword<O>)
+            else if constexpr(has_keychar_v<O> && has_keyword_v<O>)
                 fmt::print(file, "-{}, --{}", O::key, O::keyword);
 
             if constexpr(O::num_vals == npos)
@@ -1620,10 +1636,13 @@ class StandardErrorHandler
     void
     operator()(const FewArgumentsException& ex) const noexcept
     {
-        fmt::print(stderr,
-                   "{}: too few arguments for parameter \"{}\"\n",
-                   error_head,
-                   ex.keyword);
+        if(ex.keyword.empty())
+            fmt::print(stderr, "{}: too few required arguments\n", error_head);
+        else
+            fmt::print(stderr,
+                       "{}: too few arguments for parameter \"{}\"\n",
+                       error_head,
+                       ex.keyword);
         exit(1);
     }
 
@@ -1644,23 +1663,6 @@ class StandardErrorHandler
                    ex.value);
         exit(1);
     }
-
-    void
-    operator()(const std::string_view problem_key) const noexcept
-    {
-        fmt::print(stderr,
-                   "{}: too few arguments for parameter \"{}\"\n",
-                   error_head,
-                   problem_key);
-        exit(1);
-    }
-
-    void
-    operator()(bool) const noexcept
-    {
-        fmt::print(stderr, "{}: too few positional arguments\n", error_head);
-        exit(1);
-    }
 };
 
 template <typename Options, typename Positionals>
@@ -1672,7 +1674,7 @@ check_help(const Options&     options,
 {
     if(word == "-h" || word == "--help")
     {
-        show_help(make_program_name(argv0, options, positionals));
+        show_help(make_program_name(argv0), options, positionals);
         exit(0);
     }
 }
@@ -1683,8 +1685,7 @@ loop_condition(bool              r,
                ArgsRange         args,
                const ErrorState& error) noexcept
 {
-    return r && iter != std::ranges::end(args) &&
-           error.index() == std::variant_npos;
+    return r && iter != std::ranges::end(args) && !error.has_value();
 }
 
 template <typename Options, typename Positionals>
@@ -1711,7 +1712,7 @@ class MainParser
         ErrorState error;
         bool       r        = true;
         bool       pos_only = false;
-        auto       iter     = std::ranges::begin(args);
+        auto       iter     = std::next(std::ranges::begin(args));
         while(loop_condition(r, iter, args, error))
         {
             const std::string_view word = *iter;
@@ -1723,21 +1724,19 @@ class MainParser
                 continue;
             }
 
+            check_help(options, positionals, word, *std::ranges::begin(args));
+
             if(pos_only)
                 r = pp(iter, opt_state, pos_state, error);
             else
-            {
-                check_help(options,
-                           positionals,
-                           word,
-                           *std::ranges::begin(args));
                 r = typelist::first_of(ps, iter, opt_state, pos_state, error);
-            }
 
             ++iter;
         }
 
-        std::visit(std::forward<ErrorHandler>(error_handler), error);
+        if(error.has_value())
+            std::visit(std::forward<ErrorHandler>(error_handler),
+                       error.value());
 
         return ParseResults(opt_state.bindings, pos_state.bindings, options);
     }
@@ -1763,7 +1762,7 @@ class MainParser<std::tuple<Options...>, std::tuple<>>
         State      pos_state{positionals};
         ErrorState error;
         bool       r    = true;
-        auto       iter = std::ranges::begin(args);
+        auto       iter = std::next(std::ranges::begin(args));
         while(loop_condition(r, iter, args, error))
         {
             const std::string_view word = *iter;
@@ -1774,7 +1773,9 @@ class MainParser<std::tuple<Options...>, std::tuple<>>
             ++iter;
         }
 
-        std::visit(std::forward<ErrorHandler>(error_handler), error);
+        if(error.has_value())
+            std::visit(std::forward<ErrorHandler>(error_handler),
+                       error.value());
 
         return ParseResults(opt_state.bindings, options);
     }
@@ -1797,7 +1798,7 @@ class MainParser<std::tuple<>, std::tuple<Positionals...>>
         State      pos_state{positionals};
         ErrorState error;
         bool       r    = true;
-        auto       iter = std::ranges::begin(args);
+        auto       iter = std::next(std::ranges::begin(args));
         while(loop_condition(r, iter, args, error))
         {
             const std::string_view word = *iter;
@@ -1809,7 +1810,9 @@ class MainParser<std::tuple<>, std::tuple<Positionals...>>
             ++iter;
         }
 
-        std::visit(std::forward<ErrorHandler>(error_handler), error);
+        if(error.has_value())
+            std::visit(std::forward<ErrorHandler>(error_handler),
+                       error.value());
 
         return ParseResults(pos_state.bindings, options);
     }
@@ -1819,16 +1822,16 @@ class MainParser<std::tuple<>, std::tuple<Positionals...>>
 template <typename... Options,
           typename... Positionals,
           typename ErrorHandler = StandardErrorHandler>
-constexpr auto
+auto
 parse(const std::tuple<Options...>&     options,
       const std::tuple<Positionals...>& positionals,
       ArgsRange                         args,
       ErrorHandler&&                    error_handler = ErrorHandler{}) noexcept
 {
     using keychars =
-        intlist::purge<detail::missing_keychar, char_sequence<Options::key...>>;
+        intlist::purge<missing_keychar, char_sequence<Options::key...>>;
     using keywords =
-        typelist::purge<typename detail::missing_keyword::type,
+        typelist::purge<typename missing_keyword::type,
                         type_sequence<typename Options::keyword_type...>>;
     static_assert(!intlist::has_duplicates<keychars>, "Keys must be unique");
     static_assert(!typelist::has_duplicates<keywords>, "Keys must be unique");

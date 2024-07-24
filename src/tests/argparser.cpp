@@ -65,14 +65,13 @@ constexpr to_unsigned_f to_unsigned{};
 
 constexpr std::tuple options{
     option<'a', "argonaft">(to_unsigned,
-                            100,
                             "long doc for foo lore ipsum hule bly",
-                            "FOO"),
-    flag<'f', "flag">(false, "doc for flag bla bla bla foo bar"),
-    flag<'F', "Flag">(true, "doc for Flag2 bla bla bla foo bar"),
+                            "FOO",
+                            100),
+    flag<'f', "flag">("doc for flag bla bla bla foo bar"),
+    flag<'F', "Flag">("doc for Flag2 bla bla bla foo bar", true),
     option<"two-val", 2ul>(
         lucid::identity,
-        {"1111", "2222"},
         "Tu es comme le vent qui fait chanter les violons et emporte au loin "
         "le parfum des roses. Caramels, bonbons et chocolats Par moments, je "
         "ne te comprends pas. Merci, pas pour moi Mais tu peux bien les offrir "
@@ -83,7 +82,8 @@ constexpr std::tuple options{
         "te jure. Parole, parole, parole, parole, parole encore des paroles "
         "que tu sèmes au vent Voilà mon destin te parler.... te parler comme "
         "la première fois. Encore des mots toujours des mots les mêmes mots",
-        {"2val1", "2val2"}),
+        {"2val1", "2val2"},
+        {"1111", "2222"}),
     option_list<'m', "multi-val">(lucid::identity,
                                   "doc for unlimited values",
                                   "VAL")};
@@ -94,53 +94,19 @@ constexpr std::tuple positionals{
                     {"pos11", "pos12"}),
     positional(lucid::identity, "doc for 2nd positional", "pos2")};
 
-/// @test Passing correct arguments to argument parser.
-bool
-no_error_check() noexcept
-{
-    ArgvMock  mock({"argtest",
-                   "-a",
-                   "foo value",
-                   "-d",
-                   "d1",
-                   "d2",
-                   "-m",
-                   "mval1",
-                   "mval2",
-                   "mval3",
-                   "-f",
-                   "1posval1",
-                   "1posval2",
-                   "2posval"});
-    ArgsRange args(mock.argc(), mock.argv());
-    bool      ret = false;
-    parse(options, positionals, args, [&ret](const auto&) { ret = true; });
-    return ret;
-}
-
-/// @test Passing wrong arguments (no required positionals) to argument parser.
-bool
-error_check() noexcept
-{
-    ArgvMock mock({"argtest"});
-    ArgsRange args(mock.argc(), mock.argv());
-    bool ret = true;
-    parse(options, positionals, args, [&ret](const auto&){ ret = false; });
-    return ret;
-}
-
 int
 main(int argc, char* argv[])
 {
-    int        ret = 0;
-    ArgsRange  args(argc, argv);
+    int       ret = 0;
+    ArgsRange args(argc, argv);
+    fmt::print("args: {}\n", args);
     const auto results = parse(options, positionals, args);
     fmt::print("argonaft/a = {}\n", results.get_opt<"argonaft">());
     fmt::print("f/flag = {}\n", results.get_opt<'f'>());
     fmt::print("F/Flag = {}\n", results.get_opt<"Flag">());
     fmt::print("twoval = {}\n", results.get_opt<"two-val">());
     fmt::print("multival = {}\n", results.get_opt<'m'>());
-    const std::array<std::string_view, 2> pos1 = results.get_pos<0>();
+    const auto pos1 = results.get_pos<0>();
     fmt::print("pos1 = {}, {}\n", pos1[0], pos1[1]);
     fmt::print("pos2 = {}\n", results.get_pos<1>());
     // ret += no_error_check();
