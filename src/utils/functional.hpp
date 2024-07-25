@@ -128,23 +128,6 @@ struct fold_wrapper
 
 namespace fn
 {
-struct identity_fn
-{
-    template <typename T>
-    constexpr T
-    operator()(const T& t) const noexcept
-    {
-        return t;
-    }
-
-    template <typename Rhs>
-    constexpr decltype(auto)
-    operator|(const Rhs& rhs) const noexcept
-    {
-        return compose(*this, rhs);
-    }
-};
-
 template <typename T, bool list_init = true>
 struct maker_fn
 {
@@ -193,9 +176,6 @@ struct sink_fn
     }
 };
 } // namespace fn
-
-/// @brief Identity function, i.e. it returns its argument.
-inline constexpr fn::identity_fn identity;
 
 /// @brief Builds an object of type @p T from provided arguments.
 /// @tparam T class to build object of.
