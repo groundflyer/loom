@@ -137,11 +137,8 @@ struct UnexpectedValue
 /// @brief Defines requirements for callables to convert
 /// std::string_view to a value.
 template <typename T>
-concept Reader =
-    std::is_invocable_v<T, std::string_view> &&
-    !(std::is_void_v<std::invoke_result_t<T, std::string_view>> ||
-      std::is_pointer_v<std::invoke_result_t<T, std::string_view>> ||
-      std::is_reference_v<std::invoke_result_t<T, std::string_view>>);
+concept Reader = std::is_invocable_v<T, std::string_view> &&
+                 !std::is_void_v<std::invoke_result_t<T, std::string_view>>;
 
 /// @brief Reads a bool value.
 ///
@@ -724,12 +721,12 @@ struct Positional
 /// @brief Create an option with key @p Key and keyword @p s.
 /// @tparam Key ASCII character for Unix style argument setting.
 /// @tparam s string for GNU style argument setting.
-template <char Key, StringLiteral s, Reader R>
+template <char Key, StringLiteral s, Reader R = std::identity>
 consteval Option<Key, sl2cs<s>, R, 1ul>
-option(R                             reader,
-       const std::string_view        doc,
+option(const std::string_view        doc,
        const std::string_view        var,
-       const detail::result_type<R>& def_val) noexcept
+       const detail::result_type<R>& def_val,
+       R                             reader = std::identity{}) noexcept
 {
     CHECK_KEYCHAR;
     CHECK_KEYWORD;
@@ -737,24 +734,24 @@ option(R                             reader,
 }
 
 /// @brief Shortcut to create an option without keyword.
-template <char Key, Reader R>
+template <char Key, Reader R = std::identity>
 consteval Option<Key, missing_keyword, R, 1ul>
-option(R                             reader,
-       const std::string_view        doc,
+option(const std::string_view        doc,
        const std::string_view        var,
-       const detail::result_type<R>& def_val) noexcept
+       const detail::result_type<R>& def_val,
+       R                             reader = std::identity{}) noexcept
 {
     CHECK_KEYCHAR;
     return {reader, def_val, doc, var};
 }
 
 /// @brief Shorcut to create an option without character key.
-template <StringLiteral s, Reader R>
+template <StringLiteral s, Reader R = std::identity>
 consteval Option<missing_keychar, sl2cs<s>, R, 1ul>
-option(R                             reader,
-       const std::string_view        doc,
+option(const std::string_view        doc,
        const std::string_view        var,
-       const detail::result_type<R>& def_val) noexcept
+       const detail::result_type<R>& def_val,
+       R                             reader = std::identity{}) noexcept
 {
     CHECK_KEYWORD;
     return {reader, def_val, doc, var};
@@ -764,12 +761,12 @@ option(R                             reader,
 /// @tparam Key ASCII character for Unix style argument setting.
 /// @tparam s string for GNU style argument setting.
 /// @tparam N the number of fields.
-template <char Key, StringLiteral s, std::size_t N, Reader R>
+template <char Key, StringLiteral s, std::size_t N, Reader R = std::identity>
 consteval Option<Key, sl2cs<s>, R, N>
-option(R                                            reader,
-       const std::string_view                       doc,
+option(const std::string_view                       doc,
        const std::array<std::string_view, N>&       var,
-       const std::array<detail::result_type<R>, N>& def_val) noexcept
+       const std::array<detail::result_type<R>, N>& def_val,
+       R reader = std::identity{}) noexcept
 {
     static_assert(N > 1ul, "Use option without N argument");
     static_assert(N != npos, "Use option_list");
@@ -779,12 +776,12 @@ option(R                                            reader,
 }
 
 /// @brief Shortcut to create a multi-field, option without keyword.
-template <char Key, std::size_t N, Reader R>
+template <char Key, std::size_t N, Reader R = std::identity>
 consteval Option<Key, missing_keyword, R, N>
-option(R                                            reader,
-       const std::string_view                       doc,
+option(const std::string_view                       doc,
        const std::array<std::string_view, N>&       var,
-       const std::array<detail::result_type<R>, N>& def_val) noexcept
+       const std::array<detail::result_type<R>, N>& def_val,
+       R reader = std::identity{}) noexcept
 {
     static_assert(N > 1ul, "Use option without N argument");
     static_assert(N != npos, "Use option_list");
@@ -793,12 +790,12 @@ option(R                                            reader,
 }
 
 /// @brief Shorcut to create a multi-field option without character key.
-template <StringLiteral s, std::size_t N, Reader R>
+template <StringLiteral s, std::size_t N, Reader R = std::identity>
 consteval Option<missing_keychar, sl2cs<s>, R, N>
-option(R                                            reader,
-       const std::string_view                       doc,
+option(const std::string_view                       doc,
        const std::array<std::string_view, N>&       var,
-       const std::array<detail::result_type<R>, N>& def_val) noexcept
+       const std::array<detail::result_type<R>, N>& def_val,
+       R reader = std::identity{}) noexcept
 {
     static_assert(N > 1ul, "Use option without N argument");
     static_assert(N != npos, "Use option_list");
@@ -807,11 +804,11 @@ option(R                                            reader,
 }
 
 /// @brief Create a list option, one that takes one-or-more values.
-template <char Key, StringLiteral s, Reader R, typename... Args>
+template <char Key, StringLiteral s, Reader R = std::identity>
 consteval Option<Key, sl2cs<s>, R, npos>
-option_list(R                      reader,
-            const std::string_view doc,
-            const std::string_view var) noexcept
+option_list(const std::string_view doc,
+            const std::string_view var,
+            R                      reader = std::identity{}) noexcept
 {
     CHECK_KEYCHAR;
     CHECK_KEYWORD;
@@ -819,22 +816,22 @@ option_list(R                      reader,
 }
 
 /// @brief Shorcut to create a list option without keyword.
-template <char Key, Reader R, typename... Args>
+template <char Key, Reader R = std::identity>
 consteval Option<Key, missing_keyword, R, npos>
-option_list(R                      reader,
-            const std::string_view doc,
-            const std::string_view var) noexcept
+option_list(const std::string_view doc,
+            const std::string_view var,
+            R                      reader = std::identity{}) noexcept
 {
     CHECK_KEYCHAR;
     return {reader, doc, var};
 }
 
 /// @brief Shorcut to create a list option without character key.
-template <StringLiteral s, Reader R, typename... Args>
+template <StringLiteral s, Reader R = std::identity>
 consteval Option<missing_keychar, sl2cs<s>, R, npos>
-option_list(R                      reader,
-            const std::string_view doc,
-            const std::string_view var) noexcept
+option_list(const std::string_view doc,
+            const std::string_view var,
+            R                      reader = std::identity{}) noexcept
 {
     CHECK_KEYWORD;
     return {reader, doc, var};
@@ -873,31 +870,31 @@ flag(const std::string_view doc, const bool def_val = false) noexcept
 #undef CHECK_KEYWORD
 
 /// @brief Create a positional option.
-template <Reader R>
+template <Reader R = std::identity>
 consteval Positional<R, 1ul>
-positional(R                      reader,
-           const std::string_view doc,
-           const std::string_view var) noexcept
+positional(const std::string_view doc,
+           const std::string_view var,
+           R                      reader = std::identity{}) noexcept
 {
     return {reader, doc, var};
 }
 
 /// @brief Create a multi-field positional option.
-template <std::size_t nvals, Reader R>
+template <std::size_t nvals, Reader R = std::identity>
 consteval Positional<R, nvals>
-positional(R                                              reader,
-           const std::string_view                         doc,
-           const typename Positional<R, nvals>::var_type& var) noexcept
+positional(const std::string_view                         doc,
+           const typename Positional<R, nvals>::var_type& var,
+           R reader = std::identity{}) noexcept
 {
     return {reader, doc, var};
 }
 
 /// @brief Create a positional list option.
-template <Reader R>
+template <Reader R = std::identity>
 consteval Positional<R, npos>
-positional_list(R&&                    reader,
-                const std::string_view doc,
-                const std::string_view var) noexcept
+positional_list(const std::string_view doc,
+                const std::string_view var,
+                R                      reader = std::identity{}) noexcept
 {
     return {reader, doc, var};
 }
@@ -989,15 +986,15 @@ class ParseResults<std::tuple<OptBindings...>, std::tuple<>, Options>
 };
 
 /// @brief Holds results of parsing when options are not defined.
-template <typename... PosBindings, typename Options>
-class ParseResults<std::tuple<>, std::tuple<PosBindings...>, Options>
+template <typename... PosBindings>
+class ParseResults<std::tuple<>, std::tuple<PosBindings...>, void>
 {
     using PosBindings_t = std::tuple<PosBindings...>;
 
     PosBindings_t m_pos_bindings;
 
   public:
-    ParseResults(const PosBindings_t& pos_bindings, Options) noexcept :
+    ParseResults(const PosBindings_t& pos_bindings) noexcept :
         m_pos_bindings(pos_bindings)
     {
     }
@@ -1010,6 +1007,18 @@ class ParseResults<std::tuple<>, std::tuple<PosBindings...>, Options>
         return std::get<Idx>(m_pos_bindings)();
     }
 };
+
+template <typename OptBindings, typename PosBindings, typename Options>
+ParseResults(const OptBindings&, const PosBindings&, const Options&)
+    -> ParseResults<OptBindings, PosBindings, Options>;
+
+template <typename OptBindings, typename Options>
+ParseResults(const OptBindings&, const Options&)
+    -> ParseResults<OptBindings, std::tuple<>, Options>;
+
+template <typename PosBindings>
+ParseResults(const PosBindings&)
+    -> ParseResults<std::tuple<>, PosBindings, void>;
 
 /// @brief Set @p token'th value.
 template <typename... Bindings, typename Value>
@@ -1814,7 +1823,7 @@ class MainParser<std::tuple<>, std::tuple<Positionals...>>
             std::visit(std::forward<ErrorHandler>(error_handler),
                        error.value());
 
-        return ParseResults(pos_state.bindings, options);
+        return ParseResults(pos_state.bindings);
     }
 };
 
