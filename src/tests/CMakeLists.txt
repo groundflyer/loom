@@ -1,7 +1,7 @@
 include(CTest)
 
 set(test_srcs
-  argparser.cpp
+  argparse.cpp
   functional.cpp
   lang.cpp
   linal.cpp
