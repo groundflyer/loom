@@ -577,11 +577,11 @@ parse_numruns(int argc, char* argv[]) noexcept
 {
     return argparse::parse(
                std::tuple{argparse::option<'n', "numruns">(
-                   [](std::string_view word) noexcept
-                   { return std::atoi(word.data()); },
-                   1000,
                    "Number of runs for parametric tests. Default: 1000",
-                   "N")},
+                   "N",
+                   1000,
+                   [](std::string_view word) noexcept
+                   { return std::atoi(word.data()); })},
                {argc, argv})
         .get_opt<'n'>();
 }
