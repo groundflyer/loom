@@ -1192,6 +1192,13 @@ struct KeywordValueParser
             return true;
         }
 
+        const std::size_t nvals = get_nvals(token, opt_state.desc);
+        if(nvals > 1)
+        {
+            error = FewArgumentsException{sub};
+            return true;
+        }
+
         bind_value(opt_state.bindings, token, word.substr(eq_pos + 1));
         return true;
     }
