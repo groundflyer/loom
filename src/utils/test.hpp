@@ -474,6 +474,33 @@ struct ParmTestMaker
         };
     }
 
+    /// @brief Make parametric test with a hint.
+    ///
+    /// @param gh generates a pair of values.
+    /// @param t testing function.
+    /// @param cmp comparator. By default checks for equality.
+    ///
+    /// This case is useful when it's easier to generate a valid result
+    /// immediately along with test data.
+    ///
+    /// Here generator @p gh produces a pair of value.
+    /// The first value is then passed to @p t, the second is supposed to be a
+    /// reference value
+    template <std::invocable GH, typename T, typename Cmp = std::equal_to<>>
+    auto
+    test_with_hint(GH&& gh, T&& t, Cmp cmp = Cmp{}) const noexcept
+    {
+        return test(
+            std::forward<GH>(gh),
+            [&t]<typename Feed>(Feed&& feed) noexcept
+            {
+                return std::invoke(std::forward<T>(t),
+                                   std::get<0>(std::forward<Feed>(feed)));
+            },
+            [cmp](auto tr, const auto& feed) noexcept
+            { return cmp(tr, std::get<1>(feed)); });
+    }
+
     /// @brief Make parametric test with a reference implementation.
     ///
     /// @param g test data generator. If @p t accepts few parameters must return
