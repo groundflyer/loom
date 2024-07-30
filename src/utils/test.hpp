@@ -1,6 +1,7 @@
 // -*- C++ -*-
 // test.hpp
-//
+/// @file test.hpp
+/// @brief Testing utilities.
 
 #pragma once
 
@@ -113,12 +114,18 @@ struct random_dist<T>
 };
 } // namespace detail
 
+/// @brief Associates a test with a name.
 template <typename Test>
     requires(std::predicate<Test> ||
              is_strictly_invocable_rp_v<std::is_floating_point, Test>)
 struct NamedTest
 {
-    Test             test;
+    /// @brief Predicate that doesn't accept parameters.
+    ///
+    /// An invocation resulting with @p true is considered as pass
+    /// otherwise as fail.
+    Test test;
+    /// @brief Logged name.
     std::string_view name;
 
     constexpr NamedTest(Test _t, std::string_view _n) noexcept :
@@ -127,10 +134,15 @@ struct NamedTest
     }
 };
 
+/// @brief Associates a fuzzy test with name and failing threshold.
+///
+/// @tparam Test function object that doesn't accept parameters
+/// and returns relative ratio of failed runs.
 template <typename Test>
     requires(is_strictly_invocable_rp_v<std::is_floating_point, Test>)
 struct NamedFuzzyTest : NamedTest<Test>
 {
+    /// @brief The portion of fails when test is considered as fail.
     std::invoke_result_t<Test> threshold;
 
     constexpr NamedFuzzyTest(Test                       _t,
@@ -142,6 +154,7 @@ struct NamedFuzzyTest : NamedTest<Test>
     }
 };
 
+/// @brief Keeps track of tests and prints their status.
 class Track
 {
 #define _OK(r)               \
@@ -294,7 +307,24 @@ class Track
                 run_print_count(std::forward<Tests>(tests), counter, Is + 1));
     }
 
+    /// @brief Print conclusion.
+    void
+    message() const noexcept
+    {
+        fmt::print(fmt::emphasis::bold |
+                       fmt::fg(ret_code() ? fmt::terminal_color::red :
+                                            fmt::terminal_color::green),
+                   "{}/{} TESTS PASSED\n",
+                   m_passed,
+                   m_total);
+    }
+
   public:
+    /// @brief Run @p test and log the result.
+    ///
+    /// Test considered passed when the result is true.
+    ///
+    /// @param test an instance NamedTest or NamedFuzzyTest.
     template <typename Test>
     bool
     check(Test&& test) noexcept
@@ -305,6 +335,14 @@ class Track
         return p;
     }
 
+    /// @brief Run and log @p tests successively: the invocation of each next
+    /// test depends on the result of the previous one.
+    ///
+    /// @param tests instances of NamedTest or NamedFuzzy test.
+    /// Can be grouped with std::pair and std::tuple.
+    ///
+    /// A failed test halts the entire run or the run of its group, the
+    /// following tests considered failed.
     template <typename... Tests>
     bool
     dep_check(Tests&&... tests) noexcept
@@ -324,46 +362,28 @@ class Track
         return ret;
     }
 
+    /// @brief The number of passed tests.
     unsigned
     passed() const noexcept
     {
         return m_passed;
     }
 
+    /// @brief The number of checked tests.
     unsigned
     total() const noexcept
     {
         return m_total;
     }
 
+    /// @brief Returns non-zero if there are failed tests.
     int
     ret_code() const noexcept
     {
         return m_passed != m_total;
     }
 
-    void
-    message() const noexcept
-    {
-        fmt::print(fmt::emphasis::bold |
-                       fmt::fg(ret_code() ? fmt::terminal_color::red :
-                                            fmt::terminal_color::green),
-                   "{}/{} TESTS PASSED\n",
-                   m_passed,
-                   m_total);
-    }
-
     ~Track() { message(); }
-};
-
-struct range_val_id
-{
-    template <typename In>
-    constexpr In
-    operator()(unsigned, In&& in) const noexcept
-    {
-        return std::forward<In>(in);
-    }
 };
 
 template <typename... ArgRngs,
@@ -415,17 +435,38 @@ estimate(const unsigned n, G&& g, T&& t, V&& v) noexcept
                     static_cast<double>(n);
 }
 
+/// @brief Helper class to make parametric tests.
 struct ParmTestMaker
 {
-    unsigned m_num;
+    /// @brief Number of runs.
+    unsigned num_runs;
 
-    template <std::invocable G, typename T, typename V>
+    /// @brief Make standard parametric test.
+    ///
+    /// @param g test data generator. If @p t accepts few parameters must return
+    /// std::pair or std::tuple.
+    /// @param t testing function.
+    /// @param v validation function.
+    ///
+    /// The check process is following:
+    ///
+    /// 1. Generate test data with @p g.
+    ///
+    /// 2. Invoke test @p t with the data.
+    ///
+    /// 3. Validate test results by invoking @p v with the data and the result
+    /// of test invocation deciding if check was successful.
+    ///
+    /// To pass requires all runs to succeed.
+    template <std::invocable                            G,
+              maybe_applicable<std::invoke_result_t<G>> T,
+              typename V>
     auto
     test(G&& g, T&& t, V&& v) const noexcept
     {
         return [&]() noexcept
         {
-            return std::ranges::all_of(gen_test_val(m_num,
+            return std::ranges::all_of(gen_test_val(num_runs,
                                                     std::forward<G>(g),
                                                     std::forward<T>(t),
                                                     std::forward<V>(v)),
@@ -433,41 +474,59 @@ struct ParmTestMaker
         };
     }
 
+    /// @brief Make parametric test with a reference implementation.
+    ///
+    /// @param g test data generator. If @p t accepts few parameters must return
+    /// std::pair or std::tuple.
+    /// @param t testing function.
+    /// @param ri reference implementation, always produces correct results.
+    /// @param cmp comparator. By default checks for equality.
+    ///
+    /// The test is passed when comparator @p cmp invoked with the results
+    /// produced by @p t and @p ri with the same data returns true.
     template <std::invocable                            G,
               maybe_applicable<std::invoke_result_t<G>> T,
-              maybe_applicable<std::invoke_result_t<G>> ValT,
+              maybe_applicable<std::invoke_result_t<G>> RI,
               typename Cmp = std::equal_to<>>
     auto
-    test_cmp(G&& g, T&& t, ValT valt, Cmp cmp = Cmp{}) const noexcept
+    test_with_ref(G&& g, T&& t, RI ri, Cmp cmp = Cmp{}) const noexcept
     {
-        return test(std::forward<G>(g),
-                    std::forward<T>(t),
-                    [&, valt, cmp]<typename Tr, typename Gr>(Tr&& tr,
-                                                             Gr&& gr) noexcept {
-                        return cmp(std::forward<Tr>(tr),
-                                   maybe_apply(valt, std::forward<Gr>(gr)));
-                    });
+        return test(
+            std::forward<G>(g),
+            std::forward<T>(t),
+            [&, ri, cmp]<typename Tr, typename Gr>(Tr&& tr, Gr&& gr) noexcept {
+                return cmp(std::forward<Tr>(tr),
+                           maybe_apply(ri, std::forward<Gr>(gr)));
+            });
     }
 
+    /// @brief Make parametric test for function producing ranges.
+    ///
+    /// @tparam do_sort sort testing and validation ranges before comparison.
+    /// @copydetails test_with_ref
+    ///
+    /// Practically the same as ParmTestMaker::test_with_ref,
+    /// but here @p t and @p re produce
+    /// ranges thus @p cmp must be able to compare ranges.
     template <bool           do_sort = true,
               std::invocable G,
               typename T,
-              typename V   = range_val_id,
+              typename RI,
               typename Cmp = decltype(std::ranges::equal)>
     auto
-    rng_cmp(G&& g,
-            T&& t,
-            V&& v   = range_val_id{},
-            Cmp cmp = std::ranges::equal) const noexcept
+    rng_with_ref(G&&  g,
+                 T&&  t,
+                 RI&& ri,
+                 Cmp  cmp = std::ranges::equal) const noexcept
     {
 #define LAMBDA_BODY(MY_V)                                                \
     auto make_args = [&]() noexcept                                      \
     {                                                                    \
-        const auto gr = multi_gen(m_num, std::forward<G>(g));            \
+        const auto gr = multi_gen(num_runs, std::forward<G>(g));         \
         if constexpr(is_tuple_v<decltype(gr)>)                           \
-            return std::tuple_cat(std::tuple{m_num}, gr);                \
+            return std::tuple_cat(std::tuple{num_runs}, gr);             \
         else                                                             \
-            return std::pair{m_num, gr};                                 \
+            return std::pair{num_runs, gr};                              \
     };                                                                   \
     const auto              args = make_args();                          \
     std::ranges::range auto tr   = std::apply(std::forward<T>(t), args); \
@@ -479,51 +538,69 @@ struct ParmTestMaker
     }                                                                    \
     return std::invoke(cmp, tr, vr)
 
-        if constexpr(std::is_rvalue_reference_v<decltype(v)>)
-            return [&, v = std::move(v), cmp]() noexcept { LAMBDA_BODY(v); };
+        if constexpr(std::is_rvalue_reference_v<decltype(ri)>)
+            return [&, ri = std::move(ri), cmp]() noexcept { LAMBDA_BODY(ri); };
         else
-            return [&, cmp]() noexcept { LAMBDA_BODY(std::forward<V>(v)); };
+            return [&, cmp]() noexcept { LAMBDA_BODY(std::forward<RI>(ri)); };
 
 #undef LAMBDA_BODY
     }
 
-    template <std::invocable G,
+    /// @brief Special case of ParmTestMaker::rng_with_ref:
+    /// reference implementation produces scalar values.
+    /// @copydetails rng_with_ref
+    template <bool           do_sort = true,
+              std::invocable G,
               typename T,
-              typename V,
+              typename RI,
               typename Cmp = decltype(std::ranges::equal)>
     auto
-    rng_sval(G&& g, T&& t, V&& v, Cmp cmp = std::ranges::equal) const noexcept
+    rng_with_scalar_ref(G&&  g,
+                        T&&  t,
+                        RI&& ri,
+                        Cmp  cmp = std::ranges::equal) const noexcept
     {
-        return rng_cmp(
+        return rng_with_ref<do_sort>(
             std::forward<G>(g),
             std::forward<T>(t),
-            [&v]<typename... Grs>(unsigned n, Grs&&... grs) noexcept {
+            [&ri]<typename... Grs>(unsigned n, Grs&&... grs) noexcept {
                 return multi_gen(n,
-                                 std::forward<V>(v),
+                                 std::forward<RI>(ri),
                                  std::forward<Grs>(grs)...);
             },
             cmp);
     }
 
+    /// @brief Fuzzy version of ParmTestMaker::test, i.e. a portion of runs
+    /// is allowed to fail. Use with NamedFuzzyTest.
+    ///
+    /// @param g test data generator. If @p t accepts few parameters must return
+    /// std::pair or std::tuple.
+    /// @param t testing function.
+    /// @param v validation function.
+    ///
+    ///
     template <std::invocable G, typename T, typename V>
     auto
     fuzzy(G&& g, T&& t, V&& v) const noexcept
     {
         return [&]() noexcept
         {
-            return estimate(m_num,
+            return estimate(num_runs,
                             std::forward<G>(g),
                             std::forward<T>(t),
                             std::forward<V>(v));
         };
     }
 
+    /// @brief Fuzzy version of ParmTestMaker::test_with_ref.
+    /// @copydetails test_with_ref
     template <typename G,
               typename T,
-              typename ValT,
+              typename RI,
               typename Cmp = std::equal_to<>>
     auto
-    fuzzy_cmp(G&& g, T&& t, ValT valt, Cmp cmp = Cmp{}) const noexcept
+    fuzzy_with_ref(G&& g, T&& t, RI ri, Cmp cmp = Cmp{}) const noexcept
     {
         return fuzzy(
             std::forward<G>(g),
@@ -532,19 +609,24 @@ struct ParmTestMaker
             {
                 return std::invoke(cmp,
                                    std::forward<Tr>(tr),
-                                   maybe_apply(valt, std::forward<Gr>(gr)));
+                                   maybe_apply(ri, std::forward<Gr>(gr)));
             });
     }
 
-    template <typename G, typename T, typename ValT>
+    /// @brief Special case for ParmTestMaker::fuzzy_with_ref with
+    /// lucid::almost_equal as the comparator.
+    /// @copydetails fuzzy_with_ref
+    ///
+    /// @param ulp unit in the last place.
+    template <typename G, typename T, typename RI>
     auto
-    fuzzy_ulp(G&& g, T&& t, ValT valt, const unsigned ulp) const noexcept
+    fuzzy_ulp(G&& g, T&& t, RI ri, const unsigned ulp) const noexcept
     {
-        return fuzzy_cmp(std::forward<G>(g),
-                         std::forward<T>(t),
-                         valt,
-                         [&](auto t, auto v) noexcept
-                         { return almost_equal(t, v, ulp); });
+        return fuzzy_with_ref(std::forward<G>(g),
+                              std::forward<T>(t),
+                              ri,
+                              [&](auto t, auto v) noexcept
+                              { return almost_equal(t, v, ulp); });
     }
 };
 
