@@ -182,11 +182,7 @@ template <StringLiteral s>
 constexpr bool keyword_ok = detail::keyword_ok_impl<sl2cs<s>>::value;
 
 // Empty class tag type to indicate that there is no keyword defined.
-struct missing_keyword
-{
-    using type                             = char_sequence<>;
-    static constexpr std::string_view view = "";
-};
+using missing_keyword = char_sequence<' '>;
 
 // This character is used to indicate that character key is not defined.
 constexpr inline char missing_keychar = ' ';
@@ -1847,7 +1843,7 @@ parse(const std::tuple<Options...>&     options,
     using keychars =
         intlist::purge<missing_keychar, char_sequence<Options::key...>>;
     using keywords =
-        typelist::purge<typename missing_keyword::type,
+        typelist::purge<missing_keyword,
                         type_sequence<typename Options::keyword_type...>>;
     static_assert(!intlist::has_duplicates<keychars>, "Keys must be unique");
     static_assert(!typelist::has_duplicates<keywords>, "Keys must be unique");
