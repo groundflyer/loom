@@ -15,6 +15,7 @@ using namespace lucid;
 using namespace lucid::argparse;
 using namespace lucid::test;
 using namespace std::literals::string_literals;
+using namespace std::literals::string_view_literals;
 
 class ArgvMock
 {
@@ -33,6 +34,12 @@ class ArgvMock
 
   public:
     explicit ArgvMock(std::initializer_list<std::string_view> words) :
+        m_words(words.begin(), words.end())
+    {
+        update_argv();
+    }
+
+    explicit ArgvMock(std::initializer_list<std::string> words) :
         m_words(words.begin(), words.end())
     {
         update_argv();
@@ -57,15 +64,21 @@ class ArgvMock
     }
 
     char**
-    argv()
+    argv() noexcept
     {
         return m_pointers.data();
     }
 
     int
-    argc()
+    argc() noexcept
     {
         return m_pointers.size();
+    }
+
+    ArgsRange
+    operator()()
+    {
+        return {argc(), argv()};
     }
 };
 
@@ -90,20 +103,36 @@ struct ErrorCatcher
     }
 };
 
+template <char Key, typename Keyword, typename Reader, std::size_t n>
+std::string
+make_keyword(Option<Key, Keyword, Reader, n>) noexcept
+{
+    static_assert(!std::is_same_v<Keyword, missing_keyword>);
+    return "--"s + std::string(cs2sv<Keyword>);
+}
+
+template <char Key, typename Keyword, typename Reader, std::size_t n>
+std::string
+make_keychar(Option<Key, Keyword, Reader, n>) noexcept
+{
+    static_assert(Key != missing_keychar);
+    return "-"s + Key;
+}
+
 template <char Key,
           typename Keyword,
           typename Reader,
           std::size_t n,
           typename C>
 std::string
-gen_key(Option<Key, Keyword, Reader, n>, C& c) noexcept
+gen_key(const Option<Key, Keyword, Reader, n>& o, C& c) noexcept
 {
     if constexpr(Key == missing_keychar)
-        return "--"s + cs2sv<Keyword>;
+        return make_keyword(o);
     else if constexpr(std::is_same_v<Keyword, missing_keyword>)
-        return "-"s + Key;
+        return make_keychar(o);
     else
-        return c() ? "--"s + cs2sv<Keyword> : "-"s + Key;
+        return c() ? make_keychar(o) : make_keyword(o);
 }
 
 template <char Key,
@@ -135,13 +164,46 @@ gen_vals(Option<Key, Keyword, Reader, n>, G& word_gen, L& lgen) noexcept
     }
 }
 
+template <typename Option, typename W>
+std::pair<ArgvMock, std::string>
+gen_correct_kw(const Option& o, W& word_gen) noexcept
+{
+    const std::string correct = word_gen();
+    const std::string test    = make_keyword(o) + "=" + correct;
+    return {ArgvMock({test}), correct};
+}
+
+template <StringLiteral sl,
+          typename Options,
+          typename Positionals,
+          typename Parser>
+std::string
+test_val_opt_parser(const Options&     options,
+                    const Positionals& positionals,
+                    Parser             p,
+                    ArgsRange          args) noexcept
+{
+    State      opt_state{options};
+    State      pos_state{positionals};
+    ErrorState error;
+    auto       iter = args.begin();
+    p(iter, opt_state, pos_state, error);
+    ParseResults pr{opt_state.bindings, pos_state.bindings, options};
+    return std::string{pr.template get_opt<sl>()};
+};
+
 constexpr inline IntReader    int_reader{};
 constexpr inline ErrorCatcher error_catcher{};
 
-constexpr auto o_num = option<'o', "option">("long doc for option", "O", "100");
-constexpr auto o_flag1 = flag<'f', "flag">("long doc for flag");
-constexpr auto o_flag2 = flag<'F', "Flag">("long doc for inverse Flag", true);
-constexpr auto o_two   = option<"two-val", 2>(
+constexpr auto o1 =
+    option<'o', "option">("long doc for option", "O", "default");
+constexpr auto o1kc =
+    option<'c'>("long doc for option with keychar only", "C", "default");
+constexpr auto o1kw =
+    option<"keyword">("long doc for option with keyword only", "K", "default");
+constexpr auto of1  = flag<'f', "flag">("long doc for flag");
+constexpr auto of2  = flag<'F', "Flag">("long doc for inverse Flag", true);
+constexpr auto o2   = option<"two-val", 2>(
     "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do "
       "eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim "
       "ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut "
@@ -151,10 +213,10 @@ constexpr auto o_two   = option<"two-val", 2>(
       "culpa qui officia deserunt mollit anim id est laborum.",
     {"2val1", "2val2"},
     {"1111", "2222"});
-constexpr auto o_multi =
+constexpr auto om =
     option_list<'m', "multi-val">("doc for unlimited values", "VAL");
 
-constexpr std::tuple options{o_num, o_flag1, o_flag2, o_two, o_multi};
+constexpr std::tuple options{o1, o1kc, o1kw, of1, of2, o2, om};
 
 constexpr std::tuple positionals{
     positional<2ul>("doc for 1st positional", {"pos11", "pos12"}),
@@ -180,11 +242,20 @@ int main(/*int argc, char* argv[]*/)
         std::generate_n(std::back_inserter(ret), l, azgen);
         return ret;
     };
-    auto choice_gen = rs.make_gen<bool>(0.5);
+    // auto choice_gen    = rs.make_gen<bool>(0.5);
+    auto o1_correct_gen = [&]() noexcept
+    { return gen_correct_kw(o1, word_gen); };
+    auto o1_correct_test = [&](ArgvMock am) noexcept
+    {
+        return test_val_opt_parser<"option">(options,
+                                             positionals,
+                                             keyword_value_parser,
+                                             am());
+    };
 
-    int       ret = 0;
-    ArgvMock  mock({"name", "-h"});
-    ArgsRange args(mock.argc(), mock.argv());
-    fmt::print("args: {}\n", args);
-    return ret;
+    auto to1 = tm.test_with_hint(o1_correct_gen, o1_correct_test);
+
+    track.check(NamedTest(to1, "Parse correct keyword=value"));
+
+    return track.ret_code();
 }
