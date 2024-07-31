@@ -170,7 +170,6 @@ gen_correct_kw(const Option& o, W& word_gen) noexcept
 {
     const std::string correct = word_gen();
     const std::string test    = make_keyword(o) + "=" + correct;
-    fmt::print("test: {}; correct={}\n", test, correct);
     return {ArgvMock({test}), correct};
 }
 
@@ -244,11 +243,11 @@ constexpr auto o2   = option<"two-val", 2>(
 constexpr auto om =
     option_list<'m', "multi-val">("doc for unlimited values", "VAL");
 
-// constexpr std::tuple options{o1, o1kc, o1kw, of1, of2, o2, om};
+constexpr std::tuple options{o1, o1kc, o1kw, of1, of2, o2, om};
 
-// constexpr std::tuple positionals{
-//     positional<2ul>("doc for 1st positional", {"pos11", "pos12"}),
-//     positional("doc for 2nd positional", "pos2")};
+constexpr std::tuple positionals{
+    positional<2ul>("doc for 1st positional", {"pos11", "pos12"}),
+    positional("doc for 2nd positional", "pos2")};
 
 constexpr inline KeywordValueParser keyword_value_parser{};
 
@@ -285,11 +284,11 @@ int main(/*int argc, char* argv[]*/)
     auto o1_pr_gen  = [&]() { return gen_correct_kw(o1, wgen); };
     auto o1_pr_test = [&](ArgvMock mock) noexcept
     {
-        return test_parser_pr(std::tuple{o1},
-                              std::tuple{},
-                              keyword_value_parser,
-                              mock())
-            .template get_opt<"option">();
+        return std::string(test_parser_pr(std::tuple{o1},
+                                          std::tuple{},
+                                          keyword_value_parser,
+                                          mock())
+                               .template get_opt<"option">());
     };
 
     // parse ignore test
