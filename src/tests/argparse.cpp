@@ -170,26 +170,54 @@ gen_correct_kw(const Option& o, W& word_gen) noexcept
 {
     const std::string correct = word_gen();
     const std::string test    = make_keyword(o) + "=" + correct;
+    fmt::print("test: {}; correct={}\n", test, correct);
     return {ArgvMock({test}), correct};
 }
 
-template <StringLiteral sl,
-          typename Options,
-          typename Positionals,
-          typename Parser>
-std::string
-test_val_opt_parser(const Options&     options,
-                    const Positionals& positionals,
-                    Parser             p,
-                    ArgsRange          args) noexcept
+#define PARSE_INIT                     \
+    State      opt_state{options};     \
+    State      pos_state{positionals}; \
+    ErrorState error;                  \
+    auto       iter = args.begin()
+
+template <typename... Options, typename... Positionals, typename Parser>
+auto
+test_parser_pr(const std::tuple<Options...>&     options,
+               const std::tuple<Positionals...>& positionals,
+               Parser                            p,
+               ArgsRange                         args) noexcept
 {
-    State      opt_state{options};
-    State      pos_state{positionals};
-    ErrorState error;
-    auto       iter = args.begin();
+    PARSE_INIT;
     p(iter, opt_state, pos_state, error);
-    ParseResults pr{opt_state.bindings, pos_state.bindings, options};
-    return std::string{pr.template get_opt<sl>()};
+    if constexpr(sizeof...(Options) > 0 && sizeof...(Positionals) > 0)
+        return ParseResults{opt_state.bindings, pos_state.bindings, options};
+    else if constexpr(sizeof...(Options) > 0)
+        return ParseResults{opt_state.bindings, options};
+    else
+        return ParseResults{pos_state.bindings};
+};
+
+template <typename Options, typename Positionals, typename Parser>
+bool
+test_parser_ignore(const Options&     options,
+                   const Positionals& positionals,
+                   Parser             p,
+                   ArgsRange          args) noexcept
+{
+    PARSE_INIT;
+    return p(iter, opt_state, pos_state, error);
+};
+
+template <typename Options, typename Positionals, typename Parser>
+ErrorState
+test_parser_error(const Options&     options,
+                  const Positionals& positionals,
+                  Parser             p,
+                  ArgsRange          args) noexcept
+{
+    PARSE_INIT;
+    p(iter, opt_state, pos_state, error);
+    return error;
 };
 
 constexpr inline IntReader    int_reader{};
@@ -216,11 +244,11 @@ constexpr auto o2   = option<"two-val", 2>(
 constexpr auto om =
     option_list<'m', "multi-val">("doc for unlimited values", "VAL");
 
-constexpr std::tuple options{o1, o1kc, o1kw, of1, of2, o2, om};
+// constexpr std::tuple options{o1, o1kc, o1kw, of1, of2, o2, om};
 
-constexpr std::tuple positionals{
-    positional<2ul>("doc for 1st positional", {"pos11", "pos12"}),
-    positional("doc for 2nd positional", "pos2")};
+// constexpr std::tuple positionals{
+//     positional<2ul>("doc for 1st positional", {"pos11", "pos12"}),
+//     positional("doc for 2nd positional", "pos2")};
 
 constexpr inline KeywordValueParser keyword_value_parser{};
 
@@ -234,7 +262,7 @@ int main(/*int argc, char* argv[]*/)
     auto azgen = [d = rs.make_gen<int>(static_cast<int>('a'),
                                        static_cast<int>('z'))]() mutable
     { return static_cast<char>(d()); };
-    auto word_gen = [&]()
+    auto wgen = [&]()
     {
         std::string ret;
         unsigned    l = lgen();
@@ -242,20 +270,44 @@ int main(/*int argc, char* argv[]*/)
         std::generate_n(std::back_inserter(ret), l, azgen);
         return ret;
     };
-    // auto choice_gen    = rs.make_gen<bool>(0.5);
-    auto o1_correct_gen = [&]() noexcept
-    { return gen_correct_kw(o1, word_gen); };
-    auto o1_correct_test = [&](ArgvMock am) noexcept
+    auto sgen = [&]()
     {
-        return test_val_opt_parser<"option">(options,
-                                             positionals,
-                                             keyword_value_parser,
-                                             am());
+        std::vector<std::string> ret;
+        unsigned                 n = lgen();
+        ret.reserve(n);
+        std::generate_n(std::back_inserter(ret), n, wgen);
+        return ret;
     };
 
-    auto to1 = tm.test_with_hint(o1_correct_gen, o1_correct_test);
+    // auto choice_gen    = rs.make_gen<bool>(0.5);
 
-    track.check(NamedTest(to1, "Parse correct keyword=value"));
+    // parse results test
+    auto o1_pr_gen  = [&]() { return gen_correct_kw(o1, wgen); };
+    auto o1_pr_test = [&](ArgvMock mock) noexcept
+    {
+        return test_parser_pr(std::tuple{o1},
+                              std::tuple{},
+                              keyword_value_parser,
+                              mock())
+            .template get_opt<"option">();
+    };
+
+    // parse ignore test
+    auto o1_ignore_gen  = [&]() { return ArgvMock(sgen()); };
+    auto o1_ignore_test = [&](ArgvMock mock)
+    {
+        return test_parser_ignore(std::tuple{o1},
+                                  std::tuple{},
+                                  keyword_value_parser,
+                                  mock());
+    };
+
+    auto to1_pr = tm.test_with_hint(o1_pr_gen, o1_pr_test);
+    auto to1_ignore =
+        tm.invariant(o1_ignore_gen, o1_ignore_test, std::logical_not<>{});
+
+    track.check(NamedTest(to1_pr, "Parse --keyword=value"));
+    track.check(NamedTest(to1_ignore, "Ignore --keyword=value"));
 
     return track.ret_code();
 }
