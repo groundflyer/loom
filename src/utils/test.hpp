@@ -423,6 +423,21 @@ gen_test_val(const unsigned n, G&& g, T&& t, V&& v) noexcept
 }
 
 template <std::invocable G, typename T, typename V>
+auto
+gen_test_val_inv(const unsigned n, G&& g, T&& t, V&& v) noexcept
+{
+    return ranges::views::generate_n(std::forward<G>(g), n) |
+           std::ranges::views::transform(
+               [&](auto&& feed) noexcept
+               {
+                   return lucid::maybe_apply(
+                       std::forward<T>(t),
+                       std::forward<decltype(feed)>(feed));
+               }) |
+           std::ranges::views::transform(std::forward<V>(v));
+}
+
+template <std::invocable G, typename T, typename V>
 double
 estimate(const unsigned n, G&& g, T&& t, V&& v) noexcept
 {
@@ -470,6 +485,31 @@ struct ParmTestMaker
                                                     std::forward<G>(g),
                                                     std::forward<T>(t),
                                                     std::forward<V>(v)),
+                                       std::identity{});
+        };
+    }
+
+    /// @brief Make invariant parametric test.
+    ///
+    /// @param g test data generator. If @p t accepts few parameters must return
+    /// std::pair or std::tuple.
+    /// @param t testing function.
+    /// @param v validation function.
+    ///
+    /// Unlike in ParmTestMaker::test validation can be done without test data.
+    /// Only the result of test run @p t is passed to validator @p v.
+    template <std::invocable                            G,
+              maybe_applicable<std::invoke_result_t<G>> T,
+              typename V>
+    auto
+    invariant(G&& g, T&& t, V&& v) const noexcept
+    {
+        return [&]() noexcept
+        {
+            return std::ranges::all_of(gen_test_val_inv(num_runs,
+                                                        std::forward<G>(g),
+                                                        std::forward<T>(t),
+                                                        std::forward<V>(v)),
                                        std::identity{});
         };
     }
