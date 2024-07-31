@@ -418,7 +418,7 @@ gen_test_val(const unsigned n, G&& g, T&& t, V&& v) noexcept
                        std::forward<V>(v),
                        lucid::maybe_apply(std::forward<T>(t),
                                           std::forward<Feed>(feed)),
-                       feed);
+                       std::forward<Feed>(feed));
                });
 }
 
