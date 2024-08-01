@@ -331,7 +331,7 @@ int main(/*int argc, char* argv[]*/)
                                  keyword_value_parser,
                                  mock());
     };
-    auto o1_wrong_keyword_val = [&](ErrorState e)
+    auto check_keyword_ex = [&](ErrorState e)
     {
         ErrorCatcher ec;
         if(e.has_value())
@@ -341,6 +341,27 @@ int main(/*int argc, char* argv[]*/)
         }
         else
             return false;
+    };
+    auto check_few_args_ex = [&](ErrorState e)
+    {
+        ErrorCatcher ec;
+        if(e.has_value())
+        {
+            std::visit(ec, e.value());
+            return ec.few_args;
+        }
+        else
+            return false;
+    };
+
+    auto o2_kw_few_gen = [&]()
+    { return ArgvMock({make_keyword(o2) + '=' + wgen()}); };
+    auto o2_kw_few_test = [&](ArgvMock mock)
+    {
+        return test_parser_error(std::tuple{o2},
+                                 std::tuple{},
+                                 keyword_value_parser,
+                                 mock());
     };
 
     /// @test @p --keyword=value parsing results test.
@@ -360,12 +381,21 @@ int main(/*int argc, char* argv[]*/)
     /// lucid::argparse::ErrorState
     auto to1_wrong_keyword = tm.invariant(o1_wrong_keyword_gen,
                                           o1_wrong_keyword_test,
-                                          o1_wrong_keyword_val);
+                                          check_keyword_ex);
 
-    track.check(NamedTest(to1_pr, "Parse --keyword=value"));
-    track.check(NamedTest(to1_ignore, "Ignore --keyword=value"));
+    /// @test @p --keyword=value few arguments exception test.
+    /// Generate @p --keyword=value string for option that requires 2 operands.
+    /// Check if lucid::argparse::FewArgumentsException is stored.
+    auto to2_few_args_ex =
+        tm.invariant(o2_kw_few_gen, o2_kw_few_test, check_few_args_ex);
+
+    track.check(NamedTest(to1_pr, "Parsing result of --keyword=value parser"));
     track.check(
-        NamedTest(to1_wrong_keyword, "Keyword exception in --keyword=value"));
+        NamedTest(to1_ignore, "Ignore random words by --keyword=value parser"));
+    track.check(NamedTest(to1_wrong_keyword,
+                          "Keyword exception in --keyword=value parser"));
+    track.check(NamedTest(to2_few_args_ex,
+                          "Few arguments exception in --keyword=value parser"));
 
     return track.ret_code();
 }
