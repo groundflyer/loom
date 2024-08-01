@@ -195,6 +195,16 @@ gen_correct_kw(const Option& o, W& word_gen) noexcept
     return {ArgvMock({test}), correct};
 }
 
+template <typename Option, typename C>
+std::pair<ArgvMock, bool>
+gen_correct_kw_bool(const Option& o, C& choice) noexcept
+{
+    const bool        correct = choice();
+    const std::string test =
+        make_keyword(o) + "=" + (correct ? "true"s : "false"s);
+    return {ArgvMock({test}), correct};
+}
+
 #define PARSE_INIT                     \
     State      opt_state{options};     \
     State      pos_state{positionals}; \
@@ -299,8 +309,7 @@ int main(/*int argc, char* argv[]*/)
         std::generate_n(std::back_inserter(ret), n, wgen);
         return ret;
     };
-
-    // auto choice_gen    = rs.make_gen<bool>(0.5);
+    auto cgen = rs.make_gen<bool>(0.5);
 
     auto o1_pr_gen  = [&]() { return gen_correct_kw(o1, wgen); };
     auto o1_pr_test = [&](ArgvMock mock) noexcept
@@ -364,6 +373,16 @@ int main(/*int argc, char* argv[]*/)
                                  mock());
     };
 
+    auto of1_pr_gen  = [&]() { return gen_correct_kw_bool(of1, cgen); };
+    auto of1_pr_test = [&](ArgvMock mock) noexcept
+    {
+        return test_parser_pr(std::tuple{of1},
+                              std::tuple{},
+                              keyword_value_parser,
+                              mock())
+            .template get_opt<"flag">();
+    };
+
     /// @test @p --keyword=value parsing results test.
     /// Generate correct keyword and correct value.
     /// Check if binding holds the value.
@@ -389,6 +408,11 @@ int main(/*int argc, char* argv[]*/)
     auto to2_few_args_ex =
         tm.invariant(o2_kw_few_gen, o2_kw_few_test, check_few_args_ex);
 
+    /// @test Parse results in @p --flag=bool.
+    auto tof1_kw_pr = tm.test_with_hint(of1_pr_gen, of1_pr_test);
+
+    show_help("help show demo", options, positionals);
+
     track.check(NamedTest(to1_pr, "Parsing result of --keyword=value parser"));
     track.check(
         NamedTest(to1_ignore, "Ignore random words by --keyword=value parser"));
@@ -396,6 +420,7 @@ int main(/*int argc, char* argv[]*/)
                           "Keyword exception in --keyword=value parser"));
     track.check(NamedTest(to2_few_args_ex,
                           "Few arguments exception in --keyword=value parser"));
+    track.check(NamedTest(tof1_kw_pr, "Parsing result of '--flag=bool'"));
 
     return track.ret_code();
 }

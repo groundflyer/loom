@@ -1604,7 +1604,12 @@ show_help(std::string_view                  program_name,
                     fmt::print(file, " <{}>", option.var[i]);
             }
             else if constexpr(O::num_vals == 1)
-                fmt::print(file, "=<{}>", option.var);
+            {
+                if constexpr(has_keyword_v<O>)
+                    fmt::print(file, "=<{}>", option.var);
+                else
+                    fmt::print(file, " <{}>", option.var);
+            }
 
             column += shift(option);
             doc_print(option.doc);
