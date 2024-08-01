@@ -1,5 +1,7 @@
 // -*- C++ -*-
-// argparser.cpp
+/// @file argparse.cpp
+/// @brief argparse module tests.
+
 #include <utils/argparse.hpp>
 #include <utils/test.hpp>
 
@@ -93,13 +95,33 @@ struct IntReader
 
 struct ErrorCatcher
 {
-    bool got = false;
+    bool few_args       = false;
+    bool unexpected_val = false;
+    bool keychar_ex     = false;
+    bool keyword_ex     = false;
 
-    template <typename T>
     void
-    operator()(T) noexcept
+    operator()(FewArgumentsException) noexcept
     {
-        got = true;
+        few_args = true;
+    }
+
+    void
+    operator()(UnexpectedValue) noexcept
+    {
+        unexpected_val = true;
+    }
+
+    void
+    operator()(KeyException<char>)
+    {
+        keychar_ex = true;
+    }
+
+    void
+    operator()(KeyException<std::string_view>)
+    {
+        keyword_ex = true;
     }
 };
 
@@ -280,7 +302,6 @@ int main(/*int argc, char* argv[]*/)
 
     // auto choice_gen    = rs.make_gen<bool>(0.5);
 
-    // parse results test
     auto o1_pr_gen  = [&]() { return gen_correct_kw(o1, wgen); };
     auto o1_pr_test = [&](ArgvMock mock) noexcept
     {
@@ -291,7 +312,6 @@ int main(/*int argc, char* argv[]*/)
                                .template get_opt<"option">());
     };
 
-    // parse ignore test
     auto o1_ignore_gen  = [&]() { return ArgvMock(sgen()); };
     auto o1_ignore_test = [&](ArgvMock mock)
     {
@@ -301,12 +321,51 @@ int main(/*int argc, char* argv[]*/)
                                   mock());
     };
 
+    auto o1_wrong_keyword_gen = [&]()
+    // there is negligible chance that wgen() produces "option"
+    { return ArgvMock({"--"s + wgen() + '=' + wgen()}); };
+    auto o1_wrong_keyword_test = [&](ArgvMock mock)
+    {
+        return test_parser_error(std::tuple{o1},
+                                 std::tuple{},
+                                 keyword_value_parser,
+                                 mock());
+    };
+    auto o1_wrong_keyword_val = [&](ErrorState e)
+    {
+        ErrorCatcher ec;
+        if(e.has_value())
+        {
+            std::visit(ec, e.value());
+            return ec.keyword_ex;
+        }
+        else
+            return false;
+    };
+
+    /// @test @p --keyword=value parsing results test.
+    /// Generate correct keyword and correct value.
+    /// Check if binding holds the value.
     auto to1_pr = tm.test_with_hint(o1_pr_gen, o1_pr_test);
+
+    /// @test @p --keyword=value ignore test.
+    /// Generate random words that don't match @p --keyword=value pattern.
+    /// Check if parser ignores them.
     auto to1_ignore =
         tm.invariant(o1_ignore_gen, o1_ignore_test, std::logical_not<>{});
 
+    /// @test @p --keyword=value wrong key test.
+    /// Generate @p --keyword=value string where @p keyword is invalid.
+    /// Check if lucid::argparse::KeyException is stored in
+    /// lucid::argparse::ErrorState
+    auto to1_wrong_keyword = tm.invariant(o1_wrong_keyword_gen,
+                                          o1_wrong_keyword_test,
+                                          o1_wrong_keyword_val);
+
     track.check(NamedTest(to1_pr, "Parse --keyword=value"));
     track.check(NamedTest(to1_ignore, "Ignore --keyword=value"));
+    track.check(
+        NamedTest(to1_wrong_keyword, "Keyword exception in --keyword=value"));
 
     return track.ret_code();
 }

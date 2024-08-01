@@ -1092,6 +1092,7 @@ class State
     }
 };
 
+/// @brief Holds errors occured during parsing.
 using ErrorState = std::optional<std::variant<FewArgumentsException,
                                               UnexpectedValue,
                                               KeyException<char>,
