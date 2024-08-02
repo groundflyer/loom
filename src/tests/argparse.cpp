@@ -388,14 +388,26 @@ int main(/*int argc, char* argv[]*/)
                                  mock());
     };
 
-    auto of1_pr_gen  = [&]() { return gen_keyword_value_bool(of1, cgen); };
-    auto of1_pr_test = [&](ArgvMock&& mock) noexcept
+    auto of1_kw_pr_gen  = [&]() { return gen_keyword_value_bool(of1, cgen); };
+    auto of1_kw_pr_test = [&](ArgvMock&& mock) noexcept
     {
         return test_parser_pr(std::tuple{of1},
                               std::tuple{},
                               keyword_value_parser,
                               mock())
             .template get_opt<"flag">();
+    };
+    auto of1_k_pr_gen  = [&]() { return ArgvMock({gen_key(of1, cgen)}); };
+    auto of1_k_pr_test = [&](ArgvMock&& mock) noexcept
+    {
+        return test_parser_pr(std::tuple{of1}, std::tuple{}, key_parser, mock())
+            .template get_opt<"flag">();
+    };
+    auto of2_k_pr_gen  = [&]() { return ArgvMock({gen_key(of2, cgen)}); };
+    auto of2_k_pr_test = [&](ArgvMock&& mock) noexcept
+    {
+        return test_parser_pr(std::tuple{of2}, std::tuple{}, key_parser, mock())
+            .template get_opt<'F'>();
     };
 
     auto o2_k_pr_gen  = [&]() { return gen_key_vals(o2, wgen, cgen, lgen); };
@@ -442,7 +454,17 @@ int main(/*int argc, char* argv[]*/)
     auto to2_k_pr = tm.test_with_hint(o2_k_pr_gen, o2_k_pr_test);
 
     /// @test Parse results in @p --flag=bool.
-    auto tof1_kw_pr = tm.test_with_hint(of1_pr_gen, of1_pr_test);
+    auto tof1_kw_pr = tm.test_with_hint(of1_kw_pr_gen, of1_kw_pr_test);
+
+    /// @test Parse results in @p --flag or @p -f.
+    // GCC fails this test with third parameter = std::identity
+    // that stupid labmda is the workaround
+    auto tof1_k_pr =
+        tm.invariant(of1_k_pr_gen, of1_k_pr_test, [](bool r) { return r; });
+
+    /// @test Parse results in @p --flag or @p -f with true default.
+    auto tof2_k_pr =
+        tm.invariant(of2_k_pr_gen, of2_k_pr_test, std::logical_not<>{});
 
     show_help("help show demo", options, positionals);
 
@@ -457,6 +479,8 @@ int main(/*int argc, char* argv[]*/)
                           "KeywordValueParser flag converter parsing results"));
     track.check(NamedTest(to1_k_pr, "KeyParser single value parsing results"));
     track.check(NamedTest(to2_k_pr, "KeyParser two values parsing results"));
+    track.check(NamedTest(tof1_k_pr, "KeyParser flag parsing results"));
+    track.check(NamedTest(tof2_k_pr, "KeyParser reverse flag parsing results"));
 
     return track.ret_code();
 }
