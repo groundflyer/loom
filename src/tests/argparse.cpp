@@ -186,18 +186,35 @@ gen_vals(Option<Key, Keyword, Reader, n>, G& word_gen, L& lgen) noexcept
     }
 }
 
+template <typename Option, typename W, typename C, typename L>
+auto
+gen_key_vals(const Option& o, W& wgen, C& cgen, L& lgen)
+{
+    std::string key  = gen_key(o, cgen);
+    auto        vals = gen_vals(o, wgen, lgen);
+    if constexpr(std::is_same_v<decltype(vals), std::string>)
+        return std::pair{ArgvMock({key, vals}), vals};
+    else
+    {
+        std::vector<std::string> ws{std::move(key)};
+        ws.reserve(1 + vals.size());
+        for(auto& v: vals) ws.push_back(v);
+        return std::pair{ArgvMock(std::move(ws)), vals};
+    }
+};
+
 template <typename Option, typename W>
 std::pair<ArgvMock, std::string>
-gen_correct_kw(const Option& o, W& word_gen) noexcept
+gen_keyword_value(const Option& o, W& word_gen) noexcept
 {
     const std::string correct = word_gen();
-    const std::string test    = make_keyword(o) + "=" + correct;
-    return {ArgvMock({test}), correct};
+    const std::string kw      = make_keyword(o);
+    return {ArgvMock({kw + '=' + correct}), correct};
 }
 
 template <typename Option, typename C>
 std::pair<ArgvMock, bool>
-gen_correct_kw_bool(const Option& o, C& choice) noexcept
+gen_keyword_value_bool(const Option& o, C& choice) noexcept
 {
     const bool        correct = choice();
     const std::string test =
@@ -282,6 +299,7 @@ constexpr std::tuple positionals{
     positional("doc for 2nd positional", "pos2")};
 
 constexpr inline KeywordValueParser keyword_value_parser{};
+constexpr inline KeyParser          key_parser{};
 
 int main(/*int argc, char* argv[]*/)
 {
@@ -311,15 +329,34 @@ int main(/*int argc, char* argv[]*/)
     };
     auto cgen = rs.make_gen<bool>(0.5);
 
-    auto o1_pr_gen  = [&]() { return gen_correct_kw(o1, wgen); };
-    auto o1_pr_test = [&](ArgvMock mock) noexcept
+#define MAKE_ERROR_CHECK(name)            \
+    auto check_##name = [&](ErrorState e) \
+    {                                     \
+        ErrorCatcher ec;                  \
+        if(e.has_value())                 \
+        {                                 \
+            std::visit(ec, e.value());    \
+            return ec.name;               \
+        }                                 \
+        else                              \
+            return false;                 \
+    }
+
+    MAKE_ERROR_CHECK(keyword_ex);
+    MAKE_ERROR_CHECK(few_args);
+
+    auto o1_kw_pr_gen = [&]() { return gen_keyword_value(o1, wgen); };
+    auto o1_pr_test   = [&](ArgvMock& mock, auto p)
     {
-        return std::string(test_parser_pr(std::tuple{o1},
-                                          std::tuple{},
-                                          keyword_value_parser,
-                                          mock())
-                               .template get_opt<"option">());
+        return std::string(
+            test_parser_pr(std::tuple{o1}, std::tuple{}, p, mock())
+                .template get_opt<"option">());
     };
+    auto o1_kw_pr_test = [&](ArgvMock mock)
+    { return o1_pr_test(mock, keyword_value_parser); };
+    auto o1_k_pr_gen  = [&]() { return gen_key_vals(o1, wgen, cgen, lgen); };
+    auto o1_k_pr_test = [&](ArgvMock mock)
+    { return o1_pr_test(mock, key_parser); };
 
     auto o1_ignore_gen  = [&]() { return ArgvMock(sgen()); };
     auto o1_ignore_test = [&](ArgvMock mock)
@@ -340,28 +377,6 @@ int main(/*int argc, char* argv[]*/)
                                  keyword_value_parser,
                                  mock());
     };
-    auto check_keyword_ex = [&](ErrorState e)
-    {
-        ErrorCatcher ec;
-        if(e.has_value())
-        {
-            std::visit(ec, e.value());
-            return ec.keyword_ex;
-        }
-        else
-            return false;
-    };
-    auto check_few_args_ex = [&](ErrorState e)
-    {
-        ErrorCatcher ec;
-        if(e.has_value())
-        {
-            std::visit(ec, e.value());
-            return ec.few_args;
-        }
-        else
-            return false;
-    };
 
     auto o2_kw_few_gen = [&]()
     { return ArgvMock({make_keyword(o2) + '=' + wgen()}); };
@@ -373,7 +388,7 @@ int main(/*int argc, char* argv[]*/)
                                  mock());
     };
 
-    auto of1_pr_gen  = [&]() { return gen_correct_kw_bool(of1, cgen); };
+    auto of1_pr_gen  = [&]() { return gen_keyword_value_bool(of1, cgen); };
     auto of1_pr_test = [&](ArgvMock mock) noexcept
     {
         return test_parser_pr(std::tuple{of1},
@@ -386,7 +401,12 @@ int main(/*int argc, char* argv[]*/)
     /// @test @p --keyword=value parsing results test.
     /// Generate correct keyword and correct value.
     /// Check if binding holds the value.
-    auto to1_pr = tm.test_with_hint(o1_pr_gen, o1_pr_test);
+    auto to1_kw_pr = tm.test_with_hint(o1_kw_pr_gen, o1_kw_pr_test);
+
+    /// @test <tt>-k val</tt> or <tt>\--keyword val</tt> parsing results test.
+    /// Generate correct key and value.
+    /// Check if binding holds the value.
+    auto to1_k_pr = tm.test_with_hint(o1_k_pr_gen, o1_k_pr_test);
 
     /// @test @p --keyword=value ignore test.
     /// Generate random words that don't match @p --keyword=value pattern.
@@ -406,21 +426,23 @@ int main(/*int argc, char* argv[]*/)
     /// Generate @p --keyword=value string for option that requires 2 operands.
     /// Check if lucid::argparse::FewArgumentsException is stored.
     auto to2_few_args_ex =
-        tm.invariant(o2_kw_few_gen, o2_kw_few_test, check_few_args_ex);
+        tm.invariant(o2_kw_few_gen, o2_kw_few_test, check_few_args);
 
     /// @test Parse results in @p --flag=bool.
     auto tof1_kw_pr = tm.test_with_hint(of1_pr_gen, of1_pr_test);
 
     show_help("help show demo", options, positionals);
 
-    track.check(NamedTest(to1_pr, "Parsing result of --keyword=value parser"));
+    track.check(NamedTest(to1_kw_pr, "KeywordValueParser parsing results"));
     track.check(
-        NamedTest(to1_ignore, "Ignore random words by --keyword=value parser"));
-    track.check(NamedTest(to1_wrong_keyword,
-                          "Keyword exception in --keyword=value parser"));
+        NamedTest(to1_ignore, "KeywordValueParser ignore non-matching"));
+    track.check(
+        NamedTest(to1_wrong_keyword, "KeywordValueParser keyword exception"));
     track.check(NamedTest(to2_few_args_ex,
-                          "Few arguments exception in --keyword=value parser"));
-    track.check(NamedTest(tof1_kw_pr, "Parsing result of '--flag=bool'"));
+                          "KeywordValueParser few arguments exception"));
+    track.check(NamedTest(tof1_kw_pr,
+                          "KeywordValueParser flag converter parsing results"));
+    track.check(NamedTest(to1_k_pr, "KeyParser single value parsing results"));
 
     return track.ret_code();
 }
