@@ -199,7 +199,7 @@ gen_key_vals(const Option& o, W& wgen, C& cgen, L& lgen)
         std::vector<std::string> ws{std::move(key)};
         ws.reserve(1 + vals.size());
         for(auto& v: vals) ws.push_back(v);
-        return std::pair{ArgvMock(std::move(ws)), vals};
+        return std::pair{ArgvMock(std::move(ws)), std::move(vals)};
     }
 };
 
@@ -352,14 +352,14 @@ int main(/*int argc, char* argv[]*/)
             test_parser_pr(std::tuple{o1}, std::tuple{}, p, mock())
                 .template get_opt<"option">());
     };
-    auto o1_kw_pr_test = [&](ArgvMock mock)
+    auto o1_kw_pr_test = [&](ArgvMock&& mock)
     { return o1_pr_test(mock, keyword_value_parser); };
     auto o1_k_pr_gen  = [&]() { return gen_key_vals(o1, wgen, cgen, lgen); };
-    auto o1_k_pr_test = [&](ArgvMock mock)
+    auto o1_k_pr_test = [&](ArgvMock&& mock)
     { return o1_pr_test(mock, key_parser); };
 
     auto o1_ignore_gen  = [&]() { return ArgvMock(sgen()); };
-    auto o1_ignore_test = [&](ArgvMock mock)
+    auto o1_ignore_test = [&](ArgvMock&& mock)
     {
         return test_parser_ignore(std::tuple{o1},
                                   std::tuple{},
@@ -370,7 +370,7 @@ int main(/*int argc, char* argv[]*/)
     auto o1_wrong_keyword_gen = [&]()
     // there is negligible chance that wgen() produces "option"
     { return ArgvMock({"--"s + wgen() + '=' + wgen()}); };
-    auto o1_wrong_keyword_test = [&](ArgvMock mock)
+    auto o1_wrong_keyword_test = [&](ArgvMock&& mock)
     {
         return test_parser_error(std::tuple{o1},
                                  std::tuple{},
@@ -380,7 +380,7 @@ int main(/*int argc, char* argv[]*/)
 
     auto o2_kw_few_gen = [&]()
     { return ArgvMock({make_keyword(o2) + '=' + wgen()}); };
-    auto o2_kw_few_test = [&](ArgvMock mock)
+    auto o2_kw_few_test = [&](ArgvMock&& mock)
     {
         return test_parser_error(std::tuple{o2},
                                  std::tuple{},
@@ -389,13 +389,23 @@ int main(/*int argc, char* argv[]*/)
     };
 
     auto of1_pr_gen  = [&]() { return gen_keyword_value_bool(of1, cgen); };
-    auto of1_pr_test = [&](ArgvMock mock) noexcept
+    auto of1_pr_test = [&](ArgvMock&& mock) noexcept
     {
         return test_parser_pr(std::tuple{of1},
                               std::tuple{},
                               keyword_value_parser,
                               mock())
             .template get_opt<"flag">();
+    };
+
+    auto o2_k_pr_gen  = [&]() { return gen_key_vals(o2, wgen, cgen, lgen); };
+    auto o2_k_pr_test = [&](ArgvMock&& mock)
+    {
+        auto rng =
+            test_parser_pr(std::tuple{o2}, std::tuple{}, key_parser, mock())
+                .template get_opt<"two-val">();
+        return std::vector<std::string>(std::ranges::begin(rng),
+                                        std::ranges::end(rng));
     };
 
     /// @test @p --keyword=value parsing results test.
@@ -428,6 +438,9 @@ int main(/*int argc, char* argv[]*/)
     auto to2_few_args_ex =
         tm.invariant(o2_kw_few_gen, o2_kw_few_test, check_few_args);
 
+    /// @test <tt>--two-val val1 val2</tt> parsing result test.
+    auto to2_k_pr = tm.test_with_hint(o2_k_pr_gen, o2_k_pr_test);
+
     /// @test Parse results in @p --flag=bool.
     auto tof1_kw_pr = tm.test_with_hint(of1_pr_gen, of1_pr_test);
 
@@ -443,6 +456,7 @@ int main(/*int argc, char* argv[]*/)
     track.check(NamedTest(tof1_kw_pr,
                           "KeywordValueParser flag converter parsing results"));
     track.check(NamedTest(to1_k_pr, "KeyParser single value parsing results"));
+    track.check(NamedTest(to2_k_pr, "KeyParser two values parsing results"));
 
     return track.ret_code();
 }

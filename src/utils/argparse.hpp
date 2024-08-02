@@ -425,10 +425,16 @@ class Binding
     {
         if(m_is_set)
         {
-            value_type ret;
-            std::ranges::copy(std::views::counted(m_iter, nvals) |
-                                  std::views::transform(m_reader),
-                              ret.begin());
+            value_type   ret;
+            ArgsIterator it = m_iter;
+            for(std::size_t i = 0; i < nvals; ++i) ret[i] = m_reader(*it++);
+
+            // FIXME:
+            // This doesn't work when m_reader = std::identity (at least)
+            // with neither GCC 12.3.1 nor Clang/libc++ 16.0.6
+            // std::ranges::copy(std::views::counted(m_iter, nvals) |
+            //                       std::views::transform(m_reader),
+            //                   ret.begin());
             return ret;
         }
         else
@@ -1217,6 +1223,7 @@ consume_values(ArgsIterator iter,
         return iter;
     };
 
+    ++iter;
     switch(nvals)
     {
     // flag
@@ -1230,7 +1237,7 @@ consume_values(ArgsIterator iter,
     {
         if(iter.count() < 1) return fail();
 
-        bind_value(state.bindings, token, ++iter);
+        bind_value(state.bindings, token, iter);
         return iter;
     }
     // arbitrary number of values
