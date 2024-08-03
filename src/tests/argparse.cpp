@@ -367,7 +367,7 @@ int main(/*int argc, char* argv[]*/)
     auto o1_k_pr_test = [&](ArgvMock&& mock)
     { return o1_pr_test(mock, key_parser); };
 
-    auto o1_ignore_gen  = [&]() { return ArgvMock(sgen()); };
+    auto ignore_gen     = [&]() { return ArgvMock(sgen()); };
     auto o1_ignore_test = [&](ArgvMock&& mock)
     {
         return test_parser_ignore(std::tuple{o1},
@@ -445,6 +445,13 @@ int main(/*int argc, char* argv[]*/)
         return std::vector<std::string>(std::ranges::begin(rng),
                                         std::ranges::end(rng));
     };
+    auto k_ignore_test = [&](ArgvMock&& mock)
+    {
+        return test_parser_ignore(std::tuple{o1, o1kc, o1kw, o2, of1, of2, om},
+                                  std::tuple{},
+                                  key_parser,
+                                  mock());
+    };
 
     /// @test @p --keyword=value parsing results test.
     /// Generate correct keyword and correct value.
@@ -460,7 +467,7 @@ int main(/*int argc, char* argv[]*/)
     /// Generate random words that don't match @p --keyword=value pattern.
     /// Check if parser ignores them.
     auto to1_ignore =
-        tm.invariant(o1_ignore_gen, o1_ignore_test, std::logical_not<>{});
+        tm.invariant(ignore_gen, o1_ignore_test, std::logical_not<>{});
 
     /// @test @p --keyword=value wrong key test.
     /// Generate @p --keyword=value string where @p keyword is invalid.
@@ -499,6 +506,10 @@ int main(/*int argc, char* argv[]*/)
     auto to2_k_few_args_ex =
         tm.invariant(o2_k_few_gen, o2_k_few_test, check_few_args);
 
+    /// @test KeyParser ignore test.
+    auto tk_ignore =
+        tm.invariant(ignore_gen, k_ignore_test, std::logical_not<>{});
+
     show_help("help show demo", options, positionals);
 
     track.check(NamedTest(to1_kw_pr, "KeywordValueParser parsing results"));
@@ -517,6 +528,7 @@ int main(/*int argc, char* argv[]*/)
     track.check(NamedTest(tom_k_pr, "KeyParser multi values parsing results"));
     track.check(
         NamedTest(to2_k_few_args_ex, "KeyParser few arguments exception"));
+    track.check(NamedTest(tk_ignore, "KeyParser ignore non-matching"));
 
     return track.ret_code();
 }
