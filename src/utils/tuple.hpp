@@ -483,9 +483,10 @@ array_cat(const std::array<T, N1>& first,
                                second,
                                std::make_index_sequence<N1 + N2>{});
 
-    if constexpr(sizeof...(rest)) return array_cat(ret, rest...);
-
-    return ret;
+    if constexpr(sizeof...(rest))
+        return array_cat(ret, rest...);
+    else
+        return ret;
 }
 
 /// @brief Create an std::tuple of size @p N consisting only of values @p value.
