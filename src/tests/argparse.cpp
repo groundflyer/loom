@@ -4,8 +4,10 @@
 
 #include <utils/argparse.hpp>
 #include <utils/test.hpp>
+#include <utils/tuple.hpp>
 
 #include <algorithm>
+#include <array>
 #include <initializer_list>
 #include <ranges>
 #include <string>
@@ -18,6 +20,21 @@ using namespace lucid::argparse;
 using namespace lucid::test;
 using namespace std::literals::string_literals;
 using namespace std::literals::string_view_literals;
+
+consteval auto
+make_symbols() noexcept
+{
+    std::array<char, 26> az;
+    for(int i = 0; i < 26; ++i) az[i] = static_cast<char>('a' + i);
+    std::array<char, 26> AZ;
+    for(int i = 0; i < 26; ++i) AZ[i] = static_cast<char>('A' + i);
+    std::array<char, 10> nums;
+    for(int i = 0; i < 10; ++i) nums[i] = static_cast<char>('0' + i);
+    std::array allowed_symbols{'`', '~', '!', '@', '#', '$', '%', '^', '&',
+                               '*', '(', ')', '_', '[', ']', '{', '}', ';',
+                               ':', '<', '>', ',', '.', '?', '/', '|'};
+    return array_cat(az, AZ, nums, allowed_symbols);
+};
 
 class ArgvMock
 {
@@ -155,24 +172,24 @@ template <char Key,
           typename G,
           typename L>
 auto
-gen_vals(Option<Key, Keyword, Reader, n>, G& word_gen, L& lgen) noexcept
+gen_vals(Option<Key, Keyword, Reader, n>, G& wgen, L& lgen) noexcept
 {
     static_assert(!Option<Key, Keyword, Reader, n>::is_flag);
     if constexpr(n == 1)
-        return word_gen();
+        return wgen();
     else if constexpr(n == npos)
     {
         std::vector<std::string> ret;
         const unsigned           l = lgen();
         ret.reserve(l);
-        std::generate_n(std::back_inserter(ret), l, word_gen);
+        std::generate_n(std::back_inserter(ret), l, wgen);
         return ret;
     }
     else
     {
         std::vector<std::string> ret;
         ret.reserve(n);
-        std::generate_n(std::back_inserter(ret), n, word_gen);
+        std::generate_n(std::back_inserter(ret), n, wgen);
         return ret;
     }
 }
@@ -196,9 +213,9 @@ gen_key_vals(const Option& o, W& wgen, C& cgen, L& lgen)
 
 template <typename Option, typename W>
 std::pair<ArgvMock, std::string>
-gen_keyword_value(const Option& o, W& word_gen) noexcept
+gen_keyword_value(const Option& o, W& wgen) noexcept
 {
-    const std::string correct = word_gen();
+    const std::string correct = wgen();
     const std::string kw      = make_keyword(o);
     return {ArgvMock({kw + '=' + correct}), correct};
 }
@@ -294,19 +311,21 @@ constexpr inline KeyParser          key_parser{};
 int main(/*int argc, char* argv[]*/)
 {
     Track         track;
-    ParmTestMaker tm{1000};
+    ParmTestMaker tm{10000};
     RandomState   rs;
 
-    auto lgen  = rs.make_gen<unsigned>(1, 100);
-    auto azgen = [d = rs.make_gen<int>(static_cast<int>('a'),
-                                       static_cast<int>('z'))]() mutable
-    { return static_cast<char>(d()); };
+    constexpr auto symbols = make_symbols();
+    auto           lgen    = rs.make_gen<unsigned>(1, 100);
+    auto           symbolgen =
+        [&symbols,
+         d = rs.make_gen<std::size_t>(0, symbols.size() - 1)]() mutable
+    { return symbols[d()]; };
     auto wgen = [&]()
     {
         std::string ret;
         unsigned    l = lgen();
         ret.reserve(l);
-        std::generate_n(std::back_inserter(ret), l, azgen);
+        std::generate_n(std::back_inserter(ret), l, symbolgen);
         return ret;
     };
     auto sgen = [&]()
