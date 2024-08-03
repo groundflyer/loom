@@ -420,6 +420,16 @@ int main(/*int argc, char* argv[]*/)
                                         std::ranges::end(rng));
     };
 
+    auto om_k_pr_gen  = [&]() { return gen_key_vals(om, wgen, cgen, lgen); };
+    auto om_k_pr_test = [&](ArgvMock&& mock)
+    {
+        auto rng =
+            test_parser_pr(std::tuple{om}, std::tuple{}, key_parser, mock())
+                .template get_opt<'m'>();
+        return std::vector<std::string>(std::ranges::begin(rng),
+                                        std::ranges::end(rng));
+    };
+
     /// @test @p --keyword=value parsing results test.
     /// Generate correct keyword and correct value.
     /// Check if binding holds the value.
@@ -466,6 +476,9 @@ int main(/*int argc, char* argv[]*/)
     auto tof2_k_pr =
         tm.invariant(of2_k_pr_gen, of2_k_pr_test, std::logical_not<>{});
 
+    /// @test Parse results in <tt>--multi-val vals...</tt>
+    auto tom_k_pr = tm.test_with_hint(om_k_pr_gen, om_k_pr_test);
+
     show_help("help show demo", options, positionals);
 
     track.check(NamedTest(to1_kw_pr, "KeywordValueParser parsing results"));
@@ -481,6 +494,7 @@ int main(/*int argc, char* argv[]*/)
     track.check(NamedTest(to2_k_pr, "KeyParser two values parsing results"));
     track.check(NamedTest(tof1_k_pr, "KeyParser flag parsing results"));
     track.check(NamedTest(tof2_k_pr, "KeyParser reverse flag parsing results"));
+    track.check(NamedTest(tom_k_pr, "KeyParser multi values parsing results"));
 
     return track.ret_code();
 }
