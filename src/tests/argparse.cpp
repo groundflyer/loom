@@ -84,15 +84,6 @@ class ArgvMock
     }
 };
 
-struct IntReader
-{
-    int
-    operator()(const std::string_view word) const noexcept
-    {
-        return std::atoi(word.data());
-    }
-};
-
 struct ErrorCatcher
 {
     bool few_args       = false;
@@ -268,7 +259,6 @@ test_parser_error(const Options&     options,
     return error;
 };
 
-constexpr inline IntReader    int_reader{};
 constexpr inline ErrorCatcher error_catcher{};
 
 constexpr auto o1 =
@@ -387,6 +377,13 @@ int main(/*int argc, char* argv[]*/)
                                  keyword_value_parser,
                                  mock());
     };
+    auto o2_k_few_gen = [&]() { return ArgvMock({gen_key(o2, cgen), wgen()}); };
+    auto o2_k_few_test = [&](ArgvMock&& mock) {
+        return test_parser_error(std::tuple{o2},
+                                 std::tuple{},
+                                 key_parser,
+                                 mock());
+    };
 
     auto of1_kw_pr_gen  = [&]() { return gen_keyword_value_bool(of1, cgen); };
     auto of1_kw_pr_test = [&](ArgvMock&& mock) noexcept
@@ -457,7 +454,7 @@ int main(/*int argc, char* argv[]*/)
     /// @test @p --keyword=value few arguments exception test.
     /// Generate @p --keyword=value string for option that requires 2 operands.
     /// Check if lucid::argparse::FewArgumentsException is stored.
-    auto to2_few_args_ex =
+    auto to2_kw_few_args_ex =
         tm.invariant(o2_kw_few_gen, o2_kw_few_test, check_few_args);
 
     /// @test <tt>--two-val val1 val2</tt> parsing result test.
@@ -479,6 +476,10 @@ int main(/*int argc, char* argv[]*/)
     /// @test Parse results in <tt>--multi-val vals...</tt>
     auto tom_k_pr = tm.test_with_hint(om_k_pr_gen, om_k_pr_test);
 
+    /// @test <tt>--two-val value</tt> few arguments exception test.
+    auto to2_k_few_args_ex =
+        tm.invariant(o2_k_few_gen, o2_k_few_test, check_few_args);
+
     show_help("help show demo", options, positionals);
 
     track.check(NamedTest(to1_kw_pr, "KeywordValueParser parsing results"));
@@ -486,7 +487,7 @@ int main(/*int argc, char* argv[]*/)
         NamedTest(to1_ignore, "KeywordValueParser ignore non-matching"));
     track.check(
         NamedTest(to1_wrong_keyword, "KeywordValueParser keyword exception"));
-    track.check(NamedTest(to2_few_args_ex,
+    track.check(NamedTest(to2_kw_few_args_ex,
                           "KeywordValueParser few arguments exception"));
     track.check(NamedTest(tof1_kw_pr,
                           "KeywordValueParser flag converter parsing results"));
@@ -495,6 +496,8 @@ int main(/*int argc, char* argv[]*/)
     track.check(NamedTest(tof1_k_pr, "KeyParser flag parsing results"));
     track.check(NamedTest(tof2_k_pr, "KeyParser reverse flag parsing results"));
     track.check(NamedTest(tom_k_pr, "KeyParser multi values parsing results"));
+    track.check(
+        NamedTest(to2_k_few_args_ex, "KeyParser few arguments exception"));
 
     return track.ret_code();
 }
