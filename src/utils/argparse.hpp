@@ -1126,19 +1126,14 @@ tokenize_option(std::string_view              word,
     return npos;
 }
 
-bool
-mp_halt_condition(ArgsIterator iter) noexcept
-{
-    return iter == std::default_sentinel || *iter == "--";
-}
-
 /// @brief Multi-parm halt condition.
 template <typename... Options>
 bool
 mp_halt_condition(ArgsIterator                  iter,
                   const std::tuple<Options...>& opts) noexcept
 {
-    return mp_halt_condition(iter) || tokenize_option(*iter, opts) != npos;
+    return iter == std::default_sentinel || *iter == "--" ||
+           tokenize_option(*iter, opts) != npos;
 }
 
 template <typename Desc>
@@ -1150,29 +1145,14 @@ get_last(ArgsIterator iter, const Desc& desc) noexcept
     return iter;
 }
 
+template <typename Opt, typename Options>
 ArgsIterator
-get_last(ArgsIterator iter) noexcept
+mp_bind(State<Opt>&    state,
+        const Options& opts_desc,
+        std::size_t    token,
+        ArgsIterator   iter) noexcept
 {
-    do ++iter;
-    while(!mp_halt_condition(iter));
-    return iter;
-}
-
-template <typename Opt>
-ArgsIterator
-opt_mp_bind(State<Opt>& state, std::size_t token, ArgsIterator iter) noexcept
-{
-    ArgsIterator last = get_last(iter, state.desc);
-    bind_value(state.bindings, token, iter);
-    bind_value(state.bindings, token, last);
-    return last;
-}
-
-template <typename Pos>
-ArgsIterator
-pos_mp_bind(State<Pos>& state, std::size_t token, ArgsIterator iter) noexcept
-{
-    ArgsIterator last = get_last(iter);
+    ArgsIterator last = get_last(iter, opts_desc);
     bind_value(state.bindings, token, iter);
     bind_value(state.bindings, token, last);
     return last;
@@ -1216,10 +1196,11 @@ struct KeywordValueParser
     }
 };
 
-template <typename Opt>
+template <typename Opt, typename Desc>
 ArgsIterator
 consume_values(ArgsIterator iter,
                State<Opt>&  state,
+               const Desc&  desc,
                ErrorState&  error,
                std::size_t  token,
                std::size_t  nvals) noexcept
@@ -1254,7 +1235,7 @@ consume_values(ArgsIterator iter,
     {
         if(iter.count() < 1) return fail();
 
-        return opt_mp_bind(state, token, iter);
+        return mp_bind(state, desc, token, iter);
     }
     // constant number of arguments
     default:
@@ -1286,7 +1267,12 @@ struct KeyParser
 
         const std::size_t nvals = get_nvals(token, opt_state.desc);
 
-        iter = consume_values(iter, opt_state, error, token, nvals);
+        iter = consume_values(iter,
+                              opt_state,
+                              opt_state.desc,
+                              error,
+                              token,
+                              nvals);
         return true;
     }
 };
@@ -1323,7 +1309,12 @@ struct KeyCharSeqParser
                 if(word.size() - i > 1) // not at the end
                     bind_value(opt_state.bindings, token, word.substr(i + 1));
                 else
-                    iter = consume_values(iter, opt_state, error, token, nvals);
+                    iter = consume_values(iter,
+                                          opt_state,
+                                          opt_state.desc,
+                                          error,
+                                          token,
+                                          nvals);
 
                 return true;
             }
@@ -1333,7 +1324,12 @@ struct KeyCharSeqParser
                 if(word.size() - i > 1)
                     error = FewArgumentsException{word};
                 else
-                    iter = consume_values(iter, opt_state, error, token, nvals);
+                    iter = consume_values(iter,
+                                          opt_state,
+                                          opt_state.desc,
+                                          error,
+                                          token,
+                                          nvals);
 
                 return true;
             }
@@ -1349,9 +1345,9 @@ struct PositionalsParser
     template <typename Opt, typename Pos>
     bool
     operator()(ArgsIterator& iter,
-               State<Opt>& /* opt_state */,
-               State<Pos>& pos_state,
-               ErrorState& error) const noexcept
+               State<Opt>&   opt_state,
+               State<Pos>&   pos_state,
+               ErrorState&   error) const noexcept
     {
         const std::size_t token = pos_state.last_token();
 
@@ -1375,7 +1371,7 @@ struct PositionalsParser
         {
             if(iter.count() < 1) return fail();
 
-            iter = pos_mp_bind(pos_state, token, iter);
+            iter = mp_bind(pos_state, opt_state.desc, token, iter);
 
             pos_state.set_token(token);
             return true;
