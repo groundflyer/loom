@@ -320,11 +320,17 @@ int main(/*int argc, char* argv[]*/)
         [&symbols,
          d = rs.make_gen<std::size_t>(0, symbols.size() - 1)]() mutable
     { return symbols[d()]; };
+    auto cgen = rs.make_gen<bool>(0.5);
     auto wgen = [&]()
     {
         std::string ret;
         unsigned    l = lgen();
-        ret.reserve(l);
+        // randomly add '-' in front
+        bool add_dash  = l > 2 && cgen();
+        bool add_2dash = add_dash && cgen();
+        ret.reserve(l + add_dash + add_2dash);
+        if(add_dash) ret.push_back('-');
+        if(add_2dash) ret.push_back('-');
         std::generate_n(std::back_inserter(ret), l, symbolgen);
         return ret;
     };
@@ -336,7 +342,6 @@ int main(/*int argc, char* argv[]*/)
         std::generate_n(std::back_inserter(ret), n, wgen);
         return ret;
     };
-    auto cgen = rs.make_gen<bool>(0.5);
 
 #define MAKE_ERROR_CHECK(name)            \
     auto check_##name = [&](ErrorState e) \
