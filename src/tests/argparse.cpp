@@ -307,6 +307,7 @@ constexpr std::tuple positionals{
 
 constexpr inline KeywordValueParser keyword_value_parser{};
 constexpr inline KeyParser          key_parser{};
+constexpr inline KeyCharSeqParser   keycharseq_parser{};
 
 int main(/*int argc, char* argv[]*/)
 {
@@ -371,6 +372,13 @@ int main(/*int argc, char* argv[]*/)
     auto o1_k_pr_gen  = [&]() { return gen_key_vals(o1, wgen, cgen, lgen); };
     auto o1_k_pr_test = [&](ArgvMock&& mock)
     { return o1_pr_test(mock, key_parser); };
+    auto o1_kcs_pr_gen = [&]()
+    {
+        std::string val = wgen();
+        return std::pair{ArgvMock({make_keychar(o1) + val}), val};
+    };
+    auto o1_kcs_pr_test = [&](ArgvMock&& mock)
+    { return o1_pr_test(mock, keycharseq_parser); };
 
     auto ignore_gen     = [&]() { return ArgvMock(sgen()); };
     auto o1_ignore_test = [&](ArgvMock&& mock)
@@ -515,6 +523,9 @@ int main(/*int argc, char* argv[]*/)
     auto tk_ignore =
         tm.invariant(ignore_gen, k_ignore_test, std::logical_not<>{});
 
+    /// @test KeyCharSequParser parse result.
+    auto to1_kcs_pr = tm.test_with_hint(o1_kcs_pr_gen, o1_kcs_pr_test);
+
     show_help("help show demo", options, positionals);
 
     track.check(NamedTest(to1_kw_pr, "KeywordValueParser parsing results"));
@@ -534,6 +545,8 @@ int main(/*int argc, char* argv[]*/)
     track.check(
         NamedTest(to2_k_few_args_ex, "KeyParser few arguments exception"));
     track.check(NamedTest(tk_ignore, "KeyParser ignore non-matching"));
+    track.check(
+        NamedTest(to1_kcs_pr, "KeyCharSeqParser single value parsing results"));
 
     return track.ret_code();
 }
