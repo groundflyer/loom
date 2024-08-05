@@ -523,8 +523,21 @@ int main(/*int argc, char* argv[]*/)
     auto tk_ignore =
         tm.invariant(ignore_gen, k_ignore_test, std::logical_not<>{});
 
-    /// @test KeyCharSequParser parse result.
+    /// @test KeyCharSeqParser parse result.
     auto to1_kcs_pr = tm.test_with_hint(o1_kcs_pr_gen, o1_kcs_pr_test);
+
+    /// @test KeyCharSeqParser flags.
+    auto tf_kcs_pr = [&]()
+    {
+        ArgvMock mock({"-fF"s});
+        auto     pr = test_parser_pr(std::tuple{of1, of2},
+                                 std::tuple{},
+                                 keycharseq_parser,
+                                 mock());
+        bool     f1 = pr.get_opt<'f'>();
+        bool     f2 = pr.get_opt<'F'>();
+        return f1 && !f2;
+    };
 
     show_help("help show demo", options, positionals);
 
@@ -547,6 +560,7 @@ int main(/*int argc, char* argv[]*/)
     track.check(NamedTest(tk_ignore, "KeyParser ignore non-matching"));
     track.check(
         NamedTest(to1_kcs_pr, "KeyCharSeqParser single value parsing results"));
+    track.check(NamedTest(tf_kcs_pr, "KeyCharSeqParser two flags"));
 
     return track.ret_code();
 }
