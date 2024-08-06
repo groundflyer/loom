@@ -700,24 +700,22 @@ struct ParmTestMaker
 template <typename T>
 using random_dist = detail::random_dist<T>::type;
 
-class RandomState
+struct RandomState
 {
-    std::default_random_engine m_e;
+    std::default_random_engine g;
 
-  public:
-    RandomState() noexcept : m_e(std::random_device()()) {}
+    RandomState() noexcept : g(std::random_device()()) {}
 
     template <typename T, typename... Args>
     auto
     make_gen(Args&&... args) noexcept
     {
         if constexpr(std::is_floating_point_v<T> && !sizeof...(Args))
-            return [&]() noexcept
-            { return std::generate_canonical<T, 10>(m_e); };
+            return [&]() noexcept { return std::generate_canonical<T, 10>(g); };
         else
             return [&,
                     d = random_dist<T>(std::forward<Args>(
-                        args)...)]() mutable noexcept { return d(m_e); };
+                        args)...)]() mutable noexcept { return d(g); };
     }
 };
 
