@@ -466,6 +466,35 @@ int main(/*int argc, char* argv[]*/)
                                   mock());
     };
 
+    auto of_kcs_pr_gen = [&]()
+    {
+        std::string r;
+        unsigned    n1 = lgen();
+        unsigned    n2 = lgen();
+        r.reserve(n1 + n2 + 1);
+        for(unsigned i = 0; i < n1; ++i) r.push_back('f');
+        for(unsigned i = 0; i < n2; ++i) r.push_back('F');
+        std::shuffle(r.begin(), r.end(), rs.g);
+        r.insert(0, 1, '-');
+        return std::pair{
+            ArgvMock({std::move(r)}
+            ),
+            std::pair{n1 & 1, !(n2 & 1)}
+        };
+    };
+    auto of_kcs_pr_test = [&](ArgvMock&& mock)
+    {
+        auto pr = test_parser_pr(std::tuple{of1, of2},
+                                 std::tuple{},
+                                 keycharseq_parser,
+                                 mock());
+        bool f1 = pr.get_opt<'f'>();
+        bool f2 = pr.get_opt<'F'>();
+        return std::pair{f1, f2};
+    };
+    auto cmp_pairs = [](auto p1, auto p2) noexcept
+    { return p1.first == p2.first && p1.second == p2.second; };
+
     /// @test @p --keyword=value parsing results test.
     /// Generate correct keyword and correct value.
     /// Check if binding holds the value.
@@ -539,6 +568,10 @@ int main(/*int argc, char* argv[]*/)
         return f1 && !f2;
     };
 
+    /// @test KeyCharSeqParser multiple flags flips.
+    auto tf_kcs_pr_m =
+        tm.test_with_hint(of_kcs_pr_gen, of_kcs_pr_test, cmp_pairs);
+
     show_help("help show demo", options, positionals);
 
     track.check(NamedTest(to1_kw_pr, "KeywordValueParser parsing results"));
@@ -561,6 +594,8 @@ int main(/*int argc, char* argv[]*/)
     track.check(
         NamedTest(to1_kcs_pr, "KeyCharSeqParser single value parsing results"));
     track.check(NamedTest(tf_kcs_pr, "KeyCharSeqParser two flags"));
+    track.check(
+        NamedTest(tf_kcs_pr_m, "KeyCharSeqParser two flags multiple flips"));
 
     return track.ret_code();
 }
