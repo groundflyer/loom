@@ -358,6 +358,7 @@ int main(/*int argc, char* argv[]*/)
     }
 
     MAKE_ERROR_CHECK(keyword_ex);
+    MAKE_ERROR_CHECK(keychar_ex);
     MAKE_ERROR_CHECK(few_args);
 
     auto o1_kw_pr_gen = [&]() { return gen_keyword_value(o1, wgen); };
@@ -514,6 +515,21 @@ int main(/*int argc, char* argv[]*/)
         return std::string{pr.get_opt<'o'>()};
     };
 
+    auto kcs_keychar_ex_gen = [&]()
+    {
+        std::string r = wgen();
+        while(r.size() < 3) r = wgen();
+        r.insert(0, 1, '-');
+        return ArgvMock({r});
+    };
+    auto kcs_keychar_ex_test = [&](ArgvMock&& mock)
+    {
+        return test_parser_error(std::tuple{of1, of2},
+                                 std::tuple{},
+                                 keycharseq_parser,
+                                 mock());
+    };
+
     /// @test @p --keyword=value parsing results test.
     /// Generate correct keyword and correct value.
     /// Check if binding holds the value.
@@ -593,8 +609,12 @@ int main(/*int argc, char* argv[]*/)
 
     /// @test KeyCharSeqParser multiple flags and last option.
     /// Generate key char sequence with last key char and an operand.
-    auto o1_kcs_last_pr =
+    auto to1_kcs_last_pr =
         tm.test_with_hint(o1_last_kcs_pr_gen, o1_last_kcs_pr_test);
+
+    /// @test KeyCharSeqParser keychar exception.
+    auto t_kcs_keychar_ex =
+        tm.invariant(kcs_keychar_ex_gen, kcs_keychar_ex_test, check_keychar_ex);
 
     show_help("help show demo", options, positionals);
 
@@ -621,8 +641,10 @@ int main(/*int argc, char* argv[]*/)
     track.check(
         NamedTest(tf_kcs_pr_m, "KeyCharSeqParser two flags multiple flips"));
     track.check(NamedTest(
-        o1_kcs_last_pr,
+        to1_kcs_last_pr,
         "KeyCharSeqParser multiple flags and last option parsing results"));
+    track.check(
+        NamedTest(t_kcs_keychar_ex, "KeyCharSeqParser keychar exception"));
 
     return track.ret_code();
 }
