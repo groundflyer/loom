@@ -322,12 +322,12 @@ int main(/*int argc, char* argv[]*/)
          d = rs.make_gen<std::size_t>(0, symbols.size() - 1)]() mutable
     { return symbols[d()]; };
     auto cgen = rs.make_gen<bool>(0.5);
-    auto wgen = [&]()
+    auto wgen = [&](bool dash = true)
     {
         std::string ret;
         unsigned    l = lgen();
         // randomly add '-' in front
-        bool add_dash  = l > 2 && cgen();
+        bool add_dash  = dash && l > 2 && cgen();
         bool add_2dash = add_dash && cgen();
         ret.reserve(l + add_dash + add_2dash);
         if(add_dash) ret.push_back('-');
@@ -335,12 +335,14 @@ int main(/*int argc, char* argv[]*/)
         std::generate_n(std::back_inserter(ret), l, symbolgen);
         return ret;
     };
-    auto sgen = [&]()
+    auto sgen = [&](bool dash = true)
     {
         std::vector<std::string> ret;
         unsigned                 n = lgen();
         ret.reserve(n);
-        std::generate_n(std::back_inserter(ret), n, wgen);
+        std::generate_n(std::back_inserter(ret),
+                        n,
+                        [&]() { return wgen(dash); });
         return ret;
     };
 
@@ -381,7 +383,7 @@ int main(/*int argc, char* argv[]*/)
     auto o1_kcs_pr_test = [&](ArgvMock&& mock)
     { return o1_pr_test(mock, keycharseq_parser); };
 
-    auto ignore_gen     = [&]() { return ArgvMock(sgen()); };
+    auto ignore_gen = [&](bool dash = true) { return ArgvMock(sgen(dash)); };
     auto o1_ignore_test = [&](ArgvMock&& mock)
     {
         return test_parser_ignore(std::tuple{o1},
@@ -530,6 +532,16 @@ int main(/*int argc, char* argv[]*/)
                                  mock());
     };
 
+    auto kcs_ignore_test = [&](ArgvMock&& mock)
+    {
+        bool r =
+            test_parser_ignore(std::tuple{o1, o1kc, o1kw, o2, of1, of2, om},
+                               std::tuple{},
+                               keycharseq_parser,
+                               mock());
+        return r;
+    };
+
     /// @test @p --keyword=value parsing results test.
     /// Generate correct keyword and correct value.
     /// Check if binding holds the value.
@@ -616,6 +628,12 @@ int main(/*int argc, char* argv[]*/)
     auto t_kcs_keychar_ex =
         tm.invariant(kcs_keychar_ex_gen, kcs_keychar_ex_test, check_keychar_ex);
 
+    // workaround GCC
+    auto ignore_gen_no_dash = [&]() { return ignore_gen(false); };
+    /// @test KeyCharSeqParser ignore test.
+    auto t_kcs_ignore =
+        tm.invariant(ignore_gen_no_dash, kcs_ignore_test, std::logical_not<>{});
+
     show_help("help show demo", options, positionals);
 
     track.check(NamedTest(to1_kw_pr, "KeywordValueParser parsing results"));
@@ -645,6 +663,7 @@ int main(/*int argc, char* argv[]*/)
         "KeyCharSeqParser multiple flags and last option parsing results"));
     track.check(
         NamedTest(t_kcs_keychar_ex, "KeyCharSeqParser keychar exception"));
+    track.check(NamedTest(t_kcs_ignore, "KeyCharSeqParser ignore"));
 
     return track.ret_code();
 }
