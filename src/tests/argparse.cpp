@@ -466,20 +466,24 @@ int main(/*int argc, char* argv[]*/)
                                   mock());
     };
 
-    auto of_kcs_pr_gen = [&]()
+    auto kcs_multi_flags = [&](unsigned n1, unsigned n2)
     {
         std::string r;
-        unsigned    n1 = lgen();
-        unsigned    n2 = lgen();
         r.reserve(n1 + n2 + 1);
         for(unsigned i = 0; i < n1; ++i) r.push_back('f');
         for(unsigned i = 0; i < n2; ++i) r.push_back('F');
         std::shuffle(r.begin(), r.end(), rs.g);
         r.insert(0, 1, '-');
+        return r;
+    };
+    auto of_kcs_pr_gen = [&]()
+    {
+        unsigned n1 = lgen();
+        unsigned n2 = lgen();
         return std::pair{
-            ArgvMock({std::move(r)}
+            ArgvMock({kcs_multi_flags(n1,       n2)}
             ),
-            std::pair{n1 & 1, !(n2 & 1)}
+            std::pair{            n1 & 1, !(n2 & 1)}
         };
     };
     auto of_kcs_pr_test = [&](ArgvMock&& mock)
@@ -494,6 +498,21 @@ int main(/*int argc, char* argv[]*/)
     };
     auto cmp_pairs = [](auto p1, auto p2) noexcept
     { return p1.first == p2.first && p1.second == p2.second; };
+
+    auto o1_last_kcs_pr_gen = [&]()
+    {
+        std::string v = wgen();
+        return std::pair{ArgvMock({kcs_multi_flags(lgen(), lgen()) + 'o', v}),
+                         v};
+    };
+    auto o1_last_kcs_pr_test = [&](ArgvMock&& mock)
+    {
+        auto pr = test_parser_pr(std::tuple{o1, of1, of2},
+                                 std::tuple{},
+                                 keycharseq_parser,
+                                 mock());
+        return std::string{pr.get_opt<'o'>()};
+    };
 
     /// @test @p --keyword=value parsing results test.
     /// Generate correct keyword and correct value.
@@ -572,6 +591,11 @@ int main(/*int argc, char* argv[]*/)
     auto tf_kcs_pr_m =
         tm.test_with_hint(of_kcs_pr_gen, of_kcs_pr_test, cmp_pairs);
 
+    /// @test KeyCharSeqParser multiple flags and last option.
+    /// Generate key char sequence with last key char and an operand.
+    auto o1_kcs_last_pr =
+        tm.test_with_hint(o1_last_kcs_pr_gen, o1_last_kcs_pr_test);
+
     show_help("help show demo", options, positionals);
 
     track.check(NamedTest(to1_kw_pr, "KeywordValueParser parsing results"));
@@ -596,6 +620,9 @@ int main(/*int argc, char* argv[]*/)
     track.check(NamedTest(tf_kcs_pr, "KeyCharSeqParser two flags"));
     track.check(
         NamedTest(tf_kcs_pr_m, "KeyCharSeqParser two flags multiple flips"));
+    track.check(NamedTest(
+        o1_kcs_last_pr,
+        "KeyCharSeqParser multiple flags and last option parsing results"));
 
     return track.ret_code();
 }
