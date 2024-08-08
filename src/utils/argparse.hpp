@@ -13,6 +13,7 @@
 #include <algorithm>
 #include <array>
 #include <bit>
+#include <bitset>
 #include <functional>
 #include <ranges>
 #include <string_view>
@@ -717,7 +718,7 @@ struct Positional
     binding_type
     binding() const noexcept
     {
-        return {reader};
+        return binding_type(reader);
     }
 };
 
@@ -1071,9 +1072,7 @@ class State
     using Bindings =
         typelist::to<typelist::map<f, typelist::from<Desc>>, std::tuple>;
 
-    // which bindings are set
-    // only useful with positionals
-    std::size_t set = 0;
+    std::bitset<std::tuple_size_v<Bindings>> set;
 
   public:
     const Desc& desc;
@@ -1096,14 +1095,14 @@ class State
     std::size_t
     last_token() const noexcept
     {
-        const std::size_t token = std::countr_zero(set);
-        return token > std::tuple_size_v<Bindings> ? npos : token;
+        const std::size_t token = set.count();
+        return token >= std::tuple_size_v<Bindings> ? npos : token;
     }
 
     void
     set_token(const std::size_t token) noexcept
     {
-        set |= 1 << token;
+        set.set(token);
     }
 };
 
@@ -1118,22 +1117,16 @@ std::size_t
 tokenize_option(std::string_view              word,
                 const std::tuple<Options...>& opts) noexcept
 {
-    if(word.size() == 2 && word.front() == '-') return tokenize(word[1], opts);
+    if constexpr(sizeof...(Options) > 0)
+    {
+        if(word.size() == 2 && word.front() == '-')
+            return tokenize(word[1], opts);
 
-    if(word.size() >= 4 || word.substr(0, 2) == "--")
-        return tokenize(word.substr(2), opts);
+        if(word.size() >= 4 || word.substr(0, 2) == "--")
+            return tokenize(word.substr(2), opts);
+    }
 
     return npos;
-}
-
-/// @brief Multi-parm halt condition.
-template <typename... Options>
-bool
-mp_halt_condition(ArgsIterator                  iter,
-                  const std::tuple<Options...>& opts) noexcept
-{
-    return iter == std::default_sentinel || *iter == "--" ||
-           tokenize_option(*iter, opts) != npos;
 }
 
 template <typename Desc>
@@ -1141,16 +1134,17 @@ ArgsIterator
 get_last(ArgsIterator iter, const Desc& desc) noexcept
 {
     do ++iter;
-    while(!mp_halt_condition(iter, desc));
+    while(!(iter == std::default_sentinel || *iter == "--" ||
+            tokenize_option(*iter, desc) != npos));
     return iter;
 }
 
 template <typename Opt, typename Options>
 ArgsIterator
-mp_bind(State<Opt>&    state,
-        const Options& opts_desc,
-        std::size_t    token,
-        ArgsIterator   iter) noexcept
+list_bind(State<Opt>&    state,
+          const Options& opts_desc,
+          std::size_t    token,
+          ArgsIterator   iter) noexcept
 {
     ArgsIterator last = get_last(iter, opts_desc);
     bind_value(state.bindings, token, iter);
@@ -1192,6 +1186,7 @@ struct KeywordValueParser
         }
 
         bind_value(opt_state.bindings, token, word.substr(eq_pos + 1));
+        ++iter;
         return true;
     }
 };
@@ -1220,7 +1215,7 @@ consume_values(ArgsIterator iter,
     case 0:
     {
         bind_value(state.bindings, token, "");
-        return iter;
+        return ++iter;
     }
     // value
     case 1:
@@ -1228,14 +1223,14 @@ consume_values(ArgsIterator iter,
         if(iter.count() < 1) return fail();
 
         bind_value(state.bindings, token, iter);
-        return iter;
+        return ++iter;
     }
     // arbitrary number of values
     case npos:
     {
         if(iter.count() < 1) return fail();
 
-        return mp_bind(state, desc, token, iter);
+        return list_bind(state, desc, token, iter);
     }
     // constant number of arguments
     default:
@@ -1243,8 +1238,7 @@ consume_values(ArgsIterator iter,
         if(iter.count() < static_cast<int>(nvals)) return fail();
 
         bind_value(state.bindings, token, iter);
-        iter += nvals;
-        return iter;
+        return iter + nvals;
     }
     }
 }
@@ -1307,7 +1301,10 @@ struct KeyCharSeqParser
             if(nvals == 1)
             {
                 if(word.size() - i > 1) // not at the end
+                {
                     bind_value(opt_state.bindings, token, word.substr(i + 1));
+                    ++iter;
+                }
                 else
                     iter = consume_values(iter,
                                           opt_state,
@@ -1361,29 +1358,39 @@ struct PositionalsParser
         if(token == npos)
         {
             error = UnexpectedValue{*iter};
-            return true;
+            return false;
         }
 
         const std::size_t nval = get_nvals(token, pos_state.desc);
 
         // arbitrary number of arguments
-        if(nval == npos)
+        switch(nval)
+        {
+        case npos:
         {
             if(iter.count() < 1) return fail();
 
-            iter = mp_bind(pos_state, opt_state.desc, token, iter);
+            iter = list_bind(pos_state, opt_state.desc, token, iter);
 
             pos_state.set_token(token);
             return true;
         }
+        case 1:
+        {
+            if(iter.count() < 1) return fail();
+            bind_value(pos_state.bindings, token, *iter++);
+            pos_state.set_token(token);
+            return true;
+        }
+        default:
+            // constant number of arguments
+            if(iter.count() < static_cast<int>(nval)) return fail();
 
-        // constant number of arguments
-        if(iter.count() < static_cast<int>(nval)) return fail();
-
-        bind_value(pos_state.bindings, token, iter);
-        iter += nval;
-        pos_state.set_token(token);
-        return true;
+            bind_value(pos_state.bindings, token, iter);
+            iter += nval;
+            pos_state.set_token(token);
+            return true;
+        }
     }
 };
 
@@ -1710,12 +1717,9 @@ check_help(const Options&     options,
 }
 
 bool
-loop_condition(bool              r,
-               ArgsIterator      iter,
-               ArgsRange         args,
-               const ErrorState& error) noexcept
+parsing_condition(bool r, ArgsIterator iter, const ErrorState& error) noexcept
 {
-    return r && iter != std::ranges::end(args) && !error.has_value();
+    return r && iter != std::default_sentinel && !error.has_value();
 }
 
 template <typename Options, typename Positionals>
@@ -1743,7 +1747,7 @@ class MainParser
         bool       r        = true;
         bool       pos_only = false;
         auto       iter     = std::next(std::ranges::begin(args));
-        while(loop_condition(r, iter, args, error))
+        while(parsing_condition(r, iter, error))
         {
             const std::string_view word = *iter;
 
@@ -1760,8 +1764,6 @@ class MainParser
                 r = pp(iter, opt_state, pos_state, error);
             else
                 r = typelist::first_of(ps, iter, opt_state, pos_state, error);
-
-            ++iter;
         }
 
         if(error.has_value())
@@ -1793,14 +1795,12 @@ class MainParser<std::tuple<Options...>, std::tuple<>>
         ErrorState error;
         bool       r    = true;
         auto       iter = std::next(std::ranges::begin(args));
-        while(loop_condition(r, iter, args, error))
+        while(parsing_condition(r, iter, error))
         {
             const std::string_view word = *iter;
 
             check_help(options, positionals, word, *std::ranges::begin(args));
             r = typelist::first_of(ps, iter, opt_state, pos_state, error);
-
-            ++iter;
         }
 
         if(error.has_value())
@@ -1829,15 +1829,13 @@ class MainParser<std::tuple<>, std::tuple<Positionals...>>
         ErrorState error;
         bool       r    = true;
         auto       iter = std::next(std::ranges::begin(args));
-        while(loop_condition(r, iter, args, error))
+        while(parsing_condition(r, iter, error))
         {
             const std::string_view word = *iter;
 
             check_help(options, positionals, word, *std::ranges::begin(args));
 
             r = pp(iter, opt_state, pos_state, error);
-
-            ++iter;
         }
 
         if(error.has_value())

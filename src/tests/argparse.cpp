@@ -21,6 +21,8 @@ using namespace lucid::test;
 using namespace std::literals::string_literals;
 using namespace std::literals::string_view_literals;
 
+using strvec = std::vector<std::string>;
+
 consteval auto
 make_symbols() noexcept
 {
@@ -38,8 +40,8 @@ make_symbols() noexcept
 
 class ArgvMock
 {
-    std::vector<std::string> m_words;
-    std::vector<char*>       m_pointers;
+    strvec             m_words;
+    std::vector<char*> m_pointers;
 
     void
     update_argv()
@@ -64,11 +66,12 @@ class ArgvMock
         update_argv();
     }
 
-    explicit ArgvMock(std::vector<std::string>&& words) :
-        m_words(std::move(words))
+    explicit ArgvMock(strvec&& words) : m_words(std::move(words))
     {
         update_argv();
     }
+
+    explicit ArgvMock(const strvec& words) : m_words(words) { update_argv(); }
 
     explicit ArgvMock(std::string_view words)
     {
@@ -133,6 +136,30 @@ struct ErrorCatcher
     }
 };
 
+class TupleCmp
+{
+    template <typename T1, typename T2, std::size_t... Is>
+    constexpr static bool
+    cmp_tuples_impl(const T1& t1,
+                    const T2& t2,
+                    std::index_sequence<Is...>) noexcept
+    {
+        return (... && (std::get<Is>(t1) == std::get<Is>(t2)));
+    }
+
+  public:
+    template <typename T1, typename T2>
+    bool
+    operator()(const T1& t1, const T2& t2) const noexcept
+        requires(std::tuple_size_v<T1> == std::tuple_size_v<T2>)
+    {
+        return cmp_tuples_impl(
+            t1,
+            t2,
+            std::make_index_sequence<std::tuple_size_v<T1>>{});
+    }
+};
+
 template <char Key, typename Keyword, typename Reader, std::size_t n>
 std::string
 make_keyword(Option<Key, Keyword, Reader, n>) noexcept
@@ -179,15 +206,15 @@ gen_vals(Option<Key, Keyword, Reader, n>, G& wgen, L& lgen) noexcept
         return wgen();
     else if constexpr(n == npos)
     {
-        std::vector<std::string> ret;
-        const unsigned           l = lgen();
+        strvec         ret;
+        const unsigned l = lgen();
         ret.reserve(l);
         std::generate_n(std::back_inserter(ret), l, wgen);
         return ret;
     }
     else
     {
-        std::vector<std::string> ret;
+        strvec ret;
         ret.reserve(n);
         std::generate_n(std::back_inserter(ret), n, wgen);
         return ret;
@@ -204,7 +231,7 @@ gen_key_vals(const Option& o, W& wgen, C& cgen, L& lgen)
         return std::pair{ArgvMock({key, vals}), vals};
     else
     {
-        std::vector<std::string> ws{std::move(key)};
+        strvec ws{std::move(key)};
         ws.reserve(1 + vals.size());
         for(auto& v: vals) ws.push_back(v);
         return std::pair{ArgvMock(std::move(ws)), std::move(vals)};
@@ -284,30 +311,54 @@ constexpr auto o1kc =
     option<'c'>("long doc for option with keychar only", "C", "default");
 constexpr auto o1kw =
     option<"keyword">("long doc for option with keyword only", "K", "default");
-constexpr auto of1  = flag<'f', "flag">("long doc for flag");
-constexpr auto of2  = flag<'F', "Flag">("long doc for inverse Flag", true);
-constexpr auto o2   = option<"two-val", 2>(
+constexpr auto of1 = flag<'f', "flag">("long doc for flag");
+constexpr auto of2 = flag<'F', "Flag">("long doc for inverse Flag", true);
+constexpr auto o2  = option<"two-val", 2>(
     "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do "
-      "eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim "
-      "ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut "
-      "aliquip ex ea commodo consequat. Duis aute irure dolor in "
-      "reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla "
-      "pariatur. Excepteur sint occaecat cupidatat non proident, sunt in "
-      "culpa qui officia deserunt mollit anim id est laborum.",
+     "eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim "
+     "ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut "
+     "aliquip ex ea commodo consequat. Duis aute irure dolor in "
+     "reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla "
+     "pariatur. Excepteur sint occaecat cupidatat non proident, sunt in "
+     "culpa qui officia deserunt mollit anim id est laborum.",
     {"2val1", "2val2"},
     {"1111", "2222"});
 constexpr auto om =
     option_list<'m', "multi-val">("doc for unlimited values", "VAL");
 
+constexpr auto pos1 = positional("doc for 1st positional", "pos1");
+constexpr auto pos2 =
+    positional<2ul>("doc for 2nd positional", {"pos21", "pos22"});
+constexpr auto posl = positional_list("doc for positional list", "poss");
+
 constexpr std::tuple options{o1, o1kc, o1kw, of1, of2, o2, om};
 
-constexpr std::tuple positionals{
-    positional<2ul>("doc for 1st positional", {"pos11", "pos12"}),
-    positional("doc for 2nd positional", "pos2")};
+constexpr std::tuple positionals{pos1, pos2, posl};
 
 constexpr inline KeywordValueParser keyword_value_parser{};
 constexpr inline KeyParser          key_parser{};
 constexpr inline KeyCharSeqParser   keycharseq_parser{};
+constexpr inline PositionalsParser  pos_parser{};
+
+constexpr inline TupleCmp tuple_cmp{};
+
+template <typename Pos, typename ErrorHandler>
+auto
+parse_positionals(const Pos& pos, ArgsRange args, ErrorHandler&& ec)
+{
+    ErrorState error;
+    State      pos_state{pos};
+    State      opt_state{std::tuple{}};
+    auto       iter = args.begin();
+    bool       r    = true;
+    while(parsing_condition(r, iter, error))
+        r = pos_parser(iter, opt_state, pos_state, error);
+
+    if(error.has_value())
+        std::visit(std::forward<ErrorHandler>(ec), error.value());
+
+    return ParseResults(pos_state.bindings);
+}
 
 int main(/*int argc, char* argv[]*/)
 {
@@ -316,7 +367,7 @@ int main(/*int argc, char* argv[]*/)
     RandomState   rs;
 
     constexpr auto symbols = make_symbols();
-    auto           lgen    = rs.make_gen<unsigned>(1, 100);
+    auto           lgen    = rs.make_gen<unsigned>(1, 50);
     auto           symbolgen =
         [&symbols,
          d = rs.make_gen<std::size_t>(0, symbols.size() - 1)]() mutable
@@ -337,8 +388,8 @@ int main(/*int argc, char* argv[]*/)
     };
     auto sgen = [&](bool dash = true)
     {
-        std::vector<std::string> ret;
-        unsigned                 n = lgen();
+        strvec   ret;
+        unsigned n = lgen();
         ret.reserve(n);
         std::generate_n(std::back_inserter(ret),
                         n,
@@ -448,8 +499,7 @@ int main(/*int argc, char* argv[]*/)
         auto rng =
             test_parser_pr(std::tuple{o2}, std::tuple{}, key_parser, mock())
                 .template get_opt<"two-val">();
-        return std::vector<std::string>(std::ranges::begin(rng),
-                                        std::ranges::end(rng));
+        return strvec(std::ranges::begin(rng), std::ranges::end(rng));
     };
 
     auto om_k_pr_gen  = [&]() { return gen_key_vals(om, wgen, cgen, lgen); };
@@ -458,8 +508,7 @@ int main(/*int argc, char* argv[]*/)
         auto rng =
             test_parser_pr(std::tuple{om}, std::tuple{}, key_parser, mock())
                 .template get_opt<'m'>();
-        return std::vector<std::string>(std::ranges::begin(rng),
-                                        std::ranges::end(rng));
+        return strvec(std::ranges::begin(rng), std::ranges::end(rng));
     };
     auto k_ignore_test = [&](ArgvMock&& mock)
     {
@@ -540,6 +589,27 @@ int main(/*int argc, char* argv[]*/)
                                keycharseq_parser,
                                mock());
         return r;
+    };
+
+    auto pp_pr_gen = [&]()
+    {
+        auto s = sgen();
+        while(s.size() < 4) s = sgen();
+        return std::pair{
+            ArgvMock(s),
+            std::tuple{s.front(),
+                       strvec(s.begin() + 1, s.begin() + 3),
+                       strvec(s.begin() + 3, s.end())}
+        };
+    };
+    auto pp_pr_test = [&](ArgvMock&& mock)
+    {
+        auto pr = parse_positionals(std::tuple{pos1, pos2, posl}, mock(), sink);
+        auto pos2r = pr.get_pos<1>();
+        auto poslr = pr.get_pos<2>();
+        return std::tuple{std::string{pr.get_pos<0>()},
+                          strvec(pos2r.begin(), pos2r.end()),
+                          strvec(poslr.begin(), poslr.end())};
     };
 
     /// @test @p --keyword=value parsing results test.
@@ -634,6 +704,9 @@ int main(/*int argc, char* argv[]*/)
     auto t_kcs_ignore =
         tm.invariant(ignore_gen_no_dash, kcs_ignore_test, std::logical_not<>{});
 
+    /// @test Positionals parser results.
+    auto t_pp_pr = tm.test_with_hint(pp_pr_gen, pp_pr_test, tuple_cmp);
+
     show_help("help show demo", options, positionals);
 
     track.check(NamedTest(to1_kw_pr, "KeywordValueParser parsing results"));
@@ -664,6 +737,7 @@ int main(/*int argc, char* argv[]*/)
     track.check(
         NamedTest(t_kcs_keychar_ex, "KeyCharSeqParser keychar exception"));
     track.check(NamedTest(t_kcs_ignore, "KeyCharSeqParser ignore"));
+    track.check(NamedTest(t_pp_pr, "PositionalsParser parsing results"));
 
     return track.ret_code();
 }
