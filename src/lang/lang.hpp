@@ -643,35 +643,13 @@ struct same_size_union<Union<Ts...>>
     static constexpr bool value = typelist::of_same_size<type_sequence<Ts...>>;
 };
 
-template <typename T>
-class infer_index
-{
-    template <typename C>
-    struct p
-    {
-        static constexpr bool value = sizeof(C) == sizeof(T);
-    };
-
-  public:
-    using type = typelist::find<p,
-                                type_sequence<std::uint8_t,
-                                              std::uint16_t,
-                                              std::uint32_t,
-                                              std::uint64_t,
-                                              std::uintmax_t>>;
-};
-
-/// @brief Get unsigned integer type that has the same size as @p T.
-template <typename T>
-using infer_index_t = infer_index<T>::type;
-
 /// @brief Program representation.
 template <typename InputVars, typename Statements, typename OutputVars>
 struct Program
 {
     using input_vars  = InputVars;
     using output_vars = OutputVars;
-    using index_t     = infer_index_t<vartype<typelist::head<InputVars>>>;
+    using index_t = uint_of_size_t<sizeof(vartype<typelist::head<InputVars>>)>;
 
     static_assert(!std::is_void_v<index_t>);
 
@@ -769,7 +747,7 @@ struct rshift_op
 #endif
 
 #define VAR(TYPE, NAME) lucid::Variable<TYPE, lucid::sl2cs<#NAME>>
-#define IDX_TYPE        lucid::infer_index_t<MAJOR_TYPE>
+#define IDX_TYPE        lucid::uint_of_size_t<sizeof(MAJOR_TYPE)>
 #define TVAR(NAME)      VAR(MAJOR_TYPE, NAME)
 #define IVAR(NAME)      VAR(IDX_TYPE, NAME)
 

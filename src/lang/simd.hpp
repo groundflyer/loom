@@ -213,11 +213,10 @@ struct remap_comp<N, choice_op, T, I, T, T>
     };
 
 #define DEF_REMAP_TVEC_BIN(func, op) DEF_REMAP_VEC_BIN(func, op, T)
-#define DEF_REMAP_IVEC_BIN(func, op) \
-    DEF_REMAP_VEC_BIN(func, op, infer_index_t<T>)
+#define DEF_REMAP_IVEC_BIN(func, op) DEF_REMAP_VEC_BIN(func, op, IDX_TYPE)
 
 #define DEF_REMAP_TVEC_UN(func, op) DEF_REMAP_VEC_UN(func, op, T)
-#define DEF_REMAP_IVEC_UN(func, op) DEF_REMAP_VEC_UN(func, op, infer_index_t<T>)
+#define DEF_REMAP_IVEC_UN(func, op)  DEF_REMAP_VEC_UN(func, op, IDX_TYPE)
 
 DEF_REMAP_TVEC_BIN(std::plus, +)
 DEF_REMAP_TVEC_BIN(std::minus, -)

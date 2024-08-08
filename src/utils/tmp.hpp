@@ -1362,4 +1362,26 @@ struct enumerate
 template <typename List, typename Index = std::size_t>
 using enumerate = detail::enumerate<List, Index>::type;
 } // namespace typelist
+
+/// @brief Get unsigned integer type of size @p S.
+template <std::size_t S>
+class uint_of_size
+{
+    template <typename C>
+    struct p
+    {
+        static constexpr bool value = sizeof(C) == S;
+    };
+
+  public:
+    using type = typelist::find<p,
+                                type_sequence<std::uint8_t,
+                                              std::uint16_t,
+                                              std::uint32_t,
+                                              std::uint64_t,
+                                              std::uintmax_t>>;
+};
+
+template <std::size_t S>
+using uint_of_size_t = uint_of_size<S>::type;
 } // namespace lucid
