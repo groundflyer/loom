@@ -629,6 +629,9 @@ int main(/*int argc, char* argv[]*/)
     auto pp_un_test = [&](ArgvMock&& mock) {
         return parse_positionals_er(std::tuple{pos1, pos2}, mock());
     };
+    auto pp_few_gen  = [&]() { return ArgvMock({wgen()}); };
+    auto pp_few_test = [&](ArgvMock&& mock)
+    { return parse_positionals_er(std::tuple{pos2}, mock()); };
 
     /// @test @p --keyword=value parsing results test.
     /// Generate correct keyword and correct value.
@@ -725,8 +728,11 @@ int main(/*int argc, char* argv[]*/)
     /// @test Positionals parser results.
     auto t_pp_pr = tm.test_with_hint(pp_pr_gen, pp_pr_test, tuple_cmp);
 
-    /// @test Positionals unexpected value exception.
+    /// @test Positionals parser unexpected value exception.
     auto t_pp_un = tm.invariant(pp_un_gen, pp_un_test, check_unexpected_val);
+
+    /// @test Positionals parser few arguments exception.
+    auto t_pp_few = tm.invariant(pp_few_gen, pp_few_test, check_few_args);
 
     show_help("help show demo", options, positionals);
 
@@ -761,6 +767,8 @@ int main(/*int argc, char* argv[]*/)
     track.check(NamedTest(t_pp_pr, "PositionalsParser parsing results"));
     track.check(
         NamedTest(t_pp_un, "PositionalsParser unexpected value exception"));
+    track.check(
+        NamedTest(t_pp_few, "PositionalsParser few arguments exception"));
 
     return track.ret_code();
 }

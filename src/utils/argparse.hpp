@@ -1350,7 +1350,7 @@ struct PositionalsParser
 
         auto fail = [&]() noexcept
         {
-            error = FewArgumentsException{*iter};
+            error = FewArgumentsException{};
             return true;
         };
 
@@ -1766,6 +1766,10 @@ class MainParser
                 r = typelist::first_of(ps, iter, opt_state, pos_state, error);
         }
 
+        if(!error.has_value() &&
+           pos_state.last_token() != std::tuple_size_v<Positionals>)
+            error = FewArgumentsException{};
+
         if(error.has_value())
             std::visit(std::forward<ErrorHandler>(error_handler),
                        error.value());
@@ -1837,6 +1841,10 @@ class MainParser<std::tuple<>, std::tuple<Positionals...>>
 
             r = pp(iter, opt_state, pos_state, error);
         }
+
+        if(!error.has_value() &&
+           pos_state.last_token() != sizeof...(Positionals))
+            error = FewArgumentsException{};
 
         if(error.has_value())
             std::visit(std::forward<ErrorHandler>(error_handler),
