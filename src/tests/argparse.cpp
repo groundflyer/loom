@@ -342,22 +342,30 @@ constexpr inline PositionalsParser  pos_parser{};
 
 constexpr inline TupleCmp tuple_cmp{};
 
-template <typename Pos, typename ErrorHandler>
+template <typename Pos>
 auto
-parse_positionals(const Pos& pos, ArgsRange args, ErrorHandler&& ec)
+parse_positionals_pr(const Pos& positionals, ArgsRange args)
 {
-    ErrorState error;
-    State      pos_state{pos};
-    State      opt_state{std::tuple{}};
-    auto       iter = args.begin();
-    bool       r    = true;
+    std::tuple<> options;
+    PARSE_INIT;
+    bool r = true;
     while(parsing_condition(r, iter, error))
         r = pos_parser(iter, opt_state, pos_state, error);
 
-    if(error.has_value())
-        std::visit(std::forward<ErrorHandler>(ec), error.value());
-
     return ParseResults(pos_state.bindings);
+}
+
+template <typename Pos>
+ErrorState
+parse_positionals_er(const Pos& positionals, ArgsRange args)
+{
+    std::tuple<> options;
+    PARSE_INIT;
+    bool r = true;
+    while(parsing_condition(r, iter, error))
+        r = pos_parser(iter, opt_state, pos_state, error);
+
+    return error;
 }
 
 int main(/*int argc, char* argv[]*/)
@@ -413,6 +421,7 @@ int main(/*int argc, char* argv[]*/)
     MAKE_ERROR_CHECK(keyword_ex);
     MAKE_ERROR_CHECK(keychar_ex);
     MAKE_ERROR_CHECK(few_args);
+    MAKE_ERROR_CHECK(unexpected_val);
 
     auto o1_kw_pr_gen = [&]() { return gen_keyword_value(o1, wgen); };
     auto o1_pr_test   = [&](ArgvMock& mock, auto p)
@@ -604,12 +613,21 @@ int main(/*int argc, char* argv[]*/)
     };
     auto pp_pr_test = [&](ArgvMock&& mock)
     {
-        auto pr = parse_positionals(std::tuple{pos1, pos2, posl}, mock(), sink);
+        auto pr    = parse_positionals_pr(std::tuple{pos1, pos2, posl}, mock());
         auto pos2r = pr.get_pos<1>();
         auto poslr = pr.get_pos<2>();
         return std::tuple{std::string{pr.get_pos<0>()},
                           strvec(pos2r.begin(), pos2r.end()),
                           strvec(poslr.begin(), poslr.end())};
+    };
+    auto pp_un_gen = [&]()
+    {
+        auto s = sgen();
+        while(s.size() < 5) s = sgen();
+        return ArgvMock(std::move(s));
+    };
+    auto pp_un_test = [&](ArgvMock&& mock) {
+        return parse_positionals_er(std::tuple{pos1, pos2}, mock());
     };
 
     /// @test @p --keyword=value parsing results test.
@@ -707,6 +725,9 @@ int main(/*int argc, char* argv[]*/)
     /// @test Positionals parser results.
     auto t_pp_pr = tm.test_with_hint(pp_pr_gen, pp_pr_test, tuple_cmp);
 
+    /// @test Positionals unexpected value exception.
+    auto t_pp_un = tm.invariant(pp_un_gen, pp_un_test, check_unexpected_val);
+
     show_help("help show demo", options, positionals);
 
     track.check(NamedTest(to1_kw_pr, "KeywordValueParser parsing results"));
@@ -738,6 +759,8 @@ int main(/*int argc, char* argv[]*/)
         NamedTest(t_kcs_keychar_ex, "KeyCharSeqParser keychar exception"));
     track.check(NamedTest(t_kcs_ignore, "KeyCharSeqParser ignore"));
     track.check(NamedTest(t_pp_pr, "PositionalsParser parsing results"));
+    track.check(
+        NamedTest(t_pp_un, "PositionalsParser unexpected value exception"));
 
     return track.ret_code();
 }
