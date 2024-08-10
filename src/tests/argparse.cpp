@@ -303,8 +303,6 @@ test_parser_error(const Options&     options,
     return error;
 };
 
-constexpr inline ErrorCatcher error_catcher{};
-
 constexpr auto o1 =
     option<'o', "option">("long doc for option", "O", "default");
 constexpr auto o1kc =
@@ -332,15 +330,14 @@ constexpr auto pos2 =
 constexpr auto posl = positional_list("doc for positional list", "poss");
 
 constexpr std::tuple options{o1, o1kc, o1kw, of1, of2, o2, om};
-
 constexpr std::tuple positionals{pos1, pos2, posl};
 
-constexpr inline KeywordValueParser keyword_value_parser{};
-constexpr inline KeyParser          key_parser{};
-constexpr inline KeyCharSeqParser   keycharseq_parser{};
-constexpr inline PositionalsParser  pos_parser{};
+constexpr KeywordValueParser  keyword_value_parser{};
+constexpr KeyParser           key_parser{};
+constexpr KeyCharSeqParser    keycharseq_parser{};
+constexpr PositionalsParser   pos_parser{};
 
-constexpr inline TupleCmp tuple_cmp{};
+constexpr TupleCmp tuple_cmp{};
 
 template <typename Pos>
 auto
@@ -633,6 +630,13 @@ int main(/*int argc, char* argv[]*/)
     auto pp_few_test = [&](ArgvMock&& mock)
     { return parse_positionals_er(std::tuple{pos2}, mock()); };
 
+    auto full_few_test = [&](ArgvMock&& mock)
+    {
+        ErrorCatcher ec;
+        parse(options, positionals, mock(), ec);
+        return ec.few_args;
+    };
+
     /// @test @p --keyword=value parsing results test.
     /// Generate correct keyword and correct value.
     /// Check if binding holds the value.
@@ -657,6 +661,10 @@ int main(/*int argc, char* argv[]*/)
                                           o1_wrong_keyword_test,
                                           check_keyword_ex);
 
+    // GCC fails with std::identity
+    // that stupid labmda is the workaround
+    auto copy_id = [](auto v) noexcept { return v; };
+
     /// @test @p --keyword=value few arguments exception test.
     /// Generate @p --keyword=value string for option that requires 2 operands.
     /// Check if lucid::argparse::FewArgumentsException is stored.
@@ -670,10 +678,7 @@ int main(/*int argc, char* argv[]*/)
     auto tof1_kw_pr = tm.test_with_hint(of1_kw_pr_gen, of1_kw_pr_test);
 
     /// @test Parse results in @p --flag or @p -f.
-    // GCC fails this test with third parameter = std::identity
-    // that stupid labmda is the workaround
-    auto tof1_k_pr =
-        tm.invariant(of1_k_pr_gen, of1_k_pr_test, [](bool r) { return r; });
+    auto tof1_k_pr = tm.invariant(of1_k_pr_gen, of1_k_pr_test, copy_id);
 
     /// @test Parse results in @p --flag or @p -f with true default.
     auto tof2_k_pr =
@@ -734,6 +739,9 @@ int main(/*int argc, char* argv[]*/)
     /// @test Positionals parser few arguments exception.
     auto t_pp_few = tm.invariant(pp_few_gen, pp_few_test, check_few_args);
 
+    /// @test lucid::argparse::parse for few arguments exception.
+    auto t_full_few = tm.invariant(pp_few_gen, full_few_test, copy_id);
+
     show_help("help show demo", options, positionals);
 
     track.check(NamedTest(to1_kw_pr, "KeywordValueParser parsing results"));
@@ -769,6 +777,7 @@ int main(/*int argc, char* argv[]*/)
         NamedTest(t_pp_un, "PositionalsParser unexpected value exception"));
     track.check(
         NamedTest(t_pp_few, "PositionalsParser few arguments exception"));
+    track.check(NamedTest(t_full_few, "Full parse few arguments exception"));
 
     return track.ret_code();
 }
