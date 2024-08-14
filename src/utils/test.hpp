@@ -528,7 +528,7 @@ struct ParmTestMaker
     /// reference value
     template <std::invocable GH, typename T, typename Cmp = std::equal_to<>>
     auto
-    test_with_hint(GH&& gh, T&& t, Cmp cmp = Cmp{}) const noexcept
+    with_hint(GH&& gh, T&& t, Cmp cmp = Cmp{}) const noexcept
     {
         return test(
             std::forward<GH>(gh),
@@ -556,7 +556,7 @@ struct ParmTestMaker
               maybe_applicable<std::invoke_result_t<G>> RI,
               typename Cmp = std::equal_to<>>
     auto
-    test_with_ref(G&& g, T&& t, RI ri, Cmp cmp = Cmp{}) const noexcept
+    with_ref(G&& g, T&& t, RI ri, Cmp cmp = Cmp{}) const noexcept
     {
         return test(
             std::forward<G>(g),
@@ -570,9 +570,9 @@ struct ParmTestMaker
     /// @brief Make parametric test for function producing ranges.
     ///
     /// @tparam do_sort sort testing and validation ranges before comparison.
-    /// @copydetails test_with_ref
+    /// @copydetails with_ref
     ///
-    /// Practically the same as ParmTestMaker::test_with_ref,
+    /// Practically the same as ParmTestMaker::with_ref,
     /// but here @p t and @p re produce
     /// ranges thus @p cmp must be able to compare ranges.
     template <bool           do_sort = true,
@@ -660,8 +660,8 @@ struct ParmTestMaker
         };
     }
 
-    /// @brief Fuzzy version of ParmTestMaker::test_with_ref.
-    /// @copydetails test_with_ref
+    /// @brief Fuzzy version of ParmTestMaker::with_ref.
+    /// @copydetails with_ref
     template <typename G,
               typename T,
               typename RI,

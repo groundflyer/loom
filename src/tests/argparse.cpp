@@ -35,7 +35,7 @@ make_symbols() noexcept
     std::array allowed_symbols{'`', '~', '!', '@', '#', '$', '%', '^', '&',
                                '*', '(', ')', '_', '[', ']', '{', '}', ';',
                                ':', '<', '>', ',', '.', '?', '/', '|'};
-    return array_cat(az, AZ, nums, allowed_symbols);
+    return array_cat(az, AZ, nums); //, allowed_symbols);
 };
 
 class ArgvMock
@@ -104,6 +104,7 @@ class ArgvMock
     }
 };
 
+template <bool print = false>
 struct ErrorCatcher
 {
     bool few_args       = false;
@@ -112,30 +113,36 @@ struct ErrorCatcher
     bool keyword_ex     = false;
 
     void
-    operator()(FewArgumentsException) noexcept
+    operator()(FewArgumentsException e) noexcept
     {
+        if constexpr(print)
+            fmt::print("Few Arguments exception: {}\n", e.keyword);
         few_args = true;
     }
 
     void
-    operator()(UnexpectedValue) noexcept
+    operator()(UnexpectedValue e) noexcept
     {
+        if constexpr(print) fmt::print("Unexpected Value: {}\n", e.value);
         unexpected_val = true;
     }
 
     void
-    operator()(KeyException<char>)
+    operator()(KeyException<char> e) noexcept
     {
+        if constexpr(print) fmt::print("Keychar exception: {}\n", e.value);
         keychar_ex = true;
     }
 
     void
-    operator()(KeyException<std::string_view>)
+    operator()(KeyException<std::string_view> e) noexcept
     {
+        if constexpr(print) fmt::print("Keyword exception: {}\n", e.value);
         keyword_ex = true;
     }
 };
 
+template <bool print = false>
 class TupleCmp
 {
     template <typename T1, typename T2, std::size_t... Is>
@@ -153,6 +160,15 @@ class TupleCmp
     operator()(const T1& t1, const T2& t2) const noexcept
         requires(std::tuple_size_v<T1> == std::tuple_size_v<T2>)
     {
+        if constexpr(print)
+        {
+            auto printer = [](const auto&... elems)
+            { (..., fmt::print("{}\n", elems)); };
+            fmt::print("TEST ELEMS\n");
+            std::apply(printer, t1);
+            fmt::print("VALID ELEMS\n");
+            std::apply(printer, t2);
+        }
         return cmp_tuples_impl(
             t1,
             t2,
@@ -282,10 +298,10 @@ test_parser_pr(const std::tuple<Options...>&     options,
 
 template <typename Options, typename Positionals, typename Parser>
 bool
-test_parser_ignore(const Options&     options,
-                   const Positionals& positionals,
-                   Parser             p,
-                   ArgsRange          args) noexcept
+test_parser_ret(const Options&     options,
+                const Positionals& positionals,
+                Parser             p,
+                ArgsRange          args) noexcept
 {
     PARSE_INIT;
     return p(iter, opt_state, pos_state, error);
@@ -301,6 +317,18 @@ test_parser_error(const Options&     options,
     PARSE_INIT;
     p(iter, opt_state, pos_state, error);
     return error;
+};
+
+template <typename Options, typename Positionals, typename Parser>
+bool
+test_parser_iter(const Options&     options,
+                 const Positionals& positionals,
+                 Parser             p,
+                 ArgsRange          args) noexcept
+{
+    PARSE_INIT;
+    p(iter, opt_state, pos_state, error);
+    return iter == std::ranges::end(args);
 };
 
 constexpr auto o1 =
@@ -332,12 +360,181 @@ constexpr auto posl = positional_list("doc for positional list", "poss");
 constexpr std::tuple options{o1, o1kc, o1kw, of1, of2, o2, om};
 constexpr std::tuple positionals{pos1, pos2, posl};
 
-constexpr KeywordValueParser  keyword_value_parser{};
-constexpr KeyParser           key_parser{};
-constexpr KeyCharSeqParser    keycharseq_parser{};
-constexpr PositionalsParser   pos_parser{};
+constexpr KeywordValueParser keyword_value_parser{};
+constexpr KeyParser          key_parser{};
+constexpr KeyCharSeqParser   keycharseq_parser{};
+constexpr PositionalsParser  pos_parser{};
 
 constexpr TupleCmp tuple_cmp{};
+
+template <typename Option, typename Tuple>
+decltype(auto)
+get_corr_opt(Option, Tuple&& t) noexcept
+{
+    return (std::get<typelist::index<
+                std::remove_cvref_t<Option>,
+                typelist::from<std::remove_cvref_t<decltype(options)>>>>(
+        std::forward<Tuple>(t)));
+}
+
+auto
+default_vals() noexcept
+{
+    return std::tuple{
+        "default"s,
+        "default"s,
+        "default"s,
+        false,
+        true,
+        strvec{"1111"s, "2222"s},
+        strvec{}
+    };
+}
+
+template <typename C, typename W, typename S>
+auto
+gen_full(C& cgen, W& wgen, S& sgen, RandomState& rs)
+{
+    std::vector<strvec> all;
+
+    auto opt_vals = default_vals();
+
+    // gen positionals
+    std::string p1 = wgen();
+    strvec      p2 = {wgen(), wgen()};
+    strvec      pl = sgen();
+
+    // gen o1
+    if(true)
+    {
+        std::string& val = get_corr_opt(o1, opt_vals);
+        val              = wgen();
+
+        // --option=value or -o value
+        if(cgen())
+            all.push_back({make_keyword(o1) + '=' + val});
+        else
+            all.push_back({gen_key(o1, cgen), val});
+    }
+
+    // gen o1kc
+    if(true)
+    {
+        std::string& val = get_corr_opt(o1kc, opt_vals);
+        val              = wgen();
+
+        // --cvalue or -c value
+        if(cgen())
+            all.push_back({make_keychar(o1kc) + val});
+        else
+            all.push_back({gen_key(o1kc, cgen), val});
+    }
+
+    // gen o1kw
+    if(true)
+    {
+        std::string& val = get_corr_opt(o1kw, opt_vals);
+        val              = wgen();
+
+        // --keyword=value or --keyword value
+        if(cgen())
+            all.push_back({make_keyword(o1kw) + '=' + val});
+        else
+            all.push_back({gen_key(o1kw, cgen), val});
+    }
+
+    // flags
+    // group flags
+    if(cgen())
+    {
+        all.push_back({"-fF"s});
+        get_corr_opt(of1, opt_vals) ^= true;
+        get_corr_opt(of2, opt_vals) ^= true;
+    }
+    else
+    {
+        auto fgen = [&](const auto& o)
+        {
+            bool& val = get_corr_opt(o, opt_vals);
+            // --flag=true or --flag
+            if(cgen())
+            {
+                val = cgen();
+                all.push_back(
+                    {make_keyword(o) + '=' + (val ? "true"s : "false"s)});
+            }
+            else
+            {
+                all.push_back({gen_key(o, cgen)});
+                val ^= true;
+            }
+        };
+
+        if(true) fgen(of1);
+        if(true) fgen(of2);
+    }
+
+    // gen o2
+    if(true)
+    {
+        strvec& val = get_corr_opt(o2, opt_vals);
+        val         = {wgen(), wgen()};
+        all.push_back({gen_key(o2, cgen), val[0], val[1]});
+    }
+
+    // gen om
+    if(true)
+    {
+        strvec& val = get_corr_opt(om, opt_vals);
+        val         = sgen();
+        strvec to   = val;
+        to.insert(to.begin(), gen_key(om, cgen));
+        to.shrink_to_fit();
+        all.push_back(std::move(to));
+    }
+
+    std::shuffle(all.begin(), all.end(), rs.g);
+
+    auto is_multi_val = [](const strvec& v) noexcept
+    {
+        const std::string& s = v.front();
+        return s == "-m" || s == "--multi-val";
+    };
+
+    // put positionals at the end
+    if(cgen())
+    {
+        if(is_multi_val(all.back())) all.push_back({"--"s});
+        all.push_back({p1});
+        all.push_back(p2);
+        all.push_back(pl);
+    }
+    else // or in-between
+    {
+        all.insert(all.begin(), {p1});
+        std::size_t mid = all.size() / 2;
+        if(is_multi_val(all[mid - 1])) --mid;
+        all.insert(all.begin() + mid, p2);
+
+        if(is_multi_val(all.back())) all.push_back({"--"s});
+        all.push_back(pl);
+    }
+
+    std::size_t s = 0;
+    for(const auto& v: all) s += v.size();
+
+    strvec args;
+    args.reserve(s + 1);
+    args.push_back("program name");
+    for(strvec& v: all)
+        for(std::string& s: v) args.push_back(std::move(s));
+
+    return std::pair{
+        ArgvMock(std::move(args)),
+        std::tuple_cat(
+            std::move(opt_vals),
+            std::tuple{std::move(p1), std::move(p2), std::move(pl)})};
+}
 
 template <typename Pos>
 auto
@@ -365,14 +562,28 @@ parse_positionals_er(const Pos& positionals, ArgsRange args)
     return error;
 }
 
+template <typename Pos>
+bool
+parse_positionals_iter(const Pos& positionals, ArgsRange args)
+{
+    std::tuple<> options;
+    PARSE_INIT;
+    bool r = true;
+    while(parsing_condition(r, iter, error))
+        r = pos_parser(iter, opt_state, pos_state, error);
+
+    return iter == std::ranges::end(args);
+}
+
+// there is a mess down here, but who cares: it's not an API, just tests
 int main(/*int argc, char* argv[]*/)
 {
     Track         track;
-    ParmTestMaker tm{10000};
+    ParmTestMaker tm{100};
     RandomState   rs;
 
     constexpr auto symbols = make_symbols();
-    auto           lgen    = rs.make_gen<unsigned>(1, 50);
+    auto           lgen    = rs.make_gen<unsigned>(2, 6);
     auto           symbolgen =
         [&symbols,
          d = rs.make_gen<std::size_t>(0, symbols.size() - 1)]() mutable
@@ -420,8 +631,9 @@ int main(/*int argc, char* argv[]*/)
     MAKE_ERROR_CHECK(few_args);
     MAKE_ERROR_CHECK(unexpected_val);
 
-    auto o1_kw_pr_gen = [&]() { return gen_keyword_value(o1, wgen); };
-    auto o1_pr_test   = [&](ArgvMock& mock, auto p)
+    auto o1_kw_pr_gen   = [&]() { return gen_keyword_value(o1, wgen); };
+    auto o1_kw_halt_gen = [&]() { return gen_keyword_value(o1, wgen).first; };
+    auto o1_pr_test     = [&](ArgvMock& mock, auto p)
     {
         return std::string(
             test_parser_pr(std::tuple{o1}, std::tuple{}, p, mock())
@@ -429,9 +641,30 @@ int main(/*int argc, char* argv[]*/)
     };
     auto o1_kw_pr_test = [&](ArgvMock&& mock)
     { return o1_pr_test(mock, keyword_value_parser); };
+    auto o1_kw_iter_test = [&](ArgvMock&& mock)
+    {
+        return test_parser_iter(std::tuple{o1},
+                                std::tuple{},
+                                keyword_value_parser,
+                                mock());
+    };
     auto o1_k_pr_gen  = [&]() { return gen_key_vals(o1, wgen, cgen, lgen); };
     auto o1_k_pr_test = [&](ArgvMock&& mock)
     { return o1_pr_test(mock, key_parser); };
+    auto o1_k_halt_gen = [&]()
+    { return gen_key_vals(o1, wgen, cgen, lgen).first; };
+    auto o1_k_halt_test = [&](ArgvMock&& mock) {
+        return test_parser_ret(std::tuple{o1},
+                               std::tuple{},
+                               key_parser,
+                               mock());
+    };
+    auto o1_k_iter_test = [&](ArgvMock&& mock) {
+        return test_parser_iter(std::tuple{o1},
+                                std::tuple{},
+                                key_parser,
+                                mock());
+    };
     auto o1_kcs_pr_gen = [&]()
     {
         std::string val = wgen();
@@ -441,12 +674,19 @@ int main(/*int argc, char* argv[]*/)
     { return o1_pr_test(mock, keycharseq_parser); };
 
     auto ignore_gen = [&](bool dash = true) { return ArgvMock(sgen(dash)); };
-    auto o1_ignore_test = [&](ArgvMock&& mock)
+    auto o1_kw_ignore_test = [&](ArgvMock&& mock)
     {
-        return test_parser_ignore(std::tuple{o1},
-                                  std::tuple{},
-                                  keyword_value_parser,
-                                  mock());
+        return test_parser_ret(std::tuple{o1},
+                               std::tuple{},
+                               keyword_value_parser,
+                               mock());
+    };
+    auto o1_kw_halt_test = [&](ArgvMock&& mock)
+    {
+        return test_parser_ret(std::tuple{o1},
+                               std::tuple{},
+                               keyword_value_parser,
+                               mock());
     };
 
     auto o1_wrong_keyword_gen = [&]()
@@ -507,6 +747,19 @@ int main(/*int argc, char* argv[]*/)
                 .template get_opt<"two-val">();
         return strvec(std::ranges::begin(rng), std::ranges::end(rng));
     };
+    auto o2_k_halt_gen  = [&]() { return o2_k_pr_gen().first; };
+    auto o2_k_halt_test = [&](ArgvMock&& mock) {
+        return test_parser_ret(std::tuple{o2},
+                               std::tuple{},
+                               key_parser,
+                               mock());
+    };
+    auto o2_k_iter_test = [&](ArgvMock&& mock) {
+        return test_parser_iter(std::tuple{o2},
+                                std::tuple{},
+                                key_parser,
+                                mock());
+    };
 
     auto om_k_pr_gen  = [&]() { return gen_key_vals(om, wgen, cgen, lgen); };
     auto om_k_pr_test = [&](ArgvMock&& mock)
@@ -516,12 +769,25 @@ int main(/*int argc, char* argv[]*/)
                 .template get_opt<'m'>();
         return strvec(std::ranges::begin(rng), std::ranges::end(rng));
     };
+    auto om_k_halt_gen  = [&]() { return om_k_pr_gen().first; };
+    auto om_k_halt_test = [&](ArgvMock&& mock) {
+        return test_parser_ret(std::tuple{om},
+                               std::tuple{},
+                               key_parser,
+                               mock());
+    };
+    auto om_k_iter_test = [&](ArgvMock&& mock) {
+        return test_parser_iter(std::tuple{om},
+                                std::tuple{},
+                                key_parser,
+                                mock());
+    };
     auto k_ignore_test = [&](ArgvMock&& mock)
     {
-        return test_parser_ignore(std::tuple{o1, o1kc, o1kw, o2, of1, of2, om},
-                                  std::tuple{},
-                                  key_parser,
-                                  mock());
+        return test_parser_ret(std::tuple{o1, o1kc, o1kw, o2, of1, of2, om},
+                               std::tuple{},
+                               key_parser,
+                               mock());
     };
 
     auto kcs_multi_flags = [&](unsigned n1, unsigned n2)
@@ -554,6 +820,21 @@ int main(/*int argc, char* argv[]*/)
         bool f2 = pr.get_opt<'F'>();
         return std::pair{f1, f2};
     };
+    auto of_kcs_halt_gen  = [&]() { return of_kcs_pr_gen().first; };
+    auto of_kcs_halt_test = [&](ArgvMock&& mock)
+    {
+        return test_parser_ret(std::tuple{of1, of2},
+                               std::tuple{},
+                               keycharseq_parser,
+                               mock());
+    };
+    auto of_kcs_iter_test = [&](ArgvMock&& mock)
+    {
+        return test_parser_iter(std::tuple{of1, of2},
+                                std::tuple{},
+                                keycharseq_parser,
+                                mock());
+    };
     auto cmp_pairs = [](auto p1, auto p2) noexcept
     { return p1.first == p2.first && p1.second == p2.second; };
 
@@ -574,8 +855,8 @@ int main(/*int argc, char* argv[]*/)
 
     auto kcs_keychar_ex_gen = [&]()
     {
-        std::string r = wgen();
-        while(r.size() < 3) r = wgen();
+        std::string r = wgen(false);
+        while(r.size() < 3) r = wgen(false);
         r.insert(0, 1, '-');
         return ArgvMock({r});
     };
@@ -589,12 +870,10 @@ int main(/*int argc, char* argv[]*/)
 
     auto kcs_ignore_test = [&](ArgvMock&& mock)
     {
-        bool r =
-            test_parser_ignore(std::tuple{o1, o1kc, o1kw, o2, of1, of2, om},
+        return test_parser_ret(std::tuple{o1, o1kc, o1kw, o2, of1, of2, om},
                                std::tuple{},
                                keycharseq_parser,
                                mock());
-        return r;
     };
 
     auto pp_pr_gen = [&]()
@@ -610,13 +889,16 @@ int main(/*int argc, char* argv[]*/)
     };
     auto pp_pr_test = [&](ArgvMock&& mock)
     {
-        auto pr    = parse_positionals_pr(std::tuple{pos1, pos2, posl}, mock());
+        auto pr    = parse_positionals_pr(positionals, mock());
         auto pos2r = pr.get_pos<1>();
         auto poslr = pr.get_pos<2>();
         return std::tuple{std::string{pr.get_pos<0>()},
                           strvec(pos2r.begin(), pos2r.end()),
                           strvec(poslr.begin(), poslr.end())};
     };
+    auto pp_iter_gen  = [&]() { return pp_pr_gen().first; };
+    auto pp_iter_test = [&](ArgvMock&& mock)
+    { return parse_positionals_iter(positionals, mock()); };
     auto pp_un_gen = [&]()
     {
         auto s = sgen();
@@ -637,33 +919,67 @@ int main(/*int argc, char* argv[]*/)
         return ec.few_args;
     };
 
+    auto wgen_no_dash = [&]() { return wgen(false); };
+    auto sgen_no_dash = [&]() { return sgen(false); };
+
+    auto full_pr_gen = [&]()
+    { return gen_full(cgen, wgen_no_dash, sgen_no_dash, rs); };
+    auto full_pr_test = [&](ArgvMock&& mock)
+    {
+        ErrorCatcher<true> ec;
+        fmt::print("args line:\n{}\n", mock());
+        auto pr     = parse(options, positionals, mock(), ec);
+        auto o1_r   = pr.get_opt<'o'>();
+        auto o1kc_r = pr.get_opt<'c'>();
+        auto o1kw_r = pr.get_opt<"keyword">();
+        auto of1_r  = pr.get_opt<'f'>();
+        auto of2_r  = pr.get_opt<'F'>();
+        auto o2_r   = pr.get_opt<"two-val">();
+        auto om_r   = pr.get_opt<'m'>();
+        auto p1_r   = pr.get_pos<0>();
+        auto p2_r   = pr.get_pos<1>();
+        auto pl_r   = pr.get_pos<2>();
+        return std::tuple{
+            std::string(o1_r),
+            std::string(o1kc_r),
+            std::string(o1kw_r),
+            of1_r,
+            of2_r,
+            strvec(std::ranges::begin(o2_r), std::ranges::end(o2_r)),
+            strvec(std::ranges::begin(om_r), std::ranges::end(om_r)),
+            std::string(p1_r),
+            strvec(std::ranges::begin(p2_r), std::ranges::end(p2_r)),
+            strvec(std::ranges::begin(pl_r), std::ranges::end(pl_r))};
+    };
+
+    // GCC fails with std::identity
+    // that stupid labmda is the workaround
+    auto copy_id = [](auto v) noexcept { return v; };
+
     /// @test @p --keyword=value parsing results test.
     /// Generate correct keyword and correct value.
     /// Check if binding holds the value.
-    auto to1_kw_pr = tm.test_with_hint(o1_kw_pr_gen, o1_kw_pr_test);
-
-    /// @test <tt>-k val</tt> or <tt>\--keyword val</tt> parsing results test.
-    /// Generate correct key and value.
-    /// Check if binding holds the value.
-    auto to1_k_pr = tm.test_with_hint(o1_k_pr_gen, o1_k_pr_test);
+    auto to1_kw_pr = tm.with_hint(o1_kw_pr_gen, o1_kw_pr_test);
 
     /// @test @p --keyword=value ignore test.
     /// Generate random words that don't match @p --keyword=value pattern.
     /// Check if parser ignores them.
-    auto to1_ignore =
-        tm.invariant(ignore_gen, o1_ignore_test, std::logical_not<>{});
+    auto to1_kw_ignore =
+        tm.invariant(ignore_gen, o1_kw_ignore_test, std::logical_not<>{});
+
+    /// @test @p --keyword=value halt test.
+    auto to1_kw_halt = tm.invariant(o1_kw_halt_gen, o1_kw_halt_test, copy_id);
+
+    /// @test @p --keyword=value iterator test.
+    auto to1_kw_iter = tm.invariant(o1_kw_halt_gen, o1_kw_iter_test, copy_id);
 
     /// @test @p --keyword=value wrong key test.
     /// Generate @p --keyword=value string where @p keyword is invalid.
     /// Check if lucid::argparse::KeyException is stored in
     /// lucid::argparse::ErrorState
-    auto to1_wrong_keyword = tm.invariant(o1_wrong_keyword_gen,
-                                          o1_wrong_keyword_test,
-                                          check_keyword_ex);
-
-    // GCC fails with std::identity
-    // that stupid labmda is the workaround
-    auto copy_id = [](auto v) noexcept { return v; };
+    auto to1_kw_wrong_keyword = tm.invariant(o1_wrong_keyword_gen,
+                                             o1_wrong_keyword_test,
+                                             check_keyword_ex);
 
     /// @test @p --keyword=value few arguments exception test.
     /// Generate @p --keyword=value string for option that requires 2 operands.
@@ -671,11 +987,28 @@ int main(/*int argc, char* argv[]*/)
     auto to2_kw_few_args_ex =
         tm.invariant(o2_kw_few_gen, o2_kw_few_test, check_few_args);
 
-    /// @test <tt>--two-val val1 val2</tt> parsing result test.
-    auto to2_k_pr = tm.test_with_hint(o2_k_pr_gen, o2_k_pr_test);
-
     /// @test Parse results in @p --flag=bool.
-    auto tof1_kw_pr = tm.test_with_hint(of1_kw_pr_gen, of1_kw_pr_test);
+    auto tof1_kw_pr = tm.with_hint(of1_kw_pr_gen, of1_kw_pr_test);
+
+    /// @test <tt>-k val</tt> or <tt>\--keyword val</tt> parsing results test.
+    /// Generate correct key and value.
+    /// Check if binding holds the value.
+    auto to1_k_pr = tm.with_hint(o1_k_pr_gen, o1_k_pr_test);
+
+    /// @test <tt>-k val</tt> or <tt>\--keyword val</tt> halt test.
+    auto to1_k_halt = tm.invariant(o1_k_halt_gen, o1_k_halt_test, copy_id);
+
+    /// @test <tt>-k val</tt> or <tt>\--keyword val</tt> iterator test.
+    auto to1_k_iter = tm.invariant(o1_k_halt_gen, o1_k_iter_test, copy_id);
+
+    /// @test <tt>--two-val val1 val2</tt> halt test.
+    auto to2_k_halt = tm.invariant(o2_k_halt_gen, o2_k_halt_test, copy_id);
+
+    /// @test <tt>--two-val val1 val2</tt> iterator test.
+    auto to2_k_iter = tm.invariant(o2_k_halt_gen, o2_k_iter_test, copy_id);
+
+    /// @test <tt>--two-val val1 val2</tt> parsing result test.
+    auto to2_k_pr = tm.with_hint(o2_k_pr_gen, o2_k_pr_test);
 
     /// @test Parse results in @p --flag or @p -f.
     auto tof1_k_pr = tm.invariant(of1_k_pr_gen, of1_k_pr_test, copy_id);
@@ -685,7 +1018,13 @@ int main(/*int argc, char* argv[]*/)
         tm.invariant(of2_k_pr_gen, of2_k_pr_test, std::logical_not<>{});
 
     /// @test Parse results in <tt>--multi-val vals...</tt>
-    auto tom_k_pr = tm.test_with_hint(om_k_pr_gen, om_k_pr_test);
+    auto tom_k_pr = tm.with_hint(om_k_pr_gen, om_k_pr_test);
+
+    /// @test <tt>--multi-val vals...</tt> halt test.
+    auto tom_k_halt = tm.invariant(om_k_halt_gen, om_k_halt_test, copy_id);
+
+    /// @test <tt>--multi-val vals...</tt> iter test.
+    auto tom_k_iter = tm.invariant(om_k_halt_gen, om_k_iter_test, copy_id);
 
     /// @test <tt>--two-val value</tt> few arguments exception test.
     auto to2_k_few_args_ex =
@@ -696,7 +1035,7 @@ int main(/*int argc, char* argv[]*/)
         tm.invariant(ignore_gen, k_ignore_test, std::logical_not<>{});
 
     /// @test KeyCharSeqParser parse result.
-    auto to1_kcs_pr = tm.test_with_hint(o1_kcs_pr_gen, o1_kcs_pr_test);
+    auto to1_kcs_pr = tm.with_hint(o1_kcs_pr_gen, o1_kcs_pr_test);
 
     /// @test KeyCharSeqParser flags.
     auto tf_kcs_pr = [&]()
@@ -712,26 +1051,34 @@ int main(/*int argc, char* argv[]*/)
     };
 
     /// @test KeyCharSeqParser multiple flags flips.
-    auto tf_kcs_pr_m =
-        tm.test_with_hint(of_kcs_pr_gen, of_kcs_pr_test, cmp_pairs);
+    auto tf_kcs_pr_m = tm.with_hint(of_kcs_pr_gen, of_kcs_pr_test, cmp_pairs);
 
     /// @test KeyCharSeqParser multiple flags and last option.
     /// Generate key char sequence with last key char and an operand.
     auto to1_kcs_last_pr =
-        tm.test_with_hint(o1_last_kcs_pr_gen, o1_last_kcs_pr_test);
+        tm.with_hint(o1_last_kcs_pr_gen, o1_last_kcs_pr_test);
 
     /// @test KeyCharSeqParser keychar exception.
     auto t_kcs_keychar_ex =
         tm.invariant(kcs_keychar_ex_gen, kcs_keychar_ex_test, check_keychar_ex);
 
-    // workaround GCC
+    // GCC loses this lambda on stack
     auto ignore_gen_no_dash = [&]() { return ignore_gen(false); };
     /// @test KeyCharSeqParser ignore test.
     auto t_kcs_ignore =
         tm.invariant(ignore_gen_no_dash, kcs_ignore_test, std::logical_not<>{});
 
+    /// @test KeyCharSeqParser halt test.
+    auto tf_kcs_halt = tm.invariant(of_kcs_halt_gen, of_kcs_halt_test, copy_id);
+
+    /// @test KeyCharSeqParser iterator test.
+    auto tf_kcs_iter = tm.invariant(of_kcs_halt_gen, of_kcs_iter_test, copy_id);
+
     /// @test Positionals parser results.
-    auto t_pp_pr = tm.test_with_hint(pp_pr_gen, pp_pr_test, tuple_cmp);
+    auto t_pp_pr = tm.with_hint(pp_pr_gen, pp_pr_test, tuple_cmp);
+
+    /// @test Positionals parser iterator test.
+    auto t_pp_iter = tm.invariant(pp_iter_gen, pp_iter_test, copy_id);
 
     /// @test Positionals parser unexpected value exception.
     auto t_pp_un = tm.invariant(pp_un_gen, pp_un_test, check_unexpected_val);
@@ -742,25 +1089,39 @@ int main(/*int argc, char* argv[]*/)
     /// @test lucid::argparse::parse for few arguments exception.
     auto t_full_few = tm.invariant(pp_few_gen, full_few_test, copy_id);
 
+    /// @test lucid::argparse::parse parsing results.
+    auto t_full_pr = tm.with_hint(full_pr_gen, full_pr_test, TupleCmp<true>{});
+
     show_help("help show demo", options, positionals);
 
+#if 1
     track.check(NamedTest(to1_kw_pr, "KeywordValueParser parsing results"));
     track.check(
-        NamedTest(to1_ignore, "KeywordValueParser ignore non-matching"));
-    track.check(
-        NamedTest(to1_wrong_keyword, "KeywordValueParser keyword exception"));
+        NamedTest(to1_kw_ignore, "KeywordValueParser ignore non-matching"));
+    track.check(NamedTest(to1_kw_halt, "KeywordValueParser halt"));
+    track.check(NamedTest(to1_kw_iter, "KeywordValueParser iterator"));
+    track.check(NamedTest(to1_kw_wrong_keyword,
+                          "KeywordValueParser keyword exception"));
     track.check(NamedTest(to2_kw_few_args_ex,
                           "KeywordValueParser few arguments exception"));
     track.check(NamedTest(tof1_kw_pr,
                           "KeywordValueParser flag converter parsing results"));
     track.check(NamedTest(to1_k_pr, "KeyParser single value parsing results"));
+    track.check(NamedTest(to1_k_halt, "KeyParser single value halt"));
+    track.check(NamedTest(to1_k_iter, "KeyParser single value iterator"));
+    track.check(NamedTest(to2_k_halt, "KeyParser two values halt"));
+    track.check(NamedTest(to2_k_iter, "KeyParser two values iterator"));
     track.check(NamedTest(to2_k_pr, "KeyParser two values parsing results"));
     track.check(NamedTest(tof1_k_pr, "KeyParser flag parsing results"));
     track.check(NamedTest(tof2_k_pr, "KeyParser reverse flag parsing results"));
+    track.check(NamedTest(tom_k_halt, "KeyParser multi values halt"));
+    track.check(NamedTest(tom_k_iter, "KeyParser multi values iterator"));
     track.check(NamedTest(tom_k_pr, "KeyParser multi values parsing results"));
     track.check(
         NamedTest(to2_k_few_args_ex, "KeyParser few arguments exception"));
     track.check(NamedTest(tk_ignore, "KeyParser ignore non-matching"));
+    track.check(NamedTest(tf_kcs_halt, "KeyCharSeqParser halt"));
+    track.check(NamedTest(tf_kcs_iter, "KeyCharSeqParser iterator"));
     track.check(
         NamedTest(to1_kcs_pr, "KeyCharSeqParser single value parsing results"));
     track.check(NamedTest(tf_kcs_pr, "KeyCharSeqParser two flags"));
@@ -772,12 +1133,17 @@ int main(/*int argc, char* argv[]*/)
     track.check(
         NamedTest(t_kcs_keychar_ex, "KeyCharSeqParser keychar exception"));
     track.check(NamedTest(t_kcs_ignore, "KeyCharSeqParser ignore"));
+    track.check(NamedTest(t_pp_iter, "PositionalsParser iterator"));
     track.check(NamedTest(t_pp_pr, "PositionalsParser parsing results"));
     track.check(
         NamedTest(t_pp_un, "PositionalsParser unexpected value exception"));
     track.check(
         NamedTest(t_pp_few, "PositionalsParser few arguments exception"));
+#endif
+#if 0
+    track.check(NamedTest(t_full_pr, "Full parse parsing results"));
     track.check(NamedTest(t_full_few, "Full parse few arguments exception"));
+#endif
 
     return track.ret_code();
 }

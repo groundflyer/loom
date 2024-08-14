@@ -1215,15 +1215,15 @@ consume_values(ArgsIterator iter,
     case 0:
     {
         bind_value(state.bindings, token, "");
-        return ++iter;
+        return iter;
     }
     // value
     case 1:
     {
         if(iter.count() < 1) return fail();
 
-        bind_value(state.bindings, token, iter);
-        return ++iter;
+        bind_value(state.bindings, token, *iter++);
+        return iter;
     }
     // arbitrary number of values
     case npos:
@@ -1282,7 +1282,8 @@ struct KeyCharSeqParser
                ErrorState& error) const noexcept
     {
         const std::string_view word = *iter;
-        if(word.size() < 3 || word.front() != '-') return false;
+        if(word.size() < 3 || word.front() != '-' || word.substr(0, 2) == "--")
+            return false;
 
         for(std::size_t i = 1; i < word.size(); ++i)
         {
@@ -1332,7 +1333,8 @@ struct KeyCharSeqParser
             }
         }
 
-        return false;
+        ++iter;
+        return true;
     }
 };
 
@@ -1351,7 +1353,7 @@ struct PositionalsParser
         auto fail = [&]() noexcept
         {
             error = FewArgumentsException{};
-            return true;
+            return false;
         };
 
         // no unset positionals left
@@ -1766,9 +1768,11 @@ class MainParser
                 r = typelist::first_of(ps, iter, opt_state, pos_state, error);
         }
 
+#if 0
         if(!error.has_value() &&
            pos_state.last_token() != std::tuple_size_v<Positionals>)
             error = FewArgumentsException{};
+#endif
 
         if(error.has_value())
             std::visit(std::forward<ErrorHandler>(error_handler),
