@@ -111,6 +111,7 @@ struct ErrorCatcher
     bool unexpected_val = false;
     bool keychar_ex     = false;
     bool keyword_ex     = false;
+    bool help           = false;
 
     void
     operator()(FewArgumentsException e) noexcept
@@ -139,6 +140,13 @@ struct ErrorCatcher
     {
         if constexpr(print) fmt::print("Keyword exception: {}\n", e.value);
         keyword_ex = true;
+    }
+
+    void
+    operator()(HelpRequest) noexcept
+    {
+        if constexpr(print) fmt::print("Help requested\n");
+        help = true;
     }
 };
 
@@ -279,11 +287,11 @@ gen_keyword_value_bool(const Option& o, C& choice) noexcept
     ErrorState error;                  \
     auto       iter = args.begin()
 
-template <typename... Options, typename... Positionals, typename Parser>
+template <typename... Options, typename... Positionals, typename Matcher>
 auto
 test_parser_pr(const std::tuple<Options...>&     options,
                const std::tuple<Positionals...>& positionals,
-               Parser                            p,
+               Matcher                           p,
                ArgsRange                         args) noexcept
 {
     PARSE_INIT;
@@ -296,22 +304,22 @@ test_parser_pr(const std::tuple<Options...>&     options,
         return ParseResults{pos_state.bindings};
 };
 
-template <typename Options, typename Positionals, typename Parser>
+template <typename Options, typename Positionals, typename Matcher>
 bool
 test_parser_ret(const Options&     options,
                 const Positionals& positionals,
-                Parser             p,
+                Matcher            p,
                 ArgsRange          args) noexcept
 {
     PARSE_INIT;
     return p(iter, opt_state, pos_state, error);
 };
 
-template <typename Options, typename Positionals, typename Parser>
+template <typename Options, typename Positionals, typename Matcher>
 ErrorState
 test_parser_error(const Options&     options,
                   const Positionals& positionals,
-                  Parser             p,
+                  Matcher            p,
                   ArgsRange          args) noexcept
 {
     PARSE_INIT;
@@ -319,11 +327,11 @@ test_parser_error(const Options&     options,
     return error;
 };
 
-template <typename Options, typename Positionals, typename Parser>
+template <typename Options, typename Positionals, typename Matcher>
 bool
 test_parser_iter(const Options&     options,
                  const Positionals& positionals,
-                 Parser             p,
+                 Matcher            p,
                  ArgsRange          args) noexcept
 {
     PARSE_INIT;
@@ -360,10 +368,10 @@ constexpr auto posl = positional_list("doc for positional list", "poss");
 constexpr std::tuple options{o1, o1kc, o1kw, of1, of2, o2, om};
 constexpr std::tuple positionals{pos1, pos2, posl};
 
-constexpr KeywordValueParser keyword_value_parser{};
-constexpr KeyParser          key_parser{};
-constexpr KeyCharSeqParser   keycharseq_parser{};
-constexpr PositionalsParser  pos_parser{};
+constexpr KeywordValueMatcher keyword_value_parser{};
+constexpr KeyMatcher          key_parser{};
+constexpr KeyCharSeqMatcher   keycharseq_parser{};
+constexpr PositionalsMatcher  pos_parser{};
 
 constexpr TupleCmp tuple_cmp{};
 
@@ -534,6 +542,12 @@ gen_full(C& cgen, W& wgen, S& sgen, RandomState& rs)
         std::tuple_cat(
             std::move(opt_vals),
             std::tuple{std::move(p1), std::move(p2), std::move(pl)})};
+}
+
+bool
+parsing_condition(bool r, ArgsIterator iter, ErrorState error) noexcept
+{
+    return r && iter != std::default_sentinel && !error.has_value();
 }
 
 template <typename Pos>
@@ -939,17 +953,21 @@ int main(/*int argc, char* argv[]*/)
         auto p1_r   = pr.get_pos<0>();
         auto p2_r   = pr.get_pos<1>();
         auto pl_r   = pr.get_pos<2>();
+        fmt::print("Making p2v\n");
+        strvec p2_v(std::ranges::begin(p2_r), std::ranges::end(p2_r));
+        fmt::print("returning tuple\n");
         return std::tuple{
             std::string(o1_r),
             std::string(o1kc_r),
             std::string(o1kw_r),
             of1_r,
             of2_r,
-            strvec(std::ranges::begin(o2_r), std::ranges::end(o2_r)),
+            strvec{std::string(o2_r[0]), std::string(o2_r[1])},
             strvec(std::ranges::begin(om_r), std::ranges::end(om_r)),
             std::string(p1_r),
-            strvec(std::ranges::begin(p2_r), std::ranges::end(p2_r)),
-            strvec(std::ranges::begin(pl_r), std::ranges::end(pl_r))};
+            std::move(p2_v),
+            strvec(std::ranges::begin(pl_r), std::ranges::end(pl_r))
+        };
     };
 
     // GCC fails with std::identity
@@ -1030,14 +1048,14 @@ int main(/*int argc, char* argv[]*/)
     auto to2_k_few_args_ex =
         tm.invariant(o2_k_few_gen, o2_k_few_test, check_few_args);
 
-    /// @test KeyParser ignore test.
+    /// @test KeyMatcher ignore test.
     auto tk_ignore =
         tm.invariant(ignore_gen, k_ignore_test, std::logical_not<>{});
 
-    /// @test KeyCharSeqParser parse result.
+    /// @test KeyCharSeqMatcher parse result.
     auto to1_kcs_pr = tm.with_hint(o1_kcs_pr_gen, o1_kcs_pr_test);
 
-    /// @test KeyCharSeqParser flags.
+    /// @test KeyCharSeqMatcher flags.
     auto tf_kcs_pr = [&]()
     {
         ArgvMock mock({"-fF"s});
@@ -1050,28 +1068,28 @@ int main(/*int argc, char* argv[]*/)
         return f1 && !f2;
     };
 
-    /// @test KeyCharSeqParser multiple flags flips.
+    /// @test KeyCharSeqMatcher multiple flags flips.
     auto tf_kcs_pr_m = tm.with_hint(of_kcs_pr_gen, of_kcs_pr_test, cmp_pairs);
 
-    /// @test KeyCharSeqParser multiple flags and last option.
+    /// @test KeyCharSeqMatcher multiple flags and last option.
     /// Generate key char sequence with last key char and an operand.
     auto to1_kcs_last_pr =
         tm.with_hint(o1_last_kcs_pr_gen, o1_last_kcs_pr_test);
 
-    /// @test KeyCharSeqParser keychar exception.
+    /// @test KeyCharSeqMatcher keychar exception.
     auto t_kcs_keychar_ex =
         tm.invariant(kcs_keychar_ex_gen, kcs_keychar_ex_test, check_keychar_ex);
 
     // GCC loses this lambda on stack
     auto ignore_gen_no_dash = [&]() { return ignore_gen(false); };
-    /// @test KeyCharSeqParser ignore test.
+    /// @test KeyCharSeqMatcher ignore test.
     auto t_kcs_ignore =
         tm.invariant(ignore_gen_no_dash, kcs_ignore_test, std::logical_not<>{});
 
-    /// @test KeyCharSeqParser halt test.
+    /// @test KeyCharSeqMatcher halt test.
     auto tf_kcs_halt = tm.invariant(of_kcs_halt_gen, of_kcs_halt_test, copy_id);
 
-    /// @test KeyCharSeqParser iterator test.
+    /// @test KeyCharSeqMatcher iterator test.
     auto tf_kcs_iter = tm.invariant(of_kcs_halt_gen, of_kcs_iter_test, copy_id);
 
     /// @test Positionals parser results.
@@ -1094,53 +1112,53 @@ int main(/*int argc, char* argv[]*/)
 
     show_help("help show demo", options, positionals);
 
-#if 1
-    track.check(NamedTest(to1_kw_pr, "KeywordValueParser parsing results"));
+#if 0
+    track.check(NamedTest(to1_kw_pr, "KeywordValueMatcher parsing results"));
     track.check(
-        NamedTest(to1_kw_ignore, "KeywordValueParser ignore non-matching"));
-    track.check(NamedTest(to1_kw_halt, "KeywordValueParser halt"));
-    track.check(NamedTest(to1_kw_iter, "KeywordValueParser iterator"));
+        NamedTest(to1_kw_ignore, "KeywordValueMatcher ignore non-matching"));
+    track.check(NamedTest(to1_kw_halt, "KeywordValueMatcher halt"));
+    track.check(NamedTest(to1_kw_iter, "KeywordValueMatcher iterator"));
     track.check(NamedTest(to1_kw_wrong_keyword,
-                          "KeywordValueParser keyword exception"));
+                          "KeywordValueMatcher keyword exception"));
     track.check(NamedTest(to2_kw_few_args_ex,
-                          "KeywordValueParser few arguments exception"));
+                          "KeywordValueMatcher few arguments exception"));
     track.check(NamedTest(tof1_kw_pr,
-                          "KeywordValueParser flag converter parsing results"));
-    track.check(NamedTest(to1_k_pr, "KeyParser single value parsing results"));
-    track.check(NamedTest(to1_k_halt, "KeyParser single value halt"));
-    track.check(NamedTest(to1_k_iter, "KeyParser single value iterator"));
-    track.check(NamedTest(to2_k_halt, "KeyParser two values halt"));
-    track.check(NamedTest(to2_k_iter, "KeyParser two values iterator"));
-    track.check(NamedTest(to2_k_pr, "KeyParser two values parsing results"));
-    track.check(NamedTest(tof1_k_pr, "KeyParser flag parsing results"));
-    track.check(NamedTest(tof2_k_pr, "KeyParser reverse flag parsing results"));
-    track.check(NamedTest(tom_k_halt, "KeyParser multi values halt"));
-    track.check(NamedTest(tom_k_iter, "KeyParser multi values iterator"));
-    track.check(NamedTest(tom_k_pr, "KeyParser multi values parsing results"));
+                          "KeywordValueMatcher flag converter parsing results"));
+    track.check(NamedTest(to1_k_pr, "KeyMatcher single value parsing results"));
+    track.check(NamedTest(to1_k_halt, "KeyMatcher single value halt"));
+    track.check(NamedTest(to1_k_iter, "KeyMatcher single value iterator"));
+    track.check(NamedTest(to2_k_halt, "KeyMatcher two values halt"));
+    track.check(NamedTest(to2_k_iter, "KeyMatcher two values iterator"));
+    track.check(NamedTest(to2_k_pr, "KeyMatcher two values parsing results"));
+    track.check(NamedTest(tof1_k_pr, "KeyMatcher flag parsing results"));
+    track.check(NamedTest(tof2_k_pr, "KeyMatcher reverse flag parsing results"));
+    track.check(NamedTest(tom_k_halt, "KeyMatcher multi values halt"));
+    track.check(NamedTest(tom_k_iter, "KeyMatcher multi values iterator"));
+    track.check(NamedTest(tom_k_pr, "KeyMatcher multi values parsing results"));
     track.check(
-        NamedTest(to2_k_few_args_ex, "KeyParser few arguments exception"));
-    track.check(NamedTest(tk_ignore, "KeyParser ignore non-matching"));
-    track.check(NamedTest(tf_kcs_halt, "KeyCharSeqParser halt"));
-    track.check(NamedTest(tf_kcs_iter, "KeyCharSeqParser iterator"));
+        NamedTest(to2_k_few_args_ex, "KeyMatcher few arguments exception"));
+    track.check(NamedTest(tk_ignore, "KeyMatcher ignore non-matching"));
+    track.check(NamedTest(tf_kcs_halt, "KeyCharSeqMatcher halt"));
+    track.check(NamedTest(tf_kcs_iter, "KeyCharSeqMatcher iterator"));
     track.check(
-        NamedTest(to1_kcs_pr, "KeyCharSeqParser single value parsing results"));
-    track.check(NamedTest(tf_kcs_pr, "KeyCharSeqParser two flags"));
+        NamedTest(to1_kcs_pr, "KeyCharSeqMatcher single value parsing results"));
+    track.check(NamedTest(tf_kcs_pr, "KeyCharSeqMatcher two flags"));
     track.check(
-        NamedTest(tf_kcs_pr_m, "KeyCharSeqParser two flags multiple flips"));
+        NamedTest(tf_kcs_pr_m, "KeyCharSeqMatcher two flags multiple flips"));
     track.check(NamedTest(
         to1_kcs_last_pr,
-        "KeyCharSeqParser multiple flags and last option parsing results"));
+        "KeyCharSeqMatcher multiple flags and last option parsing results"));
     track.check(
-        NamedTest(t_kcs_keychar_ex, "KeyCharSeqParser keychar exception"));
-    track.check(NamedTest(t_kcs_ignore, "KeyCharSeqParser ignore"));
-    track.check(NamedTest(t_pp_iter, "PositionalsParser iterator"));
-    track.check(NamedTest(t_pp_pr, "PositionalsParser parsing results"));
+        NamedTest(t_kcs_keychar_ex, "KeyCharSeqMatcher keychar exception"));
+    track.check(NamedTest(t_kcs_ignore, "KeyCharSeqMatcher ignore"));
+    track.check(NamedTest(t_pp_iter, "PositionalsMatcher iterator"));
+    track.check(NamedTest(t_pp_pr, "PositionalsMatcher parsing results"));
     track.check(
-        NamedTest(t_pp_un, "PositionalsParser unexpected value exception"));
+        NamedTest(t_pp_un, "PositionalsMatcher unexpected value exception"));
     track.check(
-        NamedTest(t_pp_few, "PositionalsParser few arguments exception"));
+        NamedTest(t_pp_few, "PositionalsMatcher few arguments exception"));
 #endif
-#if 0
+#if 1
     track.check(NamedTest(t_full_pr, "Full parse parsing results"));
     track.check(NamedTest(t_full_few, "Full parse few arguments exception"));
 #endif

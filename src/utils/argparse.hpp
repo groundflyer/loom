@@ -114,27 +114,6 @@ struct keyword_ok_impl<char_sequence<cs...>>
 };
 } // namespace detail
 
-/// @brief Thrown when unknown key is encountered.
-template <typename Key>
-struct KeyException
-{
-    Key value;
-};
-
-/// @brief Thrown when reaching the end of the arguments list
-/// while unset values remain.
-struct FewArgumentsException
-{
-    std::string_view keyword;
-};
-
-/// @brief Thrown when parser encounters a value while expecting a key
-/// or a keyword.
-struct UnexpectedValue
-{
-    std::string_view value;
-};
-
 /// @brief Defines requirements for callables to convert
 /// std::string_view to a value.
 template <typename T>
@@ -1106,11 +1085,37 @@ class State
     }
 };
 
+/// @brief Indicates unknown key.
+template <typename Key>
+struct KeyException
+{
+    Key value;
+};
+
+/// @brief Indicates reaching the end of arguments list
+/// while unset values remain.
+struct FewArgumentsException
+{
+    std::string_view keyword;
+};
+
+/// @brief Indicates unexpected argument.
+struct UnexpectedValue
+{
+    std::string_view value;
+};
+
+/// @brief Request to print help message.
+struct HelpRequest
+{
+};
+
 /// @brief Holds errors occured during parsing.
 using ErrorState = std::optional<std::variant<FewArgumentsException,
                                               UnexpectedValue,
                                               KeyException<char>,
-                                              KeyException<std::string_view>>>;
+                                              KeyException<std::string_view>,
+                                              HelpRequest>>;
 
 template <typename... Options>
 std::size_t
@@ -1152,8 +1157,52 @@ list_bind(State<Opt>&    state,
     return last;
 }
 
+/// @brief Matches "--".
+/// The purpose of this matcher is to terminate a sequence.
+struct TerminatorMatcher
+{
+    template <typename Opt, typename Pos>
+    bool
+    operator()(ArgsIterator& iter,
+               State<Opt>& /* opt_state */,
+               State<Pos>& /* pos_state */,
+               ErrorState& /* error */) const noexcept
+    {
+        const std::string_view word = *iter;
+        if(word == "--")
+        {
+            ++iter;
+            return true;
+        }
+
+        return false;
+    }
+};
+
+/// @brief Matches "--help" of "-h"
+struct HelpMatcher
+{
+    template <typename Opt, typename Pos>
+    bool
+    operator()(ArgsIterator& iter,
+               State<Opt>& /* opt_state */,
+               State<Pos>& /* pos_state */,
+               ErrorState& error) const noexcept
+    {
+        const std::string_view word = *iter;
+        if(word == "-h" || word == "--help")
+        {
+            ++iter;
+            error = HelpRequest{};
+            return true;
+        }
+
+        return false;
+    }
+};
+
 /// @brief Matches "--keyword=value".
-struct KeywordValueParser
+struct KeywordValueMatcher
 {
     template <typename Opt, typename Pos>
     bool
@@ -1244,7 +1293,7 @@ consume_values(ArgsIterator iter,
 }
 
 /// @brief Matches "-k [value...] or --keyword [value...]".
-struct KeyParser
+struct KeyMatcher
 {
     template <typename Opt, typename Pos>
     bool
@@ -1272,7 +1321,7 @@ struct KeyParser
 };
 
 /// @brief Matches "-abcd [values...]"
-struct KeyCharSeqParser
+struct KeyCharSeqMatcher
 {
     template <typename Opt, typename Pos>
     bool
@@ -1339,7 +1388,7 @@ struct KeyCharSeqParser
 };
 
 /// @brief Matches any remained arguments.
-struct PositionalsParser
+struct PositionalsMatcher
 {
     template <typename Opt, typename Pos>
     bool
@@ -1667,11 +1716,30 @@ make_program_name(std::string_view argv0) noexcept
 
 /// @brief Prints parse errors to stderr and terminates program with exit
 /// code 1.
+template <typename Options, typename Positionals>
 class StandardErrorHandler
 {
     static constexpr std::string_view error_head = "Argument Parsing Error";
 
+    Options const*     p_opts;
+    Positionals const* p_poss;
+    std::string_view   m_program_name;
+
+    void
+    error_helper() const noexcept
+    {
+        fmt::print("Run {} -h to get full help", m_program_name);
+    }
+
   public:
+    StandardErrorHandler(const Options&     opts,
+                         const Positionals& poss,
+                         std::string_view   program_name) noexcept :
+        p_opts(&opts),
+        p_poss(&poss), m_program_name(program_name)
+    {
+    }
+
     void
     operator()(const FewArgumentsException& ex) const noexcept
     {
@@ -1682,6 +1750,7 @@ class StandardErrorHandler
                        "{}: too few arguments for parameter \"{}\"\n",
                        error_head,
                        ex.keyword);
+        error_helper();
         exit(1);
     }
 
@@ -1690,6 +1759,7 @@ class StandardErrorHandler
     operator()(const KeyException<Key>& ex) const noexcept
     {
         fmt::print(stderr, "{}: unknown key \"{}\"\n", error_head, ex.value);
+        error_helper();
         exit(1);
     }
 
@@ -1700,200 +1770,101 @@ class StandardErrorHandler
                    "{}: unexpected value \"{}\"\n",
                    error_head,
                    ex.value);
+        error_helper();
         exit(1);
     }
-};
 
-template <typename Options, typename Positionals>
-void
-check_help(const Options&     options,
-           const Positionals& positionals,
-           std::string_view   word,
-           std::string_view   argv0) noexcept
-{
-    if(word == "-h" || word == "--help")
+    void
+    operator()(HelpRequest) const noexcept
     {
-        show_help(make_program_name(argv0), options, positionals);
+        show_help(m_program_name, *p_opts, *p_poss);
         exit(0);
-    }
-}
-
-bool
-parsing_condition(bool r, ArgsIterator iter, const ErrorState& error) noexcept
-{
-    return r && iter != std::default_sentinel && !error.has_value();
-}
-
-template <typename Options, typename Positionals>
-class MainParser
-{
-    using Parsers = type_sequence<KeywordValueParser,
-                                  KeyCharSeqParser,
-                                  KeyParser,
-                                  PositionalsParser>;
-
-    static constexpr Parsers           ps{};
-    static constexpr PositionalsParser pp{};
-
-  public:
-    template <typename ErrorHandler>
-    auto
-    operator()(const Options&     options,
-               const Positionals& positionals,
-               ArgsRange          args,
-               ErrorHandler&&     error_handler) const noexcept
-    {
-        State      opt_state{options};
-        State      pos_state{positionals};
-        ErrorState error;
-        bool       r        = true;
-        bool       pos_only = false;
-        auto       iter     = std::next(std::ranges::begin(args));
-        while(parsing_condition(r, iter, error))
-        {
-            const std::string_view word = *iter;
-
-            if(word == "--")
-            {
-                pos_only = true;
-                ++iter;
-                continue;
-            }
-
-            check_help(options, positionals, word, *std::ranges::begin(args));
-
-            if(pos_only)
-                r = pp(iter, opt_state, pos_state, error);
-            else
-                r = typelist::first_of(ps, iter, opt_state, pos_state, error);
-        }
-
-#if 0
-        if(!error.has_value() &&
-           pos_state.last_token() != std::tuple_size_v<Positionals>)
-            error = FewArgumentsException{};
-#endif
-
-        if(error.has_value())
-            std::visit(std::forward<ErrorHandler>(error_handler),
-                       error.value());
-
-        return ParseResults(opt_state.bindings, pos_state.bindings, options);
-    }
-};
-
-template <typename... Options>
-class MainParser<std::tuple<Options...>, std::tuple<>>
-{
-    using Parsers =
-        type_sequence<KeywordValueParser, KeyCharSeqParser, KeyParser>;
-
-    static constexpr Parsers ps{};
-
-  public:
-    template <typename ErrorHandler>
-    auto
-    operator()(const std::tuple<Options...>& options,
-               std::tuple<>                  positionals,
-               ArgsRange                     args,
-               ErrorHandler&&                error_handler) const noexcept
-    {
-        State      opt_state{options};
-        State      pos_state{positionals};
-        ErrorState error;
-        bool       r    = true;
-        auto       iter = std::next(std::ranges::begin(args));
-        while(parsing_condition(r, iter, error))
-        {
-            const std::string_view word = *iter;
-
-            check_help(options, positionals, word, *std::ranges::begin(args));
-            r = typelist::first_of(ps, iter, opt_state, pos_state, error);
-        }
-
-        if(error.has_value())
-            std::visit(std::forward<ErrorHandler>(error_handler),
-                       error.value());
-
-        return ParseResults(opt_state.bindings, options);
-    }
-};
-
-template <typename... Positionals>
-class MainParser<std::tuple<>, std::tuple<Positionals...>>
-{
-    static constexpr PositionalsParser pp{};
-
-  public:
-    template <typename ErrorHandler>
-    auto
-    operator()(std::tuple<>                      options,
-               const std::tuple<Positionals...>& positionals,
-               ArgsRange                         args,
-               ErrorHandler&&                    error_handler) const noexcept
-    {
-        State      opt_state{options};
-        State      pos_state{positionals};
-        ErrorState error;
-        bool       r    = true;
-        auto       iter = std::next(std::ranges::begin(args));
-        while(parsing_condition(r, iter, error))
-        {
-            const std::string_view word = *iter;
-
-            check_help(options, positionals, word, *std::ranges::begin(args));
-
-            r = pp(iter, opt_state, pos_state, error);
-        }
-
-        if(!error.has_value() &&
-           pos_state.last_token() != sizeof...(Positionals))
-            error = FewArgumentsException{};
-
-        if(error.has_value())
-            std::visit(std::forward<ErrorHandler>(error_handler),
-                       error.value());
-
-        return ParseResults(pos_state.bindings);
     }
 };
 
 /// @brief Parse command line arguments.
-template <typename... Options,
-          typename... Positionals,
-          typename ErrorHandler = StandardErrorHandler>
+template <typename... Options, typename... Positionals, typename ErrorHandler>
 auto
 parse(const std::tuple<Options...>&     options,
       const std::tuple<Positionals...>& positionals,
       ArgsRange                         args,
-      ErrorHandler&&                    error_handler = ErrorHandler{}) noexcept
+      ErrorHandler&&                    error_handler) noexcept
 {
-    using keychars =
-        intlist::purge<missing_keychar, char_sequence<Options::key...>>;
-    using keywords =
-        typelist::purge<missing_keyword,
-                        type_sequence<typename Options::keyword_type...>>;
-    static_assert(!intlist::has_duplicates<keychars>, "Keys must be unique");
-    static_assert(!typelist::has_duplicates<keywords>, "Keys must be unique");
+    constexpr std::size_t num_opts = sizeof...(Options);
+    constexpr std::size_t num_poss = sizeof...(Positionals);
+    static_assert(!(num_opts == 0 && num_poss == 0), "That's pointless");
+    static_assert(
+        !intlist::has_duplicates<
+            intlist::purge<missing_keychar, char_sequence<Options::key...>>>,
+        "Keys must be unique");
+    static_assert(
+        !typelist::has_duplicates<
+            typelist::purge<missing_keyword,
+                            type_sequence<typename Options::keyword_type...>>>,
+        "Keys must be unique");
 
-    using parser =
-        MainParser<std::tuple<Options...>, std::tuple<Positionals...>>;
+    using all_matchers = type_sequence<TerminatorMatcher,
+                                       HelpMatcher,
+                                       KeywordValueMatcher,
+                                       KeyCharSeqMatcher,
+                                       KeyMatcher,
+                                       PositionalsMatcher>;
 
-    constexpr parser p{};
-    return p(options,
-             positionals,
-             args,
-             std::forward<ErrorHandler>(error_handler));
+    using active_matchers = std::conditional_t<
+        num_opts == 0,
+        type_sequence<TerminatorMatcher, HelpMatcher, PositionalsMatcher>,
+        std::conditional_t<num_poss == 0,
+                           typelist::purge<PositionalsMatcher, all_matchers>,
+                           all_matchers>>;
+
+    constexpr active_matchers ms{};
+
+    State      opt_state{options};
+    State      pos_state{positionals};
+    ErrorState error;
+    bool       r = true;
+    // skip first argv - it's the command name
+    auto iter = std::next(std::ranges::begin(args));
+    while(r && iter != std::ranges::end(args) && !error.has_value())
+        r = typelist::first_of(ms, iter, opt_state, pos_state, error);
+
+    if constexpr(num_poss)
+        if(!error.has_value() && pos_state.last_token() != num_poss)
+            error = FewArgumentsException{};
+
+    if(error.has_value())
+        std::visit(std::forward<ErrorHandler>(error_handler), error.value());
+
+    if constexpr(num_opts == 0)
+        return ParseResults(pos_state.bindings);
+    else if constexpr(num_poss == 0)
+        return ParseResults(opt_state.bindings, options);
+    else
+        return ParseResults(opt_state.bindings, pos_state.bindings, options);
 }
 
-/// @brief Parse command line arguments when no positional arguments required.
-template <typename... Options, typename ErrorHandler = StandardErrorHandler>
+/// @brief Shortcut with default error handler.
+template <typename... Options, typename... Positionals>
 auto
-parse(const std::tuple<Options...>& options,
-      ArgsRange                     args,
-      ErrorHandler&& error_handler = StandardErrorHandler{}) noexcept
+parse(const std::tuple<Options...>&     options,
+      const std::tuple<Positionals...>& positionals,
+      ArgsRange                         args) noexcept
 {
-    return parse(options, std::tuple<>{}, args, std::move(error_handler));
+    return parse(
+        options,
+        positionals,
+        args,
+        StandardErrorHandler(options,
+                             positionals,
+                             make_program_name(*std::ranges::begin(args))));
+}
+
+/// @brief Shortcut with no positionals.
+template <typename... Options>
+auto
+parse(const std::tuple<Options...>& options, ArgsRange args) noexcept
+{
+    return parse(options, std::tuple{}, args);
 }
 /// @}
 } // namespace lucid::argparse
