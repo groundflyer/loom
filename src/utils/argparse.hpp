@@ -1117,44 +1117,31 @@ using ErrorState = std::optional<std::variant<FewArgumentsException,
                                               KeyException<std::string_view>,
                                               HelpRequest>>;
 
-template <typename... Options>
-std::size_t
-tokenize_option(std::string_view              word,
-                const std::tuple<Options...>& opts) noexcept
+/// @brief Binds list values.
+template <bool do_opt, typename Opt, typename Pos>
+ArgsIterator
+bind_list(ArgsIterator iter,
+          State<Opt>&  opt_state,
+          State<Pos>&  pos_state,
+          ErrorState&  error,
+          std::size_t  token) noexcept
 {
-    if constexpr(sizeof...(Options) > 0)
+    ArgsIterator ret, last = iter;
+    do ret = ++last;
+    while(!(last == std::default_sentinel ||
+            descend(ret, opt_state, pos_state, error)));
+
+    if constexpr(do_opt)
     {
-        if(word.size() == 2 && word.front() == '-')
-            return tokenize(word[1], opts);
-
-        if(word.size() >= 4 || word.substr(0, 2) == "--")
-            return tokenize(word.substr(2), opts);
+        bind_value(opt_state.bindings, token, iter);
+        bind_value(opt_state.bindings, token, last);
     }
-
-    return npos;
-}
-
-template <typename Desc>
-ArgsIterator
-get_last(ArgsIterator iter, const Desc& desc) noexcept
-{
-    do ++iter;
-    while(!(iter == std::default_sentinel || *iter == "--" ||
-            tokenize_option(*iter, desc) != npos));
-    return iter;
-}
-
-template <typename Opt, typename Options>
-ArgsIterator
-list_bind(State<Opt>&    state,
-          const Options& opts_desc,
-          std::size_t    token,
-          ArgsIterator   iter) noexcept
-{
-    ArgsIterator last = get_last(iter, opts_desc);
-    bind_value(state.bindings, token, iter);
-    bind_value(state.bindings, token, last);
-    return last;
+    else
+    {
+        bind_value(pos_state.bindings, token, iter);
+        bind_value(pos_state.bindings, token, last);
+    }
+    return ret;
 }
 
 /// @brief Matches "--".
@@ -1240,12 +1227,12 @@ struct KeywordValueMatcher
     }
 };
 
-template <typename Opt, typename Desc>
+template <typename Opt, typename Pos>
 ArgsIterator
-consume_values(ArgsIterator iter,
-               State<Opt>&  state,
-               const Desc&  desc,
+consume_values(State<Opt>&  opt_state,
+               State<Pos>&  pos_state,
                ErrorState&  error,
+               ArgsIterator iter,
                std::size_t  token,
                std::size_t  nvals) noexcept
 {
@@ -1263,7 +1250,7 @@ consume_values(ArgsIterator iter,
     // flag
     case 0:
     {
-        bind_value(state.bindings, token, "");
+        bind_value(opt_state.bindings, token, "");
         return iter;
     }
     // value
@@ -1271,7 +1258,7 @@ consume_values(ArgsIterator iter,
     {
         if(iter.count() < 1) return fail();
 
-        bind_value(state.bindings, token, *iter++);
+        bind_value(opt_state.bindings, token, *iter++);
         return iter;
     }
     // arbitrary number of values
@@ -1279,14 +1266,14 @@ consume_values(ArgsIterator iter,
     {
         if(iter.count() < 1) return fail();
 
-        return list_bind(state, desc, token, iter);
+        return bind_list<true>(iter, opt_state, pos_state, error, token);
     }
     // constant number of arguments
     default:
     {
         if(iter.count() < static_cast<int>(nvals)) return fail();
 
-        bind_value(state.bindings, token, iter);
+        bind_value(opt_state.bindings, token, iter);
         return iter + nvals;
     }
     }
@@ -1299,23 +1286,24 @@ struct KeyMatcher
     bool
     operator()(ArgsIterator& iter,
                State<Opt>&   opt_state,
-               State<Pos>& /* pos_state */,
-               ErrorState& error) const noexcept
+               State<Pos>&   pos_state,
+               ErrorState&   error) const noexcept
     {
         const std::string_view word  = *iter;
-        const std::size_t      token = tokenize_option(word, opt_state.desc);
+        std::size_t            token = npos;
+
+        if(word.size() == 2 && word.front() == '-')
+            token = tokenize(word[1], opt_state.desc);
+
+        if(word.size() >= 4 || word.substr(0, 2) == "--")
+            token = tokenize(word.substr(2), opt_state.desc);
 
         // doesn't match any keys
         if(token == npos) return false;
 
         const std::size_t nvals = get_nvals(token, opt_state.desc);
 
-        iter = consume_values(iter,
-                              opt_state,
-                              opt_state.desc,
-                              error,
-                              token,
-                              nvals);
+        iter = consume_values(opt_state, pos_state, error, iter, token, nvals);
         return true;
     }
 };
@@ -1327,8 +1315,8 @@ struct KeyCharSeqMatcher
     bool
     operator()(ArgsIterator& iter,
                State<Opt>&   opt_state,
-               State<Pos>& /* pos_state */,
-               ErrorState& error) const noexcept
+               State<Pos>&   pos_state,
+               ErrorState&   error) const noexcept
     {
         const std::string_view word = *iter;
         if(word.size() < 3 || word.front() != '-' || word.substr(0, 2) == "--")
@@ -1356,10 +1344,10 @@ struct KeyCharSeqMatcher
                     ++iter;
                 }
                 else
-                    iter = consume_values(iter,
-                                          opt_state,
-                                          opt_state.desc,
+                    iter = consume_values(opt_state,
+                                          pos_state,
                                           error,
+                                          iter,
                                           token,
                                           nvals);
 
@@ -1371,10 +1359,10 @@ struct KeyCharSeqMatcher
                 if(word.size() - i > 1)
                     error = FewArgumentsException{word};
                 else
-                    iter = consume_values(iter,
-                                          opt_state,
-                                          opt_state.desc,
+                    iter = consume_values(opt_state,
+                                          pos_state,
                                           error,
+                                          iter,
                                           token,
                                           nvals);
 
@@ -1421,7 +1409,7 @@ struct PositionalsMatcher
         {
             if(iter.count() < 1) return fail();
 
-            iter = list_bind(pos_state, opt_state.desc, token, iter);
+            iter = bind_list<false>(iter, opt_state, pos_state, error, token);
 
             pos_state.set_token(token);
             return true;
@@ -1444,6 +1432,25 @@ struct PositionalsMatcher
         }
     }
 };
+
+template <typename Opt, typename Pos>
+bool
+descend(ArgsIterator& iter,
+        State<Opt>&   opt_state,
+        State<Pos>&   pos_state,
+        ErrorState&   error) noexcept
+{
+    using matchers =
+        std::conditional_t<std::tuple_size_v<Opt> != 0,
+                           type_sequence<TerminatorMatcher,
+                                         HelpMatcher,
+                                         KeywordValueMatcher,
+                                         KeyCharSeqMatcher,
+                                         KeyMatcher>,
+                           type_sequence<TerminatorMatcher, HelpMatcher>>;
+
+    return typelist::first_of(matchers{}, iter, opt_state, pos_state, error);
+}
 
 // -------------------- Printing help --------------------
 
