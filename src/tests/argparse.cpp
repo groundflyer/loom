@@ -32,9 +32,11 @@ make_symbols() noexcept
     for(int i = 0; i < 26; ++i) AZ[i] = static_cast<char>('A' + i);
     std::array<char, 10> nums;
     for(int i = 0; i < 10; ++i) nums[i] = static_cast<char>('0' + i);
+#if 0
     std::array allowed_symbols{'`', '~', '!', '@', '#', '$', '%', '^', '&',
                                '*', '(', ')', '_', '[', ']', '{', '}', ';',
                                ':', '<', '>', ',', '.', '?', '/', '|'};
+#endif
     return array_cat(az, AZ, nums); //, allowed_symbols);
 };
 
@@ -627,6 +629,9 @@ int main(/*int argc, char* argv[]*/)
         return ret;
     };
 
+    auto wgen_no_dash = [&]() { return wgen(false); };
+    auto sgen_no_dash = [&]() { return sgen(false); };
+
 #define MAKE_ERROR_CHECK(name)            \
     auto check_##name = [&](ErrorState e) \
     {                                     \
@@ -775,7 +780,8 @@ int main(/*int argc, char* argv[]*/)
                                 mock());
     };
 
-    auto om_k_pr_gen  = [&]() { return gen_key_vals(om, wgen, cgen, lgen); };
+    auto om_k_pr_gen = [&]()
+    { return gen_key_vals(om, wgen_no_dash, cgen, lgen); };
     auto om_k_pr_test = [&](ArgvMock&& mock)
     {
         auto rng =
@@ -933,29 +939,22 @@ int main(/*int argc, char* argv[]*/)
         return ec.few_args;
     };
 
-    auto wgen_no_dash = [&]() { return wgen(false); };
-    auto sgen_no_dash = [&]() { return sgen(false); };
-
     auto full_pr_gen = [&]()
     { return gen_full(cgen, wgen_no_dash, sgen_no_dash, rs); };
     auto full_pr_test = [&](ArgvMock&& mock)
     {
-        ErrorCatcher<true> ec;
-        fmt::print("args line:\n{}\n", mock());
-        auto pr     = parse(options, positionals, mock(), ec);
-        auto o1_r   = pr.get_opt<'o'>();
-        auto o1kc_r = pr.get_opt<'c'>();
-        auto o1kw_r = pr.get_opt<"keyword">();
-        auto of1_r  = pr.get_opt<'f'>();
-        auto of2_r  = pr.get_opt<'F'>();
-        auto o2_r   = pr.get_opt<"two-val">();
-        auto om_r   = pr.get_opt<'m'>();
-        auto p1_r   = pr.get_pos<0>();
-        auto p2_r   = pr.get_pos<1>();
-        auto pl_r   = pr.get_pos<2>();
-        fmt::print("Making p2v\n");
-        strvec p2_v(std::ranges::begin(p2_r), std::ranges::end(p2_r));
-        fmt::print("returning tuple\n");
+        ErrorCatcher ec;
+        auto         pr     = parse(options, positionals, mock(), ec);
+        auto         o1_r   = pr.get_opt<'o'>();
+        auto         o1kc_r = pr.get_opt<'c'>();
+        auto         o1kw_r = pr.get_opt<"keyword">();
+        auto         of1_r  = pr.get_opt<'f'>();
+        auto         of2_r  = pr.get_opt<'F'>();
+        auto         o2_r   = pr.get_opt<"two-val">();
+        auto         om_r   = pr.get_opt<'m'>();
+        auto         p1_r   = pr.get_pos<0>();
+        auto         p2_r   = pr.get_pos<1>();
+        auto         pl_r   = pr.get_pos<2>();
         return std::tuple{
             std::string(o1_r),
             std::string(o1kc_r),
@@ -965,7 +964,7 @@ int main(/*int argc, char* argv[]*/)
             strvec{std::string(o2_r[0]), std::string(o2_r[1])},
             strvec(std::ranges::begin(om_r), std::ranges::end(om_r)),
             std::string(p1_r),
-            std::move(p2_v),
+            strvec(std::ranges::begin(p2_r), std::ranges::end(p2_r)),
             strvec(std::ranges::begin(pl_r), std::ranges::end(pl_r))
         };
     };
@@ -1108,11 +1107,10 @@ int main(/*int argc, char* argv[]*/)
     auto t_full_few = tm.invariant(pp_few_gen, full_few_test, copy_id);
 
     /// @test lucid::argparse::parse parsing results.
-    auto t_full_pr = tm.with_hint(full_pr_gen, full_pr_test, TupleCmp<true>{});
+    auto t_full_pr = tm.with_hint(full_pr_gen, full_pr_test, tuple_cmp);
 
     show_help("help show demo", options, positionals);
 
-#if 0
     track.check(NamedTest(to1_kw_pr, "KeywordValueMatcher parsing results"));
     track.check(
         NamedTest(to1_kw_ignore, "KeywordValueMatcher ignore non-matching"));
@@ -1122,8 +1120,9 @@ int main(/*int argc, char* argv[]*/)
                           "KeywordValueMatcher keyword exception"));
     track.check(NamedTest(to2_kw_few_args_ex,
                           "KeywordValueMatcher few arguments exception"));
-    track.check(NamedTest(tof1_kw_pr,
-                          "KeywordValueMatcher flag converter parsing results"));
+    track.check(
+        NamedTest(tof1_kw_pr,
+                  "KeywordValueMatcher flag converter parsing results"));
     track.check(NamedTest(to1_k_pr, "KeyMatcher single value parsing results"));
     track.check(NamedTest(to1_k_halt, "KeyMatcher single value halt"));
     track.check(NamedTest(to1_k_iter, "KeyMatcher single value iterator"));
@@ -1131,7 +1130,8 @@ int main(/*int argc, char* argv[]*/)
     track.check(NamedTest(to2_k_iter, "KeyMatcher two values iterator"));
     track.check(NamedTest(to2_k_pr, "KeyMatcher two values parsing results"));
     track.check(NamedTest(tof1_k_pr, "KeyMatcher flag parsing results"));
-    track.check(NamedTest(tof2_k_pr, "KeyMatcher reverse flag parsing results"));
+    track.check(
+        NamedTest(tof2_k_pr, "KeyMatcher reverse flag parsing results"));
     track.check(NamedTest(tom_k_halt, "KeyMatcher multi values halt"));
     track.check(NamedTest(tom_k_iter, "KeyMatcher multi values iterator"));
     track.check(NamedTest(tom_k_pr, "KeyMatcher multi values parsing results"));
@@ -1140,8 +1140,8 @@ int main(/*int argc, char* argv[]*/)
     track.check(NamedTest(tk_ignore, "KeyMatcher ignore non-matching"));
     track.check(NamedTest(tf_kcs_halt, "KeyCharSeqMatcher halt"));
     track.check(NamedTest(tf_kcs_iter, "KeyCharSeqMatcher iterator"));
-    track.check(
-        NamedTest(to1_kcs_pr, "KeyCharSeqMatcher single value parsing results"));
+    track.check(NamedTest(to1_kcs_pr,
+                          "KeyCharSeqMatcher single value parsing results"));
     track.check(NamedTest(tf_kcs_pr, "KeyCharSeqMatcher two flags"));
     track.check(
         NamedTest(tf_kcs_pr_m, "KeyCharSeqMatcher two flags multiple flips"));
@@ -1157,11 +1157,8 @@ int main(/*int argc, char* argv[]*/)
         NamedTest(t_pp_un, "PositionalsMatcher unexpected value exception"));
     track.check(
         NamedTest(t_pp_few, "PositionalsMatcher few arguments exception"));
-#endif
-#if 1
     track.check(NamedTest(t_full_pr, "Full parse parsing results"));
     track.check(NamedTest(t_full_few, "Full parse few arguments exception"));
-#endif
 
     return track.ret_code();
 }
