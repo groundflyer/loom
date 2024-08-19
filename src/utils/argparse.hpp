@@ -1074,14 +1074,19 @@ class State
     std::size_t
     last_token() const noexcept
     {
-        const std::size_t token = set.count();
-        return token >= std::tuple_size_v<Bindings> ? npos : token;
+        return set.count();
     }
 
     void
     set_token(const std::size_t token) noexcept
     {
         set.set(token);
+    }
+
+    bool
+    complete() const noexcept
+    {
+        return set.all();
     }
 };
 
@@ -1385,6 +1390,13 @@ struct PositionalsMatcher
                State<Pos>&   pos_state,
                ErrorState&   error) const noexcept
     {
+        // no unset positionals left
+        if(pos_state.complete())
+        {
+            error = UnexpectedValue{*iter};
+            return false;
+        }
+
         const std::size_t token = pos_state.last_token();
 
         auto fail = [&]() noexcept
@@ -1392,13 +1404,6 @@ struct PositionalsMatcher
             error = FewArgumentsException{};
             return false;
         };
-
-        // no unset positionals left
-        if(token == npos)
-        {
-            error = UnexpectedValue{*iter};
-            return false;
-        }
 
         const std::size_t nval = get_nvals(token, pos_state.desc);
 
@@ -1836,7 +1841,7 @@ parse(const std::tuple<Options...>&     options,
         r = typelist::first_of(ms, iter, opt_state, pos_state, error);
 
     if constexpr(num_poss)
-        if(!error.has_value() && pos_state.last_token() != num_poss)
+        if(!(error.has_value() || pos_state.complete()))
             error = FewArgumentsException{};
 
     if(error.has_value())
