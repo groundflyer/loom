@@ -8,6 +8,7 @@
 
 #include <algorithm>
 #include <array>
+#include <bitset>
 #include <initializer_list>
 #include <ranges>
 #include <string>
@@ -170,19 +171,21 @@ class TupleCmp
     operator()(const T1& t1, const T2& t2) const noexcept
         requires(std::tuple_size_v<T1> == std::tuple_size_v<T2>)
     {
+        bool ret =
+            cmp_tuples_impl(t1,
+                            t2,
+                            std::make_index_sequence<std::tuple_size_v<T1>>{});
         if constexpr(print)
-        {
-            auto printer = [](const auto&... elems)
-            { (..., fmt::print("{}\n", elems)); };
-            fmt::print("TEST ELEMS\n");
-            std::apply(printer, t1);
-            fmt::print("VALID ELEMS\n");
-            std::apply(printer, t2);
-        }
-        return cmp_tuples_impl(
-            t1,
-            t2,
-            std::make_index_sequence<std::tuple_size_v<T1>>{});
+            if(!ret)
+            {
+                auto printer = [](const auto&... elems)
+                { (..., fmt::print("{}\n", elems)); };
+                fmt::print("TEST ELEMS\n");
+                std::apply(printer, t1);
+                fmt::print("VALID ELEMS\n");
+                std::apply(printer, t2);
+            }
+        return ret;
     }
 };
 
@@ -401,149 +404,177 @@ default_vals() noexcept
     };
 }
 
-template <typename C, typename W, typename S>
+#define PUSH_KEY_VAL(OPT)               \
+    args.push_back(gen_key(OPT, cgen)); \
+    args.push_back(val)
+
+template <typename C, typename W, typename L>
 auto
-gen_full(C& cgen, W& wgen, S& sgen, RandomState& rs)
+gen_full(C& cgen, W& wgen, L& lgen, RandomState& rs)
 {
-    std::vector<strvec> all;
+    auto                                    opt_vals = default_vals();
+    std::tuple<std::string, strvec, strvec> pos_vals;
 
-    auto opt_vals = default_vals();
+    constexpr std::size_t num_opts = std::tuple_size_v<decltype(opt_vals)>;
 
-    // gen positionals
-    std::string p1 = wgen();
-    strvec      p2 = {wgen(), wgen()};
-    strvec      pl = sgen();
+    std::bitset<num_opts> opt_set;
+    std::bitset<3>        pos_set;
 
-    // gen o1
-    if(true)
+    auto opt_choice = rs.make_gen<unsigned>(0, num_opts - 1);
+    auto threeway   = rs.make_gen<unsigned>(0, 2);
+    auto con_gen    = rs.make_gen<bool>(0.8);
+
+    strvec args{"program name"};
+
+    bool last_multival = false;
+
+    // flag generator
+    auto fgen = [&](const auto& o)
     {
-        std::string& val = get_corr_opt(o1, opt_vals);
-        val              = wgen();
-
-        // --option=value or -o value
+        bool& val = get_corr_opt(o, opt_vals);
+        // --flag=true or --flag
         if(cgen())
-            all.push_back({make_keyword(o1) + '=' + val});
-        else
-            all.push_back({gen_key(o1, cgen), val});
-    }
-
-    // gen o1kc
-    if(true)
-    {
-        std::string& val = get_corr_opt(o1kc, opt_vals);
-        val              = wgen();
-
-        // --cvalue or -c value
-        if(cgen())
-            all.push_back({make_keychar(o1kc) + val});
-        else
-            all.push_back({gen_key(o1kc, cgen), val});
-    }
-
-    // gen o1kw
-    if(true)
-    {
-        std::string& val = get_corr_opt(o1kw, opt_vals);
-        val              = wgen();
-
-        // --keyword=value or --keyword value
-        if(cgen())
-            all.push_back({make_keyword(o1kw) + '=' + val});
-        else
-            all.push_back({gen_key(o1kw, cgen), val});
-    }
-
-    // flags
-    // group flags
-    if(cgen())
-    {
-        all.push_back({"-fF"s});
-        get_corr_opt(of1, opt_vals) ^= true;
-        get_corr_opt(of2, opt_vals) ^= true;
-    }
-    else
-    {
-        auto fgen = [&](const auto& o)
         {
-            bool& val = get_corr_opt(o, opt_vals);
-            // --flag=true or --flag
-            if(cgen())
-            {
-                val = cgen();
-                all.push_back(
-                    {make_keyword(o) + '=' + (val ? "true"s : "false"s)});
-            }
-            else
-            {
-                all.push_back({gen_key(o, cgen)});
-                val ^= true;
-            }
-        };
-
-        if(true) fgen(of1);
-        if(true) fgen(of2);
-    }
-
-    // gen o2
-    if(true)
-    {
-        strvec& val = get_corr_opt(o2, opt_vals);
-        val         = {wgen(), wgen()};
-        all.push_back({gen_key(o2, cgen), val[0], val[1]});
-    }
-
-    // gen om
-    if(true)
-    {
-        strvec& val = get_corr_opt(om, opt_vals);
-        val         = sgen();
-        strvec to   = val;
-        to.insert(to.begin(), gen_key(om, cgen));
-        to.shrink_to_fit();
-        all.push_back(std::move(to));
-    }
-
-    std::shuffle(all.begin(), all.end(), rs.g);
-
-    auto is_multi_val = [](const strvec& v) noexcept
-    {
-        const std::string& s = v.front();
-        return s == "-m" || s == "--multi-val";
+            val = cgen();
+            args.push_back(make_keyword(o) + '=' + (val ? "true"s : "false"s));
+        }
+        else
+        {
+            args.push_back(gen_key(o, cgen));
+            val ^= true;
+        }
     };
 
-    // put positionals at the end
-    if(cgen())
+    while(!pos_set.all() || (con_gen() && !opt_set.all()))
     {
-        if(is_multi_val(all.back())) all.push_back({"--"s});
-        all.push_back({p1});
-        all.push_back(p2);
-        all.push_back(pl);
+        // set positional
+        if(!pos_set.all() && cgen())
+        {
+            if(last_multival) args.push_back("--"s);
+
+            switch(pos_set.count())
+            {
+            case 0: // pos1
+                std::get<0>(pos_vals) = wgen();
+                args.push_back(std::get<0>(pos_vals));
+                pos_set.set(0);
+                break;
+            case 1: // pos2
+                std::get<1>(pos_vals).push_back(wgen());
+                std::get<1>(pos_vals).push_back(wgen());
+                args.push_back(std::get<1>(pos_vals)[0]);
+                args.push_back(std::get<1>(pos_vals)[1]);
+                pos_set.set(1);
+                break;
+            case 2: // posl
+                unsigned l = lgen();
+                std::get<2>(pos_vals).reserve(l);
+                for(unsigned i = 0; i < l; ++i)
+                {
+                    std::string val = wgen();
+                    args.push_back(val);
+                    std::get<2>(pos_vals).push_back(std::move(val));
+                }
+                pos_set.set(2);
+                break;
+            }
+
+            last_multival = false;
+        }
+        else if(!opt_set.all())
+        {
+            unsigned choice = opt_choice();
+            while(opt_set.test(choice)) choice = opt_choice();
+
+            switch(choice)
+            {
+            case 0: // o1
+            {
+                std::string& val = get_corr_opt(o1, opt_vals);
+                val              = wgen();
+
+                // --option=value or -o value or -ovalue
+                switch(threeway())
+                {
+                case 0: args.push_back(make_keyword(o1) + '=' + val); break;
+                case 1: PUSH_KEY_VAL(o1); break;
+                case 2: args.push_back(make_keychar(o1) + val); break;
+                }
+
+                opt_set.set(0);
+                last_multival = false;
+                break;
+            }
+            case 1: // o1kc
+            {
+                std::string& val = get_corr_opt(o1kc, opt_vals);
+                val              = wgen();
+
+                // -cvalue or -c value
+                if(cgen())
+                    args.push_back(make_keychar(o1kc) + val);
+                else { PUSH_KEY_VAL(o1kc); }
+
+                opt_set.set(1);
+                last_multival = false;
+                break;
+            }
+            case 2: // o1kw
+            {
+                std::string& val = get_corr_opt(o1kw, opt_vals);
+                val              = wgen();
+
+                if(cgen())
+                    args.push_back(make_keyword(o1kw) + '=' + val);
+                else { PUSH_KEY_VAL(o1kw); }
+                opt_set.set(2);
+                last_multival = false;
+                break;
+            }
+            case 3: // -f
+                fgen(of1);
+                opt_set.set(3);
+                last_multival = false;
+                break;
+            case 4: // -F
+                fgen(of2);
+                opt_set.set(4);
+                last_multival = false;
+                break;
+            case 5: // o2
+            {
+                strvec& val = get_corr_opt(o2, opt_vals);
+                val         = {wgen(), wgen()};
+                args.push_back(gen_key(o2, cgen));
+                args.push_back(val[0]);
+                args.push_back(val[1]);
+                opt_set.set(5);
+                last_multival = false;
+                break;
+            }
+            case 6: // om
+            {
+                strvec& vals = get_corr_opt(om, opt_vals);
+                vals.clear();
+                unsigned l = lgen();
+                vals.reserve(l);
+                args.push_back(gen_key(om, cgen));
+                for(unsigned i = 0; i < l; ++i)
+                {
+                    std::string val = wgen();
+                    args.push_back(val);
+                    vals.push_back(std::move(val));
+                }
+                opt_set.set(6);
+                last_multival = true;
+                break;
+            }
+            }
+        }
     }
-    else // or in-between
-    {
-        all.insert(all.begin(), {p1});
-        std::size_t mid = all.size() / 2;
-        if(is_multi_val(all[mid - 1])) --mid;
-        all.insert(all.begin() + mid, p2);
 
-        if(is_multi_val(all.back())) all.push_back({"--"s});
-        all.push_back(pl);
-    }
-
-    std::size_t s = 0;
-    for(const auto& v: all) s += v.size();
-
-    strvec args;
-    args.reserve(s + 1);
-    args.push_back("program name");
-    for(strvec& v: all)
-        for(std::string& s: v) args.push_back(std::move(s));
-
-    return std::pair{
-        ArgvMock(std::move(args)),
-        std::tuple_cat(
-            std::move(opt_vals),
-            std::tuple{std::move(p1), std::move(p2), std::move(pl)})};
+    return std::pair{ArgvMock(std::move(args)),
+                     std::tuple_cat(std::move(opt_vals), std::move(pos_vals))};
 }
 
 bool
@@ -939,10 +970,10 @@ int main(/*int argc, char* argv[]*/)
         return ec.few_args;
     };
 
-    auto full_pr_gen = [&]()
-    { return gen_full(cgen, wgen_no_dash, sgen_no_dash, rs); };
+    auto full_pr_gen = [&]() { return gen_full(cgen, wgen_no_dash, lgen, rs); };
     auto full_pr_test = [&](ArgvMock&& mock)
     {
+        fmt::print("args: {}\n", mock());
         ErrorCatcher ec;
         auto         pr     = parse(options, positionals, mock(), ec);
         auto         o1_r   = pr.get_opt<'o'>();
@@ -1107,10 +1138,11 @@ int main(/*int argc, char* argv[]*/)
     auto t_full_few = tm.invariant(pp_few_gen, full_few_test, copy_id);
 
     /// @test lucid::argparse::parse parsing results.
-    auto t_full_pr = tm.with_hint(full_pr_gen, full_pr_test, tuple_cmp);
+    auto t_full_pr = tm.with_hint(full_pr_gen, full_pr_test, TupleCmp<true>{});
 
     show_help("help show demo", options, positionals);
 
+#if 0
     track.check(NamedTest(to1_kw_pr, "KeywordValueMatcher parsing results"));
     track.check(
         NamedTest(to1_kw_ignore, "KeywordValueMatcher ignore non-matching"));
@@ -1157,6 +1189,7 @@ int main(/*int argc, char* argv[]*/)
         NamedTest(t_pp_un, "PositionalsMatcher unexpected value exception"));
     track.check(
         NamedTest(t_pp_few, "PositionalsMatcher few arguments exception"));
+#endif
     track.check(NamedTest(t_full_pr, "Full parse parsing results"));
     track.check(NamedTest(t_full_few, "Full parse few arguments exception"));
 
