@@ -541,6 +541,7 @@ class ValuelessBinding
 {
     R            m_reader;
     ArgsIterator m_iter;
+    bool         m_set = false;
 
   public:
     ValuelessBinding(R reader) noexcept : m_reader(reader) {}
@@ -549,6 +550,7 @@ class ValuelessBinding
     set(ArgsIterator iter) noexcept
     {
         m_iter = iter;
+        m_set  = true;
     }
 
     // sink for tokenize
@@ -561,7 +563,7 @@ class ValuelessBinding
     operator()() const
         noexcept(std::is_nothrow_invocable_v<R, std::string_view>)
     {
-        return std::views::counted(m_iter, nvals) |
+        return std::views::counted(m_iter, m_set ? nvals : 0) |
                std::views::transform(m_reader);
     }
 };
