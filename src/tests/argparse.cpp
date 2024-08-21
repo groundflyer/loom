@@ -33,12 +33,10 @@ make_symbols() noexcept
     for(int i = 0; i < 26; ++i) AZ[i] = static_cast<char>('A' + i);
     std::array<char, 10> nums;
     for(int i = 0; i < 10; ++i) nums[i] = static_cast<char>('0' + i);
-#if 0
     std::array allowed_symbols{'`', '~', '!', '@', '#', '$', '%', '^', '&',
                                '*', '(', ')', '_', '[', ']', '{', '}', ';',
                                ':', '<', '>', ',', '.', '?', '/', '|'};
-#endif
-    return array_cat(az, AZ, nums); //, allowed_symbols);
+    return array_cat(az, AZ, nums, allowed_symbols);
 };
 
 class ArgvMock
@@ -484,8 +482,13 @@ gen_full(C& cgen, W& wgen, L& lgen, RandomState& rs)
         else if(!opt_set.all())
         {
             unsigned choice = opt_choice();
+            // we don't wanna use same option twice
             while(opt_set.test(choice)) choice = opt_choice();
 
+            // FIXME: can be extended with a couple options:
+            // combination of flags: -fF
+            // combination of flags with single value at the end: -fFcvalue
+            // combination of flags with multi value at the end: -fFm foo bar...
             switch(choice)
             {
             case 0: // o1
@@ -623,10 +626,11 @@ parse_positionals_iter(const Pos& positionals, ArgsRange args)
 }
 
 // there is a mess down here, but who cares: it's not an API, just tests
+// FIXME: refactor this
 int main(/*int argc, char* argv[]*/)
 {
     Track         track;
-    ParmTestMaker tm{100};
+    ParmTestMaker tm{10000};
     RandomState   rs;
 
     constexpr auto symbols = make_symbols();
@@ -661,7 +665,6 @@ int main(/*int argc, char* argv[]*/)
     };
 
     auto wgen_no_dash = [&]() { return wgen(false); };
-    auto sgen_no_dash = [&]() { return sgen(false); };
 
 #define MAKE_ERROR_CHECK(name)            \
     auto check_##name = [&](ErrorState e) \
@@ -973,7 +976,6 @@ int main(/*int argc, char* argv[]*/)
     auto full_pr_gen = [&]() { return gen_full(cgen, wgen_no_dash, lgen, rs); };
     auto full_pr_test = [&](ArgvMock&& mock)
     {
-        fmt::print("args: {}\n", mock());
         ErrorCatcher ec;
         auto         pr     = parse(options, positionals, mock(), ec);
         auto         o1_r   = pr.get_opt<'o'>();
@@ -998,6 +1000,14 @@ int main(/*int argc, char* argv[]*/)
             strvec(std::ranges::begin(p2_r), std::ranges::end(p2_r)),
             strvec(std::ranges::begin(pl_r), std::ranges::end(pl_r))
         };
+    };
+
+    auto full_er_gen  = [&]() { return full_pr_gen().first; };
+    auto full_er_test = [&](ArgvMock&& mock)
+    {
+        bool err = false;
+        parse(options, positionals, mock(), [&err](auto) { err = true; });
+        return err;
     };
 
     // GCC fails with std::identity
@@ -1140,9 +1150,13 @@ int main(/*int argc, char* argv[]*/)
     /// @test lucid::argparse::parse parsing results.
     auto t_full_pr = tm.with_hint(full_pr_gen, full_pr_test, TupleCmp<true>{});
 
+    /// @test Check that lucid::argparse::parse doesn't generate errors with
+    /// valid data.
+    auto t_full_er =
+        tm.invariant(full_er_gen, full_er_test, std::logical_not<>{});
+
     show_help("help show demo", options, positionals);
 
-#if 0
     track.check(NamedTest(to1_kw_pr, "KeywordValueMatcher parsing results"));
     track.check(
         NamedTest(to1_kw_ignore, "KeywordValueMatcher ignore non-matching"));
@@ -1189,9 +1203,9 @@ int main(/*int argc, char* argv[]*/)
         NamedTest(t_pp_un, "PositionalsMatcher unexpected value exception"));
     track.check(
         NamedTest(t_pp_few, "PositionalsMatcher few arguments exception"));
-#endif
     track.check(NamedTest(t_full_pr, "Full parse parsing results"));
     track.check(NamedTest(t_full_few, "Full parse few arguments exception"));
+    track.check(NamedTest(t_full_er, "Full parse no errors with valid input"));
 
     return track.ret_code();
 }
