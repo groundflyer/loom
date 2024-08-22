@@ -634,7 +634,7 @@ int main(/*int argc, char* argv[]*/)
     RandomState   rs;
 
     constexpr auto symbols = make_symbols();
-    auto           lgen    = rs.make_gen<unsigned>(2, 6);
+    auto           lgen    = rs.make_gen<unsigned>(2, 50);
     auto           symbolgen =
         [&symbols,
          d = rs.make_gen<std::size_t>(0, symbols.size() - 1)]() mutable
@@ -664,7 +664,10 @@ int main(/*int argc, char* argv[]*/)
         return ret;
     };
 
-    auto wgen_no_dash = [&]() { return wgen(false); };
+    auto wgen_no_dash       = [&]() { return wgen(false); };
+    auto sgen_no_dash       = [&]() { return sgen(false); };
+    auto ignore_gen         = [&]() { return ArgvMock(sgen()); };
+    auto ignore_gen_no_dash = [&]() { return ArgvMock(sgen_no_dash()); };
 
 #define MAKE_ERROR_CHECK(name)            \
     auto check_##name = [&](ErrorState e) \
@@ -725,8 +728,6 @@ int main(/*int argc, char* argv[]*/)
     };
     auto o1_kcs_pr_test = [&](ArgvMock&& mock)
     { return o1_pr_test(mock, keycharseq_parser); };
-
-    auto ignore_gen = [&](bool dash = true) { return ArgvMock(sgen(dash)); };
     auto o1_kw_ignore_test = [&](ArgvMock&& mock)
     {
         return test_parser_ret(std::tuple{o1},
@@ -830,7 +831,12 @@ int main(/*int argc, char* argv[]*/)
                                key_parser,
                                mock());
     };
-    auto om_k_iter_test = [&](ArgvMock&& mock) {
+    auto om_k_iter_test = [&](ArgvMock&& mock)
+    {
+        auto er =
+            test_parser_error(std::tuple{om}, std::tuple{}, key_parser, mock());
+        ErrorCatcher<true> ec;
+        if(er.has_value()) std::visit(ec, er.value());
         return test_parser_iter(std::tuple{om},
                                 std::tuple{},
                                 key_parser,
@@ -909,9 +915,7 @@ int main(/*int argc, char* argv[]*/)
 
     auto kcs_keychar_ex_gen = [&]()
     {
-        std::string r = wgen(false);
-        while(r.size() < 3) r = wgen(false);
-        r.insert(0, 1, '-');
+        std::string r = (cgen() ? "-f" : "-F") + wgen(false);
         return ArgvMock({r});
     };
     auto kcs_keychar_ex_test = [&](ArgvMock&& mock)
@@ -1090,7 +1094,7 @@ int main(/*int argc, char* argv[]*/)
 
     /// @test KeyMatcher ignore test.
     auto tk_ignore =
-        tm.invariant(ignore_gen, k_ignore_test, std::logical_not<>{});
+        tm.invariant(ignore_gen_no_dash, k_ignore_test, std::logical_not<>{});
 
     /// @test KeyCharSeqMatcher parse result.
     auto to1_kcs_pr = tm.with_hint(o1_kcs_pr_gen, o1_kcs_pr_test);
@@ -1120,8 +1124,6 @@ int main(/*int argc, char* argv[]*/)
     auto t_kcs_keychar_ex =
         tm.invariant(kcs_keychar_ex_gen, kcs_keychar_ex_test, check_keychar_ex);
 
-    // GCC loses this lambda on stack
-    auto ignore_gen_no_dash = [&]() { return ignore_gen(false); };
     /// @test KeyCharSeqMatcher ignore test.
     auto t_kcs_ignore =
         tm.invariant(ignore_gen_no_dash, kcs_ignore_test, std::logical_not<>{});

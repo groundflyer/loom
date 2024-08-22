@@ -1300,12 +1300,21 @@ struct KeyMatcher
         std::size_t            token = npos;
 
         if(word.size() == 2 && word.front() == '-')
+        {
             token = tokenize(word[1], opt_state.desc);
+            if(token == npos) return false;
+        }
 
-        if(word.size() >= 4 || word.substr(0, 2) == "--")
+        if(word.size() >= 4 && word.substr(0, 2) == "--")
+        {
             token = tokenize(word.substr(2), opt_state.desc);
+            if(token == npos)
+            {
+                error = KeyException<std::string_view>{word};
+                return true;
+            }
+        }
 
-        // doesn't match any keys
         if(token == npos) return false;
 
         const std::size_t nvals = get_nvals(token, opt_state.desc);
@@ -1335,8 +1344,13 @@ struct KeyCharSeqMatcher
 
             if(token == npos)
             {
-                error = KeyException<char>{word[i]};
-                return true;
+                if(i == 1)
+                    return false;
+                else
+                {
+                    error = KeyException<char>{word[i]};
+                    return true;
+                }
             }
 
             const std::size_t nvals = get_nvals(token, opt_state.desc);
