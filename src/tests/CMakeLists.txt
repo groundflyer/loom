@@ -36,6 +36,8 @@ endif()
 target_include_directories(test_viewport PUBLIC ${OPENGL_INCLUDE_DIR})
 target_link_libraries(test_viewport PUBLIC ${GL_LIBS})
 target_compile_definitions(test_viewport PUBLIC ${GL_DEFS})
+target_compile_options(test_argparse PUBLIC -fno-exceptions)
+target_link_options(test_argparse PUBLIC -fno-exceptions)
 
 # target_compile_options(test_lang PUBLIC -save-temps)
 # target_compile_options(test_lang PUBLIC -fverbose-asm)
