@@ -1557,6 +1557,11 @@ show_help(std::string_view                  program_name,
     const auto try_newline1 = [margin1, file](std::size_t column) noexcept
     { return try_newline(line_width, margin1, column, file); };
 
+    // print -h switch
+    std::fputs(" [-h]", file);
+    column += 5;
+    column = try_newline1(column);
+
     // print flags key characters first, e.g. [-fLaGs]
     using flag_opts = typelist::filter<is_flag, type_sequence<Options...>>;
     if constexpr(!typelist::empty<flag_opts>)
@@ -1604,6 +1609,7 @@ show_help(std::string_view                  program_name,
         { column = print_vars<true>(p, try_newline1, column, file); },
         positionals);
 
+    // options details
     std::fputs("\n\nOptions:\n", file);
 
     constexpr std::size_t short_margin = 2;
@@ -1631,9 +1637,11 @@ show_help(std::string_view                  program_name,
         return ret;
     };
     const std::size_t doc_margin =
-        fold_tuple([](const auto& o1, const auto& o2) noexcept
-                   { return std::max(o1, o2); },
-                   map_tuple(shift, options)) +
+        fold_tuple(
+            [](const auto& o1, const auto& o2) noexcept
+            { return std::max(o1, o2); },
+            // shift of "-h, --help" = 10
+            std::tuple_cat(map_tuple(shift, options), std::tuple{10ul})) +
         short_margin + 1;
 
     const auto doc_align = [&]() noexcept
@@ -1682,6 +1690,12 @@ show_help(std::string_view                  program_name,
     };
 
     column = 0;
+    // -h, --help
+    opt_align();
+    std::fputs("-h, --help", file);
+    column += 10;
+    doc_print("show this message and exit");
+
     lucid::for_each(
         [&]<typename O>(const O& option) noexcept
         {
@@ -1714,6 +1728,7 @@ show_help(std::string_view                  program_name,
         },
         options);
 
+    // positionals details
     if constexpr(sizeof...(Positionals) > 0)
     {
         std::fputs("\nRequired arguments:\n", file);
