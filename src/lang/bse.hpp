@@ -34,44 +34,53 @@ class Memory
     }
 };
 
-template <typename InputVars>
-struct input_setter
+template <typename RegTypes,
+          typename RegNames,
+          typename CPVar,
+          typename InputVars,
+          typename OutputVars>
+struct MemoryFacade
 {
-    template <typename _Memory, typename... Args>
+    Memory<RegTypes, RegNames, CPVar> memory;
+
+    template <typename... Args>
         requires(typelist::length<InputVars> == sizeof...(Args))
     constexpr void
-    operator()(_Memory& mem, Args&&... args) const noexcept
+    set_input(Args&&... args) noexcept
     {
-        typelist::for_each_arg(
-            [&mem]<typename Var>(auto&& arg) constexpr noexcept
-            { mem.template get<Var>() = arg; },
-            InputVars{},
-            std::forward<Args>(args)...);
+        typelist::for_each_arg([&]<typename Var>(auto&& arg) constexpr noexcept
+                               { memory.template get<Var>() = arg; },
+                               InputVars{},
+                               std::forward<Args>(args)...);
     }
-};
 
-template <typename OutputVars>
-struct output_getter
-{
-    template <typename _Memory>
-    constexpr decltype(auto)
-    operator()(_Memory& mem) const noexcept
+    constexpr auto
+    get_output() noexcept
     {
         return typelist::maybe_collect<std::tuple>(
-            [&mem]<typename Var>() constexpr noexcept
-            { return mem.template get<Var>(); },
+            [&]<typename Var>() constexpr noexcept
+            { return memory.template get<Var>(); },
             OutputVars{});
+    }
+
+    template <typename Cell>
+    constexpr void
+    step(Cell cell) noexcept
+    {
+        cell(memory);
     }
 };
 
 template <typename _Program>
 class basic_scalar_evaluator
 {
-    using labelmap  = _Program::labelmap;
-    using cells     = _Program::cells;
-    using reg_names = _Program::reg_names;
-    using reg_types = _Program::reg_types;
-    using cp        = _Program::cp;
+    using labelmap    = _Program::labelmap;
+    using cells       = _Program::cells;
+    using reg_names   = _Program::reg_names;
+    using reg_types   = _Program::reg_types;
+    using cp          = _Program::cp;
+    using input_vars  = _Program::input_vars;
+    using output_vars = _Program::output_vars;
 
     static constexpr auto halt_pos = _Program::halt_pos;
 
@@ -80,49 +89,42 @@ class basic_scalar_evaluator
 
     using compiled_cells = typelist::map<compile_cell, cells>;
 
-    static constexpr input_setter<typename _Program::input_vars>   setter{};
-    static constexpr output_getter<typename _Program::output_vars> getter{};
+    using facade =
+        MemoryFacade<reg_types, reg_names, cp, input_vars, output_vars>;
 
-    using memory = Memory<reg_types, reg_names, cp>;
-
-    struct single_cell_evaluator
+    struct single_cell_evaluator : facade
     {
         static constexpr typelist::head<compiled_cells> cell{};
-
-        memory mem;
 
         template <typename... Args>
         constexpr auto
         operator()(const Args&... args) noexcept
         {
-            setter(mem, args...);
-            cell(mem);
-            return getter(mem);
+            facade::set_input(args...);
+            facade::step(cell);
+            return facade::get_output();
         }
     };
 
-    struct simple_evaluator
+    struct simple_evaluator : facade
     {
         static constexpr typelist::to<compiled_cells, std::tuple> cells{};
-
-        memory mem;
 
         template <typename... Args>
         constexpr auto
         operator()(const Args&... args) noexcept
         {
             // reset state when calling multiple times
-            mem.cp() = 0;
-            setter(mem, args...);
-            while(mem.cp() != halt_pos)
-            {
+            facade::memory.cp() = 0;
+            facade::set_input(args...);
+            while(facade::memory.cp() != halt_pos)
                 visit_at(
-                    mem.cp(),
-                    [&](auto cell) constexpr noexcept { cell(mem); },
+                    facade::memory.cp(),
+                    [&](auto cell) constexpr noexcept { facade::step(cell); },
                     cells,
                     sink);
-            }
-            return getter(mem);
+
+            return facade::get_output();
         }
     };
 
