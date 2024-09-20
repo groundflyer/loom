@@ -194,53 +194,52 @@ main(int argc, char* argv[])
     auto ft_rs = std::pair{tsv_rs, tsk_rs};
 #endif
 
-    track.dep_check(NamedTest(tm.test_with_ref(g_int, bse_ii, val_inc),
-                              "BSE increment int"),
-                    NamedTest(tm.rng_with_scalar_ref(g_int, bve_ii, bse_ii),
-                              "BVE increment int"),
-                    ft_ii);
+    track.dep_check(
+        NamedTest(tm.with_ref(g_int, bse_ii, val_inc), "BSE increment int"),
+        NamedTest(tm.rng_with_scalar_ref(g_int, bve_ii, bse_ii),
+                  "BVE increment int"),
+        ft_ii);
 
     track.dep_check(
-        NamedTest(tm.test_with_ref(g_shift, bse_lshift, val_lshift),
+        NamedTest(tm.with_ref(g_shift, bse_lshift, val_lshift),
                   "BSE left shift"),
         NamedTest(tm.rng_with_scalar_ref(g_shift, bve_lshift, bse_lshift),
                   "BVE left shift"),
         ft_ls);
 
     track.dep_check(
-        NamedTest(tm.test_with_ref(g_shift, bse_rshift, val_rshift),
+        NamedTest(tm.with_ref(g_shift, bse_rshift, val_rshift),
                   "BSE right shift"),
         NamedTest(tm.rng_with_scalar_ref(g_shift, bve_rshift, bse_rshift),
                   "BVE right shift"),
         ft_rs);
 
     track.dep_check(
-        std::pair{NamedTest(tm.test_with_ref(g_int, bse_fi, val_fac),
-                            "BSE factorial int"),
-                  NamedTest(tm.test_with_ref(g_ui, bse_fu, val_fac),
-                            "BSE factorial unsigned")},
+        std::pair{
+            NamedTest(tm.with_ref(g_int, bse_fi, val_fac), "BSE factorial int"),
+            NamedTest(tm.with_ref(g_ui, bse_fu, val_fac),
+                      "BSE factorial unsigned")},
         NamedTest(TEST_RESET_T(g_ui, bve_fu, bse_fu), "BVE factorial unsigned"),
         ft_fu);
 
-    track.dep_check(NamedTest(tm.test_with_ref(g_float, bse_sut, val_sut),
-                              "BSE simple union"),
-                    NamedTest(tm.rng_with_scalar_ref(g_float, bve_sut, bse_sut),
-                              "BVE simple union"),
-                    ft_su);
+    track.dep_check(
+        NamedTest(tm.with_ref(g_float, bse_sut, val_sut), "BSE simple union"),
+        NamedTest(tm.rng_with_scalar_ref(g_float, bve_sut, bse_sut),
+                  "BVE simple union"),
+        ft_su);
 
     track.dep_check(
-        NamedTest(tm.test_with_ref(g_float, bse_cut, val_cut),
-                  "BSE complex union"),
+        NamedTest(tm.with_ref(g_float, bse_cut, val_cut), "BSE complex union"),
         NamedTest(TEST_RESET_T(g_float, bve_cut, bse_cut), "BVE complex union"),
         ft_cu);
 
     track.dep_check(
-        NamedTest(tm.test_with_ref(g_j4, bse_jmp4, val_jmp4), "BSE jump4"),
+        NamedTest(tm.with_ref(g_j4, bse_jmp4, val_jmp4), "BSE jump4"),
         NamedTest(TEST_RESET_T(g_j4, bve_jmp4, bse_jmp4), "BVE jump4"),
         ft_j4);
 
     track.dep_check(
-        NamedTest(tm.test_with_ref(g_j4, bse_choice, val_choice), "BSE choice"),
+        NamedTest(tm.with_ref(g_j4, bse_choice, val_choice), "BSE choice"),
         NamedTest(tm.rng_with_scalar_ref(g_j4, bve_choice, bse_choice),
                   "BVE choice"),
         ft_ch);
