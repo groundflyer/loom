@@ -241,6 +241,43 @@ struct is_applicable<F, std::pair<T1, T2>, M>
     static constexpr bool value = M<F, T1, T2>::value;
 };
 
+template <typename F, typename R, typename T, template <typename...> typename M>
+struct is_applicable_r
+{
+    static constexpr bool value = false;
+};
+
+template <typename F,
+          typename R,
+          template <typename...>
+          typename M,
+          typename... Ts>
+struct is_applicable_r<F, R, steady_tuple<Ts...>, M>
+{
+    static constexpr bool value = M<F, R, Ts...>::value;
+};
+
+template <typename F,
+          typename R,
+          template <typename...>
+          typename M,
+          typename... Ts>
+struct is_applicable_r<F, R, std::tuple<Ts...>, M>
+{
+    static constexpr bool value = M<F, R, Ts...>::value;
+};
+
+template <typename F,
+          typename R,
+          template <typename...>
+          typename M,
+          typename T1,
+          typename T2>
+struct is_applicable_r<F, R, std::pair<T1, T2>, M>
+{
+    static constexpr bool value = M<F, R, T1, T2>::value;
+};
+
 template <template <typename> typename Array, typename T>
 struct maybe_toa
 {
@@ -311,8 +348,25 @@ inline constexpr bool is_maybe_nothrow_applicable_v =
     (is_applicable_v<F, T> && is_nothrow_applicable_v<F, T>) ||
     (std::is_invocable_v<F, T> && std::is_nothrow_invocable_v<F, T>);
 
+template <typename F, typename R, typename T>
+inline constexpr bool is_applicable_r_v =
+    detail::is_applicable_r<F, R, std::decay_t<T>, std::is_invocable_r>::value;
+
+template <typename F, typename R, typename T>
+inline constexpr bool is_nothrow_applicable_r_v = detail::
+    is_applicable_r<F, R, std::decay_t<T>, std::is_nothrow_invocable_r>::value;
+
+template <typename F, typename R, typename T>
+inline constexpr bool is_maybe_nothrow_applicable_r_v =
+    (is_applicable_r_v<F, R, T> && is_nothrow_applicable_r_v<F, R, T>) ||
+    (std::is_invocable_r_v<F, R, T> && std::is_nothrow_invocable_r_v<F, R, T>);
+
 template <typename F, typename T>
 concept maybe_applicable = is_applicable_v<F, T> || std::is_invocable_v<F, T>;
+
+template <typename F, typename R, typename T>
+concept maybe_applicable_r =
+    is_applicable_r_v<F, R, T> || std::is_invocable_r_v<F, R, T>;
 
 /// @brief Tuple class template
 /// for objects that aren't default- or copy-constructible.
