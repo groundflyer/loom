@@ -455,15 +455,15 @@ class BulkDispatcher
     /// @param stride SIMD width.
     template <typename _MemoryView>
     static fsize_t
-    next_offset(_MemoryView view, fsize_t stride) noexcept
+    next_offset(_MemoryView view) noexcept
     {
         // ensure that we have aligned access to the view
-        const fsize_t r  = view.offset() % stride; // remainder
-        const fsize_t sr = stride - r;
+        const fsize_t r  = view.offset() % N; // remainder
+        const fsize_t sr = N - r;
         const fsize_t vs = view.size();
         fsize_t       no = std::min(sr, vs); // new offset
         // if reminder doesn't fit SIMD lane we execute it here too
-        if(vs - no < stride) no = vs;
+        if(vs - no < N) no = vs;
         return no;
     }
 
@@ -515,7 +515,7 @@ class BulkDispatcher
     void
     operator()(_MemoryView view) const noexcept
     {
-        const fsize_t no = next_offset(view, N);
+        const fsize_t no = next_offset(view);
         // non-aligned rows executed serially
         for(fsize_t i = 0; i < no; ++i) serial_runner(view[i]);
 
