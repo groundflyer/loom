@@ -22,6 +22,7 @@
 
 namespace lucid::bve
 {
+// division and modulo for 32 bit unsigned integer can be faster
 using fsize_t = std::uint32_t;
 
 constexpr inline fsize_t dynamic_extent = -1;
@@ -595,6 +596,76 @@ class Memory
     }
 };
 
+template <typename _Program,
+          template <typename, typename> typename _Vector = std::vector,
+          template <typename> typename Allocator         = std::allocator>
+class MemoryFacade
+{
+    using reg_names   = _Program::reg_names;
+    using reg_types   = _Program::reg_types;
+    using cp_var      = _Program::cp;
+    using input_vars  = _Program::input_vars;
+    using output_vars = _Program::output_vars;
+
+    static constexpr auto halt_pos = _Program::halt_pos;
+
+    Memory<reg_types, reg_names, cp_var, _Vector, Allocator> mem;
+
+  public:
+    template <typename... Args>
+    constexpr void
+    set_input(Args&&... args) noexcept
+    {
+        typelist::for_each_arg(
+            [&mem = mem]<typename Var, typename T>(
+                const T& value) constexpr noexcept
+            {
+                std::ranges::range decltype(auto) column =
+                    mem.template get<Var>();
+                if constexpr(std::ranges::input_range<T>)
+                    std::ranges::copy(value, column.begin());
+                else
+                    std::ranges::fill(column, value);
+            },
+            input_vars{},
+            std::forward<Args>(args)...);
+    }
+
+    constexpr decltype(auto)
+    get_output() noexcept
+    {
+        return typelist::maybe_collect<std::tuple>(
+            [&mem = mem]<typename Var>() constexpr noexcept
+            { return std::views::all(mem.template get<Var>()); },
+            output_vars{});
+    }
+
+    template <typename F>
+    constexpr void
+    step(F&& f) noexcept
+    {
+        std::invoke(std::forward<F>(f), mem);
+    }
+
+    constexpr void
+    reset() noexcept
+    {
+        if constexpr(!_Program::singular) std::ranges::fill(mem.cp(), 0);
+    }
+
+    constexpr auto
+    done() noexcept
+    {
+        if constexpr(!_Program::singular) return mem.cp().front() == halt_pos;
+    }
+
+    constexpr void
+    resize(fsize_t n) noexcept
+    {
+        mem.resize(n);
+    }
+};
+
 template <typename Command, typename LabelMap>
 struct vector_eval;
 
@@ -645,136 +716,78 @@ struct vector_eval<ParmJump<Var, Labels>, LabelMap>
     }
 };
 
-template <typename InputVars>
-struct input_setter
-{
-    template <typename _Memory, typename... Args>
-    constexpr void
-    operator()(_Memory& mem, Args&&... args) const noexcept
-    {
-        typelist::for_each_arg(
-            [&mem]<typename Var, typename T>(const T& value) constexpr noexcept
-            {
-                std::ranges::range decltype(auto) column =
-                    mem.template get<Var>();
-                if constexpr(std::ranges::input_range<T>)
-                    std::ranges::copy(value, column.begin());
-                else
-                    std::ranges::fill(column, value);
-            },
-            InputVars{},
-            std::forward<Args>(args)...);
-    }
-};
-
-template <typename OutputVars>
-struct output_getter
-{
-    template <typename _Memory>
-    constexpr decltype(auto)
-    operator()(_Memory& mem) const noexcept
-    {
-        return typelist::maybe_collect<std::tuple>(
-            [&mem]<typename Var>() constexpr noexcept
-            { return std::views::all(mem.template get<Var>()); },
-            OutputVars{});
-    }
-};
-
 template <typename _Program>
 struct basic_vector_evaluator
 {
     using labelmap  = _Program::labelmap;
     using cells     = _Program::cells;
-    using vars      = _Program::variables;
     using reg_names = _Program::reg_names;
     using reg_types = _Program::reg_types;
     using cp        = _Program::cp;
-
-    static constexpr auto halt_pos = _Program::halt_pos;
 
     template <typename C>
     using compile_cell = standard_compiler<C, labelmap, vector_eval>;
 
     using compiled_cells = typelist::map<compile_cell, cells>;
 
-    static constexpr input_setter<typename _Program::input_vars>   setter{};
-    static constexpr output_getter<typename _Program::output_vars> getter{};
-
     using memory = Memory<reg_types, reg_names, cp>;
+    using facade = MemoryFacade<_Program>;
 
-    struct single_cell_evaluator
+    class single_cell_evaluator : public facade
     {
         static constexpr typelist::head<compiled_cells> cell{};
 
-        memory mem;
-
+      public:
         template <typename... Args>
         constexpr auto
         operator()(const fsize_t n, Args&&... args) noexcept
         {
-            mem.resize(n);
-            setter(mem, std::forward<Args>(args)...);
-            cell(mem);
-            return getter(mem);
-        }
-
-        void
-        reset() noexcept
-        {
+            facade::resize(n);
+            facade::set_input(std::forward<Args>(args)...);
+            facade::step(cell);
+            return facade::get_output();
         }
     };
 
-    struct evaluator
+    class evaluator : public facade
     {
         static constexpr typename typelist::to<compiled_cells, std::tuple>
-            cells{};
+                              cells{};
+        static constexpr auto halt_pos = _Program::halt_pos;
 
-        memory mem;
-
+      public:
         template <typename... Args>
         constexpr auto
         operator()(const fsize_t n, Args&&... args) noexcept
         {
-            mem.resize(n);
-            setter(mem, std::forward<Args>(args)...);
+            facade::resize(n);
+            facade::set_input(std::forward<Args>(args)...);
 
-            while(mem.cp()[0] != halt_pos)
-            {
-                std::ranges::for_each(
-                    ranges::views::filter(mem,
-                                          [](auto row) constexpr noexcept
-                                          { return row.cp() != halt_pos; }) |
-                        ranges::views::chunk_by(
-                            [](auto a, auto b) constexpr noexcept
-                            { return a.cp() == b.cp(); }),
-                    [](auto grp) constexpr noexcept
+            while(!facade::done())
+                facade::step(
+                    [](memory& mem) constexpr noexcept
                     {
-                        visit_at(
-                            ranges::front(grp).cp(),
-                            [&](auto& cell) constexpr noexcept { cell(grp); },
-                            cells,
-                            sink);
+                        std::ranges::for_each(
+                            ranges::views::filter(
+                                mem,
+                                [](auto row) constexpr noexcept
+                                { return row.cp() != halt_pos; }) |
+                                ranges::views::chunk_by(
+                                    [](auto a, auto b) constexpr noexcept
+                                    { return a.cp() == b.cp(); }),
+                            [](auto grp) constexpr noexcept
+                            {
+                                visit_at(
+                                    ranges::front(grp).cp(),
+                                    [grp](auto cell) constexpr noexcept
+                                    { cell(grp); },
+                                    cells,
+                                    sink);
+                            });
+                        std::sort(mem.begin(), mem.end());
                     });
 
-#ifdef _LIBCPP_VERSION
-                std::sort(mem.begin(), mem.end());
-#else
-                // libstdc++ std::sort doesn't use swap internally
-                // so we sort it manually
-                for(fsize_t i = 1; i < mem.size(); ++i)
-                    for(fsize_t j = i; j > 0 && mem[j - 1] > mem[j]; --j)
-                        swap(mem[j], mem[j - 1]);
-#endif
-            }
-
-            return getter(mem);
-        }
-
-        void
-        reset() noexcept
-        {
-            std::ranges::fill(mem.cp(), 0);
+            return facade::get_output();
         }
     };
 

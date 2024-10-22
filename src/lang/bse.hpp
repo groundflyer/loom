@@ -81,7 +81,7 @@ class MemoryFacade
         cell(memory);
     }
 
-    auto
+    constexpr auto
     cp() noexcept
     {
         // no-op when singular
@@ -92,13 +92,8 @@ class MemoryFacade
 template <typename _Program>
 class basic_scalar_evaluator
 {
-    using labelmap    = _Program::labelmap;
-    using cells       = _Program::cells;
-    using reg_names   = _Program::reg_names;
-    using reg_types   = _Program::reg_types;
-    using cp          = _Program::cp;
-    using input_vars  = _Program::input_vars;
-    using output_vars = _Program::output_vars;
+    using labelmap = _Program::labelmap;
+    using cells    = _Program::cells;
 
     static constexpr auto halt_pos = _Program::halt_pos;
 

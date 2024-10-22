@@ -871,69 +871,58 @@ class simd_evaluator
 
     using compiled_cells = typelist::map<compile_cell, cells>;
 
-    static constexpr bve::input_setter<typename _Program::input_vars> setter{};
-    static constexpr bve::output_getter<typename _Program::output_vars>
-        getter{};
-
+    using facade =
+        bve::MemoryFacade<_Program, std::vector, SIMDAlignedAllocator>;
     using memory = bve::
         Memory<reg_types, reg_names, cp, std::vector, SIMDAlignedAllocator>;
 
-    struct single_cell_evaluator
+    class single_cell_evaluator : public facade
     {
         static constexpr typelist::head<compiled_cells> cell{};
 
-        memory mem;
-
+      public:
         template <typename... Args>
         constexpr auto
         operator()(fsize_t n, Args&&... args) noexcept
         {
-            mem.resize(n);
-            setter(mem, std::forward<Args>(args)...);
-            cell(mem.view());
-            return getter(mem);
+            facade::resize(n);
+            facade::set_input(std::forward<Args>(args)...);
+            facade::step([](memory& mem) noexcept { cell(mem.view()); });
+            return facade::get_output();
         }
     };
 
-    struct evaluator
+    class evaluator : public facade
     {
         static constexpr typelist::to<compiled_cells, std::tuple> cells{};
 
-        memory mem;
-
+      public:
         template <typename... Args>
         constexpr auto
         operator()(fsize_t n, Args&&... args) noexcept
         {
-            mem.resize(n);
-            setter(mem, std::forward<Args>(args)...);
+            facade::resize(n);
+            facade::set_input(std::forward<Args>(args)...);
 
-            const auto cps = mem.view().cp();
-            while(cps.front() != halt_pos)
-            {
-                std::ranges::for_each(memory_chunks(mem),
-                                      [](auto view) noexcept
-                                      {
-                                          visit_at(
-                                              view.cp().front(),
-                                              [&](auto cell) noexcept
-                                              { cell(view); },
-                                              cells,
-                                              sink);
-                                      });
+            while(!facade::done())
+                facade::step(
+                    [](memory& mem) noexcept
+                    {
+                        std::ranges::for_each(memory_chunks(mem),
+                                              [](auto view) noexcept
+                                              {
+                                                  visit_at(
+                                                      view.cp().front(),
+                                                      [&](auto cell) noexcept
+                                                      { cell(view); },
+                                                      cells,
+                                                      sink);
+                                              });
 
-#ifdef _LIBCPP_VERSION
-                std::sort(mem.begin(), mem.end());
-#else
-                // libstdc++ std::sort doesn't use swap internally
-                // so we sort it manually
-                for(std::size_t i = 1; i < mem.size(); ++i)
-                    for(std::size_t j = i; j > 0 && mem[j - 1] > mem[j]; --j)
-                        swap(mem[j], mem[j - 1]);
-#endif
-            }
+                        std::sort(mem.begin(), mem.end());
+                    });
 
-            return getter(mem);
+            return facade::get_output();
         }
     };
 
