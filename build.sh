@@ -1,7 +1,7 @@
 #!/bin/bash
 
 showhelp() {
-    echo "Usage: $0 [-h] [-t] [-b] [-d] [-e] [-a] [-c] [-clang] [-D]"
+    echo "Usage: $0 [-h] [-t] [-b] [-d] [-e] [-a] [-c] [-clang] [-cuda] [-D]"
     echo -e "\t-t\tbuild and run tests"
     echo -e "\t-b\tbuild and run benchmarks"
     echo -e "\t-d\tbuild documentation"
@@ -9,6 +9,7 @@ showhelp() {
     echo -e "\t-a\tbuild all, then run benchmarks and tests"
     echo -e "\t-c\trun cmake only, don't build"
     echo -e "\t-clang\tuse clang"
+    echo -e "\t-cuda\tuse cuda"
     echo -e "\t-D\tbuild RelWithDebInfo"
     echo -e "\t-h\tshow this help message and exit"
 }
@@ -52,6 +53,9 @@ enable_debug() {
 use_clang() {
     CXX=clang++
     CMAKE_ARGS+=(-DCMAKE_CXX_COMPILER=${CXX})
+}
+
+use_cuda() {
     CMAKE_ARGS+=(-DUSE_CUDA=ON)
     CMAKE_ARGS+=(-DCMAKE_CUDA_ARCHITECTURES=21)
 }
@@ -113,6 +117,9 @@ for key in $@; do
             ;;
         -clang)
             use_clang
+            ;;
+        -cuda)
+            use_cuda
             ;;
         -D)
             enable_debug
