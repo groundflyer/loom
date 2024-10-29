@@ -788,6 +788,12 @@ using from = detail::from<Source>::type;
 template <typename Source, template <typename...> typename Target>
 using to = detail::to<Source, Target>::type;
 
+/// @brief If @p List consists of single element it's the resulting type,
+/// otherwise it's @p Target of the elements.
+template <typename List, template <typename...> typename Target>
+using maybe_to =
+    std::conditional_t<length<List> == 1, head<List>, to<List, Target>>;
+
 /// @brief Convert type_sequence of std::integer_constant into a
 /// std::integer_sequence.
 ///

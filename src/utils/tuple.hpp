@@ -214,19 +214,19 @@ for_each2_impl(F&&         f,
 }
 
 template <typename F, typename T, template <typename...> typename M>
-struct is_applicable
+struct is_applicable_mod
 {
     static constexpr bool value = false;
 };
 
 template <typename F, template <typename...> typename M, typename... Ts>
-struct is_applicable<F, steady_tuple<Ts...>, M>
+struct is_applicable_mod<F, steady_tuple<Ts...>, M>
 {
     static constexpr bool value = M<F, Ts...>::value;
 };
 
 template <typename F, template <typename...> typename M, typename... Ts>
-struct is_applicable<F, std::tuple<Ts...>, M>
+struct is_applicable_mod<F, std::tuple<Ts...>, M>
 {
     static constexpr bool value = M<F, Ts...>::value;
 };
@@ -236,13 +236,13 @@ template <typename F,
           typename M,
           typename T1,
           typename T2>
-struct is_applicable<F, std::pair<T1, T2>, M>
+struct is_applicable_mod<F, std::pair<T1, T2>, M>
 {
     static constexpr bool value = M<F, T1, T2>::value;
 };
 
 template <typename F, typename R, typename T, template <typename...> typename M>
-struct is_applicable_r
+struct is_applicable_mod_r
 {
     static constexpr bool value = false;
 };
@@ -252,7 +252,7 @@ template <typename F,
           template <typename...>
           typename M,
           typename... Ts>
-struct is_applicable_r<F, R, steady_tuple<Ts...>, M>
+struct is_applicable_mod_r<F, R, steady_tuple<Ts...>, M>
 {
     static constexpr bool value = M<F, R, Ts...>::value;
 };
@@ -262,7 +262,7 @@ template <typename F,
           template <typename...>
           typename M,
           typename... Ts>
-struct is_applicable_r<F, R, std::tuple<Ts...>, M>
+struct is_applicable_mod_r<F, R, std::tuple<Ts...>, M>
 {
     static constexpr bool value = M<F, R, Ts...>::value;
 };
@@ -273,7 +273,7 @@ template <typename F,
           typename M,
           typename T1,
           typename T2>
-struct is_applicable_r<F, R, std::pair<T1, T2>, M>
+struct is_applicable_mod_r<F, R, std::pair<T1, T2>, M>
 {
     static constexpr bool value = M<F, R, T1, T2>::value;
 };
@@ -333,33 +333,41 @@ using maybe_toa = detail::maybe_toa<Array, T>::type;
 
 /// @brief Check if tuple.
 template <typename T>
-inline constexpr bool is_tuple_v = detail::is_tuple<std::decay_t<T>>::value;
+inline constexpr bool is_tuple_v =
+    detail::is_tuple<std::remove_cvref_t<T>>::value;
 
 template <typename F, typename T>
-inline constexpr bool is_applicable_v =
-    detail::is_applicable<F, std::decay_t<T>, std::is_invocable>::value;
+inline constexpr bool is_applicable_v = detail::
+    is_applicable_mod<F, std::remove_cvref_t<T>, std::is_invocable>::value;
 
 template <typename F, typename T>
 inline constexpr bool is_nothrow_applicable_v =
-    detail::is_applicable<F, std::decay_t<T>, std::is_nothrow_invocable>::value;
+    detail::is_applicable_mod<F,
+                              std::remove_cvref_t<T>,
+                              std::is_nothrow_invocable>::value;
 
 template <typename F, typename T>
 inline constexpr bool is_maybe_nothrow_applicable_v =
-    (is_applicable_v<F, T> && is_nothrow_applicable_v<F, T>) ||
-    (std::is_invocable_v<F, T> && std::is_nothrow_invocable_v<F, T>);
+    is_nothrow_applicable_v<F, T> || std::is_nothrow_invocable_v<F, T>;
 
 template <typename F, typename R, typename T>
 inline constexpr bool is_applicable_r_v =
-    detail::is_applicable_r<F, R, std::decay_t<T>, std::is_invocable_r>::value;
+    detail::is_applicable_mod_r<F,
+                                R,
+                                std::remove_cvref_t<T>,
+                                std::is_invocable_r>::value;
 
 template <typename F, typename R, typename T>
-inline constexpr bool is_nothrow_applicable_r_v = detail::
-    is_applicable_r<F, R, std::decay_t<T>, std::is_nothrow_invocable_r>::value;
+inline constexpr bool is_nothrow_applicable_r_v =
+    detail::is_applicable_mod_r<F,
+                                R,
+                                std::remove_cvref_t<T>,
+                                std::is_nothrow_invocable_r>::value;
 
 template <typename F, typename R, typename T>
 inline constexpr bool is_maybe_nothrow_applicable_r_v =
-    (is_applicable_r_v<F, R, T> && is_nothrow_applicable_r_v<F, R, T>) ||
-    (std::is_invocable_r_v<F, R, T> && std::is_nothrow_invocable_r_v<F, R, T>);
+    is_nothrow_applicable_r_v<F, R, T> ||
+    std::is_nothrow_invocable_r_v<F, R, T>;
 
 template <typename F, typename T>
 concept maybe_applicable = is_applicable_v<F, T> || std::is_invocable_v<F, T>;

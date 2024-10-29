@@ -17,6 +17,8 @@
 #include <lang/simd.hpp>
 #include <utils/test.hpp>
 
+#include <range/v3/view/drop.hpp>
+
 using namespace lucid;
 using namespace lucid::test;
 
@@ -53,6 +55,37 @@ main(int argc, char* argv[])
     bve::evaluator<choice_float> bve_choice;
     bve::evaluator<lshift_u>     bve_lshift;
     bve::evaluator<rshift_u>     bve_rshift;
+
+    bve::streamer<fac_unsigned> bvs_fu(tm.num_runs / 8);
+    auto                        bvs_fu_wrapper =
+        [&stream = bvs_fu](unsigned, const auto& input) noexcept
+    {
+        // prepare result container
+        std::vector<unsigned> out;
+        out.reserve(input.size());
+        auto inserter = std::back_inserter(out);
+
+        // set initial data
+        auto dropped = stream.size();
+        stream.set_input(std::views::take(input, dropped));
+        stream();
+
+        // feed all the input data
+        while(dropped < input.size())
+        {
+            auto exs = stream.exchange(ranges::views::drop(input, dropped));
+            dropped += std::ranges::size(exs);
+            std::ranges::copy(exs, inserter);
+            stream();
+        }
+
+        // compute the rest
+        while(!stream.done()) stream();
+
+        std::ranges::copy(stream.get_completed_output(), inserter);
+
+        return out;
+    };
 
     // vertical SIMD
     simd::evaluator<incr_int>     simd_v_ii;
@@ -220,6 +253,8 @@ main(int argc, char* argv[])
             NamedTest(tm.with_ref(g_ui, bse_fu, val_fac),
                       "BSE factorial unsigned")},
         NamedTest(TEST_RESET_T(g_ui, bve_fu, bse_fu), "BVE factorial unsigned"),
+        NamedTest(TEST_RESET_V(g_ui, bvs_fu_wrapper, bve_fu),
+                  "BVE Stream factorial unsigned"),
         ft_fu);
 
     track.dep_check(
