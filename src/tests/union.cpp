@@ -27,17 +27,30 @@ static_assert(std::is_move_assignable_v<VectorTest>);
 
 static_assert(std::is_swappable_v<ProxyUnionTest>);
 
+struct range_val_id
+{
+    template <typename In>
+    constexpr In
+    operator()(unsigned, In&& in) const noexcept
+    {
+        return std::forward<In>(in);
+    }
+};
+
+constexpr inline range_val_id rng_id{};
+
 int
 main(int argc, char* argv[])
 {
-    Track       track(argc, argv);
-    RandomState rs;
-    auto        bgen         = rs.make_gen<bool>(0.5);
-    auto        igen         = rs.make_gen<int>(-10000, 10000);
-    auto        ugen         = rs.make_gen<unsigned>(0, 10000);
-    auto        fgen         = rs.make_gen<float>();
-    auto        dgen         = rs.make_gen<double>();
-    auto        union_assign = [](auto val) noexcept
+    Track         track;
+    ParmTestMaker tm{parse_numruns(argc, argv)};
+    RandomState   rs;
+    auto          bgen         = rs.make_gen<bool>(0.5);
+    auto          igen         = rs.make_gen<int>(-10000, 10000);
+    auto          ugen         = rs.make_gen<unsigned>(0, 10000);
+    auto          fgen         = rs.make_gen<float>();
+    auto          dgen         = rs.make_gen<double>();
+    auto          union_assign = [](auto val) noexcept
     {
         UnionTest t;
         t = val;
@@ -77,22 +90,37 @@ main(int argc, char* argv[])
         return vptest2.view<std::ranges::range_value_t<In>>();
     };
 
-    track.parm_test("Union assign bool", bgen, union_assign, union_val);
-    track.parm_test("Union assign int", igen, union_assign, union_val);
-    track.parm_test("Union assign unsigned", ugen, union_assign, union_val);
-    track.parm_test("Union assign float", fgen, union_assign, union_val);
-    track.parm_test("Union assign double", dgen, union_assign, union_val);
-    track.parm_range_test<false>("Union vector bool", bgen, vu_test);
-    track.parm_range_test<false>("Union vector int", igen, vu_test);
-    track.parm_range_test<false>("Union vector unsigned", ugen, vu_test);
-    track.parm_range_test<false>("Union vector float", fgen, vu_test);
-    track.parm_range_test<false>("Union vector double", dgen, vu_test);
-    track.parm_range_test<false>("Union vector proxy int", igen, vpu_test);
-    track.parm_range_test<false>("Union vector proxy unsigned", ugen, vpu_test);
-    track.parm_range_test<false>("Union vector proxy float", fgen, vpu_test);
-    track.parm_range_test<false>("Union vector proxy swap",
-                                 fgen,
-                                 vpu_swap_test);
+    track.check(
+        NamedTest(tm.test(bgen, union_assign, union_val), "Union assign bool"));
+    track.check(
+        NamedTest(tm.test(igen, union_assign, union_val), "Union assign int"));
+    track.check(NamedTest(tm.test(ugen, union_assign, union_val),
+                          "Union assign unsigned"));
+    track.check(NamedTest(tm.test(fgen, union_assign, union_val),
+                          "Union assign float"));
+    track.check(NamedTest(tm.test(dgen, union_assign, union_val),
+                          "Union assign double"));
 
-    return track.code();
+    track.check(NamedTest(tm.rng_with_ref<false>(bgen, vu_test, rng_id),
+                          "Union vector bool"));
+    track.check(NamedTest(tm.rng_with_ref<false>(bgen, vu_test, rng_id),
+                          "Union vector bool"));
+    track.check(NamedTest(tm.rng_with_ref<false>(igen, vu_test, rng_id),
+                          "Union vector int"));
+    track.check(NamedTest(tm.rng_with_ref<false>(ugen, vu_test, rng_id),
+                          "Union vector unsigned"));
+    track.check(NamedTest(tm.rng_with_ref<false>(fgen, vu_test, rng_id),
+                          "Union vector float"));
+    track.check(NamedTest(tm.rng_with_ref<false>(dgen, vu_test, rng_id),
+                          "Union vector double"));
+    track.check(NamedTest(tm.rng_with_ref<false>(igen, vpu_test, rng_id),
+                          "Union vector proxy int"));
+    track.check(NamedTest(tm.rng_with_ref<false>(ugen, vpu_test, rng_id),
+                          "Union vector proxy unsigned"));
+    track.check(NamedTest(tm.rng_with_ref<false>(fgen, vpu_test, rng_id),
+                          "Union vector proxy float"));
+    track.check(NamedTest(tm.rng_with_ref<false>(fgen, vpu_swap_test, rng_id),
+                          "Union vector proxy swap"));
+
+    return track.ret_code();
 }

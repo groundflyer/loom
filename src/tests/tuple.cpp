@@ -51,34 +51,36 @@ struct B
 using namespace lucid::test;
 
 int
-main(int argc, char* argv[])
+main()
 {
-    Track track(argc, argv);
+    Track track;
 
-    track.checks(
-        "visit modify reference",
+    track.check(NamedTest(
         []() noexcept
         {
             TT t{1, 2.f, 3.};
-            lucid::visit(
+            lucid::visit_at(
                 1ul,
                 [](auto& v) noexcept { v += 1; },
                 t,
                 lucid::sink);
-            return cmp_all(std::get<1>(t), 3.f);
+            return std::get<1>(t) == 3.f;
         },
-        "visit and return",
+        "visit modify reference"));
+
+    track.check(NamedTest(
         []() noexcept
         {
             const TT t2{4, 5.f, 6.};
-            return cmp_all(lucid::visit(
-                               2ul,
-                               [](const auto& v) -> double { return v * 10; },
-                               t2,
-                               []() { return .0; }),
-                           60.);
+            return lucid::visit_at(
+                       2ul,
+                       [](const auto& v) -> double { return v * 10; },
+                       t2,
+                       []() { return .0; }) == 60.;
         },
-        "map tuple to steady_tuple",
+        "visit and return"));
+
+    track.check(NamedTest(
         []() noexcept
         {
             std::tuple<std::array<char, 4>, std::array<int, 4>> ta{
@@ -90,17 +92,21 @@ main(int argc, char* argv[])
                 ta);
             st.template get<0>() = 'x';
             st.template get<1>() += 5;
-            return cmp_all(std::get<0>(ta)[1], 'x', std::get<1>(ta)[1], 7);
+            return std::get<0>(ta)[1] == 'x' && std::get<1>(ta)[1] == 7;
         },
-        "steady_tuple uniform_init",
+        "map tuple to steady_tuple"));
+
+    track.check(NamedTest(
         []() noexcept
         {
             lucid::steady_tuple<A, B> st1(lucid::uniform_init, 34, 0);
             const A&                  a1 = st1.template get<0>();
             const B&                  b1 = st1.template get<1>();
-            return cmp_all(a1.a, b1.a, a1.b, b1.b);
+            return a1.a == b1.a && a1.b == b1.b;
         },
-        "steady_tuple piecewise_construct",
+        "steady_tuple uniform_init"));
+
+    track.check(NamedTest(
         []() noexcept
         {
             lucid::steady_tuple<A, B> st2(std::piecewise_construct,
@@ -108,9 +114,11 @@ main(int argc, char* argv[])
                                           std::pair(3, 4));
             const A&                  a2 = st2.template get<A>();
             const B&                  b2 = st2.template get<B>();
-            return cmp_all(a2.a, 1, a2.b, 2, b2.a, 3, b2.b, 4);
+            return a2.a == 1 && a2.b == 2 && b2.a == 3 && b2.b == 4;
         },
-        "steady_tuple uniform_init piecewise_construct",
+        "steady_tuple piecewise_construct"));
+
+    track.check(NamedTest(
         []() noexcept
         {
             lucid::steady_tuple<A, B> st3(lucid::uniform_init,
@@ -118,9 +126,12 @@ main(int argc, char* argv[])
                                           std::pair(34, 0));
             const A&                  a3 = st3.template get<A>();
             const B&                  b3 = st3.template get<B>();
-            return cmp_all(a3.a, b3.a, a3.b, b3.b);
+            return a3.a == b3.a && a3.b == b3.b;
         },
-        "steady_tuple of refs",
+        "steady_tuple uniform_init piecewise_construct"));
+
+    track.check(NamedTest(
+
         []() noexcept
         {
             int                              i1 = 3;
@@ -128,26 +139,24 @@ main(int argc, char* argv[])
             lucid::steady_tuple<int&, char&> st4(i1, c1);
             st4.template get<0>() += 5;
             st4.template get<1>() = 'f';
-            return cmp_all(i1, 8, c1, 'f');
-        });
+            return i1 == 8 && c1 == 'f';
+        },
+        "steady_tuple of refs"));
 
     lucid::steady_tuple<A, B> st5(A(1, 2ul), B(3l, 4));
     lucid::steady_tuple<A, B> st6(std::move(st5));
 
-    track.checks(
-        "steady_tuple move construct",
+    track.check(NamedTest(
         [&]() noexcept
         {
-            return cmp_all(st6.template get<0>().a,
-                           1,
-                           st6.template get<0>().b,
-                           2ul,
-                           st6.template get<1>().a,
-                           3l,
-                           st6.template get<1>().b,
-                           4);
+            return st6.template get<0>().a == 1 &&
+                   st6.template get<0>().b == 2ul &&
+                   st6.template get<1>().a == 3l &&
+                   st6.template get<1>().b == 4;
         },
-        "steady_tuple move assign",
+        "steady_tuple move construct"));
+
+    track.check(NamedTest(
         [&]() noexcept
         {
             st5.template get<0>().a = 5;
@@ -156,21 +165,20 @@ main(int argc, char* argv[])
             st5.template get<1>().b = 8;
 
             st6 = std::move(st5);
-            return cmp_all(st6.template get<0>().a,
-                           5,
-                           st6.template get<0>().b,
-                           6ul,
-                           st6.template get<1>().a,
-                           7l,
-                           st6.template get<1>().b,
-                           8);
+            return st6.template get<0>().a == 5 &&
+                   st6.template get<0>().b == 6ul &&
+                   st6.template get<1>().a == 7l &&
+                   st6.template get<1>().b == 8;
         },
-        "steady_tuple structured binding",
+        "steady_tuple move assign"));
+
+    track.check(NamedTest(
         [&]() noexcept
         {
             auto& [a6, b6] = st6;
-            return cmp_all(a6.a, 5, a6.b, 6ul, b6.a, 7l, b6.b, 8);
-        });
+            return a6.a == 5 && a6.b == 6ul && b6.a == 7l && b6.b == 8;
+        },
+        "steady_tuple structured binding"));
 
-    return track.code();
+    return track.ret_code();
 }
