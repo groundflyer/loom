@@ -18,26 +18,35 @@ main()
     NamedFuzzyTest       passing_fuzzy{f, "Passing fuzzy test", 0.15};
 
     Track track;
+    fmt::print("failing\n");
     track.check(failing_test);
+    fmt::print("passing\n");
     track.check(passing_test);
+    fmt::print("failing\n");
     track.check(failing_fuzzy);
+    fmt::print("passing\n");
     track.check(passing_fuzzy);
 
+    fmt::print("2 passing, fuzzy fails, 2 skipped\n");
     track.dep_check(passing_test,
                     passing_fuzzy,
                     failing_fuzzy,
                     failing_test,
                     passing_test);
 
+    fmt::print(
+        "pair of passing, tuple of 2 failing and 2 passing, skipping 1\n");
     track.dep_check(
         std::pair{passing_test, passing_fuzzy},
         std::tuple{failing_fuzzy, failing_test, passing_test, passing_fuzzy},
         passing_test);
 
+    fmt::print("all passing\n");
     track.dep_check(passing_test,
                     std::pair{passing_test, passing_fuzzy},
                     std::pair{passing_test, passing_fuzzy},
                     passing_test);
 
+    fmt::print("14 test must fail out of total 22\n");
     return track.total() != 22 || track.passed() != 14;
 }
