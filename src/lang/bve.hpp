@@ -826,7 +826,7 @@ struct vector_eval<ParmJump<Var, Labels>, LabelMap>
 };
 
 template <typename _Program>
-struct basic_vector_evaluator
+class basic_vector_compiler
 {
     using labelmap  = _Program::labelmap;
     using cells     = _Program::cells;
@@ -905,6 +905,10 @@ struct basic_vector_evaluator
         }
     };
 
+  public:
+    using function = std::
+        conditional_t<_Program::singular, single_cell_evaluator, evaluator>;
+
     class streamer : public facade
     {
         static_assert(!_Program::singular);
@@ -927,15 +931,11 @@ struct basic_vector_evaluator
             facade::sort();
         }
     };
-
-  public:
-    using type = std::
-        conditional_t<_Program::singular, single_cell_evaluator, evaluator>;
 };
 
 template <typename _Program>
-using evaluator = basic_vector_evaluator<_Program>::type;
+using function = basic_vector_compiler<_Program>::function;
 
 template <typename _Program>
-using streamer = basic_vector_evaluator<_Program>::streamer;
+using streamer = basic_vector_compiler<_Program>::streamer;
 } // namespace lucid::bve

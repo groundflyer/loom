@@ -29,85 +29,93 @@ main(int argc, char* argv[])
     ParmTestMaker tm{parse_numruns(argc, argv)};
     RandomState   rs;
 
-    auto g_int   = rs.make_gen<int>(2, 10);
-    auto g_ui    = rs.make_gen<unsigned>(2, 10);
-    auto g_float = rs.make_gen<float>();
-    auto g_u3    = rs.make_gen<unsigned>(0, 3);
-    auto g_j4    = [&]() noexcept { return std::pair{g_u3(), g_float()}; };
-    auto g_shift = [&]() noexcept { return std::pair(g_ui(), g_ui()); };
-
-    bse::evaluator<incr_int>     bse_ii;
-    bse::evaluator<fac_unsigned> bse_fu;
-    bse::evaluator<fac_int>      bse_fi;
-    bse::evaluator<sut>          bse_sut;
-    bse::evaluator<cut>          bse_cut;
-    bse::evaluator<jmp4_float>   bse_jmp4;
-    bse::evaluator<choice_float> bse_choice;
-    bse::evaluator<lshift_u>     bse_lshift;
-    bse::evaluator<rshift_u>     bse_rshift;
-
-    bve::evaluator<incr_int>     bve_ii;
-    bve::evaluator<fac_unsigned> bve_fu;
-    bve::evaluator<fac_int>      bve_fi;
-    bve::evaluator<sut>          bve_sut;
-    bve::evaluator<cut>          bve_cut;
-    bve::evaluator<jmp4_float>   bve_jmp4;
-    bve::evaluator<choice_float> bve_choice;
-    bve::evaluator<lshift_u>     bve_lshift;
-    bve::evaluator<rshift_u>     bve_rshift;
-
-    bve::streamer<fac_unsigned> bvs_fu(tm.num_runs / 8);
-    auto                        bvs_fu_wrapper =
-        [&stream = bvs_fu](unsigned, const auto& input) noexcept
+    auto g_int       = rs.make_gen<int>(2, 10);
+    auto g_ui        = rs.make_gen<unsigned>(2, 10);
+    auto g_float     = rs.make_gen<float>();
+    auto g_u3        = rs.make_gen<unsigned>(0, 3);
+    auto g_j4        = [&]() noexcept { return std::pair{g_u3(), g_float()}; };
+    auto g_shift     = [&]() noexcept { return std::pair(g_ui(), g_ui()); };
+    auto wrap_stream = [](auto& stream) noexcept
     {
-        // prepare result container
-        std::vector<unsigned> out;
-        out.reserve(input.size());
-        auto inserter = std::back_inserter(out);
-
-        // set initial data
-        auto dropped = stream.size();
-        stream.set_input(std::views::take(input, dropped));
-        stream();
-
-        // feed all the input data
-        while(dropped < input.size())
+        return [&stream](unsigned, const auto& input) noexcept
         {
-            auto exs = stream.exchange(ranges::views::drop(input, dropped));
-            dropped += std::ranges::size(exs);
-            std::ranges::copy(exs, inserter);
+            // prepare result container
+            std::vector<unsigned> out;
+            out.reserve(input.size());
+            auto inserter = std::back_inserter(out);
+
+            // set initial data
+            auto dropped = stream.size();
+            stream.set_input(std::views::take(input, dropped));
             stream();
-        }
 
-        // compute the rest
-        while(!stream.done()) stream();
+            // feed all the input data
+            while(dropped < input.size())
+            {
+                auto exs = stream.exchange(ranges::views::drop(input, dropped));
+                dropped += std::ranges::size(exs);
+                std::ranges::copy(exs, inserter);
+                stream();
+            }
 
-        std::ranges::copy(stream.get_completed_output(), inserter);
+            // compute the rest
+            while(!stream.done()) stream();
 
-        return out;
+            std::ranges::copy(stream.get_completed_output(), inserter);
+
+            return out;
+        };
     };
 
+    const unsigned stream_size = tm.num_runs / 8;
+
+    bse::function<incr_int>     bse_ii;
+    bse::function<fac_unsigned> bse_fu;
+    bse::function<fac_int>      bse_fi;
+    bse::function<sut>          bse_sut;
+    bse::function<cut>          bse_cut;
+    bse::function<jmp4_float>   bse_jmp4;
+    bse::function<choice_float> bse_choice;
+    bse::function<lshift_u>     bse_lshift;
+    bse::function<rshift_u>     bse_rshift;
+
+    bve::function<incr_int>     bve_ii;
+    bve::function<fac_unsigned> bve_fu;
+    bve::function<fac_int>      bve_fi;
+    bve::function<sut>          bve_sut;
+    bve::function<cut>          bve_cut;
+    bve::function<jmp4_float>   bve_jmp4;
+    bve::function<choice_float> bve_choice;
+    bve::function<lshift_u>     bve_lshift;
+    bve::function<rshift_u>     bve_rshift;
+
+    bve::streamer<fac_unsigned> bvs_fu(stream_size);
+
     // vertical SIMD
-    simd::evaluator<incr_int>     simd_v_ii;
-    simd::evaluator<fac_unsigned> simd_v_fu;
-    simd::evaluator<fac_int>      simd_v_fi;
-    simd::evaluator<sut>          simd_v_sut;
-    simd::evaluator<cut>          simd_v_cut;
-    simd::evaluator<jmp4_float>   simd_v_jmp4;
-    simd::evaluator<choice_float> simd_v_choice;
-    simd::evaluator<lshift_u>     simd_v_lshift;
-    simd::evaluator<rshift_u>     simd_v_rshift;
+    simd::function<incr_int>     simd_v_ii;
+    simd::function<fac_unsigned> simd_v_fu;
+    simd::function<fac_int>      simd_v_fi;
+    simd::function<sut>          simd_v_sut;
+    simd::function<cut>          simd_v_cut;
+    simd::function<jmp4_float>   simd_v_jmp4;
+    simd::function<choice_float> simd_v_choice;
+    simd::function<lshift_u>     simd_v_lshift;
+    simd::function<rshift_u>     simd_v_rshift;
+
+    simd::streamer<fac_unsigned> simds_v_fu(stream_size);
 
     // minikernel SIMD
-    simd::evaluator<incr_int, true>     simd_k_ii;
-    simd::evaluator<fac_unsigned, true> simd_k_fu;
-    simd::evaluator<fac_int, true>      simd_k_fi;
-    simd::evaluator<sut, true>          simd_k_sut;
-    simd::evaluator<cut, true>          simd_k_cut;
-    simd::evaluator<jmp4_float, true>   simd_k_jmp4;
-    simd::evaluator<choice_float, true> simd_k_choice;
-    simd::evaluator<lshift_u, true>     simd_k_lshift;
-    simd::evaluator<rshift_u, true>     simd_k_rshift;
+    simd::function<incr_int, true>     simd_k_ii;
+    simd::function<fac_unsigned, true> simd_k_fu;
+    simd::function<fac_int, true>      simd_k_fi;
+    simd::function<sut, true>          simd_k_sut;
+    simd::function<cut, true>          simd_k_cut;
+    simd::function<jmp4_float, true>   simd_k_jmp4;
+    simd::function<choice_float, true> simd_k_choice;
+    simd::function<lshift_u, true>     simd_k_lshift;
+    simd::function<rshift_u, true>     simd_k_rshift;
+
+    simd::streamer<fac_unsigned, true> simds_k_fu(stream_size);
 
 #define TEST_RESET_T(G, T, V)                       \
     [&]() noexcept                                  \
@@ -159,6 +167,14 @@ main(int argc, char* argv[])
                             "SIMD Vertical right shift");
     auto tsk_rs = NamedTest(tm.rng_with_ref(g_shift, simd_k_rshift, bve_rshift),
                             "SIMD Minikernel right shift");
+    // tssv - test stream simd vertical
+    // tssk - test stream simd minikernel
+    auto tssv_fu =
+        NamedTest(TEST_RESET_V(g_ui, wrap_stream(simds_v_fu), bve_fu),
+                  "SIMD Vertical stream factorial unsigned");
+    auto tssk_fu =
+        NamedTest(TEST_RESET_V(g_ui, wrap_stream(simds_k_fu), bve_fu),
+                  "SIMD Minikernel stream factorial unsigned");
 
 #ifdef USE_CUDA
 #define WRAP(NAME) \
@@ -218,7 +234,7 @@ main(int argc, char* argv[])
                              "CUDA right shift")};
 #else
     auto ft_ii = std::pair{tsv_ii, tsk_ii};
-    auto ft_fu = std::pair{tsv_fu, tsk_fu};
+    auto ft_fu = std::tuple{tsv_fu, tsk_fu, tssv_fu, tssk_fu};
     auto ft_su = std::pair{tsv_su, tsk_su};
     auto ft_cu = std::pair{tsv_cu, tsk_cu};
     auto ft_j4 = std::pair{tsv_j4, tsk_j4};
@@ -252,9 +268,10 @@ main(int argc, char* argv[])
             NamedTest(tm.with_ref(g_int, bse_fi, val_fac), "BSE factorial int"),
             NamedTest(tm.with_ref(g_ui, bse_fu, val_fac),
                       "BSE factorial unsigned")},
-        NamedTest(TEST_RESET_T(g_ui, bve_fu, bse_fu), "BVE factorial unsigned"),
-        NamedTest(TEST_RESET_V(g_ui, bvs_fu_wrapper, bve_fu),
-                  "BVE Stream factorial unsigned"),
+        std::pair{NamedTest(TEST_RESET_T(g_ui, bve_fu, bse_fu),
+                            "BVE factorial unsigned"),
+                  NamedTest(TEST_RESET_V(g_ui, wrap_stream(bvs_fu), bve_fu),
+                            "BVE Stream factorial unsigned")},
         ft_fu);
 
     track.dep_check(

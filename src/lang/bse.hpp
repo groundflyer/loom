@@ -90,7 +90,7 @@ class MemoryFacade
 };
 
 template <typename _Program>
-class basic_scalar_evaluator
+class basic_scalar_compiler
 {
     using labelmap = _Program::labelmap;
     using cells    = _Program::cells;
@@ -141,11 +141,11 @@ class basic_scalar_evaluator
     };
 
   public:
-    using type = std::conditional_t<_Program::singular,
-                                    single_cell_evaluator,
-                                    simple_evaluator>;
+    using function = std::conditional_t<_Program::singular,
+                                        single_cell_evaluator,
+                                        simple_evaluator>;
 };
 
 template <typename _Program>
-using evaluator = basic_scalar_evaluator<_Program>::type;
+using function = basic_scalar_compiler<_Program>::function;
 } // namespace lucid::bse

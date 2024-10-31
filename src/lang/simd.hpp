@@ -855,7 +855,7 @@ class SIMDAlignedAllocator
 };
 
 template <typename _Program, template <typename...> typename Runner>
-class simd_evaluator
+class simd_compiler
 {
     using labelmap  = _Program::labelmap;
     using cells     = _Program::cells;
@@ -882,7 +882,7 @@ class simd_evaluator
 
       public:
         template <typename... Args>
-        constexpr auto
+        auto
         operator()(fsize_t n, Args&&... args) noexcept
         {
             facade::resize(n);
@@ -892,43 +892,72 @@ class simd_evaluator
         }
     };
 
-    class evaluator : public facade
+    struct stepper
     {
         static constexpr typelist::to<compiled_cells, std::tuple> cells{};
 
+        void
+        operator()(memory& mem) const noexcept
+        {
+            std::ranges::for_each(memory_chunks(mem),
+                                  [](auto view) noexcept
+                                  {
+                                      visit_at(
+                                          view.cp().front(),
+                                          [&](auto cell) noexcept
+                                          { cell(view); },
+                                          cells,
+                                          sink);
+                                  });
+        }
+    };
+
+    class evaluator : public facade
+    {
       public:
         template <typename... Args>
-        constexpr auto
+        auto
         operator()(fsize_t n, Args&&... args) noexcept
         {
             facade::resize(n);
             facade::set_input(std::forward<Args>(args)...);
 
             while(!facade::done())
-                facade::step(
-                    [](memory& mem) noexcept
-                    {
-                        std::ranges::for_each(memory_chunks(mem),
-                                              [](auto view) noexcept
-                                              {
-                                                  visit_at(
-                                                      view.cp().front(),
-                                                      [&](auto cell) noexcept
-                                                      { cell(view); },
-                                                      cells,
-                                                      sink);
-                                              });
-
-                        std::sort(mem.begin(), mem.end());
-                    });
+            {
+                facade::step(stepper{});
+                facade::sort();
+            }
 
             return facade::get_output();
         }
     };
 
   public:
-    using type = std::
+    using function = std::
         conditional_t<_Program::singular, single_cell_evaluator, evaluator>;
+
+    class streamer : public facade
+    {
+        static_assert(!_Program::singular);
+
+      public:
+        streamer()                = delete;
+        streamer(const streamer&) = delete;
+        streamer(streamer&&)      = delete;
+        streamer&
+        operator=(const streamer&) = delete;
+        streamer&
+        operator=(streamer&&) = delete;
+
+        constexpr streamer(const fsize_t n) noexcept { facade::resize(n); }
+
+        constexpr void
+        operator()() noexcept
+        {
+            facade::step(stepper{});
+            facade::sort();
+        }
+    };
 };
 
 template <typename _Program, bool use_minikernel, fsize_t bulk_number>
@@ -942,11 +971,19 @@ class choose_evaluator
         vertical_runner<Cell, LabelMap, CPVar, bulk_number>>;
 
   public:
-    using type = simd_evaluator<_Program, runner>::type;
+    using function = simd_compiler<_Program, runner>::function;
+    using streamer = simd_compiler<_Program, runner>::streamer;
 };
 
 template <typename _Program,
           bool    use_minikernel = false,
           fsize_t bulk_number    = 8>
-using evaluator = choose_evaluator<_Program, use_minikernel, bulk_number>::type;
+using function =
+    choose_evaluator<_Program, use_minikernel, bulk_number>::function;
+
+template <typename _Program,
+          bool    use_minikernel = false,
+          fsize_t bulk_number    = 8>
+using streamer =
+    choose_evaluator<_Program, use_minikernel, bulk_number>::streamer;
 } // namespace lucid::simd
