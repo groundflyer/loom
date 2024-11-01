@@ -881,11 +881,23 @@ class simd_compiler
         static constexpr typelist::head<compiled_cells> cell{};
 
       public:
-        template <typename... Args>
-        auto
-        operator()(fsize_t n, Args&&... args) noexcept
+        single_cell_evaluator()                             = delete;
+        single_cell_evaluator(const single_cell_evaluator&) = delete;
+        single_cell_evaluator(single_cell_evaluator&&)      = delete;
+        single_cell_evaluator&
+        operator=(const single_cell_evaluator&) = delete;
+        single_cell_evaluator&
+        operator=(single_cell_evaluator&&) = delete;
+
+        explicit constexpr single_cell_evaluator(const fsize_t n) noexcept
         {
             facade::resize(n);
+        }
+
+        template <typename... Args>
+        auto
+        operator()(Args&&... args) noexcept
+        {
             facade::set_input(std::forward<Args>(args)...);
             facade::step([](memory& mem) noexcept { cell(mem.view()); });
             return facade::get_output();
@@ -915,11 +927,23 @@ class simd_compiler
     class evaluator : public facade
     {
       public:
-        template <typename... Args>
-        auto
-        operator()(fsize_t n, Args&&... args) noexcept
+        evaluator()                 = delete;
+        evaluator(const evaluator&) = delete;
+        evaluator(evaluator&&)      = delete;
+        evaluator&
+        operator=(const evaluator&) = delete;
+        evaluator&
+        operator=(evaluator&&) = delete;
+
+        explicit constexpr evaluator(const fsize_t n) noexcept
         {
             facade::resize(n);
+        }
+
+        template <typename... Args>
+        auto
+        operator()(Args&&... args) noexcept
+        {
             facade::set_input(std::forward<Args>(args)...);
 
             while(!facade::done())

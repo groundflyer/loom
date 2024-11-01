@@ -37,7 +37,7 @@ main(int argc, char* argv[])
     auto g_shift     = [&]() noexcept { return std::pair(g_ui(), g_ui()); };
     auto wrap_stream = [](auto& stream) noexcept
     {
-        return [&stream](unsigned, const auto& input) noexcept
+        return [&stream](const auto& input) noexcept
         {
             // prepare result container
             std::vector<unsigned> out;
@@ -67,7 +67,8 @@ main(int argc, char* argv[])
         };
     };
 
-    const unsigned stream_size = tm.num_runs / 8;
+    const unsigned vector_size = tm.num_runs;
+    const unsigned stream_size = vector_size / 8;
 
     bse::function<incr_int>     bse_ii;
     bse::function<fac_unsigned> bse_fu;
@@ -79,41 +80,41 @@ main(int argc, char* argv[])
     bse::function<lshift_u>     bse_lshift;
     bse::function<rshift_u>     bse_rshift;
 
-    bve::function<incr_int>     bve_ii;
-    bve::function<fac_unsigned> bve_fu;
-    bve::function<fac_int>      bve_fi;
-    bve::function<sut>          bve_sut;
-    bve::function<cut>          bve_cut;
-    bve::function<jmp4_float>   bve_jmp4;
-    bve::function<choice_float> bve_choice;
-    bve::function<lshift_u>     bve_lshift;
-    bve::function<rshift_u>     bve_rshift;
+    bve::function<incr_int>     bve_ii(vector_size);
+    bve::function<fac_unsigned> bve_fu(vector_size);
+    bve::function<fac_int>      bve_fi(vector_size);
+    bve::function<sut>          bve_sut(vector_size);
+    bve::function<cut>          bve_cut(vector_size);
+    bve::function<jmp4_float>   bve_jmp4(vector_size);
+    bve::function<choice_float> bve_choice(vector_size);
+    bve::function<lshift_u>     bve_lshift(vector_size);
+    bve::function<rshift_u>     bve_rshift(vector_size);
 
     bve::streamer<fac_unsigned> bvs_fu(stream_size);
 
     // vertical SIMD
-    simd::function<incr_int>     simd_v_ii;
-    simd::function<fac_unsigned> simd_v_fu;
-    simd::function<fac_int>      simd_v_fi;
-    simd::function<sut>          simd_v_sut;
-    simd::function<cut>          simd_v_cut;
-    simd::function<jmp4_float>   simd_v_jmp4;
-    simd::function<choice_float> simd_v_choice;
-    simd::function<lshift_u>     simd_v_lshift;
-    simd::function<rshift_u>     simd_v_rshift;
+    simd::function<incr_int>     simd_v_ii(vector_size);
+    simd::function<fac_unsigned> simd_v_fu(vector_size);
+    simd::function<fac_int>      simd_v_fi(vector_size);
+    simd::function<sut>          simd_v_sut(vector_size);
+    simd::function<cut>          simd_v_cut(vector_size);
+    simd::function<jmp4_float>   simd_v_jmp4(vector_size);
+    simd::function<choice_float> simd_v_choice(vector_size);
+    simd::function<lshift_u>     simd_v_lshift(vector_size);
+    simd::function<rshift_u>     simd_v_rshift(vector_size);
 
     simd::streamer<fac_unsigned> simds_v_fu(stream_size);
 
     // minikernel SIMD
-    simd::function<incr_int, true>     simd_k_ii;
-    simd::function<fac_unsigned, true> simd_k_fu;
-    simd::function<fac_int, true>      simd_k_fi;
-    simd::function<sut, true>          simd_k_sut;
-    simd::function<cut, true>          simd_k_cut;
-    simd::function<jmp4_float, true>   simd_k_jmp4;
-    simd::function<choice_float, true> simd_k_choice;
-    simd::function<lshift_u, true>     simd_k_lshift;
-    simd::function<rshift_u, true>     simd_k_rshift;
+    simd::function<incr_int, true>     simd_k_ii(vector_size);
+    simd::function<fac_unsigned, true> simd_k_fu(vector_size);
+    simd::function<fac_int, true>      simd_k_fi(vector_size);
+    simd::function<sut, true>          simd_k_sut(vector_size);
+    simd::function<cut, true>          simd_k_cut(vector_size);
+    simd::function<jmp4_float, true>   simd_k_jmp4(vector_size);
+    simd::function<choice_float, true> simd_k_choice(vector_size);
+    simd::function<lshift_u, true>     simd_k_lshift(vector_size);
+    simd::function<rshift_u, true>     simd_k_rshift(vector_size);
 
     simd::streamer<fac_unsigned, true> simds_k_fu(stream_size);
 

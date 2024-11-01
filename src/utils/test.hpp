@@ -567,6 +567,36 @@ struct ParmTestMaker
             });
     }
 
+    template <bool           do_sort = true,
+              std::invocable G,
+              typename T,
+              typename RI,
+              typename Cmp = decltype(std::ranges::equal)>
+    auto
+    rng_with_ref(G&&  g,
+                 T&&  t,
+                 RI&& ri,
+                 Cmp  cmp = std::ranges::equal) const noexcept
+    {
+#define LAMBDA_BODY(MY_V)                                                   \
+    const auto              args = multi_gen(num_runs, std::forward<G>(g)); \
+    std::ranges::range auto tr   = maybe_apply(std::forward<T>(t), args);   \
+    std::ranges::range auto vr   = maybe_apply(MY_V, args);                 \
+    if constexpr(do_sort)                                                   \
+    {                                                                       \
+        std::ranges::sort(tr);                                              \
+        std::ranges::sort(vr);                                              \
+    }                                                                       \
+    return std::invoke(cmp, tr, vr)
+
+        if constexpr(std::is_rvalue_reference_v<decltype(ri)>)
+            return [&, ri = std::move(ri), cmp]() noexcept { LAMBDA_BODY(ri); };
+        else
+            return [&, cmp]() noexcept { LAMBDA_BODY(std::forward<RI>(ri)); };
+
+#undef LAMBDA_BODY
+    }
+
     /// @brief Make parametric test for function producing ranges.
     ///
     /// @tparam do_sort sort testing and validation ranges before comparison.
@@ -581,10 +611,10 @@ struct ParmTestMaker
               typename RI,
               typename Cmp = decltype(std::ranges::equal)>
     auto
-    rng_with_ref(G&&  g,
-                 T&&  t,
-                 RI&& ri,
-                 Cmp  cmp = std::ranges::equal) const noexcept
+    rng_with_ref_n(G&&  g,
+                   T&&  t,
+                   RI&& ri,
+                   Cmp  cmp = std::ranges::equal) const noexcept
     {
 #define LAMBDA_BODY(MY_V)                                                \
     auto make_args = [&]() noexcept                                      \
@@ -628,6 +658,28 @@ struct ParmTestMaker
                         Cmp  cmp = std::ranges::equal) const noexcept
     {
         return rng_with_ref<do_sort>(
+            std::forward<G>(g),
+            std::forward<T>(t),
+            [&ri, n = num_runs]<typename... Grs>(Grs&&... grs) noexcept {
+                return multi_gen(n,
+                                 std::forward<RI>(ri),
+                                 std::forward<Grs>(grs)...);
+            },
+            cmp);
+    }
+
+    template <bool           do_sort = true,
+              std::invocable G,
+              typename T,
+              typename RI,
+              typename Cmp = decltype(std::ranges::equal)>
+    auto
+    rng_with_scalar_ref_n(G&&  g,
+                          T&&  t,
+                          RI&& ri,
+                          Cmp  cmp = std::ranges::equal) const noexcept
+    {
+        return rng_with_ref_n<do_sort>(
             std::forward<G>(g),
             std::forward<T>(t),
             [&ri]<typename... Grs>(unsigned n, Grs&&... grs) noexcept {
