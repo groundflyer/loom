@@ -67,6 +67,11 @@ main(int argc, char* argv[])
         };
     };
 
+#ifdef USE_CUDA
+    // CUDA backend supports only 2^n size
+    tm.num_runs = std::bit_floor(tm.num_runs);
+#endif
+
     const unsigned vector_size = tm.num_runs;
     const unsigned stream_size = vector_size / 8;
 
@@ -194,45 +199,48 @@ main(int argc, char* argv[])
     auto cuda_ls = WRAP(cuda_lshift);
     auto cuda_rs = WRAP(cuda_rshift);
 
-    // CUDA backend supports only 2^n size
-    tm.num_runs = std::bit_floor(tm.num_runs);
-
-    auto ft_ii = std::tuple{tsv_ii,
-                            tsk_ii,
-                            NamedTest(tm.rng_with_ref(g_int, cuda_ii, bve_ii),
-                                      "CUDA increment int")};
-    auto ft_fu = std::tuple{tsv_fu,
-                            tsk_fu,
-                            NamedTest(tm.rng_with_ref(g_ui, cuda_fu, bve_fu),
-                                      "CUDA factorial unsigned")};
-    auto ft_su =
-        std::tuple{tsv_su,
-                   tsk_su,
-                   NamedTest(tm.rng_with_ref(g_float, cuda_su, bve_sut),
-                             "CUDA simple union")};
-    auto ft_cu =
-        std::tuple{tsv_cu,
-                   tsk_cu,
-                   NamedTest(tm.rng_with_ref(g_float, cuda_cu, bve_cut),
-                             "CUDA complex union")};
-    auto ft_j4 = std::tuple{
-        tsv_j4,
-        tsk_j4,
-        NamedTest(tm.rng_with_ref(g_j4, cuda_j4, bve_jmp4), "CUDA jump4")};
+    auto ft_ii =
+        std::tuple{tsv_ii,
+                   tsk_ii,
+                   NamedTest(tm.rng_with_scalar_ref_n(g_int, cuda_ii, bse_ii),
+                             "CUDA increment int")};
+    auto ft_fu =
+        std::tuple{tsv_fu,
+                   tsk_fu,
+                   tssv_fu,
+                   tssk_fu,
+                   NamedTest(tm.rng_with_scalar_ref_n(g_ui, cuda_fu, bse_fu),
+                             "CUDA factorial unsigned")};
+    auto ft_su = std::tuple{
+        tsv_su,
+        tsk_su,
+        NamedTest(tm.rng_with_scalar_ref_n(g_float, cuda_su, bse_sut),
+                  "CUDA simple union")};
+    auto ft_cu = std::tuple{
+        tsv_cu,
+        tsk_cu,
+        NamedTest(tm.rng_with_scalar_ref_n(g_float, cuda_cu, bse_cut),
+                  "CUDA complex union")};
+    auto ft_j4 =
+        std::tuple{tsv_j4,
+                   tsk_j4,
+                   NamedTest(tm.rng_with_scalar_ref_n(g_j4, cuda_j4, bse_jmp4),
+                             "CUDA jump4")};
     auto ft_ch = std::tuple{
         tsv_ch,
         tsk_ch,
-        NamedTest(tm.rng_with_ref(g_j4, cuda_ch, bve_choice), "CUDA choice")};
-    auto ft_ls =
-        std::tuple{tsv_ls,
-                   tsk_ls,
-                   NamedTest(tm.rng_with_ref(g_shift, cuda_ls, bve_lshift),
-                             "CUDA left shift")};
-    auto ft_rs =
-        std::tuple{tsv_rs,
-                   tsk_rs,
-                   NamedTest(tm.rng_with_ref(g_shift, cuda_rs, bve_rshift),
-                             "CUDA right shift")};
+        NamedTest(tm.rng_with_scalar_ref_n(g_j4, cuda_ch, bse_choice),
+                  "CUDA choice")};
+    auto ft_ls = std::tuple{
+        tsv_ls,
+        tsk_ls,
+        NamedTest(tm.rng_with_scalar_ref_n(g_shift, cuda_ls, bse_lshift),
+                  "CUDA left shift")};
+    auto ft_rs = std::tuple{
+        tsv_rs,
+        tsk_rs,
+        NamedTest(tm.rng_with_scalar_ref_n(g_shift, cuda_rs, bse_rshift),
+                  "CUDA right shift")};
 #else
     auto ft_ii = std::pair{tsv_ii, tsk_ii};
     auto ft_fu = std::tuple{tsv_fu, tsk_fu, tssv_fu, tssk_fu};

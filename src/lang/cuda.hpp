@@ -836,15 +836,31 @@ class chunk_ranges :
     }
 };
 
-template <typename InputVars>
-struct input_setter
+template <typename _Program>
+class MemoryFacade
 {
-    template <typename _Memory, typename... Args>
-    constexpr void
-    operator()(_Memory& mem, Args&&... args) const noexcept
+    using reg_names   = _Program::reg_names;
+    using reg_types   = _Program::reg_types;
+    using input_vars  = _Program::input_vars;
+    using output_vars = _Program::output_vars;
+    using vars        = _Program::variables;
+    using cp_var      = _Program::cp;
+    using cp_t        = vartype<cp_var>;
+
+    using memory = bve::
+        Memory<reg_types, reg_names, cp_var, SimpleVector, DeviceAllocator>;
+
+    static constexpr bool singular = _Program::singular;
+
+    memory mem;
+
+  public:
+    template <typename... Args>
+    void
+    set_input(Args&&... args) noexcept
     {
         typelist::for_each_arg(
-            [&mem]<typename Var, typename T>(const T& value) constexpr noexcept
+            [&mem = mem]<typename Var, typename T>(const T& value) noexcept
             {
                 using t     = vartype<Var>;
                 auto column = mem.template get<Var>();
@@ -858,20 +874,15 @@ struct input_setter
                 // now copy to device
                 HOST_TO_DEVICE(column.data(), buffer.data(), column.size());
             },
-            InputVars{},
+            input_vars{},
             std::forward<Args>(args)...);
     }
-};
 
-template <typename OutputVars>
-struct output_getter
-{
-    template <typename _Memory>
-    constexpr decltype(auto)
-    operator()(_Memory& mem) const noexcept
+    auto
+    get_output() noexcept
     {
         return typelist::maybe_collect<std::tuple>(
-            [&mem]<typename Var>() constexpr noexcept
+            [&mem = mem]<typename Var>() constexpr noexcept
             {
                 using t     = vartype<Var>;
                 auto column = mem.template get<Var>();
@@ -881,7 +892,39 @@ struct output_getter
                 std::ranges::copy(buffer, ret.begin());
                 return ret;
             },
-            OutputVars{});
+            output_vars{});
+    }
+
+    void
+    resize(unsigned n) noexcept
+    {
+        mem.resize(n);
+    }
+
+    void
+    reset() noexcept
+    {
+        if constexpr(!singular)
+        {
+            cp_t*          cps = mem.cp().data();
+            const unsigned n   = mem.size();
+
+            LAUNCH_KERNEL(set_constant, n, 0, n, cps, static_cast<cp_t>(0));
+            cudaDeviceSynchronize();
+        }
+    }
+
+    template <typename F>
+    auto
+    visit(F&& f) noexcept
+    {
+        return std::invoke(std::forward<F>(f), mem);
+    }
+
+    void
+    sort() noexcept
+    {
+        if constexpr(!singular) cuda::sort(vars{}, mem);
     }
 };
 
@@ -898,8 +941,6 @@ class cuda_evaluator
 
     static constexpr gsize_t num_chunks = _Program::num_cells + 1;
     static constexpr auto    halt_pos   = _Program::halt_pos;
-    static constexpr input_setter<typename _Program::input_vars>   setter{};
-    static constexpr output_getter<typename _Program::output_vars> getter{};
 
     template <typename C>
     using compile_cell = cuda::compiler<C, labelmap, cp>;
@@ -908,48 +949,49 @@ class cuda_evaluator
 
     using memory =
         bve::Memory<reg_types, reg_names, cp, SimpleVector, DeviceAllocator>;
+    using facade = MemoryFacade<_Program>;
 
-    struct single_cell_evaluator
+    class single_cell_evaluator : public facade
     {
         static constexpr typelist::head<compiled_cells> cell{};
 
-        memory mem;
+      public:
+        single_cell_evaluator()                             = delete;
+        single_cell_evaluator(const single_cell_evaluator&) = delete;
+        single_cell_evaluator(single_cell_evaluator&&)      = delete;
+        single_cell_evaluator&
+        operator=(const single_cell_evaluator&) = delete;
+        single_cell_evaluator&
+        operator=(single_cell_evaluator&&) = delete;
+
+        explicit single_cell_evaluator(const gsize_t n) noexcept
+        {
+            facade::resize(n);
+        }
 
         template <typename... Args>
-        constexpr auto
-        operator()(const gsize_t n, Args&&... args) noexcept
+        auto
+        operator()(Args&&... args) noexcept
         {
-            mem.resize(n);
-            setter(mem, std::forward<Args>(args)...);
-            run_cell_kernel(cell, mem, 0, mem.size());
-            return getter(mem);
+            facade::set_input(std::forward<Args>(args)...);
+            facade::visit([](memory& mem) noexcept
+                          { run_cell_kernel(cell, mem, 0, mem.size()); });
+            return facade::get_output();
         }
     };
 
-    struct evaluator
+    struct stepper
     {
-        using rngs_t = chunk_ranges<num_chunks, cp_t, halt_pos>;
         static constexpr typename typelist::to<compiled_cells, std::tuple>
             cells{};
 
-        memory mem;
+        chunk_ranges<num_chunks, cp_t, halt_pos> chunks;
 
-        template <typename... Args>
-        constexpr auto
-        operator()(const gsize_t n, Args&&... args) noexcept
+        stepper(memory& mem) noexcept : chunks(mem.cp().data(), mem.size()) {}
+
+        void
+        operator()(memory& mem) noexcept
         {
-            mem.resize(n);
-            setter(mem, std::forward<Args>(args)...);
-
-            cp_t* cps = mem.cp().data();
-
-            LAUNCH_KERNEL(set_constant, n, 0, n, cps, static_cast<cp_t>(0));
-            cudaDeviceSynchronize();
-
-            rngs_t chunks(cps, n);
-
-            while(chunks.terminated() != 0)
-            {
                 std::ranges::for_each(
                     chunks,
                     [&](auto rng) noexcept
@@ -961,9 +1003,40 @@ class cuda_evaluator
                             { run_cell_kernel(cell, mem, bgn, end); },
                             cells,
                             sink);
-                    });
+                    });            
+        }
+    };
 
-                sort(vars{}, mem);
+    class evaluator : public facade
+    {
+      public:
+        evaluator()                 = delete;
+        evaluator(const evaluator&) = delete;
+        evaluator(evaluator&&)      = delete;
+        evaluator&
+        operator=(const evaluator&) = delete;
+        evaluator&
+        operator=(evaluator&&) = delete;
+
+        explicit constexpr evaluator(const gsize_t n) noexcept
+        {
+                facade::resize(n);
+        }
+
+        template <typename... Args>
+        auto
+        operator()(Args&&... args) noexcept
+        {
+            facade::set_input(std::forward<Args>(args)...);
+            facade::reset();
+
+            stepper step = facade::visit(maker<stepper>);
+
+            while(step.chunks.terminated() != 0)
+            {
+                facade::visit(step);
+                facade::sort();
+
 #if 0
                 auto columns = typelist::maybe_collect<std::tuple>(
                     [&]<typename Var>() constexpr noexcept
@@ -1002,15 +1075,15 @@ class cuda_evaluator
                 }
 #endif
             }
-            return getter(mem);
+            return facade::get_output();
         }
     };
 
   public:
-    using type = std::
+    using function = std::
         conditional_t<_Program::singular, single_cell_evaluator, evaluator>;
 };
 
 template <typename _Program>
-using evaluator = cuda_evaluator<_Program>::type;
+using function = cuda_evaluator<_Program>::function;
 } // namespace lucid::cuda

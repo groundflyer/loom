@@ -58,6 +58,7 @@ use_clang() {
 use_cuda() {
     CMAKE_ARGS+=(-DUSE_CUDA=ON)
     CMAKE_ARGS+=(-DCMAKE_CUDA_ARCHITECTURES=21)
+    BUILD_DIR+="_cuda"
 }
 
 run_tests() {

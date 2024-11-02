@@ -6,16 +6,16 @@
     template <typename T>                                     \
     std::vector<T> NAME(unsigned n, const std::vector<T>& in) \
     {                                                         \
-        lucid::cuda::evaluator<PROGRAM> eval;                 \
-        return eval(n, in);                                   \
+        lucid::cuda::function<PROGRAM> eval(n);               \
+        return eval(in);                                      \
     }
 
 #define DEF_TEST_FUNC_UNION(NAME, PROGRAM)                    \
     template <typename R, typename T>                         \
     std::vector<R> NAME(unsigned n, const std::vector<T>& in) \
     {                                                         \
-        lucid::cuda::evaluator<PROGRAM> eval;                 \
-        return eval(n, in);                                   \
+        lucid::cuda::function<PROGRAM> eval(n);               \
+        return eval(in);                                      \
     }
 
 #define DEF_TEST_FUNC2(NAME, PROGRAM)                \
@@ -24,8 +24,8 @@
                          const std::vector<T1>& in1, \
                          const std::vector<T2>& in2) \
     {                                                \
-        lucid::cuda::evaluator<PROGRAM> eval;        \
-        return eval(n, in1, in2);                    \
+        lucid::cuda::function<PROGRAM> eval(n);      \
+        return eval(in1, in2);                       \
     }
 
 #define INST_TEST_FUNC(NAME, T) \
