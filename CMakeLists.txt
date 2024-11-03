@@ -91,7 +91,7 @@ endif()
 find_package(fmt 9 REQUIRED)
 if(fmt_FOUND)
   message(STATUS "Found fmt: " ${fmt_VERSION})
-  set(FMTLIB fmt::fmt-header-only)
+  set(FMTLIB fmt::fmt)
 endif()
 
 # CUDA

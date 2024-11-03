@@ -6,11 +6,6 @@
 
 #include "programs.hpp"
 
-#ifdef USE_CUDA
-#include "cuda.hpp"
-#include <bit>
-#endif
-
 #include <lang/bse.hpp>
 #include <lang/bve.hpp>
 #include <lang/lang.hpp>
@@ -66,11 +61,6 @@ main(int argc, char* argv[])
             return out;
         };
     };
-
-#ifdef USE_CUDA
-    // CUDA backend supports only 2^n size
-    tm.num_runs = std::bit_floor(tm.num_runs);
-#endif
 
     const unsigned vector_size = tm.num_runs;
     const unsigned stream_size = vector_size / 8;
@@ -182,66 +172,6 @@ main(int argc, char* argv[])
         NamedTest(TEST_RESET_V(g_ui, wrap_stream(simds_k_fu), bve_fu),
                   "SIMD Minikernel stream factorial unsigned");
 
-#ifdef USE_CUDA
-#define WRAP(NAME) \
-    [](unsigned n, const auto&... in) noexcept { return NAME(n, in...); }
-
-#define WRAP_UNION(NAME)                                             \
-    [](unsigned n, const auto& in) noexcept -> std::vector<unsigned> \
-    { return NAME<unsigned, float>(n, in); }
-
-    auto cuda_ii = WRAP(cuda_inc);
-    auto cuda_fu = WRAP(cuda_fac);
-    auto cuda_su = WRAP_UNION(cuda_sut);
-    auto cuda_cu = WRAP_UNION(cuda_cut);
-    auto cuda_j4 = WRAP(cuda_jmp4);
-    auto cuda_ch = WRAP(cuda_choice);
-    auto cuda_ls = WRAP(cuda_lshift);
-    auto cuda_rs = WRAP(cuda_rshift);
-
-    auto ft_ii =
-        std::tuple{tsv_ii,
-                   tsk_ii,
-                   NamedTest(tm.rng_with_scalar_ref_n(g_int, cuda_ii, bse_ii),
-                             "CUDA increment int")};
-    auto ft_fu =
-        std::tuple{tsv_fu,
-                   tsk_fu,
-                   tssv_fu,
-                   tssk_fu,
-                   NamedTest(tm.rng_with_scalar_ref_n(g_ui, cuda_fu, bse_fu),
-                             "CUDA factorial unsigned")};
-    auto ft_su = std::tuple{
-        tsv_su,
-        tsk_su,
-        NamedTest(tm.rng_with_scalar_ref_n(g_float, cuda_su, bse_sut),
-                  "CUDA simple union")};
-    auto ft_cu = std::tuple{
-        tsv_cu,
-        tsk_cu,
-        NamedTest(tm.rng_with_scalar_ref_n(g_float, cuda_cu, bse_cut),
-                  "CUDA complex union")};
-    auto ft_j4 =
-        std::tuple{tsv_j4,
-                   tsk_j4,
-                   NamedTest(tm.rng_with_scalar_ref_n(g_j4, cuda_j4, bse_jmp4),
-                             "CUDA jump4")};
-    auto ft_ch = std::tuple{
-        tsv_ch,
-        tsk_ch,
-        NamedTest(tm.rng_with_scalar_ref_n(g_j4, cuda_ch, bse_choice),
-                  "CUDA choice")};
-    auto ft_ls = std::tuple{
-        tsv_ls,
-        tsk_ls,
-        NamedTest(tm.rng_with_scalar_ref_n(g_shift, cuda_ls, bse_lshift),
-                  "CUDA left shift")};
-    auto ft_rs = std::tuple{
-        tsv_rs,
-        tsk_rs,
-        NamedTest(tm.rng_with_scalar_ref_n(g_shift, cuda_rs, bse_rshift),
-                  "CUDA right shift")};
-#else
     auto ft_ii = std::pair{tsv_ii, tsk_ii};
     auto ft_fu = std::tuple{tsv_fu, tsk_fu, tssv_fu, tssk_fu};
     auto ft_su = std::pair{tsv_su, tsk_su};
@@ -250,7 +180,6 @@ main(int argc, char* argv[])
     auto ft_ch = std::pair{tsv_ch, tsk_ch};
     auto ft_ls = std::pair{tsv_ls, tsk_ls};
     auto ft_rs = std::pair{tsv_rs, tsk_rs};
-#endif
 
     track.dep_check(
         NamedTest(tm.with_ref(g_int, bse_ii, val_inc), "BSE increment int"),
