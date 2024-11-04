@@ -153,3 +153,65 @@ if(BUILD_DOC)
 endif()
 
 add_subdirectory(src)
+
+# Tests
+if(BUILD_TESTS)
+  message(STATUS "Building tests")
+  enable_testing()
+
+  include(CTest)
+
+  set(test_srcs
+    argparse.cpp
+    functional.cpp
+    lang.cpp
+    linal.cpp
+    string.cpp
+    tmp.cpp
+    transforms.cpp
+    tuple.cpp
+    union.cpp
+    viewport.cpp
+    test.cpp
+  )
+
+  set(TESTS_SRC_DIR src/tests)
+
+  add_custom_target(tests)
+
+  foreach(src ${test_srcs})
+    string(REPLACE ".cpp" "" name ${src})
+    string(PREPEND name "test_")
+
+    add_executable(${name} ${TESTS_SRC_DIR}/${src})
+    add_test(NAME ${name} COMMAND ${name})
+    target_link_libraries(${name} PRIVATE ${FMTLIB})
+    target_include_directories(${name} PUBLIC src)
+    add_dependencies(tests ${name})
+  endforeach()
+
+  if(USE_CUDA)
+    add_executable(test_lang_cuda ${TESTS_SRC_DIR}/lang.cu)
+    target_compile_definitions(test_lang_cuda PUBLIC USE_CUDA FMT_USE_FLOAT128=0)
+    target_link_libraries(test_lang_cuda PRIVATE CUDA::cudart_static ${FMTLIB})
+    target_include_directories(test_lang_cuda PUBLIC src)
+    add_dependencies(tests test_lang_cuda)
+    add_test(NAME test_lang_cuda COMMAND test_lang_cuda)
+  endif()
+
+  target_include_directories(test_viewport PUBLIC ${OPENGL_INCLUDE_DIR})
+  target_link_libraries(test_viewport PUBLIC ${GL_LIBS})
+  target_compile_definitions(test_viewport PUBLIC ${GL_DEFS})
+  target_compile_options(test_argparse PUBLIC -fno-exceptions)
+  target_link_options(test_argparse PUBLIC -fno-exceptions)
+
+  # target_compile_options(test_lang PUBLIC -save-temps)
+  # target_compile_options(test_lang PUBLIC -fverbose-asm)
+  target_compile_options(test_lang PUBLIC $<$<CONFIG:RelWithDebInfo>:-fsanitize=address>)
+  target_compile_options(test_lang PUBLIC $<$<CONFIG:RelWithDebInfo>:-fsanitize=alignment>)
+  target_link_options(test_lang PUBLIC $<$<CONFIG:RelWithDebInfo>:-fsanitize=address>)
+  target_link_options(test_lang PUBLIC $<$<CONFIG:RelWithDebInfo>:-fsanitize=alignment>)
+  target_compile_options(test_argparse PUBLIC $<$<CONFIG:RelWithDebInfo>:-fsanitize=address>)
+  target_link_options(test_argparse PUBLIC $<$<CONFIG:RelWithDebInfo>:-fsanitize=address>)
+
+endif()
