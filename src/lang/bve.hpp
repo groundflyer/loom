@@ -677,12 +677,22 @@ class MemoryFacade
     {
         typelist::for_each_arg(
             [&mem = mem]<typename Var, typename T>(
-                const T& value) constexpr noexcept
-            {
+                const T&
+                    value) constexpr noexcept requires(std::ranges::
+                                                           sized_range<T> ||
+                                                       std::
+                                                           is_nothrow_convertible_v<
+                                                               T,
+                                                               vartype<Var>>) {
                 std::ranges::range decltype(auto) column =
                     mem.template get<Var>();
-                if constexpr(std::ranges::input_range<T>)
+                if constexpr(std::ranges::sized_range<T>)
+                {
+                    ASSERT(
+                        std::ranges::size(value) == mem.size(),
+                        "Input range size doesn't match memory buffer size.");
                     std::ranges::copy(value, column.begin());
+                }
                 else
                     std::ranges::fill(column, value);
             },

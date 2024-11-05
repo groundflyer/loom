@@ -4,7 +4,7 @@
 
 #pragma once
 
-#ifndef NDEBUG
+#if !defined(NDEBUG) || defined(DEBUG)
 #include <cassert>
 #define ASSERT(CONDITION, MESSAGE) assert((CONDITION) && MESSAGE)
 #else
