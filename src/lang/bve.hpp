@@ -756,14 +756,11 @@ class StreamFacade : public MemoryFacade<_Program, _Vector, Allocator>
     constexpr decltype(auto)
     get_completed_output() noexcept
     {
-        if constexpr(_Program::singular)
-            return facade::get_output();
-        else
-            return typelist::maybe_collect<std::tuple>(
-                [&mem   = facade::mem,
-                 offset = completed_offset()]<typename Var>() constexpr noexcept
-                { return std::views::drop(mem.template get<Var>(), offset); },
-                output_vars{});
+        return typelist::maybe_collect<std::tuple>(
+            [&mem   = facade::mem,
+             offset = completed_offset()]<typename Var>() constexpr noexcept
+            { return std::views::drop(mem.template get<Var>(), offset); },
+            output_vars{});
     }
 
     template <std::ranges::range Input>

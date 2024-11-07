@@ -791,6 +791,7 @@ using to = detail::to<Source, Target>::type;
 /// @brief If @p List consists of single element it's the resulting type,
 /// otherwise it's @p Target of the elements.
 template <typename List, template <typename...> typename Target>
+    requires(length<List> != 0)
 using maybe_to =
     std::conditional_t<length<List> == 1, head<List>, to<List, Target>>;
 
