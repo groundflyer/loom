@@ -112,7 +112,29 @@ struct random_dist<T>
 {
     using type = std::uniform_real_distribution<T>;
 };
+
+template <template <typename> typename Array, typename T>
+struct maybe_toa
+{
+    using type = Array<T>;
+};
+
+template <template <typename> typename Array, typename T1, typename T2>
+struct maybe_toa<Array, std::pair<T1, T2>>
+{
+    using type = std::pair<Array<T1>, Array<T2>>;
+};
+
+template <template <typename> typename Array, typename... Ts>
+struct maybe_toa<Array, std::tuple<Ts...>>
+{
+    using type = std::tuple<Array<Ts>...>;
+};
 } // namespace detail
+
+/// @brief Tuple of arrays.
+template <template <typename> typename Array, typename T>
+using maybe_toa = detail::maybe_toa<Array, T>::type;
 
 /// @brief Associates a test with a name.
 template <typename Test>
