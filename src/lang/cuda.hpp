@@ -852,6 +852,7 @@ class MemoryFacade
 
     static constexpr bool singular = _Program::singular;
 
+  protected:
     memory mem;
 
   public:
@@ -957,9 +958,9 @@ class cuda_evaluator
 
     using memory =
         bve::Memory<reg_types, reg_names, cp, SimpleVector, DeviceAllocator>;
-    using facade = MemoryFacade<_Program>;
+    using memory_facade = MemoryFacade<_Program>;
 
-    class single_cell_evaluator : public facade
+    class single_cell_evaluator : public memory_facade
     {
         static constexpr typelist::head<compiled_cells> cell{};
 
@@ -974,17 +975,18 @@ class cuda_evaluator
 
         explicit single_cell_evaluator(const gsize_t n) noexcept
         {
-            facade::resize(n);
+            memory_facade::resize(n);
         }
 
         template <typename... Args>
         auto
         operator()(Args&&... args) noexcept
         {
-            facade::set_input(std::forward<Args>(args)...);
-            facade::visit([](memory& mem) noexcept
-                          { run_cell_kernel(cell, mem, 0, mem.size()); });
-            return facade::get_output();
+            memory_facade::set_input(std::forward<Args>(args)...);
+            memory_facade::visit(
+                [](memory& mem) noexcept
+                { run_cell_kernel(cell, mem, 0, mem.size()); });
+            return memory_facade::get_output();
         }
     };
 
@@ -1015,7 +1017,7 @@ class cuda_evaluator
         }
     };
 
-    class evaluator : public facade
+    class evaluator : public memory_facade
     {
       public:
         evaluator()                 = delete;
@@ -1028,22 +1030,22 @@ class cuda_evaluator
 
         explicit constexpr evaluator(const gsize_t n) noexcept
         {
-                facade::resize(n);
+                memory_facade::resize(n);
         }
 
         template <typename... Args>
         auto
         operator()(Args&&... args) noexcept
         {
-            facade::set_input(std::forward<Args>(args)...);
-            facade::reset();
+                memory_facade::set_input(std::forward<Args>(args)...);
+                memory_facade::reset();
 
-            stepper step = facade::visit(maker<stepper>);
+                stepper step = memory_facade::visit(maker<stepper>);
 
-            while(step.chunks.terminated() != 0)
-            {
-                facade::visit(step);
-                facade::sort();
+                while(step.chunks.terminated() != 0)
+                {
+                    memory_facade::visit(step);
+                    memory_facade::sort();
 
 #if 0
                 auto columns = typelist::maybe_collect<std::tuple>(
@@ -1082,8 +1084,8 @@ class cuda_evaluator
                     putchar('\n');
                 }
 #endif
-            }
-            return facade::get_output();
+                }
+                return memory_facade::get_output();
         }
     };
 

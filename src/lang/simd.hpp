@@ -871,12 +871,14 @@ class simd_compiler
 
     using compiled_cells = typelist::map<compile_cell, cells>;
 
-    using facade =
+    using stream_facade =
+        bve::StreamFacade<_Program, std::vector, SIMDAlignedAllocator>;
+    using memory_facade =
         bve::MemoryFacade<_Program, std::vector, SIMDAlignedAllocator>;
     using memory = bve::
         Memory<reg_types, reg_names, cp, std::vector, SIMDAlignedAllocator>;
 
-    class single_cell_evaluator : public facade
+    class single_cell_evaluator : public memory_facade
     {
         static constexpr typelist::head<compiled_cells> cell{};
 
@@ -891,20 +893,21 @@ class simd_compiler
 
         explicit constexpr single_cell_evaluator(const fsize_t n) noexcept
         {
-            facade::resize(n);
+            memory_facade::resize(n);
         }
 
         template <typename... Args>
         auto
         operator()(Args&&... args) noexcept
         {
-            facade::set_input(std::forward<Args>(args)...);
-            facade::step([](memory& mem) noexcept { cell(mem.view()); });
-            return facade::get_output();
+            memory_facade::set_input(std::forward<Args>(args)...);
+            memory_facade::visit([](memory& mem) noexcept
+                                 { cell(mem.view()); });
+            return memory_facade::get_output();
         }
     };
 
-    struct stepper
+    struct visitor
     {
         static constexpr typelist::to<compiled_cells, std::tuple> cells{};
 
@@ -924,7 +927,7 @@ class simd_compiler
         }
     };
 
-    class evaluator : public facade
+    class evaluator : public memory_facade
     {
       public:
         evaluator()                 = delete;
@@ -937,22 +940,22 @@ class simd_compiler
 
         explicit constexpr evaluator(const fsize_t n) noexcept
         {
-            facade::resize(n);
+            memory_facade::resize(n);
         }
 
         template <typename... Args>
         auto
         operator()(Args&&... args) noexcept
         {
-            facade::set_input(std::forward<Args>(args)...);
+            memory_facade::set_input(std::forward<Args>(args)...);
 
-            while(!facade::done())
+            while(!memory_facade::done())
             {
-                facade::step(stepper{});
-                facade::sort();
+                memory_facade::visit(visitor{});
+                memory_facade::sort();
             }
 
-            return facade::get_output();
+            return memory_facade::get_output();
         }
     };
 
@@ -960,7 +963,7 @@ class simd_compiler
     using function = std::
         conditional_t<_Program::singular, single_cell_evaluator, evaluator>;
 
-    class streamer : public facade
+    class streamer : public stream_facade
     {
         static_assert(!_Program::singular);
 
@@ -973,13 +976,16 @@ class simd_compiler
         streamer&
         operator=(streamer&&) = delete;
 
-        constexpr streamer(const fsize_t n) noexcept { facade::resize(n); }
+        constexpr streamer(const fsize_t n) noexcept
+        {
+            stream_facade::resize(n);
+        }
 
         constexpr void
         operator()() noexcept
         {
-            facade::step(stepper{});
-            facade::sort();
+            stream_facade::visit(visitor{});
+            stream_facade::sort();
         }
     };
 };
@@ -1008,6 +1014,7 @@ using function =
 template <typename _Program,
           bool    use_minikernel = false,
           fsize_t bulk_number    = 8>
+    requires(!_Program::singular)
 using streamer =
     choose_evaluator<_Program, use_minikernel, bulk_number>::streamer;
 } // namespace lucid::simd

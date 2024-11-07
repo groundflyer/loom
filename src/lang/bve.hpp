@@ -13,6 +13,7 @@
 #include <range/v3/range/operations.hpp>
 #include <range/v3/view/chunk_by.hpp>
 #include <range/v3/view/filter.hpp>
+#include <range/v3/view/subrange.hpp>
 #include <range/v3/view/zip_with.hpp>
 
 #include <algorithm>
@@ -596,16 +597,7 @@ class Memory
         return m.size();
     }
 };
-} // namespace lucid::bve
 
-namespace ranges
-{
-template <typename T>
-inline constexpr bool enable_borrowed_range<std::ranges::subrange<T>> = true;
-}
-
-namespace lucid::bve
-{
 template <typename _Program,
           template <typename, typename> typename _Vector = std::vector,
           template <typename> typename Allocator         = std::allocator>
@@ -619,56 +611,8 @@ class MemoryFacade
 
     static constexpr auto halt_pos = _Program::halt_pos;
 
+  protected:
     Memory<reg_types, reg_names, cp_var, _Vector, Allocator> mem;
-
-    template <typename _ProxyRow, typename... Args>
-    static constexpr void
-    set_row_input(_ProxyRow row, Args&&... args) noexcept
-    {
-        typelist::for_each_arg(
-            [row]<typename Var>(auto&& arg) constexpr noexcept
-            { row.template get<Var>() = arg; },
-            input_vars{},
-            std::forward<Args>(args)...);
-
-        // reset
-        row.cp() = 0;
-    }
-
-    template <typename _ProxyRow>
-    static constexpr auto
-    get_row_output(_ProxyRow row) noexcept
-    {
-        return typelist::maybe_collect<std::tuple>(
-            [row]<typename Var>() constexpr noexcept
-            { return row.template get<Var>(); },
-            output_vars{});
-    }
-
-    constexpr auto
-    completed_iter() noexcept
-    {
-        return std::ranges::find_if(mem,
-                                    [](auto row) constexpr noexcept
-                                    { return row.cp() == halt_pos; });
-    }
-
-    constexpr auto
-    completed_offset() noexcept
-    {
-        return std::distance(std::ranges::begin(mem), completed_iter());
-    }
-
-    /// @brief View to completed (halt) elements.
-    constexpr auto
-    completed() noexcept
-    {
-        if constexpr(_Program::singular)
-            return std::views::all(mem);
-        else
-            return std::ranges::subrange(completed_iter(),
-                                         std::ranges::end(mem));
-    }
 
   public:
     template <typename... Args>
@@ -709,24 +653,11 @@ class MemoryFacade
             output_vars{});
     }
 
-    constexpr decltype(auto)
-    get_completed_output() noexcept
-    {
-        if constexpr(_Program::singular)
-            return get_output();
-        else
-            return typelist::maybe_collect<std::tuple>(
-                [&mem   = mem,
-                 offset = completed_offset()]<typename Var>() constexpr noexcept
-                { return std::views::drop(mem.template get<Var>(), offset); },
-                output_vars{});
-    }
-
     template <typename F>
-    constexpr void
-    step(F&& f) noexcept
+    constexpr auto
+    visit(F&& f) noexcept
     {
-        std::invoke(std::forward<F>(f), mem);
+        return std::invoke(std::forward<F>(f), mem);
     }
 
     constexpr void
@@ -757,6 +688,82 @@ class MemoryFacade
     resize(fsize_t n) noexcept
     {
         mem.resize(n);
+    }
+};
+
+template <typename _Program,
+          template <typename, typename> typename _Vector = std::vector,
+          template <typename> typename Allocator         = std::allocator>
+class StreamFacade : public MemoryFacade<_Program, _Vector, Allocator>
+{
+    using reg_names   = _Program::reg_names;
+    using reg_types   = _Program::reg_types;
+    using cp_var      = _Program::cp;
+    using input_vars  = _Program::input_vars;
+    using output_vars = _Program::output_vars;
+
+    static constexpr auto halt_pos = _Program::halt_pos;
+
+    using facade = MemoryFacade<_Program, _Vector, Allocator>;
+
+    template <typename _ProxyRow, typename... Args>
+    static constexpr void
+    set_row_input(_ProxyRow row, Args&&... args) noexcept
+    {
+        typelist::for_each_arg(
+            [row]<typename Var>(auto&& arg) constexpr noexcept
+            { row.template get<Var>() = arg; },
+            input_vars{},
+            std::forward<Args>(args)...);
+
+        // reset
+        row.cp() = 0;
+    }
+
+    template <typename _ProxyRow>
+    static constexpr auto
+    get_row_output(_ProxyRow row) noexcept
+    {
+        return typelist::maybe_collect<std::tuple>(
+            [row]<typename Var>() constexpr noexcept
+            { return row.template get<Var>(); },
+            output_vars{});
+    }
+
+    constexpr auto
+    completed_iter() noexcept
+    {
+        return std::ranges::find_if(facade::mem,
+                                    [](auto row) constexpr noexcept
+                                    { return row.cp() == halt_pos; });
+    }
+
+    constexpr auto
+    completed_offset() noexcept
+    {
+        return std::distance(std::ranges::begin(facade::mem), completed_iter());
+    }
+
+    /// @brief View to completed (halt) elements.
+    constexpr auto
+    completed() noexcept
+    {
+        return ranges::subrange(completed_iter(),
+                                std::ranges::end(facade::mem));
+    }
+
+  public:
+    constexpr decltype(auto)
+    get_completed_output() noexcept
+    {
+        if constexpr(_Program::singular)
+            return facade::get_output();
+        else
+            return typelist::maybe_collect<std::tuple>(
+                [&mem   = facade::mem,
+                 offset = completed_offset()]<typename Var>() constexpr noexcept
+                { return std::views::drop(mem.template get<Var>(), offset); },
+                output_vars{});
     }
 
     template <std::ranges::range Input>
@@ -849,10 +856,11 @@ class basic_vector_compiler
 
     using compiled_cells = typelist::map<compile_cell, cells>;
 
-    using memory = Memory<reg_types, reg_names, cp>;
-    using facade = MemoryFacade<_Program>;
+    using memory        = Memory<reg_types, reg_names, cp>;
+    using memory_facade = MemoryFacade<_Program>;
+    using stream_facade = StreamFacade<_Program>;
 
-    class single_cell_evaluator : public facade
+    class single_cell_evaluator : public memory_facade
     {
         static constexpr typelist::head<compiled_cells> cell{};
 
@@ -867,20 +875,20 @@ class basic_vector_compiler
 
         explicit constexpr single_cell_evaluator(const fsize_t n) noexcept
         {
-            facade::resize(n);
+            memory_facade::resize(n);
         }
 
         template <typename... Args>
         constexpr auto
         operator()(Args&&... args) noexcept
         {
-            facade::set_input(std::forward<Args>(args)...);
-            facade::step(cell);
-            return facade::get_output();
+            memory_facade::set_input(std::forward<Args>(args)...);
+            memory_facade::visit(cell);
+            return memory_facade::get_output();
         }
     };
 
-    struct stepper
+    struct visitor
     {
         static constexpr typename typelist::to<compiled_cells, std::tuple>
                               cells{};
@@ -907,7 +915,7 @@ class basic_vector_compiler
         }
     };
 
-    class evaluator : public facade
+    class evaluator : public memory_facade
     {
       public:
         evaluator()                 = delete;
@@ -920,22 +928,22 @@ class basic_vector_compiler
 
         explicit constexpr evaluator(const fsize_t n) noexcept
         {
-            facade::resize(n);
+            memory_facade::resize(n);
         }
 
         template <typename... Args>
         constexpr auto
         operator()(Args&&... args) noexcept
         {
-            facade::set_input(std::forward<Args>(args)...);
+            memory_facade::set_input(std::forward<Args>(args)...);
 
-            while(!facade::done())
+            while(!memory_facade::done())
             {
-                facade::step(stepper{});
-                facade::sort();
+                memory_facade::visit(visitor{});
+                memory_facade::sort();
             }
 
-            return facade::get_output();
+            return memory_facade::get_output();
         }
     };
 
@@ -943,7 +951,7 @@ class basic_vector_compiler
     using function = std::
         conditional_t<_Program::singular, single_cell_evaluator, evaluator>;
 
-    class streamer : public facade
+    class streamer : public stream_facade
     {
         static_assert(!_Program::singular);
 
@@ -956,13 +964,16 @@ class basic_vector_compiler
         streamer&
         operator=(streamer&&) = delete;
 
-        constexpr streamer(const fsize_t n) noexcept { facade::resize(n); }
+        constexpr streamer(const fsize_t n) noexcept
+        {
+            stream_facade::resize(n);
+        }
 
         constexpr void
         operator()() noexcept
         {
-            facade::step(stepper{});
-            facade::sort();
+            stream_facade::visit(visitor{});
+            stream_facade::sort();
         }
     };
 };
@@ -971,5 +982,6 @@ template <typename _Program>
 using function = basic_vector_compiler<_Program>::function;
 
 template <typename _Program>
+    requires(!_Program::singular)
 using streamer = basic_vector_compiler<_Program>::streamer;
 } // namespace lucid::bve
