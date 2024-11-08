@@ -891,10 +891,7 @@ class simd_compiler
         single_cell_evaluator&
         operator=(single_cell_evaluator&&) = delete;
 
-        explicit constexpr single_cell_evaluator(const fsize_t n) noexcept
-        {
-            memory_facade::resize(n);
-        }
+        using memory_facade::memory_facade;
 
         template <typename... Args>
         auto
@@ -938,10 +935,7 @@ class simd_compiler
         evaluator&
         operator=(evaluator&&) = delete;
 
-        explicit constexpr evaluator(const fsize_t n) noexcept
-        {
-            memory_facade::resize(n);
-        }
+        using memory_facade::memory_facade;
 
         template <typename... Args>
         auto
@@ -976,10 +970,7 @@ class simd_compiler
         streamer&
         operator=(streamer&&) = delete;
 
-        constexpr streamer(const fsize_t n) noexcept
-        {
-            stream_facade::resize(n);
-        }
+        using stream_facade::stream_facade;
 
         constexpr void
         operator()() noexcept

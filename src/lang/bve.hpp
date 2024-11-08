@@ -500,6 +500,8 @@ class Memory
     Memory(const Memory&) = delete;
     Memory(Memory&&)      = delete;
 
+    explicit Memory(fsize_t n) { resize(n); }
+
     Memory&
     operator=(const Memory&) = delete;
     Memory&
@@ -615,6 +617,8 @@ class MemoryFacade
     Memory<reg_types, reg_names, cp_var, _Vector, Allocator> mem;
 
   public:
+    explicit MemoryFacade(fsize_t n) : mem(n) {}
+
     template <typename... Args>
     constexpr void
     set_input(Args&&... args) noexcept
@@ -753,6 +757,8 @@ class StreamFacade : public MemoryFacade<_Program, _Vector, Allocator>
     }
 
   public:
+    using facade::facade;
+
     constexpr decltype(auto)
     get_completed_output() noexcept
     {
@@ -870,10 +876,7 @@ class basic_vector_compiler
         single_cell_evaluator&
         operator=(single_cell_evaluator&&) = delete;
 
-        explicit constexpr single_cell_evaluator(const fsize_t n) noexcept
-        {
-            memory_facade::resize(n);
-        }
+        using memory_facade::memory_facade;
 
         template <typename... Args>
         constexpr auto
@@ -923,10 +926,7 @@ class basic_vector_compiler
         evaluator&
         operator=(evaluator&&) = delete;
 
-        explicit constexpr evaluator(const fsize_t n) noexcept
-        {
-            memory_facade::resize(n);
-        }
+        using memory_facade::memory_facade;
 
         template <typename... Args>
         constexpr auto
@@ -961,10 +961,7 @@ class basic_vector_compiler
         streamer&
         operator=(streamer&&) = delete;
 
-        constexpr streamer(const fsize_t n) noexcept
-        {
-            stream_facade::resize(n);
-        }
+        using stream_facade::stream_facade;
 
         constexpr void
         operator()() noexcept
