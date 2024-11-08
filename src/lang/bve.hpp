@@ -777,8 +777,6 @@ class StreamFacade : public MemoryFacade<_Program, _Vector, Allocator>
     constexpr auto
     exchange(Input&& input) noexcept
     {
-        static_assert(ranges::viewable_range<std::remove_cvref_t<Input>>);
-
         return ranges::views::zip_with(
             [](auto row, auto inputs)
             {
