@@ -770,7 +770,7 @@ class StreamFacade : public MemoryFacade<_Program, _Vector, Allocator>
     }
 
     template <std::ranges::range Input>
-        requires(std::is_same_v<
+        requires(std::is_nothrow_convertible_v<
                  std::ranges::range_value_t<Input>,
                  typelist::maybe_to<typelist::map<vartype, input_vars>,
                                     std::tuple>>)
