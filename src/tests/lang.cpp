@@ -24,43 +24,12 @@ main(int argc, char* argv[])
     ParmTestMaker tm{parse_numruns(argc, argv)};
     RandomState   rs;
 
-    auto g_int       = rs.make_gen<int>(2, 10);
-    auto g_ui        = rs.make_gen<unsigned>(2, 10);
-    auto g_float     = rs.make_gen<float>();
-    auto g_u3        = rs.make_gen<unsigned>(0, 3);
-    auto g_j4        = [&]() noexcept { return std::pair{g_u3(), g_float()}; };
-    auto g_shift     = [&]() noexcept { return std::pair(g_ui(), g_ui()); };
-    auto wrap_stream = [](auto& stream) noexcept
-    {
-        return [&stream](const auto& input) noexcept
-        {
-            // prepare result container
-            std::vector<unsigned> out;
-            out.reserve(input.size());
-            auto inserter = std::back_inserter(out);
-
-            // set initial data
-            auto dropped = stream.size();
-            stream.set_input(std::views::take(input, dropped));
-            stream();
-
-            // feed all the input data
-            while(dropped < input.size())
-            {
-                auto exs = stream.exchange(ranges::views::drop(input, dropped));
-                dropped += std::ranges::size(exs);
-                std::ranges::copy(exs, inserter);
-                stream();
-            }
-
-            // compute the rest
-            while(!stream.done()) stream();
-
-            std::ranges::copy(stream.get_completed_output(), inserter);
-
-            return out;
-        };
-    };
+    auto g_int   = rs.make_gen<int>(2, 10);
+    auto g_ui    = rs.make_gen<unsigned>(2, 10);
+    auto g_float = rs.make_gen<float>();
+    auto g_u3    = rs.make_gen<unsigned>(0, 3);
+    auto g_j4    = [&]() noexcept { return std::pair{g_u3(), g_float()}; };
+    auto g_shift = [&]() noexcept { return std::pair(g_ui(), g_ui()); };
 
     const unsigned vector_size = tm.num_runs;
     const unsigned stream_size = vector_size / 8;

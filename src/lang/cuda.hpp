@@ -128,20 +128,38 @@ class SimpleVector
             std::allocator_traits<A>::deallocate(m_alloc, p_data, size());
     }
 
+    _REINIT void
+    reinit() noexcept
+    {
+        m_n    = 0;
+        p_data = nullptr;
+    }
+
   public:
     using value_type = T;
     using iterator   = T*;
 
     SimpleVector(const SimpleVector&) = delete;
-    SimpleVector(SimpleVector&&)      = delete;
     SimpleVector&
     operator=(const SimpleVector&) = delete;
-    SimpleVector&
-    operator=(SimpleVector&&) = delete;
 
     SimpleVector() = default;
     explicit SimpleVector(const A& a) noexcept : m_alloc(a) {}
     SimpleVector(unsigned n, const A& a = A()) : m_n(n), m_alloc(a) { alloc(); }
+    SimpleVector(SimpleVector&& rhs) :
+        p_data(rhs.p_data), m_n(rhs.m_n), m_alloc(rhs.m_alloc)
+    {
+        rhs.reinit();
+    }
+
+    SimpleVector&
+    operator=(SimpleVector&& rhs) noexcept
+    {
+        p_data  = rhs.p_data;
+        m_n     = rhs.m_n;
+        m_alloc = rhs.m_alloc;
+        rhs.reinit();
+    }
 
     ~SimpleVector() { dealloc(); }
 
@@ -794,6 +812,13 @@ class chunk_ranges :
     }
 
   public:
+    chunk_ranges(const chunk_ranges&) = delete;
+    chunk_ranges(chunk_ranges&&)      = delete;
+    chunk_ranges&
+    operator=(const chunk_ranges&) = delete;
+    chunk_ranges&
+    operator=(chunk_ranges&&) = delete;
+
     chunk_ranges() = default;
 
     chunk_ranges(cp_t* cps, gsize_t cps_size) :
@@ -839,6 +864,7 @@ class chunk_ranges :
 template <typename _Program>
 class MemoryFacade
 {
+  protected:
     using reg_names   = _Program::reg_names;
     using reg_types   = _Program::reg_types;
     using input_vars  = _Program::input_vars;
@@ -852,10 +878,11 @@ class MemoryFacade
 
     static constexpr bool singular = _Program::singular;
 
-  protected:
     memory mem;
 
   public:
+    explicit MemoryFacade(gsize_t n) : mem(n) {}
+
     template <typename... Args>
     void
     set_input(Args&&... args) noexcept
@@ -904,6 +931,12 @@ class MemoryFacade
             output_vars{});
     }
 
+    gsize_t
+    size() const noexcept
+    {
+        return mem.size();
+    }
+
     void
     resize(unsigned n) noexcept
     {
@@ -938,15 +971,138 @@ class MemoryFacade
 };
 
 template <typename _Program>
+class StreamFacade : public MemoryFacade<_Program>
+{
+    using facade      = MemoryFacade<_Program>;
+    using input_vars  = facade::input_vars;
+    using output_vars = facade::output_vars;
+    using cp_var      = facade::cp_var;
+    using cp_t        = facade::cp_t;
+    using memory      = facade::memory;
+
+    static constexpr gsize_t num_chunks = _Program::num_cells + 1;
+    static constexpr auto    halt_pos   = _Program::halt_pos;
+
+    template <typename T>
+    using buffer_t = std::vector<T, HostAllocator<T>>;
+
+    template <typename List>
+    using make_buffer_t =
+        typelist::to<typelist::map<buffer_t, typelist::map<vartype, List>>,
+                     std::tuple>;
+
+  protected:
+    using input_buffer_t  = make_buffer_t<input_vars>;
+    using output_buffer_t = make_buffer_t<output_vars>;
+    using cp_buffer_t     = buffer_t<cp_t>;
+
+    cp_buffer_t     m_cpbuf;
+    input_buffer_t  m_inbuf;
+    output_buffer_t m_outbuf;
+
+    template <typename Vars>
+    struct consumer
+    {
+        template <typename Var, typename Buffer>
+        void
+        operator()(memory& mem, Buffer& outbuff)
+        {
+            buffer_t<vartype<Var>>& buffer =
+                std::get<typelist::index<Var, Vars>>(outbuff);
+            auto column = mem.template get<Var>();
+            DEVICE_TO_HOST(buffer.data(), column.data(), column.size());
+        }
+    };
+
+    template <typename Vars>
+    struct publisher
+    {
+        template <typename Var, typename Buffer>
+        void
+        operator()(memory& mem, Buffer& inbuff)
+        {
+            buffer_t<vartype<Var>>& buffer =
+                std::get<typelist::index<Var, Vars>>(inbuff);
+            auto column = mem.template get<Var>();
+            HOST_TO_DEVICE(column.data(), buffer.data(), column.size());
+        }
+    };
+
+    void
+    fetch()
+    {
+        typelist::for_each(consumer<output_vars>{},
+                           output_vars{},
+                           facade::mem,
+                           m_outbuf);
+        typelist::for_each(consumer<input_vars>{},
+                           input_vars{},
+                           facade::mem,
+                           m_inbuf);
+    }
+
+    void
+    release()
+    {
+        typelist::for_each(publisher<input_vars>{},
+                           input_vars{},
+                           facade::mem,
+                           m_inbuf);
+    }
+
+    void
+    reset_range(gsize_t begin, gsize_t end) noexcept
+    {
+        cp_t* cps = facade::mem.cp().data();
+
+        LAUNCH_KERNEL(set_constant,
+                      facade::mem.size(),
+                      begin,
+                      end,
+                      cps,
+                      static_cast<cp_t>(0));
+        cudaDeviceSynchronize();
+    }
+
+    auto
+    views_to_completed(const chunk_ranges<num_chunks, cp_t, halt_pos>& chunks)
+    {
+        return typelist::maybe_collect<std::tuple>(
+            [offset = chunks.terminated()]<typename Var>(
+                const output_buffer_t& outbuff)
+            {
+                const buffer_t<vartype<Var>>& buffer =
+                    std::get<typelist::index<Var, output_vars>>(outbuff);
+                return std::views::drop(buffer, offset);
+            },
+            output_vars{},
+            m_outbuf);
+    }
+
+  public:
+    using facade::facade;
+
+    void
+    resize(unsigned n) noexcept
+    {
+        facade::resize(n);
+        m_inbuf.resize(n);
+        m_outbuf.resize(n);
+    }
+};
+
+template <typename _Program>
 class cuda_evaluator
 {
-    using labelmap  = _Program::labelmap;
-    using cells     = _Program::cells;
-    using reg_names = _Program::reg_names;
-    using reg_types = _Program::reg_types;
-    using cp        = _Program::cp;
-    using cp_t      = vartype<cp>;
-    using vars      = _Program::variables;
+    using labelmap    = _Program::labelmap;
+    using cells       = _Program::cells;
+    using reg_names   = _Program::reg_names;
+    using reg_types   = _Program::reg_types;
+    using cp          = _Program::cp;
+    using cp_t        = vartype<cp>;
+    using vars        = _Program::variables;
+    using input_vars  = _Program::input_vars;
+    using output_vars = _Program::output_vars;
 
     static constexpr gsize_t num_chunks = _Program::num_cells + 1;
     static constexpr auto    halt_pos   = _Program::halt_pos;
@@ -959,6 +1115,7 @@ class cuda_evaluator
     using memory =
         bve::Memory<reg_types, reg_names, cp, SimpleVector, DeviceAllocator>;
     using memory_facade = MemoryFacade<_Program>;
+    using stream_facade = StreamFacade<_Program>;
 
     class single_cell_evaluator : public memory_facade
     {
@@ -973,10 +1130,7 @@ class cuda_evaluator
         single_cell_evaluator&
         operator=(single_cell_evaluator&&) = delete;
 
-        explicit single_cell_evaluator(const gsize_t n) noexcept
-        {
-            memory_facade::resize(n);
-        }
+        using memory_facade::memory_facade;
 
         template <typename... Args>
         auto
@@ -990,36 +1144,38 @@ class cuda_evaluator
         }
     };
 
-    struct stepper
+    struct visitor
     {
         static constexpr typename typelist::to<compiled_cells, std::tuple>
             cells{};
 
         chunk_ranges<num_chunks, cp_t, halt_pos> chunks;
 
-        stepper(memory& mem) noexcept : chunks(mem.cp().data(), mem.size()) {}
+        explicit visitor(memory& mem) noexcept :
+            chunks(mem.cp().data(), mem.size())
+        {
+        }
 
         void
         operator()(memory& mem) noexcept
         {
-                std::ranges::for_each(
-                    chunks,
-                    [&](auto rng) noexcept
-                    {
-                        auto [cp, bgn, end] = rng;
-                        visit_at(
-                            cp,
-                            [&](auto cell) noexcept
-                            { run_cell_kernel(cell, mem, bgn, end); },
-                            cells,
-                            sink);
-                    });            
+            std::ranges::for_each(
+                chunks,
+                [&](auto rng) noexcept
+                {
+                    auto [cp, bgn, end] = rng;
+                    visit_at(
+                        cp,
+                        [&](auto cell) noexcept
+                        { run_cell_kernel(cell, mem, bgn, end); },
+                        cells,
+                        sink);
+                });
         }
     };
 
-    class evaluator : public memory_facade
+    struct evaluator : public memory_facade
     {
-      public:
         evaluator()                 = delete;
         evaluator(const evaluator&) = delete;
         evaluator(evaluator&&)      = delete;
@@ -1028,24 +1184,21 @@ class cuda_evaluator
         evaluator&
         operator=(evaluator&&) = delete;
 
-        explicit constexpr evaluator(const gsize_t n) noexcept
-        {
-                memory_facade::resize(n);
-        }
+        using memory_facade::memory_facade;
 
         template <typename... Args>
         auto
         operator()(Args&&... args) noexcept
         {
-                memory_facade::set_input(std::forward<Args>(args)...);
-                memory_facade::reset();
+            memory_facade::set_input(std::forward<Args>(args)...);
+            memory_facade::reset();
 
-                stepper step = memory_facade::visit(maker<stepper>);
+            visitor step{memory_facade::mem};
 
-                while(step.chunks.terminated() != 0)
-                {
-                    memory_facade::visit(step);
-                    memory_facade::sort();
+            while(step.chunks.terminated() != 0)
+            {
+                memory_facade::visit(step);
+                memory_facade::sort();
 
 #if 0
                 auto columns = typelist::maybe_collect<std::tuple>(
@@ -1084,16 +1237,102 @@ class cuda_evaluator
                     putchar('\n');
                 }
 #endif
-                }
-                return memory_facade::get_output();
+            }
+            return memory_facade::get_output();
         }
     };
 
   public:
     using function = std::
         conditional_t<_Program::singular, single_cell_evaluator, evaluator>;
+
+    class streamer : public stream_facade
+    {
+        static_assert(!_Program::singular);
+
+        visitor step;
+
+      public:
+        streamer()                = delete;
+        streamer(const streamer&) = delete;
+        streamer(streamer&&)      = delete;
+        streamer&
+        operator=(const streamer&) = delete;
+        streamer&
+        operator=(streamer&&) = delete;
+
+        streamer(const gsize_t n) : stream_facade(n), step(stream_facade::mem)
+        {
+        }
+
+        void
+        operator()() noexcept
+        {
+            stream_facade::visit(step);
+            stream_facade::sort();
+        }
+
+        bool
+        done() noexcept
+        {
+            return step.chunks.terminated() == 0;
+        }
+
+        auto
+        get_completed_output() noexcept
+        {
+            return stream_facade::views_to_completed(step.chunks);
+        }
+
+        template <std::ranges::range Input>
+            requires(std::is_nothrow_convertible_v<
+                     std::ranges::range_value_t<Input>,
+                     typelist::maybe_to<typelist::map<vartype, input_vars>,
+                                        std::tuple>>)
+        auto
+        exchange(Input&& input) noexcept
+        {
+            stream_facade::fetch();
+
+            const gsize_t lbound      = step.chunks.terminated();
+            const gsize_t count       = stream_facade::mem.size() - lbound;
+            gsize_t       steps_taken = 0;
+
+            std::ranges::for_each(
+                std::views::take(std::forward<Input>(input), count),
+                [lbound,
+                 &steps_taken,
+                 &buf = stream_facade::m_inbuf]<typename Elem>(
+                    const Elem& elem) noexcept
+                {
+                    const gsize_t i = lbound + steps_taken;
+
+                    if constexpr(is_tuple_v<Elem>)
+                        intlist::for_each(
+                            [&]<std::size_t I>() noexcept
+                            { std::get<I>(buf)[i] = std::get<I>(elem); },
+                            std::make_index_sequence<std::tuple_size_v<
+                                typename stream_facade::input_buffer_t>>{});
+                    else
+                        std::get<0>(buf)[i] = elem;
+
+                    ++steps_taken;
+                });
+
+            stream_facade::release();
+            stream_facade::reset_range(lbound, lbound + steps_taken);
+
+            if(count != steps_taken) stream_facade::sort();
+
+            return std::views::take(get_completed_output(), steps_taken);
+        }
+    };
 };
 
 template <typename _Program>
 using function = cuda_evaluator<_Program>::function;
+
+template <typename _Program>
+    requires(!_Program::singular)
+using streamer = cuda_evaluator<_Program>::streamer;
 } // namespace lucid::cuda

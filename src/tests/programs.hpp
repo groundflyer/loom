@@ -8,6 +8,13 @@
 #include <utils/functional.hpp>
 #include <utils/math.hpp>
 
+#include <range/v3/view/drop.hpp>
+
+#include <algorithm>
+#include <iterator>
+#include <ranges>
+#include <vector>
+
 // clang-format off
 
 // test programs
@@ -195,3 +202,37 @@ using jmp4_float   = jmp4_test<float>;
 using choice_float = choice_test<float>;
 using lshift_u     = lshift_test<unsigned>;
 using rshift_u     = rshift_test<unsigned>;
+
+template <typename S>
+auto
+wrap_stream(S& stream) noexcept
+{
+    return [&stream](const auto& input) noexcept
+    {
+        // prepare result container
+        std::vector<unsigned> out;
+        out.reserve(input.size());
+        auto inserter = std::back_inserter(out);
+
+        // set initial data
+        auto dropped = stream.size();
+        stream.set_input(std::views::take(input, dropped));
+        stream();
+
+        // feed all the input data
+        while(dropped < input.size())
+        {
+            auto exs = stream.exchange(ranges::views::drop(input, dropped));
+            dropped += std::ranges::size(exs);
+            std::ranges::copy(exs, inserter);
+            stream();
+        }
+
+        // compute the rest
+        while(!stream.done()) stream();
+
+        std::ranges::copy(stream.get_completed_output(), inserter);
+
+        return out;
+    };
+}

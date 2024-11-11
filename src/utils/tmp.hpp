@@ -1341,6 +1341,19 @@ using nlperm = nlperm_impl<N, L>::type;
 /// @brief First N numbers of power of two series.
 template <std::integral auto N>
 using powerof2s = typename detail::powersof2s<N>::type;
+
+/// @brief Invoke @p f with each value of @p List as template parameter.
+template <typename F, typename Int, Int... Is, typename... Args>
+constexpr void
+for_each(
+    F&& f,
+    std::integer_sequence<Int, Is...> /*List*/,
+    Args&&... args) noexcept((...&& noexcept(f.template
+                                             operator()<Is>(
+                                                 std::forward<Args>(args)...))))
+{
+    (..., f.template operator()<Is>(std::forward<Args>(args)...));
+}
 /// @}
 } // namespace intlist
 

@@ -29,6 +29,7 @@ main(int argc, char* argv[])
 {
     Track          track;
     const unsigned vector_size = std::bit_floor(parse_numruns(argc, argv));
+    const unsigned stream_size = vector_size / 8;
     ParmTestMaker  tm{vector_size};
     RandomState    rs;
 
@@ -49,6 +50,8 @@ main(int argc, char* argv[])
     cuda::function<lshift_u>     cuda_ls(vector_size);
     cuda::function<rshift_u>     cuda_rs(vector_size);
 
+    cuda::streamer<fac_unsigned> cudas_fu(stream_size);
+
     track.check(NamedTest(tm.rng_with_scalar_ref(g_int, cuda_ii, val_inc),
                           "CUDA increment int"));
     track.check(NamedTest(tm.rng_with_scalar_ref(g_ui, cuda_fu, val_fac),
@@ -65,6 +68,9 @@ main(int argc, char* argv[])
                           "CUDA left shift"));
     track.check(NamedTest(tm.rng_with_scalar_ref(g_shift, cuda_rs, val_rshift),
                           "CUDA right shift"));
+    track.check(
+        NamedTest(tm.rng_with_scalar_ref(g_ui, wrap_stream(cudas_fu), val_fac),
+                  "CUDA stream factorial unsigned"));
 
     return track.ret_code();
 }
