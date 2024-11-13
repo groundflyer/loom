@@ -5,6 +5,7 @@
 #pragma once
 
 #include <lang/lang.hpp>
+#include <utils/debug.hpp>
 #include <utils/functional.hpp>
 #include <utils/math.hpp>
 
@@ -232,6 +233,8 @@ wrap_stream(S& stream) noexcept
         while(!stream.done()) stream();
 
         std::ranges::copy(stream.get_completed_output(), inserter);
+
+        ASSERT(out.size() == input.size(), "Output size doesn't match");
 
         return out;
     };
