@@ -11,6 +11,7 @@
 
 #include <range/v3/numeric/accumulate.hpp>
 #include <range/v3/view/generate_n.hpp>
+#include <range/v3/view/zip.hpp>
 
 #include <fmt/color.h>
 
@@ -793,6 +794,7 @@ struct RandomState
     }
 };
 
+template <int def = 1000>
 unsigned
 parse_numruns(int argc, char* argv[]) noexcept
 {
@@ -800,10 +802,30 @@ parse_numruns(int argc, char* argv[]) noexcept
                std::tuple{argparse::option<'n', "numruns">(
                    "Number of runs for parametric tests. Default: 1000",
                    "N",
-                   1000,
+                   def,
                    [](std::string_view word) noexcept
                    { return std::atoi(word.data()); })},
                {argc, argv})
-        .get_opt<'n'>();
+        .template get_opt<'n'>();
 }
+
+struct transparent_range_cmp
+{
+    template <std::ranges::range A, std::ranges::range B>
+    bool
+    operator()(A&& a, B&& b) const noexcept
+    {
+        bool ret = true;
+        std::ranges::for_each(
+            ranges::views::zip(std::forward<A>(a), std::forward<B>(b)),
+            [&ret](const auto& elem) noexcept
+            {
+                const auto& [a, b] = elem;
+                const bool eq      = a == b;
+                fmt::print("{:>8} {}= {:>8}\n", a, eq ? '=' : '!', b);
+                ret &= eq;
+            });
+        return ret;
+    }
+};
 } // namespace lucid::test
