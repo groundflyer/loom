@@ -107,16 +107,16 @@ static_assert(BLOCK_SIZE % 32 == 0 && BLOCK_SIZE >= 32);
 static constexpr unsigned BLOCK_SIZE = 256;
 #endif
 
-// std::vector doesn't work with CUDA. We replace it with this.
+/// @brief Vector that doesn't do anything stupid.
 template <typename T, typename A>
 class SimpleVector
 {
     T*       p_data;
-    unsigned m_n = 0;
+    unsigned m_size = 0;
     A        m_alloc;
 
     void
-    alloc() noexcept
+    alloc()
     {
         p_data = std::allocator_traits<A>::allocate(m_alloc, size());
     }
@@ -128,37 +128,25 @@ class SimpleVector
             std::allocator_traits<A>::deallocate(m_alloc, p_data, size());
     }
 
-    _REINIT void
-    reinit() noexcept
-    {
-        m_n    = 0;
-        p_data = nullptr;
-    }
-
   public:
-    using value_type = T;
-    using iterator   = T*;
+    using value_type      = T;
+    using iterator        = T*;
+    using const_iterator  = const T*;
+    using difference_type = std::ptrdiff_t;
+
+    SimpleVector() = default;
 
     SimpleVector(const SimpleVector&) = delete;
     SimpleVector&
     operator=(const SimpleVector&) = delete;
-
-    SimpleVector() = default;
-    explicit SimpleVector(const A& a) noexcept : m_alloc(a) {}
-    SimpleVector(unsigned n, const A& a = A()) : m_n(n), m_alloc(a) { alloc(); }
-    SimpleVector(SimpleVector&& rhs) :
-        p_data(rhs.p_data), m_n(rhs.m_n), m_alloc(rhs.m_alloc)
-    {
-        rhs.reinit();
-    }
-
+    SimpleVector(SimpleVector&&)   = delete;
     SimpleVector&
-    operator=(SimpleVector&& rhs) noexcept
+    operator=(SimpleVector&&) = delete;
+
+    explicit SimpleVector(const A& a) noexcept : m_alloc(a) {}
+    SimpleVector(unsigned n, const A& a = A()) : m_size(n), m_alloc(a)
     {
-        p_data  = rhs.p_data;
-        m_n     = rhs.m_n;
-        m_alloc = rhs.m_alloc;
-        rhs.reinit();
+        alloc();
     }
 
     ~SimpleVector() { dealloc(); }
@@ -166,10 +154,10 @@ class SimpleVector
     void
     resize(unsigned new_size)
     {
-        if(new_size != m_n)
+        if(new_size != m_size)
         {
             dealloc();
-            m_n = new_size;
+            m_size = new_size;
             alloc();
         }
     }
@@ -177,11 +165,11 @@ class SimpleVector
     __host__ __device__ unsigned
     size() const noexcept
     {
-        return m_n;
+        return m_size;
     }
 
     __host__ __device__ T*
-    data() noexcept
+    data() const noexcept
     {
         return p_data;
     }
@@ -198,8 +186,39 @@ class SimpleVector
         return p_data + size();
     }
 
+    __host__ __device__ const_iterator
+    begin() const noexcept
+    {
+        return p_data;
+    }
+
+    __host__ __device__ const_iterator
+    end() const noexcept
+    {
+        return p_data + size();
+    }
+
+    __host__ __device__ const_iterator
+    cbegin() const noexcept
+    {
+        return p_data;
+    }
+
+    __host__ __device__ const_iterator
+    cend() const noexcept
+    {
+        return p_data + size();
+    }
+
     __host__ __device__ T&
     operator[](const unsigned i) noexcept
+    {
+        CHECK_INDEX(i, size());
+        return p_data[i];
+    }
+
+    __host__ __device__ const T&
+    operator[](const unsigned i) const noexcept
     {
         CHECK_INDEX(i, size());
         return p_data[i];
@@ -219,6 +238,24 @@ class SimpleVector
 
     __host__ __device__ friend unsigned
     size(SimpleVector& v) noexcept
+    {
+        return v.size();
+    }
+
+    __host__ __device__ friend iterator
+    begin(const SimpleVector& v) noexcept
+    {
+        return v.cbegin();
+    }
+
+    __host__ __device__ friend iterator
+    end(const SimpleVector& v) noexcept
+    {
+        return v.cend();
+    }
+
+    __host__ __device__ friend unsigned
+    size(const SimpleVector& v) noexcept
     {
         return v.size();
     }
@@ -912,6 +949,8 @@ class MemoryFacade
             },
             input_vars{},
             std::forward<Args>(args)...);
+
+        reset();
     }
 
     auto
@@ -984,7 +1023,7 @@ class StreamFacade : public MemoryFacade<_Program>
     static constexpr auto    halt_pos   = _Program::halt_pos;
 
     template <typename T>
-    using buffer_t = std::vector<T, HostAllocator<T>>;
+    using buffer_t = SimpleVector<T, HostAllocator<T>>;
 
     template <typename List>
     using make_buffer_t =
@@ -1028,6 +1067,7 @@ class StreamFacade : public MemoryFacade<_Program>
         }
     };
 
+    template <bool all = true>
     void
     fetch()
     {
@@ -1035,10 +1075,11 @@ class StreamFacade : public MemoryFacade<_Program>
                            output_vars{},
                            facade::mem,
                            m_outbuf);
-        typelist::for_each(consumer<input_vars>{},
-                           input_vars{},
-                           facade::mem,
-                           m_inbuf);
+        if constexpr(all)
+            typelist::for_each(consumer<input_vars>{},
+                               input_vars{},
+                               facade::mem,
+                               m_inbuf);
     }
 
     void
@@ -1065,11 +1106,11 @@ class StreamFacade : public MemoryFacade<_Program>
     }
 
     auto
-    views_to_completed(const chunk_ranges<num_chunks, cp_t, halt_pos>& chunks)
+    drop_output(const gsize_t offset)
     {
+        ASSERT(offset <= facade::size(), "Out of range");
         return typelist::maybe_collect<std::tuple>(
-            [offset = chunks.terminated()]<typename Var>(
-                const output_buffer_t& outbuff)
+            [offset]<typename Var>(const output_buffer_t& outbuff)
             {
                 const buffer_t<vartype<Var>>& buffer =
                     std::get<typelist::index<Var, output_vars>>(outbuff);
@@ -1080,15 +1121,7 @@ class StreamFacade : public MemoryFacade<_Program>
     }
 
   public:
-    using facade::facade;
-
-    void
-    resize(unsigned n) noexcept
-    {
-        facade::resize(n);
-        m_inbuf.resize(n);
-        m_outbuf.resize(n);
-    }
+    explicit StreamFacade(gsize_t n) : facade(n), m_inbuf(n), m_outbuf(n) {}
 };
 
 template <typename _Program>
@@ -1191,7 +1224,6 @@ class cuda_evaluator
         operator()(Args&&... args) noexcept
         {
             memory_facade::set_input(std::forward<Args>(args)...);
-            memory_facade::reset();
 
             visitor step{memory_facade::mem};
 
@@ -1272,6 +1304,46 @@ class cuda_evaluator
             stream_facade::sort();
         }
 
+#if 0
+        void
+        print()
+        {
+            auto columns = typelist::maybe_collect<std::tuple>(
+                [&]<typename Var>() constexpr noexcept
+                {
+                    using t     = vartype<Var>;
+                    auto column = stream_facade::mem.template get<Var>();
+                    SimpleVector<t, HostAllocator<t>> buffer(column.size());
+                    DEVICE_TO_HOST(buffer.data(), column.data(), column.size());
+                    std::vector<t> ret(buffer.size());
+                    std::ranges::copy(buffer, ret.begin());
+                    return ret;
+                },
+                vars{});
+
+            typelist::for_each(
+                []<typename Var>()
+                {
+                    using name                   = varname<Var>;
+                    constexpr auto             l = intlist::length<name>;
+                    constexpr auto             a = intlist::array<name>;
+                    constexpr std::string_view s(a, l);
+                    for(char c: s) putchar(c);
+                    putchar('\t');
+                    putchar('\t');
+                },
+                vars{});
+            putchar('\n');
+            for(gsize_t i = 0; i < stream_facade::size(); ++i)
+            {
+                lucid::for_each([&](const auto& c)
+                                { printf("%*u\t", 10, c[i]); },
+                                columns);
+                putchar('\n');
+            }
+        }
+#endif
+
         bool
         done() noexcept
         {
@@ -1281,10 +1353,11 @@ class cuda_evaluator
         auto
         get_completed_output() noexcept
         {
-            return stream_facade::views_to_completed(step.chunks);
+            stream_facade::template fetch<false>();
+            return stream_facade::drop_output(step.chunks.terminated());
         }
 
-        template <std::ranges::range Input>
+        template <std::ranges::input_range Input>
             requires(std::is_nothrow_convertible_v<
                      std::ranges::range_value_t<Input>,
                      typelist::maybe_to<typelist::map<vartype, input_vars>,
@@ -1294,18 +1367,21 @@ class cuda_evaluator
         {
             stream_facade::fetch();
 
-            const gsize_t lbound      = step.chunks.terminated();
-            const gsize_t count       = stream_facade::mem.size() - lbound;
-            gsize_t       steps_taken = 0;
+            const gsize_t size   = stream_facade::size();
+            const gsize_t offset = step.chunks.terminated();
+            if(offset == n_pos) return stream_facade::drop_output(size);
+
+            const gsize_t num_halt  = size - offset;
+            gsize_t       num_steps = 0;
 
             std::ranges::for_each(
-                std::views::take(std::forward<Input>(input), count),
-                [lbound,
-                 &steps_taken,
+                std::views::take(std::forward<Input>(input), num_halt),
+                [size,
+                 &num_steps,
                  &buf = stream_facade::m_inbuf]<typename Elem>(
                     const Elem& elem) noexcept
                 {
-                    const gsize_t i = lbound + steps_taken;
+                    const gsize_t i = size - num_steps - 1;
 
                     if constexpr(is_tuple_v<Elem>)
                         intlist::for_each(
@@ -1316,15 +1392,18 @@ class cuda_evaluator
                     else
                         std::get<0>(buf)[i] = elem;
 
-                    ++steps_taken;
+                    ++num_steps;
                 });
 
+            if(num_steps == 0) return stream_facade::drop_output(size);
+
+            const gsize_t lbound = size - num_steps;
+
             stream_facade::release();
-            stream_facade::reset_range(lbound, lbound + steps_taken);
+            stream_facade::reset_range(lbound, size);
+            stream_facade::sort();
 
-            if(count != steps_taken) stream_facade::sort();
-
-            return std::views::take(get_completed_output(), steps_taken);
+            return stream_facade::drop_output(lbound);
         }
     };
 };
