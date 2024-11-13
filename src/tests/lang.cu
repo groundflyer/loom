@@ -28,8 +28,9 @@ int
 main(int argc, char* argv[])
 {
     Track          track;
-    const unsigned vector_size = std::bit_floor(parse_numruns(argc, argv));
-    const unsigned stream_size = vector_size / 8;
+    const unsigned vector_size =
+        std::bit_floor(parse_numruns<102400>(argc, argv));
+    const unsigned stream_size = vector_size >> 1;
     ParmTestMaker  tm{vector_size};
     RandomState    rs;
 
@@ -40,37 +41,37 @@ main(int argc, char* argv[])
     auto g_j4    = [&]() noexcept { return std::pair{g_u3(), g_float()}; };
     auto g_shift = [&]() noexcept { return std::pair(g_ui(), g_ui()); };
 
-    cuda::function<incr_int>     cuda_ii(vector_size);
-    cuda::function<fac_unsigned> cuda_fu(vector_size);
-    cuda::function<fac_int>      cuda_fi(vector_size);
-    cuda::function<sut>          cuda_su(vector_size);
-    cuda::function<cut>          cuda_cu(vector_size);
-    cuda::function<jmp4_float>   cuda_j4(vector_size);
-    cuda::function<choice_float> cuda_ch(vector_size);
-    cuda::function<lshift_u>     cuda_ls(vector_size);
-    cuda::function<rshift_u>     cuda_rs(vector_size);
+    // wrap tests to reuse memory
+    auto test_function =
+        [&]<typename P>(P, auto& g, auto val, std::string_view name) noexcept
+    {
+        cuda::function<P> func(vector_size);
+        return track.check(
+            NamedTest(tm.rng_with_scalar_ref(g, func, val), name));
+    };
 
-    cuda::streamer<fac_unsigned> cudas_fu(stream_size);
+    auto test_stream =
+        [&]<typename P>(P, auto& g, auto val, std::string_view name) noexcept
+    {
+        cuda::streamer<P> stream(stream_size);
+        return track.check(
+            NamedTest(tm.rng_with_scalar_ref(g, wrap_stream(stream), val),
+                      name));
+    };
 
-    track.check(NamedTest(tm.rng_with_scalar_ref(g_int, cuda_ii, val_inc),
-                          "CUDA increment int"));
-    track.check(NamedTest(tm.rng_with_scalar_ref(g_ui, cuda_fu, val_fac),
-                          "CUDA factorial unsigned"));
-    track.check(NamedTest(tm.rng_with_scalar_ref(g_float, cuda_su, val_sut),
-                          "CUDA simple union"));
-    track.check(NamedTest(tm.rng_with_scalar_ref(g_float, cuda_cu, val_cut),
-                          "CUDA complex union"));
-    track.check(NamedTest(tm.rng_with_scalar_ref(g_j4, cuda_j4, val_jmp4),
-                          "CUDA jump4"));
-    track.check(NamedTest(tm.rng_with_scalar_ref(g_j4, cuda_ch, val_choice),
-                          "CUDA choice"));
-    track.check(NamedTest(tm.rng_with_scalar_ref(g_shift, cuda_ls, val_lshift),
-                          "CUDA left shift"));
-    track.check(NamedTest(tm.rng_with_scalar_ref(g_shift, cuda_rs, val_rshift),
-                          "CUDA right shift"));
-    track.check(
-        NamedTest(tm.rng_with_scalar_ref(g_ui, wrap_stream(cudas_fu), val_fac),
-                  "CUDA stream factorial unsigned"));
+    test_function(incr_int{}, g_int, val_inc, "CUDA increment int");
+    test_function(fac_unsigned{}, g_ui, val_fac, "CUDA factorial unsigned");
+    test_function(fac_int{}, g_int, val_fac, "CUDA factorial int");
+    test_function(sut{}, g_float, val_sut, "CUDA simple union");
+    test_function(cut{}, g_float, val_cut, "CUDA complex union");
+    test_function(jmp4_float{}, g_j4, val_jmp4, "CUDA jump4");
+    test_function(choice_float{}, g_j4, val_choice, "CUDA choice");
+    test_function(lshift_u{}, g_shift, val_lshift, "CUDA left shift");
+    test_function(rshift_u{}, g_shift, val_rshift, "CUDA right shift");
+    test_stream(fac_unsigned{},
+                g_ui,
+                val_fac,
+                "CUDA stream factorial unsigned");
 
     return track.ret_code();
 }
