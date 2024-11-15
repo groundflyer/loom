@@ -734,40 +734,8 @@ class StreamFacade : public MemoryFacade<_Program, _Vector, Allocator>
             output_vars{});
     }
 
-    constexpr auto
-    completed_iter() noexcept
-    {
-        return std::ranges::find_if(facade::mem,
-                                    [](auto row) constexpr noexcept
-                                    { return row.cp() == halt_pos; });
-    }
-
-    constexpr auto
-    completed_offset() noexcept
-    {
-        return std::distance(std::ranges::begin(facade::mem), completed_iter());
-    }
-
-    /// @brief View to completed (halt) elements.
-    constexpr auto
-    completed() noexcept
-    {
-        return ranges::subrange(completed_iter(),
-                                std::ranges::end(facade::mem));
-    }
-
   public:
     using facade::facade;
-
-    constexpr decltype(auto)
-    get_completed_output() noexcept
-    {
-        return typelist::maybe_collect<std::tuple>(
-            [&mem   = facade::mem,
-             offset = completed_offset()]<typename Var>() constexpr noexcept
-            { return std::views::drop(mem.template get<Var>(), offset); },
-            output_vars{});
-    }
 
     template <std::ranges::range Input>
         requires(std::is_nothrow_convertible_v<
@@ -788,7 +756,11 @@ class StreamFacade : public MemoryFacade<_Program, _Vector, Allocator>
 
                 return val;
             },
-            completed(),
+            ranges::subrange(
+                std::ranges::find_if(facade::mem,
+                                     [](auto row) constexpr noexcept
+                                     { return row.cp() == halt_pos; }),
+                std::ranges::end(facade::mem)),
             std::forward<Input>(input));
     }
 };

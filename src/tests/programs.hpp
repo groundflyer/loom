@@ -232,7 +232,7 @@ wrap_stream(S& stream) noexcept
         // compute the rest
         while(!stream.done()) stream();
 
-        std::ranges::copy(stream.get_completed_output(), inserter);
+        std::ranges::copy(stream.get_output(), inserter);
 
         ASSERT(out.size() == input.size(), "Output size doesn't match");
 

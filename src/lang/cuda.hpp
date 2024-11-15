@@ -1350,13 +1350,6 @@ class cuda_evaluator
             return step.chunks.terminated() == 0;
         }
 
-        auto
-        get_completed_output() noexcept
-        {
-            stream_facade::template fetch<false>();
-            return stream_facade::drop_output(step.chunks.terminated());
-        }
-
         template <std::ranges::input_range Input>
             requires(std::is_nothrow_convertible_v<
                      std::ranges::range_value_t<Input>,
