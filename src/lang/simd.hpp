@@ -519,7 +519,7 @@ class BulkDispatcher
         // non-aligned rows executed serially
         for(fsize_t i = 0; i < no; ++i) serial_runner(view[i]);
 
-        // we have reavhed the end of the view
+        // we have reached the end of the view
         if(view.size() == no) return;
 
         auto new_view = view.view(no);
