@@ -572,7 +572,7 @@ class Memory
     void
     resize(fsize_t new_size)
     {
-        lucid::for_each([&](auto& c) noexcept { c.resize(new_size); }, m_data);
+        lucid::for_each([new_size](auto& c) noexcept { c.resize(new_size); }, m_data);
     }
 
     fsize_t
