@@ -600,10 +600,44 @@ class Memory
     }
 };
 
+template <typename _Memory, bool singular>
+class SimpleSorter
+{
+    _Memory m_mem;
+
+  protected:
+    _Memory&
+    mem() noexcept
+    {
+        return m_mem;
+    }
+
+    const _Memory&
+    mem() const noexcept
+    {
+        return m_mem;
+    }
+
+  public:
+    explicit SimpleSorter(fsize_t n) : m_mem(n){};
+
+    void
+    sort() noexcept
+    {
+        if constexpr(!singular) std::sort(m_mem.begin(), m_mem.end());
+    }
+};
+
 template <typename _Program,
           template <typename, typename> typename _Vector = std::vector,
-          template <typename> typename Allocator         = std::allocator>
-class MemoryFacade
+          template <typename> typename Allocator         = std::allocator,
+          typename Sorter = SimpleSorter<Memory<typename _Program::reg_types,
+                                                typename _Program::reg_names,
+                                                typename _Program::cp,
+                                                _Vector,
+                                                Allocator>,
+                                         _Program::singular>>
+class MemoryFacade : public Sorter
 {
     using reg_names   = _Program::reg_names;
     using reg_types   = _Program::reg_types;
@@ -613,18 +647,15 @@ class MemoryFacade
 
     static constexpr auto halt_pos = _Program::halt_pos;
 
-  protected:
-    Memory<reg_types, reg_names, cp_var, _Vector, Allocator> mem;
-
   public:
-    explicit MemoryFacade(fsize_t n) : mem(n) {}
+    using Sorter::Sorter;
 
     template <typename... Args>
-    constexpr void
+    void
     set_input(Args&&... args) noexcept
     {
         typelist::for_each_arg(
-            [&mem = mem]<typename Var, typename T>(
+            [&mem = Sorter::mem()]<typename Var, typename T>(
                 const T&
                     value) constexpr noexcept requires(std::ranges::
                                                            sized_range<T> ||
@@ -648,50 +679,46 @@ class MemoryFacade
             std::forward<Args>(args)...);
     }
 
-    constexpr decltype(auto)
+    decltype(auto)
     get_output() noexcept
     {
         return typelist::maybe_collect<std::tuple>(
-            [&mem = mem]<typename Var>() constexpr noexcept
+            [&mem = Sorter::mem()]<typename Var>() constexpr noexcept
             { return std::views::all(mem.template get<Var>()); },
             output_vars{});
     }
 
     template <typename F>
-    constexpr auto
+    auto
     visit(F&& f) noexcept
     {
-        return std::invoke(std::forward<F>(f), mem);
+        return std::invoke(std::forward<F>(f), Sorter::mem());
     }
 
-    constexpr void
+    void
     reset() noexcept
     {
-        if constexpr(!_Program::singular) std::ranges::fill(mem.cp(), 0);
+        if constexpr(!_Program::singular)
+            std::ranges::fill(Sorter::mem().cp(), 0);
     }
 
-    constexpr auto
+    auto
     done() noexcept
     {
-        if constexpr(!_Program::singular) return mem.cp().front() == halt_pos;
+        if constexpr(!_Program::singular)
+            return Sorter::mem().cp().front() == halt_pos;
     }
 
-    constexpr void
-    sort() noexcept
-    {
-        if constexpr(!_Program::singular) std::sort(mem.begin(), mem.end());
-    }
-
-    constexpr fsize_t
+    fsize_t
     size() const noexcept
     {
-        return mem.size();
+        return Sorter::mem().size();
     }
 
-    constexpr void
+    void
     resize(fsize_t n) noexcept
     {
-        mem.resize(n);
+        Sorter::mem().resize(n);
     }
 };
 
@@ -711,7 +738,7 @@ class StreamFacade : public MemoryFacade<_Program, _Vector, Allocator>
     using facade = MemoryFacade<_Program, _Vector, Allocator>;
 
     template <typename _ProxyRow, typename... Args>
-    static constexpr void
+    static void
     set_row_input(_ProxyRow row, Args&&... args) noexcept
     {
         typelist::for_each_arg(
@@ -725,7 +752,7 @@ class StreamFacade : public MemoryFacade<_Program, _Vector, Allocator>
     }
 
     template <typename _ProxyRow>
-    static constexpr auto
+    static auto
     get_row_output(_ProxyRow row) noexcept
     {
         return typelist::maybe_collect<std::tuple>(
@@ -757,10 +784,10 @@ class StreamFacade : public MemoryFacade<_Program, _Vector, Allocator>
                 return val;
             },
             ranges::subrange(
-                std::ranges::find_if(facade::mem,
+                std::ranges::find_if(facade::mem(),
                                      [](auto row) constexpr noexcept
                                      { return row.cp() == halt_pos; }),
-                std::ranges::end(facade::mem)),
+                std::ranges::end(facade::mem())),
             std::forward<Input>(input));
     }
 };
@@ -849,7 +876,7 @@ class basic_vector_compiler
         using memory_facade::memory_facade;
 
         template <typename... Args>
-        constexpr auto
+        auto
         operator()(Args&&... args) noexcept
         {
             memory_facade::set_input(std::forward<Args>(args)...);
@@ -864,7 +891,7 @@ class basic_vector_compiler
                               cells{};
         static constexpr auto halt_pos = _Program::halt_pos;
 
-        constexpr void
+        void
         operator()(memory& mem) const noexcept
         {
             std::ranges::for_each(
@@ -899,7 +926,7 @@ class basic_vector_compiler
         using memory_facade::memory_facade;
 
         template <typename... Args>
-        constexpr auto
+        auto
         operator()(Args&&... args) noexcept
         {
             memory_facade::set_input(std::forward<Args>(args)...);
@@ -933,7 +960,7 @@ class basic_vector_compiler
 
         using stream_facade::stream_facade;
 
-        constexpr void
+        void
         operator()() noexcept
         {
             stream_facade::visit(visitor{});
