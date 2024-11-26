@@ -724,8 +724,14 @@ class MemoryFacade : public Sorter
 
 template <typename _Program,
           template <typename, typename> typename _Vector = std::vector,
-          template <typename> typename Allocator         = std::allocator>
-class StreamFacade : public MemoryFacade<_Program, _Vector, Allocator>
+          template <typename> typename Allocator         = std::allocator,
+          typename Sorter = SimpleSorter<Memory<typename _Program::reg_types,
+                                                typename _Program::reg_names,
+                                                typename _Program::cp,
+                                                _Vector,
+                                                Allocator>,
+                                         _Program::singular>>
+class StreamFacade : public MemoryFacade<_Program, _Vector, Allocator, Sorter>
 {
     using reg_names   = _Program::reg_names;
     using reg_types   = _Program::reg_types;
