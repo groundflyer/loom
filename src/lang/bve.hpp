@@ -63,10 +63,16 @@ class ProxyRow
     fsize_t m_pos;
 
     void
-    copy_values(ProxyRow rhs) noexcept
+    copy_values(const ProxyRow& rhs) noexcept
     {
-        lucid::for_each([&](auto& c) noexcept { c[m_pos] = c[rhs.m_pos]; },
-                        m_data);
+        intlist::for_each(
+            []<std::size_t I>(ProxyRow& lhs, const ProxyRow& rhs) noexcept {
+                std::get<I>(lhs.m_data)[lhs.m_pos] =
+                    std::get<I>(rhs.m_data)[rhs.m_pos];
+            },
+            std::make_index_sequence<std::tuple_size_v<Data>>{},
+            *this,
+            rhs);
     }
 
   public:
@@ -90,7 +96,6 @@ class ProxyRow
     operator=(const ProxyRow& rhs) noexcept
     {
         copy_values(rhs);
-        m_pos = rhs.m_pos;
 
         return *this;
     }
@@ -99,7 +104,6 @@ class ProxyRow
     operator=(ProxyRow&& rhs) noexcept
     {
         copy_values(rhs);
-        m_pos = rhs.m_pos;
 
         return *this;
     }
@@ -572,7 +576,8 @@ class Memory
     void
     resize(fsize_t new_size)
     {
-        lucid::for_each([new_size](auto& c) noexcept { c.resize(new_size); }, m_data);
+        lucid::for_each([new_size](auto& c) noexcept { c.resize(new_size); },
+                        m_data);
     }
 
     fsize_t
@@ -600,6 +605,40 @@ class Memory
     }
 };
 
+template <fsize_t num_bins,
+          auto    halt_pos,
+          typename RegTypes,
+          typename RegNames,
+          typename _CP,
+          template <typename, typename>
+          typename _Vector,
+          template <typename>
+          typename Allocator>
+    requires(std::is_same_v<decltype(halt_pos), vartype<_CP>>)
+void
+counting_sort(Memory<RegTypes, RegNames, _CP, _Vector, Allocator>& in,
+              Memory<RegTypes, RegNames, _CP, _Vector, Allocator>& out) noexcept
+{
+    ASSERT(in.size() == out.size(), "Sizes must match");
+
+    using cp_t = vartype<_CP>;
+
+    cp_t bins[num_bins] = {};
+
+    auto fit = [](cp_t cp) noexcept
+    { return cp != halt_pos ? cp : num_bins - 1; };
+
+    // histogram
+    for(cp_t cp: in.cp()) ++bins[fit(cp)];
+
+    // prefix sum
+    for(cp_t i = 1; i < num_bins; ++i) bins[i] += bins[i - 1];
+
+    // fill out
+    for(int i = in.size() - 1; i >= 0; --i)
+        out[--bins[fit(in.cp()[i])]] = in[i];
+}
+
 template <typename _Memory, bool singular>
 class SimpleSorter
 {
@@ -625,6 +664,38 @@ class SimpleSorter
     sort() noexcept
     {
         if constexpr(!singular) std::sort(m_mem.begin(), m_mem.end());
+    }
+};
+
+template <typename _Memory, fsize_t num_bins, auto halt_pos>
+class CountingSorter
+{
+    _Memory  m_buf0;
+    _Memory  m_buf1;
+    _Memory* p_main = &m_buf0;
+    _Memory* p_aux  = &m_buf1;
+
+  protected:
+    _Memory&
+    mem() noexcept
+    {
+        return *p_main;
+    }
+
+    const _Memory&
+    mem() const noexcept
+    {
+        return *p_main;
+    }
+
+  public:
+    CountingSorter(fsize_t n) : m_buf0(n), m_buf1(n) {}
+
+    void
+    sort() noexcept
+    {
+        counting_sort<num_bins, halt_pos>(*p_main, *p_aux);
+        std::swap(p_main, p_aux);
     }
 };
 
@@ -741,7 +812,7 @@ class StreamFacade : public MemoryFacade<_Program, _Vector, Allocator, Sorter>
 
     static constexpr auto halt_pos = _Program::halt_pos;
 
-    using facade = MemoryFacade<_Program, _Vector, Allocator>;
+    using facade = MemoryFacade<_Program, _Vector, Allocator, Sorter>;
 
     template <typename _ProxyRow, typename... Args>
     static void
@@ -848,7 +919,7 @@ struct vector_eval<ParmJump<Var, Labels>, LabelMap>
     }
 };
 
-template <typename _Program>
+template <typename _Program, bool use_counting_sort>
 class basic_vector_compiler
 {
     using labelmap  = _Program::labelmap;
@@ -857,14 +928,28 @@ class basic_vector_compiler
     using reg_types = _Program::reg_types;
     using cp        = _Program::cp;
 
+    static constexpr bool        singular = _Program::singular;
+    static constexpr vartype<cp> halt_pos = _Program::halt_pos;
+
     template <typename C>
     using compile_cell = standard_compiler<C, labelmap, vector_eval>;
 
     using compiled_cells = typelist::map<compile_cell, cells>;
 
     using memory        = Memory<reg_types, reg_names, cp>;
-    using memory_facade = MemoryFacade<_Program>;
-    using stream_facade = StreamFacade<_Program>;
+    using simple_sorter = SimpleSorter<memory, singular>;
+    using sorter        = std::conditional_t<
+        use_counting_sort,
+        std::conditional_t<
+            singular,
+            simple_sorter,
+            CountingSorter<memory, _Program::num_cells + 1, halt_pos>>,
+        simple_sorter>;
+
+    using memory_facade =
+        MemoryFacade<_Program, std::vector, std::allocator, sorter>;
+    using stream_facade =
+        StreamFacade<_Program, std::vector, std::allocator, sorter>;
 
     class single_cell_evaluator : public memory_facade
     {
@@ -975,10 +1060,10 @@ class basic_vector_compiler
     };
 };
 
-template <typename _Program>
-using function = basic_vector_compiler<_Program>::function;
+template <typename _Program, bool use_counting_sort = false>
+using function = basic_vector_compiler<_Program, use_counting_sort>::function;
 
-template <typename _Program>
+template <typename _Program, bool use_counting_sort = false>
     requires(!_Program::singular)
-using streamer = basic_vector_compiler<_Program>::streamer;
+using streamer = basic_vector_compiler<_Program, use_counting_sort>::streamer;
 } // namespace lucid::bve

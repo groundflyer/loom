@@ -56,6 +56,10 @@ main(int argc, char* argv[])
 
     bve::streamer<fac_unsigned> bvs_fu(stream_size);
 
+    // counting sort bve
+    bve::function<fac_unsigned, true> bve_cs_fu(vector_size);
+    bve::streamer<fac_unsigned, true> bvs_cs_fu(stream_size);
+
     // vertical SIMD
     simd::function<incr_int>     simd_v_ii(vector_size);
     simd::function<fac_unsigned> simd_v_fu(vector_size);
@@ -175,10 +179,14 @@ main(int argc, char* argv[])
             NamedTest(tm.with_ref(g_int, bse_fi, val_fac), "BSE factorial int"),
             NamedTest(tm.with_ref(g_ui, bse_fu, val_fac),
                       "BSE factorial unsigned")},
-        std::pair{NamedTest(TEST_RESET_T(g_ui, bve_fu, bse_fu),
-                            "BVE factorial unsigned"),
-                  NamedTest(TEST_RESET_V(g_ui, wrap_stream(bvs_fu), bve_fu),
-                            "BVE Stream factorial unsigned")},
+        std::tuple{NamedTest(TEST_RESET_T(g_ui, bve_fu, bse_fu),
+                             "BVE factorial unsigned"),
+                   NamedTest(TEST_RESET_V(g_ui, wrap_stream(bvs_fu), bve_fu),
+                             "BVE Stream factorial unsigned"),
+                   NamedTest(TEST_RESET_T(g_ui, bve_cs_fu, bse_fu),
+                             "BVE counting sort factorial unsigned"),
+                   NamedTest(TEST_RESET_V(g_ui, wrap_stream(bvs_cs_fu), bve_fu),
+                             "BVE Stream counting sort factorial unsigned")},
         ft_fu);
 
     track.dep_check(
