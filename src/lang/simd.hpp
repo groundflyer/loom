@@ -854,7 +854,10 @@ class SIMDAlignedAllocator
     }
 };
 
-template <typename _Program, template <typename...> typename Runner>
+template <typename _Program,
+          template <typename...>
+          typename Runner,
+          bool use_counting_sort>
 class simd_compiler
 {
     using labelmap  = _Program::labelmap;
@@ -863,6 +866,7 @@ class simd_compiler
     using reg_types = _Program::reg_types;
     using cp        = _Program::cp;
 
+    static constexpr bool    singular = _Program::singular;
     static constexpr auto    halt_pos = _Program::halt_pos;
     static constexpr fsize_t align    = simd_align;
 
@@ -871,12 +875,21 @@ class simd_compiler
 
     using compiled_cells = typelist::map<compile_cell, cells>;
 
-    using stream_facade =
-        bve::StreamFacade<_Program, std::vector, SIMDAlignedAllocator>;
-    using memory_facade =
-        bve::MemoryFacade<_Program, std::vector, SIMDAlignedAllocator>;
     using memory = bve::
         Memory<reg_types, reg_names, cp, std::vector, SIMDAlignedAllocator>;
+    using simple_sorter = bve::SimpleSorter<memory, singular>;
+    using sorter        = std::conditional_t<
+        use_counting_sort,
+        std::conditional_t<
+            singular,
+            simple_sorter,
+            bve::CountingSorter<memory, _Program::num_cells + 1, halt_pos>>,
+        simple_sorter>;
+
+    using stream_facade =
+        bve::StreamFacade<_Program, std::vector, SIMDAlignedAllocator, sorter>;
+    using memory_facade =
+        bve::MemoryFacade<_Program, std::vector, SIMDAlignedAllocator, sorter>;
 
     class single_cell_evaluator : public memory_facade
     {
@@ -981,7 +994,10 @@ class simd_compiler
     };
 };
 
-template <typename _Program, bool use_minikernel, fsize_t bulk_number>
+template <typename _Program,
+          bool    use_minikernel,
+          fsize_t bulk_number,
+          bool    use_counting_sort>
     requires(bulk_number > 0)
 class choose_evaluator
 {
@@ -992,20 +1008,26 @@ class choose_evaluator
         vertical_runner<Cell, LabelMap, CPVar, bulk_number>>;
 
   public:
-    using function = simd_compiler<_Program, runner>::function;
-    using streamer = simd_compiler<_Program, runner>::streamer;
+    using function =
+        simd_compiler<_Program, runner, use_counting_sort>::function;
+    using streamer =
+        simd_compiler<_Program, runner, use_counting_sort>::streamer;
 };
 
 template <typename _Program,
-          bool    use_minikernel = false,
-          fsize_t bulk_number    = 8>
+          bool    use_minikernel    = false,
+          bool    use_counting_sort = false,
+          fsize_t bulk_number       = 8>
 using function =
-    choose_evaluator<_Program, use_minikernel, bulk_number>::function;
+    choose_evaluator<_Program, use_minikernel, bulk_number, use_counting_sort>::
+        function;
 
 template <typename _Program,
-          bool    use_minikernel = false,
-          fsize_t bulk_number    = 8>
+          bool    use_minikernel    = false,
+          bool    use_counting_sort = false,
+          fsize_t bulk_number       = 8>
     requires(!_Program::singular)
 using streamer =
-    choose_evaluator<_Program, use_minikernel, bulk_number>::streamer;
+    choose_evaluator<_Program, use_minikernel, bulk_number, use_counting_sort>::
+        streamer;
 } // namespace lucid::simd

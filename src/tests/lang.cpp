@@ -86,6 +86,12 @@ main(int argc, char* argv[])
 
     simd::streamer<fac_unsigned, true> simds_k_fu(stream_size);
 
+    // counting sort
+    simd::function<fac_unsigned, false, true> simd_v_cs_fu(vector_size);
+    simd::function<fac_unsigned, true, true>  simd_k_cs_fu(vector_size);
+    simd::streamer<fac_unsigned, false, true> simds_v_cs_fu(stream_size);
+    simd::streamer<fac_unsigned, true, true>  simds_k_cs_fu(stream_size);
+
 #define TEST_RESET_T(G, T, V)                       \
     [&]() noexcept                                  \
     {                                               \
@@ -112,6 +118,12 @@ main(int argc, char* argv[])
                             "SIMD Vertical factorial unsigned");
     auto tsk_fu = NamedTest(TEST_RESET_V(g_ui, simd_k_fu, bve_fu),
                             "SIMD Minikernel factorial unsigned");
+    auto tsv_cs_fu =
+        NamedTest(TEST_RESET_V(g_ui, simd_v_cs_fu, bve_fu),
+                  "SIMD Vertical Counting Sort factorial unsigned");
+    auto tsk_cs_fu =
+        NamedTest(TEST_RESET_V(g_ui, simd_k_cs_fu, bve_fu),
+                  "SIMD Minikernel Counting Sort factorial unsigned");
     auto tsv_su = NamedTest(tm.rng_with_ref(g_float, simd_v_sut, bve_sut),
                             "SIMD Vertical simple union");
     auto tsk_su = NamedTest(tm.rng_with_ref(g_float, simd_k_sut, bve_sut),
@@ -144,9 +156,22 @@ main(int argc, char* argv[])
     auto tssk_fu =
         NamedTest(TEST_RESET_V(g_ui, wrap_stream(simds_k_fu), bve_fu),
                   "SIMD Minikernel stream factorial unsigned");
+    auto tssv_cs_fu =
+        NamedTest(TEST_RESET_V(g_ui, wrap_stream(simds_v_cs_fu), bve_fu),
+                  "SIMD Vertical Counting Sort stream factorial unsigned");
+    auto tssk_cs_fu =
+        NamedTest(TEST_RESET_V(g_ui, wrap_stream(simds_k_cs_fu), bve_fu),
+                  "SIMD Minikernel Counting Sort stream factorial unsigned");
 
     auto ft_ii = std::pair{tsv_ii, tsk_ii};
-    auto ft_fu = std::tuple{tsv_fu, tsk_fu, tssv_fu, tssk_fu};
+    auto ft_fu = std::tuple{tsv_fu,
+                            tsk_fu,
+                            tssv_fu,
+                            tssk_fu,
+                            tsv_cs_fu,
+                            tsk_cs_fu,
+                            tssv_cs_fu,
+                            tssk_cs_fu};
     auto ft_su = std::pair{tsv_su, tsk_su};
     auto ft_cu = std::pair{tsv_cu, tsk_cu};
     auto ft_j4 = std::pair{tsv_j4, tsk_j4};
@@ -184,9 +209,9 @@ main(int argc, char* argv[])
                    NamedTest(TEST_RESET_V(g_ui, wrap_stream(bvs_fu), bve_fu),
                              "BVE Stream factorial unsigned"),
                    NamedTest(TEST_RESET_T(g_ui, bve_cs_fu, bse_fu),
-                             "BVE counting sort factorial unsigned"),
+                             "BVE Counting Sort factorial unsigned"),
                    NamedTest(TEST_RESET_V(g_ui, wrap_stream(bvs_cs_fu), bve_fu),
-                             "BVE Stream counting sort factorial unsigned")},
+                             "BVE Stream Counting Sort factorial unsigned")},
         ft_fu);
 
     track.dep_check(
