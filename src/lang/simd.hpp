@@ -1,6 +1,6 @@
 // -*- C++ -*-
 /// @file simd.hpp
-/// SIMD evaluator.
+/// SIMD backend.
 
 #pragma once
 
@@ -215,7 +215,7 @@ struct remap_comp<N, choice_op, T, I, T, T>
 #define DEF_REMAP_TVEC_BIN(func, op) DEF_REMAP_VEC_BIN(func, op, T)
 #define DEF_REMAP_IVEC_BIN(func, op) DEF_REMAP_VEC_BIN(func, op, IDX_TYPE)
 
-#define DEF_REMAP_TVEC_UN(func, op) DEF_REMAP_VEC_UN(func, op, T)
+#define DEF_REMAP_TVEC_UN(func, op)  DEF_REMAP_VEC_UN(func, op, T)
 #define DEF_REMAP_IVEC_UN(func, op)  DEF_REMAP_VEC_UN(func, op, IDX_TYPE)
 
 DEF_REMAP_TVEC_BIN(std::plus, +)
@@ -451,8 +451,6 @@ class BulkDispatcher
     static constexpr SerialRunner serial_runner{};
 
     /// @brief Compute aligned offset for the next view.
-    ///
-    /// @param stride SIMD width.
     template <typename _MemoryView>
     static fsize_t
     next_offset(_MemoryView view) noexcept
@@ -1007,7 +1005,7 @@ template <typename _Program,
           fsize_t bulk_number,
           bool    use_counting_sort>
     requires(bulk_number > 0)
-class choose_evaluator
+class select_runner
 {
     template <typename Cell, typename LabelMap, typename CPVar>
     using runner = std::conditional_t<
@@ -1027,7 +1025,7 @@ template <typename _Program,
           bool    use_counting_sort = false,
           fsize_t bulk_number       = 8>
 using function =
-    choose_evaluator<_Program, use_minikernel, bulk_number, use_counting_sort>::
+    select_runner<_Program, use_minikernel, bulk_number, use_counting_sort>::
         function;
 
 template <typename _Program,
@@ -1036,6 +1034,6 @@ template <typename _Program,
           fsize_t bulk_number       = 8>
     requires(!_Program::singular)
 using streamer =
-    choose_evaluator<_Program, use_minikernel, bulk_number, use_counting_sort>::
+    select_runner<_Program, use_minikernel, bulk_number, use_counting_sort>::
         streamer;
 } // namespace lucid::simd
