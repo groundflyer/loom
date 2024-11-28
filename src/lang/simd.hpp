@@ -820,13 +820,11 @@ class memory_chunks : public std::ranges::view_interface<memory_chunks<_Memory>>
     }
 };
 
-template <typename T>
-class SIMDAlignedAllocator
+template <typename T, fsize_t align>
+class AlignedAllocator
 {
-    static constexpr fsize_t align = get_native_vector_align<T>::value;
-
     static constexpr fsize_t
-    align_to(fsize_t n) noexcept
+    align_size(fsize_t n) noexcept
     {
         const fsize_t m = n % align;
         return m == 0 ? n : n + align - m;
@@ -836,12 +834,18 @@ class SIMDAlignedAllocator
     using value_type = T;
     using pointer    = T*;
 
-    SIMDAlignedAllocator() noexcept = default;
+    template <typename U>
+    struct rebind
+    {
+        using other = AlignedAllocator<U, align>;
+    };
+
+    AlignedAllocator() noexcept = default;
 
     pointer
     allocate(fsize_t n)
     {
-        void* p = std::aligned_alloc(align, align_to(sizeof(T) * n));
+        void* p = std::aligned_alloc(align, align_size(sizeof(T) * n));
         if(!p) throw std::bad_alloc();
 
         return static_cast<pointer>(p);
@@ -853,6 +857,10 @@ class SIMDAlignedAllocator
         std::free(p);
     }
 };
+
+template <typename T>
+using SIMDAlignedAllocator =
+    AlignedAllocator<T, get_native_vector_align<T>::value>;
 
 template <typename _Program,
           template <typename...>
