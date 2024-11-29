@@ -14,9 +14,9 @@
 namespace lucid
 {
 template <typename... Ts>
-class steady_tuple;
+class unique_tuple;
 
-/// @brief Empty class tag type to indicate steady_tuple
+/// @brief Empty class tag type to indicate unique_tuple
 /// to build all the containing objects using the same provided arguments.
 struct uniform_init_t
 {
@@ -28,37 +28,37 @@ inline constexpr uniform_init_t uniform_init;
 namespace detail
 {
 template <std::size_t I, typename T>
-class steady_tuple_leaf
+class unique_tuple_leaf
 {
     T value;
 
   public:
-    steady_tuple_leaf()                         = delete;
-    steady_tuple_leaf(const steady_tuple_leaf&) = delete;
-    steady_tuple_leaf&
-    operator=(const steady_tuple_leaf&) = delete;
+    unique_tuple_leaf()                         = delete;
+    unique_tuple_leaf(const unique_tuple_leaf&) = delete;
+    unique_tuple_leaf&
+    operator=(const unique_tuple_leaf&) = delete;
 
-    constexpr steady_tuple_leaf(steady_tuple_leaf&& other) noexcept :
+    constexpr unique_tuple_leaf(unique_tuple_leaf&& other) noexcept :
         value(std::move(other.value))
     {
     }
 
-    constexpr steady_tuple_leaf&
-    operator=(steady_tuple_leaf&& other) noexcept
+    constexpr unique_tuple_leaf&
+    operator=(unique_tuple_leaf&& other) noexcept
     {
         value = std::move(other.value);
         return *this;
     }
 
     template <typename ArgsTuple>
-    constexpr steady_tuple_leaf(std::piecewise_construct_t,
+    constexpr unique_tuple_leaf(std::piecewise_construct_t,
                                 ArgsTuple&& args) noexcept :
         value(std::make_from_tuple<T>(std::forward<ArgsTuple>(args)))
     {
     }
 
     template <typename... Args>
-    constexpr steady_tuple_leaf(Args&&... args) noexcept :
+    constexpr unique_tuple_leaf(Args&&... args) noexcept :
         value(std::forward<Args>(args)...)
     {
     }
@@ -77,54 +77,54 @@ class steady_tuple_leaf
 };
 
 template <typename Idxs, typename... Ts>
-class steady_tuple_impl;
+class unique_tuple_impl;
 
 template <std::size_t... Idxs, typename... Ts>
-class steady_tuple_impl<std::index_sequence<Idxs...>, Ts...> :
-    public steady_tuple_leaf<Idxs, Ts>...
+class unique_tuple_impl<std::index_sequence<Idxs...>, Ts...> :
+    public unique_tuple_leaf<Idxs, Ts>...
 {
     template <std::size_t I, typename T>
     constexpr void
-    assign(steady_tuple_leaf<I, T>&& other) noexcept
+    assign(unique_tuple_leaf<I, T>&& other) noexcept
     {
-        static_cast<steady_tuple_leaf<I, T>&>(*this) = std::move(other);
+        static_cast<unique_tuple_leaf<I, T>&>(*this) = std::move(other);
     }
 
   public:
-    steady_tuple_impl()                         = delete;
-    steady_tuple_impl(const steady_tuple_impl&) = delete;
-    steady_tuple_impl&
-    operator=(const steady_tuple_impl&) = delete;
+    unique_tuple_impl()                         = delete;
+    unique_tuple_impl(const unique_tuple_impl&) = delete;
+    unique_tuple_impl&
+    operator=(const unique_tuple_impl&) = delete;
 
-    constexpr steady_tuple_impl(steady_tuple_impl&& other) noexcept :
-        steady_tuple_leaf<Idxs, Ts>(
-            std::move(static_cast<steady_tuple_leaf<Idxs, Ts>&&>(other)))...
+    constexpr unique_tuple_impl(unique_tuple_impl&& other) noexcept :
+        unique_tuple_leaf<Idxs, Ts>(
+            std::move(static_cast<unique_tuple_leaf<Idxs, Ts>&&>(other)))...
     {
     }
 
-    constexpr steady_tuple_impl&
-    operator=(steady_tuple_impl&& other) noexcept
+    constexpr unique_tuple_impl&
+    operator=(unique_tuple_impl&& other) noexcept
     {
         (..., assign<Idxs, Ts>(std::move(other)));
         return *this;
     }
 
     template <typename... ValueTs>
-    constexpr steady_tuple_impl(ValueTs&&... values) noexcept :
-        steady_tuple_leaf<Idxs, Ts>(std::forward<ValueTs>(values))...
+    constexpr unique_tuple_impl(ValueTs&&... values) noexcept :
+        unique_tuple_leaf<Idxs, Ts>(std::forward<ValueTs>(values))...
     {
     }
 
     template <typename... ValueTs>
-    constexpr steady_tuple_impl(std::piecewise_construct_t _pc,
+    constexpr unique_tuple_impl(std::piecewise_construct_t _pc,
                                 ValueTs&&... values) noexcept :
-        steady_tuple_leaf<Idxs, Ts>(_pc, std::forward<ValueTs>(values))...
+        unique_tuple_leaf<Idxs, Ts>(_pc, std::forward<ValueTs>(values))...
     {
     }
 
     template <typename... ValueTs>
-    constexpr steady_tuple_impl(uniform_init_t, ValueTs&&... values) noexcept :
-        steady_tuple_leaf<Idxs, Ts>(std::forward<ValueTs>(values)...)...
+    constexpr unique_tuple_impl(uniform_init_t, ValueTs&&... values) noexcept :
+        unique_tuple_leaf<Idxs, Ts>(std::forward<ValueTs>(values)...)...
     {
     }
 };
@@ -220,7 +220,7 @@ struct is_applicable_mod
 };
 
 template <typename F, template <typename...> typename M, typename... Ts>
-struct is_applicable_mod<F, steady_tuple<Ts...>, M>
+struct is_applicable_mod<F, unique_tuple<Ts...>, M>
 {
     static constexpr bool value = M<F, Ts...>::value;
 };
@@ -252,7 +252,7 @@ template <typename F,
           template <typename...>
           typename M,
           typename... Ts>
-struct is_applicable_mod_r<F, R, steady_tuple<Ts...>, M>
+struct is_applicable_mod_r<F, R, unique_tuple<Ts...>, M>
 {
     static constexpr bool value = M<F, R, Ts...>::value;
 };
@@ -297,7 +297,7 @@ struct is_tuple<std::tuple<Ts...>>
 };
 
 template <typename... Ts>
-struct is_tuple<steady_tuple<Ts...>>
+struct is_tuple<unique_tuple<Ts...>>
 {
     static constexpr bool value = true;
 };
@@ -351,21 +351,21 @@ concept maybe_applicable_r =
 /// @brief Tuple class template
 /// for objects that aren't default- or copy-constructible.
 template <typename... Ts>
-class steady_tuple
+class unique_tuple
 {
     using Types = type_sequence<Ts...>;
     using Idxs  = typelist::indices<Types>;
-    using Data  = detail::steady_tuple_impl<Idxs, Ts...>;
+    using Data  = detail::unique_tuple_impl<Idxs, Ts...>;
 
     Data data;
 
   public:
-    steady_tuple()                    = delete;
-    steady_tuple(const steady_tuple&) = delete;
-    steady_tuple&
-    operator=(const steady_tuple&) = delete;
+    unique_tuple()                    = delete;
+    unique_tuple(const unique_tuple&) = delete;
+    unique_tuple&
+    operator=(const unique_tuple&) = delete;
 
-    constexpr steady_tuple(steady_tuple&& other) noexcept :
+    constexpr unique_tuple(unique_tuple&& other) noexcept :
         data(std::move(other.data))
     {
     }
@@ -385,13 +385,13 @@ class steady_tuple
     /// tuples and should be unpacked for constructing corresponding objects,
     /// i. e. uses std::make_from_tuple to construct the objects.
     template <typename... Args>
-    constexpr steady_tuple(Args&&... args) noexcept :
+    constexpr unique_tuple(Args&&... args) noexcept :
         data(std::forward<Args>(args)...)
     {
     }
 
-    constexpr steady_tuple&
-    operator=(steady_tuple&& other) noexcept
+    constexpr unique_tuple&
+    operator=(unique_tuple&& other) noexcept
     {
         data = std::move(other.data);
         return *this;
@@ -403,7 +403,7 @@ class steady_tuple
     get() const noexcept
     {
         return static_cast<
-                   const detail::steady_tuple_leaf<I, typelist::at<I, Types>>&>(
+                   const detail::unique_tuple_leaf<I, typelist::at<I, Types>>&>(
                    data)
             .get();
     }
@@ -414,7 +414,7 @@ class steady_tuple
     get() noexcept
     {
         return static_cast<
-                   detail::steady_tuple_leaf<I, typelist::at<I, Types>>&>(data)
+                   detail::unique_tuple_leaf<I, typelist::at<I, Types>>&>(data)
             .get();
     }
 
@@ -426,7 +426,7 @@ class steady_tuple
     get() const noexcept
     {
         return static_cast<
-                   detail::steady_tuple_leaf<typelist::index<T, Types>, T>&>(
+                   detail::unique_tuple_leaf<typelist::index<T, Types>, T>&>(
                    data)
             .get();
     }
@@ -439,7 +439,7 @@ class steady_tuple
     get() noexcept
     {
         return static_cast<
-                   detail::steady_tuple_leaf<typelist::index<T, Types>, T>&>(
+                   detail::unique_tuple_leaf<typelist::index<T, Types>, T>&>(
                    data)
             .get();
     }
@@ -608,13 +608,13 @@ maybe_apply(F&& f, MaybeTuple&& mt)
 namespace std
 {
 template <typename... Ts>
-class tuple_size<lucid::steady_tuple<Ts...>> :
+class tuple_size<lucid::unique_tuple<Ts...>> :
     public integral_constant<size_t, sizeof...(Ts)>
 {
 };
 
 template <size_t I, typename... Ts>
-class tuple_element<I, lucid::steady_tuple<Ts...>>
+class tuple_element<I, lucid::unique_tuple<Ts...>>
 {
   public:
     using type = lucid::typelist::at<I, lucid::type_sequence<Ts...>>;
@@ -622,14 +622,14 @@ class tuple_element<I, lucid::steady_tuple<Ts...>>
 
 template <size_t I, typename... Ts>
 constexpr decltype(auto)
-get(const lucid::steady_tuple<Ts...>& t) noexcept
+get(const lucid::unique_tuple<Ts...>& t) noexcept
 {
     return t.template get<I>();
 }
 
 template <size_t I, typename... Ts>
 constexpr decltype(auto)
-get(lucid::steady_tuple<Ts...>& t) noexcept
+get(lucid::unique_tuple<Ts...>& t) noexcept
 {
     return t.template get<I>();
 }

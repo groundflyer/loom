@@ -87,7 +87,7 @@ struct total_counter_helper<std::pair<T1, T2>>
 };
 
 template <typename... Ts>
-struct total_counter_helper<steady_tuple<Ts...>>
+struct total_counter_helper<unique_tuple<Ts...>>
 {
     static constexpr std::size_t value =
         (... + total_counter_helper<std::remove_cvref_t<Ts>>::value);

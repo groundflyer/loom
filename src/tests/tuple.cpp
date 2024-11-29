@@ -87,48 +87,48 @@ main()
                 {'a', 'b', 'c', 'd'},
                 {  1,   2,   3,   4}
             };
-            auto st = lucid::map_tuple<lucid::steady_tuple>(
+            auto st = lucid::map_tuple<lucid::unique_tuple>(
                 [](auto& a) -> decltype(auto) { return a[1]; },
                 ta);
             st.template get<0>() = 'x';
             st.template get<1>() += 5;
             return std::get<0>(ta)[1] == 'x' && std::get<1>(ta)[1] == 7;
         },
-        "map tuple to steady_tuple"));
+        "map tuple to unique_tuple"));
 
     track.check(NamedTest(
         []() noexcept
         {
-            lucid::steady_tuple<A, B> st1(lucid::uniform_init, 34, 0);
+            lucid::unique_tuple<A, B> st1(lucid::uniform_init, 34, 0);
             const A&                  a1 = st1.template get<0>();
             const B&                  b1 = st1.template get<1>();
             return a1.a == b1.a && a1.b == b1.b;
         },
-        "steady_tuple uniform_init"));
+        "unique_tuple uniform_init"));
 
     track.check(NamedTest(
         []() noexcept
         {
-            lucid::steady_tuple<A, B> st2(std::piecewise_construct,
+            lucid::unique_tuple<A, B> st2(std::piecewise_construct,
                                           std::pair(1, 2),
                                           std::pair(3, 4));
             const A&                  a2 = st2.template get<A>();
             const B&                  b2 = st2.template get<B>();
             return a2.a == 1 && a2.b == 2 && b2.a == 3 && b2.b == 4;
         },
-        "steady_tuple piecewise_construct"));
+        "unique_tuple piecewise_construct"));
 
     track.check(NamedTest(
         []() noexcept
         {
-            lucid::steady_tuple<A, B> st3(lucid::uniform_init,
+            lucid::unique_tuple<A, B> st3(lucid::uniform_init,
                                           std::piecewise_construct,
                                           std::pair(34, 0));
             const A&                  a3 = st3.template get<A>();
             const B&                  b3 = st3.template get<B>();
             return a3.a == b3.a && a3.b == b3.b;
         },
-        "steady_tuple uniform_init piecewise_construct"));
+        "unique_tuple uniform_init piecewise_construct"));
 
     track.check(NamedTest(
 
@@ -136,15 +136,15 @@ main()
         {
             int                              i1 = 3;
             char                             c1 = 'c';
-            lucid::steady_tuple<int&, char&> st4(i1, c1);
+            lucid::unique_tuple<int&, char&> st4(i1, c1);
             st4.template get<0>() += 5;
             st4.template get<1>() = 'f';
             return i1 == 8 && c1 == 'f';
         },
-        "steady_tuple of refs"));
+        "unique_tuple of refs"));
 
-    lucid::steady_tuple<A, B> st5(A(1, 2ul), B(3l, 4));
-    lucid::steady_tuple<A, B> st6(std::move(st5));
+    lucid::unique_tuple<A, B> st5(A(1, 2ul), B(3l, 4));
+    lucid::unique_tuple<A, B> st6(std::move(st5));
 
     track.check(NamedTest(
         [&]() noexcept
@@ -154,7 +154,7 @@ main()
                    st6.template get<1>().a == 3l &&
                    st6.template get<1>().b == 4;
         },
-        "steady_tuple move construct"));
+        "unique_tuple move construct"));
 
     track.check(NamedTest(
         [&]() noexcept
@@ -170,7 +170,7 @@ main()
                    st6.template get<1>().a == 7l &&
                    st6.template get<1>().b == 8;
         },
-        "steady_tuple move assign"));
+        "unique_tuple move assign"));
 
     track.check(NamedTest(
         [&]() noexcept
@@ -178,7 +178,7 @@ main()
             auto& [a6, b6] = st6;
             return a6.a == 5 && a6.b == 6ul && b6.a == 7l && b6.b == 8;
         },
-        "steady_tuple structured binding"));
+        "unique_tuple structured binding"));
 
     return track.ret_code();
 }
