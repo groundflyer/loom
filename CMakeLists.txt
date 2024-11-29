@@ -173,6 +173,7 @@ if(BUILD_TESTS)
     union.cpp
     viewport.cpp
     test.cpp
+    threadpool.cpp
   )
 
   set(TESTS_SRC_DIR src/tests)
@@ -204,6 +205,7 @@ if(BUILD_TESTS)
   target_compile_definitions(test_viewport PUBLIC ${GL_DEFS})
   target_compile_options(test_argparse PUBLIC -fno-exceptions)
   target_link_options(test_argparse PUBLIC -fno-exceptions)
+  target_link_libraries(test_threadpool PUBLIC Threads::Threads)
 
   # target_compile_options(test_lang PUBLIC -save-temps)
   # target_compile_options(test_lang PUBLIC -fverbose-asm)

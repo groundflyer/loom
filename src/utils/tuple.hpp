@@ -15,7 +15,40 @@ namespace lucid
 {
 template <typename... Ts>
 class unique_tuple;
+}
 
+namespace std
+{
+template <typename... Ts>
+class tuple_size<lucid::unique_tuple<Ts...>> :
+    public integral_constant<size_t, sizeof...(Ts)>
+{
+};
+
+template <size_t I, typename... Ts>
+class tuple_element<I, lucid::unique_tuple<Ts...>>
+{
+  public:
+    using type = lucid::typelist::at<I, lucid::type_sequence<Ts...>>;
+};
+
+template <size_t I, typename... Ts>
+constexpr decltype(auto)
+get(const lucid::unique_tuple<Ts...>& t) noexcept
+{
+    return t.template get<I>();
+}
+
+template <size_t I, typename... Ts>
+constexpr decltype(auto)
+get(lucid::unique_tuple<Ts...>& t) noexcept
+{
+    return t.template get<I>();
+}
+} // namespace std
+
+namespace lucid
+{
 /// @brief Empty class tag type to indicate unique_tuple
 /// to build all the containing objects using the same provided arguments.
 struct uniform_init_t
@@ -604,33 +637,3 @@ maybe_apply(F&& f, MaybeTuple&& mt)
         return std::invoke(std::forward<F>(f), std::forward<MaybeTuple>(mt));
 }
 } // namespace lucid
-
-namespace std
-{
-template <typename... Ts>
-class tuple_size<lucid::unique_tuple<Ts...>> :
-    public integral_constant<size_t, sizeof...(Ts)>
-{
-};
-
-template <size_t I, typename... Ts>
-class tuple_element<I, lucid::unique_tuple<Ts...>>
-{
-  public:
-    using type = lucid::typelist::at<I, lucid::type_sequence<Ts...>>;
-};
-
-template <size_t I, typename... Ts>
-constexpr decltype(auto)
-get(const lucid::unique_tuple<Ts...>& t) noexcept
-{
-    return t.template get<I>();
-}
-
-template <size_t I, typename... Ts>
-constexpr decltype(auto)
-get(lucid::unique_tuple<Ts...>& t) noexcept
-{
-    return t.template get<I>();
-}
-} // namespace std
