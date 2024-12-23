@@ -127,20 +127,12 @@ concept Reader =
 ///
 /// "1", "yes", "YES", "true", "TRUE", "on", "ON" - considered to be true,
 /// any other values to be false.
-class FlagReader
+struct FlagReader
 {
-    template <typename... Rest>
-    static bool
-    any(std::string_view w, Rest... rest) noexcept
-    {
-        return (... || (w == rest));
-    }
-
-  public:
     bool
     operator()(std::string_view word) const noexcept
     {
-        return any(word, "1", "yes", "YES", "true", "TRUE", "on", "ON");
+        return any_string(word, "1", "yes", "YES", "true", "TRUE", "on", "ON");
     }
 };
 

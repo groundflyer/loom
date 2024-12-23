@@ -1,50 +1,42 @@
 // -*- C++ -*-
 // char.cpp
 #include <utils/string.hpp>
+#include <utils/test.hpp>
+
+#include <limits>
 
 using namespace lucid;
 
 static_assert(std::is_same_v<char_sequence<'t', 'e', 's', 't'>, sl2cs<"test">>);
 
-#define TEST_s2i(T, BASE, VAL) \
-    static_assert(s2i<T, BASE>(#VAL).value() == static_cast<T>(VAL))
+using namespace lucid;
+using namespace lucid::test;
 
-#define FAIL_s2i(VAL) static_assert(!s2i<unsigned>(VAL).has_value())
+template <std::signed_integral Int>
+std::string
+gen_int_str(RandomState& rs) noexcept
+{
+    auto g = [c = rs.make_gen<bool>(0.5),
+              i = rs.make_gen<Int>(
+                  std::numeric_limits<Int>::lowest(),
+                  std::numeric_limits<Int>::max())]() mutable noexcept
+    { return i() * (c() ? static_cast<Int>(-1) : static_cast<Int>(1)); };
+}
 
-#define TEST_s2f(T, VAL) \
-    static_assert(s2f<T>(#VAL).value() == static_cast<T>(VAL))
-
-#define FAIL_s2f(VAL) static_assert(!s2f<float>(VAL).has_value())
+template <std::integral Int>
+bool
+test_integral(Track& track, const ParmTestMaker& tm, RandomState& rs) noexcept
+{
+}
 
 int
-main()
+main(int argc, char* argv[])
 {
-    TEST_s2i(int, 10, 98763);
-    TEST_s2i(int, 10, -10034);
-    TEST_s2i(unsigned, 16, 0xdeadbeef);
-    TEST_s2i(unsigned, 2, 0b11101101);
-    TEST_s2i(int, 10, -2345);
+    Track         track;
+    ParmTestMaker tm{parse_numruns(argc, argv)};
+    RandomState   rs;
 
-    FAIL_s2i("e334g");
-    FAIL_s2i("-");
-    FAIL_s2i("+");
-    FAIL_s2i("0b");
-    FAIL_s2i("0x");
-
-    TEST_s2f(float, 1);
-    TEST_s2f(float, 1234.567);
-    TEST_s2f(float, 1e2);
-    TEST_s2f(float, 0.5e2);
-    TEST_s2f(float, 0.5e-2);
-    TEST_s2f(double, -1234.567);
-    TEST_s2f(double, -1e2);
-    TEST_s2f(double, -0.5e2);
-    TEST_s2f(double, -0.5e-2);
-    TEST_s2f(double, -2430.5e4);
-
-    FAIL_s2f("e334g");
-    FAIL_s2f("-");
-    FAIL_s2f("+");
+    auto choice = rs.make_gen<bool>(0.5);
 
     return 0;
 }

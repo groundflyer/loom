@@ -140,23 +140,40 @@ is_abcdef(char c) noexcept
     return is_abcdef_upper(c) || is_abcdef_lower(c);
 }
 
-template <std::integral T, int Base>
-constexpr std::optional<T>
-c2i(char c) noexcept
+template <typename... Rest>
+constexpr bool
+any_string(std::string_view w, Rest... rest) noexcept
 {
-    if constexpr(Base == 16)
+    return (... || (w == rest));
+}
+
+/// @brief Converts character into the corresponding integer number.
+///
+/// @param c character to convert. Valid set is [0-9,a-f,A-F] for base 16, [0-9]
+/// for 10 and (0, 1) for 2.
+/// @param the number base. Valid values are 16, 10, 2.
+template <std::integral Int = int>
+constexpr std::optional<Int>
+c2i(char c, Int base = 10) noexcept
+{
+    if(base == 16)
     {
-        if(is_abcdef_lower(c)) return static_cast<T>(c - 87);
-        if(is_abcdef_upper(c)) return static_cast<T>(c - 55);
+        if(is_abcdef_lower(c)) return static_cast<Int>(c - 87);
+        if(is_abcdef_upper(c)) return static_cast<Int>(c - 55);
     }
 
-    if(is_digit(c)) return static_cast<T>(c - 48);
+    if(is_digit(c))
+    {
+        const Int num = static_cast<Int>(c - 48);
+        if(num < base) return num;
+    }
 
     return {};
 }
 
 template <typename T>
-consteval std::pair<T, std::string_view>
+    requires(std::signed_integral<T> || std::floating_point<T>)
+constexpr std::pair<T, std::string_view>
 parse_sign(std::string_view s) noexcept
 {
     T sign = static_cast<T>(1);
@@ -170,35 +187,83 @@ parse_sign(std::string_view s) noexcept
     return {sign, s};
 }
 
-/// @brief constexpr analogue of std::stoi
-template <std::integral T = int, T Base = 10>
-consteval std::optional<T>
-s2i(std::string_view word) noexcept
+template <std::integral Int>
+constexpr std::optional<Int>
+parse_num(std::string_view s, Int base) noexcept
 {
-    auto [sign, s] = parse_sign<T>(word);
-
     if(s.empty()) return {};
 
-    if constexpr(Base == 2)
-        if(s.length() > 2 && (s.starts_with("0b") || s.starts_with("0B")))
-            s = s.substr(2);
-
-    if constexpr(Base == 16)
-        if(s.length() > 2 && (s.starts_with("0x") || s.starts_with("0X")))
-            s = s.substr(2);
-
-    T ret = 0;
-    T exp = 0;
+    Int ret = 0;
+    Int exp = 0;
     for(auto it = s.crbegin(); it != s.crend(); ++it)
     {
-        const auto o = c2i<T, Base>(*it);
+        const auto o = c2i<Int>(*it, base);
         if(!o) return {};
 
-        ret += o.value() * smath::pow(Base, exp);
+        ret += o.value() * smath::pow(base, exp);
         ++exp;
     }
 
-    return ret * sign;
+    return ret;
+}
+
+template <std::signed_integral Int>
+constexpr std::optional<Int>
+parse_signed(std::string_view s, Int base) noexcept
+{
+    auto [sign, rest] = parse_sign<Int>(s);
+
+    if(rest.empty()) return {};
+
+    std::optional<Int> num = parse_num<Int>(rest, base);
+    if(num) return num.value() * sign;
+
+    return {};
+}
+
+/// @brief constexpr analogue of std::stoi
+template <std::integral Int = int>
+constexpr std::optional<Int>
+s2i(std::string_view s, unsigned base = 10) noexcept
+{
+    if constexpr(std::signed_integral<Int>)
+        return parse_signed<Int>(s, base);
+    else
+        return parse_num<Int>(s, base);
+}
+
+constexpr std::pair<unsigned, std::string_view>
+detect_base(std::string_view s) noexcept
+{
+    if(any_string(s.substr(0, 2), "0x", "0X"))
+        return {16, s.substr(2)};
+    else if(any_string(s.substr(0, 2), "0b", "0B"))
+        return {2, s.substr(2)};
+
+    return {10, s};
+}
+
+/// @brief For strings that could have prefixes like "0x" or "0b".
+template <std::integral Int = int>
+constexpr std::optional<Int>
+s2i_base_prefix(std::string_view s) noexcept
+{
+    if(s.empty()) return {};
+
+    if constexpr(std::signed_integral<Int>)
+    {
+        auto [sign, rest]            = parse_sign<Int>(s);
+        const auto [base, rest2]     = detect_base(rest);
+        const std::optional<Int> num = parse_num<Int>(rest2, base);
+        if(num) return num.value() * sign;
+    }
+    else
+    {
+        const auto [base, rest] = detect_base(s);
+        return parse_num<Int>(rest, base);
+    }
+
+    return {};
 }
 
 /// @brief Inaccurate constexpr analogue of std::stof.

@@ -378,14 +378,7 @@ parse_literal() noexcept
     using type                   = vartype<_Variable>;
 
     if constexpr(std::is_integral_v<vartype<_Variable>>)
-    {
-        if constexpr(s.starts_with("0x") || s.starts_with("0X"))
-            return s2i<type, 16>(s);
-        else if constexpr((s.starts_with("0b") || s.starts_with("0B")))
-            return s2i<type, 2>(s);
-        else
-            return s2i<type>(s);
-    }
+        return s2i_base_prefix<type>(s);
     else
         return s2f<type>(s);
 }
