@@ -1802,21 +1802,21 @@ inline constexpr fn::max_fn max;
 template <typename Int>
 inline constexpr fn::downsample_fn<Int> downsample;
 
-DEF_FN_OBJ(dot)
-DEF_FN_OBJ(cross)
-DEF_FN_OBJ(length2)
-DEF_FN_OBJ(length)
-DEF_FN_OBJ(normalize)
-DEF_FN_OBJ(distance)
-DEF_FN_OBJ(sum)
-DEF_FN_OBJ(product)
-DEF_FN_OBJ(all)
-DEF_FN_OBJ(any)
-DEF_FN_OBJ(avg)
-DEF_FN_OBJ(roll)
-DEF_FN_OBJ(transpose)
-DEF_FN_OBJ(det)
-DEF_FN_OBJ(inverse)
+MK_NIEBLOID(dot)
+MK_NIEBLOID(cross)
+MK_NIEBLOID(length2)
+MK_NIEBLOID(length)
+MK_NIEBLOID(normalize)
+MK_NIEBLOID(distance)
+MK_NIEBLOID(sum)
+MK_NIEBLOID(product)
+MK_NIEBLOID(all)
+MK_NIEBLOID(any)
+MK_NIEBLOID(avg)
+MK_NIEBLOID(roll)
+MK_NIEBLOID(transpose)
+MK_NIEBLOID(det)
+MK_NIEBLOID(inverse)
 
 template <typename T,
           std::size_t N,

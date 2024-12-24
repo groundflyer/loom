@@ -8,10 +8,10 @@
 #include <type_traits>
 
 /// @brief Declare a composable functional object using @p FUNC as its
-/// implementation.
+/// implementation and instantiate it.
 /// @param NAME used as variable name.
 /// @param FUNC will be called internally.
-#define DEF_NAMED_FN_OBJ(NAME, FUNC)                              \
+#define MK_NAMED_NIEBLOID(NAME, FUNC)                             \
     namespace fn                                                  \
     {                                                             \
     struct NAME##_fn                                              \
@@ -33,8 +33,8 @@
     }                                                             \
     inline constexpr fn::NAME##_fn NAME{};
 
-/// @brief Same as DEF_NAMED_FN_OBJ, but @p FUNC is also used as the name.
-#define DEF_FN_OBJ(FUNC) DEF_NAMED_FN_OBJ(FUNC, FUNC)
+/// @brief Same as MK_NAMED_NIEBLOID, but @p FUNC is also used as the name.
+#define MK_NIEBLOID(FUNC) MK_NAMED_NIEBLOID(FUNC, FUNC)
 
 namespace lucid
 {

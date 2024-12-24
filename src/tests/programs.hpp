@@ -185,14 +185,14 @@ val_rshift(unsigned a, unsigned b) noexcept
 }
 } // namespace fn
 
-DEF_FN_OBJ(val_inc);
-DEF_FN_OBJ(val_fac);
-DEF_FN_OBJ(val_sut);
-DEF_FN_OBJ(val_cut);
-DEF_FN_OBJ(val_jmp4);
-DEF_FN_OBJ(val_choice);
-DEF_FN_OBJ(val_lshift);
-DEF_FN_OBJ(val_rshift);
+MK_NIEBLOID(val_inc);
+MK_NIEBLOID(val_fac);
+MK_NIEBLOID(val_sut);
+MK_NIEBLOID(val_cut);
+MK_NIEBLOID(val_jmp4);
+MK_NIEBLOID(val_choice);
+MK_NIEBLOID(val_lshift);
+MK_NIEBLOID(val_rshift);
 
 using incr_int     = increment<int>;
 using fac_int      = factorial_int<int>;
