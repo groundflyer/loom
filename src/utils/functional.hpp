@@ -7,6 +7,13 @@
 #include <functional>
 #include <type_traits>
 
+#define COMPOSE_OP                                                    \
+    template <typename Rhs>                                           \
+    constexpr decltype(auto) operator|(const Rhs& rhs) const noexcept \
+    {                                                                 \
+        return compose(*this, rhs);                                   \
+    }
+
 /// @brief Declare a composable functional object using @p FUNC as its
 /// implementation and instantiate it.
 /// @param NAME used as variable name.
@@ -23,12 +30,7 @@
         {                                                         \
             return FUNC(std::forward<Args>(args)...);             \
         }                                                         \
-        template <typename Rhs>                                   \
-        constexpr decltype(auto)                                  \
-        operator|(const Rhs& rhs) const noexcept                  \
-        {                                                         \
-            return compose(*this, rhs);                           \
-        }                                                         \
+        COMPOSE_OP                                                \
     };                                                            \
     }                                                             \
     inline constexpr fn::NAME##_fn NAME{};

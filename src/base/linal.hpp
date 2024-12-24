@@ -70,12 +70,7 @@
                 ret.at(i) = op(lhs.at(i), rhs);                           \
             return ret;                                                   \
         }                                                                 \
-        template <typename Rhs>                                           \
-        constexpr decltype(auto)                                          \
-        operator|(const Rhs& rhs) const noexcept                          \
-        {                                                                 \
-            return compose(*this, rhs);                                   \
-        }                                                                 \
+        COMPOSE_OP                                                        \
     };                                                                    \
     }                                                                     \
     static constexpr fn::FUNC##_fn FUNC{};                                \
@@ -127,12 +122,7 @@
             return Matrix<T, M, N, std::array>(                          \
                 transform(std::FUNC<T>(), flat_ref(lhs)));               \
         }                                                                \
-        template <typename Rhs>                                          \
-        constexpr decltype(auto)                                         \
-        operator|(const Rhs& rhs) const noexcept                         \
-        {                                                                \
-            return compose(*this, rhs);                                  \
-        }                                                                \
+        COMPOSE_OP                                                       \
     };                                                                   \
     }                                                                    \
     inline constexpr fn::FUNC##_fn FUNC{};                               \
@@ -179,12 +169,7 @@
         {                                              \
             return FUNC(args...);                      \
         }                                              \
-        template <typename Rhs>                        \
-        constexpr decltype(auto)                       \
-        operator|(const Rhs& rhs) const noexcept       \
-        {                                              \
-            return compose(*this, rhs);                \
-        }                                              \
+        COMPOSE_OP                                     \
     };                                                 \
     }                                                  \
     inline constexpr fn::NAME##_fn NAME{};
@@ -219,12 +204,7 @@
             else                                       \
                 return std::FUNC(args...);             \
         }                                              \
-        template <typename Rhs>                        \
-        constexpr decltype(auto)                       \
-        operator|(const Rhs& rhs) const noexcept       \
-        {                                              \
-            return compose(*this, rhs);                \
-        }                                              \
+        COMPOSE_OP                                     \
     };                                                 \
     }                                                  \
     inline constexpr fn::FUNC##_fn FUNC{};
@@ -1358,12 +1338,8 @@ struct multiplies_fn
     {
         return transform(std::multiplies<T1>(), lhs, rhs);
     }
-    template <typename Rhs>
-    constexpr decltype(auto)
-    operator|(const Rhs& rhs) const noexcept
-    {
-        return compose(*this, rhs);
-    }
+
+    COMPOSE_OP
 };
 
 /// @addtogroup LINAL
@@ -1596,12 +1572,7 @@ struct min_fn
         return reduce(*this, a, std::numeric_limits<T>::max());
     }
 
-    template <typename Rhs>
-    constexpr decltype(auto)
-    operator|(const Rhs& rhs) const noexcept
-    {
-        return compose(*this, rhs);
-    }
+    COMPOSE_OP
 };
 
 struct max_fn
@@ -1626,12 +1597,7 @@ struct max_fn
         return reduce(*this, a, std::numeric_limits<T>::min());
     }
 
-    template <typename Rhs>
-    constexpr decltype(auto)
-    operator|(const Rhs& rhs) const noexcept
-    {
-        return compose(*this, rhs);
-    }
+    COMPOSE_OP
 };
 
 template <std::integral Int>
@@ -1656,12 +1622,7 @@ struct downsample_fn
         return transform(*this, vec);
     }
 
-    template <typename Rhs>
-    constexpr decltype(auto)
-    operator|(Rhs&& rhs) const noexcept
-    {
-        return compose(*this, rhs);
-    }
+    COMPOSE_OP
 };
 
 /// @brief Transpose matrix.

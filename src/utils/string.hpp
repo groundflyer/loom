@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include "functional.hpp"
 #include "math.hpp"
 #include "tmp.hpp"
 
@@ -80,6 +81,8 @@ inline constexpr std::string_view cs2sv =
     std::string_view(intlist::array<S>, intlist::length<S>);
 /// @}
 
+namespace fn
+{
 constexpr bool
 is_alpha_upper(char c) noexcept
 {
@@ -221,17 +224,6 @@ parse_signed(std::string_view s, Int base) noexcept
     return {};
 }
 
-/// @brief constexpr analogue of std::stoi
-template <std::integral Int = int>
-constexpr std::optional<Int>
-s2i(std::string_view s, unsigned base = 10) noexcept
-{
-    if constexpr(std::signed_integral<Int>)
-        return parse_signed<Int>(s, base);
-    else
-        return parse_num<Int>(s, base);
-}
-
 constexpr std::pair<unsigned, std::string_view>
 detect_base(std::string_view s) noexcept
 {
@@ -243,86 +235,131 @@ detect_base(std::string_view s) noexcept
     return {10, s};
 }
 
+/// @brief constexpr analogue of std::stoi
+template <std::integral Int = int>
+struct s2i_fn
+{
+    constexpr std::optional<Int>
+    operator()(std::string_view s, unsigned base = 10) const noexcept
+    {
+        if constexpr(std::signed_integral<Int>)
+            return parse_signed<Int>(s, base);
+        else
+            return parse_num<Int>(s, base);
+    }
+
+    COMPOSE_OP
+};
+
 /// @brief For strings that could have prefixes like "0x" or "0b".
 template <std::integral Int = int>
-constexpr std::optional<Int>
-s2i_base_prefix(std::string_view s) noexcept
+struct s2i_base_prefix_fn
 {
-    if(s.empty()) return {};
-
-    if constexpr(std::signed_integral<Int>)
+    constexpr std::optional<Int>
+    operator()(std::string_view s) const noexcept
     {
-        auto [sign, rest]            = parse_sign<Int>(s);
-        const auto [base, rest2]     = detect_base(rest);
-        const std::optional<Int> num = parse_num<Int>(rest2, base);
-        if(num) return num.value() * sign;
-    }
-    else
-    {
-        const auto [base, rest] = detect_base(s);
-        return parse_num<Int>(rest, base);
-    }
+        if(s.empty()) return {};
 
-    return {};
-}
+        if constexpr(std::signed_integral<Int>)
+        {
+            auto [sign, rest]            = parse_sign<Int>(s);
+            const auto [base, rest2]     = detect_base(rest);
+            const std::optional<Int> num = parse_num<Int>(rest2, base);
+            if(num) return num.value() * sign;
+        }
+        else
+        {
+            const auto [base, rest] = detect_base(s);
+            return parse_num<Int>(rest, base);
+        }
+
+        return {};
+    }
+    COMPOSE_OP
+};
 
 /// @brief Inaccurate constexpr analogue of std::stof.
 template <std::floating_point T = float>
-consteval std::optional<T>
-s2f(std::string_view word) noexcept
+struct s2f_fn
 {
-    auto [sign, s] = parse_sign<T>(word);
-
-    if(s.empty()) return {};
-
-    const std::size_t sep_pos = s.find('.');
-    const std::size_t ep1     = s.find('e');
-    const std::size_t ep2     = s.find('E');
-    const std::size_t exp_pos = std::min(ep1, ep2);
-
-    const bool has_sep = sep_pos != std::string_view::npos;
-    const bool has_exp = exp_pos != std::string_view::npos;
-
-    std::string_view int_part =
-        has_sep ? s.substr(0, sep_pos) : (has_exp ? s.substr(0, exp_pos) : s);
-
-    std::string_view frac_part =
-        has_sep ? (has_exp ? s.substr(sep_pos + 1, exp_pos - sep_pos - 1) :
-                             s.substr(sep_pos + 1)) :
-                  "";
-
-    std::string_view exp_part = has_exp ? s.substr(exp_pos + 1) : "";
-
-    T ret{};
-
-    if(!int_part.empty())
+    constexpr std::optional<T>
+    operator()(std::string_view word) const noexcept
     {
-        const auto oi = s2i<long>(int_part);
-        if(!oi.has_value()) return {};
+        auto [sign, s] = parse_sign<T>(word);
 
-        ret = static_cast<T>(oi.value());
+        if(s.empty()) return {};
+
+        const std::size_t sep_pos = s.find('.');
+        const std::size_t ep1     = s.find('e');
+        const std::size_t ep2     = s.find('E');
+        const std::size_t exp_pos = std::min(ep1, ep2);
+
+        const bool has_sep = sep_pos != std::string_view::npos;
+        const bool has_exp = exp_pos != std::string_view::npos;
+
+        std::string_view int_part = has_sep ?
+                                        s.substr(0, sep_pos) :
+                                        (has_exp ? s.substr(0, exp_pos) : s);
+
+        std::string_view frac_part =
+            has_sep ? (has_exp ? s.substr(sep_pos + 1, exp_pos - sep_pos - 1) :
+                                 s.substr(sep_pos + 1)) :
+                      "";
+
+        std::string_view exp_part = has_exp ? s.substr(exp_pos + 1) : "";
+
+        T ret{};
+
+        if(!int_part.empty())
+        {
+            const auto oi = parse_num<long>(int_part, 10);
+            if(!oi.has_value()) return {};
+
+            ret = static_cast<T>(oi.value());
+        }
+
+        if(!frac_part.empty())
+        {
+            const auto oi = parse_num<long>(frac_part, 10);
+            if(!oi.has_value()) return {};
+
+            const auto frac =
+                oi.value() * smath::pow(static_cast<T>(10),
+                                        -static_cast<int>(frac_part.length()));
+
+            ret += frac;
+        }
+
+        if(!exp_part.empty())
+        {
+            const auto oi = parse_num<long>(exp_part, 10);
+            if(!oi.has_value()) return {};
+
+            ret *= smath::pow(static_cast<T>(10), oi.value());
+        }
+
+        return ret * sign;
     }
 
-    if(!frac_part.empty())
-    {
-        const auto oi = s2i<long>(frac_part);
-        if(!oi.has_value()) return {};
+    COMPOSE_OP
+};
+} // namespace fn
 
-        const auto frac =
-            oi.value() * smath::pow(static_cast<T>(10),
-                                    -static_cast<int>(frac_part.length()));
+MK_NIEBLOID(is_alpha_upper);
+MK_NIEBLOID(is_alpha_lower);
+MK_NIEBLOID(is_alpha);
+MK_NIEBLOID(is_digit);
+MK_NIEBLOID(is_alphadigit);
+MK_NIEBLOID(upper);
+MK_NIEBLOID(lower);
+MK_NIEBLOID(any_string);
 
-        ret += frac;
-    }
+template <std::integral Int = int>
+constexpr inline fn::s2i_fn<Int> s2i{};
 
-    if(!exp_part.empty())
-    {
-        const auto oi = s2i<long>(exp_part);
-        if(!oi.has_value()) return {};
+template <std::integral Int = int>
+constexpr inline fn::s2i_base_prefix_fn<Int> s2i_base_prefix{};
 
-        ret *= smath::pow(static_cast<T>(10), oi.value());
-    }
-
-    return ret * sign;
-}
+template <std::floating_point T = float>
+constexpr inline fn::s2f_fn<T> s2f{};
 } // namespace lucid
