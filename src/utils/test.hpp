@@ -539,7 +539,8 @@ struct ParmTestMaker
 
     /// @brief Make parametric test with a hint.
     ///
-    /// @param gh generates a pair of values.
+    /// @param gh generates a pair of values. The first value goes to testing
+    /// function, the second value is the hint.
     /// @param t testing function.
     /// @param cmp comparator. By default checks for equality.
     ///
