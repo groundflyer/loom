@@ -558,7 +558,7 @@ struct ParmTestMaker
             std::forward<GH>(gh),
             [&t]<typename Feed>(Feed&& feed) noexcept
             {
-                return std::invoke(std::forward<T>(t),
+                return maybe_apply(std::forward<T>(t),
                                    std::get<0>(std::forward<Feed>(feed)));
             },
             [cmp](auto tr, const auto& feed) noexcept
@@ -809,6 +809,18 @@ parse_numruns(int argc, char* argv[]) noexcept
                {argc, argv})
         .template get_opt<'n'>();
 }
+
+struct transparent_cmp
+{
+    template <typename T>
+    bool
+    operator()(const T& a, const T& b) const noexcept
+    {
+        bool eq = a == b;
+        fmt::print("{:>8} {}= {:>8}\n", a, eq ? '=' : '!', b);
+        return eq;
+    }
+};
 
 struct transparent_range_cmp
 {

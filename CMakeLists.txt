@@ -91,7 +91,6 @@ endif()
 find_package(fmt 9 REQUIRED)
 if(fmt_FOUND)
   message(STATUS "Found fmt: " ${fmt_VERSION})
-  set(FMTLIB fmt::fmt)
 endif()
 
 # CUDA
@@ -166,7 +165,6 @@ if(BUILD_TESTS)
     functional.cpp
     lang.cpp
     linal.cpp
-    string.cpp
     tmp.cpp
     transforms.cpp
     tuple.cpp
@@ -186,15 +184,23 @@ if(BUILD_TESTS)
 
     add_executable(${name} ${TESTS_SRC_DIR}/${src})
     add_test(NAME ${name} COMMAND ${name})
-    target_link_libraries(${name} PRIVATE ${FMTLIB})
+    target_link_libraries(${name} PRIVATE fmt::fmt)
     target_include_directories(${name} PUBLIC src)
     add_dependencies(tests ${name})
   endforeach()
 
+  # string.cpp might not work with system dso fmt
+  # as it's usually built with libstdc++ and (atm) we work with libc++
+  add_executable(test_string ${TESTS_SRC_DIR}/string.cpp)
+  add_test(NAME test_string COMMAND test_string)
+  target_link_libraries(test_string PRIVATE fmt::fmt-header-only)
+  target_include_directories(test_string PUBLIC src)
+  add_dependencies(tests test_string)
+
   if(USE_CUDA)
     add_executable(test_lang_cuda ${TESTS_SRC_DIR}/lang.cu)
     target_compile_definitions(test_lang_cuda PUBLIC USE_CUDA FMT_USE_FLOAT128=0)
-    target_link_libraries(test_lang_cuda PRIVATE CUDA::cudart_static ${FMTLIB})
+    target_link_libraries(test_lang_cuda PRIVATE CUDA::cudart_static fmt::fmt)
     target_include_directories(test_lang_cuda PUBLIC src)
     add_dependencies(tests test_lang_cuda)
     add_test(NAME test_lang_cuda COMMAND test_lang_cuda)
@@ -215,5 +221,7 @@ if(BUILD_TESTS)
   target_link_options(test_lang PUBLIC $<$<CONFIG:RelWithDebInfo>:-fsanitize=alignment>)
   target_compile_options(test_argparse PUBLIC $<$<CONFIG:RelWithDebInfo>:-fsanitize=address>)
   target_link_options(test_argparse PUBLIC $<$<CONFIG:RelWithDebInfo>:-fsanitize=address>)
+  target_compile_options(test_string PUBLIC $<$<CONFIG:RelWithDebInfo>:-fsanitize=address>)
+  target_link_options(test_string PUBLIC $<$<CONFIG:RelWithDebInfo>:-fsanitize=address>)
 
 endif()
