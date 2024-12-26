@@ -96,13 +96,12 @@ test_integral(Track& track, const ParmTestMaker& tm, RandomState& rs) noexcept
         return std::pair{format_int_prefix(num, gb2(), gw()), num};
     };
 
-    std::string s2i_info = fmt::format("s2i {}", get_typeinfo_string(Int{}));
-    std::string s2i_bp_info =
-        fmt::format("s2i_base_prefix {}", get_typeinfo_string(Int{}));
-
-    auto test_s2i = NamedTest{tm.with_hint(gh1, s2i<Int>, cmp), s2i_info};
-    auto test_s2i_bp =
-        NamedTest{tm.with_hint(gh2, s2i_base_prefix<Int>, cmp), s2i_bp_info};
+    auto test_s2i =
+        NamedTest{tm.with_hint(gh1, s2i<Int>, cmp),
+                  fmt::format("s2i {}", get_typeinfo_string(Int{}))};
+    auto test_s2i_bp = NamedTest{
+        tm.with_hint(gh2, s2i_base_prefix<Int>, cmp),
+        fmt::format("s2i_base_prefix {}", get_typeinfo_string(Int{}))};
 
     return track.dep_check(test_s2i, test_s2i_bp);
 }

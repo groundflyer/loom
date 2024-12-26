@@ -138,7 +138,7 @@ template <template <typename> typename Array, typename T>
 using maybe_toa = detail::maybe_toa<Array, T>::type;
 
 /// @brief Associates a test with a name.
-template <typename Test>
+template <typename Test, std::convertible_to<std::string_view> Name>
     requires(std::predicate<Test> ||
              is_strictly_invocable_rp_v<std::is_floating_point, Test>)
 struct NamedTest
@@ -149,29 +149,26 @@ struct NamedTest
     /// otherwise as fail.
     Test test;
     /// @brief Logged name.
-    std::string_view name;
+    Name name;
 
-    constexpr NamedTest(Test _t, std::string_view _n) noexcept :
-        test(_t), name(_n)
-    {
-    }
+    constexpr NamedTest(Test _t, Name _n) noexcept : test(_t), name(_n) {}
 };
 
 /// @brief Associates a fuzzy test with name and failing threshold.
 ///
 /// @tparam Test function object that doesn't accept parameters
 /// and returns relative ratio of failed runs.
-template <typename Test>
+template <typename Test, typename Name>
     requires(is_strictly_invocable_rp_v<std::is_floating_point, Test>)
-struct NamedFuzzyTest : NamedTest<Test>
+struct NamedFuzzyTest : NamedTest<Test, Name>
 {
     /// @brief The portion of fails when test is considered as fail.
     std::invoke_result_t<Test> threshold;
 
     constexpr NamedFuzzyTest(Test                       _t,
-                             std::string_view           _n,
+                             Name                       _n,
                              std::invoke_result_t<Test> _thr) noexcept :
-        NamedTest<Test>(_t, _n),
+        NamedTest<Test, Name>(_t, _n),
         threshold(_thr)
     {
     }
@@ -250,16 +247,16 @@ class Track
     print_status(ntest.name, p, l);      \
     return p
 
-    template <typename Test>
+    template <typename Test, typename Name>
     static bool
-    run_print(const NamedTest<Test>& ntest, unsigned l = 0) noexcept
+    run_print(const NamedTest<Test, Name>& ntest, unsigned l = 0) noexcept
     {
         RUN_NTEST;
     }
 
-    template <typename Test>
+    template <typename Test, typename Name>
     static bool
-    run_print(NamedTest<Test>& ntest, unsigned l = 0) noexcept
+    run_print(NamedTest<Test, Name>& ntest, unsigned l = 0) noexcept
     {
         RUN_NTEST;
     }
@@ -272,16 +269,16 @@ class Track
     print_status(nftest.name, p, error, l);       \
     return p
 
-    template <typename Test>
+    template <typename Test, typename Name>
     static bool
-    run_print(const NamedFuzzyTest<Test>& nftest, unsigned l = 0) noexcept
+    run_print(const NamedFuzzyTest<Test, Name>& nftest, unsigned l = 0) noexcept
     {
         RUN_NFTEST;
     }
 
-    template <typename Test>
+    template <typename Test, typename Name>
     static bool
-    run_print(NamedFuzzyTest<Test>& nftest, unsigned l = 0) noexcept
+    run_print(NamedFuzzyTest<Test, Name>& nftest, unsigned l = 0) noexcept
     {
         RUN_NFTEST;
     }
@@ -556,9 +553,8 @@ struct ParmTestMaker
     {
         return test(
             std::forward<GH>(gh),
-            [&t]<typename Feed>(Feed&& feed) noexcept
-            {
-                return maybe_apply(std::forward<T>(t),
+            [t = std::move(t)]<typename Feed>(Feed&& feed) noexcept {
+                return maybe_apply(std::move(t),
                                    std::get<0>(std::forward<Feed>(feed)));
             },
             [cmp](auto tr, const auto& feed) noexcept
