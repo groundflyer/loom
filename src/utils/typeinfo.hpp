@@ -4,17 +4,12 @@
 
 #pragma once
 
-#include <base/linal.hpp>
-
 #include <fmt/core.h>
 
 namespace lucid
 {
-#define MAKE_TYPEINFO_STRING(TYPE)                    \
-    constexpr auto get_typeinfo_string(TYPE) noexcept \
-    {                                                 \
-        return #TYPE;                                 \
-    }
+#define MAKE_TYPEINFO_STRING(TYPE) \
+    constexpr auto get_typeinfo_string(TYPE) noexcept { return #TYPE; }
 
 MAKE_TYPEINFO_STRING(int)
 MAKE_TYPEINFO_STRING(bool)
@@ -30,31 +25,4 @@ MAKE_TYPEINFO_STRING(unsigned int)
 MAKE_TYPEINFO_STRING(unsigned char)
 MAKE_TYPEINFO_STRING(unsigned short)
 
-template <typename T, size_t N>
-constexpr auto
-get_typeinfo_string(lucid::Vector<T, N, std::array>)
-{
-    return fmt::format("Vector<{}, {}>", get_typeinfo_string(T{}), N);
-}
-
-template <typename T, size_t M, size_t N>
-constexpr auto
-get_typeinfo_string(lucid::Matrix<T, M, N, std::array>)
-{
-    return fmt::format("Matrix<{}, {}, {}>", get_typeinfo_string(T{}), M, N);
-}
-
-template <typename... Ts>
-constexpr auto
-get_typeinfo_string(std::tuple<Ts...>) noexcept
-{
-    return fmt::format("{}", tuple(get_typeinfo_string(Ts{})...));
-}
-
-template <typename T, size_t N>
-auto
-get_typeinfo_string(std::array<T, N>) noexcept
-{
-    return fmt::format("std::array<{}, {}>", get_typeinfo_string(T{}), N);
-}
 } // namespace lucid

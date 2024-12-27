@@ -6,6 +6,7 @@
 
 #include <functional>
 #include <type_traits>
+#include <utility>
 
 #define COMPOSE_OP                                                    \
     template <typename Rhs>                                           \
@@ -143,12 +144,7 @@ struct maker_fn
             return T(std::forward<Args>(args)...);
     }
 
-    template <typename Rhs>
-    constexpr decltype(auto)
-    operator|(const Rhs& rhs) const noexcept
-    {
-        return compose(*this, rhs);
-    }
+    COMPOSE_OP
 };
 
 template <typename T>
@@ -158,15 +154,10 @@ struct tuple_maker_fn
     constexpr T
     operator()(Tuple&& t) const noexcept
     {
-        return std::make_from_tuple<T>(std::forward<T>(t));
+        return std::make_from_tuple<T>(std::forward<Tuple>(t));
     }
 
-    template <typename Rhs>
-    constexpr decltype(auto)
-    operator|(const Rhs& rhs) const noexcept
-    {
-        return compose(*this, rhs);
-    }
+    COMPOSE_OP
 };
 
 struct sink_fn

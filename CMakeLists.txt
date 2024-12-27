@@ -165,6 +165,7 @@ if(BUILD_TESTS)
     functional.cpp
     lang.cpp
     linal.cpp
+    string.cpp
     tmp.cpp
     transforms.cpp
     tuple.cpp
@@ -173,6 +174,9 @@ if(BUILD_TESTS)
     test.cpp
     threadpool.cpp
   )
+
+  # header-only fmt
+  set(fmt_ho test_string test_linal)
 
   set(TESTS_SRC_DIR src/tests)
 
@@ -184,18 +188,14 @@ if(BUILD_TESTS)
 
     add_executable(${name} ${TESTS_SRC_DIR}/${src})
     add_test(NAME ${name} COMMAND ${name})
-    target_link_libraries(${name} PRIVATE fmt::fmt)
+    if (name IN_LIST fmt_ho)
+      target_link_libraries(${name} PRIVATE fmt::fmt-header-only)
+    else()
+      target_link_libraries(${name} PRIVATE fmt::fmt)
+    endif()
     target_include_directories(${name} PUBLIC src)
     add_dependencies(tests ${name})
   endforeach()
-
-  # string.cpp might not work with system dso fmt
-  # as it's usually built with libstdc++ and (atm) we work with libc++
-  add_executable(test_string ${TESTS_SRC_DIR}/string.cpp)
-  add_test(NAME test_string COMMAND test_string)
-  target_link_libraries(test_string PRIVATE fmt::fmt-header-only)
-  target_include_directories(test_string PUBLIC src)
-  add_dependencies(tests test_string)
 
   if(USE_CUDA)
     add_executable(test_lang_cuda ${TESTS_SRC_DIR}/lang.cu)
