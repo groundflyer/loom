@@ -1384,14 +1384,13 @@ template <typename List, typename Index = std::size_t>
 using enumerate = detail::enumerate<List, Index>::type;
 } // namespace typelist
 
-/// @brief Get unsigned integer type of size @p S.
-template <std::size_t S>
-class uint_of_size
+template <std::size_t N>
+class uint_of_bits
 {
     template <typename C>
     struct p
     {
-        static constexpr bool value = sizeof(C) == S;
+        static constexpr bool value = sizeof(C) * 8 >= N;
     };
 
   public:
@@ -1403,6 +1402,15 @@ class uint_of_size
                                               std::uintmax_t>>;
 };
 
+/// @brief Unsigned integer type capable of holding @p N bits.
+///
+/// void if there is no such.
+template <std::size_t N>
+using uint_of_bits_t = uint_of_bits<N>::type;
+
+/// @brief Unsigned integer type of at least size @p S.
+///
+/// void if there is no such.
 template <std::size_t S>
-using uint_of_size_t = uint_of_size<S>::type;
+using uint_of_size_t = uint_of_bits_t<S * 8>;
 } // namespace lucid
