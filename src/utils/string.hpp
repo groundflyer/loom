@@ -332,7 +332,7 @@ struct s2f_fn
 
         if(!exp_part.empty())
         {
-            const auto oi = parse_num<long>(exp_part, 10);
+            const auto oi = parse_signed<long>(exp_part, 10);
             if(!oi.has_value()) return {};
 
             ret *= smath::pow(static_cast<T>(10), oi.value());
