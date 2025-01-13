@@ -438,13 +438,13 @@ class eval<ParmJump<Var, Labels>, LabelMap, N>
 template <typename SIMDRunner,
           typename SerialRunner,
           fsize_t N,
-          fsize_t bulk_number>
+          fsize_t unroll_exp>
 class BulkDispatcher
 {
     using bulk_sizes =
         intlist::map_f<decltype([](fsize_t n) constexpr noexcept -> fsize_t
                                 { return n * N; }),
-                       intlist::reverse<intlist::powerof2s<bulk_number>>>;
+                       intlist::reverse<intlist::powerof2s<unroll_exp>>>;
 
     static constexpr bulk_sizes   seq{};
     static constexpr SIMDRunner   simd_runner{};
@@ -528,7 +528,7 @@ class BulkDispatcher
 };
 
 /// @brief Executes a single instruction @p I through the whole view.
-template <typename I, typename LabelMap, typename CPVar, fsize_t bulk_number>
+template <typename I, typename LabelMap, typename CPVar, fsize_t unroll_exp>
 class make_vertical_instruction_runner
 {
     static constexpr fsize_t N = native_instruction_width_v<I, vartype<CPVar>>;
@@ -537,23 +537,22 @@ class make_vertical_instruction_runner
     using type = BulkDispatcher<eval<I, LabelMap, N>,
                                 standard_eval<I, LabelMap>,
                                 N,
-                                bulk_number>;
+                                unroll_exp>;
 };
 
-template <typename Cell, typename LabelMap, typename CPVar, fsize_t bulk_number>
+template <typename Cell, typename LabelMap, typename CPVar, fsize_t unroll_exp>
 class make_vertical_runner
 {
     template <typename I, typename _LabelMap>
     using eval =
-        make_vertical_instruction_runner<I, _LabelMap, CPVar, bulk_number>::
-            type;
+        make_vertical_instruction_runner<I, _LabelMap, CPVar, unroll_exp>::type;
 
   public:
     using type = standard_compiler<Cell, LabelMap, eval>;
 };
 
 /// @brief Executes @p Cell as SIMD kernel.
-template <typename Cell, typename LabelMap, typename CPVar, fsize_t bulk_number>
+template <typename Cell, typename LabelMap, typename CPVar, fsize_t unroll_exp>
 class make_minikernel_runner
 {
     template <typename Var>
@@ -673,16 +672,16 @@ class make_minikernel_runner
     };
 
   public:
-    using type = BulkDispatcher<SIMDRunner, SerialRunner, N, bulk_number>;
+    using type = BulkDispatcher<SIMDRunner, SerialRunner, N, unroll_exp>;
 };
 
-template <typename Cell, typename LabelMap, typename CPVar, fsize_t bulk_number>
+template <typename Cell, typename LabelMap, typename CPVar, fsize_t unroll_exp>
 using vertical_runner =
-    make_vertical_runner<Cell, LabelMap, CPVar, bulk_number>::type;
+    make_vertical_runner<Cell, LabelMap, CPVar, unroll_exp>::type;
 
-template <typename Cell, typename LabelMap, typename CPVar, fsize_t bulk_number>
+template <typename Cell, typename LabelMap, typename CPVar, fsize_t unroll_exp>
 using minikernel_runner =
-    make_minikernel_runner<Cell, LabelMap, CPVar, bulk_number>::type;
+    make_minikernel_runner<Cell, LabelMap, CPVar, unroll_exp>::type;
 
 template <typename _Memory>
 class memory_chunks : public std::ranges::view_interface<memory_chunks<_Memory>>
@@ -1002,16 +1001,16 @@ class simd_compiler
 
 template <typename _Program,
           bool    use_minikernel,
-          fsize_t bulk_number,
+          fsize_t unroll_exp,
           bool    use_counting_sort>
-    requires(bulk_number > 0)
+    requires(unroll_exp > 0)
 class select_runner
 {
     template <typename Cell, typename LabelMap, typename CPVar>
-    using runner = std::conditional_t<
-        use_minikernel,
-        minikernel_runner<Cell, LabelMap, CPVar, bulk_number>,
-        vertical_runner<Cell, LabelMap, CPVar, bulk_number>>;
+    using runner =
+        std::conditional_t<use_minikernel,
+                           minikernel_runner<Cell, LabelMap, CPVar, unroll_exp>,
+                           vertical_runner<Cell, LabelMap, CPVar, unroll_exp>>;
 
   public:
     using function =
@@ -1023,17 +1022,17 @@ class select_runner
 template <typename _Program,
           bool    use_minikernel    = false,
           bool    use_counting_sort = false,
-          fsize_t bulk_number       = 8>
+          fsize_t unroll_exp        = 8>
 using function =
-    select_runner<_Program, use_minikernel, bulk_number, use_counting_sort>::
+    select_runner<_Program, use_minikernel, unroll_exp, use_counting_sort>::
         function;
 
 template <typename _Program,
           bool    use_minikernel    = false,
           bool    use_counting_sort = false,
-          fsize_t bulk_number       = 8>
+          fsize_t unroll_exp        = 8>
     requires(!_Program::singular)
 using streamer =
-    select_runner<_Program, use_minikernel, bulk_number, use_counting_sort>::
+    select_runner<_Program, use_minikernel, unroll_exp, use_counting_sort>::
         streamer;
 } // namespace lucid::simd
