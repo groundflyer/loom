@@ -10,6 +10,7 @@
 
 #include <utils/debug.hpp>
 #include <utils/tmp.hpp>
+#include <utils/tuple.hpp>
 
 #include <algorithm>
 #include <cstdlib>
@@ -1035,4 +1036,65 @@ template <typename _Program,
 using streamer =
     select_runner<_Program, use_minikernel, unroll_exp, use_counting_sort>::
         streamer;
+
+template <typename Programs,
+          bool    use_minikernel    = false,
+          bool    use_counting_sort = false,
+          fsize_t unroll_exp        = 8>
+class MultiStreamer
+{
+    template <typename P>
+    using streamer_t =
+        streamer<P, use_minikernel, use_counting_sort, unroll_exp>;
+
+    using streamers_t =
+        typelist::to<typelist::map<streamer_t, Programs>, unique_tuple>;
+
+    template <typename P>
+    decltype(auto)
+    access() noexcept
+    {
+        return m_streamers.template get<streamer_t<P>>();
+    }
+
+    streamers_t m_streamers;
+
+  public:
+    MultiStreamer()                     = delete;
+    MultiStreamer(const MultiStreamer&) = delete;
+    MultiStreamer(MultiStreamer&&)      = delete;
+    MultiStreamer&
+    operator=(const MultiStreamer&) = delete;
+    MultiStreamer&
+    operator=(MultiStreamer&&) = delete;
+
+    MultiStreamer(fsize_t n) noexcept : m_streamers(uniform_init, n) {}
+
+    template <typename _Program, typename... Args>
+    void
+    set_input(Args&&... args) noexcept
+    {
+        access<_Program>().set_input(std::forward<Args>(args)...);
+    }
+
+    template <typename _Program>
+    decltype(auto)
+    get_output() const noexcept
+    {
+        return access<_Program>().get_output();
+    }
+
+    template <typename _Program, typename Input>
+    auto
+    exchange(Input&& input) noexcept
+    {
+        return access<_Program>().exchange(std::forward<Input>(input));
+    }
+
+    void
+    operator()() noexcept
+    {
+        lucid::for_each([](auto& s) noexcept { s(); }, m_streamers);
+    }
+};
 } // namespace lucid::simd
