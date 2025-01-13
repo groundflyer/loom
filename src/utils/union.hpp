@@ -306,11 +306,11 @@ class UnionVector
     }
 
     template <typename T>
-    constexpr std::span<const T>
+    constexpr std::span<T>
     view() const noexcept
         requires(has<T>)
     {
-        return {reinterpret_cast<const T*>(p_data), m_count};
+        return {const_cast<T*>(reinterpret_cast<const T*>(p_data)), m_count};
     }
 
     template <typename T>
@@ -321,7 +321,7 @@ class UnionVector
         return {reinterpret_cast<T*>(p_data), m_count};
     }
 
-    constexpr std::span<const std::byte>
+    constexpr std::span<std::byte>
     byteview() const noexcept
     {
         return {p_data, size()};

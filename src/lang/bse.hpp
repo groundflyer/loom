@@ -32,6 +32,21 @@ class Memory
     {
         return get<CPVar>();
     }
+
+    /// @brief Access a variable.
+    template <typename Var>
+    std::add_lvalue_reference_t<std::add_const_t<vartype<Var>>>
+    get() const noexcept
+    {
+        return helper::template get<Var>(m_data);
+    }
+
+    /// @brief Access cell pointer.
+    std::add_lvalue_reference_t<std::add_const_t<vartype<CPVar>>>
+    cp() const noexcept
+    {
+        return get<CPVar>();
+    }
 };
 
 template <typename _Program>
@@ -66,11 +81,11 @@ class MemoryFacade
     }
 
     constexpr auto
-    get_output() noexcept
+    get_output() const noexcept
     {
         return typelist::maybe_collect<std::tuple>(
-            [&]<typename Var>() constexpr noexcept
-            { return memory.template get<Var>(); },
+            [&mem = memory]<typename Var>() constexpr noexcept
+            { return mem.template get<Var>(); },
             output_vars{});
     }
 

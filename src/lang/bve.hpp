@@ -121,14 +121,27 @@ class ProxyRow
     }
 
     template <typename Var>
-    std::add_lvalue_reference_t<vartype<Var>>
+    std::add_const_t<std::add_lvalue_reference_t<vartype<Var>>>
     get() const noexcept
     {
         return Helper::template get<Var>(m_data)[m_pos];
     }
 
-    std::add_lvalue_reference_t<vartype<_CP>>
+    std::add_const_t<std::add_lvalue_reference_t<vartype<_CP>>>
     cp() const noexcept
+    {
+        return get<_CP>();
+    }
+
+    template <typename Var>
+    std::add_lvalue_reference_t<vartype<Var>>
+    get() noexcept
+    {
+        return Helper::template get<Var>(m_data)[m_pos];
+    }
+
+    std::add_lvalue_reference_t<vartype<_CP>>
+    cp() noexcept
     {
         return get<_CP>();
     }
@@ -518,9 +531,25 @@ class Memory
         return {m_data, n};
     }
 
+    value_type
+    operator[](const fsize_t n) const noexcept
+    {
+        CHECK_INDEX(n, size());
+        return {m_data, n};
+    }
+
     template <fsize_t N>
     proxy_view<N>
     view(const fsize_t pos = 0) noexcept
+    {
+        CHECK_INDEX(pos, size());
+        ASSERT(N <= size() - pos, "Extent too big");
+        return {m_data, pos};
+    }
+
+    template <fsize_t N>
+    proxy_view<N>
+    view(const fsize_t pos = 0) const noexcept
     {
         CHECK_INDEX(pos, size());
         ASSERT(N <= size() - pos, "Extent too big");
@@ -536,7 +565,22 @@ class Memory
     }
 
     proxy_view<dynamic_extent>
+    view(const fsize_t pos, const fsize_t ext) const noexcept
+    {
+        CHECK_INDEX(pos, size());
+        ASSERT(ext <= size() - pos, "Extent too big");
+        return {m_data, pos, ext};
+    }
+
+    proxy_view<dynamic_extent>
     view(const fsize_t pos = 0) noexcept
+    {
+        CHECK_INDEX(pos, size());
+        return view(pos, size() - pos);
+    }
+
+    proxy_view<dynamic_extent>
+    view(const fsize_t pos = 0) const noexcept
     {
         CHECK_INDEX(pos, size());
         return view(pos, size() - pos);
@@ -554,6 +598,18 @@ class Memory
         return {&m_data, size(), size()};
     }
 
+    iterator
+    begin() const noexcept
+    {
+        return {&m_data, 0ul, size()};
+    }
+
+    iterator
+    end() const noexcept
+    {
+        return {&m_data, size(), size()};
+    }
+
     fsize_t
     size() const noexcept
     {
@@ -567,8 +623,21 @@ class Memory
         return {helper::template get<Var>(m_data).data(), size()};
     }
 
+    template <typename Var>
+    std::span<vartype<Var>>
+    get() const noexcept
+    {
+        return {const_cast<std::add_pointer_t<vartype<Var>>>(helper::template get<Var>(m_data).data()), size()};
+    }
+
     std::span<vartype<_CP>>
     cp() noexcept
+    {
+        return get<_CP>();
+    }
+
+    std::span<vartype<_CP>>
+    cp() const noexcept
     {
         return get<_CP>();
     }
@@ -600,6 +669,24 @@ class Memory
 
     friend fsize_t
     size(Memory& m) noexcept
+    {
+        return m.size();
+    }
+
+    friend iterator
+    begin(const Memory& m) noexcept
+    {
+        return m.begin();
+    }
+
+    friend std::default_sentinel_t
+    end(const Memory&) noexcept
+    {
+        return std::default_sentinel;
+    }
+
+    friend fsize_t
+    size(const Memory& m) noexcept
     {
         return m.size();
     }
@@ -751,7 +838,7 @@ class MemoryFacade : public Sorter
     }
 
     decltype(auto)
-    get_output() noexcept
+    get_output() const noexcept
     {
         return typelist::maybe_collect<std::tuple>(
             [&mem = Sorter::mem()]<typename Var>() constexpr noexcept

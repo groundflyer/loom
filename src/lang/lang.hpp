@@ -283,7 +283,7 @@ struct access_wrapper
     }
 
     template <std::same_as<T> T1, typename Val>
-    constexpr const Val
+    constexpr const Val&
     operator()(const Val& val) const noexcept
     {
         return val;
@@ -341,6 +341,16 @@ struct MemoryHelper
     template <typename Var>
     static constexpr decltype(auto)
     get(data& _data) noexcept
+    {
+        constexpr reg_access<Var> op{};
+
+        return op.template operator()<vartype<Var>>(
+            std::get<regindex<varname<Var>>>(_data));
+    }
+
+    template <typename Var>
+    static constexpr decltype(auto)
+    get(const data& _data) noexcept
     {
         constexpr reg_access<Var> op{};
 
