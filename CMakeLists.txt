@@ -25,6 +25,8 @@ option(SIMD_NARROW_AVX_INT "Use 128 bit integer vectors on AVX instead of 256" O
 option(USE_LIBCXX "Link to libc++ when compiling with Clang" ON)
 option(USE_CUDA "Enable CUDA support" OFF)
 set(CUDA_BLOCK_SIZE 256 CACHE STRING "Number of threads in a block")
+option(THREAD_POOL_AFFINITY "Enable affinity for threads" ON)
+set(THREAD_POOL_SIZE PHYSICAL CACHE STRING "Number of threads in CPU thread pool. Set the value to PHYSICAL to use number of physical cores of the host machine, LOGICAL to use number of logical cores of the host machine, DYNAMIC for dynamic size or a positive integer number to set custom size.")
 
 # Set floating point precision
 set(_precision "single")
@@ -74,6 +76,20 @@ endif()
 set(CMAKE_THREAD_PREFER_PTHREAD 1)
 set(THREADS_PREFER_PTHREAD_FLAG 1)
 find_package(Threads REQUIRED)
+
+if(THREAD_POOL_SIZE STREQUAL "PHYSICAL")
+  cmake_host_system_information(RESULT TP_THREADS_NUMBER QUERY NUMBER_OF_PHYSICAL_CORES)
+  message(STATUS "Static thread pool size: " ${TP_THREADS_NUMBER} " physical cores")
+elseif(THREAD_POOL_SIZE STREQUAL "LOGICAL")
+  cmake_host_system_information(RESULT TP_THREADS_NUMBER QUERY NUMBER_OF_LOGICAL_CORES)
+  message(STATUS "Static thread pool size: " ${TP_THREADS_NUMBER} " logical cores")
+elseif(THREAD_POOL_SIZE STREQUAL "DYNAMIC")
+  set(TP_THREADS_NUMBER -1)
+  message(STATUS "Dynamic thread pool size")
+else()
+  set(TP_THREADS_NUMBER ${THREAD_POOL_SIZE})
+  message(STATUS "Static thread pool size: " ${TP_THREADS_NUMBER})
+endif()
 
 # OpenGL
 set(OpenGL_GL_PREFERENCE LEGACY)
@@ -196,6 +212,8 @@ if(BUILD_TESTS)
     target_include_directories(${name} PUBLIC src)
     add_dependencies(tests ${name})
   endforeach()
+
+  target_compile_definitions(test_lang PUBLIC TP_THREADS_NUMBER=${TP_THREADS_NUMBER})
 
   if(USE_CUDA)
     add_executable(test_lang_cuda ${TESTS_SRC_DIR}/lang.cu)
