@@ -275,6 +275,7 @@ struct s2i_base_prefix_fn
 
         return {};
     }
+
     COMPOSE_OP
 };
 
@@ -353,6 +354,8 @@ MK_NIEBLOID(is_alphadigit);
 MK_NIEBLOID(upper);
 MK_NIEBLOID(lower);
 MK_NIEBLOID(any_string);
+
+// std::from_chars is not constexpr until C++23
 
 template <std::integral Int = int>
 constexpr inline fn::s2i_fn<Int> s2i{};
