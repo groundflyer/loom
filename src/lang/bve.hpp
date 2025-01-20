@@ -6,6 +6,7 @@
 
 #include "lang.hpp"
 
+#include <utils/common.hpp>
 #include <utils/debug.hpp>
 #include <utils/functional.hpp>
 #include <utils/tuple.hpp>
@@ -76,7 +77,7 @@ class ProxyRow
     }
 
   public:
-    ProxyRow() = delete;
+    FORBID_DEFAULT(ProxyRow);
 
     ProxyRow(const ProxyRow& other) noexcept :
         m_data(other.m_data), m_pos(other.m_pos)
@@ -169,7 +170,8 @@ class ProxyView
     }
 
   public:
-    ProxyView() = delete;
+    FORBID_DEFAULT(ProxyView);
+
     ProxyView&
     operator=(const ProxyView& rhs) = delete;
     ProxyView&
@@ -255,7 +257,7 @@ class ProxyView<Data, Helper, _CP, dynamic_extent>
     }
 
   public:
-    ProxyView() = delete;
+    FORBID_DEFAULT(ProxyView);
     ProxyView&
     operator=(const ProxyView& rhs) = delete;
     ProxyView&
@@ -512,17 +514,12 @@ class Memory
     using view_type  = proxy_view<dynamic_extent>;
     using iterator   = bve::MemoryIterator<Data, helper, _CP>;
 
+    FORBID_COPY(Memory);
+    FORBID_MOVE(Memory);
+
     Memory() noexcept = default;
 
-    Memory(const Memory&) = delete;
-    Memory(Memory&&)      = delete;
-
     explicit Memory(fsize_t n) { resize(n); }
-
-    Memory&
-    operator=(const Memory&) = delete;
-    Memory&
-    operator=(Memory&&) = delete;
 
     value_type
     operator[](const fsize_t n) noexcept
@@ -627,7 +624,9 @@ class Memory
     std::span<vartype<Var>>
     get() const noexcept
     {
-        return {const_cast<std::add_pointer_t<vartype<Var>>>(helper::template get<Var>(m_data).data()), size()};
+        return {const_cast<std::add_pointer_t<vartype<Var>>>(
+                    helper::template get<Var>(m_data).data()),
+                size()};
     }
 
     std::span<vartype<_CP>>
@@ -928,7 +927,7 @@ class StreamFacade : public MemoryFacade<_Program, _Vector, Allocator, Sorter>
   public:
     using facade::facade;
 
-    template <std::ranges::range Input>
+    template <std::ranges::input_range Input>
         requires(std::is_nothrow_convertible_v<
                  std::ranges::range_value_t<Input>,
                  typelist::maybe_to<typelist::map<vartype, input_vars>,
@@ -1043,13 +1042,7 @@ class basic_vector_compiler
         static constexpr typelist::head<compiled_cells> cell{};
 
       public:
-        single_cell_evaluator()                             = delete;
-        single_cell_evaluator(const single_cell_evaluator&) = delete;
-        single_cell_evaluator(single_cell_evaluator&&)      = delete;
-        single_cell_evaluator&
-        operator=(const single_cell_evaluator&) = delete;
-        single_cell_evaluator&
-        operator=(single_cell_evaluator&&) = delete;
+        FORBID_ALL(single_cell_evaluator);
 
         using memory_facade::memory_facade;
 
@@ -1093,13 +1086,7 @@ class basic_vector_compiler
     class evaluator : public memory_facade
     {
       public:
-        evaluator()                 = delete;
-        evaluator(const evaluator&) = delete;
-        evaluator(evaluator&&)      = delete;
-        evaluator&
-        operator=(const evaluator&) = delete;
-        evaluator&
-        operator=(evaluator&&) = delete;
+        FORBID_ALL(evaluator);
 
         using memory_facade::memory_facade;
 
@@ -1128,13 +1115,7 @@ class basic_vector_compiler
         static_assert(!_Program::singular);
 
       public:
-        streamer()                = delete;
-        streamer(const streamer&) = delete;
-        streamer(streamer&&)      = delete;
-        streamer&
-        operator=(const streamer&) = delete;
-        streamer&
-        operator=(streamer&&) = delete;
+        FORBID_ALL(streamer);
 
         using stream_facade::stream_facade;
 
@@ -1142,7 +1123,6 @@ class basic_vector_compiler
         operator()() noexcept
         {
             stream_facade::visit(visitor{});
-            stream_facade::sort();
         }
     };
 };

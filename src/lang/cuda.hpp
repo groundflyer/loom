@@ -136,12 +136,8 @@ class SimpleVector
 
     SimpleVector() = default;
 
-    SimpleVector(const SimpleVector&) = delete;
-    SimpleVector&
-    operator=(const SimpleVector&) = delete;
-    SimpleVector(SimpleVector&&)   = delete;
-    SimpleVector&
-    operator=(SimpleVector&&) = delete;
+    FORBID_COPY(SimpleVector);
+    FORBID_MOVE(SimpleVector);
 
     explicit SimpleVector(const A& a) noexcept : m_alloc(a) {}
     SimpleVector(unsigned n, const A& a = A()) : m_size(n), m_alloc(a)
@@ -849,12 +845,8 @@ class chunk_ranges :
     }
 
   public:
-    chunk_ranges(const chunk_ranges&) = delete;
-    chunk_ranges(chunk_ranges&&)      = delete;
-    chunk_ranges&
-    operator=(const chunk_ranges&) = delete;
-    chunk_ranges&
-    operator=(chunk_ranges&&) = delete;
+    FORBID_COPY(chunk_ranges);
+    FORBID_MOVE(chunk_ranges);
 
     chunk_ranges() = default;
 
@@ -1155,13 +1147,7 @@ class cuda_evaluator
         static constexpr typelist::head<compiled_cells> cell{};
 
       public:
-        single_cell_evaluator()                             = delete;
-        single_cell_evaluator(const single_cell_evaluator&) = delete;
-        single_cell_evaluator(single_cell_evaluator&&)      = delete;
-        single_cell_evaluator&
-        operator=(const single_cell_evaluator&) = delete;
-        single_cell_evaluator&
-        operator=(single_cell_evaluator&&) = delete;
+        FORBID_ALL(single_cell_evaluator);
 
         using memory_facade::memory_facade;
 
@@ -1209,13 +1195,7 @@ class cuda_evaluator
 
     struct evaluator : public memory_facade
     {
-        evaluator()                 = delete;
-        evaluator(const evaluator&) = delete;
-        evaluator(evaluator&&)      = delete;
-        evaluator&
-        operator=(const evaluator&) = delete;
-        evaluator&
-        operator=(evaluator&&) = delete;
+        FORBID_ALL(evaluator);
 
         using memory_facade::memory_facade;
 
@@ -1285,13 +1265,7 @@ class cuda_evaluator
         visitor step;
 
       public:
-        streamer()                = delete;
-        streamer(const streamer&) = delete;
-        streamer(streamer&&)      = delete;
-        streamer&
-        operator=(const streamer&) = delete;
-        streamer&
-        operator=(streamer&&) = delete;
+        FORBID_ALL(streamer);
 
         streamer(const gsize_t n) : stream_facade(n), step(stream_facade::mem)
         {

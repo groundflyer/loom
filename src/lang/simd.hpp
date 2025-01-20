@@ -902,13 +902,7 @@ class simd_compiler
         static constexpr typelist::head<compiled_cells> cell{};
 
       public:
-        single_cell_evaluator()                             = delete;
-        single_cell_evaluator(const single_cell_evaluator&) = delete;
-        single_cell_evaluator(single_cell_evaluator&&)      = delete;
-        single_cell_evaluator&
-        operator=(const single_cell_evaluator&) = delete;
-        single_cell_evaluator&
-        operator=(single_cell_evaluator&&) = delete;
+        FORBID_ALL(single_cell_evaluator);
 
         using memory_facade::memory_facade;
 
@@ -946,13 +940,7 @@ class simd_compiler
     class evaluator : public memory_facade
     {
       public:
-        evaluator()                 = delete;
-        evaluator(const evaluator&) = delete;
-        evaluator(evaluator&&)      = delete;
-        evaluator&
-        operator=(const evaluator&) = delete;
-        evaluator&
-        operator=(evaluator&&) = delete;
+        FORBID_ALL(evaluator);
 
         using memory_facade::memory_facade;
 
@@ -981,13 +969,7 @@ class simd_compiler
         static_assert(!_Program::singular);
 
       public:
-        streamer()                = delete;
-        streamer(const streamer&) = delete;
-        streamer(streamer&&)      = delete;
-        streamer&
-        operator=(const streamer&) = delete;
-        streamer&
-        operator=(streamer&&) = delete;
+        FORBID_ALL(streamer);
 
         using stream_facade::stream_facade;
 
@@ -1057,18 +1039,19 @@ class MultiStreamer
         return m_streamers.template get<streamer_t<P>>();
     }
 
+    template <typename P>
+    decltype(auto)
+    access() const noexcept
+    {
+        return m_streamers.template get<streamer_t<P>>();
+    }
+
     streamers_t m_streamers;
 
   public:
-    MultiStreamer()                     = delete;
-    MultiStreamer(const MultiStreamer&) = delete;
-    MultiStreamer(MultiStreamer&&)      = delete;
-    MultiStreamer&
-    operator=(const MultiStreamer&) = delete;
-    MultiStreamer&
-    operator=(MultiStreamer&&) = delete;
+    FORBID_ALL(MultiStreamer);
 
-    MultiStreamer(fsize_t n) noexcept : m_streamers(uniform_init, n) {}
+    explicit MultiStreamer(fsize_t n) noexcept : m_streamers(uniform_init, n) {}
 
     template <typename _Program, typename... Args>
     void
