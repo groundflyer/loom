@@ -5,6 +5,8 @@
 #pragma once
 
 #include <utils/common.hpp>
+#include <utils/tmp.hpp>
+#include <utils/tuple.hpp>
 
 #include <range/v3/view/drop.hpp>
 
@@ -66,6 +68,62 @@ class StreamPipeline
             sort();
         }
         std::ranges::copy(m_stream.get_output(), m_output);
+    }
+};
+
+template <typename Programs, template <typename> typename S>
+class MultiStreamer
+{
+    using streamers_t = typelist::to<typelist::map<S, Programs>, unique_tuple>;
+
+    template <typename P>
+    decltype(auto)
+    access() noexcept
+    {
+        return m_streamers.template get<S<P>>();
+    }
+
+    template <typename P>
+    decltype(auto)
+    access() const noexcept
+    {
+        return m_streamers.template get<S<P>>();
+    }
+
+    streamers_t m_streamers;
+
+  public:
+    FORBID_ALL(MultiStreamer);
+
+    explicit MultiStreamer(unsigned n) noexcept : m_streamers(uniform_init, n)
+    {
+    }
+
+    template <typename _Program, typename... Args>
+    void
+    set_input(Args&&... args) noexcept
+    {
+        access<_Program>().set_input(std::forward<Args>(args)...);
+    }
+
+    template <typename _Program>
+    decltype(auto)
+    get_output() const noexcept
+    {
+        return access<_Program>().get_output();
+    }
+
+    template <typename _Program, typename Input>
+    auto
+    exchange(Input&& input) noexcept
+    {
+        return access<_Program>().exchange(std::forward<Input>(input));
+    }
+
+    void
+    operator()() noexcept
+    {
+        lucid::for_each([](auto& s) noexcept { s(); }, m_streamers);
     }
 };
 } // namespace lucid
