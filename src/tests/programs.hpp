@@ -5,7 +5,6 @@
 #pragma once
 
 #include <lang/lang.hpp>
-#include <lang/pipeline.hpp>
 #include <utils/debug.hpp>
 #include <utils/functional.hpp>
 #include <utils/math.hpp>
@@ -214,21 +213,26 @@ wrap_stream(S& stream) noexcept
         // prepare result container
         std::vector<unsigned> out;
         out.reserve(input.size());
+        auto inserter = std::back_inserter(out);
 
-        lucid::StreamPipeline pl(stream, input, std::back_inserter(out));
-        pl.step();
-        pl.sort();
+        // set initial data
+        auto dropped = stream.size();
+        stream.set_input(std::views::take(input, dropped));
+        stream();
 
         // feed all the input data
-        while(pl.body_condition())
+        while(dropped < input.size())
         {
-            pl.body_step();
-            pl.step();
-            pl.sort();
+            auto exs = stream.exchange(ranges::views::drop(input, dropped));
+            dropped += std::ranges::size(exs);
+            std::ranges::copy(exs, inserter);
+            stream();
         }
 
         // compute the rest
-        pl.tail();
+        while(!stream.done()) stream();
+
+        std::ranges::copy(stream.get_output(), inserter);
 
         ASSERT(out.size() == input.size(), "Output size doesn't match");
 
