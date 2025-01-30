@@ -928,10 +928,9 @@ class StreamFacade : public MemoryFacade<_Program, _Vector, Allocator, Sorter>
     using facade::facade;
 
     template <std::ranges::input_range Input>
-        requires(std::is_nothrow_convertible_v<
-                 std::ranges::range_value_t<Input>,
-                 typelist::maybe_to<typelist::map<vartype, input_vars>,
-                                    std::tuple>>)
+        requires(
+            std::is_nothrow_convertible_v<std::ranges::range_value_t<Input>,
+                                          input_type<_Program>>)
     constexpr auto
     exchange(Input&& input) noexcept
     {

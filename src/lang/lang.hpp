@@ -714,6 +714,20 @@ struct Program
                            ensure_last_jumps_t<cells_statements, labels>>;
 };
 
+/// @brief Helper meta-function to obtain type of input.
+/// @tparam P program.
+template <typename P>
+using input_type =
+    typelist::maybe_to<typelist::map<vartype, typename P::input_vars>,
+                       std::tuple>;
+
+/// @brief Helper meta-function to obtain type of output.
+/// @tparam P program.
+template <typename P>
+using output_type =
+    typelist::maybe_to<typelist::map<vartype, typename P::output_vars>,
+                       std::tuple>;
+
 struct choice_op
 {
     template <typename C, typename T>
