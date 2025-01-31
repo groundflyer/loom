@@ -514,11 +514,7 @@ class Memory
     using view_type  = proxy_view<dynamic_extent>;
     using iterator   = bve::MemoryIterator<Data, helper, _CP>;
 
-    FORBID_COPY(Memory);
-    FORBID_MOVE(Memory);
-
     Memory() noexcept = default;
-
     explicit Memory(fsize_t n) { resize(n); }
 
     value_type
@@ -744,6 +740,7 @@ class SimpleSorter
     }
 
   public:
+    SimpleSorter() noexcept = default;
     explicit SimpleSorter(fsize_t n) : m_mem(n){};
 
     void
@@ -775,6 +772,7 @@ class CountingSorter
     }
 
   public:
+    CountingSorter() noexcept = default;
     CountingSorter(fsize_t n) : m_buf0(n), m_buf1(n) {}
 
     void
@@ -1041,8 +1039,6 @@ class basic_vector_compiler
         static constexpr typelist::head<compiled_cells> cell{};
 
       public:
-        FORBID_ALL(single_cell_evaluator);
-
         using memory_facade::memory_facade;
 
         template <typename... Args>
@@ -1085,8 +1081,6 @@ class basic_vector_compiler
     class evaluator : public memory_facade
     {
       public:
-        FORBID_ALL(evaluator);
-
         using memory_facade::memory_facade;
 
         template <typename... Args>
@@ -1114,8 +1108,6 @@ class basic_vector_compiler
         static_assert(!_Program::singular);
 
       public:
-        FORBID_ALL(streamer);
-
         using stream_facade::stream_facade;
 
         void
