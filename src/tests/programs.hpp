@@ -215,10 +215,16 @@ wrap_stream(S& stream) noexcept
         out.reserve(input.size());
         auto inserter = std::back_inserter(out);
 
+        auto step = [&stream]() noexcept
+        {
+            stream();
+            stream.sort();
+        };
+
         // set initial data
         auto dropped = stream.size();
         stream.set_input(std::views::take(input, dropped));
-        stream();
+        step();
 
         // feed all the input data
         while(dropped < input.size())
@@ -226,11 +232,11 @@ wrap_stream(S& stream) noexcept
             auto exs = stream.exchange(ranges::views::drop(input, dropped));
             dropped += std::ranges::size(exs);
             std::ranges::copy(exs, inserter);
-            stream();
+            step();
         }
 
         // compute the rest
-        while(!stream.done()) stream();
+        while(!stream.done()) step();
 
         std::ranges::copy(stream.get_output(), inserter);
 

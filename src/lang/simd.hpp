@@ -971,7 +971,6 @@ class simd_compiler
         operator()() noexcept
         {
             stream_facade::visit(visitor{});
-            stream_facade::sort();
         }
     };
 };
