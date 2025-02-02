@@ -48,6 +48,11 @@ struct B
     B(const B&) = delete;
 };
 
+struct C
+{
+    explicit C(unsigned& i) noexcept { ++i; }
+};
+
 using namespace lucid::test;
 
 int
@@ -109,6 +114,15 @@ main()
     track.check(NamedTest(
         []() noexcept
         {
+            unsigned                     i = 0;
+            lucid::unique_tuple<C, C, C> t(lucid::uniform_init, i);
+            return i == 3;
+        },
+        "unique_tuple uniform_init with reference"));
+
+    track.check(NamedTest(
+        []() noexcept
+        {
             lucid::unique_tuple<A, B> st2(std::piecewise_construct,
                                           std::pair(1, 2),
                                           std::pair(3, 4));
@@ -131,7 +145,6 @@ main()
         "unique_tuple uniform_init piecewise_construct"));
 
     track.check(NamedTest(
-
         []() noexcept
         {
             int                              i1 = 3;
