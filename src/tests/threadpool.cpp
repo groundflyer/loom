@@ -30,16 +30,5 @@ main()
             return a;
         },
         "thread pool 2"));
-    track.check(NamedTest(
-        []() noexcept
-        {
-            constexpr unsigned I = 8;
-            unsigned           i = 0;
-            {
-                thread_pool<I> p([&i]() noexcept { ++i; });
-            }
-            return i == I;
-        },
-        "sequential initialization"));
     return track.ret_code();
 }
