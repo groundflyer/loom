@@ -960,7 +960,7 @@ class simd_compiler
     using function = std::
         conditional_t<_Program::singular, single_cell_evaluator, evaluator>;
 
-    class streamer : public stream_facade
+    class stream : public stream_facade
     {
         static_assert(!_Program::singular);
 
@@ -991,8 +991,7 @@ class select_runner
   public:
     using function =
         simd_compiler<_Program, runner, use_counting_sort>::function;
-    using streamer =
-        simd_compiler<_Program, runner, use_counting_sort>::streamer;
+    using stream = simd_compiler<_Program, runner, use_counting_sort>::stream;
 };
 
 template <typename _Program,
@@ -1008,7 +1007,7 @@ template <typename _Program,
           bool    use_counting_sort = false,
           fsize_t unroll_exp        = 8>
     requires(!_Program::singular)
-using streamer =
+using stream =
     select_runner<_Program, use_minikernel, unroll_exp, use_counting_sort>::
-        streamer;
+        stream;
 } // namespace lucid::simd

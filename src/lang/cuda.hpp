@@ -1258,18 +1258,16 @@ class cuda_evaluator
     using function = std::
         conditional_t<_Program::singular, single_cell_evaluator, evaluator>;
 
-    class streamer : public stream_facade
+    class stream : public stream_facade
     {
         static_assert(!_Program::singular);
 
         visitor step;
 
       public:
-        FORBID_ALL(streamer);
+        FORBID_ALL(stream);
 
-        streamer(const gsize_t n) : stream_facade(n), step(stream_facade::mem)
-        {
-        }
+        stream(const gsize_t n) : stream_facade(n), step(stream_facade::mem) {}
 
         void
         operator()() noexcept
@@ -1380,5 +1378,5 @@ using function = cuda_evaluator<_Program>::function;
 
 template <typename _Program>
     requires(!_Program::singular)
-using streamer = cuda_evaluator<_Program>::streamer;
+using stream = cuda_evaluator<_Program>::stream;
 } // namespace lucid::cuda

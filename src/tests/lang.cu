@@ -53,7 +53,7 @@ main(int argc, char* argv[])
     auto test_stream =
         [&]<typename P>(P, auto& g, auto val, std::string_view name) noexcept
     {
-        cuda::streamer<P> stream(stream_size);
+        cuda::stream<P> stream(stream_size);
         return track.check(
             NamedTest(tm.rng_with_scalar_ref(g, wrap_stream(stream), val),
                       name));

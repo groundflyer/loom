@@ -1103,7 +1103,7 @@ class basic_vector_compiler
     using function = std::
         conditional_t<_Program::singular, single_cell_evaluator, evaluator>;
 
-    class streamer : public stream_facade
+    class stream : public stream_facade
     {
         static_assert(!_Program::singular);
 
@@ -1123,5 +1123,5 @@ using function = basic_vector_compiler<_Program, use_counting_sort>::function;
 
 template <typename _Program, bool use_counting_sort = false>
     requires(!_Program::singular)
-using streamer = basic_vector_compiler<_Program, use_counting_sort>::streamer;
+using stream = basic_vector_compiler<_Program, use_counting_sort>::stream;
 } // namespace lucid::bve

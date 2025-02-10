@@ -54,11 +54,11 @@ main(int argc, char* argv[])
     bve::function<lshift_u>     bve_lshift(vector_size);
     bve::function<rshift_u>     bve_rshift(vector_size);
 
-    bve::streamer<fac_unsigned> bvs_fu(stream_size);
+    bve::stream<fac_unsigned> bvs_fu(stream_size);
 
     // counting sort bve
     bve::function<fac_unsigned, true> bve_cs_fu(vector_size);
-    bve::streamer<fac_unsigned, true> bvs_cs_fu(stream_size);
+    bve::stream<fac_unsigned, true>   bvs_cs_fu(stream_size);
 
     // vertical SIMD
     simd::function<incr_int>     simd_v_ii(vector_size);
@@ -71,7 +71,7 @@ main(int argc, char* argv[])
     simd::function<lshift_u>     simd_v_lshift(vector_size);
     simd::function<rshift_u>     simd_v_rshift(vector_size);
 
-    simd::streamer<fac_unsigned> simds_v_fu(stream_size);
+    simd::stream<fac_unsigned> simds_v_fu(stream_size);
 
     // minikernel SIMD
     simd::function<incr_int, true>     simd_k_ii(vector_size);
@@ -84,13 +84,13 @@ main(int argc, char* argv[])
     simd::function<lshift_u, true>     simd_k_lshift(vector_size);
     simd::function<rshift_u, true>     simd_k_rshift(vector_size);
 
-    simd::streamer<fac_unsigned, true> simds_k_fu(stream_size);
+    simd::stream<fac_unsigned, true> simds_k_fu(stream_size);
 
     // counting sort
     simd::function<fac_unsigned, false, true> simd_v_cs_fu(vector_size);
     simd::function<fac_unsigned, true, true>  simd_k_cs_fu(vector_size);
-    simd::streamer<fac_unsigned, false, true> simds_v_cs_fu(stream_size);
-    simd::streamer<fac_unsigned, true, true>  simds_k_cs_fu(stream_size);
+    simd::stream<fac_unsigned, false, true>   simds_v_cs_fu(stream_size);
+    simd::stream<fac_unsigned, true, true>    simds_k_cs_fu(stream_size);
 
 #define TEST_RESET_T(G, T, V)                       \
     [&]() noexcept                                  \
