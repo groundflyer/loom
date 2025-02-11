@@ -18,3 +18,22 @@
 #else
 #define _REINIT
 #endif
+
+namespace lucid
+{
+namespace fn
+{
+struct forbidden_sink_fn
+{
+    template <typename... Ts>
+    constexpr void
+    operator()(Ts&&...) const noexcept
+    {
+        ASSERT(false, "This sink shouldn't have been called.");
+    }
+};
+} // namespace fn
+
+/// @brief Always asserts if called.
+inline constexpr fn::forbidden_sink_fn forbidden_sink;
+} // namespace lucid
