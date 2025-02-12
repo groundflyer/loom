@@ -813,20 +813,17 @@ class MemoryFacade : public Sorter
             [&mem = Sorter::mem()]<typename Var, typename T>(
                 const T&
                     value) constexpr noexcept requires(std::ranges::
-                                                           sized_range<T> ||
+                                                           input_range<T> ||
                                                        std::
                                                            is_nothrow_convertible_v<
                                                                T,
                                                                vartype<Var>>) {
                 std::ranges::range decltype(auto) column =
                     mem.template get<Var>();
-                if constexpr(std::ranges::sized_range<T>)
-                {
-                    ASSERT(
-                        std::ranges::size(value) == mem.size(),
-                        "Input range size doesn't match memory buffer size.");
-                    std::ranges::copy(value, column.begin());
-                }
+                if constexpr(std::ranges::input_range<T>)
+                    std::ranges::copy_n(std::ranges::cbegin(value),
+                                        column.size(),
+                                        column.begin());
                 else
                     std::ranges::fill(column, value);
             },

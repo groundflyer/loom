@@ -918,7 +918,7 @@ class MemoryFacade
     {
         typelist::for_each_arg(
             [&mem = mem]<typename Var, typename T>(
-                const T& value) noexcept requires(std::ranges::sized_range<T> ||
+                const T& value) noexcept requires(std::ranges::input_range<T> ||
                                                   std::is_nothrow_convertible_v<
                                                       T,
                                                       vartype<Var>>) {
@@ -926,13 +926,10 @@ class MemoryFacade
                 auto column = mem.template get<Var>();
                 // fill pinned memory buffer first
                 SimpleVector<t, HostAllocator<t>> buffer(column.size());
-                if constexpr(std::ranges::sized_range<T>)
-                {
-                    ASSERT(
-                        std::ranges::size(value) == mem.size(),
-                        "Input range size doesn't match memory buffer size.");
-                    std::ranges::copy(value, buffer.begin());
-                }
+                if constexpr(std::ranges::input_range<T>)
+                    std::ranges::copy_n(std::ranges::cbegin(value),
+                                        column.size(),
+                                        column.begin());
                 else
                     std::ranges::fill(buffer, value);
 
