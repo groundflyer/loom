@@ -185,7 +185,7 @@ visit_at_impl(const I i, Visitor&& visitor, Tuple&& tuple, Default&& def)
         return std::invoke(std::forward<Visitor>(visitor),
                            std::get<idx>(std::forward<Tuple>(tuple)));
 
-    if constexpr(idx < std::tuple_size_v<std::decay_t<Tuple>> - 1)
+    if constexpr(idx < std::tuple_size_v<std::remove_cvref_t<Tuple>> - 1)
         return visit_at_impl<I, idx + 1>(i,
                                          std::forward<Visitor>(visitor),
                                          std::forward<Tuple>(tuple),
@@ -216,16 +216,17 @@ array_cat_impl(const std::array<T, N1>& first,
 
 template <typename F, typename Tuple, typename... Args, std::size_t... I>
 constexpr void
-for_each_impl(
-    F&&     f,
-    Tuple&& tuple,
-    Args&&... args,
-    std::index_sequence<
-        I...>) noexcept(std::
-                            conjunction_v<std::is_nothrow_invocable<
-                                F,
-                                std::tuple_element_t<I, std::decay_t<Tuple>>,
-                                std::decay_t<Args>...>...>)
+for_each_impl(F&&     f,
+              Tuple&& tuple,
+              Args&&... args,
+              std::index_sequence<
+                  I...>) noexcept(std::
+                                      conjunction_v<std::is_nothrow_invocable<
+                                          F,
+                                          std::tuple_element_t<
+                                              I,
+                                              std::remove_cvref_t<Tuple>>,
+                                          std::remove_cvref_t<Args>...>...>)
 {
     (...,
      std::invoke(std::forward<F>(f),
@@ -233,17 +234,26 @@ for_each_impl(
                  std::forward<Args>(args)...));
 }
 
-template <typename F, typename Tuple, typename TupleArgs, std::size_t... I>
-constexpr void
-for_each2_impl(F&&         f,
-               Tuple&&     tuple,
-               TupleArgs&& args,
-               std::index_sequence<I...>)
+template <std::size_t I, typename F, typename... Ts>
+constexpr decltype(auto)
+multi_invoke(F&& f, Ts&&... tuples) noexcept(
+    std::is_nothrow_invocable_v<
+        F,
+        std::tuple_element_t<I, std::remove_cvref_t<Ts>>...>)
 {
-    (...,
-     std::invoke(std::forward<F>(f),
-                 std::get<I>(std::forward<Tuple>(tuple)),
-                 std::get<I>(std::forward<TupleArgs>(args))));
+    return std::invoke(std::forward<F>(f), std::get<I>(tuples)...);
+}
+
+template <typename F, typename... Ts, std::size_t... I>
+constexpr void
+zip_with_for_each_impl(
+    std::index_sequence<I...>,
+    F&& f,
+    Ts&&... tuples) noexcept((...&& noexcept(multi_invoke<I>(std::forward<F>(f),
+                                                             std::forward<Ts>(
+                                                                 tuples)...))))
+{
+    (..., multi_invoke<I>(std::forward<F>(f), std::forward<Ts>(tuples)...));
 }
 
 template <typename F, typename T, template <typename...> typename M>
@@ -594,36 +604,46 @@ generate(G&& g, Args&&... args) noexcept
     return ret;
 }
 
-#define _FOR_EACH_EXP                \
+#define _FOR_EACH_EXPR               \
     detail::for_each_impl(           \
         std::forward<F>(f),          \
         std::forward<Tuple>(tuple),  \
         std::forward<Args>(args)..., \
-        std::make_index_sequence<std::tuple_size_v<std::decay_t<Tuple>>>{})
+        std::make_index_sequence<    \
+            std::tuple_size_v<std::remove_cvref_t<Tuple>>>{})
+
+#define _ZIP_WITH_FOR_EACH_EXPR                               \
+    detail::zip_with_for_each_impl(                           \
+        std::make_index_sequence<                             \
+            std::tuple_size_v<std::remove_cvref_t<Tuple>>>{}, \
+        std::forward<F>(f),                                   \
+        std::forward<Tuple>(tuple),                           \
+        std::forward<Rest>(tuples)...)
 
 /// @brief Invoke @p F on every element of @p tuple.
 template <typename F, typename Tuple, typename... Args>
 constexpr void
-for_each(F&& f, Tuple&& tuple, Args&&... args) noexcept(noexcept(_FOR_EACH_EXP))
+for_each(F&&     f,
+         Tuple&& tuple,
+         Args&&... args) noexcept(noexcept(_FOR_EACH_EXPR))
 {
-    _FOR_EACH_EXP;
+    _FOR_EACH_EXPR;
 }
 
-#undef _FOR_EACH_EXP
-
-/// @brief Invoke @p F on every correspondent element of @p tuple and @p args.
-template <typename F, typename Tuple, typename TupleArgs>
-    requires(std::tuple_size_v<std::decay_t<Tuple>> ==
-             std::tuple_size_v<std::decay_t<TupleArgs>>)
+/// @brief Invoke @p F on every correspondent element of @p tuple and @p tuples.
+template <typename F, typename Tuple, typename... Rest>
+    requires(... && (std::tuple_size_v<std::remove_cvref_t<Tuple>> ==
+                     std::tuple_size_v<std::remove_cvref_t<Rest>>))
 constexpr void
-for_each2(F&& f, Tuple&& tuple, TupleArgs&& args)
+zip_with_for_each(F&&     f,
+                  Tuple&& tuple,
+                  Rest&&... tuples) noexcept(noexcept(_ZIP_WITH_FOR_EACH_EXPR))
 {
-    detail::for_each2_impl(
-        std::forward<F>(f),
-        std::forward<Tuple>(tuple),
-        std::forward<TupleArgs>(args),
-        std::make_index_sequence<std::tuple_size_v<std::decay_t<Tuple>>>{});
+    _ZIP_WITH_FOR_EACH_EXPR;
 }
+
+#undef _FOR_EACH_EXPR
+#undef _ZIP_WITH_FOR_EACH_EXPR
 
 /// @brief Invoke @p f with elements of @p mt as arguments if
 /// possible otherwise just pass @p mt directly to @p f.
@@ -631,7 +651,7 @@ template <typename F, typename MaybeTuple>
 constexpr decltype(auto)
 maybe_apply(F&& f, MaybeTuple&& mt)
 {
-    if constexpr(is_applicable_v<F, std::decay_t<MaybeTuple>>)
+    if constexpr(is_applicable_v<F, std::remove_cvref_t<MaybeTuple>>)
         return std::apply(std::forward<F>(f), std::forward<MaybeTuple>(mt));
     else
         return std::invoke(std::forward<F>(f), std::forward<MaybeTuple>(mt));
