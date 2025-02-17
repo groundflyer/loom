@@ -806,10 +806,10 @@ class MemoryFacade : public Sorter
     using Sorter::Sorter;
 
     template <typename... Args>
-    void
+    auto
     set_input(Args&&... args) noexcept
     {
-        typelist::for_each_arg(
+        return typelist::maybe_collect_arg<std::tuple>(
             [&mem = Sorter::mem()]<typename Var, typename T>(
                 const T&
                     value) constexpr noexcept requires(std::ranges::
@@ -821,11 +821,11 @@ class MemoryFacade : public Sorter
                 std::ranges::range decltype(auto) column =
                     mem.template get<Var>();
                 if constexpr(std::ranges::input_range<T>)
-                    std::ranges::copy_n(std::ranges::cbegin(value),
-                                        column.size(),
-                                        column.begin());
+                    return std::ranges::copy_n(std::ranges::cbegin(value),
+                                               column.size(),
+                                               column.begin());
                 else
-                    std::ranges::fill(column, value);
+                    return std::ranges::fill(column, value);
             },
             input_vars{},
             std::forward<Args>(args)...);

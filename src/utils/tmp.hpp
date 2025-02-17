@@ -822,7 +822,7 @@ for_each(F&& f, type_sequence<Ts...>, Args&&... args) noexcept(
 }
 
 /// @brief Invoke @p f with each class of @p List as template parameter and pass
-/// arguments separately.
+/// each argument of @p args separately to coresponding invocation.
 template <typename F, typename... Ts, typename... Args>
     requires(sizeof...(Ts) == sizeof...(Args))
 constexpr void
@@ -836,7 +836,7 @@ for_each_arg(F&& f, type_sequence<Ts...>, Args&&... args) noexcept(
 /// and @p args as function parameters.
 ///
 /// @return @p Tuple of elements if there are more than one elements in @p list
-/// otherwise singular value.
+/// and return value of @p f is not void, otherwise singular value.
 template <template <typename...> typename Tuple = std::tuple,
           typename F,
           typename... Ts,
@@ -852,6 +852,35 @@ maybe_collect(F&& f, type_sequence<Ts...> /*list*/, Args&&... args) noexcept(
         return Tuple<std::remove_cvref_t<decltype(f.template operator()<Ts>(
             std::forward<Args>(args)...))>...>{
             f.template operator()<Ts>(std::forward<Args>(args)...)...};
+    else
+        return f.template operator()<Ts...>(std::forward<Args>(args)...);
+}
+
+/// @brief Invoke @p f with each class of @p list as template parameter,
+/// and pass each argument of @p args separately to coresponding invocation
+/// if there number of elements in @p list more than one.
+///
+/// @return @p Tuple of elements if there are more than one elements in @p list
+/// and return value of @p f is not void, otherwise singular value.
+template <template <typename...> typename Tuple = std::tuple,
+          typename F,
+          typename... Ts,
+          typename... Args>
+constexpr decltype(auto)
+maybe_collect_arg(
+    F&& f,
+    type_sequence<Ts...> /*list*/,
+    Args&&... args) noexcept((...&& noexcept(f.template
+                                             operator()<Ts>(
+                                                 std::forward<Args>(args)))))
+{
+    if constexpr(sizeof...(Ts) > 1 &&
+                 !std::disjunction_v<std::is_void<
+                     std::remove_cvref_t<decltype(f.template operator()<Ts>(
+                         std::forward<Args>(args)))>>...>)
+        return Tuple<std::remove_cvref_t<decltype(f.template operator()<Ts>(
+            std::forward<Args>(args)))>...>{
+            f.template operator()<Ts>(std::forward<Args>(args))...};
     else
         return f.template operator()<Ts...>(std::forward<Args>(args)...);
 }
