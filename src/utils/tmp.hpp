@@ -845,7 +845,10 @@ constexpr decltype(auto)
 maybe_collect(F&& f, type_sequence<Ts...> /*list*/, Args&&... args) noexcept(
     (...&& noexcept(f.template operator()<Ts>(std::forward<Args>(args)...))))
 {
-    if constexpr(sizeof...(Ts) > 1)
+    if constexpr(sizeof...(Ts) > 1 &&
+                 !std::disjunction_v<std::is_void<
+                     std::remove_cvref_t<decltype(f.template operator()<Ts>(
+                         std::forward<Args>(args)...))>>...>)
         return Tuple<std::remove_cvref_t<decltype(f.template operator()<Ts>(
             std::forward<Args>(args)...))>...>{
             f.template operator()<Ts>(std::forward<Args>(args)...)...};
