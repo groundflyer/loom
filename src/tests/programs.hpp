@@ -9,7 +9,7 @@
 #include <utils/functional.hpp>
 #include <utils/math.hpp>
 
-#include <range/v3/view/drop.hpp>
+#include <range/v3/view/subrange.hpp>
 
 #include <algorithm>
 #include <iterator>
@@ -222,15 +222,15 @@ wrap_stream(S& stream) noexcept
         };
 
         // set initial data
-        auto dropped = stream.size();
-        stream.set_input(std::views::take(input, dropped));
+        auto [i, _] = stream.set_input(input);
         step();
 
         // feed all the input data
-        while(dropped < input.size())
+        while(i != std::ranges::end(input))
         {
-            auto exs = stream.exchange(ranges::views::drop(input, dropped));
-            dropped += std::ranges::size(exs);
+            auto exs =
+                stream.exchange(ranges::subrange(i, std::ranges::end(input)));
+            i += std::ranges::size(exs);
             std::ranges::copy(exs, inserter);
             step();
         }
