@@ -59,10 +59,10 @@ struct multi_pusher<std::tuple<Ts...>>
     operator()(std::tuple<std::vector<Ts>...>& vs,
                const std::tuple<Ts...>&        grs) const noexcept
     {
-        zip_with_for_each([](auto& v, const auto& gr) noexcept
-                          { v.push_back(gr); },
-                          vs,
-                          grs);
+        zip_with_for_each(
+            vs,
+            [](auto& v, const auto& gr) noexcept { v.push_back(gr); },
+            grs);
     }
 };
 
@@ -417,7 +417,7 @@ multi_gen(const unsigned n, G&& g, ArgRngs&&... args) noexcept
     maybe_toa<detail::def_vec, result_t>     ret;
     constexpr detail::multi_pusher<result_t> mp{};
     if constexpr(is_tuple_v<decltype(ret)>)
-        for_each([n](auto& v) noexcept { v.reserve(n); }, ret);
+        for_each(ret, [n](auto& v) noexcept { v.reserve(n); });
     else
         ret.reserve(n);
 
@@ -435,11 +435,10 @@ gen_test_val(const unsigned n, G&& g, T&& t, V&& v) noexcept
            std::ranges::views::transform(
                [&]<typename Feed>(Feed&& feed) noexcept
                {
-                   return std::invoke(
-                       std::forward<V>(v),
-                       lucid::maybe_apply(std::forward<T>(t),
-                                          std::forward<Feed>(feed)),
-                       std::forward<Feed>(feed));
+                   return std::invoke(std::forward<V>(v),
+                                      maybe_apply(std::forward<T>(t),
+                                                  std::forward<Feed>(feed)),
+                                      std::forward<Feed>(feed));
                });
 }
 
@@ -451,9 +450,8 @@ gen_test_val_inv(const unsigned n, G&& g, T&& t, V&& v) noexcept
            std::ranges::views::transform(
                [&](auto&& feed) noexcept
                {
-                   return lucid::maybe_apply(
-                       std::forward<T>(t),
-                       std::forward<decltype(feed)>(feed));
+                   return maybe_apply(std::forward<T>(t),
+                                      std::forward<decltype(feed)>(feed));
                }) |
            std::ranges::views::transform(std::forward<V>(v));
 }

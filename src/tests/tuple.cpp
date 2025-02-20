@@ -93,8 +93,8 @@ main()
                 {  1,   2,   3,   4}
             };
             auto st = lucid::map_tuple<lucid::unique_tuple>(
-                [](auto& a) -> decltype(auto) { return a[1]; },
-                ta);
+                ta,
+                [](auto& a) -> decltype(auto) { return a[1]; });
             st.template get<0>() = 'x';
             st.template get<1>() += 5;
             return std::get<0>(ta)[1] == 'x' && std::get<1>(ta)[1] == 7;
@@ -199,9 +199,10 @@ main()
             TT t1{0, 0, 0};
             TT t2{1, 1.f, 1.};
 
-            lucid::zip_with_for_each([](auto& a, auto b) noexcept { a = b; },
-                                     t1,
-                                     t2);
+            lucid::zip_with_for_each(
+                t1,
+                [](auto& a, auto b) noexcept { a = b; },
+                t2);
 
             return std::get<0>(t1) == std::get<0>(t2) &&
                    std::get<1>(t1) == std::get<1>(t2) &&

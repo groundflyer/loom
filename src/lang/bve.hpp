@@ -150,9 +150,9 @@ class ProxyRow
     friend void
     swap(ProxyRow a, ProxyRow b) noexcept
     {
-        lucid::for_each([&](auto& c) noexcept
-                        { std::swap(c[a.m_pos], c[b.m_pos]); },
-                        a.m_data);
+        lucid::for_each(a.m_data,
+                        [&](auto& c) noexcept
+                        { std::swap(c[a.m_pos], c[b.m_pos]); });
     }
 };
 
@@ -640,8 +640,8 @@ class Memory
     void
     resize(fsize_t new_size)
     {
-        lucid::for_each([new_size](auto& c) noexcept { c.resize(new_size); },
-                        m_data);
+        lucid::for_each(m_data,
+                        [new_size](auto& c) noexcept { c.resize(new_size); });
     }
 
     fsize_t
@@ -810,6 +810,7 @@ class MemoryFacade : public Sorter
     set_input(Args&&... args) noexcept
     {
         return typelist::maybe_collect_arg<std::tuple>(
+            input_vars{},
             [&mem = Sorter::mem()]<typename Var, typename T>(
                 const T&
                     value) constexpr noexcept requires(std::ranges::
@@ -827,7 +828,6 @@ class MemoryFacade : public Sorter
                 else
                     return std::ranges::fill(column, value);
             },
-            input_vars{},
             std::forward<Args>(args)...);
     }
 
@@ -835,9 +835,9 @@ class MemoryFacade : public Sorter
     get_output() const noexcept
     {
         return typelist::maybe_collect<std::tuple>(
+            output_vars{},
             [&mem = Sorter::mem()]<typename Var>() constexpr noexcept
-            { return std::views::all(mem.template get<Var>()); },
-            output_vars{});
+            { return std::views::all(mem.template get<Var>()); });
     }
 
     template <typename F>
@@ -900,9 +900,9 @@ class StreamFacade : public MemoryFacade<_Program, _Vector, Allocator, Sorter>
     set_row_input(_ProxyRow row, Args&&... args) noexcept
     {
         typelist::for_each_arg(
+            input_vars{},
             [row]<typename Var>(auto&& arg) constexpr noexcept
             { row.template get<Var>() = arg; },
-            input_vars{},
             std::forward<Args>(args)...);
 
         // reset
@@ -914,9 +914,9 @@ class StreamFacade : public MemoryFacade<_Program, _Vector, Allocator, Sorter>
     get_row_output(_ProxyRow row) noexcept
     {
         return typelist::maybe_collect<std::tuple>(
+            output_vars{},
             [row]<typename Var>() constexpr noexcept
-            { return row.template get<Var>(); },
-            output_vars{});
+            { return row.template get<Var>(); });
     }
 
   public:

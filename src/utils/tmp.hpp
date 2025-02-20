@@ -815,40 +815,51 @@ constexpr inline bool of_same_size = detail::of_same_size<List>::value;
 /// @brief Invoke @p f with each class of @p List as template parameter.
 template <typename F, typename... Ts, typename... Args>
 constexpr void
-for_each(F&& f, type_sequence<Ts...>, Args&&... args) noexcept(
+for_each(type_sequence<Ts...> /* list */, F&& f, Args&&... args) noexcept(
     (...&& noexcept(f.template operator()<Ts>(std::forward<Args>(args)...))))
 {
     (..., f.template operator()<Ts>(std::forward<Args>(args)...));
 }
 
-/// @brief Invoke @p f with each class of @p List as template parameter and pass
-/// each argument of @p args separately to coresponding invocation.
+/// @brief Same as typelist::for_each, except each argument of @p args passed
+/// separately to coresponding invocation of @p f.
 template <typename F, typename... Ts, typename... Args>
     requires(sizeof...(Ts) == sizeof...(Args))
 constexpr void
-for_each_arg(F&& f, type_sequence<Ts...>, Args&&... args) noexcept(
+for_each_arg(type_sequence<Ts...> /* list */, F&& f, Args&&... args) noexcept(
     (...&& noexcept(f.template operator()<Ts>(std::forward<Args>(args)))))
 {
     (..., f.template operator()<Ts>(std::forward<Args>(args)));
 }
 
-/// @brief Invoke @p f with each class of @p list as template parameter,
-/// and @p args as function parameters.
+/// @brief Consecutively invoke @p f with each class of @p list as the first
+/// template parameter and @p args as function parameters. If theare more than
+/// one entries in @p list, collect results into an instance of @p Tuple.
 ///
-/// @return @p Tuple of elements if there are more than one elements in @p list
-/// and return value of @p f is not void, otherwise singular value.
+/// It's similar to std::transform or lucid::map_tuple, except the input is a
+/// list of types, so it can be seen as transformation of virtual entities
+/// (types) to actual values.
+///
+/// Each invocation looks roughly like this:
+/// @code
+/// auto v_n = f<T_n>(args...);
+/// @endcode
+///
+/// @return @p Tuple of resulting
+/// @tparam Tuple class template to hold resulting values.
 template <template <typename...> typename Tuple = std::tuple,
           typename F,
           typename... Ts,
           typename... Args>
 constexpr decltype(auto)
-maybe_collect(F&& f, type_sequence<Ts...> /*list*/, Args&&... args) noexcept(
+maybe_collect(type_sequence<Ts...> /*list*/, F&& f, Args&&... args) noexcept(
     (...&& noexcept(f.template operator()<Ts>(std::forward<Args>(args)...))))
+    requires(
+        !std::disjunction_v<
+            std::is_void<std::remove_cvref_t<decltype(f.template operator()<Ts>(
+                std::forward<Args>(args)...))>>...>)
 {
-    if constexpr(sizeof...(Ts) > 1 &&
-                 !std::disjunction_v<std::is_void<
-                     std::remove_cvref_t<decltype(f.template operator()<Ts>(
-                         std::forward<Args>(args)...))>>...>)
+    if constexpr(sizeof...(Ts) > 1)
         return Tuple<std::remove_cvref_t<decltype(f.template operator()<Ts>(
             std::forward<Args>(args)...))>...>{
             f.template operator()<Ts>(std::forward<Args>(args)...)...};
@@ -856,28 +867,36 @@ maybe_collect(F&& f, type_sequence<Ts...> /*list*/, Args&&... args) noexcept(
         return f.template operator()<Ts...>(std::forward<Args>(args)...);
 }
 
-/// @brief Invoke @p f with each class of @p list as template parameter,
-/// and pass each argument of @p args separately to coresponding invocation
-/// if there number of elements in @p list more than one.
+/// @brief Same as typelist::maybe_collect, except each argument of @p args
+/// passed separately to corresponding invocation of @p f.
+///
+/// This function is kind of lucid::realise(zip(@p list, @p args)).
+///
+/// Each invocation looks roughly like this:
+/// @code
+/// auto v_n = f<T_n>(arg_n);
+/// @endcode
 ///
 /// @return @p Tuple of elements if there are more than one elements in @p list
-/// and return value of @p f is not void, otherwise singular value.
+/// and return value of @p f is not void.
+/// @tparam Tuple class template to hold resulting values.
 template <template <typename...> typename Tuple = std::tuple,
           typename F,
           typename... Ts,
           typename... Args>
+    requires(sizeof...(Ts) == sizeof...(Args))
 constexpr decltype(auto)
 maybe_collect_arg(
-    F&& f,
     type_sequence<Ts...> /*list*/,
+    F&& f,
     Args&&... args) noexcept((...&& noexcept(f.template
                                              operator()<Ts>(
                                                  std::forward<Args>(args)))))
+    requires(
+        !std::disjunction_v<std::is_void<std::remove_cvref_t<
+            decltype(f.template operator()<Ts>(std::forward<Args>(args)))>>...>)
 {
-    if constexpr(sizeof...(Ts) > 1 &&
-                 !std::disjunction_v<std::is_void<
-                     std::remove_cvref_t<decltype(f.template operator()<Ts>(
-                         std::forward<Args>(args)))>>...>)
+    if constexpr(sizeof...(Ts) > 1)
         return Tuple<std::remove_cvref_t<decltype(f.template operator()<Ts>(
             std::forward<Args>(args)))>...>{
             f.template operator()<Ts>(std::forward<Args>(args))...};
@@ -885,8 +904,11 @@ maybe_collect_arg(
         return f.template operator()<Ts...>(std::forward<Args>(args)...);
 }
 
-/// @brief Invoke every functional object in the typelist with @p args.
+/// @brief Instantiate every class in typelist as a functional object and invoke
+/// it with @p args.
 template <typename... Fs, typename... Args>
+    requires(... && (std::is_nothrow_default_constructible_v<Fs> &&
+                     std::is_invocable_v<Fs, Args...>))
 constexpr void
 instantiate(type_sequence<Fs...> /*list*/, Args&&... args) noexcept(
     std::conjunction_v<std::is_nothrow_invocable<Fs, Args...>...>)

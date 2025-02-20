@@ -359,8 +359,8 @@ class eval<Compute<Op, Dst, Args...>, LabelMap, N>
     packed_vector<T, N>
     compute(_Memory&& mem) const noexcept
     {
-        auto vars = typelist::maybe_collect(loader,
-                                            type_sequence<Args...>{},
+        auto vars = typelist::maybe_collect(type_sequence<Args...>{},
+                                            loader,
                                             std::forward<_Memory>(mem));
         return maybe_apply(vector_op{}, vars);
     }
@@ -587,9 +587,9 @@ class make_minikernel_runner
         {
             Storage storage;
             typelist::for_each(
+                load_vars{},
                 []<typename Var>(_ProxyRow row, Storage& storage) noexcept
                 { storage.template get<Var>() = row.template get<Var>(); },
-                load_vars{},
                 row,
                 storage);
             return storage;
@@ -600,9 +600,9 @@ class make_minikernel_runner
         spill(_ProxyRow row, Storage& storage) noexcept
         {
             typelist::for_each(
+                store_vars{},
                 []<typename Var>(_ProxyRow row, Storage& storage) noexcept
                 { row.template get<Var>() = storage.template get<Var>(); },
-                store_vars{},
                 row,
                 storage);
         }
@@ -635,11 +635,11 @@ class make_minikernel_runner
         {
             Storage storage;
             typelist::for_each(
+                load_vars{},
                 []<typename Var>(_MemoryView view, Storage& storage) noexcept {
                     storage.template get<Var>() =
                         load<N>(view.template get<Var>().data());
                 },
-                load_vars{},
                 view,
                 storage);
             return storage;
@@ -651,11 +651,11 @@ class make_minikernel_runner
         spill(_MemoryView view, Storage& storage) noexcept
         {
             typelist::for_each(
+                store_vars{},
                 []<typename Var>(_MemoryView view, Storage& storage) noexcept {
                     store<N>(view.template get<Var>().data(),
                              storage.template get<Var>());
                 },
-                store_vars{},
                 view,
                 storage);
         }

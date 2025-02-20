@@ -24,7 +24,7 @@ class thread_pool
     void
     join_all() noexcept
     {
-        lucid::for_each([](std::thread& t) noexcept { t.join(); }, m_threads);
+        lucid::for_each(m_threads, [](std::thread& t) noexcept { t.join(); });
     }
 
   public:

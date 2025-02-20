@@ -661,8 +661,9 @@ run_cell_kernel(CompiledCell  cc,
     };
 
     maybe_apply(launcher,
-                typelist::maybe_collect(memory_accessor{},
-                                        typename CompiledCell::vars{},
+                typelist::maybe_collect(typename CompiledCell::vars{},
+                                        memory_accessor{},
+
                                         mem));
 }
 
@@ -691,7 +692,7 @@ sort(Vars vars, _Memory& mem) noexcept
     };
 
     maybe_apply(launcher,
-                typelist::maybe_collect(memory_accessor{}, vars, mem));
+                typelist::maybe_collect(vars, memory_accessor{}, mem));
 }
 
 template <gsize_t N, std::unsigned_integral cp_t, cp_t halt_pos>
@@ -913,10 +914,13 @@ class MemoryFacade
     explicit MemoryFacade(gsize_t n) : mem(n) {}
 
     template <typename... Args>
-    void
+    auto
     set_input(Args&&... args) noexcept
     {
-        typelist::for_each_arg(
+        reset();
+
+        return typelist::maybe_collect_arg<std::tuple>(
+            input_vars{},
             [&mem = mem]<typename Var, typename T>(
                 const T& value) noexcept requires(std::ranges::input_range<T> ||
                                                   std::is_nothrow_convertible_v<
@@ -927,25 +931,33 @@ class MemoryFacade
                 // fill pinned memory buffer first
                 SimpleVector<t, HostAllocator<t>> buffer(column.size());
                 if constexpr(std::ranges::input_range<T>)
-                    std::ranges::copy_n(std::ranges::cbegin(value),
-                                        column.size(),
-                                        column.begin());
+                {
+                    auto r = std::ranges::copy_n(std::ranges::cbegin(value),
+                                                 column.size(),
+                                                 column.begin());
+                    // now copy to device
+                    HOST_TO_DEVICE(column.data(), buffer.data(), column.size());
+
+                    return r;
+                }
                 else
-                    std::ranges::fill(buffer, value);
+                {
+                    auto r = std::ranges::fill(buffer, value);
 
-                // now copy to device
-                HOST_TO_DEVICE(column.data(), buffer.data(), column.size());
+                    // now copy to device
+                    HOST_TO_DEVICE(column.data(), buffer.data(), column.size());
+
+                    return r;
+                }
             },
-            input_vars{},
             std::forward<Args>(args)...);
-
-        reset();
     }
 
     auto
     get_output() noexcept
     {
         return typelist::maybe_collect<std::tuple>(
+            output_vars{},
             [&mem = mem]<typename Var>() constexpr noexcept
             {
                 using t     = vartype<Var>;
@@ -955,8 +967,7 @@ class MemoryFacade
                 std::vector<t> ret(buffer.size());
                 std::ranges::copy(buffer, ret.begin());
                 return ret;
-            },
-            output_vars{});
+            });
     }
 
     gsize_t
@@ -1060,13 +1071,13 @@ class StreamFacade : public MemoryFacade<_Program>
     void
     fetch()
     {
-        typelist::for_each(consumer<output_vars>{},
-                           output_vars{},
+        typelist::for_each(output_vars{},
+                           consumer<output_vars>{},
                            facade::mem,
                            m_outbuf);
         if constexpr(all)
-            typelist::for_each(consumer<input_vars>{},
-                               input_vars{},
+            typelist::for_each(input_vars{},
+                               consumer<input_vars>{},
                                facade::mem,
                                m_inbuf);
     }
@@ -1074,8 +1085,8 @@ class StreamFacade : public MemoryFacade<_Program>
     void
     release()
     {
-        typelist::for_each(publisher<input_vars>{},
-                           input_vars{},
+        typelist::for_each(input_vars{},
+                           publisher<input_vars>{},
                            facade::mem,
                            m_inbuf);
     }
@@ -1099,13 +1110,13 @@ class StreamFacade : public MemoryFacade<_Program>
     {
         ASSERT(offset <= facade::size(), "Out of range");
         return typelist::maybe_collect<std::tuple>(
+            output_vars{},
             [offset]<typename Var>(const output_buffer_t& outbuff)
             {
                 const buffer_t<vartype<Var>>& buffer =
                     std::get<typelist::index<Var, output_vars>>(outbuff);
                 return std::views::drop(buffer, offset);
             },
-            output_vars{},
             m_outbuf);
     }
 
@@ -1210,7 +1221,7 @@ class cuda_evaluator
                 memory_facade::sort();
 
 #if 0
-                auto columns = typelist::maybe_collect<std::tuple>(
+                auto columns = typelist::maybe_collect<std::tuple>(vars{},
                     [&]<typename Var>() constexpr noexcept
                     {
                         using t     = vartype<Var>;
@@ -1222,10 +1233,9 @@ class cuda_evaluator
                         std::vector<t> ret(buffer.size());
                         std::ranges::copy(buffer, ret.begin());
                         return ret;
-                    },
-                    vars{});
+                    });
 
-                typelist::for_each(
+                typelist::for_each(vars{},
                     []<typename Var>()
                     {
                         using name                   = varname<Var>;
@@ -1235,14 +1245,12 @@ class cuda_evaluator
                         for(char c: s) putchar(c);
                         putchar('\t');
                         putchar('\t');
-                    },
-                    vars{});
+                    });
                 putchar('\n');
                 for(gsize_t i = 0; i < n; ++i)
                 {
-                    lucid::for_each([&](const auto& c)
-                                    { printf("%*u\t", 10, c[i]); },
-                                    columns);
+                    lucid::for_each(columns, [&](const auto& c)
+                                    { printf("%*u\t", 10, c[i]); });
                     putchar('\n');
                 }
 #endif
@@ -1277,7 +1285,7 @@ class cuda_evaluator
         void
         print()
         {
-            auto columns = typelist::maybe_collect<std::tuple>(
+            auto columns = typelist::maybe_collect<std::tuple>(vars{},
                 [&]<typename Var>() constexpr noexcept
                 {
                     using t     = vartype<Var>;
@@ -1287,10 +1295,9 @@ class cuda_evaluator
                     std::vector<t> ret(buffer.size());
                     std::ranges::copy(buffer, ret.begin());
                     return ret;
-                },
-                vars{});
+                });
 
-            typelist::for_each(
+            typelist::for_each(vars{},
                 []<typename Var>()
                 {
                     using name                   = varname<Var>;
@@ -1300,14 +1307,12 @@ class cuda_evaluator
                     for(char c: s) putchar(c);
                     putchar('\t');
                     putchar('\t');
-                },
-                vars{});
+                });
             putchar('\n');
             for(gsize_t i = 0; i < stream_facade::size(); ++i)
             {
-                lucid::for_each([&](const auto& c)
-                                { printf("%*u\t", 10, c[i]); },
-                                columns);
+                lucid::for_each(columns, [&](const auto& c)
+                                { printf("%*u\t", 10, c[i]); });
                 putchar('\n');
             }
         }
@@ -1320,10 +1325,9 @@ class cuda_evaluator
         }
 
         template <std::ranges::input_range Input>
-            requires(std::is_nothrow_convertible_v<
-                     std::ranges::range_value_t<Input>,
-                     typelist::maybe_to<typelist::map<vartype, input_vars>,
-                                        std::tuple>>)
+            requires(
+                std::is_nothrow_convertible_v<std::ranges::range_value_t<Input>,
+                                              input_type<_Program>>)
         auto
         exchange(Input&& input) noexcept
         {

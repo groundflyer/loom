@@ -73,10 +73,11 @@ class MemoryFacade
     constexpr void
     set_input(Args&&... args) noexcept
     {
-        typelist::for_each_arg([&]<typename Var>(auto&& arg) constexpr noexcept
-                               { memory.template get<Var>() = arg; },
-                               input_vars{},
-                               std::forward<Args>(args)...);
+        typelist::for_each_arg(
+            input_vars{},
+            [&]<typename Var>(auto&& arg) constexpr noexcept
+            { memory.template get<Var>() = arg; },
+            std::forward<Args>(args)...);
         reset();
     }
 
@@ -84,9 +85,9 @@ class MemoryFacade
     get_output() const noexcept
     {
         return typelist::maybe_collect<std::tuple>(
+            output_vars{},
             [&mem = memory]<typename Var>() constexpr noexcept
-            { return mem.template get<Var>(); },
-            output_vars{});
+            { return mem.template get<Var>(); });
     }
 
     template <typename Cell>

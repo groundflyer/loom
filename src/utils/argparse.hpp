@@ -1559,13 +1559,12 @@ show_help(std::string_view                  program_name,
     if constexpr(!typelist::empty<flag_opts>)
     {
         std::fputs(" [-", file);
-        typelist::for_each(
-            [file, &column]<typename O>() noexcept
-            {
-                std::fputc(O::key, file);
-                ++column;
-            },
-            flag_opts{});
+        typelist::for_each(flag_opts{},
+                           [file, &column]<typename O>() noexcept
+                           {
+                               std::fputc(O::key, file);
+                               ++column;
+                           });
         std::fputc(']', file);
         column += 4;
         column = try_newline1(column);
@@ -1573,6 +1572,7 @@ show_help(std::string_view                  program_name,
 
     // print options short descriptions, e.g. [-o var] or [--option var]
     lucid::for_each(
+        options,
         [&]<typename O>(const O& option) noexcept
         {
             if constexpr(is_option<O>)
@@ -1592,14 +1592,14 @@ show_help(std::string_view                  program_name,
                 ++column;
                 column = try_newline1(column);
             }
-        },
-        options);
+        });
 
     // print positionals short description
-    lucid::for_each(
-        [&](const auto& p) noexcept
-        { column = print_vars<true>(p, try_newline1, column, file); },
-        positionals);
+    lucid::for_each(positionals,
+                    [&](const auto& p) noexcept {
+                        column =
+                            print_vars<true>(p, try_newline1, column, file);
+                    });
 
     // options details
     std::fputs("\n\nOptions:\n", file);
@@ -1630,10 +1630,10 @@ show_help(std::string_view                  program_name,
     };
     const std::size_t doc_margin =
         fold_tuple(
-            [](const auto& o1, const auto& o2) noexcept
-            { return std::max(o1, o2); },
             // shift of "-h, --help" = 10
-            std::tuple_cat(map_tuple(shift, options), std::tuple{10ul})) +
+            std::tuple_cat(map_tuple(options, shift), std::tuple{10ul}),
+            [](const auto& o1, const auto& o2) noexcept
+            { return std::max(o1, o2); }) +
         short_margin + 1;
 
     const auto doc_align = [&]() noexcept
@@ -1688,55 +1688,53 @@ show_help(std::string_view                  program_name,
     column += 10;
     doc_print("show this message and exit");
 
-    lucid::for_each(
-        [&]<typename O>(const O& option) noexcept
-        {
-            opt_align();
+    lucid::for_each(options,
+                    [&]<typename O>(const O& option) noexcept
+                    {
+                        opt_align();
 
-            if constexpr(has_keychar_v<O> && !has_keyword_v<O>)
-                fmt::print(file, "-{}", O::key);
-            else if constexpr(!has_keychar_v<O> && has_keyword_v<O>)
-                fmt::print(file, "    --{}", O::keyword);
-            else if constexpr(has_keychar_v<O> && has_keyword_v<O>)
-                fmt::print(file, "-{}, --{}", O::key, O::keyword);
+                        if constexpr(has_keychar_v<O> && !has_keyword_v<O>)
+                            fmt::print(file, "-{}", O::key);
+                        else if constexpr(!has_keychar_v<O> && has_keyword_v<O>)
+                            fmt::print(file, "    --{}", O::keyword);
+                        else if constexpr(has_keychar_v<O> && has_keyword_v<O>)
+                            fmt::print(file, "-{}, --{}", O::key, O::keyword);
 
-            if constexpr(O::num_vals == npos)
-                fmt::print(file, " <{}...>", option.var);
-            else if constexpr(O::num_vals > 1)
-            {
-                for(std::size_t i = 0; i < O::num_vals; ++i)
-                    fmt::print(file, " <{}>", option.var[i]);
-            }
-            else if constexpr(O::num_vals == 1)
-            {
-                if constexpr(has_keyword_v<O>)
-                    fmt::print(file, "=<{}>", option.var);
-                else
-                    fmt::print(file, " <{}>", option.var);
-            }
+                        if constexpr(O::num_vals == npos)
+                            fmt::print(file, " <{}...>", option.var);
+                        else if constexpr(O::num_vals > 1)
+                        {
+                            for(std::size_t i = 0; i < O::num_vals; ++i)
+                                fmt::print(file, " <{}>", option.var[i]);
+                        }
+                        else if constexpr(O::num_vals == 1)
+                        {
+                            if constexpr(has_keyword_v<O>)
+                                fmt::print(file, "=<{}>", option.var);
+                            else
+                                fmt::print(file, " <{}>", option.var);
+                        }
 
-            column += shift(option);
-            doc_print(option.doc);
-        },
-        options);
+                        column += shift(option);
+                        doc_print(option.doc);
+                    });
 
     // positionals details
     if constexpr(sizeof...(Positionals) > 0)
     {
         std::fputs("\nRequired arguments:\n", file);
 
-        lucid::for_each(
-            [&](const auto& o) noexcept
-            {
-                opt_align();
-                column = print_vars<false>(
-                    o,
-                    []() {},
-                    column,
-                    file);
-                doc_print(o.doc);
-            },
-            positionals);
+        lucid::for_each(positionals,
+                        [&](const auto& o) noexcept
+                        {
+                            opt_align();
+                            column = print_vars<false>(
+                                o,
+                                []() {},
+                                column,
+                                file);
+                            doc_print(o.doc);
+                        });
     }
 }
 

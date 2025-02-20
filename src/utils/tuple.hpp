@@ -493,7 +493,7 @@ template <template <typename...> typename ResultTuple = std::tuple,
           typename UnaryOp,
           typename InputTuple>
 constexpr decltype(auto)
-map_tuple(UnaryOp&& op, InputTuple&& tuple)
+map_tuple(InputTuple&& tuple, UnaryOp&& op)
 {
     return std::apply([op = std::move(op)]<typename... Ts>(Ts&&... args)
                           -> ResultTuple<std::invoke_result_t<UnaryOp, Ts>...>
@@ -504,7 +504,7 @@ map_tuple(UnaryOp&& op, InputTuple&& tuple)
 /// @brief Left-assotiative fold of a @p tuple.
 template <typename BinaryOp, typename T, typename... Ts>
 constexpr decltype(auto)
-fold_tuple(BinaryOp&& op, const T& init, const std::tuple<Ts...>& tuple)
+fold_tuple(const std::tuple<Ts...>& tuple, BinaryOp&& op, const T& init)
 {
     return std::apply([&](const Ts&... args)
                       { return fold(op, init, args...); },
@@ -514,7 +514,7 @@ fold_tuple(BinaryOp&& op, const T& init, const std::tuple<Ts...>& tuple)
 /// @brief Left-assotiative fold of a non-empty @p tuple.
 template <typename BinaryOp, typename Tuple>
 constexpr decltype(auto)
-fold_tuple(BinaryOp&& op, const Tuple& tuple)
+fold_tuple(const Tuple& tuple, BinaryOp&& op)
 {
     return std::apply([&](const auto&... args) { return fold(op, args...); },
                       tuple);
@@ -623,8 +623,8 @@ generate(G&& g, Args&&... args) noexcept
 /// @brief Invoke @p F on every element of @p tuple.
 template <typename F, typename Tuple, typename... Args>
 constexpr void
-for_each(F&&     f,
-         Tuple&& tuple,
+for_each(Tuple&& tuple,
+         F&&     f,
          Args&&... args) noexcept(noexcept(_FOR_EACH_EXPR))
 {
     _FOR_EACH_EXPR;
@@ -635,8 +635,8 @@ template <typename F, typename Tuple, typename... Rest>
     requires(... && (std::tuple_size_v<std::remove_cvref_t<Tuple>> ==
                      std::tuple_size_v<std::remove_cvref_t<Rest>>))
 constexpr void
-zip_with_for_each(F&&     f,
-                  Tuple&& tuple,
+zip_with_for_each(Tuple&& tuple,
+                  F&&     f,
                   Rest&&... tuples) noexcept(noexcept(_ZIP_WITH_FOR_EACH_EXPR))
 {
     _ZIP_WITH_FOR_EACH_EXPR;
