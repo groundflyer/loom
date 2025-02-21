@@ -915,7 +915,7 @@ class MemoryFacade
 
     template <typename... Args>
     auto
-    set_input(Args&&... args) noexcept
+    set_inputs(Args&&... args) noexcept
     {
         reset();
 
@@ -954,7 +954,7 @@ class MemoryFacade
     }
 
     auto
-    get_output() noexcept
+    get_outputs() noexcept
     {
         return typelist::maybe_collect<std::tuple>(
             output_vars{},
@@ -1163,11 +1163,11 @@ class cuda_evaluator
         auto
         operator()(Args&&... args) noexcept
         {
-            memory_facade::set_input(std::forward<Args>(args)...);
+            memory_facade::set_inputs(std::forward<Args>(args)...);
             memory_facade::visit(
                 [](memory& mem) noexcept
                 { run_cell_kernel(cell, mem, 0, mem.size()); });
-            return memory_facade::get_output();
+            return memory_facade::get_outputs();
         }
     };
 
@@ -1211,7 +1211,7 @@ class cuda_evaluator
         auto
         operator()(Args&&... args) noexcept
         {
-            memory_facade::set_input(std::forward<Args>(args)...);
+            memory_facade::set_inputs(std::forward<Args>(args)...);
 
             visitor step{memory_facade::mem};
 
@@ -1255,7 +1255,7 @@ class cuda_evaluator
                 }
 #endif
             }
-            return memory_facade::get_output();
+            return memory_facade::get_outputs();
         }
     };
 

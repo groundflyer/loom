@@ -908,10 +908,10 @@ class simd_compiler
         auto
         operator()(Args&&... args) noexcept
         {
-            memory_facade::set_input(std::forward<Args>(args)...);
+            memory_facade::set_inputs(std::forward<Args>(args)...);
             memory_facade::visit([](memory& mem) noexcept
                                  { cell(mem.view()); });
-            return memory_facade::get_output();
+            return memory_facade::get_outputs();
         }
     };
 
@@ -944,7 +944,7 @@ class simd_compiler
         auto
         operator()(Args&&... args) noexcept
         {
-            memory_facade::set_input(std::forward<Args>(args)...);
+            memory_facade::set_inputs(std::forward<Args>(args)...);
 
             while(!memory_facade::done())
             {
@@ -952,7 +952,7 @@ class simd_compiler
                 memory_facade::sort();
             }
 
-            return memory_facade::get_output();
+            return memory_facade::get_outputs();
         }
     };
 

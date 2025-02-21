@@ -71,7 +71,7 @@ class MemoryFacade
     template <typename... Args>
         requires(typelist::length<input_vars> == sizeof...(Args))
     constexpr void
-    set_input(Args&&... args) noexcept
+    set_inputs(Args&&... args) noexcept
     {
         typelist::for_each_arg(
             input_vars{},
@@ -82,7 +82,7 @@ class MemoryFacade
     }
 
     constexpr auto
-    get_output() const noexcept
+    get_outputs() const noexcept
     {
         return typelist::maybe_collect<std::tuple>(
             output_vars{},
@@ -129,9 +129,9 @@ class basic_scalar_compiler
         constexpr auto
         operator()(const Args&... args) noexcept
         {
-            facade::set_input(args...);
+            facade::set_inputs(args...);
             facade::step(cell);
-            return facade::get_output();
+            return facade::get_outputs();
         }
     };
 
@@ -144,7 +144,7 @@ class basic_scalar_compiler
         constexpr auto
         operator()(const Args&... args) noexcept
         {
-            facade::set_input(args...);
+            facade::set_inputs(args...);
             while(facade::cp() != halt_pos)
                 visit_at(
                     facade::cp(),
@@ -152,7 +152,7 @@ class basic_scalar_compiler
                     cells,
                     sink);
 
-            return facade::get_output();
+            return facade::get_outputs();
         }
     };
 

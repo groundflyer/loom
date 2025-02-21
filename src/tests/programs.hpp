@@ -222,7 +222,7 @@ wrap_stream(S& stream) noexcept
         };
 
         // set initial data
-        auto [i, _] = stream.set_input(input);
+        auto [i, _] = stream.set_inputs(input);
         step();
 
         // feed all the input data
@@ -238,7 +238,7 @@ wrap_stream(S& stream) noexcept
         // compute the rest
         while(!stream.done()) step();
 
-        std::ranges::copy(stream.get_output(), inserter);
+        std::ranges::copy(stream.get_outputs(), inserter);
 
         ASSERT(out.size() == input.size(), "Output size doesn't match");
 

@@ -853,7 +853,7 @@ class MemoryFacade : public Sorter
 
     template <typename... Args>
     auto
-    set_input(Args&&... args) noexcept
+    set_inputs(Args&&... args) noexcept
     {
         return typelist::maybe_collect_arg<std::tuple>(
             input_vars{},
@@ -878,7 +878,7 @@ class MemoryFacade : public Sorter
     }
 
     auto
-    get_output() const noexcept
+    get_outputs() const noexcept
     {
         return typelist::maybe_collect<std::tuple>(
             output_vars{},
@@ -1072,9 +1072,9 @@ class basic_vector_compiler
         auto
         operator()(Args&&... args) noexcept
         {
-            memory_facade::set_input(std::forward<Args>(args)...);
+            memory_facade::set_inputs(std::forward<Args>(args)...);
             memory_facade::visit(cell);
-            return memory_facade::get_output();
+            return memory_facade::get_outputs();
         }
     };
 
@@ -1114,7 +1114,7 @@ class basic_vector_compiler
         auto
         operator()(Args&&... args) noexcept
         {
-            memory_facade::set_input(std::forward<Args>(args)...);
+            memory_facade::set_inputs(std::forward<Args>(args)...);
 
             while(!memory_facade::done())
             {
@@ -1122,7 +1122,7 @@ class basic_vector_compiler
                 memory_facade::sort();
             }
 
-            return memory_facade::get_output();
+            return memory_facade::get_outputs();
         }
     };
 
