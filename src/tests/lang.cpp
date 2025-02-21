@@ -12,8 +12,6 @@
 #include <lang/simd.hpp>
 #include <utils/test.hpp>
 
-#include <range/v3/view/drop.hpp>
-
 using namespace lucid;
 using namespace lucid::test;
 
