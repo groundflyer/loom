@@ -802,8 +802,54 @@ class MemoryFacade : public Sorter
 
     static constexpr auto halt_pos = _Program::halt_pos;
 
+  protected:
+    template <typename _ProxyRow, typename... Args>
+    static void
+    set_row_input(_ProxyRow row, Args&&... args) noexcept
+    {
+        typelist::for_each_arg(
+            input_vars{},
+            [row]<typename Var>(auto&& arg) constexpr noexcept
+            { row.template get<Var>() = arg; },
+            std::forward<Args>(args)...);
+
+        // reset
+        if constexpr(!_Program::singular) row.cp() = 0;
+    }
+
+    template <typename _ProxyRow>
+    static auto
+    get_row_output(_ProxyRow row) noexcept
+    {
+        return typelist::maybe_collect<std::tuple>(
+            output_vars{},
+            [row]<typename Var>() constexpr noexcept
+            { return row.template get<Var>(); });
+    }
+
   public:
     using Sorter::Sorter;
+
+    template <std::ranges::input_range Input>
+        requires(
+            is_tuple_v<std::ranges::range_value_t<Input>> &&
+            std::is_nothrow_convertible_v<std::ranges::range_value_t<Input>,
+                                          input_type<_Program>>)
+    auto
+    set_input(Input&& input) noexcept
+    {
+        auto i = std::ranges::begin(input);
+        auto o = std::ranges::for_each(
+            Sorter::mem(),
+            [&i](auto row) noexcept
+            {
+                std::apply([row](const auto... args) noexcept
+                           { set_row_input(row, args...); },
+                           *i++);
+            });
+
+        return std::ranges::in_out_result{i, o};
+    }
 
     template <typename... Args>
     auto
@@ -831,13 +877,21 @@ class MemoryFacade : public Sorter
             std::forward<Args>(args)...);
     }
 
-    decltype(auto)
+    auto
     get_output() const noexcept
     {
         return typelist::maybe_collect<std::tuple>(
             output_vars{},
             [&mem = Sorter::mem()]<typename Var>() constexpr noexcept
             { return std::views::all(mem.template get<Var>()); });
+    }
+
+    auto
+    get_output_zipped() const noexcept
+    {
+        return std::views::transform(Sorter::mem(),
+                                     [](auto row) noexcept
+                                     { return get_row_output(row); });
     }
 
     template <typename F>
@@ -895,30 +949,6 @@ class StreamFacade : public MemoryFacade<_Program, _Vector, Allocator, Sorter>
 
     using facade = MemoryFacade<_Program, _Vector, Allocator, Sorter>;
 
-    template <typename _ProxyRow, typename... Args>
-    static void
-    set_row_input(_ProxyRow row, Args&&... args) noexcept
-    {
-        typelist::for_each_arg(
-            input_vars{},
-            [row]<typename Var>(auto&& arg) constexpr noexcept
-            { row.template get<Var>() = arg; },
-            std::forward<Args>(args)...);
-
-        // reset
-        row.cp() = 0;
-    }
-
-    template <typename _ProxyRow>
-    static auto
-    get_row_output(_ProxyRow row) noexcept
-    {
-        return typelist::maybe_collect<std::tuple>(
-            output_vars{},
-            [row]<typename Var>() constexpr noexcept
-            { return row.template get<Var>(); });
-    }
-
   public:
     using facade::facade;
 
@@ -932,10 +962,10 @@ class StreamFacade : public MemoryFacade<_Program, _Vector, Allocator, Sorter>
         return ranges::views::zip_with(
             [](auto row, auto inputs)
             {
-                auto val = get_row_output(row);
+                auto val = facade::get_row_output(row);
 
                 maybe_apply([row](auto... args) constexpr noexcept
-                            { set_row_input(row, args...); },
+                            { facade::set_row_input(row, args...); },
                             inputs);
 
                 return val;
