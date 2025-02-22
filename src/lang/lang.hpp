@@ -10,6 +10,7 @@
 #include <utils/tuple.hpp>
 #include <utils/union.hpp>
 
+#include <cmath>
 #include <cstdint>
 
 namespace lucid
@@ -728,7 +729,9 @@ using output_type =
     typelist::maybe_to<typelist::map<vartype, typename P::output_vars>,
                        std::tuple>;
 
-struct choice_op
+namespace ops
+{
+struct choice
 {
     template <typename C, typename T>
     constexpr T
@@ -739,7 +742,7 @@ struct choice_op
 };
 
 template <std::integral T>
-struct lshift_op
+struct lshift
 {
     constexpr T
     operator()(const T v, const T s) const noexcept
@@ -749,7 +752,7 @@ struct lshift_op
 };
 
 template <std::integral T>
-struct rshift_op
+struct rshift
 {
     constexpr T
     operator()(const T v, const T s) const noexcept
@@ -757,6 +760,7 @@ struct rshift_op
         return v >> s;
     }
 };
+} // namespace ops
 } // namespace lucid
 
 #ifndef MAJOR_TYPE
@@ -828,11 +832,11 @@ struct rshift_op
 #define CMP(OP, TYPE, DST, A, B) \
     lucid::Compute<OP<TYPE>, IVAR(DST), VAR(TYPE, A), VAR(TYPE, B)>
 
-#define CHOICE(TYPE, DST, C, A, B)   \
-    lucid::Compute<lucid::choice_op, \
-                   VAR(TYPE, DST),   \
-                   VAR(IDX_TYPE, C), \
-                   VAR(TYPE, A),     \
+#define CHOICE(TYPE, DST, C, A, B)     \
+    lucid::Compute<lucid::ops::choice, \
+                   VAR(TYPE, DST),     \
+                   VAR(IDX_TYPE, C),   \
+                   VAR(TYPE, A),       \
                    VAR(TYPE, B)>
 
 #define ADD(...)     BINOP(std::plus, __VA_ARGS__)
@@ -892,5 +896,5 @@ struct rshift_op
 #define TCHOICE(...) CHOICE(MAJOR_TYPE, __VA_ARGS__)
 #define ICHOICE(...) CHOICE(INDEX_TYPE, __VA_ARGS__)
 
-#define LSHFT(...)   BINOP(lucid::lshift_op, IDX_TYPE, __VA_ARGS__)
-#define RSHFT(...)   BINOP(lucid::rshift_op, IDX_TYPE, __VA_ARGS__)
+#define LSHFT(...)   BINOP(lucid::ops::lshift, IDX_TYPE, __VA_ARGS__)
+#define RSHFT(...)   BINOP(lucid::ops::rshift, IDX_TYPE, __VA_ARGS__)

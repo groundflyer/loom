@@ -283,7 +283,7 @@ struct remap_comp<std::identity>
 };
 
 template <>
-struct remap_comp<choice_op>
+struct remap_comp<ops::choice>
 {
     struct type
     {
@@ -342,8 +342,8 @@ DEF_REMAP_BIN(std::logical_and, &&)
 DEF_REMAP_BIN(std::logical_or, ||)
 DEF_REMAP_UN(std::logical_not, !)
 
-DEF_REMAP_BIN(lshift_op, <<)
-DEF_REMAP_BIN(rshift_op, >>)
+DEF_REMAP_BIN(ops::lshift, <<)
+DEF_REMAP_BIN(ops::rshift, >>)
 
 #undef DEF_REMAP_UN
 #undef DEF_REMAP_BIN
