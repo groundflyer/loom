@@ -760,6 +760,52 @@ struct rshift
         return v >> s;
     }
 };
+
+template <typename T>
+struct abs
+{
+    T
+    operator()(const T v) const noexcept
+    {
+        return std::abs(v);
+    }
+};
+
+#define MK_STD_BINOP(NAME)                              \
+    template <typename T>                               \
+    struct NAME                                         \
+    {                                                   \
+        T                                               \
+        operator()(const T a, const T b) const noexcept \
+        {                                               \
+            return std::NAME(a, b);                     \
+        }                                               \
+    };
+
+#define MK_STD_UNOP_FLOAT(NAME)              \
+    template <std::floating_point T>         \
+    struct NAME                              \
+    {                                        \
+        T                                    \
+        operator()(const T v) const noexcept \
+        {                                    \
+            return std::NAME(v);             \
+        }                                    \
+    };
+
+MK_STD_BINOP(max)
+MK_STD_BINOP(min)
+
+MK_STD_UNOP_FLOAT(round)
+MK_STD_UNOP_FLOAT(ceil)
+MK_STD_UNOP_FLOAT(floor)
+MK_STD_UNOP_FLOAT(trunc)
+MK_STD_UNOP_FLOAT(copysign)
+MK_STD_UNOP_FLOAT(sin)
+MK_STD_UNOP_FLOAT(cos)
+
+#undef MK_STD_BINOP
+#undef MK_STD_UNOP_FLOAT
 } // namespace ops
 } // namespace lucid
 
@@ -767,10 +813,10 @@ struct rshift
 #define MAJOR_TYPE T
 #endif
 
+#define INDEX_TYPE      lucid::uint_of_size_t<sizeof(MAJOR_TYPE)>
 #define VAR(TYPE, NAME) lucid::Variable<TYPE, lucid::sl2cs<#NAME>>
-#define IDX_TYPE        lucid::uint_of_size_t<sizeof(MAJOR_TYPE)>
 #define TVAR(NAME)      VAR(MAJOR_TYPE, NAME)
-#define IVAR(NAME)      VAR(IDX_TYPE, NAME)
+#define IVAR(NAME)      VAR(INDEX_TYPE, NAME)
 
 #define BEGIN(NAME, ...)                                             \
     using NAME = lucid::Program < lucid::type_sequence<__VA_ARGS__>, \
@@ -803,24 +849,26 @@ struct rshift
     >
 
 #define PJMPN(varname, ...) \
-    lucid::ParmJump<VAR(IDX_TYPE, varname), lucid::type_sequence<__VA_ARGS__>>
+    lucid::ParmJump<VAR(INDEX_TYPE, varname), lucid::type_sequence<__VA_ARGS__>>
 
-#define PJMP2(varname, L1, L2)                                             \
-    lucid::ParmJump < VAR(IDX_TYPE, varname), lucid::type_pair < LABEL(L1) \
-    , LABEL(L2)                                                            \
+#define PJMP2(varname, L1, L2)                                               \
+    lucid::ParmJump < VAR(INDEX_TYPE, varname), lucid::type_pair < LABEL(L1) \
+    , LABEL(L2)                                                              \
     >>
 
-#define PJMP3(varname, L1, L2, L3)                                             \
-    lucid::ParmJump < VAR(IDX_TYPE, varname), lucid::type_sequence < LABEL(L1) \
-    , LABEL(L2)                                                                \
-    , LABEL(L3)                                                                \
+#define PJMP3(varname, L1, L2, L3)              \
+    lucid::ParmJump < VAR(INDEX_TYPE, varname), \
+        lucid::type_sequence < LABEL(L1)        \
+    , LABEL(L2)                                 \
+    , LABEL(L3)                                 \
     >>
 
-#define PJMP4(varname, L1, L2, L3, L4)                                         \
-    lucid::ParmJump < VAR(IDX_TYPE, varname), lucid::type_sequence < LABEL(L1) \
-    , LABEL(L2)                                                                \
-    , LABEL(L3)                                                                \
-    , LABEL(L4)                                                                \
+#define PJMP4(varname, L1, L2, L3, L4)          \
+    lucid::ParmJump < VAR(INDEX_TYPE, varname), \
+        lucid::type_sequence < LABEL(L1)        \
+    , LABEL(L2)                                 \
+    , LABEL(L3)                                 \
+    , LABEL(L4)                                 \
     >>
 
 #define BINOP(OP, TYPE, DST, A, B) \
@@ -835,7 +883,7 @@ struct rshift
 #define CHOICE(TYPE, DST, C, A, B)     \
     lucid::Compute<lucid::ops::choice, \
                    VAR(TYPE, DST),     \
-                   VAR(IDX_TYPE, C),   \
+                   VAR(INDEX_TYPE, C), \
                    VAR(TYPE, A),       \
                    VAR(TYPE, B)>
 
@@ -871,30 +919,42 @@ struct rshift
 #define TGE(...)     GE(MAJOR_TYPE, __VA_ARGS__)
 #define TLE(...)     LE(MAJOR_TYPE, __VA_ARGS__)
 
-#define IADD(...)    ADD(IDX_TYPE, __VA_ARGS__)
-#define ISUB(...)    SUB(IDX_TYPE, __VA_ARGS__)
-#define IMUL(...)    MUL(IDX_TYPE, __VA_ARGS__)
-#define IDIV(...)    DIV(IDX_TYPE, __VA_ARGS__)
-#define IMOD(...)    MOD(IDX_TYPE, __VA_ARGS__)
-#define INEG(...)    NEG(IDX_TYPE, __VA_ARGS__)
+#define IADD(...)     ADD(INDEX_TYPE, __VA_ARGS__)
+#define ISUB(...)     SUB(INDEX_TYPE, __VA_ARGS__)
+#define IMUL(...)     MUL(INDEX_TYPE, __VA_ARGS__)
+#define IDIV(...)     DIV(INDEX_TYPE, __VA_ARGS__)
+#define IMOD(...)     MOD(INDEX_TYPE, __VA_ARGS__)
+#define INEG(...)     NEG(INDEX_TYPE, __VA_ARGS__)
 
-#define IEQ(...)     EQ(IDX_TYPE, __VA_ARGS__)
-#define INEQ(...)    NEQ(IDX_TYPE, __VA_ARGS__)
-#define IGT(...)     GT(IDX_TYPE, __VA_ARGS__)
-#define ILT(...)     LT(IDX_TYPE, __VA_ARGS__)
-#define IGE(...)     GE(IDX_TYPE, __VA_ARGS__)
-#define ILE(...)     LE(IDX_TYPE, __VA_ARGS__)
+#define IEQ(...)      EQ(INDEX_TYPE, __VA_ARGS__)
+#define INEQ(...)     NEQ(INDEX_TYPE, __VA_ARGS__)
+#define IGT(...)      GT(INDEX_TYPE, __VA_ARGS__)
+#define ILT(...)      LT(INDEX_TYPE, __VA_ARGS__)
+#define IGE(...)      GE(INDEX_TYPE, __VA_ARGS__)
+#define ILE(...)      LE(INDEX_TYPE, __VA_ARGS__)
 
 #define TAND(...)    LAND(MAJOR_TYPE, __VA_ARGS__)
 #define TOR(...)     LOR(MAJOR_TYPE, __VA_ARGS__)
 #define TNOT(...)    LNOT(MAJOR_TYPE, __VA_ARGS__)
 
-#define IAND(...)    LAND(IDX_TYPE, __VA_ARGS__)
-#define IOR(...)     LOR(IDX_TYPE, __VA_ARGS__)
-#define INOT(...)    LNOT(IDX_TYPE, __VA_ARGS__)
+#define IAND(...)     LAND(INDEX_TYPE, __VA_ARGS__)
+#define IOR(...)      LOR(INDEX_TYPE, __VA_ARGS__)
+#define INOT(...)     LNOT(INDEX_TYPE, __VA_ARGS__)
 
-#define TCHOICE(...) CHOICE(MAJOR_TYPE, __VA_ARGS__)
-#define ICHOICE(...) CHOICE(INDEX_TYPE, __VA_ARGS__)
+#define TCHOICE(...)  CHOICE(MAJOR_TYPE, __VA_ARGS__)
+#define ICHOICE(...)  CHOICE(INDEX_TYPE, __VA_ARGS__)
 
-#define LSHFT(...)   BINOP(lucid::ops::lshift, IDX_TYPE, __VA_ARGS__)
-#define RSHFT(...)   BINOP(lucid::ops::rshift, IDX_TYPE, __VA_ARGS__)
+#define LSHFT(...)    BINOP(lucid::ops::lshift, INDEX_TYPE, __VA_ARGS__)
+#define RSHFT(...)    BINOP(lucid::ops::rshift, INDEX_TYPE, __VA_ARGS__)
+
+#define ABS(...)      UNOP(lucid::ops::abs, MAJOR_TYPE, __VA_ARGS__)
+#define ROUND(...)    UNOP(lucid::ops::round, MAJOR_TYPE, __VA_ARGS__)
+#define CEIL(...)     UNOP(lucid::ops::ceil, MAJOR_TYPE, __VA_ARGS__)
+#define FLOOR(...)    UNOP(lucid::ops::floor, MAJOR_TYPE, __VA_ARGS__)
+#define TRUNC(...)    UNOP(lucid::ops::trunc, MAJOR_TYPE, __VA_ARGS__)
+#define COPYSIGN(...) UNOP(lucid::ops::copysign, MAJOR_TYPE, __VA_ARGS__)
+#define SIN(...)      UNOP(lucid::ops::sin, MAJOR_TYPE, __VA_ARGS__)
+#define COS(...)      UNOP(lucid::ops::cos, MAJOR_TYPE, __VA_ARGS__)
+
+#define MIN(...)      BINOP(lucid::ops::min, MAJOR_TYPE, __VA_ARGS__)
+#define MAX(...)      BINOP(lucid::ops::max, MAJOR_TYPE, __VA_ARGS__)

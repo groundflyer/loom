@@ -184,9 +184,9 @@ struct remap_comp<N, ops::choice, T, I, T, T>
     };
 };
 
-#define DEF_REMAP_VEC_BIN(func, op, R)                             \
+#define MK_REMAP_BINOP(FUNC, OP, R)                                \
     template <fsize_t N, typename T>                               \
-    struct remap_comp<N, func<T>, R, T, T>                         \
+    struct remap_comp<N, FUNC<T>, R, T, T>                         \
     {                                                              \
         struct type                                                \
         {                                                          \
@@ -194,58 +194,103 @@ struct remap_comp<N, ops::choice, T, I, T, T>
             operator()(const packed_vector<T, N> a,                \
                        const packed_vector<T, N> b) const noexcept \
             {                                                      \
-                return a op b;                                     \
+                return a OP b;                                     \
             }                                                      \
         };                                                         \
     };
 
-#define DEF_REMAP_VEC_UN(func, op, R)                              \
+#define MK_REMAP_UNOP(FUNC, OP, R)                                 \
     template <fsize_t N, typename T>                               \
-    struct remap_comp<N, func<T>, R, T>                            \
+    struct remap_comp<N, FUNC<T>, R, T>                            \
     {                                                              \
         struct type                                                \
         {                                                          \
             constexpr packed_vector<R, N>                          \
             operator()(const packed_vector<T, N> a) const noexcept \
             {                                                      \
-                return op a;                                       \
+                return OP a;                                       \
             }                                                      \
         };                                                         \
     };
 
-#define DEF_REMAP_TVEC_BIN(func, op) DEF_REMAP_VEC_BIN(func, op, T)
-#define DEF_REMAP_IVEC_BIN(func, op) DEF_REMAP_VEC_BIN(func, op, IDX_TYPE)
+#define MK_REMAP_BIN_FUNC(OLD, NEW)                                \
+    template <fsize_t N, typename T>                               \
+    struct remap_comp<N, OLD<T>, T, T, T>                          \
+    {                                                              \
+        struct type                                                \
+        {                                                          \
+            constexpr packed_vector<T, N>                          \
+            operator()(const packed_vector<T, N> a,                \
+                       const packed_vector<T, N> b) const noexcept \
+            {                                                      \
+                return NEW(a, b);                                  \
+            }                                                      \
+        };                                                         \
+    };
 
-#define DEF_REMAP_TVEC_UN(func, op)  DEF_REMAP_VEC_UN(func, op, T)
-#define DEF_REMAP_IVEC_UN(func, op)  DEF_REMAP_VEC_UN(func, op, IDX_TYPE)
+#define MK_REMAP_UN_FUNC(OLD, NEW)                                 \
+    template <fsize_t N, typename T>                               \
+    struct remap_comp<N, OLD<T>, T, T>                             \
+    {                                                              \
+        struct type                                                \
+        {                                                          \
+            constexpr packed_vector<T, N>                          \
+            operator()(const packed_vector<T, N> a) const noexcept \
+            {                                                      \
+                return NEW(a);                                     \
+            }                                                      \
+        };                                                         \
+    };
 
-DEF_REMAP_TVEC_BIN(std::plus, +)
-DEF_REMAP_TVEC_BIN(std::minus, -)
-DEF_REMAP_TVEC_BIN(std::multiplies, *)
-DEF_REMAP_TVEC_BIN(std::divides, /)
-DEF_REMAP_TVEC_BIN(std::modulus, %)
-DEF_REMAP_TVEC_UN(std::negate, -)
+#define MK_REMAP_BINOP_T(func, op) MK_REMAP_BINOP(func, op, T)
+#define MK_REMAP_BINOP_I(func, op) MK_REMAP_BINOP(func, op, INDEX_TYPE)
 
-DEF_REMAP_IVEC_BIN(std::equal_to, ==)
-DEF_REMAP_IVEC_BIN(std::not_equal_to, !=)
-DEF_REMAP_IVEC_BIN(std::greater, >)
-DEF_REMAP_IVEC_BIN(std::less, <)
-DEF_REMAP_IVEC_BIN(std::greater_equal, >=)
-DEF_REMAP_IVEC_BIN(std::less_equal, <=)
+#define MK_REMAP_UNOP_T(func, op)  MK_REMAP_UNOP(func, op, T)
+#define MK_REMAP_UNOP_I(func, op)  MK_REMAP_UNOP(func, op, INDEX_TYPE)
 
-DEF_REMAP_IVEC_BIN(std::logical_and, &&)
-DEF_REMAP_IVEC_BIN(std::logical_or, ||)
-DEF_REMAP_IVEC_UN(std::logical_not, !)
+MK_REMAP_BINOP_T(std::plus, +)
+MK_REMAP_BINOP_T(std::minus, -)
+MK_REMAP_BINOP_T(std::multiplies, *)
+MK_REMAP_BINOP_T(std::divides, /)
+MK_REMAP_BINOP_T(std::modulus, %)
+MK_REMAP_UNOP_T(std::negate, -)
 
-DEF_REMAP_IVEC_BIN(ops::lshift, <<)
-DEF_REMAP_IVEC_BIN(ops::rshift, >>)
+MK_REMAP_BINOP_I(std::equal_to, ==)
+MK_REMAP_BINOP_I(std::not_equal_to, !=)
+MK_REMAP_BINOP_I(std::greater, >)
+MK_REMAP_BINOP_I(std::less, <)
+MK_REMAP_BINOP_I(std::greater_equal, >=)
+MK_REMAP_BINOP_I(std::less_equal, <=)
 
-#undef DEF_REMAP_IVEC_UN
-#undef DEF_REMAP_TVEC_UN
-#undef DEF_REMAP_IVEC_BIN
-#undef DEF_REMAP_TVEC_BIN
-#undef DEF_REMAP_VEC_UN
-#undef DEF_REMAP_IVEC_BIN
+MK_REMAP_BINOP_I(std::logical_and, &&)
+MK_REMAP_BINOP_I(std::logical_or, ||)
+MK_REMAP_UNOP_I(std::logical_not, !)
+
+MK_REMAP_BINOP_I(ops::lshift, <<)
+MK_REMAP_BINOP_I(ops::rshift, >>)
+
+MK_REMAP_UN_FUNC(ops::abs, __builtin_elementwise_abs)
+MK_REMAP_UN_FUNC(
+    ops::round,
+    __builtin_elementwise_roundeven) // FIXME: roundeven is not exactly round
+MK_REMAP_UN_FUNC(ops::ceil, __builtin_elementwise_ceil)
+MK_REMAP_UN_FUNC(ops::floor, __builtin_elementwise_floor)
+MK_REMAP_UN_FUNC(ops::trunc, __builtin_elementwise_trunc)
+MK_REMAP_UN_FUNC(ops::copysign, __builtin_elementwise_copysign)
+MK_REMAP_UN_FUNC(ops::sin, __builtin_elementwise_sin)
+MK_REMAP_UN_FUNC(ops::cos, __builtin_elementwise_cos)
+
+MK_REMAP_BIN_FUNC(ops::min, __builtin_elementwise_min)
+MK_REMAP_BIN_FUNC(ops::max, __builtin_elementwise_max)
+
+#undef MK_REMAP_UNOP_I
+#undef MK_REMAP_UNOP_T
+#undef MK_REMAP_BINOP_I
+#undef MK_REMAP_BINOP_T
+#undef MK_REMAP_UNOP
+#undef MK_REMAP_BINOP_I
+#undef MK_REMAP_UN_FUNC
+#undef MK_REMAP_BIN_FUNC
 
 template <fsize_t N, typename Op, typename Ret, typename... Args>
 using remap_comp_t = remap_comp<N, Op, Ret, Args...>::type;
