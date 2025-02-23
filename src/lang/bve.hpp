@@ -836,7 +836,7 @@ class MemoryFacade : public Sorter
             std::is_nothrow_convertible_v<std::ranges::range_value_t<Input>,
                                           input_type<_Program>>)
     auto
-    set_input(Input&& input) noexcept
+    set_inputs(Input&& input) noexcept
     {
         auto i = std::ranges::begin(input);
         auto o = std::ranges::for_each(
