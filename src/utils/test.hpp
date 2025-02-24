@@ -427,6 +427,21 @@ multi_gen(const unsigned n, G&& g, ArgRngs&&... args) noexcept
     return ret;
 }
 
+template <bool do_sort, typename G, typename T, typename V, typename Cmp>
+auto
+rng_with_ref_impl(unsigned num_runs, G&& g, T&& t, V&& v, Cmp cmp) noexcept
+{
+    const auto              args = multi_gen(num_runs, std::forward<G>(g));
+    std::ranges::range auto tr   = maybe_apply(std::forward<T>(t), args);
+    std::ranges::range auto vr   = maybe_apply(std::forward<V>(v), args);
+    if constexpr(do_sort)
+    {
+        std::ranges::sort(tr);
+        std::ranges::sort(vr);
+    }
+    return std::invoke(cmp, tr, vr);
+}
+
 template <std::invocable G, typename T, typename V>
 auto
 gen_test_val(const unsigned n, G&& g, T&& t, V&& v) noexcept
@@ -605,23 +620,12 @@ struct ParmTestMaker
                  RI&& ri,
                  Cmp  cmp = std::ranges::equal) const noexcept
     {
-#define LAMBDA_BODY(MY_V)                                                   \
-    const auto              args = multi_gen(num_runs, std::forward<G>(g)); \
-    std::ranges::range auto tr   = maybe_apply(std::forward<T>(t), args);   \
-    std::ranges::range auto vr   = maybe_apply(MY_V, args);                 \
-    if constexpr(do_sort)                                                   \
-    {                                                                       \
-        std::ranges::sort(tr);                                              \
-        std::ranges::sort(vr);                                              \
-    }                                                                       \
-    return std::invoke(cmp, tr, vr)
-
         if constexpr(std::is_rvalue_reference_v<decltype(ri)>)
-            return [&, ri = std::move(ri), cmp]() noexcept { LAMBDA_BODY(ri); };
+            return [&, ri = std::move(ri), cmp]() noexcept
+            { return rng_with_ref_impl<do_sort>(num_runs, g, t, ri, cmp); };
         else
-            return [&, cmp]() noexcept { LAMBDA_BODY(std::forward<RI>(ri)); };
-
-#undef LAMBDA_BODY
+            return [&, cmp]() noexcept
+            { return rng_with_ref_impl<do_sort>(num_runs, g, t, ri, cmp); };
     }
 
     /// @brief Special case of ParmTestMaker::rng_with_ref:
