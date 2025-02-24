@@ -586,6 +586,14 @@ struct ParmTestMaker
             });
     }
 
+    /// @brief Make parametric test for function producing ranges.
+    ///
+    /// @tparam do_sort sort testing and validation ranges before comparison.
+    /// @copydetails with_ref
+    ///
+    /// Practically the same as ParmTestMaker::with_ref,
+    /// but here @p t and @p ri produce
+    /// ranges thus @p cmp must be able to compare ranges.
     template <bool           do_sort = true,
               std::invocable G,
               typename T,
@@ -616,52 +624,6 @@ struct ParmTestMaker
 #undef LAMBDA_BODY
     }
 
-    /// @brief Make parametric test for function producing ranges.
-    ///
-    /// @tparam do_sort sort testing and validation ranges before comparison.
-    /// @copydetails with_ref
-    ///
-    /// Practically the same as ParmTestMaker::with_ref,
-    /// but here @p t and @p re produce
-    /// ranges thus @p cmp must be able to compare ranges.
-    template <bool           do_sort = true,
-              std::invocable G,
-              typename T,
-              typename RI,
-              typename Cmp = decltype(std::ranges::equal)>
-    auto
-    rng_with_ref_n(G&&  g,
-                   T&&  t,
-                   RI&& ri,
-                   Cmp  cmp = std::ranges::equal) const noexcept
-    {
-#define LAMBDA_BODY(MY_V)                                                \
-    auto make_args = [&]() noexcept                                      \
-    {                                                                    \
-        const auto gr = multi_gen(num_runs, std::forward<G>(g));         \
-        if constexpr(is_tuple_v<decltype(gr)>)                           \
-            return std::tuple_cat(std::tuple{num_runs}, gr);             \
-        else                                                             \
-            return std::pair{num_runs, gr};                              \
-    };                                                                   \
-    const auto              args = make_args();                          \
-    std::ranges::range auto tr   = std::apply(std::forward<T>(t), args); \
-    std::ranges::range auto vr   = std::apply(MY_V, args);               \
-    if constexpr(do_sort)                                                \
-    {                                                                    \
-        std::ranges::sort(tr);                                           \
-        std::ranges::sort(vr);                                           \
-    }                                                                    \
-    return std::invoke(cmp, tr, vr)
-
-        if constexpr(std::is_rvalue_reference_v<decltype(ri)>)
-            return [&, ri = std::move(ri), cmp]() noexcept { LAMBDA_BODY(ri); };
-        else
-            return [&, cmp]() noexcept { LAMBDA_BODY(std::forward<RI>(ri)); };
-
-#undef LAMBDA_BODY
-    }
-
     /// @brief Special case of ParmTestMaker::rng_with_ref:
     /// reference implementation produces scalar values.
     /// @copydetails rng_with_ref
@@ -680,28 +642,6 @@ struct ParmTestMaker
             std::forward<G>(g),
             std::forward<T>(t),
             [&ri, n = num_runs]<typename... Grs>(Grs&&... grs) noexcept {
-                return multi_gen(n,
-                                 std::forward<RI>(ri),
-                                 std::forward<Grs>(grs)...);
-            },
-            cmp);
-    }
-
-    template <bool           do_sort = true,
-              std::invocable G,
-              typename T,
-              typename RI,
-              typename Cmp = decltype(std::ranges::equal)>
-    auto
-    rng_with_scalar_ref_n(G&&  g,
-                          T&&  t,
-                          RI&& ri,
-                          Cmp  cmp = std::ranges::equal) const noexcept
-    {
-        return rng_with_ref_n<do_sort>(
-            std::forward<G>(g),
-            std::forward<T>(t),
-            [&ri]<typename... Grs>(unsigned n, Grs&&... grs) noexcept {
                 return multi_gen(n,
                                  std::forward<RI>(ri),
                                  std::forward<Grs>(grs)...);
