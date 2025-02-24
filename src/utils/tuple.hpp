@@ -344,6 +344,41 @@ struct is_tuple<unique_tuple<Ts...>>
 {
     static constexpr bool value = true;
 };
+
+template <typename F, typename... Args>
+struct is_invocable_non_void
+{
+    static constexpr bool value =
+        std::is_invocable_v<F, Args...> &&
+        !std::is_void_v<std::invoke_result_t<F, Args...>>;
+};
+
+template <typename F, typename T>
+struct is_mappable
+{
+    static constexpr bool value = true;
+};
+
+template <typename F, typename T1, typename T2>
+struct is_mappable<F, std::pair<T1, T2>>
+{
+    static constexpr bool value = is_invocable_non_void<F, T1>::value &&
+                                  is_invocable_non_void<F, T2>::value;
+};
+
+template <typename F, typename... Ts>
+struct is_mappable<F, std::tuple<Ts...>>
+{
+    static constexpr bool value =
+        std::conjunction_v<is_invocable_non_void<F, Ts>...>;
+};
+
+template <typename F, typename... Ts>
+struct is_mappable<F, unique_tuple<Ts...>>
+{
+    static constexpr bool value =
+        std::conjunction_v<is_invocable_non_void<F, Ts>...>;
+};
 } // namespace detail
 
 /// @brief Check if tuple.
@@ -385,11 +420,17 @@ inline constexpr bool is_maybe_nothrow_applicable_r_v =
     std::is_nothrow_invocable_r_v<F, R, T>;
 
 template <typename F, typename T>
+inline constexpr bool is_mappable_v = detail::is_mappable<F, T>::value;
+
+template <typename F, typename T>
 concept maybe_applicable = is_applicable_v<F, T> || std::is_invocable_v<F, T>;
 
 template <typename F, typename R, typename T>
 concept maybe_applicable_r =
     is_applicable_r_v<F, R, T> || std::is_invocable_r_v<F, R, T>;
+
+template <typename F, typename T>
+concept mappable_tuple = is_mappable_v<F, T>;
 
 /// @brief Tuple class template
 /// for objects that aren't default- or copy-constructible.
@@ -491,7 +532,7 @@ class unique_tuple
 // @brief Apply @p op to every element of @p tuple and return result as a tuple.
 template <template <typename...> typename ResultTuple = std::tuple,
           typename UnaryOp,
-          typename InputTuple>
+          mappable_tuple<UnaryOp> InputTuple>
 constexpr decltype(auto)
 map_tuple(InputTuple&& tuple, UnaryOp&& op)
 {
@@ -653,6 +694,19 @@ maybe_apply(F&& f, MaybeTuple&& mt)
 {
     if constexpr(is_applicable_v<F, std::remove_cvref_t<MaybeTuple>>)
         return std::apply(std::forward<F>(f), std::forward<MaybeTuple>(mt));
+    else
+        return std::invoke(std::forward<F>(f), std::forward<MaybeTuple>(mt));
+}
+
+template <template <typename...> typename ResultTuple = std::tuple,
+          typename F,
+          typename MaybeTuple>
+constexpr decltype(auto)
+maybe_map(F&& f, MaybeTuple&& mt)
+{
+    if constexpr(is_mappable_v<F, std::remove_cvref_t<MaybeTuple>>)
+        return map_tuple<ResultTuple>(std::forward<MaybeTuple>(mt),
+                                      std::forward<F>(f));
     else
         return std::invoke(std::forward<F>(f), std::forward<MaybeTuple>(mt));
 }
