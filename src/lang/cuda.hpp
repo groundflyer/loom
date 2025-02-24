@@ -296,57 +296,144 @@ struct remap_comp<ops::choice>
     };
 };
 
-#define DEF_REMAP_BIN(func, op)                    \
+#define MK_REMAP_BINOP(FUNC, OP)                   \
     template <typename T>                          \
-    struct remap_comp<func<T>>                     \
+    struct remap_comp<FUNC<T>>                     \
     {                                              \
         struct type                                \
         {                                          \
             __device__ T                           \
             operator()(const T a, const T b) const \
             {                                      \
-                return a op b;                     \
+                return a OP b;                     \
             }                                      \
         };                                         \
     };
 
-#define DEF_REMAP_UN(func, op)          \
+#define MK_REMAP_UNOP(FUNC, OP)         \
     template <typename T>               \
-    struct remap_comp<func<T>>          \
+    struct remap_comp<FUNC<T>>          \
     {                                   \
         struct type                     \
         {                               \
             __device__ T                \
             operator()(const T a) const \
             {                           \
-                return op a;            \
+                return OP a;            \
             }                           \
         };                              \
     };
 
-DEF_REMAP_BIN(std::plus, +)
-DEF_REMAP_BIN(std::minus, -)
-DEF_REMAP_BIN(std::multiplies, *)
-DEF_REMAP_BIN(std::divides, /)
-DEF_REMAP_BIN(std::modulus, %)
-DEF_REMAP_UN(std::negate, -)
+#define MK_REMAP_BIN_FUNC_F_SUFFIX(FUNC, SUFFIX)           \
+    template <>                                            \
+    struct remap_comp<ops::FUNC<float>>                    \
+    {                                                      \
+        struct type                                        \
+        {                                                  \
+            __device__ float                               \
+            operator()(const float a, const float b) const \
+            {                                              \
+                return FUNC##SUFFIX(a, b);                 \
+            }                                              \
+        };                                                 \
+    };
 
-DEF_REMAP_BIN(std::equal_to, ==)
-DEF_REMAP_BIN(std::not_equal_to, !=)
-DEF_REMAP_BIN(std::greater, >)
-DEF_REMAP_BIN(std::less, <)
-DEF_REMAP_BIN(std::greater_equal, >=)
-DEF_REMAP_BIN(std::less_equal, <=)
+#define MK_REMAP_UN_FUNC_F_SUFFIX(FUNC, SUFFIX) \
+    template <>                                 \
+    struct remap_comp<ops::FUNC<float>>         \
+    {                                           \
+        struct type                             \
+        {                                       \
+            __device__ float                    \
+            operator()(const float a) const     \
+            {                                   \
+                return FUNC##SUFFIX(a);         \
+            }                                   \
+        };                                      \
+    };
 
-DEF_REMAP_BIN(std::logical_and, &&)
-DEF_REMAP_BIN(std::logical_or, ||)
-DEF_REMAP_UN(std::logical_not, !)
+#define MK_REMAP_BIN_FUNC_D(FUNC)                            \
+    template <>                                              \
+    struct remap_comp<ops::FUNC<double>>                     \
+    {                                                        \
+        struct type                                          \
+        {                                                    \
+            __device__ double                                \
+            operator()(const double a, const double b) const \
+            {                                                \
+                return FUNC(a, b);                           \
+            }                                                \
+        };                                                   \
+    };
 
-DEF_REMAP_BIN(ops::lshift, <<)
-DEF_REMAP_BIN(ops::rshift, >>)
+#define MK_REMAP_UN_FUNC_D(FUNC)             \
+    template <>                              \
+    struct remap_comp<ops::FUNC<double>>     \
+    {                                        \
+        struct type                          \
+        {                                    \
+            __device__ double                \
+            operator()(const double a) const \
+            {                                \
+                return FUNC(a);              \
+            }                                \
+        };                                   \
+    };
 
-#undef DEF_REMAP_UN
-#undef DEF_REMAP_BIN
+#define MK_REMAP_BIN_FUNC_F(FUNC) MK_REMAP_BIN_FUNC_F_SUFFIX(FUNC, f)
+#define MK_REMAP_UN_FUNC_F(FUNC)  MK_REMAP_UN_FUNC_F_SUFFIX(FUNC, f)
+
+MK_REMAP_BINOP(std::plus, +)
+MK_REMAP_BINOP(std::minus, -)
+MK_REMAP_BINOP(std::multiplies, *)
+MK_REMAP_BINOP(std::divides, /)
+MK_REMAP_BINOP(std::modulus, %)
+MK_REMAP_UNOP(std::negate, -)
+
+MK_REMAP_BINOP(std::equal_to, ==)
+MK_REMAP_BINOP(std::not_equal_to, !=)
+MK_REMAP_BINOP(std::greater, >)
+MK_REMAP_BINOP(std::less, <)
+MK_REMAP_BINOP(std::greater_equal, >=)
+MK_REMAP_BINOP(std::less_equal, <=)
+
+MK_REMAP_BINOP(std::logical_and, &&)
+MK_REMAP_BINOP(std::logical_or, ||)
+MK_REMAP_UNOP(std::logical_not, !)
+
+MK_REMAP_BINOP(ops::lshift, <<)
+MK_REMAP_BINOP(ops::rshift, >>)
+
+MK_REMAP_UN_FUNC_F(abs)
+MK_REMAP_UN_FUNC_F(round)
+MK_REMAP_UN_FUNC_F(ceil)
+MK_REMAP_UN_FUNC_F(floor)
+MK_REMAP_UN_FUNC_F(trunc)
+MK_REMAP_UN_FUNC_F(sin)
+MK_REMAP_UN_FUNC_F(cos)
+
+MK_REMAP_BIN_FUNC_F(min)
+MK_REMAP_BIN_FUNC_F(max)
+
+MK_REMAP_UN_FUNC_D(abs)
+MK_REMAP_UN_FUNC_D(round)
+MK_REMAP_UN_FUNC_D(ceil)
+MK_REMAP_UN_FUNC_D(floor)
+MK_REMAP_UN_FUNC_D(trunc)
+MK_REMAP_UN_FUNC_D(sin)
+MK_REMAP_UN_FUNC_D(cos)
+
+MK_REMAP_BIN_FUNC_D(min)
+MK_REMAP_BIN_FUNC_D(max)
+
+#undef MK_REMAP_UNOP
+#undef MK_REMAP_BINOP
+#undef MK_REMAP_UN_FUNC_F
+#undef MK_REMAP_BIN_FUNC_F
+#undef MK_REMAP_UN_FUNC_D
+#undef MK_REMAP_BIN_FUNC_D
+#undef MK_REMAP_BIN_FUNC_F_SUFFIX
+#undef MK_REMAP_UN_FUNC_F_SUFFIX
 
 template <typename Op>
 using remap_comp_t = remap_comp<Op>::type;
