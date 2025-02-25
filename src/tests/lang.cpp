@@ -24,11 +24,12 @@ main(int argc, char* argv[])
 
     auto g_int   = rs.make_gen<int>(2, 10);
     auto g_ui    = rs.make_gen<unsigned>(2, 10);
-    auto g_float = rs.make_gen<float>();
-    auto g_f2    = rs.make_gen<float>(-1e6f, 1e6f);
+    auto g_canon = rs.make_gen<float>();
+    auto g_float = rs.make_gen<float>(-1e6f, 1e6f);
     auto g_u3    = rs.make_gen<unsigned>(0, 3);
-    auto g_j4    = [&]() noexcept { return std::pair{g_u3(), g_float()}; };
+    auto g_j4    = [&]() noexcept { return std::pair{g_u3(), g_canon()}; };
     auto g_shift = [&]() noexcept { return std::pair(g_ui(), g_ui()); };
+    auto g_f2    = [&]() noexcept { return std::pair{g_float(), g_float()}; };
 
     const unsigned vector_size = tm.num_runs;
     const unsigned stream_size = vector_size / 8;
@@ -70,6 +71,7 @@ main(int argc, char* argv[])
     simd::function<lshift_u>     simd_v_lshift(vector_size);
     simd::function<rshift_u>     simd_v_rshift(vector_size);
     simd::function<abs_float>    simd_v_abs(vector_size);
+    simd::function<minmax_float> simd_v_minmax(vector_size);
 
     simd::stream<fac_unsigned> simds_v_fu(stream_size);
 
@@ -84,6 +86,7 @@ main(int argc, char* argv[])
     simd::function<lshift_u, true>     simd_k_lshift(vector_size);
     simd::function<rshift_u, true>     simd_k_rshift(vector_size);
     simd::function<abs_float, true>    simd_k_abs(vector_size);
+    simd::function<minmax_float, true> simd_k_minmax(vector_size);
 
     simd::stream<fac_unsigned, true> simds_k_fu(stream_size);
 
@@ -125,13 +128,13 @@ main(int argc, char* argv[])
     auto tsk_cs_fu =
         NamedTest(TEST_RESET_V(g_ui, simd_k_cs_fu, bve_fu),
                   "SIMD Minikernel Counting Sort factorial unsigned");
-    auto tsv_su = NamedTest(tm.rng_with_ref(g_float, simd_v_sut, bve_sut),
+    auto tsv_su = NamedTest(tm.rng_with_ref(g_canon, simd_v_sut, bve_sut),
                             "SIMD Vertical simple union");
-    auto tsk_su = NamedTest(tm.rng_with_ref(g_float, simd_k_sut, bve_sut),
+    auto tsk_su = NamedTest(tm.rng_with_ref(g_canon, simd_k_sut, bve_sut),
                             "SIMD Vertical simple union");
-    auto tsv_cu = NamedTest(TEST_RESET_V(g_float, simd_v_cut, bve_cut),
+    auto tsv_cu = NamedTest(TEST_RESET_V(g_canon, simd_v_cut, bve_cut),
                             "SIMD Vertical complex union");
-    auto tsk_cu = NamedTest(TEST_RESET_V(g_float, simd_k_cut, bve_cut),
+    auto tsk_cu = NamedTest(TEST_RESET_V(g_canon, simd_k_cut, bve_cut),
                             "SIMD Minikernel complex union");
     auto tsv_j4 = NamedTest(TEST_RESET_V(g_j4, simd_v_jmp4, bve_jmp4),
                             "SIMD Vertical jump4");
@@ -151,11 +154,18 @@ main(int argc, char* argv[])
                             "SIMD Minikernel right shift");
 
     auto tsv_abs =
-        NamedTest(tm.rng_invariant(g_f2, simd_v_abs, std::identity{}),
+        NamedTest(tm.rng_invariant(g_float, simd_v_abs, std::identity{}),
                   "SIMD Vertical abs");
     auto tsk_abs =
-        NamedTest(tm.rng_invariant(g_f2, simd_k_abs, std::identity{}),
+        NamedTest(tm.rng_invariant(g_float, simd_k_abs, std::identity{}),
                   "SIMD Minikernel abs");
+
+    auto tsv_minmax =
+        NamedTest(tm.rng_invariant(g_f2, simd_v_minmax, std::identity{}),
+                  "SIMD Vertical min max");
+    auto tsk_minmax =
+        NamedTest(tm.rng_invariant(g_f2, simd_k_minmax, std::identity{}),
+                  "SIMD Minikernel min max");
 
     // tssv - test stream simd vertical
     // tssk - test stream simd minikernel
@@ -224,14 +234,14 @@ main(int argc, char* argv[])
         ft_fu);
 
     track.dep_check(
-        NamedTest(tm.with_ref(g_float, bse_sut, val_sut), "BSE simple union"),
-        NamedTest(tm.rng_with_scalar_ref(g_float, bve_sut, bse_sut),
+        NamedTest(tm.with_ref(g_canon, bse_sut, val_sut), "BSE simple union"),
+        NamedTest(tm.rng_with_scalar_ref(g_canon, bve_sut, bse_sut),
                   "BVE simple union"),
         ft_su);
 
     track.dep_check(
-        NamedTest(tm.with_ref(g_float, bse_cut, val_cut), "BSE complex union"),
-        NamedTest(TEST_RESET_T(g_float, bve_cut, bse_cut), "BVE complex union"),
+        NamedTest(tm.with_ref(g_canon, bse_cut, val_cut), "BSE complex union"),
+        NamedTest(TEST_RESET_T(g_canon, bve_cut, bse_cut), "BVE complex union"),
         ft_cu);
 
     track.dep_check(
@@ -247,6 +257,8 @@ main(int argc, char* argv[])
 
     track.check(tsv_abs);
     track.check(tsk_abs);
+    track.check(tsv_minmax);
+    track.check(tsk_minmax);
 
     return track.ret_code();
 }

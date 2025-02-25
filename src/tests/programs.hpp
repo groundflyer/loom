@@ -124,6 +124,14 @@ TBEGIN1(abs_test, x)
     TGE(x, x, 0)
 END(IVAR(x));
 
+// max(a, b) > min(a, b)
+template <std::floating_point T>
+TBEGIN2(minmax_test, a, b)
+    MAX(x, a, b),
+    MIN(n, a, b),
+    TGT(r, x, n)
+END(IVAR(r));
+
 // clang-format on
 
 // validation programs
@@ -211,6 +219,7 @@ using choice_float = choice_test<float>;
 using lshift_u     = lshift_test<unsigned>;
 using rshift_u     = rshift_test<unsigned>;
 using abs_float    = abs_test<float>;
+using minmax_float = minmax_test<float>;
 
 template <typename S>
 auto

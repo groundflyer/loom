@@ -877,7 +877,7 @@ class MemoryFacade : public Sorter
                            *i++);
             });
 
-        return std::ranges::in_out_result{i, o};
+        return std::ranges::in_out_result<decltype(i), decltype(o)>{i, o};
     }
 
     template <typename... Args>
