@@ -802,6 +802,35 @@ class MemoryFacade : public Sorter
 
     static constexpr auto halt_pos = _Program::halt_pos;
 
+    template <typename _Memory>
+    struct var_setter
+    {
+        _Memory* mem;
+
+        explicit var_setter(_Memory* _mem) noexcept : mem(_mem) {}
+
+        template <typename Var, std::ranges::input_range Rng>
+        auto
+        operator()(Rng&& rng) const noexcept
+        {
+            decltype(auto) column = mem->template get<Var>();
+            return std::ranges::copy_n(std::ranges::begin(rng),
+                                       column.size(),
+                                       column.begin());
+        }
+
+        template <typename Var, typename Val>
+            requires(std::is_nothrow_convertible_v<Val, vartype<Var>>)
+        auto
+        operator()(Val val) const noexcept
+        {
+            return std::ranges::fill(mem->template get<Var>(), val);
+        }
+    };
+
+    template <typename _Memory>
+    var_setter(_Memory*) -> var_setter<_Memory>;
+
   protected:
     template <typename _ProxyRow, typename... Args>
     static void
@@ -857,23 +886,7 @@ class MemoryFacade : public Sorter
     {
         return typelist::maybe_collect_arg<std::tuple>(
             input_vars{},
-            [&mem = Sorter::mem()]<typename Var, typename T>(
-                const T&
-                    value) constexpr noexcept requires(std::ranges::
-                                                           input_range<T> ||
-                                                       std::
-                                                           is_nothrow_convertible_v<
-                                                               T,
-                                                               vartype<Var>>) {
-                std::ranges::range decltype(auto) column =
-                    mem.template get<Var>();
-                if constexpr(std::ranges::input_range<T>)
-                    return std::ranges::copy_n(std::ranges::cbegin(value),
-                                               column.size(),
-                                               column.begin());
-                else
-                    return std::ranges::fill(column, value);
-            },
+            var_setter(&Sorter::mem()),
             std::forward<Args>(args)...);
     }
 
@@ -882,7 +895,7 @@ class MemoryFacade : public Sorter
     {
         return typelist::maybe_collect<std::tuple>(
             output_vars{},
-            [&mem = Sorter::mem()]<typename Var>() constexpr noexcept
+            [&mem = Sorter::mem()]<typename Var>() noexcept
             { return std::views::all(mem.template get<Var>()); });
     }
 
