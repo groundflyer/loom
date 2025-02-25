@@ -133,6 +133,14 @@ TBEGIN1(trunc_test, x)
     TLE(x, t, x)
 END(IVAR(x));
 
+// ceil(x) >= floor(x)
+template <std::floating_point T>
+TBEGIN1(ceilfloor, x)
+    CEIL(c, x),
+    FLOOR(x, x),
+    TGE(c, c, x)
+END(IVAR(c));
+
 // max(a, b) > min(a, b)
 template <std::floating_point T>
 TBEGIN2(minmax_test, a, b)
@@ -229,6 +237,7 @@ using lshift_u     = lshift_test<unsigned>;
 using rshift_u     = rshift_test<unsigned>;
 using abs_float    = abs_test<float>;
 using trunc_float  = trunc_test<float>;
+using ceilfloor_f  = ceilfloor<float>;
 using minmax_float = minmax_test<float>;
 
 template <typename S>

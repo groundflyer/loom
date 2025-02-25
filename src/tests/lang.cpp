@@ -72,6 +72,7 @@ main(int argc, char* argv[])
     simd::function<rshift_u>     simd_v_rshift(vector_size);
     simd::function<abs_float>    simd_v_abs(vector_size);
     simd::function<trunc_float>  simd_v_trunc(vector_size);
+    simd::function<ceilfloor_f>  simd_v_ceilfloor(vector_size);
     simd::function<minmax_float> simd_v_minmax(vector_size);
 
     simd::stream<fac_unsigned> simds_v_fu(stream_size);
@@ -88,6 +89,7 @@ main(int argc, char* argv[])
     simd::function<rshift_u, true>     simd_k_rshift(vector_size);
     simd::function<abs_float, true>    simd_k_abs(vector_size);
     simd::function<trunc_float, true>  simd_k_trunc(vector_size);
+    simd::function<ceilfloor_f, true>  simd_k_ceilfloor(vector_size);
     simd::function<minmax_float, true> simd_k_minmax(vector_size);
 
     simd::stream<fac_unsigned, true> simds_k_fu(stream_size);
@@ -169,12 +171,19 @@ main(int argc, char* argv[])
         NamedTest(tm.rng_invariant(g_float, simd_k_trunc, std::identity{}),
                   "SIMD Minikernel trunc");
 
+    auto tsv_ceilfloor =
+        NamedTest(tm.rng_invariant(g_float, simd_v_ceilfloor, std::identity{}),
+                  "SIMD Vertical ceil/floor");
+    auto tsk_ceilfloor =
+        NamedTest(tm.rng_invariant(g_float, simd_k_ceilfloor, std::identity{}),
+                  "SIMD Minikernel ceil/floor");
+
     auto tsv_minmax =
         NamedTest(tm.rng_invariant(g_f2, simd_v_minmax, std::identity{}),
-                  "SIMD Vertical min max");
+                  "SIMD Vertical min/max");
     auto tsk_minmax =
         NamedTest(tm.rng_invariant(g_f2, simd_k_minmax, std::identity{}),
-                  "SIMD Minikernel min max");
+                  "SIMD Minikernel min/max");
 
     // tssv - test stream simd vertical
     // tssk - test stream simd minikernel
@@ -268,6 +277,8 @@ main(int argc, char* argv[])
     track.check(tsk_abs);
     track.check(tsv_trunc);
     track.check(tsk_trunc);
+    track.check(tsv_ceilfloor);
+    track.check(tsk_ceilfloor);
     track.check(tsv_minmax);
     track.check(tsk_minmax);
 
