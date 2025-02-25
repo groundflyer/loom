@@ -4,6 +4,8 @@ include(CheckCXXCompilerFlag)
 if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
   # Colored output from Clang
   add_compile_options($<$<CXX_COMPILER_ID:Clang>:-fcolor-diagnostics>)
+  # Limit number of emitting errors
+  add_compile_options($<$<CXX_COMPILER_ID:Clang>:-ferror-limit=1>)
   check_cxx_compiler_flag("-stdlib=libc++ -lc++abi" LibCxx)
 
   if(USE_LIBCXX AND LibCxx)
