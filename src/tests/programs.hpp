@@ -117,6 +117,13 @@ TBEGIN2(rshift_test, a, b)
     RSHFT(a, a, b)
 TEND1(a);
 
+// abs(x) > 0
+template <std::floating_point T>
+TBEGIN1(abs_test, x)
+    ABS(x, x),
+    TGE(x, x, 0)
+END(IVAR(x));
+
 // clang-format on
 
 // validation programs
@@ -203,6 +210,7 @@ using jmp4_float   = jmp4_test<float>;
 using choice_float = choice_test<float>;
 using lshift_u     = lshift_test<unsigned>;
 using rshift_u     = rshift_test<unsigned>;
+using abs_float    = abs_test<float>;
 
 template <typename S>
 auto

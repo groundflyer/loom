@@ -25,6 +25,7 @@ main(int argc, char* argv[])
     auto g_int   = rs.make_gen<int>(2, 10);
     auto g_ui    = rs.make_gen<unsigned>(2, 10);
     auto g_float = rs.make_gen<float>();
+    auto g_f2    = rs.make_gen<float>(-1e6f, 1e6f);
     auto g_u3    = rs.make_gen<unsigned>(0, 3);
     auto g_j4    = [&]() noexcept { return std::pair{g_u3(), g_float()}; };
     auto g_shift = [&]() noexcept { return std::pair(g_ui(), g_ui()); };
@@ -68,6 +69,7 @@ main(int argc, char* argv[])
     simd::function<choice_float> simd_v_choice(vector_size);
     simd::function<lshift_u>     simd_v_lshift(vector_size);
     simd::function<rshift_u>     simd_v_rshift(vector_size);
+    simd::function<abs_float>    simd_v_abs(vector_size);
 
     simd::stream<fac_unsigned> simds_v_fu(stream_size);
 
@@ -81,6 +83,7 @@ main(int argc, char* argv[])
     simd::function<choice_float, true> simd_k_choice(vector_size);
     simd::function<lshift_u, true>     simd_k_lshift(vector_size);
     simd::function<rshift_u, true>     simd_k_rshift(vector_size);
+    simd::function<abs_float, true>    simd_k_abs(vector_size);
 
     simd::stream<fac_unsigned, true> simds_k_fu(stream_size);
 
@@ -146,6 +149,14 @@ main(int argc, char* argv[])
                             "SIMD Vertical right shift");
     auto tsk_rs = NamedTest(tm.rng_with_ref(g_shift, simd_k_rshift, bve_rshift),
                             "SIMD Minikernel right shift");
+
+    auto tsv_abs =
+        NamedTest(tm.rng_invariant(g_f2, simd_v_abs, std::identity{}),
+                  "SIMD Vertical abs");
+    auto tsk_abs =
+        NamedTest(tm.rng_invariant(g_f2, simd_k_abs, std::identity{}),
+                  "SIMD Minikernel abs");
+
     // tssv - test stream simd vertical
     // tssk - test stream simd minikernel
     auto tssv_fu =
@@ -233,6 +244,9 @@ main(int argc, char* argv[])
         NamedTest(tm.rng_with_scalar_ref(g_j4, bve_choice, bse_choice),
                   "BVE choice"),
         ft_ch);
+
+    track.check(tsv_abs);
+    track.check(tsk_abs);
 
     return track.ret_code();
 }
