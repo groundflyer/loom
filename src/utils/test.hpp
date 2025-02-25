@@ -427,21 +427,6 @@ multi_gen(const unsigned n, G&& g, ArgRngs&&... args) noexcept
     return ret;
 }
 
-template <bool do_sort, typename G, typename T, typename V, typename Cmp>
-auto
-rng_with_ref_impl(unsigned num_runs, G&& g, T&& t, V&& v, Cmp cmp) noexcept
-{
-    const auto              args = multi_gen(num_runs, std::forward<G>(g));
-    std::ranges::range auto tr   = maybe_apply(std::forward<T>(t), args);
-    std::ranges::range auto vr   = maybe_apply(std::forward<V>(v), args);
-    if constexpr(do_sort)
-    {
-        std::ranges::sort(tr);
-        std::ranges::sort(vr);
-    }
-    return std::invoke(cmp, tr, vr);
-}
-
 template <std::invocable G, typename T, typename V>
 auto
 gen_test_val(const unsigned n, G&& g, T&& t, V&& v) noexcept
@@ -469,6 +454,15 @@ gen_test_val_inv(const unsigned n, G&& g, T&& t, V&& v) noexcept
                                       std::forward<decltype(feed)>(feed));
                }) |
            std::ranges::views::transform(std::forward<V>(v));
+}
+
+template <std::invocable G, typename T, typename V>
+auto
+gen_test_val_rng_inv(const unsigned n, G&& g, T&& t, V&& v) noexcept
+{
+    return std::invoke(std::forward<T>(t),
+                       ranges::views::generate_n(std::forward<G>(g), n)) |
+           std::views::transform(std::forward<V>(v));
 }
 
 template <std::invocable G, typename T, typename V>
@@ -601,6 +595,20 @@ struct ParmTestMaker
             });
     }
 
+    template <std::invocable G, typename T, typename V>
+    auto
+    rng_invariant(G&& g, T&& t, V&& v) const noexcept
+    {
+        return [&]() noexcept
+        {
+            return std::ranges::all_of(gen_test_val_rng_inv(num_runs,
+                                                            std::forward<G>(g),
+                                                            std::forward<T>(t),
+                                                            std::forward<V>(v)),
+                                       std::identity{});
+        };
+    }
+
     /// @brief Make parametric test for function producing ranges.
     ///
     /// @tparam do_sort sort testing and validation ranges before comparison.
@@ -620,12 +628,23 @@ struct ParmTestMaker
                  RI&& ri,
                  Cmp  cmp = std::ranges::equal) const noexcept
     {
+#define LAMBDA_BODY(MY_V)                                                   \
+    const auto              args = multi_gen(num_runs, std::forward<G>(g)); \
+    std::ranges::range auto tr   = maybe_apply(std::forward<T>(t), args);   \
+    std::ranges::range auto vr   = maybe_apply(MY_V, args);                 \
+    if constexpr(do_sort)                                                   \
+    {                                                                       \
+        std::ranges::sort(tr);                                              \
+        std::ranges::sort(vr);                                              \
+    }                                                                       \
+    return std::invoke(cmp, tr, vr)
+
         if constexpr(std::is_rvalue_reference_v<decltype(ri)>)
-            return [&, ri = std::move(ri), cmp]() noexcept
-            { return rng_with_ref_impl<do_sort>(num_runs, g, t, ri, cmp); };
+            return [&, ri = std::move(ri), cmp]() noexcept { LAMBDA_BODY(ri); };
         else
-            return [&, cmp]() noexcept
-            { return rng_with_ref_impl<do_sort>(num_runs, g, t, ri, cmp); };
+            return [&, cmp]() noexcept { LAMBDA_BODY(std::forward<RI>(ri)); };
+
+#undef LAMBDA_BODY
     }
 
     /// @brief Special case of ParmTestMaker::rng_with_ref:
@@ -748,6 +767,17 @@ parse_numruns(int argc, char* argv[]) noexcept
                {argc, argv})
         .template get_opt<'n'>();
 }
+
+struct transparent_id
+{
+    template <typename T>
+    bool
+    operator()(T val) const noexcept
+    {
+        fmt::print("{:>8}\n", val);
+        return val;
+    }
+};
 
 struct transparent_cmp
 {
