@@ -124,6 +124,15 @@ TBEGIN1(abs_test, x)
     TGE(x, x, 0)
 END(IVAR(x));
 
+// abs(trunc(x)) <= abs(x)
+template <std::floating_point T>
+TBEGIN1(trunc_test, x)
+    TRUNC(t, x),
+    ABS(t, t),
+    ABS(x, x),
+    TLE(x, t, x)
+END(IVAR(x));
+
 // max(a, b) > min(a, b)
 template <std::floating_point T>
 TBEGIN2(minmax_test, a, b)
@@ -219,6 +228,7 @@ using choice_float = choice_test<float>;
 using lshift_u     = lshift_test<unsigned>;
 using rshift_u     = rshift_test<unsigned>;
 using abs_float    = abs_test<float>;
+using trunc_float  = trunc_test<float>;
 using minmax_float = minmax_test<float>;
 
 template <typename S>

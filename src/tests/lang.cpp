@@ -71,6 +71,7 @@ main(int argc, char* argv[])
     simd::function<lshift_u>     simd_v_lshift(vector_size);
     simd::function<rshift_u>     simd_v_rshift(vector_size);
     simd::function<abs_float>    simd_v_abs(vector_size);
+    simd::function<trunc_float>  simd_v_trunc(vector_size);
     simd::function<minmax_float> simd_v_minmax(vector_size);
 
     simd::stream<fac_unsigned> simds_v_fu(stream_size);
@@ -86,6 +87,7 @@ main(int argc, char* argv[])
     simd::function<lshift_u, true>     simd_k_lshift(vector_size);
     simd::function<rshift_u, true>     simd_k_rshift(vector_size);
     simd::function<abs_float, true>    simd_k_abs(vector_size);
+    simd::function<trunc_float, true>  simd_k_trunc(vector_size);
     simd::function<minmax_float, true> simd_k_minmax(vector_size);
 
     simd::stream<fac_unsigned, true> simds_k_fu(stream_size);
@@ -159,6 +161,13 @@ main(int argc, char* argv[])
     auto tsk_abs =
         NamedTest(tm.rng_invariant(g_float, simd_k_abs, std::identity{}),
                   "SIMD Minikernel abs");
+
+    auto tsv_trunc =
+        NamedTest(tm.rng_invariant(g_float, simd_v_trunc, std::identity{}),
+                  "SIMD Vertical trunc");
+    auto tsk_trunc =
+        NamedTest(tm.rng_invariant(g_float, simd_k_trunc, std::identity{}),
+                  "SIMD Minikernel trunc");
 
     auto tsv_minmax =
         NamedTest(tm.rng_invariant(g_f2, simd_v_minmax, std::identity{}),
@@ -257,6 +266,8 @@ main(int argc, char* argv[])
 
     track.check(tsv_abs);
     track.check(tsk_abs);
+    track.check(tsv_trunc);
+    track.check(tsk_trunc);
     track.check(tsv_minmax);
     track.check(tsk_minmax);
 
