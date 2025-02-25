@@ -854,10 +854,6 @@ template <template <typename...> typename Tuple = std::tuple,
 constexpr decltype(auto)
 maybe_collect(type_sequence<Ts...> /*list*/, F&& f, Args&&... args) noexcept(
     (...&& noexcept(f.template operator()<Ts>(std::forward<Args>(args)...))))
-    requires(
-        !std::disjunction_v<
-            std::is_void<std::remove_cvref_t<decltype(f.template operator()<Ts>(
-                std::forward<Args>(args)...))>>...>)
 {
     if constexpr(sizeof...(Ts) > 1)
         return Tuple<std::remove_cvref_t<decltype(f.template operator()<Ts>(
@@ -892,9 +888,6 @@ maybe_collect_arg(
     Args&&... args) noexcept((...&& noexcept(f.template
                                              operator()<Ts>(
                                                  std::forward<Args>(args)))))
-    requires(
-        !std::disjunction_v<std::is_void<std::remove_cvref_t<
-            decltype(f.template operator()<Ts>(std::forward<Args>(args)))>>...>)
 {
     if constexpr(sizeof...(Ts) > 1)
         return Tuple<std::remove_cvref_t<decltype(f.template operator()<Ts>(
