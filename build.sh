@@ -1,14 +1,13 @@
 #!/bin/bash
 
 showhelp() {
-    echo "Usage: $0 [-h] [-t] [-b] [-d] [-e] [-a] [-c] [-clang] [-cuda] [-D]"
+    echo "Usage: $0 [-h] [-t] [-b] [-d] [-e] [-a] [-c] [-cuda] [-D]"
     echo -e "\t-t\tbuild and run tests"
     echo -e "\t-b\tbuild and run benchmarks"
     echo -e "\t-d\tbuild documentation"
     echo -e "\t-e\tuse temporary directory"
     echo -e "\t-a\tbuild all, then run benchmarks and tests"
     echo -e "\t-c\trun cmake only, don't build"
-    echo -e "\t-clang\tuse clang"
     echo -e "\t-cuda\tuse cuda"
     echo -e "\t-D\tbuild RelWithDebInfo"
     echo -e "\t-h\tshow this help message and exit"
@@ -48,11 +47,6 @@ enable_docs() {
 enable_debug() {
     CMAKE_ARGS+=(-DCMAKE_BUILD_TYPE=RelWithDebInfo)
     BUILD_DIR+=_dbg
-}
-
-use_clang() {
-    CXX=clang++
-    CMAKE_ARGS+=(-DCMAKE_CXX_COMPILER=${CXX})
 }
 
 use_cuda() {
@@ -116,9 +110,6 @@ for key in $@; do
         -c)
             DO_BUILD=false
             ;;
-        -clang)
-            use_clang
-            ;;
         -cuda)
             use_cuda
             ;;
@@ -136,12 +127,6 @@ for key in $@; do
             ;;
     esac
 done
-
-if [ $CXX = "clang++" ]; then
-    BUILD_DIR+="_clang"
-else
-    BUILD_DIR+="_gcc"
-fi
 
 set_cmake_args_from_envs
 

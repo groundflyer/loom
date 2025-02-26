@@ -1,5 +1,9 @@
 cmake_minimum_required(VERSION 3.16)
 
+# Using clang++
+set(CMAKE_CXX_COMPILER "clang++" CACHE STRING "C++ compiler" FORCE)
+set(CMAKE_C_COMPILER "clang" CACHE STRING "C compiler" FORCE)
+
 project(Lucid CXX)
 
 # Compiler with C++20 support is required
