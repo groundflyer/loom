@@ -25,9 +25,12 @@ option(BUILD_TESTS "Build tests" OFF)
 option(BUILD_BENCHMARKS "Build benchmarks" OFF)
 option(BUILD_DOC "Build documentation" OFF)
 option(ENABLE_IPO "Enable interprocedural optimization" OFF)
-option(SIMD_NARROW_AVX_INT "Use 128 bit integer vectors on AVX instead of 256" ON)
+option(SIMD_NARROW_AVX_INT "Use 128 bit integer vectors on AVX instead of 256" OFF)
 option(USE_LIBCXX "Link to libc++ when compiling with Clang" ON)
 option(USE_CUDA "Enable CUDA support" OFF)
+option(USE_SYSTEM_RANGEV3 "Use system range-v3 library" ON)
+option(USE_SYSTEM_FMT "Use system libfmt" ON)
+option(USE_SYSTEM_GLFW "Use system glfw3" ON)
 set(CUDA_BLOCK_SIZE 256 CACHE STRING "Number of threads in a block")
 option(THREAD_POOL_AFFINITY "Enable affinity for threads" ON)
 set(THREAD_POOL_SIZE PHYSICAL CACHE STRING "Number of threads in CPU thread pool. Set the value to PHYSICAL to use number of physical cores of the host machine, LOGICAL to use number of logical cores of the host machine, DYNAMIC for dynamic size or a positive integer number to set custom size.")
@@ -49,6 +52,9 @@ include(CxxFeatures)
 
 # Clang-related checks
 include(Clang)
+
+# Fetch content
+include(ExternalContent)
 
 add_compile_options(-Wall -Wpedantic -Wextra -fno-rtti)
 # Optimize for the host machine
@@ -100,17 +106,27 @@ set(OpenGL_GL_PREFERENCE LEGACY)
 find_package(OpenGL REQUIRED)
 
 # GLFW3
-find_package(glfw3 3.3 REQUIRED)
-if(glfw3_FOUND)
-  message(STATUS "Found glfw3: " ${glfw3_VERSION})
-  set(GL_LIBS OpenGL::GL glfw)
-  set(GL_DEFS "-DGLFW_INCLUDE_GLCOREARB -DGLFW_INCLUDE_GLEXT -DGL_GLEXT_PROTOTYPES")
+if(USE_SYSTEM_GLFW)
+  find_package(glfw3 3.3 REQUIRED)
+  if(glfw3_FOUND)
+    message(STATUS "Found glfw3: " ${glfw3_VERSION})
+  endif()
+else()
+  message(STATUS "Fetching glfw3...")
+  FetchContent_MakeAvailable(glfw)
 endif()
+set(GL_LIBS OpenGL::GL glfw)
+set(GL_DEFS "-DGLFW_INCLUDE_GLCOREARB -DGLFW_INCLUDE_GLEXT -DGL_GLEXT_PROTOTYPES")
   
 # fmt
-find_package(fmt 9 REQUIRED)
-if(fmt_FOUND)
-  message(STATUS "Found fmt: " ${fmt_VERSION})
+if(USE_SYSTEM_FMT)
+  find_package(fmt 9 REQUIRED)
+  if(fmt_FOUND)
+    message(STATUS "Found fmt: " ${fmt_VERSION})
+  endif()
+else()
+  message(STATUS "Fetching fmt...")
+  FetchContent_MakeAvailable(libfmt)
 endif()
 
 # CUDA
@@ -126,7 +142,13 @@ if(USE_CUDA)
 endif()
 
 # range-v3
-find_package(range-v3 REQUIRED)
+if(USE_SYSTEM_RANGEV3)
+  find_package(range-v3 REQUIRED)
+else()
+  message(STATUS "Fetching range-v3...")
+  FetchContent_MakeAvailable(range-v3)
+  include_directories(${Range-v3_SOURCE_DIR}/include)
+endif()
 
 # External includes
 include_directories(ext/include)
