@@ -120,32 +120,32 @@ TEND1(a);
 // abs(x) > 0
 template <std::floating_point T>
 TBEGIN1(abs_test, x)
-    ABS(x, x),
+    TABS(x, x),
     TGE(x, x, 0)
 END(IVAR(x));
 
 // abs(trunc(x)) <= abs(x)
 template <std::floating_point T>
 TBEGIN1(trunc_test, x)
-    TRUNC(t, x),
-    ABS(t, t),
-    ABS(x, x),
+    TTRUNC(t, x),
+    TABS(t, t),
+    TABS(x, x),
     TLE(x, t, x)
 END(IVAR(x));
 
 // ceil(x) >= floor(x)
 template <std::floating_point T>
 TBEGIN1(ceilfloor, x)
-    CEIL(c, x),
-    FLOOR(x, x),
+    TCEIL(c, x),
+    TFLOOR(x, x),
     TGE(c, c, x)
 END(IVAR(c));
 
 // max(a, b) > min(a, b)
 template <std::floating_point T>
 TBEGIN2(minmax_test, a, b)
-    MAX(x, a, b),
-    MIN(n, a, b),
+    TMAX(x, a, b),
+    TMIN(n, a, b),
     TGT(r, x, n)
 END(IVAR(r));
 
