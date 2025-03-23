@@ -247,7 +247,8 @@ wrap_stream(S& stream) noexcept
     return [&stream](const auto& input) noexcept
     {
         // prepare result container
-        std::vector<unsigned> out;
+        using program = S::program;
+        std::vector<lucid::output_type<program>> out;
         out.reserve(input.size());
         auto inserter = std::back_inserter(out);
 

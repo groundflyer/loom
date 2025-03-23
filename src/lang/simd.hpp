@@ -947,6 +947,7 @@ class simd_compiler
         static constexpr typelist::head<compiled_cells> cell{};
 
       public:
+        using program = _Program;
         using memory_facade::memory_facade;
 
         template <typename... Args>
@@ -983,6 +984,7 @@ class simd_compiler
     class evaluator : public memory_facade
     {
       public:
+        using program = _Program;
         using memory_facade::memory_facade;
 
         template <typename... Args>
@@ -1010,6 +1012,7 @@ class simd_compiler
         static_assert(!_Program::singular);
 
       public:
+        using program = _Program;
         using stream_facade::stream_facade;
 
         constexpr void

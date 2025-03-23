@@ -1079,6 +1079,7 @@ class basic_vector_compiler
         static constexpr typelist::head<compiled_cells> cell{};
 
       public:
+        using program = _Program;
         using memory_facade::memory_facade;
 
         template <typename... Args>
@@ -1121,6 +1122,7 @@ class basic_vector_compiler
     class evaluator : public memory_facade
     {
       public:
+        using program = _Program;
         using memory_facade::memory_facade;
 
         template <typename... Args>
@@ -1148,6 +1150,7 @@ class basic_vector_compiler
         static_assert(!_Program::singular);
 
       public:
+        using program = _Program;
         using stream_facade::stream_facade;
 
         void
