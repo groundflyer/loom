@@ -654,6 +654,7 @@ struct Program
     using input_vars  = InputVars;
     using output_vars = OutputVars;
     using index_t = uint_of_size_t<sizeof(vartype<typelist::head<InputVars>>)>;
+    using instructions = typelist::flatten<Statements>;
 
     static_assert(!std::is_void_v<index_t>);
 
@@ -666,14 +667,14 @@ struct Program
     using stated_vars = typelist::nub<typelist::join<
         typelist::join<InputVars, OutputVars>,
         typelist::map<command_dst_t,
-                      typelist::filter<is_compute, Statements>>>>;
+                      typelist::filter<is_compute, instructions>>>>;
 
     static_assert(!typelist::any<is_literal, stated_vars>);
 
     /// @brief List of lists of commands.
-    using cells_statements = typelist::split_with<is_label, Statements>;
+    using cells_statements = typelist::split_with<is_label, instructions>;
 
-    using stated_labels = typelist::filter<is_label, Statements>;
+    using stated_labels = typelist::filter<is_label, instructions>;
 
     static constexpr std::size_t num_cells = typelist::length<cells_statements>;
 
@@ -838,6 +839,11 @@ MK_STD_UNOP_FLOAT(cos)
 #define IEND2(a, b) \
     END             \
     (IVAR(a), IVAR(b))
+
+#define MACRO_BEGIN(NAME)        using NAME = lucid::type_sequence <
+#define MACRO_END                >
+
+#define INSERT_MACRO(NAME, ...)  NAME __VA_OPT__(<__VA_ARGS__>)
 
 #define MOV(a, b)   lucid::Compute<std::identity, a, b>
 #define TMOV(a, b)  MOV(TVAR(a), TVAR(b))
