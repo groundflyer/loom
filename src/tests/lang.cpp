@@ -8,7 +8,6 @@
 
 #include <lang/bse.hpp>
 #include <lang/bve.hpp>
-#include <lang/lang.hpp>
 #include <lang/simd.hpp>
 #include <utils/test.hpp>
 

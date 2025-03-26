@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "lang.hpp"
+#include "core.hpp"
 
 namespace lucid::bse
 {

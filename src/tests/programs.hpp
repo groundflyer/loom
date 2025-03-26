@@ -4,7 +4,8 @@
 
 #pragma once
 
-#include <lang/lang.hpp>
+#include <lang/core.hpp>
+#include <lang/macros.hpp>
 #include <utils/debug.hpp>
 #include <utils/functional.hpp>
 #include <utils/math.hpp>
@@ -149,6 +150,10 @@ TBEGIN2(minmax_test, a, b)
     TGT(r, x, n)
 END(IVAR(r));
 
+TMACRO_BEGIN2(cubic_eval, result, tmp)
+    
+MACRO_END;
+
 // clang-format on
 
 // validation programs
@@ -214,6 +219,14 @@ constexpr unsigned
 val_rshift(unsigned a, unsigned b) noexcept
 {
     return a >> b;
+}
+
+template <std::floating_point T>
+T
+cubic_eval_at(const std::tuple<T, T, T, T>& ks, const T x) noexcept
+{
+    const auto [a, b, c, d] = ks;
+    return a * x * x * x + b * x * x + c * x + d;
 }
 } // namespace fn
 
