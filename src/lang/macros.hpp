@@ -25,9 +25,14 @@
 #define BEGIN(NAME, ...)                                             \
     using NAME = lucid::Program < lucid::type_sequence<__VA_ARGS__>, \
           lucid::type_sequence <
-#define END(...)            >, lucid::type_sequence < __VA_ARGS__ >>
-#define TBEGIN1(NAME, v)    BEGIN(NAME, TVAR(v))
-#define TBEGIN2(NAME, a, b) BEGIN(NAME, TVAR(a), TVAR(b))
+#define END(...)               >, lucid::type_sequence < __VA_ARGS__ >>
+#define TBEGIN1(NAME, v)       BEGIN(NAME, TVAR(v))
+#define TBEGIN2(NAME, a, b)    BEGIN(NAME, TVAR(a), TVAR(b))
+#define TBEGIN3(NAME, a, b, c) BEGIN(NAME, TVAR(a), TVAR(b), TVAR(c))
+#define TBEGIN4(NAME, a, b, c, d) \
+    BEGIN(NAME, TVAR(a), TVAR(b), TVAR(c), TVAR(d))
+#define TBEGIN5(NAME, a, b, c, d, e) \
+    BEGIN(NAME, TVAR(a), TVAR(b), TVAR(c), TVAR(d), TVAR(e))
 #define TEND1(v) \
     END          \
     (TVAR(v))
@@ -58,13 +63,14 @@
 #define TMACRO_BEGIN2(NAME, T1, T2) PMACRO_BEGIN2(NAME, typename, T1, T2)
 #define TMACRO_BEGIN3(NAME, T1, T2, T3) \
     PMACRO_BEGIN3(NAME, typename, T1, T2, T3)
-#define MACRO_END                    >
+#define MACRO_END                       >
 
-#define INSERT_MACRO(NAME, ...)      NAME __VA_OPT__(<__VA_ARGS__>)
-#define INSERT_SMACRO1(NAME, S1)     INSERT_MACRO(NAME, CS(S1))
-#define INSERT_SMACRO2(NAME, S1, S2) INSERT_MACRO(NAME, CS(S1), CS(S2))
-#define INSERT_SMACRO3(NAME, S1, S2, S3) \
-    INSERT_MACRO(NAME, CS(S1), CS(S2), CS(S3))
+#define INSERT_MACRO(NAME, ...)         NAME __VA_OPT__(<__VA_ARGS__>)
+#define INSERT_TMACRO(NAME, ...)        INSERT_MACRO(NAME, MAJOR_TYPE, __VA_ARGS__)
+#define INSERT_TMACRO_CS1(NAME, S1)     INSERT_TMACRO(NAME, CS(S1))
+#define INSERT_TMACRO_CS2(NAME, S1, S2) INSERT_TMACRO(NAME, CS(S1), CS(S2))
+#define INSERT_TMACRO_CS3(NAME, S1, S2, S3) \
+    INSERT_TMACRO(NAME, CS(S1), CS(S2), CS(S3))
 
 #define MOV(a, b)   lucid::Compute<std::identity, a, b>
 #define TMOV(a, b)  MOV(TVAR(a), TVAR(b))
