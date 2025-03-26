@@ -814,10 +814,16 @@ MK_STD_UNOP_FLOAT(cos)
 #define MAJOR_TYPE T
 #endif
 
-#define INDEX_TYPE      lucid::uint_of_size_t<sizeof(MAJOR_TYPE)>
-#define VAR(TYPE, NAME) lucid::Variable<TYPE, lucid::sl2cs<#NAME>>
-#define TVAR(NAME)      VAR(MAJOR_TYPE, NAME)
-#define IVAR(NAME)      VAR(INDEX_TYPE, NAME)
+#define INDEX_TYPE       lucid::uint_of_size_t<sizeof(MAJOR_TYPE)>
+
+// NAME - char_sequence
+#define NVAR(TYPE, NAME) lucid::Variable<TYPE, NAME>
+// NAME - literal without quotes
+#define VAR(TYPE, NAME)  NVAR(TYPE, lucid::sl2cs<#NAME>)
+#define TVAR(NAME)       VAR(MAJOR_TYPE, NAME)
+#define IVAR(NAME)       VAR(INDEX_TYPE, NAME)
+#define NTVAR(NAME)      NVAR(MAJOR_TYPE, NAME)
+#define NIVAR(NAME)      NVAR(INDEX_TYPE, NAME)
 
 #define BEGIN(NAME, ...)                                             \
     using NAME = lucid::Program < lucid::type_sequence<__VA_ARGS__>, \
@@ -840,10 +846,29 @@ MK_STD_UNOP_FLOAT(cos)
     END             \
     (IVAR(a), IVAR(b))
 
-#define MACRO_BEGIN(NAME)        using NAME = lucid::type_sequence <
+#define MACRO_BEGIN(NAME) using NAME = lucid::type_sequence <
+
+// parametric macro
+#define PMACRO_BEGIN(NAME, ...)                               \
+    template <typename MAJOR_TYPE __VA_OPT__(, ) __VA_ARGS__> \
+    MACRO_BEGIN(NAME)
+#define PMACRO_BEGIN1(NAME, CLASS, T1) PMACRO_BEGIN(NAME, CLASS T1)
+#define PMACRO_BEGIN2(NAME, CLASS, T1, T2) \
+    PMACRO_BEGIN(NAME, CLASS T1, CLASS T2)
+#define PMACRO_BEGIN3(NAME, CLASS, T1, T2, T3) \
+    PMACRO_BEGIN(NAME, CLASS T1, CLASS T2, CLASS T3)
+#define TMACRO_BEGIN1(NAME, T1)     PMACRO_BEGIN1(NAME, typename, T1)
+#define TMACRO_BEGIN2(NAME, T1, T2) PMACRO_BEGIN2(NAME, typename, T1, T2)
+#define TMACRO_BEGIN3(NAME, T1, T2, T3) \
+    PMACRO_BEGIN3(NAME, typename, T1, T2, T3)
 #define MACRO_END                >
 
-#define INSERT_MACRO(NAME, ...)  NAME __VA_OPT__(<__VA_ARGS__>)
+#define INSERT_MACRO(NAME, ...)         NAME __VA_OPT__(<__VA_ARGS__>)
+#define INSERT_SMACRO1(NAME, S1)        INSERT_MACRO(NAME, lucid::sl2cs<#S1>)
+#define INSERT_SMACRO2(NAME, S1, S2) \
+    INSERT_MACRO(NAME, lucid::sl2cs<#S1>, lucid::sl2cs<#S2>)
+#define INSERT_SMACRO3(NAME, S1, S2, S3) \
+    INSERT_MACRO(NAME, lucid::sl2cs<#S1>, lucid::sl2cs<#S2>, lucid::sl2cs<#S3>)
 
 #define MOV(a, b)   lucid::Compute<std::identity, a, b>
 #define TMOV(a, b)  MOV(TVAR(a), TVAR(b))
