@@ -816,10 +816,13 @@ MK_STD_UNOP_FLOAT(cos)
 
 #define INDEX_TYPE       lucid::uint_of_size_t<sizeof(MAJOR_TYPE)>
 
+// convert to char_sequence
+#define CS(S)            lucid::sl2cs<#S>
+
 // NAME - char_sequence
 #define NVAR(TYPE, NAME) lucid::Variable<TYPE, NAME>
 // NAME - literal without quotes
-#define VAR(TYPE, NAME)  NVAR(TYPE, lucid::sl2cs<#NAME>)
+#define VAR(TYPE, NAME)  NVAR(TYPE, CS(NAME))
 #define TVAR(NAME)       VAR(MAJOR_TYPE, NAME)
 #define IVAR(NAME)       VAR(INDEX_TYPE, NAME)
 #define NTVAR(NAME)      NVAR(MAJOR_TYPE, NAME)
@@ -861,143 +864,224 @@ MK_STD_UNOP_FLOAT(cos)
 #define TMACRO_BEGIN2(NAME, T1, T2) PMACRO_BEGIN2(NAME, typename, T1, T2)
 #define TMACRO_BEGIN3(NAME, T1, T2, T3) \
     PMACRO_BEGIN3(NAME, typename, T1, T2, T3)
-#define MACRO_END                >
+#define MACRO_END                    >
 
-#define INSERT_MACRO(NAME, ...)         NAME __VA_OPT__(<__VA_ARGS__>)
-#define INSERT_SMACRO1(NAME, S1)        INSERT_MACRO(NAME, lucid::sl2cs<#S1>)
-#define INSERT_SMACRO2(NAME, S1, S2) \
-    INSERT_MACRO(NAME, lucid::sl2cs<#S1>, lucid::sl2cs<#S2>)
+#define INSERT_MACRO(NAME, ...)      NAME __VA_OPT__(<__VA_ARGS__>)
+#define INSERT_SMACRO1(NAME, S1)     INSERT_MACRO(NAME, CS(S1))
+#define INSERT_SMACRO2(NAME, S1, S2) INSERT_MACRO(NAME, CS(S1), CS(S2))
 #define INSERT_SMACRO3(NAME, S1, S2, S3) \
-    INSERT_MACRO(NAME, lucid::sl2cs<#S1>, lucid::sl2cs<#S2>, lucid::sl2cs<#S3>)
+    INSERT_MACRO(NAME, CS(S1), CS(S2), CS(S3))
 
 #define MOV(a, b)   lucid::Compute<std::identity, a, b>
 #define TMOV(a, b)  MOV(TVAR(a), TVAR(b))
 #define IMOV(a, b)  MOV(IVAR(a), IVAR(b))
 
-#define LABEL(NAME) lucid::Label<lucid::sl2cs<#NAME>>
+#define LABEL(NAME) lucid::Label<CS(NAME)>
 #define JMP(TARGET)             \
     lucid::Jump < LABEL(TARGET) \
     >
 
-#define PJMPN(varname, ...) \
-    lucid::ParmJump<VAR(INDEX_TYPE, varname), lucid::type_sequence<__VA_ARGS__>>
+#define PJMPN(VN, ...) \
+    lucid::ParmJump<VAR(INDEX_TYPE, VN), lucid::type_sequence<__VA_ARGS__>>
 
-#define PJMP2(varname, L1, L2)                                               \
-    lucid::ParmJump < VAR(INDEX_TYPE, varname), lucid::type_pair < LABEL(L1) \
-    , LABEL(L2)                                                              \
+#define PJMP2(VN, L1, L2)                                               \
+    lucid::ParmJump < VAR(INDEX_TYPE, VN), lucid::type_pair < LABEL(L1) \
+    , LABEL(L2)                                                         \
     >>
 
-#define PJMP3(varname, L1, L2, L3)              \
-    lucid::ParmJump < VAR(INDEX_TYPE, varname), \
-        lucid::type_sequence < LABEL(L1)        \
-    , LABEL(L2)                                 \
-    , LABEL(L3)                                 \
+#define PJMP3(VN, L1, L2, L3)                                               \
+    lucid::ParmJump < VAR(INDEX_TYPE, VN), lucid::type_sequence < LABEL(L1) \
+    , LABEL(L2)                                                             \
+    , LABEL(L3)                                                             \
     >>
 
-#define PJMP4(varname, L1, L2, L3, L4)          \
-    lucid::ParmJump < VAR(INDEX_TYPE, varname), \
-        lucid::type_sequence < LABEL(L1)        \
-    , LABEL(L2)                                 \
-    , LABEL(L3)                                 \
-    , LABEL(L4)                                 \
+#define PJMP4(VN, L1, L2, L3, L4)                                           \
+    lucid::ParmJump < VAR(INDEX_TYPE, VN), lucid::type_sequence < LABEL(L1) \
+    , LABEL(L2)                                                             \
+    , LABEL(L3)                                                             \
+    , LABEL(L4)                                                             \
     >>
 
-#define BINOP(OP, TYPE, DST, A, B) \
-    lucid::Compute<OP<TYPE>, VAR(TYPE, DST), VAR(TYPE, A), VAR(TYPE, B)>
+#define BINOP_CS(OP, TYPE, DST, A, B) \
+    lucid::Compute<OP<TYPE>, NVAR(TYPE, DST), NVAR(TYPE, A), NVAR(TYPE, B)>
+#define BINOP(OP, TYPE, DST, A, B) BINOP_CS(OP, TYPE, CS(DST), CS(A), CS(B))
 
-#define UNOP(OP, TYPE, DST, V) \
-    lucid::Compute<OP<TYPE>, VAR(TYPE, DST), VAR(TYPE, V)>
+#define UNOP_CS(OP, TYPE, DST, V) \
+    lucid::Compute<OP<TYPE>, NVAR(TYPE, DST), NVAR(TYPE, V)>
+#define UNOP(OP, TYPE, DST, V) UNOP_CS(OP, TYPE, CS(DST), CS(V))
 
-#define CMP(OP, TYPE, DST, A, B) \
-    lucid::Compute<OP<TYPE>, IVAR(DST), VAR(TYPE, A), VAR(TYPE, B)>
+#define CMP_CS(OP, TYPE, DST, A, B) \
+    lucid::Compute<OP<TYPE>, NIVAR(DST), NVAR(TYPE, A), NVAR(TYPE, B)>
+#define CMP(OP, TYPE, DST, A, B) CMP_CS(OP, TYPE, CS(DST), CS(A), CS(B))
 
-#define CHOICE(TYPE, DST, C, A, B)     \
+#define CHOICE_CS(TYPE, DST, C, A, B)  \
     lucid::Compute<lucid::ops::choice, \
-                   VAR(TYPE, DST),     \
-                   VAR(INDEX_TYPE, C), \
-                   VAR(TYPE, A),       \
-                   VAR(TYPE, B)>
+                   NVAR(TYPE, DST),    \
+                   NIVAR(C),           \
+                   NVAR(TYPE, A),      \
+                   NVAR(TYPE, B)>
+#define CHOICE(TYPE, DST, C, A, B) CHOICE_CS(TYPE, CS(DST), CS(C), CS(A), CS(B))
 
-#define ADD(...)     BINOP(std::plus, __VA_ARGS__)
-#define SUB(...)     BINOP(std::minus, __VA_ARGS__)
-#define MUL(...)     BINOP(std::multiplies, __VA_ARGS__)
-#define DIV(...)     BINOP(std::divides, __VA_ARGS__)
-#define MOD(...)     BINOP(std::modulus, __VA_ARGS__)
-#define NEG(...)     UNOP(std::negate, __VA_ARGS__)
+#define ADD(...)                   BINOP(std::plus, __VA_ARGS__)
+#define SUB(...)                   BINOP(std::minus, __VA_ARGS__)
+#define MUL(...)                   BINOP(std::multiplies, __VA_ARGS__)
+#define DIV(...)                   BINOP(std::divides, __VA_ARGS__)
+#define MOD(...)                   BINOP(std::modulus, __VA_ARGS__)
+#define NEG(...)                   UNOP(std::negate, __VA_ARGS__)
 
-#define EQ(...)      CMP(std::equal_to, __VA_ARGS__)
-#define NEQ(...)     CMP(std::not_equal_to, __VA_ARGS__)
-#define GT(...)      CMP(std::greater, __VA_ARGS__)
-#define LT(...)      CMP(std::less, __VA_ARGS__)
-#define GE(...)      CMP(std::greater_equal, __VA_ARGS__)
-#define LE(...)      CMP(std::less_equal, __VA_ARGS__)
+#define TADD(...)                  ADD(MAJOR_TYPE, __VA_ARGS__)
+#define TSUB(...)                  SUB(MAJOR_TYPE, __VA_ARGS__)
+#define TMUL(...)                  MUL(MAJOR_TYPE, __VA_ARGS__)
+#define TDIV(...)                  DIV(MAJOR_TYPE, __VA_ARGS__)
+#define TMOD(...)                  MOD(MAJOR_TYPE, __VA_ARGS__)
+#define TNEG(...)                  NEG(MAJOR_TYPE, __VA_ARGS__)
 
-#define LAND(...)    BINOP(std::logical_and, __VA_ARGS__)
-#define LOR(...)     BINOP(std::logical_or, __VA_ARGS__)
-#define LNOT(...)    UNOP(std::logical_not, __VA_ARGS__)
+#define IADD(...)                  ADD(INDEX_TYPE, __VA_ARGS__)
+#define ISUB(...)                  SUB(INDEX_TYPE, __VA_ARGS__)
+#define IMUL(...)                  MUL(INDEX_TYPE, __VA_ARGS__)
+#define IDIV(...)                  DIV(INDEX_TYPE, __VA_ARGS__)
+#define IMOD(...)                  MOD(INDEX_TYPE, __VA_ARGS__)
+#define INEG(...)                  NEG(INDEX_TYPE, __VA_ARGS__)
 
-#define TADD(...)    ADD(MAJOR_TYPE, __VA_ARGS__)
-#define TSUB(...)    SUB(MAJOR_TYPE, __VA_ARGS__)
-#define TMUL(...)    MUL(MAJOR_TYPE, __VA_ARGS__)
-#define TDIV(...)    DIV(MAJOR_TYPE, __VA_ARGS__)
-#define TMOD(...)    MOD(MAJOR_TYPE, __VA_ARGS__)
-#define TNEG(...)    NEG(MAJOR_TYPE, __VA_ARGS__)
+#define ADD_CS(...)                BINOP_CS(std::plus, __VA_ARGS__)
+#define SUB_CS(...)                BINOP_CS(std::minus, __VA_ARGS__)
+#define MUL_CS(...)                BINOP_CS(std::multiplies, __VA_ARGS__)
+#define DIV_CS(...)                BINOP_CS(std::divides, __VA_ARGS__)
+#define MOD_CS(...)                BINOP_CS(std::modulus, __VA_ARGS__)
+#define NEG_CS(...)                UNOP_CS(std::negate, __VA_ARGS__)
 
-#define TEQ(...)     EQ(MAJOR_TYPE, __VA_ARGS__)
-#define TNEQ(...)    NEQ(MAJOR_TYPE, __VA_ARGS__)
-#define TGT(...)     GT(MAJOR_TYPE, __VA_ARGS__)
-#define TLT(...)     LT(MAJOR_TYPE, __VA_ARGS__)
-#define TGE(...)     GE(MAJOR_TYPE, __VA_ARGS__)
-#define TLE(...)     LE(MAJOR_TYPE, __VA_ARGS__)
+#define TADD_CS(...)               ADD_CS(MAJOR_TYPE, __VA_ARGS__)
+#define TSUB_CS(...)               SUB_CS(MAJOR_TYPE, __VA_ARGS__)
+#define TMUL_CS(...)               MUL_CS(MAJOR_TYPE, __VA_ARGS__)
+#define TDIV_CS(...)               DIV_CS(MAJOR_TYPE, __VA_ARGS__)
+#define TMOD_CS(...)               MOD_CS(MAJOR_TYPE, __VA_ARGS__)
+#define TNEG_CS(...)               NEG_CS(MAJOR_TYPE, __VA_ARGS__)
 
-#define IADD(...)     ADD(INDEX_TYPE, __VA_ARGS__)
-#define ISUB(...)     SUB(INDEX_TYPE, __VA_ARGS__)
-#define IMUL(...)     MUL(INDEX_TYPE, __VA_ARGS__)
-#define IDIV(...)     DIV(INDEX_TYPE, __VA_ARGS__)
-#define IMOD(...)     MOD(INDEX_TYPE, __VA_ARGS__)
-#define INEG(...)     NEG(INDEX_TYPE, __VA_ARGS__)
+#define IADD_CS(...)               ADD_CS(INDEX_TYPE, __VA_ARGS__)
+#define ISUB_CS(...)               SUB_CS(INDEX_TYPE, __VA_ARGS__)
+#define IMUL_CS(...)               MUL_CS(INDEX_TYPE, __VA_ARGS__)
+#define IDIV_CS(...)               DIV_CS(INDEX_TYPE, __VA_ARGS__)
+#define IMOD_CS(...)               MOD_CS(INDEX_TYPE, __VA_ARGS__)
+#define INEG_CS(...)               NEG_CS(INDEX_TYPE, __VA_ARGS__)
 
-#define IEQ(...)      EQ(INDEX_TYPE, __VA_ARGS__)
-#define INEQ(...)     NEQ(INDEX_TYPE, __VA_ARGS__)
-#define IGT(...)      GT(INDEX_TYPE, __VA_ARGS__)
-#define ILT(...)      LT(INDEX_TYPE, __VA_ARGS__)
-#define IGE(...)      GE(INDEX_TYPE, __VA_ARGS__)
-#define ILE(...)      LE(INDEX_TYPE, __VA_ARGS__)
+#define EQ(...)                    CMP(std::equal_to, __VA_ARGS__)
+#define NEQ(...)                   CMP(std::not_equal_to, __VA_ARGS__)
+#define GT(...)                    CMP(std::greater, __VA_ARGS__)
+#define LT(...)                    CMP(std::less, __VA_ARGS__)
+#define GE(...)                    CMP(std::greater_equal, __VA_ARGS__)
+#define LE(...)                    CMP(std::less_equal, __VA_ARGS__)
 
-#define TAND(...)    LAND(MAJOR_TYPE, __VA_ARGS__)
-#define TOR(...)     LOR(MAJOR_TYPE, __VA_ARGS__)
-#define TNOT(...)    LNOT(MAJOR_TYPE, __VA_ARGS__)
+#define EQ_CS(...)                 CMP_CS(std::equal_to, __VA_ARGS__)
+#define NEQ_CS(...)                CMP_CS(std::not_equal_to, __VA_ARGS__)
+#define GT_CS(...)                 CMP_CS(std::greater, __VA_ARGS__)
+#define LT_CS(...)                 CMP_CS(std::less, __VA_ARGS__)
+#define GE_CS(...)                 CMP_CS(std::greater_equal, __VA_ARGS__)
+#define LE_CS(...)                 CMP_CS(std::less_equal, __VA_ARGS__)
 
-#define IAND(...)     LAND(INDEX_TYPE, __VA_ARGS__)
-#define IOR(...)      LOR(INDEX_TYPE, __VA_ARGS__)
-#define INOT(...)     LNOT(INDEX_TYPE, __VA_ARGS__)
+#define TEQ(...)                   EQ(MAJOR_TYPE, __VA_ARGS__)
+#define TNEQ(...)                  NEQ(MAJOR_TYPE, __VA_ARGS__)
+#define TGT(...)                   GT(MAJOR_TYPE, __VA_ARGS__)
+#define TLT(...)                   LT(MAJOR_TYPE, __VA_ARGS__)
+#define TGE(...)                   GE(MAJOR_TYPE, __VA_ARGS__)
+#define TLE(...)                   LE(MAJOR_TYPE, __VA_ARGS__)
 
-#define TCHOICE(...)  CHOICE(MAJOR_TYPE, __VA_ARGS__)
-#define ICHOICE(...)  CHOICE(INDEX_TYPE, __VA_ARGS__)
+#define IEQ(...)                   EQ(INDEX_TYPE, __VA_ARGS__)
+#define INEQ(...)                  NEQ(INDEX_TYPE, __VA_ARGS__)
+#define IGT(...)                   GT(INDEX_TYPE, __VA_ARGS__)
+#define ILT(...)                   LT(INDEX_TYPE, __VA_ARGS__)
+#define IGE(...)                   GE(INDEX_TYPE, __VA_ARGS__)
+#define ILE(...)                   LE(INDEX_TYPE, __VA_ARGS__)
 
-#define LSHFT(...)    BINOP(lucid::ops::lshift, INDEX_TYPE, __VA_ARGS__)
-#define RSHFT(...)    BINOP(lucid::ops::rshift, INDEX_TYPE, __VA_ARGS__)
+#define TEQ_CS(...)                EQ_CS(MAJOR_TYPE, __VA_ARGS__)
+#define TNEQ_CS(...)               NEQ_CS(MAJOR_TYPE, __VA_ARGS__)
+#define TGT_CS(...)                GT_CS(MAJOR_TYPE, __VA_ARGS__)
+#define TLT_CS(...)                LT_CS(MAJOR_TYPE, __VA_ARGS__)
+#define TGE_CS(...)                GE_CS(MAJOR_TYPE, __VA_ARGS__)
+#define TLE_CS(...)                LE_CS(MAJOR_TYPE, __VA_ARGS__)
 
-#define ABS(...)       UNOP(lucid::ops::abs, __VA_ARGS__)
-#define ROUND(...)     UNOP(lucid::ops::round, __VA_ARGS__)
-#define CEIL(...)      UNOP(lucid::ops::ceil, __VA_ARGS__)
-#define FLOOR(...)     UNOP(lucid::ops::floor, __VA_ARGS__)
-#define TRUNC(...)     UNOP(lucid::ops::trunc, __VA_ARGS__)
-#define COPYSIGN(...)  UNOP(lucid::ops::copysign, __VA_ARGS__)
-#define SIN(...)       UNOP(lucid::ops::sin, __VA_ARGS__)
-#define COS(...)       UNOP(lucid::ops::cos, __VA_ARGS__)
+#define IEQ_CS(...)                EQ_CS(INDEX_TYPE, __VA_ARGS__)
+#define INEQ_CS(...)               NEQ_CS(INDEX_TYPE, __VA_ARGS__)
+#define IGT_CS(...)                GT_CS(INDEX_TYPE, __VA_ARGS__)
+#define ILT_CS(...)                LT_CS(INDEX_TYPE, __VA_ARGS__)
+#define IGE_CS(...)                GE_CS(INDEX_TYPE, __VA_ARGS__)
+#define ILE_CS(...)                LE_CS(INDEX_TYPE, __VA_ARGS__)
 
-#define MIN(...)       BINOP(lucid::ops::min, __VA_ARGS__)
-#define MAX(...)       BINOP(lucid::ops::max, __VA_ARGS__)
+#define LAND(...)                  BINOP(std::logical_and, __VA_ARGS__)
+#define LOR(...)                   BINOP(std::logical_or, __VA_ARGS__)
+#define LNOT(...)                  UNOP(std::logical_not, __VA_ARGS__)
 
-#define TABS(...)      ABS(MAJOR_TYPE, __VA_ARGS__)
-#define TROUND(...)    ROUND(MAJOR_TYPE, __VA_ARGS__)
-#define TCEIL(...)     CEIL(MAJOR_TYPE, __VA_ARGS__)
-#define TFLOOR(...)    FLOOR(MAJOR_TYPE, __VA_ARGS__)
-#define TTRUNC(...)    TRUNC(MAJOR_TYPE, __VA_ARGS__)
-#define TCOPYSIGN(...) COPYSIGN(MAJOR_TYPE, __VA_ARGS__)
-#define TSIN(...)      SIN(MAJOR_TYPE, __VA_ARGS__)
-#define TCOS(...)      COS(MAJOR_TYPE, __VA_ARGS__)
+#define LAND_CS(...)               BINOP_CS(std::logical_and, __VA_ARGS__)
+#define LOR_CS(...)                BINOP_CS(std::logical_or, __VA_ARGS__)
+#define LNOT_CS(...)               UNOP_CS(std::logical_not, __VA_ARGS__)
 
-#define TMIN(...)      MIN(MAJOR_TYPE, __VA_ARGS__)
-#define TMAX(...)      MAX(MAJOR_TYPE, __VA_ARGS__)
+#define TAND(...)                  LAND(MAJOR_TYPE, __VA_ARGS__)
+#define TOR(...)                   LOR(MAJOR_TYPE, __VA_ARGS__)
+#define TNOT(...)                  LNOT(MAJOR_TYPE, __VA_ARGS__)
+
+#define IAND(...)                  LAND(INDEX_TYPE, __VA_ARGS__)
+#define IOR(...)                   LOR(INDEX_TYPE, __VA_ARGS__)
+#define INOT(...)                  LNOT(INDEX_TYPE, __VA_ARGS__)
+
+#define TAND_CS(...)               LAND_CS(MAJOR_TYPE, __VA_ARGS__)
+#define TOR_CS(...)                LOR_CS(MAJOR_TYPE, __VA_ARGS__)
+#define TNOT_CS(...)               LNOT_CS(MAJOR_TYPE, __VA_ARGS__)
+
+#define IAND_CS(...)               LAND_CS(INDEX_TYPE, __VA_ARGS__)
+#define IOR_CS(...)                LOR_CS(INDEX_TYPE, __VA_ARGS__)
+#define INOT_CS(...)               LNOT_CS(INDEX_TYPE, __VA_ARGS__)
+
+#define TCHOICE(...)               CHOICE(MAJOR_TYPE, __VA_ARGS__)
+#define ICHOICE(...)               CHOICE(INDEX_TYPE, __VA_ARGS__)
+
+#define TCHOICE_CS(...)            CHOICE_CS(MAJOR_TYPE, __VA_ARGS__)
+#define ICHOICE_CS(...)            CHOICE_CS(INDEX_TYPE, __VA_ARGS__)
+
+#define LSHFT(...)                 BINOP(lucid::ops::lshift, INDEX_TYPE, __VA_ARGS__)
+#define RSHFT(...)                 BINOP(lucid::ops::rshift, INDEX_TYPE, __VA_ARGS__)
+
+#define LSHFT_CS(...)              BINOP_CS(lucid::ops::lshift, INDEX_TYPE, __VA_ARGS__)
+#define RSHFT_CS(...)              BINOP_CS(lucid::ops::rshift, INDEX_TYPE, __VA_ARGS__)
+
+#define ABS(...)                   UNOP(lucid::ops::abs, __VA_ARGS__)
+#define ROUND(...)                 UNOP(lucid::ops::round, __VA_ARGS__)
+#define CEIL(...)                  UNOP(lucid::ops::ceil, __VA_ARGS__)
+#define FLOOR(...)                 UNOP(lucid::ops::floor, __VA_ARGS__)
+#define TRUNC(...)                 UNOP(lucid::ops::trunc, __VA_ARGS__)
+#define COPYSIGN(...)              UNOP(lucid::ops::copysign, __VA_ARGS__)
+#define SIN(...)                   UNOP(lucid::ops::sin, __VA_ARGS__)
+#define COS(...)                   UNOP(lucid::ops::cos, __VA_ARGS__)
+#define MIN(...)                   BINOP(lucid::ops::min, __VA_ARGS__)
+#define MAX(...)                   BINOP(lucid::ops::max, __VA_ARGS__)
+
+#define TABS(...)                  ABS(MAJOR_TYPE, __VA_ARGS__)
+#define TROUND(...)                ROUND(MAJOR_TYPE, __VA_ARGS__)
+#define TCEIL(...)                 CEIL(MAJOR_TYPE, __VA_ARGS__)
+#define TFLOOR(...)                FLOOR(MAJOR_TYPE, __VA_ARGS__)
+#define TTRUNC(...)                TRUNC(MAJOR_TYPE, __VA_ARGS__)
+#define TCOPYSIGN(...)             COPYSIGN(MAJOR_TYPE, __VA_ARGS__)
+#define TSIN(...)                  SIN(MAJOR_TYPE, __VA_ARGS__)
+#define TCOS(...)                  COS(MAJOR_TYPE, __VA_ARGS__)
+#define TMIN(...)                  MIN(MAJOR_TYPE, __VA_ARGS__)
+#define TMAX(...)                  MAX(MAJOR_TYPE, __VA_ARGS__)
+
+#define ABS_CS(...)                UNOP_CS(lucid::ops::abs, __VA_ARGS__)
+#define ROUND_CS(...)              UNOP_CS(lucid::ops::round, __VA_ARGS__)
+#define CEIL_CS(...)               UNOP_CS(lucid::ops::ceil, __VA_ARGS__)
+#define FLOOR_CS(...)              UNOP_CS(lucid::ops::floor, __VA_ARGS__)
+#define TRUNC_CS(...)              UNOP_CS(lucid::ops::trunc, __VA_ARGS__)
+#define COPYSIGN_CS(...)           UNOP_CS(lucid::ops::copysign, __VA_ARGS__)
+#define SIN_CS(...)                UNOP_CS(lucid::ops::sin, __VA_ARGS__)
+#define COS_CS(...)                UNOP_CS(lucid::ops::cos, __VA_ARGS__)
+#define MIN_CS(...)                BINOP_CS(lucid::ops::min, __VA_ARGS__)
+#define MAX_CS(...)                BINOP_CS(lucid::ops::max, __VA_ARGS__)
+
+#define TABS_CS(...)               ABS_CS(MAJOR_TYPE, __VA_ARGS__)
+#define TROUND_CS(...)             ROUND_CS(MAJOR_TYPE, __VA_ARGS__)
+#define TCEIL_CS(...)              CEIL_CS(MAJOR_TYPE, __VA_ARGS__)
+#define TFLOOR_CS(...)             FLOOR_CS(MAJOR_TYPE, __VA_ARGS__)
+#define TTRUNC_CS(...)             TRUNC_CS(MAJOR_TYPE, __VA_ARGS__)
+#define TCOPYSIGN_CS(...)          COPYSIGN_CS(MAJOR_TYPE, __VA_ARGS__)
+#define TSIN_CS(...)               SIN_CS(MAJOR_TYPE, __VA_ARGS__)
+#define TCOS_CS(...)               COS_CS(MAJOR_TYPE, __VA_ARGS__)
+#define TMIN_CS(...)               MIN_CS(MAJOR_TYPE, __VA_ARGS__)
+#define TMAX_CS(...)               MAX_CS(MAJOR_TYPE, __VA_ARGS__)
