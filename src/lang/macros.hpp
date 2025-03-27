@@ -206,29 +206,23 @@
 #define IGE_CS(...)                GE_CS(INDEX_TYPE, __VA_ARGS__)
 #define ILE_CS(...)                LE_CS(INDEX_TYPE, __VA_ARGS__)
 
-#define LAND(...)                  BINOP(std::logical_and, __VA_ARGS__)
-#define LOR(...)                   BINOP(std::logical_or, __VA_ARGS__)
-#define LNOT(...)                  UNOP(std::logical_not, __VA_ARGS__)
+#define LAND(...)                  BINOP(std::logical_and, INDEX_TYPE, __VA_ARGS__)
+#define LOR(...)                   BINOP(std::logical_or, INDEX_TYPE, __VA_ARGS__)
+#define LNOT(...)                  UNOP(std::logical_not, INDEX_TYPE, __VA_ARGS__)
 
-#define LAND_CS(...)               BINOP_CS(std::logical_and, __VA_ARGS__)
-#define LOR_CS(...)                BINOP_CS(std::logical_or, __VA_ARGS__)
-#define LNOT_CS(...)               UNOP_CS(std::logical_not, __VA_ARGS__)
+#define LAND_CS(...)               BINOP_CS(std::logical_and, INDEX_TYPE, __VA_ARGS__)
+#define LOR_CS(...)                BINOP_CS(std::logical_or, INDEX_TYPE, __VA_ARGS__)
+#define LNOT_CS(...)               UNOP_CS(std::logical_not, INDEX_TYPE, __VA_ARGS__)
 
-#define TAND(...)                  LAND(MAJOR_TYPE, __VA_ARGS__)
-#define TOR(...)                   LOR(MAJOR_TYPE, __VA_ARGS__)
-#define TNOT(...)                  LNOT(MAJOR_TYPE, __VA_ARGS__)
+#define BAND(...)                  BINOP(std::bit_and, INDEX_TYPE, __VA_ARGS__)
+#define BOR(...)                   BINOP(std::bit_or, INDEX_TYPE, __VA_ARGS__)
+#define XOR(...)                   BINOP(std::bit_xor, INDEX_TYPE, __VA_ARGS__)
+#define BNOT(...)                  UNOP(std::bit_not, INDEX_TYPE, __VA_ARGS__)
 
-#define IAND(...)                  LAND(INDEX_TYPE, __VA_ARGS__)
-#define IOR(...)                   LOR(INDEX_TYPE, __VA_ARGS__)
-#define INOT(...)                  LNOT(INDEX_TYPE, __VA_ARGS__)
-
-#define TAND_CS(...)               LAND_CS(MAJOR_TYPE, __VA_ARGS__)
-#define TOR_CS(...)                LOR_CS(MAJOR_TYPE, __VA_ARGS__)
-#define TNOT_CS(...)               LNOT_CS(MAJOR_TYPE, __VA_ARGS__)
-
-#define IAND_CS(...)               LAND_CS(INDEX_TYPE, __VA_ARGS__)
-#define IOR_CS(...)                LOR_CS(INDEX_TYPE, __VA_ARGS__)
-#define INOT_CS(...)               LNOT_CS(INDEX_TYPE, __VA_ARGS__)
+#define BAND_CS(...)               BINOP_CS(std::bit_and, INDEX_TYPE, __VA_ARGS__)
+#define BOR_CS(...)                BINOP_CS(std::bit_or, INDEX_TYPE, __VA_ARGS__)
+#define XOR_CS(...)                BINOP_CS(std::bit_xor, INDEX_TYPE, __VA_ARGS__)
+#define BNOT_CS(...)               UNOP_CS(std::bit_not, INDEX_TYPE, __VA_ARGS__)
 
 #define TCHOICE(...)               CHOICE(MAJOR_TYPE, __VA_ARGS__)
 #define ICHOICE(...)               CHOICE(INDEX_TYPE, __VA_ARGS__)

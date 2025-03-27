@@ -401,6 +401,11 @@ MK_REMAP_BINOP(std::logical_and, &&)
 MK_REMAP_BINOP(std::logical_or, ||)
 MK_REMAP_UNOP(std::logical_not, !)
 
+MK_REMAP_BINOP(std::bit_and, &)
+MK_REMAP_BINOP(std::bit_or, |)
+MK_REMAP_BINOP(std::bit_xor, ^)
+MK_REMAP_UNOP(std::bit_not, ~)
+
 MK_REMAP_BINOP(ops::lshift, <<)
 MK_REMAP_BINOP(ops::rshift, >>)
 
