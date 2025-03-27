@@ -96,13 +96,37 @@ BEGIN(jmp4_test, IVAR(i), TVAR(a))
     TDIV(a, a, 2)
 TEND1(a);
 
+// 0: a & b;
+// 1: a | b;
+// 2: a ^ 5;
+// 3: ~a;
+template <std::integral T>
+BEGIN(bit_test, IVAR(i), IVAR(a), IVAR(b))
+    PJMP4(i, l0, l1, l2, l3),
+
+    LABEL(l0),
+    BAND(a, a, b),
+    JMP(HALT),
+
+    LABEL(l1),
+    BOR(a, a, b),
+    JMP(HALT),
+
+    LABEL(l2),
+    XOR(a, a, b),
+    JMP(HALT),
+
+    LABEL(l3),
+    BNOT(a, a)
+END(IVAR(a));
+
 // !i && (a > 0.5) ? -a : a
 template <std::floating_point T>
 BEGIN(choice_test, IVAR(i), TVAR(a))
-    INOT(i, i),
+    LNOT(i, i),
     TGT(cmp, a, 0.5),
     TNEG(ma, a),
-    IAND(i, i, cmp),
+    LAND(i, i, cmp),
     TCHOICE(ma, i, ma, a)
 TEND1(ma);
 
@@ -216,6 +240,20 @@ val_jmp4(unsigned i, float a) noexcept
     return a;
 }
 
+// bitwise ops validation
+constexpr unsigned
+val_bit(unsigned i, unsigned a, unsigned b)
+{
+    switch(i)
+    {
+    case 0: return a & b;
+    case 1: return a | b;
+    case 2: return a ^ b;
+    case 3: return ~a;
+    }
+    return a;
+};
+
 constexpr float
 val_choice(unsigned i, float a) noexcept
 {
@@ -250,6 +288,7 @@ MK_NIEBLOID(val_sut);
 MK_NIEBLOID(val_cut);
 MK_NIEBLOID(val_jmp4);
 MK_NIEBLOID(val_choice);
+MK_NIEBLOID(val_bit);
 MK_NIEBLOID(val_lshift);
 MK_NIEBLOID(val_rshift);
 MK_NIEBLOID(val_cubic_eval);
@@ -261,6 +300,7 @@ using sut          = simple_union_test<float>;
 using cut          = complex_union_test<float>;
 using jmp4_float   = jmp4_test<float>;
 using choice_float = choice_test<float>;
+using bit_u        = bit_test<unsigned>;
 using lshift_u     = lshift_test<unsigned>;
 using rshift_u     = rshift_test<unsigned>;
 using abs_float    = abs_test<float>;

@@ -23,12 +23,16 @@ main(int argc, char* argv[])
 
     auto g_int   = rs.make_gen<int>(2, 10);
     auto g_ui    = rs.make_gen<unsigned>(2, 10);
+    auto g_uim   = rs.make_gen<unsigned>(0, static_cast<unsigned>(-1));
     auto g_canon = rs.make_gen<float>();
     auto g_float = rs.make_gen<float>(-1e6f, 1e6f);
     auto g_u3    = rs.make_gen<unsigned>(0, 3);
     auto g_b     = rs.make_gen<bool>(0.5);
     auto g_a     = rs.make_gen<float>(1.f, 1e6f);
     auto g_j4    = [&]() noexcept { return std::pair{g_u3(), g_canon()}; };
+    auto g_bit   = [&]() noexcept {
+        return std::tuple{g_u3(), g_uim(), g_uim()};
+    };
     auto g_shift = [&]() noexcept { return std::pair(g_ui(), g_ui()); };
     auto g_f2    = [&]() noexcept { return std::pair{g_float(), g_float()}; };
     auto g_cubic = [&]() noexcept
@@ -50,6 +54,7 @@ main(int argc, char* argv[])
     bse::function<cut>          bse_cut;
     bse::function<jmp4_float>   bse_jmp4;
     bse::function<choice_float> bse_choice;
+    bse::function<bit_u>        bse_bit;
     bse::function<lshift_u>     bse_lshift;
     bse::function<rshift_u>     bse_rshift;
     bse::function<cubic_eval_f> bse_cubic;
@@ -61,6 +66,7 @@ main(int argc, char* argv[])
     bve::function<cut>          bve_cut(vector_size);
     bve::function<jmp4_float>   bve_jmp4(vector_size);
     bve::function<choice_float> bve_choice(vector_size);
+    bve::function<bit_u>        bve_bit(vector_size);
     bve::function<lshift_u>     bve_lshift(vector_size);
     bve::function<rshift_u>     bve_rshift(vector_size);
 
@@ -78,6 +84,7 @@ main(int argc, char* argv[])
     simd::function<cut>          simd_v_cut(vector_size);
     simd::function<jmp4_float>   simd_v_jmp4(vector_size);
     simd::function<choice_float> simd_v_choice(vector_size);
+    simd::function<bit_u>        simd_v_bit(vector_size);
     simd::function<lshift_u>     simd_v_lshift(vector_size);
     simd::function<rshift_u>     simd_v_rshift(vector_size);
     simd::function<abs_float>    simd_v_abs(vector_size);
@@ -95,6 +102,7 @@ main(int argc, char* argv[])
     simd::function<cut, true>          simd_k_cut(vector_size);
     simd::function<jmp4_float, true>   simd_k_jmp4(vector_size);
     simd::function<choice_float, true> simd_k_choice(vector_size);
+    simd::function<bit_u, true>        simd_k_bit(vector_size);
     simd::function<lshift_u, true>     simd_k_lshift(vector_size);
     simd::function<rshift_u, true>     simd_k_rshift(vector_size);
     simd::function<abs_float, true>    simd_k_abs(vector_size);
@@ -158,6 +166,10 @@ main(int argc, char* argv[])
                             "SIMD Vertical choice");
     auto tsk_ch = NamedTest(tm.rng_with_ref(g_j4, simd_k_choice, bve_choice),
                             "SIMD Minikernel choice");
+    auto tsv_bt = NamedTest(TEST_RESET_V(g_bit, simd_v_bit, bve_bit),
+                            "SIMD Vertical bitwise operations");
+    auto tsk_bt = NamedTest(TEST_RESET_V(g_bit, simd_k_bit, bve_bit),
+                            "SIMD Minikernel bitwise operations");
     auto tsv_ls = NamedTest(tm.rng_with_ref(g_shift, simd_v_lshift, bve_lshift),
                             "SIMD Vertical left shift");
     auto tsk_ls = NamedTest(tm.rng_with_ref(g_shift, simd_k_lshift, bve_lshift),
@@ -223,6 +235,7 @@ main(int argc, char* argv[])
     auto ft_cu = std::pair{tsv_cu, tsk_cu};
     auto ft_j4 = std::pair{tsv_j4, tsk_j4};
     auto ft_ch = std::pair{tsv_ch, tsk_ch};
+    auto ft_bt = std::pair{tsv_bt, tsk_bt};
     auto ft_ls = std::pair{tsv_ls, tsk_ls};
     auto ft_rs = std::pair{tsv_rs, tsk_rs};
 
@@ -282,6 +295,19 @@ main(int argc, char* argv[])
         NamedTest(tm.rng_with_scalar_ref(g_j4, bve_choice, bse_choice),
                   "BVE choice"),
         ft_ch);
+
+    track.dep_check(
+        NamedTest(tm.with_ref(g_bit, bse_bit, val_bit),
+                  "BSE bitwise operations"),
+        NamedTest(
+            [&]() noexcept
+            {
+                bool r = tm.rng_with_scalar_ref(g_bit, bve_bit, bse_bit)();
+                bve_bit.reset();
+                return r;
+            },
+            "BVE bitwise operations"),
+        ft_bt);
 
     track.check(tsv_abs);
     track.check(tsk_abs);
