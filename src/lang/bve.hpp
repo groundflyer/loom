@@ -31,30 +31,24 @@ using fsize_t = std::uint32_t;
 constexpr inline fsize_t dynamic_extent = -1;
 
 template <typename T,
-          template <typename, typename>
-          typename Vector,
-          template <typename>
-          typename Allocator>
+          template <typename, typename> typename Vector,
+          template <typename> typename Allocator>
 struct vector_union
 {
     using type = Vector<T, Allocator<T>>;
 };
 
 template <typename... Ts,
-          template <typename, typename>
-          typename Vector,
-          template <typename>
-          typename Allocator>
+          template <typename, typename> typename Vector,
+          template <typename> typename Allocator>
 struct vector_union<Union<Ts...>, Vector, Allocator>
 {
     using type = UnionVector<type_sequence<Ts...>, Allocator<std::byte>>;
 };
 
 template <typename T,
-          template <typename, typename>
-          typename Vector,
-          template <typename>
-          typename Allocator>
+          template <typename, typename> typename Vector,
+          template <typename> typename Allocator>
 using vector_union_t = vector_union<T, Vector, Allocator>::type;
 
 template <typename Data, typename Helper, typename _CP>
@@ -67,7 +61,8 @@ class ProxyRow
     copy_values(const ProxyRow& rhs) noexcept
     {
         intlist::for_each(
-            []<std::size_t I>(ProxyRow& lhs, const ProxyRow& rhs) noexcept {
+            []<std::size_t I>(ProxyRow& lhs, const ProxyRow& rhs) noexcept
+            {
                 std::get<I>(lhs.m_data)[lhs.m_pos] =
                     std::get<I>(rhs.m_data)[rhs.m_pos];
             },
@@ -182,7 +177,7 @@ class ProxyView
     {
     }
     ProxyView(ProxyView&& other) noexcept :
-        m_data(other.m_data), m_pos(other.m_pos){};
+        m_data(other.m_data), m_pos(other.m_pos) {};
 
     ProxyView(Data& data, fsize_t pos) noexcept : m_data(data), m_pos(pos) {}
 
@@ -268,7 +263,7 @@ class ProxyView<Data, Helper, _CP, dynamic_extent>
     {
     }
     ProxyView(ProxyView&& other) noexcept :
-        m_data(other.m_data), m_pos(other.m_pos), m_ext(other.m_ext){};
+        m_data(other.m_data), m_pos(other.m_pos), m_ext(other.m_ext) {};
 
     ProxyView(Data& data, fsize_t pos, fsize_t ext) noexcept :
         m_data(data), m_pos(pos), m_ext(ext)
@@ -451,7 +446,7 @@ class MemoryIterator : public std::contiguous_iterator_tag
     MemoryIterator
     operator-(difference_type rhs) const noexcept
     {
-        return {p_data, m_pos - rhs, m_size};
+        return {p_data, static_cast<fsize_t>(m_pos - rhs), m_size};
     }
 
     difference_type
@@ -687,15 +682,165 @@ class Memory
     }
 };
 
+template <std::input_iterator                                          I,
+          std::predicate<typename std::iterator_traits<I>::value_type> P>
+I
+swap_only_partition(I first, I last, P p) noexcept
+{
+    first = std::find_if_not(first, last, p);
+    if(first == last) return first;
+
+    for(auto i = std::next(first); i != last; ++i)
+        if(p(*i)) std::iter_swap(i, first++);
+
+    return first;
+}
+
+template <std::random_access_iterator                                  I,
+          std::predicate<typename std::iterator_traits<I>::value_type,
+                         typename std::iterator_traits<I>::value_type> Cmp =
+              std::less<typename std::iterator_traits<I>::value_type>>
+void
+swap_only_make_heap(I first, I last, Cmp cmp = Cmp{}) noexcept
+{
+    using difference_type = std::iterator_traits<I>::difference_type;
+
+    difference_type n = last - first;
+
+    for(difference_type i = 1; i < n; ++i)
+    {
+        I child_i  = first + i;
+        I parent_i = first + (i - 1) / 2;
+
+        if(cmp(*parent_i, *child_i))
+        {
+            difference_type j        = i;
+            I               child_j  = first + j;
+            I               parent_j = first + (j - 1) / 2;
+
+            while(cmp(*parent_j, *child_j))
+            {
+                std::iter_swap(child_j, parent_j);
+                j        = (j - 1) / 2;
+                child_j  = first + j;
+                parent_j = first + (j - 1) / 2;
+            }
+        }
+    }
+}
+
+template <std::random_access_iterator                                  I,
+          std::predicate<typename std::iterator_traits<I>::value_type,
+                         typename std::iterator_traits<I>::value_type> Cmp =
+              std::less<typename std::iterator_traits<I>::value_type>>
+void
+swap_only_heap_sort(I first, I last, Cmp cmp = Cmp{}) noexcept
+{
+    using difference_type = std::iterator_traits<I>::difference_type;
+
+    difference_type n = last - first;
+
+    for(difference_type i = n - 1; i > 0; --i)
+    {
+        std::iter_swap(first, first + i);
+
+        difference_type j = 0;
+        difference_type idx;
+
+        do {
+            idx = 2 * j + 1;
+
+            if(cmp(*(first + idx), *(first + idx + 1)) && idx < (i - 1)) ++idx;
+
+            if(cmp(*(first + j), *(first + idx)) && idx < i)
+                std::iter_swap(first + j, first + idx);
+
+            j = idx;
+        } while(idx < i);
+    }
+}
+
+template <std::random_access_iterator                                  I,
+          std::predicate<typename std::iterator_traits<I>::value_type,
+                         typename std::iterator_traits<I>::value_type> Cmp =
+              std::less<typename std::iterator_traits<I>::value_type>>
+void
+swap_only_insertion_sort(I first, I last, Cmp cmp = Cmp{}) noexcept
+{
+    for(auto i = std::next(first); i != last; ++i)
+        for(auto j = i; (j != first) && cmp(*j, *(std::prev(j))); --j)
+            std::iter_swap(j, std::prev(j));
+}
+
+template <std::random_access_iterator I>
+    requires(
+        std::three_way_comparable<typename std::iterator_traits<I>::value_type>)
+I
+median_of_3(I a, I b, I c) noexcept
+{
+    const bool alb = *a < *b;
+    const bool blc = *b < *c;
+    if(alb && blc) return b;
+
+    const bool alc  = *a < *c;
+    const bool cleb = *c <= *b;
+    if(alc && cleb) return c;
+
+    const bool blea = *b <= *a;
+    if(alc && blea) return a;
+
+    const bool clea = *c <= *a;
+    if(blc && clea) return c;
+
+    if(clea && alb) return a;
+
+    // if(cleb && blea)
+    return b;
+}
+
+template <std::random_access_iterator I>
+void
+swap_only_introsort_impl(I first, I last, const unsigned depth) noexcept
+{
+    using difference_type     = std::iterator_traits<I>::difference_type;
+    const difference_type len = last - first;
+
+    if(len < static_cast<difference_type>(16))
+        return swap_only_insertion_sort(first, last);
+
+    if(depth == 0u)
+    {
+        swap_only_make_heap(first, last);
+        return swap_only_heap_sort(first, last);
+    }
+
+    I pivot = median_of_3(first, first + len / 2, last - 1);
+    I m     = swap_only_partition(first,
+                              last,
+                              [p = *pivot](auto val) { return val < p; });
+    swap_only_introsort_impl(first, m, depth - 1);
+    swap_only_introsort_impl(m, last, depth - 1);
+}
+
+template <std::random_access_iterator I>
+    requires(
+        std::three_way_comparable<typename std::iterator_traits<I>::value_type>)
+void
+swap_only_introsort(I first, I last) noexcept
+{
+    swap_only_introsort_impl(
+        first,
+        last,
+        2u * static_cast<unsigned>(std::floor(std::log(last - first))));
+}
+
 template <fsize_t num_bins,
           auto    halt_pos,
           typename RegTypes,
           typename RegNames,
           typename _CP,
-          template <typename, typename>
-          typename _Vector,
-          template <typename>
-          typename Allocator>
+          template <typename, typename> typename _Vector,
+          template <typename> typename Allocator>
     requires(std::is_same_v<decltype(halt_pos), vartype<_CP>>)
 void
 counting_sort(Memory<RegTypes, RegNames, _CP, _Vector, Allocator>& in,
@@ -741,12 +886,12 @@ class SimpleSorter
 
   public:
     SimpleSorter() noexcept = default;
-    explicit SimpleSorter(fsize_t n) : m_mem(n){};
+    explicit SimpleSorter(fsize_t n) : m_mem(n) {};
 
     void
     sort() noexcept
     {
-        if constexpr(!singular) std::sort(m_mem.begin(), m_mem.end());
+        if constexpr(!singular) swap_only_introsort(m_mem.begin(), m_mem.end());
     }
 };
 
@@ -1003,7 +1148,8 @@ struct vector_eval<Compute<Op, Dst, Args...>, LabelMap>
     operator()(_Memory&& mem) const noexcept
     {
         std::ranges::for_each(std::forward<_Memory>(mem),
-                              [](auto row) constexpr noexcept {
+                              [](auto row) constexpr noexcept
+                              {
                                   row.template get<Dst>() =
                                       std::invoke(Op{},
                                                   get_value<Args>(row)...);
@@ -1050,6 +1196,7 @@ class basic_vector_compiler
     using reg_names = _Program::reg_names;
     using reg_types = _Program::reg_types;
     using cp        = _Program::cp;
+    using vars      = _Program::variables;
 
     static constexpr bool        singular = _Program::singular;
     static constexpr vartype<cp> halt_pos = _Program::halt_pos;
@@ -1062,12 +1209,12 @@ class basic_vector_compiler
     using memory        = Memory<reg_types, reg_names, cp>;
     using simple_sorter = SimpleSorter<memory, singular>;
     using sorter        = std::conditional_t<
-        use_counting_sort,
-        std::conditional_t<
-            singular,
-            simple_sorter,
-            CountingSorter<memory, _Program::num_cells + 1, halt_pos>>,
-        simple_sorter>;
+               use_counting_sort,
+               std::conditional_t<
+                   singular,
+                   simple_sorter,
+                   CountingSorter<memory, _Program::num_cells + 1, halt_pos>>,
+               simple_sorter>;
 
     using memory_facade =
         MemoryFacade<_Program, std::vector, std::allocator, sorter>;
@@ -1121,6 +1268,39 @@ class basic_vector_compiler
 
     class evaluator : public memory_facade
     {
+#if 0
+        void
+        print() const noexcept
+        {
+            auto columns = typelist::maybe_collect<std::tuple>(
+                vars{},
+                [&]<typename Var>() constexpr noexcept
+                {
+                    return memory_facade::visit(
+                        [](memory& mem) noexcept
+                        { return std::views::all(mem.template get<Var>()); });
+                });
+
+            typelist::for_each(vars{},
+                               []<typename Var>()
+                               {
+                                   using name       = varname<Var>;
+                                   constexpr auto l = intlist::length<name>;
+                                   constexpr auto a = intlist::array<name>;
+                                   constexpr std::string_view s(a, l);
+                                   fmt::print("{:>10}", s);
+                               });
+            putchar('\n');
+            for(fsize_t i = 0; i < memory_facade::size(); ++i)
+            {
+                lucid::for_each(columns,
+                                [i](const auto& c)
+                                { fmt::print("{:>10}", c[i]); });
+                putchar('\n');
+            }
+        }
+#endif
+
       public:
         using program = _Program;
         using memory_facade::memory_facade;
