@@ -463,43 +463,113 @@ struct find<P, type_sequence<T, Ts...>>
                            typename find<P, type_sequence<Ts...>>::type>;
 };
 
-template <template <typename> typename P, typename Ms, typename Rs, typename Xs>
-struct split_with;
-
-template <template <typename> typename P, typename Ms, typename Rs>
-struct split_with<P, Ms, Rs, type_sequence<>>
+template <template <typename> typename Predicate,
+          typename InputList,
+          typename OutputList,
+          typename TmpList>
+struct Splitter
 {
-    using type = join<Ms, type_sequence<Rs>>::type;
+    template <typename T>
+    using delim_p     = Predicate<T>;
+    using input_list  = InputList;
+    using tmp_list    = TmpList;
+    using output_list = OutputList;
 };
 
-template <template <typename> typename P,
-          typename Ms,
-          typename Rs,
-          typename X,
-          typename... Xs>
-struct split_with<P, Ms, Rs, type_sequence<X, Xs...>>
+template <template <typename> typename P, typename Elem>
+struct test_delim
 {
-    using type = std::conditional_t<
-        P<X>::value,
-        typename split_with<P,
-                            typename join<Ms, type_sequence<Rs>>::type,
-                            type_sequence<>,
-                            type_sequence<Xs...>>::type,
-        typename split_with<P,
-                            Ms,
-                            typename join<Rs, type_sequence<X>>::type,
-                            type_sequence<Xs...>>::type>;
+    using type = std::conditional_t<P<Elem>::value, void, Elem>;
+};
+
+template <typename Elem, typename L>
+struct update_tmp
+{
+    using type = join<L, type_sequence<Elem>>::type;
+};
+
+template <typename L>
+struct update_tmp<void, L>
+{
+    using type = type_sequence<>;
+};
+
+template <typename Elem, typename Tmp, typename Out>
+struct update_out
+{
+    using type = Out;
+};
+
+template <typename Tmp, typename Out>
+struct update_out<void, Tmp, Out>
+{
+    using type = join<Out, type_sequence<Tmp>>::type;
+};
+
+template <typename _Splitter>
+class split_step
+{
+    using old_tmp = _Splitter::tmp_list;
+    using old_inp = _Splitter::input_list;
+    using old_out = _Splitter::output_list;
+
+    template <typename T>
+    using p = _Splitter::template delim_p<T>;
+
+    using elem = test_delim<p, typename at<0, old_inp>::type>::type;
+
+    using new_tmp = update_tmp<elem, old_tmp>::type;
+    using new_inp = tail<old_inp>::type;
+    using new_out = update_out<elem, old_tmp, old_out>::type;
+
+  public:
+    using type = Splitter<p, new_inp, new_out, new_tmp>;
+};
+
+template <typename Inp, typename _Splitter>
+struct split_cont;
+
+template <typename T, typename... Ts, typename _Splitter>
+struct split_cont<type_sequence<T, Ts...>, _Splitter>
+{
+    using next_splitter = split_step<_Splitter>::type;
+    using type =
+        split_cont<typename next_splitter::input_list, next_splitter>::type;
+};
+
+template <typename _Splitter>
+struct split_cont<type_sequence<>, _Splitter>
+{
+    using type = _Splitter;
+};
+
+template <template <typename> typename P, typename InputList>
+struct make_splitter
+{
+    using type = Splitter<P, InputList, type_sequence<>, type_sequence<>>;
+};
+
+template <template <typename> typename P, typename InputList>
+class split_when
+{
+    using result_splitter =
+        split_cont<InputList, typename make_splitter<P, InputList>::type>::type;
+    using result_list =
+        join<typename result_splitter::output_list,
+             type_sequence<typename result_splitter::tmp_list>>::type;
+
+  public:
+    using type = purge<type_sequence<>, result_list>::type;
 };
 
 template <typename D, typename List>
-class split
+class split_up
 {
     template <typename U>
     using eq = std::is_same<D, U>;
 
   public:
-    using type =
-        typename split_with<eq, type_sequence<>, type_sequence<>, List>::type;
+    using type = split_when<eq, List>::type;
 };
 
 template <typename List, typename Aggr>
@@ -769,17 +839,13 @@ inline constexpr bool empty = length<List> == 0;
 /// The delimeter elements are such that satisfy predicate @p P,
 /// i.e. P<T>::value == true.
 template <template <typename> typename P, typename List>
-using split_with =
-    purge<type_sequence<>,
-          typename detail::
-              split_with<P, type_sequence<>, type_sequence<>, List>::type>;
+using split_when = detail::split_when<P, List>::type;
 
 /// @brief Split typelist into sublists with a delimeter.
 ///
 /// The resulting type is type_sequence<type_sequence<...>...>.
 template <typename Delimeter, typename List>
-using split =
-    purge<type_sequence<>, typename detail::split<Delimeter, List>::type>;
+using split_up = detail::split_up<Delimeter, List>::type;
 
 /// @brief Convert a class template @p Source into type_sequence.
 template <typename Source>

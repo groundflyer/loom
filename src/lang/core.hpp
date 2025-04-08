@@ -340,6 +340,7 @@ struct MemoryHelper
     using reg_access = access_wrapper<typelist::lookup<varname<Var>, table>>;
 
     template <typename Var>
+        requires(typelist::elem<varname<Var>, RegNames>)
     static constexpr decltype(auto)
     get(data& _data) noexcept
     {
@@ -350,6 +351,7 @@ struct MemoryHelper
     }
 
     template <typename Var>
+        requires(typelist::elem<varname<Var>, RegNames>)
     static constexpr decltype(auto)
     get(const data& _data) noexcept
     {
@@ -672,7 +674,7 @@ struct Program
     static_assert(!typelist::any<is_literal, stated_vars>);
 
     /// @brief List of lists of commands.
-    using cells_statements = typelist::split_with<is_label, instructions>;
+    using cells_statements = typelist::split_when<is_label, instructions>;
 
     using stated_labels = typelist::filter<is_label, instructions>;
 

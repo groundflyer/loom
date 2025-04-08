@@ -84,12 +84,12 @@ using splitest1  = type_sequence<bool, int, float, bool, double, unsigned, int>;
 using splittest2 = type_sequence<type_sequence<int, float>,
                                  type_sequence<double, unsigned, int>>;
 #define I(i) std::integral_constant<int, i>
-using flatten_test =
-    type_sequence<I(1),
-                  I(2),
-                  type_sequence<I(3), I(4), type_sequence<I(5), I(6)>, I(7)>,
-                  type_sequence<I(8), I(9)>,
-                  I(10)>;
+using flatten_test = type_sequence<
+    I(1),
+    I(2),
+    type_sequence<I(3), I(4), type_sequence<I(5), type_sequence<I(6), I(7)>>>,
+    type_sequence<I(8), I(9)>,
+    I(10)>;
 using flatten_val =
     type_sequence<I(1), I(2), I(3), I(4), I(5), I(6), I(7), I(8), I(9), I(10)>;
 
@@ -135,7 +135,7 @@ static_assert(is_same_v<lookup<float, testmap>, double>);
 static_assert(is_void_v<lookup<long*, testmap>>);
 static_assert(is_same_v<find<is_floating_point, testlist1>, float>);
 static_assert(is_void_v<find<is_pointer, testlist1>>);
-static_assert(is_same_v<split<bool, splitest1>, splittest2>);
+static_assert(is_same_v<split_up<bool, splitest1>, splittest2>);
 static_assert(
     is_same_v<to_integer_sequence<intlist::testlist1_ts>, intlist::testlist1>);
 static_assert(
