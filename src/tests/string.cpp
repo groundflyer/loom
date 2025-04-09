@@ -15,12 +15,14 @@ using namespace lucid;
 #define TEST_s2f(T, VAL) \
     static_assert(s2f<T>(#VAL).value() == static_cast<T>(VAL))
 
+TEST_s2f(float, 0);
 TEST_s2f(float, 1);
 TEST_s2f(float, 1234.567);
 TEST_s2f(float, 1e2);
 TEST_s2f(float, 0.5e2);
 TEST_s2f(float, 0.5e-2);
 TEST_s2f(float, 1e-8);
+TEST_s2f(double, 0);
 TEST_s2f(double, -1234.567);
 TEST_s2f(double, -1e2);
 TEST_s2f(double, -0.5e2);
