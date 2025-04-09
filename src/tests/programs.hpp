@@ -174,23 +174,6 @@ TBEGIN2(minmax_test, a, b)
     TGT(r, x, n)
 END(IVAR(r));
 
-// a * x^3 + b * x^2 + c * x + d
-TMACRO_BEGIN3(cubic_eval, result, x3, x2)
-    TMUL_CS(x2, CS(x), CS(x)),
-    TMUL_CS(x3, x2, CS(x)),
-    TMUL_CS(result, CS(a), x3),
-    TMUL_CS(x3, CS(b), x2),
-    TADD_CS(result, result, x3),
-    TMUL_CS(x3, CS(c), CS(x)),
-    TADD_CS(result, result, x3),
-    TADD_CS(result, result, CS(d))
-MACRO_END;
-
-template <std::floating_point T>
-TBEGIN5(cubic_eval_program, a, b, c, d, x)
-    INSERT_TMACRO_CS3(cubic_eval, r, t1, t2)
-TEND1(r);
-
 // clang-format on
 
 // validation programs
@@ -271,15 +254,6 @@ val_rshift(unsigned a, unsigned b) noexcept
 {
     return a >> b;
 }
-
-template <std::floating_point T>
-T
-val_cubic_eval(const T a, const T b, const T c, const T d, const T x) noexcept
-{
-    const T x2 = x * x;
-    const T x3 = x2 * x;
-    return a * x3 + b * x2 + c * x + d;
-}
 } // namespace fn
 
 MK_NIEBLOID(val_inc);
@@ -291,7 +265,6 @@ MK_NIEBLOID(val_choice);
 MK_NIEBLOID(val_bit);
 MK_NIEBLOID(val_lshift);
 MK_NIEBLOID(val_rshift);
-MK_NIEBLOID(val_cubic_eval);
 
 using incr_int     = increment<int>;
 using fac_int      = factorial_int<int>;
@@ -307,7 +280,6 @@ using abs_float    = abs_test<float>;
 using trunc_float  = trunc_test<float>;
 using ceilfloor_f  = ceilfloor<float>;
 using minmax_float = minmax_test<float>;
-using cubic_eval_f = cubic_eval_program<float>;
 
 template <typename S>
 auto

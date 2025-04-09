@@ -1,7 +1,7 @@
 // -*- C++ -*-
 // lang.cpp
 
-#pragma GCC diagnostic   ignored "-Wignored-attributes"
+#pragma GCC diagnostic ignored "-Wignored-attributes"
 #pragma clang diagnostic ignored "-Walign-mismatch"
 
 #include "programs.hpp"
@@ -27,22 +27,11 @@ main(int argc, char* argv[])
     auto g_canon = rs.make_gen<float>();
     auto g_float = rs.make_gen<float>(-1e6f, 1e6f);
     auto g_u3    = rs.make_gen<unsigned>(0, 3);
-    auto g_b     = rs.make_gen<bool>(0.5);
-    auto g_a     = rs.make_gen<float>(1.f, 1e6f);
     auto g_j4    = [&]() noexcept { return std::pair{g_u3(), g_canon()}; };
-    auto g_bit   = [&]() noexcept {
-        return std::tuple{g_u3(), g_uim(), g_uim()};
-    };
+    auto g_bit   = [&]() noexcept
+    { return std::tuple{g_u3(), g_uim(), g_uim()}; };
     auto g_shift = [&]() noexcept { return std::pair(g_ui(), g_ui()); };
     auto g_f2    = [&]() noexcept { return std::pair{g_float(), g_float()}; };
-    auto g_cubic = [&]() noexcept
-    {
-        return std::tuple{g_a() * (g_b() ? -1.f : 1.f),
-                          g_float(),
-                          g_float(),
-                          g_float(),
-                          g_float()};
-    };
 
     const unsigned vector_size = tm.num_runs;
     const unsigned stream_size = vector_size / 8;
@@ -57,7 +46,6 @@ main(int argc, char* argv[])
     bse::function<bit_u>        bse_bit;
     bse::function<lshift_u>     bse_lshift;
     bse::function<rshift_u>     bse_rshift;
-    bse::function<cubic_eval_f> bse_cubic;
 
     bve::function<incr_int>     bve_ii(vector_size);
     bve::function<fac_unsigned> bve_fu(vector_size);
@@ -317,9 +305,6 @@ main(int argc, char* argv[])
     track.check(tsk_ceilfloor);
     track.check(tsv_minmax);
     track.check(tsk_minmax);
-
-    track.check(NamedTest(tm.with_ref(g_cubic, bse_cubic, val_cubic_eval),
-                          "BSE cubic eval"));
 
     return track.ret_code();
 }

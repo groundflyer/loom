@@ -33,6 +33,8 @@
     BEGIN(NAME, TVAR(a), TVAR(b), TVAR(c), TVAR(d))
 #define TBEGIN5(NAME, a, b, c, d, e) \
     BEGIN(NAME, TVAR(a), TVAR(b), TVAR(c), TVAR(d), TVAR(e))
+#define TBEGIN6(NAME, a, b, c, d, e, f) \
+    BEGIN(NAME, TVAR(a), TVAR(b), TVAR(c), TVAR(d), TVAR(e), TVAR(f))
 #define TEND1(v) \
     END          \
     (TVAR(v))
@@ -59,47 +61,75 @@
     PMACRO_BEGIN(NAME, CLASS T1, CLASS T2)
 #define PMACRO_BEGIN3(NAME, CLASS, T1, T2, T3) \
     PMACRO_BEGIN(NAME, CLASS T1, CLASS T2, CLASS T3)
+#define PMACRO_BEGIN4(NAME, CLASS, T1, T2, T3, T4) \
+    PMACRO_BEGIN(NAME, CLASS T1, CLASS T2, CLASS T3, CLASS T4)
+#define PMACRO_BEGIN5(NAME, CLASS, T1, T2, T3, T4, T5) \
+    PMACRO_BEGIN(NAME, CLASS T1, CLASS T2, CLASS T3, CLASS T4, CLASS T5)
+#define PMACRO_BEGIN6(NAME, CLASS, T1, T2, T3, T4, T5, T6) \
+    PMACRO_BEGIN(NAME,                                     \
+                 CLASS T1,                                 \
+                 CLASS T2,                                 \
+                 CLASS T3,                                 \
+                 CLASS T4,                                 \
+                 CLASS T5,                                 \
+                 CLASS T6)
 #define TMACRO_BEGIN1(NAME, T1)     PMACRO_BEGIN1(NAME, typename, T1)
 #define TMACRO_BEGIN2(NAME, T1, T2) PMACRO_BEGIN2(NAME, typename, T1, T2)
 #define TMACRO_BEGIN3(NAME, T1, T2, T3) \
     PMACRO_BEGIN3(NAME, typename, T1, T2, T3)
-#define MACRO_END                       >
+#define TMACRO_BEGIN4(NAME, T1, T2, T3, T4) \
+    PMACRO_BEGIN4(NAME, typename, T1, T2, T3, T4)
+#define TMACRO_BEGIN5(NAME, T1, T2, T3, T4, T5) \
+    PMACRO_BEGIN5(NAME, typename, T1, T2, T3, T4, T5)
+#define TMACRO_BEGIN6(NAME, T1, T2, T3, T4, T5, T6) \
+    PMACRO_BEGIN6(NAME, typename, T1, T2, T3, T4, T5, T6)
+#define MACRO_END                >
 
-#define INSERT_MACRO(NAME, ...)         NAME __VA_OPT__(<__VA_ARGS__>)
-#define INSERT_TMACRO(NAME, ...)        INSERT_MACRO(NAME, MAJOR_TYPE, __VA_ARGS__)
-#define INSERT_TMACRO_CS1(NAME, S1)     INSERT_TMACRO(NAME, CS(S1))
-#define INSERT_TMACRO_CS2(NAME, S1, S2) INSERT_TMACRO(NAME, CS(S1), CS(S2))
-#define INSERT_TMACRO_CS3(NAME, S1, S2, S3) \
-    INSERT_TMACRO(NAME, CS(S1), CS(S2), CS(S3))
+#define INSERT_MACRO(NAME, ...)  NAME __VA_OPT__(<__VA_ARGS__>)
+#define INSERT_TMACRO(NAME, ...) INSERT_MACRO(NAME, MAJOR_TYPE, __VA_ARGS__)
 
-#define MOV(a, b)   lucid::Compute<std::identity, a, b>
-#define TMOV(a, b)  MOV(TVAR(a), TVAR(b))
-#define IMOV(a, b)  MOV(IVAR(a), IVAR(b))
+#define MOV(a, b)                lucid::Compute<std::identity, a, b>
+#define TMOV(a, b)               MOV(TVAR(a), TVAR(b))
+#define IMOV(a, b)               MOV(IVAR(a), IVAR(b))
+#define TMOV_CS(a, b)            MOV(NTVAR(a), NTVAR(b))
+#define IMOV_CS(a, b)            MOV(NIVAR(a), NIVAR(b))
 
-#define LABEL(NAME) lucid::Label<CS(NAME)>
+#define LABEL(NAME)              lucid::Label<CS(NAME)>
 #define JMP(TARGET)             \
     lucid::Jump < LABEL(TARGET) \
     >
 
 #define PJMPN(VN, ...) \
     lucid::ParmJump<VAR(INDEX_TYPE, VN), lucid::type_sequence<__VA_ARGS__>>
-
 #define PJMP2(VN, L1, L2)                                               \
     lucid::ParmJump < VAR(INDEX_TYPE, VN), lucid::type_pair < LABEL(L1) \
     , LABEL(L2)                                                         \
     >>
-
 #define PJMP3(VN, L1, L2, L3)                                               \
     lucid::ParmJump < VAR(INDEX_TYPE, VN), lucid::type_sequence < LABEL(L1) \
     , LABEL(L2)                                                             \
     , LABEL(L3)                                                             \
     >>
-
 #define PJMP4(VN, L1, L2, L3, L4)                                           \
     lucid::ParmJump < VAR(INDEX_TYPE, VN), lucid::type_sequence < LABEL(L1) \
     , LABEL(L2)                                                             \
     , LABEL(L3)                                                             \
     , LABEL(L4)                                                             \
+    >>
+#define PJMP2_CS(VN, L1, L2)                                             \
+    lucid::ParmJump < NVAR(INDEX_TYPE, VN), lucid::type_pair < LABEL(L1) \
+    , LABEL(L2)                                                          \
+    >>
+#define PJMP3_CS(VN, L1, L2, L3)                                             \
+    lucid::ParmJump < NVAR(INDEX_TYPE, VN), lucid::type_sequence < LABEL(L1) \
+    , LABEL(L2)                                                              \
+    , LABEL(L3)                                                              \
+    >>
+#define PJMP4_CS(VN, L1, L2, L3, L4)                                         \
+    lucid::ParmJump < NVAR(INDEX_TYPE, VN), lucid::type_sequence < LABEL(L1) \
+    , LABEL(L2)                                                              \
+    , LABEL(L3)                                                              \
+    , LABEL(L4)                                                              \
     >>
 
 #define BINOP_CS(OP, TYPE, DST, A, B) \

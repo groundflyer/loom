@@ -206,6 +206,7 @@ if(BUILD_TESTS)
     argparse.cpp
     functional.cpp
     lang.cpp
+    lang_root_finding.cpp
     linal.cpp
     string.cpp
     tmp.cpp
@@ -259,6 +260,7 @@ if(BUILD_TESTS)
 
   # target_compile_options(test_lang PUBLIC -save-temps)
   # target_compile_options(test_lang PUBLIC -fverbose-asm)
+  # target_compile_options(test_lang_root_finding PUBLIC -save-temps -ftemplate-depth=128)
   target_compile_options(test_lang PUBLIC $<$<CONFIG:RelWithDebInfo>:-fsanitize=address>)
   target_compile_options(test_lang PUBLIC $<$<CONFIG:RelWithDebInfo>:-fsanitize=alignment>)
   target_link_options(test_lang PUBLIC $<$<CONFIG:RelWithDebInfo>:-fsanitize=address>)
