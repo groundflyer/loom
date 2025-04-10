@@ -78,8 +78,8 @@ using testlist3    = type_sequence<long, size_t, unsigned char>;
 using testlist4    = type_sequence<int, bool, int, float, int, char, int>;
 using testlist4nub = type_sequence<int, bool, float, char>;
 using testmap      = type_sequence<type_sequence<char, unsigned char>,
-                              type_sequence<int, unsigned int>,
-                              type_sequence<float, double>>;
+                                   type_sequence<int, unsigned int>,
+                                   type_sequence<float, double>>;
 using splitest1  = type_sequence<bool, int, float, bool, double, unsigned, int>;
 using splittest2 = type_sequence<type_sequence<int, float>,
                                  type_sequence<double, unsigned, int>>;
@@ -135,7 +135,8 @@ static_assert(is_same_v<lookup<float, testmap>, double>);
 static_assert(is_void_v<lookup<long*, testmap>>);
 static_assert(is_same_v<find<is_floating_point, testlist1>, float>);
 static_assert(is_void_v<find<is_pointer, testlist1>>);
-static_assert(is_same_v<split_up<bool, splitest1>, splittest2>);
+static_assert(
+    is_same_v<purge<type_sequence<>, split_up<bool, splitest1>>, splittest2>);
 static_assert(
     is_same_v<to_integer_sequence<intlist::testlist1_ts>, intlist::testlist1>);
 static_assert(

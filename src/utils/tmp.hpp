@@ -554,12 +554,10 @@ class split_when
 {
     using result_splitter =
         split_cont<InputList, typename make_splitter<P, InputList>::type>::type;
-    using result_list =
-        join<typename result_splitter::output_list,
-             type_sequence<typename result_splitter::tmp_list>>::type;
 
   public:
-    using type = purge<type_sequence<>, result_list>::type;
+    using type = join<typename result_splitter::output_list,
+                      type_sequence<typename result_splitter::tmp_list>>::type;
 };
 
 template <typename D, typename List>
