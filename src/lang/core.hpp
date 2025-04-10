@@ -665,30 +665,31 @@ struct Program
     template <typename C>
     using command_dst_t = stored_var_t<C, cp>;
 
+    using stated_comps = typelist::filter<is_compute, instructions>;
+    static_assert(!typelist::empty<stated_comps>);
+
     /// @brief Variables that have stored values to.
-    using stated_vars = typelist::nub<typelist::join<
-        typelist::join<InputVars, OutputVars>,
-        typelist::map<command_dst_t,
-                      typelist::filter<is_compute, instructions>>>>;
+    using stated_vars = typelist::nub<
+        typelist::join<typelist::join<InputVars, OutputVars>,
+                       typelist::map<command_dst_t, stated_comps>>>;
 
     static_assert(!typelist::any<is_literal, stated_vars>);
 
-    /// @brief List of lists of commands.
-    using cells_statements = typelist::split_when<is_label, instructions>;
-
     using stated_labels = typelist::filter<is_label, instructions>;
+    static_assert(!typelist::elem<StartLabel, stated_labels>);
+    static_assert(!typelist::elem<HaltLabel, stated_labels>);
+
+    /// @brief List of lists of commands.
+    using cells_statements =
+        typelist::purge<type_sequence<>,
+                        typelist::split_when<is_label, instructions>>;
 
     static constexpr std::size_t num_cells = typelist::length<cells_statements>;
+    static constexpr std::size_t num_labels = typelist::length<stated_labels>;
 
     static constexpr index_t halt_pos = -1;
 
-    // Ensure that every cell is labeled.
-    // Only the first label can be skipped, so we just add special label at the
-    // beginning.
-    using labels =
-        std::conditional_t<num_cells == typelist::length<stated_labels>,
-                           stated_labels,
-                           typelist::cons<StartLabel, stated_labels>>;
+    using labels = typelist::cons<StartLabel, stated_labels>;
 
     static_assert(!typelist::has_duplicates<labels>);
 
