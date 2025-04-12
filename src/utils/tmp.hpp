@@ -329,6 +329,15 @@ struct zip_with<F, type_sequence<X, Xs...>, type_sequence<Y, Ys...>>
                                         type_sequence<Ys...>>::type>::type;
 };
 
+template <typename LZ>
+struct lz_step_forward;
+
+template <typename T, typename... Ts, typename Bs>
+struct lz_step_forward<type_pair<type_sequence<T, Ts...>, Bs>>
+{
+    using type = type_pair<type_sequence<Ts...>, typename cons<T, Bs>::type>;
+};
+
 template <typename List>
 struct same;
 
@@ -766,6 +775,11 @@ using concat = foldr<join, type_sequence<>, List>;
 template <typename List>
 using flatten = detail::flatten<List, type_sequence<>>::type;
 
+/// @brief Given a list zipper (a pair of lists) take a step forward moving
+/// the head element from @p a to @p b.
+template <typename ListZipper>
+using list_zipper_step_forward = detail::lz_step_forward<ListZipper>::type;
+
 /// @brief Check whether the classes of @p List are the same.
 template <typename List>
 inline constexpr bool same = detail::same<List>::value;
@@ -880,7 +894,7 @@ constexpr inline bool of_same_size = detail::of_same_size<List>::value;
 template <typename F, typename... Ts, typename... Args>
 constexpr void
 for_each(type_sequence<Ts...> /* list */, F&& f, Args&&... args) noexcept(
-    (...&& noexcept(f.template operator()<Ts>(std::forward<Args>(args)...))))
+    (... && noexcept(f.template operator()<Ts>(std::forward<Args>(args)...))))
 {
     (..., f.template operator()<Ts>(std::forward<Args>(args)...));
 }
