@@ -46,13 +46,14 @@ TMACRO_BEGIN4(cubic_fb, rc, t1, t2, t3)
     TMOV_CS(CS(r), CS(10)),
     INSERT_TMACRO(cubic_rc, rc, t1, t2, t3),
     TNEQ_CS(rc, rc, CS(0)),
-    PJMP2_CS(rc, fb_loop, HALT),
+    PJMP2_CS(rc, fb_loop, fb_end),
     LABEL(fb_loop),
     TMUL_CS(CS(l), CS(l), CS(10)),
     TMUL_CS(CS(r), CS(r), CS(10)),
     INSERT_TMACRO(cubic_rc, rc, t1, t2, t3),
     TNEQ_CS(rc, rc, CS(0)),
-    PJMP2_CS(rc, fb_loop, HALT)
+    PJMP2_CS(rc, fb_loop, fb_end),
+    LABEL(fb_end)
 MACRO_END;
 
 template <std::floating_point T>

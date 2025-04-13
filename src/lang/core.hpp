@@ -138,8 +138,8 @@ struct is_jump
     static constexpr bool value = false;
 };
 
-template <typename... Ts>
-struct is_jump<Jump<Ts...>>
+template <typename T>
+struct is_jump<Jump<T>>
 {
     static constexpr bool value = true;
 };
@@ -497,6 +497,115 @@ struct load_set<store_tag<Var>, Stores, Loads>
 
 template <typename Tag, typename Stores, typename Loads>
 using load_set_t = load_set<Tag, Stores, Loads>::type;
+
+template <typename Target, typename Dict, typename Items>
+struct CleanUpState
+{
+    using target = Target;
+    using dict   = Dict;
+    using items  = Items;
+};
+
+template <typename Instructions>
+struct test_label_head
+{
+    using type = void;
+};
+
+template <typename S, typename... Is>
+struct test_label_head<type_sequence<Label<S>, Is...>>
+{
+    using type = Label<S>;
+};
+
+template <typename MaybeInstruction, typename Target, typename Dict>
+struct update_dict;
+
+template <typename Target, typename Dict>
+struct update_dict<void, Target, Dict>
+{
+    using type = Dict;
+};
+
+template <typename S, typename Target, typename Dict>
+struct update_dict<Label<S>, Target, Dict>
+{
+    using type = typelist::cons<type_pair<Label<S>, Target>, Dict>;
+};
+
+template <typename E, typename _CleanUpState>
+struct trim_cont;
+
+template <typename _CleanUpState>
+struct trim_front
+{
+    using type =
+        trim_cont<typename test_label_head<typename _CleanUpState::items>::type,
+                  _CleanUpState>::type;
+};
+
+template <typename _CleanUpState>
+struct trim_cont<void, _CleanUpState>
+{
+    using type = _CleanUpState;
+};
+
+template <typename S, typename _CleanUpState>
+struct trim_cont<Label<S>, _CleanUpState>
+{
+  private:
+    using e = Label<S>;
+    using t = _CleanUpState::target;
+    using i = typelist::tail<typename _CleanUpState::items>;
+    using d = update_dict<e, t, typename _CleanUpState::dict>::type;
+    using s = CleanUpState<t, d, i>;
+
+  public:
+    using type = trim_front<s>::type;
+};
+
+template <typename Instructions>
+class trim
+{
+    using rf = trim_front<
+        CleanUpState<StartLabel, type_sequence<>, Instructions>>::type;
+    using rb =
+        trim_front<CleanUpState<HaltLabel,
+                                typename rf::dict,
+                                typelist::reverse<typename rf::items>>>::type;
+
+  public:
+    using type =
+        type_pair<typelist::reverse<typename rb::items>, typename rb::dict>;
+};
+
+template <typename Instruction, typename LabelDict>
+struct update_jmp
+{
+    using type = Instruction;
+};
+
+template <typename L, typename LabelDict>
+struct update_jmp<Jump<L>, LabelDict>
+{
+    using type = Jump<choice_t<typelist::lookup<L, LabelDict>, L>>;
+};
+
+template <typename Var, typename Labels, typename LabelDict>
+struct update_jmp<ParmJump<Var, Labels>, LabelDict>
+{
+    using type = ParmJump<Var, typelist::replace_with_dict<LabelDict, Labels>>;
+};
+
+template <typename Instructions, typename LabelDict>
+class update_jmps
+{
+    template <typename I>
+    using f = update_jmp<I, LabelDict>::type;
+
+  public:
+    using type = typelist::map<f, Instructions>;
+};
 } // namespace detail
 
 /// @brief Select only variables needed to load.
@@ -517,7 +626,7 @@ class load_list
         using stores = fst_t<Acc>;
         using loads  = snd_t<Acc>;
         using type   = type_pair<detail::store_set_t<Tag, stores>,
-                               detail::load_set_t<Tag, stores, loads>>;
+                                 detail::load_set_t<Tag, stores, loads>>;
     };
 
     template <typename Tag, typename Acc>
@@ -609,7 +718,7 @@ struct standard_compiler
 };
 
 template <typename Cells, typename Labels>
-struct ensure_last_jumps
+class ensure_last_jumps
 {
     template <typename CellIdx>
     struct f_impl
@@ -630,12 +739,27 @@ struct ensure_last_jumps
     template <typename CellIdx>
     using f = f_impl<CellIdx>::type;
 
+  public:
     using type = typelist::map<f, typelist::enumerate<Cells>>;
 };
 
 /// @brief Ensures that every cell ends with a jump.
 template <typename Cells, typename Labels>
 using ensure_last_jumps_t = ensure_last_jumps<Cells, Labels>::type;
+
+template <typename Instructions>
+class optimize_labels
+{
+    using tp = detail::trim<Instructions>::type;
+    using ti = fst_t<tp>;
+    using td = snd_t<tp>;
+
+  public:
+    using type = detail::update_jmps<ti, td>::type;
+};
+
+template <typename Instructions>
+using optimize_labels_t = optimize_labels<Instructions>::type;
 
 template <typename T>
 struct same_size_union
@@ -656,7 +780,8 @@ struct Program
     using input_vars  = InputVars;
     using output_vars = OutputVars;
     using index_t = uint_of_size_t<sizeof(vartype<typelist::head<InputVars>>)>;
-    using instructions = typelist::flatten<Statements>;
+    using flat_instructions = typelist::flatten<Statements>;
+    using instructions      = optimize_labels_t<flat_instructions>;
 
     static_assert(!std::is_void_v<index_t>);
 
