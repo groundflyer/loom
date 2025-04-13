@@ -92,6 +92,8 @@ using flatten_test = type_sequence<
     I(10)>;
 using flatten_val =
     type_sequence<I(1), I(2), I(3), I(4), I(5), I(6), I(7), I(8), I(9), I(10)>;
+using dict = type_sequence<type_pair<int, long>, type_pair<float, double>>;
+using testlist4_v = type_sequence<long, bool, long, double, long, char, long>;
 
 static_assert(length<testlist1> == 4);
 static_assert(
@@ -150,6 +152,7 @@ static_assert(
         map<test_f,
             type_sequence<int8_t, int16_t, int32_t, int64_t, float, double>>,
         integer_sequence<size_t, 1, 2, 4, 8, 4, 8>>);
+static_assert(is_same_v<replace_with_dict<dict, testlist4>, testlist4_v>);
 } // namespace lucid::typelist
 
 int

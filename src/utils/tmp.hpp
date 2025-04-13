@@ -655,6 +655,16 @@ struct of_same_size<type_sequence<T, Ts...>>
 {
     static constexpr bool value = (... && (sizeof(T) == sizeof(Ts)));
 };
+
+template <typename Dict, typename List>
+class replace_with_dict
+{
+    template <typename T>
+    using f = choice_t<typename lookup<T, Dict>::type, T>;
+
+  public:
+    using type = map<f, List>::type;
+};
 } // namespace detail
 
 /// @defgroup Typelist Typelist
@@ -779,6 +789,14 @@ using flatten = detail::flatten<List, type_sequence<>>::type;
 /// the head element from @p a to @p b.
 template <typename ListZipper>
 using list_zipper_step_forward = detail::lz_step_forward<ListZipper>::type;
+
+/// @brief Replace items occuring as keys of @p Dict in @p List with
+/// corresponding values.
+///
+/// @tparam Dict type_sequence<type_pair<Key, Value>....>
+/// @tparam List type_sequence<...>
+template <typename Dict, typename List>
+using replace_with_dict = detail::replace_with_dict<Dict, List>::type;
 
 /// @brief Check whether the classes of @p List are the same.
 template <typename List>
