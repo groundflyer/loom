@@ -579,6 +579,31 @@ class trim
         type_pair<typelist::reverse<typename rb::items>, typename rb::dict>;
 };
 
+template <typename ZD>
+struct optimize_adjacent_labels;
+
+template <typename S, typename T, typename... Xs, typename Ys, typename Dict>
+struct optimize_adjacent_labels<
+    type_pair<type_pair<type_sequence<Label<S>, Label<T>, Xs...>, Ys>, Dict>>
+{
+    using type = optimize_adjacent_labels<
+        type_pair<type_pair<type_sequence<Label<T>, Xs...>, Ys>,
+                  typelist::cons<type_pair<Label<S>, Label<T>>, Dict>>>::type;
+};
+
+template <typename Ys, typename Dict>
+struct optimize_adjacent_labels<type_pair<type_pair<type_sequence<>, Ys>, Dict>>
+{
+    using type = type_pair<type_pair<type_sequence<>, Ys>, Dict>;
+};
+
+template <typename LZ, typename Dict>
+struct optimize_adjacent_labels<type_pair<LZ, Dict>>
+{
+    using type = optimize_adjacent_labels<
+        type_pair<typelist::list_zipper_step_forward<LZ>, Dict>>::type;
+};
+
 template <typename Instruction, typename LabelDict>
 struct update_jmp
 {
@@ -748,14 +773,28 @@ template <typename Cells, typename Labels>
 using ensure_last_jumps_t = ensure_last_jumps<Cells, Labels>::type;
 
 template <typename Instructions>
+using trim_t = detail::trim<Instructions>::type;
+
+template <typename Instructions, typename LabelDict>
+using update_jumps_t = detail::update_jmps<Instructions, LabelDict>::type;
+
+template <typename Instructions>
+using optimize_adjascent_labels = detail::optimize_adjacent_labels<
+    type_pair<type_pair<Instructions, type_sequence<>>, type_sequence<>>>::type;
+
+template <typename Instructions>
 class optimize_labels
 {
-    using tp = detail::trim<Instructions>::type;
+    using tp = trim_t<Instructions>;
     using ti = fst_t<tp>;
     using td = snd_t<tp>;
+    using tr = update_jumps_t<ti, td>;
+    using ar = optimize_adjascent_labels<tr>;
+    using ai = typelist::reverse<snd_t<fst_t<ar>>>;
+    using od = snd_t<ar>;
 
   public:
-    using type = detail::update_jmps<ti, td>::type;
+    using type = update_jumps_t<ai, od>;
 };
 
 template <typename Instructions>
