@@ -29,6 +29,7 @@ TMACRO_BEGIN4(cubic_rc, result, t1, t2, t3)
 MACRO_END;
 
 // find_bounds
+// saves to: l, r
 // l = -10
 // r = 10
 // rc = root_condition
@@ -48,13 +49,44 @@ TMACRO_BEGIN4(cubic_fb, rc, t1, t2, t3)
     TNEQ_CS(rc, rc, CS(0)),
     PJMP2_CS(rc, fb_loop, fb_end),
     LABEL(fb_loop),
-    LABEL(useless), // to test label optimizations
+    LABEL(useless),             // to test label optimizations
     TMUL_CS(CS(l), CS(l), CS(10)),
     TMUL_CS(CS(r), CS(r), CS(10)),
     INSERT_TMACRO(cubic_rc, rc, t1, t2, t3),
     TNEQ_CS(rc, rc, CS(0)),
     PJMP2_CS(rc, fb_loop, fb_end),
-    LABEL(fb_end)
+    LABEL(fb_end)               // will be replaced with HaltLabel
+MACRO_END;
+
+// median
+// l + (r - l) * 0.5
+TMACRO_BEGIN1(median, s)
+    TSUB_CS(s, CS(r), CS(l)),
+    TMUL_CS(s, s, CS(0.5)),
+    TADD_CS(s, s, CS(l))
+MACRO_END;
+
+#define ERR_THRESHOLD 1e-8
+
+// find zero
+TMACRO_BEGIN3(cubic_fz, t1, t2, t3)
+    INSERT_TMACRO(cubic_fb, CS(rc), t1, t2, t3),
+    INSERT_TMACRO(median, CS(s)),
+    INSERT_TMACRO(cubic_eval, CS(y), CS(s), t1, t2),
+    IMOV(i, 0),
+    TABS(y, y),
+    TGE(lc, y, ERR_THRESHOLD),
+    PJMP2(lc, fz_end, fz_loop),
+    LABEL(fz_loop),
+    INSERT_TMACRO(cubic_rc, CS(rc), t1, t2, t3),
+    TCHOICE(r, rc, s, r),
+    TCHOICE(l, rc, l, s),
+    INSERT_TMACRO(median, CS(s)),
+    INSERT_TMACRO(cubic_eval, CS(y), CS(s), t1, t2),
+    TGE(lc, y, ERR_THRESHOLD),
+    IADD(i, i, 1),
+    PJMP2(lc, fz_end, fz_loop),
+    LABEL(fz_end)
 MACRO_END;
 
 template <std::floating_point T>
@@ -71,6 +103,11 @@ template <std::floating_point T>
 TBEGIN4(cubic_fb_program, a, b, c, d)
     INSERT_TMACRO(cubic_fb, CS(rc), CS(t1), CS(t2), CS(t3))
 TEND2(l, r);
+
+template <std::floating_point T>
+TBEGIN4(cubic_fz_program, a, b, c, d)
+    INSERT_TMACRO(cubic_fz, CS(t1), CS(t2), CS(t3))
+END(TVAR(s), IVAR(i));
 // clang-format on
 
 namespace fn
@@ -107,15 +144,50 @@ val_cubic_fb(T a, T b, T c, T d) noexcept
 
     return {l, r};
 }
+
+template <std::floating_point T>
+T
+median(const T l, const T r) noexcept
+{
+    return l + (r - l) * static_cast<T>(0.5);
+}
+
+template <std::floating_point T>
+std::tuple<T, unsigned>
+val_cubic_fz(T a, T b, T c, T d) noexcept
+{
+    auto [l, r] = val_cubic_fb(a, b, c, d);
+    auto     s  = median(l, r);
+    auto     y  = val_cubic_eval(a, b, c, d, s);
+    unsigned i  = 0;
+    while(abs(y) >= ERR_THRESHOLD)
+    {
+        // if (root_condition(ks, l, s))
+        //     r = s;
+        // else
+        //     l = s;
+        const bool rc = val_cubic_rc(a, b, c, d, l, s);
+        r             = rc ? s : r;
+        l             = rc ? l : s;
+
+        s = median(l, r);
+        y = val_cubic_eval(a, b, c, d, s);
+        ++i;
+    }
+
+    return {s, i};
+}
 } // namespace fn
 
 MK_NIEBLOID(val_cubic_eval);
 MK_NIEBLOID(val_cubic_rc);
 MK_NIEBLOID(val_cubic_fb);
+MK_NIEBLOID(val_cubic_fz);
 
 using cubic_eval_f = cubic_eval_program<float>;
 using cubic_rc_f   = cubic_rc_program<float>;
 using cubic_fb_f   = cubic_fb_program<float>;
+using cubic_fz_f   = cubic_fz_program<float>;
 
 using namespace lucid;
 using namespace lucid::test;
@@ -148,6 +220,7 @@ main(int argc, char* argv[])
     bse::function<cubic_eval_f> bse_cubic;
     bse::function<cubic_rc_f>   bse_cubic_rc;
     bse::function<cubic_fb_f>   bse_cubic_fb;
+    bse::function<cubic_fz_f>   bse_cubic_fz;
 
     track.check(NamedTest(tm.with_ref(g_cubic, bse_cubic, val_cubic_eval),
                           "BSE cubic eval"));
@@ -155,6 +228,8 @@ main(int argc, char* argv[])
                           "BSE cubic root condition"));
     track.check(NamedTest(tm.with_ref(g_c4, bse_cubic_fb, val_cubic_fb),
                           "BSE cubic find bounds"));
+    track.check(NamedTest(tm.with_ref(g_c4, bse_cubic_fz, val_cubic_fz),
+                          "BSE cubic find zero"));
 
     return track.ret_code();
 }
