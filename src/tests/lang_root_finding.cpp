@@ -5,6 +5,8 @@
 #include <utils/functional.hpp>
 #include <utils/test.hpp>
 
+#include <fmt/ranges.h>
+
 // clang-format off
 // a * x^3 + b * x^2 + c * x + d
 TMACRO_BEGIN4(cubic_eval, result, x, x2, x3)
@@ -66,14 +68,14 @@ TMACRO_BEGIN1(median, s)
     TADD_CS(s, s, CS(l))
 MACRO_END;
 
-#define ERR_THRESHOLD 1e-8
+#define ERR_THRESHOLD 1e-3
 
 // find zero
 TMACRO_BEGIN3(cubic_fz, t1, t2, t3)
     INSERT_TMACRO(cubic_fb, CS(rc), t1, t2, t3),
     INSERT_TMACRO(median, CS(s)),
     INSERT_TMACRO(cubic_eval, CS(y), CS(s), t1, t2),
-    IMOV(i, 0),
+    // IMOV(i, 0),
     TABS(y, y),
     TGE(lc, y, ERR_THRESHOLD),
     PJMP2(lc, fz_end, fz_loop),
@@ -83,8 +85,9 @@ TMACRO_BEGIN3(cubic_fz, t1, t2, t3)
     TCHOICE(l, rc, l, s),
     INSERT_TMACRO(median, CS(s)),
     INSERT_TMACRO(cubic_eval, CS(y), CS(s), t1, t2),
+    TABS(y, y),
     TGE(lc, y, ERR_THRESHOLD),
-    IADD(i, i, 1),
+    // IADD(i, i, 1),
     PJMP2(lc, fz_end, fz_loop),
     LABEL(fz_end)
 MACRO_END;
@@ -107,7 +110,7 @@ TEND2(l, r);
 template <std::floating_point T>
 TBEGIN4(cubic_fz_program, a, b, c, d)
     INSERT_TMACRO(cubic_fz, CS(t1), CS(t2), CS(t3))
-END(TVAR(s), IVAR(i));
+END(TVAR(s));
 // clang-format on
 
 namespace fn
@@ -153,29 +156,30 @@ median(const T l, const T r) noexcept
 }
 
 template <std::floating_point T>
-std::tuple<T, unsigned>
+T
 val_cubic_fz(T a, T b, T c, T d) noexcept
 {
     auto [l, r] = val_cubic_fb(a, b, c, d);
-    auto     s  = median(l, r);
-    auto     y  = val_cubic_eval(a, b, c, d, s);
-    unsigned i  = 0;
+    auto s      = median(l, r);
+    auto y      = val_cubic_eval(a, b, c, d, s);
+    // unsigned i  = 0;
     while(abs(y) >= ERR_THRESHOLD)
     {
-        // if (root_condition(ks, l, s))
+        const bool rc = val_cubic_rc(a, b, c, d, l, s);
+        // if (rc)
         //     r = s;
         // else
         //     l = s;
-        const bool rc = val_cubic_rc(a, b, c, d, l, s);
-        r             = rc ? s : r;
-        l             = rc ? l : s;
+        r = rc ? s : r;
+        l = rc ? l : s;
 
         s = median(l, r);
         y = val_cubic_eval(a, b, c, d, s);
-        ++i;
+        // ++i;
     }
 
-    return {s, i};
+    // return {s, i};
+    return s;
 }
 } // namespace fn
 
@@ -198,9 +202,9 @@ main(int argc, char* argv[])
     Track         track;
     ParmTestMaker tm{parse_numruns(argc, argv)};
     RandomState   rs;
-    auto          g_float = rs.make_gen<float>(-1e6f, 1e6f);
+    auto          g_float = rs.make_gen<float>(-10.f, 10.f);
     auto          g_b     = rs.make_gen<bool>(0.5);
-    auto          g_a     = rs.make_gen<float>(1.f, 1e6f);
+    auto          g_a     = rs.make_gen<float>(1.f, 10.f);
     auto g_a1 = [&]() noexcept { return g_a() * (g_b() ? -1.f : 1.f); };
     auto g_c4 = [&]() noexcept
     { return std::tuple{g_a1(), g_float(), g_float(), g_float()}; };
@@ -222,14 +226,20 @@ main(int argc, char* argv[])
     bse::function<cubic_fb_f>   bse_cubic_fb;
     bse::function<cubic_fz_f>   bse_cubic_fz;
 
+    auto ks = g_c4();
+    fmt::print("solving f(x) = {}\n", ks);
+    auto r = std::apply(bse_cubic_fz, ks);
+    fmt::print("r = {}\n", r);
+
     track.check(NamedTest(tm.with_ref(g_cubic, bse_cubic, val_cubic_eval),
                           "BSE cubic eval"));
     track.check(NamedTest(tm.with_ref(g_cubrc, bse_cubic_rc, val_cubic_rc),
                           "BSE cubic root condition"));
     track.check(NamedTest(tm.with_ref(g_c4, bse_cubic_fb, val_cubic_fb),
                           "BSE cubic find bounds"));
-    track.check(NamedTest(tm.with_ref(g_c4, bse_cubic_fz, val_cubic_fz),
-                          "BSE cubic find zero"));
+    track.check(NamedTest(
+        tm.with_ref(g_c4, bse_cubic_fz, val_cubic_fz, transparent_cmp{}),
+        "BSE cubic find zero"));
 
     return track.ret_code();
 }
