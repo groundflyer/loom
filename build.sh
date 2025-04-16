@@ -1,7 +1,7 @@
 #!/bin/bash
 
 showhelp() {
-    echo "Usage: $0 [-h] [-t] [-b] [-d] [-e] [-a] [-c] [-cuda] [-D]"
+    echo "Usage: $0 [-h] [-t] [-b] [-d] [-e] [-a] [-c] [-cuda] [-D] [-g]"
     echo -e "\t-t\tbuild and run tests"
     echo -e "\t-b\tbuild and run benchmarks"
     echo -e "\t-d\tbuild documentation"
@@ -10,6 +10,7 @@ showhelp() {
     echo -e "\t-c\trun cmake only, don't build"
     echo -e "\t-cuda\tuse cuda"
     echo -e "\t-D\tbuild RelWithDebInfo"
+    echo -e "\t-g\tbuild debugger"
     echo -e "\t-h\tshow this help message and exit"
 }
 
@@ -37,6 +38,10 @@ enable_benchmarks() {
     CMAKE_ARGS+=(-DBUILD_BENCHMARKS=ON)
     BENCHMARK=true
     TARGETS+=(benchmarks)
+}
+
+enable_debugger() {
+    CMAKE_ARGS+=(-DBUILD_DEBUGGER=ON)
 }
 
 enable_docs() {
@@ -115,6 +120,9 @@ for key in $@; do
             ;;
         -D)
             enable_debug
+            ;;
+        -g)
+            enable_debugger
             ;;
         -h)
             showhelp
