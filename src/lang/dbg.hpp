@@ -81,13 +81,13 @@ struct prettify<ParmJump<Var, Labels>>
     }
 };
 
-template <typename Int, typename T2, Int val>
-struct prettify<type_pair<std::integral_constant<Int, val>, T2>>
+template <typename Int, typename T1, Int val>
+struct prettify<type_pair<T1, std::integral_constant<Int, val>>>
 {
     std::string
     operator()() const noexcept
     {
-        return fmt::format("{}: {}", val, prettify<T2>{}());
+        return fmt::format("{}: {}", val, prettify<T1>{}());
     }
 };
 
@@ -106,6 +106,18 @@ template <>
 struct prettify<ops::choice>
 {
     static constexpr std::string_view value = "choice";
+
+    std::string_view
+    operator()() const noexcept
+    {
+        return value;
+    }
+};
+
+template <>
+struct prettify<std::identity>
+{
+    static constexpr std::string_view value = "mov";
 
     std::string_view
     operator()() const noexcept
@@ -173,6 +185,35 @@ MK_OPS_PRETTIFY(cos)
 
 #undef MK_STD_PRETTIFY
 #undef MK_OPS_PRETTIFY
+
+template <typename T>
+struct decorator
+{
+    std::string
+    operator()() const noexcept
+    {
+        return fmt::format("\t{}", prettify<T>{}());
+    }
+};
+
+template <typename Name>
+struct decorator<Label<Name>>
+{
+    auto
+    operator()() const noexcept
+    {
+        return fmt::format("{}:", prettify<Label<Name>>{}());
+    }
+};
+
+template <typename... Ts>
+void
+print_program(Program<Ts...>) noexcept
+{
+    using instructions = Program<Ts...>::instructions;
+    typelist::for_each(typelist::map<decorator, instructions>{},
+                       []<typename D>() { fmt::print("{}\n", D{}()); });
+}
 
 class TerminalReader
 {
