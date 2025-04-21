@@ -28,19 +28,23 @@ template <typename T, typename N>
 struct prettify<Variable<T, N>>
 {
     std::string
-    operator()() const noexcept
+    operator()(bool type_signature, unsigned) const noexcept
     {
-        return fmt::format("{}: {}",
-                           Variable<T, N>::nameview,
-                           TypeInfo<T>::chars);
+        if(type_signature)
+            return fmt::format("{}: {}",
+                               Variable<T, N>::nameview,
+                               TypeInfo<T>::chars);
+        else
+            return std::string(Variable<T, N>::nameview);
     }
 };
 
 template <typename Name>
 struct prettify<Label<Name>>
 {
+    template <typename... _>
     std::string_view
-    operator()() const noexcept
+    operator()(_...) const noexcept
     {
         return cs2sv<Name>;
     }
@@ -50,55 +54,61 @@ template <typename Op, typename Dst, typename... Args>
 struct prettify<Compute<Op, Dst, Args...>>
 {
     std::string
-    operator()() const noexcept
+    operator()(bool ts, unsigned a) const noexcept
     {
-        return fmt::format("{} <- {}({})",
-                           prettify<Dst>{}(),
-                           prettify<Op>{}(),
-                           prettify<type_sequence<Args...>>{}());
+        return fmt::format("{:<{}} <- {}({})",
+                           prettify<Dst>{}(ts, a),
+                           a,
+                           prettify<Op>{}(ts, a),
+                           prettify<type_sequence<Args...>>{}(ts, a));
     }
 };
 
 template <typename Target>
 struct prettify<Jump<Target>>
 {
+    template <typename... Ts>
     std::string
-    operator()() const noexcept
+    operator()(Ts... args) const noexcept
     {
-        return fmt::format("JUMP {}", prettify<Target>{}());
+        return fmt::format("JUMP {}", prettify<Target>{}(args...));
     }
 };
 
 template <typename Var, typename Labels>
 struct prettify<ParmJump<Var, Labels>>
 {
+    template <typename... Ts>
     std::string
-    operator()() const noexcept
+    operator()(Ts... args) const noexcept
     {
         return fmt::format("JUMP ({})[{}]",
-                           prettify<typelist::enumerate<Labels>>{}(),
-                           prettify<Var>{}());
+                           prettify<typelist::enumerate<Labels>>{}(args...),
+                           prettify<Var>{}(args...));
     }
 };
 
 template <typename Int, typename T1, Int val>
 struct prettify<type_pair<T1, std::integral_constant<Int, val>>>
 {
+    template <typename... Ts>
     std::string
-    operator()() const noexcept
+    operator()(Ts... args) const noexcept
     {
-        return fmt::format("{}: {}", val, prettify<T1>{}());
+        return fmt::format("{}: {}", val, prettify<T1>{}(args...));
     }
 };
 
 template <typename... Ts>
 struct prettify<type_sequence<Ts...>>
 {
+    template <typename... Args>
     std::string
-    operator()() const noexcept
+    operator()(Args... args) const noexcept
     {
-        return fmt::format("{}",
-                           fmt::join(std::tuple{prettify<Ts>{}()...}, ", "));
+        return fmt::format(
+            "{}",
+            fmt::join(std::tuple{prettify<Ts>{}(args...)...}, ", "));
     }
 };
 
@@ -107,8 +117,9 @@ struct prettify<ops::choice>
 {
     static constexpr std::string_view value = "choice";
 
+    template <typename... Ts>
     std::string_view
-    operator()() const noexcept
+    operator()(Ts...) const noexcept
     {
         return value;
     }
@@ -119,8 +130,9 @@ struct prettify<std::identity>
 {
     static constexpr std::string_view value = "mov";
 
+    template <typename... Ts>
     std::string_view
-    operator()() const noexcept
+    operator()(Ts...) const noexcept
     {
         return value;
     }
@@ -131,8 +143,9 @@ struct prettify<std::identity>
     struct prettify<std::OP<T>>                          \
     {                                                    \
         static constexpr std::string_view value = #NAME; \
+        template <typename... Ts>                        \
         std::string_view                                 \
-        operator()() const noexcept                      \
+        operator()(Ts...) const noexcept                 \
         {                                                \
             return value;                                \
         }                                                \
@@ -143,8 +156,9 @@ struct prettify<std::identity>
     struct prettify<ops::OP<_...>>                     \
     {                                                  \
         static constexpr std::string_view value = #OP; \
+        template <typename... Ts>                      \
         std::string_view                               \
-        operator()() const noexcept                    \
+        operator()(Ts...) const noexcept               \
         {                                              \
             return value;                              \
         }                                              \
@@ -189,20 +203,22 @@ MK_OPS_PRETTIFY(cos)
 template <typename T>
 struct decorator
 {
+    template <typename... Ts>
     std::string
-    operator()() const noexcept
+    operator()(Ts... args) const noexcept
     {
-        return fmt::format("\t{}", prettify<T>{}());
+        return fmt::format("\t{}", prettify<T>{}(args...));
     }
 };
 
 template <typename Name>
 struct decorator<Label<Name>>
 {
-    auto
-    operator()() const noexcept
+    template <typename... Ts>
+    std::string
+    operator()(Ts... args) const noexcept
     {
-        return fmt::format("{}:", prettify<Label<Name>>{}());
+        return fmt::format("{}:", prettify<Label<Name>>{}(args...));
     }
 };
 
@@ -212,7 +228,7 @@ print_program(Program<Ts...>) noexcept
 {
     using instructions = Program<Ts...>::instructions;
     typelist::for_each(typelist::map<decorator, instructions>{},
-                       []<typename D>() { fmt::print("{}\n", D{}()); });
+                       []<typename D>() { fmt::print("{}\n", D{}(false, 5)); });
 }
 
 class TerminalReader
