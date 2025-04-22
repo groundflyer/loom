@@ -911,9 +911,9 @@ using SIMDAlignedAllocator =
     AlignedAllocator<T, get_native_vector_align<T>::value>;
 
 template <typename _Program,
-          template <typename...>
-          typename Runner,
+          template <typename...> typename Runner,
           bool use_counting_sort>
+    requires(typelist::of_same_size<typename _Program::reg_types>)
 class simd_compiler
 {
     using labelmap  = _Program::labelmap;
@@ -935,12 +935,12 @@ class simd_compiler
         Memory<reg_types, reg_names, cp, std::vector, SIMDAlignedAllocator>;
     using simple_sorter = bve::SimpleSorter<memory, singular>;
     using sorter        = std::conditional_t<
-        use_counting_sort,
-        std::conditional_t<
-            singular,
-            simple_sorter,
-            bve::CountingSorter<memory, _Program::num_cells + 1, halt_pos>>,
-        simple_sorter>;
+               use_counting_sort,
+               std::conditional_t<
+                   singular,
+                   simple_sorter,
+                   bve::CountingSorter<memory, _Program::num_cells + 1, halt_pos>>,
+               simple_sorter>;
 
     using stream_facade =
         bve::StreamFacade<_Program, std::vector, SIMDAlignedAllocator, sorter>;
