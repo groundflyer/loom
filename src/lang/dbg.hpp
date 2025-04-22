@@ -14,6 +14,10 @@
 #include <fmt/format.h>
 #include <fmt/ranges.h>
 
+#include <bitset>
+#include <cerrno>
+#include <cstdio>
+#include <optional>
 #include <string>
 
 #include <termios.h>
@@ -231,32 +235,53 @@ print_program(Program<Ts...>) noexcept
                        []<typename D>() { fmt::print("{}\n", D{}(false, 5)); });
 }
 
-class TerminalReader
+template <typename... _>
+std::optional<std::string>
+get_var_value(const bse::Memory<_...>& mem, const unsigned var) noexcept
+{
+}
+
+class RawTerminalReader
 {
     termios m_orig;
 
-  public:
-    FORBID_COPY(TerminalReader);
-
-    TerminalReader(bool echo = false) noexcept
+    void
+    die(const char* s) const noexcept
     {
-        tcgetattr(STDIN_FILENO, &m_orig);
+        std::perror(s);
+        std::exit(1);
+    }
+
+  public:
+    FORBID_COPY(RawTerminalReader);
+
+    RawTerminalReader(bool echo = false) noexcept
+    {
+        if(tcgetattr(STDIN_FILENO, &m_orig) == -1) die("tcgetattr");
 
         if(!echo)
         {
-            termios raw;
-            raw.c_lflag &= ~(ECHO);
-            tcsetattr(STDIN_FILENO, TCSAFLUSH, &raw);
+            termios raw = m_orig;
+
+            raw.c_iflag &= ~(BRKINT | ICRNL | INPCK | ISTRIP | IXON);
+            raw.c_lflag &= ~(ECHO | ICANON | ISIG | IEXTEN);
+            raw.c_oflag &= ~OPOST;
+            raw.c_cflag |= CS8;
+
+            if(tcsetattr(STDIN_FILENO, TCSAFLUSH, &raw) == -1) die("tcsetattr");
         }
     }
 
-    bool
+    void
     operator()(char* c) const noexcept
     {
-        return read(STDIN_FILENO, c, 1) == 1;
+        if(read(STDIN_FILENO, c, 1) == -1 && errno != EAGAIN) die("read");
     }
 
-    ~TerminalReader() { tcsetattr(STDIN_FILENO, TCSAFLUSH, &m_orig); }
+    ~RawTerminalReader()
+    {
+        if(tcsetattr(STDIN_FILENO, TCSAFLUSH, &m_orig) == -1) die("tcsetattr");
+    }
 };
 
 } // namespace lucid
