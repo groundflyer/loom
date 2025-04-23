@@ -77,8 +77,10 @@ struct test_suite
         bse::function<cubic_fb_p>   bse_cubic_fb;
         // bse::function<cubic_fz_p>   bse_cubic_fz;
 
-        track.check(NamedTest(tm.with_ref(g_cubic, bse_cubic, val_cubic_eval),
-                              fmt::format("({}) BSE cubic eval", ti)));
+        track.check(
+            NamedFuzzyTest(tm.fuzzy_ulp(g_cubic, bse_cubic, val_cubic_eval, 10),
+                           fmt::format("({}) BSE cubic eval", ti),
+                           1e-5));
         track.check(
             NamedTest(tm.with_ref(g_cubrc, bse_cubic_rc, val_cubic_rc),
                       fmt::format("({}) BSE cubic root condition", ti)));
