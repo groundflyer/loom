@@ -51,7 +51,7 @@ struct test_suite
     static constexpr auto ti = TypeInfo<T>::chars;
 
     Track&
-    operator()(Track& track, ParmTestMaker tm, RandomState& rs)
+    operator()(Track& track, ParmTestMaker tm, RandomState& rs) const
     {
         auto g_f  = rs.make_gen<T>(lbound, rbound);
         auto g_b  = rs.make_gen<bool>(0.5);
