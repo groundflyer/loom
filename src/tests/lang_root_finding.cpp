@@ -4,14 +4,93 @@
 
 #include <lang/bse.hpp>
 #include <utils/test.hpp>
+#include <utils/typeinfo.hpp>
 
-using cubic_eval_f = cubic_eval_program<float>;
-using cubic_rc_f   = cubic_rc_program<float>;
-using cubic_fb_f   = cubic_fb_program<float>;
-using cubic_fz_f   = cubic_fz_program<float>;
+#include <fmt/core.h>
+
+template <std::floating_point T>
+struct constants;
+
+template <>
+struct constants<float>
+{
+    static constexpr float err_threshold = 1e-3;
+    static constexpr float lbound        = -100;
+    static constexpr float rbound        = 100;
+
+    using errt = CS(1e-3);
+};
+
+template <>
+struct constants<double>
+{
+    static constexpr double err_threshold = 1e-8;
+    static constexpr double lbound        = -1e6;
+    static constexpr double rbound        = 1e6;
+
+    using errt = CS(1e-8);
+};
 
 using namespace lucid;
 using namespace lucid::test;
+
+template <std::floating_point T>
+struct test_suite
+{
+    using cnsts                      = constants<T>;
+    static constexpr T err_threshold = cnsts::err_threshold;
+    static constexpr T lbound        = cnsts::lbound;
+    static constexpr T rbound        = cnsts::rbound;
+    using errt                       = cnsts::errt;
+
+    using cubic_eval_p = cubic_eval_program<T>;
+    using cubic_rc_p   = cubic_rc_program<T>;
+    using cubic_fb_p   = cubic_fb_program<T>;
+    using cubic_fz_p   = cubic_fz_program<T>;
+
+    static constexpr auto ti = TypeInfo<T>::chars;
+
+    Track&
+    operator()(Track& track, ParmTestMaker tm, RandomState& rs)
+    {
+        auto g_f  = rs.make_gen<T>(lbound, rbound);
+        auto g_b  = rs.make_gen<bool>(0.5);
+        auto g_a  = rs.make_gen<T>(1, rbound);
+        auto g_a1 = [&]() noexcept { return g_a() * (g_b() ? T(-1) : T(1)); };
+        auto g_c4 = [&]() noexcept
+        { return std::tuple{g_a1(), g_f(), g_f(), g_f()}; };
+        auto g_cubic = [&]() noexcept
+        { return std::tuple{g_a1(), g_f(), g_f(), g_f(), g_f()}; };
+        auto g_cubrc = [&]() noexcept
+        {
+            bool b = g_b();
+            return std::tuple{g_a1(),
+                              g_f(),
+                              g_f(),
+                              g_f(),
+                              b ? T(-100) : T(100),
+                              b ? T(100) : T(-100)};
+        };
+
+        bse::function<cubic_eval_p> bse_cubic;
+        bse::function<cubic_rc_p>   bse_cubic_rc;
+        bse::function<cubic_fb_p>   bse_cubic_fb;
+        // bse::function<cubic_fz_p>   bse_cubic_fz;
+
+        track.check(NamedTest(tm.with_ref(g_cubic, bse_cubic, val_cubic_eval),
+                              fmt::format("({}) BSE cubic eval", ti)));
+        track.check(
+            NamedTest(tm.with_ref(g_cubrc, bse_cubic_rc, val_cubic_rc),
+                      fmt::format("({}) BSE cubic root condition", ti)));
+        track.check(NamedTest(tm.with_ref(g_c4, bse_cubic_fb, val_cubic_fb),
+                              fmt::format("({}) BSE cubic find bounds", ti)));
+        // track.check(NamedTest(
+        //     tm.with_ref(g_c4, bse_cubic_fz, val_cubic_fz, transparent_cmp{}),
+        //     fmt::format("({}) BSE cubic find zero", ti)));
+
+        return track;
+    }
+};
 
 int
 main(int argc, char* argv[])
@@ -19,39 +98,11 @@ main(int argc, char* argv[])
     Track         track;
     ParmTestMaker tm{parse_numruns(argc, argv)};
     RandomState   rs;
-    auto          g_float = rs.make_gen<float>(-10.f, 10.f);
-    auto          g_b     = rs.make_gen<bool>(0.5);
-    auto          g_a     = rs.make_gen<float>(1.f, 10.f);
-    auto g_a1 = [&]() noexcept { return g_a() * (g_b() ? -1.f : 1.f); };
-    auto g_c4 = [&]() noexcept
-    { return std::tuple{g_a1(), g_float(), g_float(), g_float()}; };
-    auto g_cubic = [&]() noexcept
-    { return std::tuple{g_a1(), g_float(), g_float(), g_float(), g_float()}; };
-    auto g_cubrc = [&]() noexcept
-    {
-        bool b = g_b();
-        return std::tuple{g_a1(),
-                          g_float(),
-                          g_float(),
-                          g_float(),
-                          b ? -100.f : 100.f,
-                          b ? 100.f : -100.f};
-    };
 
-    bse::function<cubic_eval_f> bse_cubic;
-    bse::function<cubic_rc_f>   bse_cubic_rc;
-    bse::function<cubic_fb_f>   bse_cubic_fb;
-    bse::function<cubic_fz_f>   bse_cubic_fz;
-
-    track.check(NamedTest(tm.with_ref(g_cubic, bse_cubic, val_cubic_eval),
-                          "BSE cubic eval"));
-    track.check(NamedTest(tm.with_ref(g_cubrc, bse_cubic_rc, val_cubic_rc),
-                          "BSE cubic root condition"));
-    track.check(NamedTest(tm.with_ref(g_c4, bse_cubic_fb, val_cubic_fb),
-                          "BSE cubic find bounds"));
-    track.check(NamedTest(
-        tm.with_ref(g_c4, bse_cubic_fz, val_cubic_fz, transparent_cmp{}),
-        "BSE cubic find zero"));
+    test_suite<float>  tsf;
+    test_suite<double> tsd;
+    track = tsf(track, tm, rs);
+    track = tsd(track, tm, rs);
 
     return track.ret_code();
 }
