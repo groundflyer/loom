@@ -685,13 +685,22 @@ struct ParmTestMaker
     auto
     fuzzy(G&& g, T&& t, V&& v) const noexcept
     {
-        return [&]() noexcept
-        {
-            return estimate(num_runs,
-                            std::forward<G>(g),
-                            std::forward<T>(t),
-                            std::forward<V>(v));
-        };
+        if constexpr(std::is_rvalue_reference_v<decltype(v)>)
+            return [&g, &t, v = std::move(v), n = num_runs]() noexcept
+            {
+                return estimate(n,
+                                std::forward<G>(g),
+                                std::forward<T>(t),
+                                std::move(v));
+            };
+        else
+            return [&, n = num_runs]() noexcept
+            {
+                return estimate(n,
+                                std::forward<G>(g),
+                                std::forward<T>(t),
+                                std::forward<V>(v));
+            };
     }
 
     /// @brief Fuzzy version of ParmTestMaker::with_ref.
@@ -701,17 +710,29 @@ struct ParmTestMaker
               typename RI,
               typename Cmp = std::equal_to<>>
     auto
-    fuzzy_with_ref(G&& g, T&& t, RI ri, Cmp cmp = Cmp{}) const noexcept
+    fuzzy_with_ref(G&& g, T&& t, RI&& ri, Cmp cmp = Cmp{}) const noexcept
     {
-        return fuzzy(
-            std::forward<G>(g),
-            std::forward<T>(t),
-            [&, cmp]<typename Tr, typename Gr>(Tr&& tr, Gr&& gr) noexcept
-            {
-                return std::invoke(cmp,
-                                   std::forward<Tr>(tr),
-                                   maybe_apply(ri, std::forward<Gr>(gr)));
-            });
+        if constexpr(std::is_rvalue_reference_v<decltype(ri)>)
+            return fuzzy(
+                std::forward<G>(g),
+                std::forward<T>(t),
+                [ri = std::move(ri),
+                 cmp]<typename Tr, typename Gr>(Tr&& tr, Gr&& gr) noexcept
+                {
+                    return std::invoke(cmp,
+                                       std::forward<Tr>(tr),
+                                       maybe_apply(ri, std::forward<Gr>(gr)));
+                });
+        else
+            return fuzzy(
+                std::forward<G>(g),
+                std::forward<T>(t),
+                [&, cmp]<typename Tr, typename Gr>(Tr&& tr, Gr&& gr) noexcept
+                {
+                    return std::invoke(cmp,
+                                       std::forward<Tr>(tr),
+                                       maybe_apply(ri, std::forward<Gr>(gr)));
+                });
     }
 
     /// @brief Special case for ParmTestMaker::fuzzy_with_ref with
@@ -721,12 +742,12 @@ struct ParmTestMaker
     /// @param ulp unit in the last place.
     template <typename G, typename T, typename RI>
     auto
-    fuzzy_ulp(G&& g, T&& t, RI ri, const unsigned ulp) const noexcept
+    fuzzy_ulp(G&& g, T&& t, RI&& ri, const unsigned ulp) const noexcept
     {
         return fuzzy_with_ref(std::forward<G>(g),
                               std::forward<T>(t),
-                              ri,
-                              [&](auto t, auto v) noexcept
+                              std::forward<RI>(ri),
+                              [ulp](auto t, auto v) noexcept
                               { return almost_equal(t, v, ulp); });
     }
 };
