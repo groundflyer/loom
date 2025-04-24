@@ -3,7 +3,11 @@
 
 #include "dbg.hpp"
 
+#include <tests/root_finding.hpp>
+
 #include <cctype>
+
+#define MOD_CTRL(k) ((k) & 0x1f)
 
 using namespace std;
 using namespace lucid;
@@ -14,13 +18,12 @@ int main(/*int argc, char* argv[]*/)
 
     while(true)
     {
-        char c = '\0';
-        reader(&c);
+        char c = reader();
         if(std::iscntrl(c))
             fmt::print("{:d}\r\n", c);
         else
             fmt::print("{c:d} {c}\r\n", fmt::arg("c", c));
-        if(c == 'q') break;
+        if(quit_condition(c)) break;
     }
 
     return 0;

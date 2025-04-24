@@ -241,6 +241,18 @@ get_var_value(const bse::Memory<_...>& mem, const unsigned var) noexcept
 {
 }
 
+constexpr char
+mod_ctrl(char c) noexcept
+{
+    return c & 0x1f;
+}
+
+constexpr bool
+quit_condition(char c) noexcept
+{
+    return c == mod_ctrl('q');
+}
+
 class RawTerminalReader
 {
     termios m_orig;
@@ -272,10 +284,12 @@ class RawTerminalReader
         }
     }
 
-    void
-    operator()(char* c) const noexcept
+    char
+    operator()() const noexcept
     {
-        if(read(STDIN_FILENO, c, 1) == -1 && errno != EAGAIN) die("read");
+        char c;
+        if(read(STDIN_FILENO, &c, 1) == -1 && errno != EAGAIN) die("read");
+        return c;
     }
 
     ~RawTerminalReader()
@@ -283,5 +297,4 @@ class RawTerminalReader
         if(tcsetattr(STDIN_FILENO, TCSAFLUSH, &m_orig) == -1) die("tcsetattr");
     }
 };
-
 } // namespace lucid
