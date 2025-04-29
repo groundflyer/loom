@@ -5,6 +5,7 @@
 #pragma once
 
 #include <array>
+#include <bitset>
 #include <cstdint>
 #include <type_traits>
 #include <utility>
@@ -665,6 +666,44 @@ class replace_with_dict
   public:
     using type = map<f, List>::type;
 };
+
+template <std::unsigned_integral I,
+          I                      idx,
+          typename Visitor,
+          typename List,
+          typename Default,
+          typename... Args>
+constexpr decltype(auto)
+visit_at_impl(const I   i,
+              Visitor&& visitor,
+              List      list,
+              Default&& def,
+              Args&&... args)
+{
+    if(idx == i)
+        return visitor.template operator()<typename at<idx, List>::type>(
+            std::forward<Args>(args)...);
+
+    if constexpr(idx < length<List>::value - 1)
+        return visit_at_impl<I, idx + 1>(i,
+                                         std::forward<Visitor>(visitor),
+                                         list,
+                                         std::forward<Default>(def),
+                                         std::forward<Args>(args)...);
+    else
+        return std::invoke(std::forward<Default>(def));
+}
+
+struct self_caller
+{
+    template <typename T, typename... Args>
+    decltype(auto)
+    operator()(Args&&... args) const
+        noexcept(std::is_nothrow_invocable_v<T, Args...>)
+    {
+        return std::invoke(T{}, std::forward<Args>(args)...);
+    }
+}
 } // namespace detail
 
 /// @defgroup Typelist Typelist
@@ -923,7 +962,7 @@ template <typename F, typename... Ts, typename... Args>
     requires(sizeof...(Ts) == sizeof...(Args))
 constexpr void
 for_each_arg(type_sequence<Ts...> /* list */, F&& f, Args&&... args) noexcept(
-    (...&& noexcept(f.template operator()<Ts>(std::forward<Args>(args)))))
+    (... && noexcept(f.template operator()<Ts>(std::forward<Args>(args)))))
 {
     (..., f.template operator()<Ts>(std::forward<Args>(args)));
 }
@@ -949,12 +988,13 @@ template <template <typename...> typename Tuple = std::tuple,
           typename... Args>
 constexpr decltype(auto)
 maybe_collect(type_sequence<Ts...> /*list*/, F&& f, Args&&... args) noexcept(
-    (...&& noexcept(f.template operator()<Ts>(std::forward<Args>(args)...))))
+    (... && noexcept(f.template operator()<Ts>(std::forward<Args>(args)...))))
 {
     if constexpr(sizeof...(Ts) > 1)
         return Tuple<std::remove_cvref_t<decltype(f.template operator()<Ts>(
-            std::forward<Args>(args)...))>...>{
-            f.template operator()<Ts>(std::forward<Args>(args)...)...};
+            std::forward<Args>(args)...))>...> {
+            f.template operator()<Ts>(std::forward<Args>(args)...)...
+        };
     else
         return f.template operator()<Ts...>(std::forward<Args>(args)...);
 }
@@ -978,17 +1018,17 @@ template <template <typename...> typename Tuple = std::tuple,
           typename... Args>
     requires(sizeof...(Ts) == sizeof...(Args))
 constexpr decltype(auto)
-maybe_collect_arg(
-    type_sequence<Ts...> /*list*/,
-    F&& f,
-    Args&&... args) noexcept((...&& noexcept(f.template
-                                             operator()<Ts>(
-                                                 std::forward<Args>(args)))))
+maybe_collect_arg(type_sequence<Ts...> /*list*/,
+                  F&& f,
+                  Args&&... args) noexcept((... &&
+                                            noexcept(f.template operator()<Ts>(
+                                                std::forward<Args>(args)))))
 {
     if constexpr(sizeof...(Ts) > 1)
         return Tuple<std::remove_cvref_t<decltype(f.template operator()<Ts>(
-            std::forward<Args>(args)))>...>{
-            f.template operator()<Ts>(std::forward<Args>(args))...};
+            std::forward<Args>(args)))>...> {
+            f.template operator()<Ts>(std::forward<Args>(args))...
+        };
     else
         return f.template operator()<Ts...>(std::forward<Args>(args)...);
 }
@@ -1016,6 +1056,51 @@ first_of(type_sequence<Fs...> /*list*/, Args&&... args) noexcept(
     std::conjunction_v<std::is_nothrow_invocable<Fs, Args...>...>)
 {
     return (... || std::invoke(Fs{}, std::forward<Args>(args)...));
+}
+
+/// @brief Invoke @p visitor on the @p i'th element of @p List.
+///
+/// @p visitor is incoked with an element of the @p List as a template
+/// parameter.
+///
+/// @param i which @p List element to invoke @p visitor on.
+/// @param visitor callable to invoke. Is called with @p List element
+/// as template argument.
+/// @param def function that invoked without arguments if @p i out of range.
+/// @param args arguments passed to @p visitor on invocation.
+/// @tparam List contains elements to invoke @p visitor on.
+template <std::unsigned_integral I,
+          typename Visitor,
+          typename List,
+          typename Default,
+          typename... Args>
+constexpr decltype(auto)
+visit_at(const I i, Visitor&& visitor, List list, Default&& def, Args&&... args)
+{
+    return detail::visit_at_impl<I, 0u>(i,
+                                        std::forward<Visitor>(visitor),
+                                        list,
+                                        std::forward<Default>(def),
+                                        std::forward<Args>(args)...);
+}
+
+/// @brief Same as typelist::visit_at , but typelist @p List contains callables.
+/// @tparam List consists of callable types.
+/// @param i which @p List element to invoke @p visitor on.
+/// @param def function that invoked without arguments if @p i out of range.
+/// @param args arguments passed to the invoked element.
+template <std::unsigned_integral I,
+          typename List,
+          typename Default,
+          typename... Args>
+constexpr decltype(auto)
+visit_funcs_at(const I i, List list, Default&& def, Args&&... args)
+{
+    return visit_at(i,
+                    self_caller{},
+                    list,
+                    std::forward<Default>(def),
+                    std::forward<Args>(args)...);
 }
 /// @}
 } // namespace typelist
@@ -1489,12 +1574,11 @@ using powerof2s = typename detail::powersof2s<N>::type;
 /// @brief Invoke @p f with each value of @p List as template parameter.
 template <typename F, typename Int, Int... Is, typename... Args>
 constexpr void
-for_each(
-    F&& f,
-    std::integer_sequence<Int, Is...> /*List*/,
-    Args&&... args) noexcept((...&& noexcept(f.template
-                                             operator()<Is>(
-                                                 std::forward<Args>(args)...))))
+for_each(F&& f,
+         std::integer_sequence<Int, Is...> /*List*/,
+         Args&&... args) noexcept((... &&
+                                   noexcept(f.template operator()<Is>(
+                                       std::forward<Args>(args)...))))
 {
     (..., f.template operator()<Is>(std::forward<Args>(args)...));
 }
@@ -1525,6 +1609,42 @@ struct enumerate
 /// Type of the index member is std::integer_constant<Index, value>
 template <typename List, typename Index = std::size_t>
 using enumerate = detail::enumerate<List, Index>::type;
+
+/// @brief Masked version of typelist::for_each.
+template <typename F, typename L, std::size_t N, typename... Args>
+    requires(N == length<L>)
+constexpr void
+for_each_masked(L /* list */, F&& f, const std::bitset<N>& mask, Args&&... args)
+{
+    for_each(
+        enumerate<L>{},
+        [&]<typename P>(Args&&... args)
+        {
+            if(mask.test(snd_t<P>::value))
+                f.template operator()<fst_t<P>>(std::forward<Args>(args)...);
+        },
+        std::forward<Args>(args)...);
+}
+
+/// @brief Masked version of typelist::for_each_arg.
+template <typename F, typename L, std::size_t N, typename... Args>
+    requires(N == length<L>)
+constexpr void
+for_each_arg_masked(L /* list */,
+                    F&&                   f,
+                    const std::bitset<N>& mask,
+                    Args&&... args)
+{
+    for_each_arg(
+        enumerate<L>{},
+        [&]<typename P>(auto arg)
+        {
+            if(mask.test(snd_t<P>::value))
+                f.template operator()<fst_t<P>>(
+                    std::forward<decltype(arg)>(arg));
+        },
+        std::forward<Args>(args)...);
+}
 } // namespace typelist
 
 template <std::size_t N>
