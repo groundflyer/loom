@@ -69,16 +69,14 @@ TMACRO_BEGIN1(median, s)
     TADD_CS(s, s, CS(l))
 MACRO_END;
 
-#define ERR_THRESHOLD 1e-3
-
 // find zero
-TMACRO_BEGIN3(cubic_fz, t1, t2, t3)
+TMACRO_BEGIN4(cubic_fz, t1, t2, t3, errt)
     INSERT_TMACRO(cubic_fb, CS(rc), t1, t2, t3),
     INSERT_TMACRO(median, CS(s)),
     INSERT_TMACRO(cubic_eval, CS(y), CS(s), t1, t2),
     // IMOV(i, 0),
     TABS(y, y),
-    TGE(lc, y, ERR_THRESHOLD),
+    TGE_CS(CS(lc), CS(y), errt),
     PJMP2(lc, fz_end, fz_loop),
     LABEL(fz_loop),
     INSERT_TMACRO(cubic_rc, CS(rc), t1, t2, t3),
@@ -87,7 +85,7 @@ TMACRO_BEGIN3(cubic_fz, t1, t2, t3)
     INSERT_TMACRO(median, CS(s)),
     INSERT_TMACRO(cubic_eval, CS(y), CS(s), t1, t2),
     TABS(y, y),
-    TGE(lc, y, ERR_THRESHOLD),
+    TGE_CS(CS(lc), CS(y), errt),
     // IADD(i, i, 1),
     PJMP2(lc, fz_end, fz_loop),
     LABEL(fz_end)
@@ -108,11 +106,34 @@ TBEGIN4(cubic_fb_program, a, b, c, d)
     INSERT_TMACRO(cubic_fb, CS(rc), CS(t1), CS(t2), CS(t3))
 TEND2(l, r);
 
-template <std::floating_point T>
+template <std::floating_point T, typename errt>
 TBEGIN4(cubic_fz_program, a, b, c, d)
-    INSERT_TMACRO(cubic_fz, CS(t1), CS(t2), CS(t3))
+    INSERT_TMACRO(cubic_fz, CS(t1), CS(t2), CS(t3), errt)
 END(TVAR(s));
 // clang-format on
+
+template <std::floating_point T>
+struct constants;
+
+template <>
+struct constants<float>
+{
+    static constexpr float err_threshold = 1e-3;
+    static constexpr float lbound        = -100;
+    static constexpr float rbound        = 100;
+
+    using errt = CS(1e-3);
+};
+
+template <>
+struct constants<double>
+{
+    static constexpr double err_threshold = 1e-8;
+    static constexpr double lbound        = -1e6;
+    static constexpr double rbound        = 1e6;
+
+    using errt = CS(1e-8);
+};
 
 namespace fn
 {
@@ -164,7 +185,7 @@ val_cubic_fz(T a, T b, T c, T d) noexcept
     auto s      = median(l, r);
     auto y      = val_cubic_eval(a, b, c, d, s);
     // unsigned i  = 0;
-    while(abs(y) >= ERR_THRESHOLD)
+    while(abs(y) >= constants<T>::err_threshold)
     {
         const bool rc = val_cubic_rc(a, b, c, d, l, s);
         // if (rc)

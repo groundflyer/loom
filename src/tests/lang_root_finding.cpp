@@ -8,29 +8,6 @@
 
 #include <fmt/core.h>
 
-template <std::floating_point T>
-struct constants;
-
-template <>
-struct constants<float>
-{
-    static constexpr float err_threshold = 1e-3;
-    static constexpr float lbound        = -100;
-    static constexpr float rbound        = 100;
-
-    using errt = CS(1e-3);
-};
-
-template <>
-struct constants<double>
-{
-    static constexpr double err_threshold = 1e-8;
-    static constexpr double lbound        = -1e6;
-    static constexpr double rbound        = 1e6;
-
-    using errt = CS(1e-8);
-};
-
 using namespace lucid;
 using namespace lucid::test;
 
@@ -46,7 +23,7 @@ struct test_suite
     using cubic_eval_p = cubic_eval_program<T>;
     using cubic_rc_p   = cubic_rc_program<T>;
     using cubic_fb_p   = cubic_fb_program<T>;
-    using cubic_fz_p   = cubic_fz_program<T>;
+    using cubic_fz_p   = cubic_fz_program<T, errt>;
 
     static constexpr auto ti = TypeInfo<T>::chars;
 
@@ -75,7 +52,7 @@ struct test_suite
         bse::function<cubic_eval_p> bse_cubic;
         bse::function<cubic_rc_p>   bse_cubic_rc;
         bse::function<cubic_fb_p>   bse_cubic_fb;
-        // bse::function<cubic_fz_p>   bse_cubic_fz;
+        bse::function<cubic_fz_p>   bse_cubic_fz;
 
         track.check(
             NamedFuzzyTest(tm.fuzzy_ulp(g_cubic, bse_cubic, val_cubic_eval, 10),
@@ -86,9 +63,9 @@ struct test_suite
                       fmt::format("({}) BSE cubic root condition", ti)));
         track.check(NamedTest(tm.with_ref(g_c4, bse_cubic_fb, val_cubic_fb),
                               fmt::format("({}) BSE cubic find bounds", ti)));
-        // track.check(NamedTest(
-        //     tm.with_ref(g_c4, bse_cubic_fz, val_cubic_fz, transparent_cmp{}),
-        //     fmt::format("({}) BSE cubic find zero", ti)));
+        track.check(NamedTest(
+            tm.with_ref(g_c4, bse_cubic_fz, val_cubic_fz, transparent_cmp{}),
+            fmt::format("({}) BSE cubic find zero", ti)));
 
         return track;
     }
@@ -103,8 +80,8 @@ main(int argc, char* argv[])
 
     test_suite<float>  tsf;
     test_suite<double> tsd;
-    track = tsf(track, tm, rs);
     track = tsd(track, tm, rs);
+    track = tsf(track, tm, rs);
 
     return track.ret_code();
 }
