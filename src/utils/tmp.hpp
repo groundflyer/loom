@@ -703,7 +703,7 @@ struct self_caller
     {
         return std::invoke(T{}, std::forward<Args>(args)...);
     }
-}
+};
 } // namespace detail
 
 /// @defgroup Typelist Typelist
@@ -1097,7 +1097,7 @@ constexpr decltype(auto)
 visit_funcs_at(const I i, List list, Default&& def, Args&&... args)
 {
     return visit_at(i,
-                    self_caller{},
+                    detail::self_caller{},
                     list,
                     std::forward<Default>(def),
                     std::forward<Args>(args)...);
