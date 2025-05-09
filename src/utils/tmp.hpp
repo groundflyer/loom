@@ -1039,10 +1039,10 @@ template <typename... Fs, typename... Args>
     requires(... && (std::is_nothrow_default_constructible_v<Fs> &&
                      std::is_invocable_v<Fs, Args...>))
 constexpr void
-instantiate(type_sequence<Fs...> /*list*/, Args&&... args) noexcept(
+instantiate(type_sequence<Fs...> list, Args&&... args) noexcept(
     std::conjunction_v<std::is_nothrow_invocable<Fs, Args...>...>)
 {
-    (..., std::invoke(Fs{}, std::forward<Args>(args)...));
+    for_each(list, detail::self_caller{}, std::forward<Args>(args)...);
 }
 
 /// @brief Invoke every functional object @p Fs in the typelist with @p args
