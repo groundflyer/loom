@@ -1589,11 +1589,11 @@ namespace typelist
 {
 namespace detail
 {
-template <typename List, typename Index>
+template <typename List, std::integral Index, Index start>
 struct enumerate
 {
     template <Index i>
-    using index_type = std::integral_constant<Index, i>;
+    using index_type = std::integral_constant<Index, start + i>;
 
     using type = typelist::zip<
         List,
@@ -1607,8 +1607,8 @@ struct enumerate
 /// @f$[(T_0, 0), (T_1, 1), ... (T_n, n)]@f$
 ///
 /// Type of the index member is std::integer_constant<Index, value>
-template <typename List, typename Index = std::size_t>
-using enumerate = detail::enumerate<List, Index>::type;
+template <typename List, typename Index = std::size_t, Index start = 0>
+using enumerate = detail::enumerate<List, Index, start>::type;
 
 /// @brief Masked version of typelist::for_each.
 template <typename F, typename L, std::size_t N, typename... Args>
