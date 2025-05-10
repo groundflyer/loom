@@ -245,4 +245,21 @@ almost_equal(const T a, const T b, const ULP ulp)
     return amb <= std::numeric_limits<T>::epsilon() * apb * ulp ||
            amb < std::numeric_limits<T>::min();
 }
+
+/// @brief Compute order of magnitude.
+template <std::unsigned_integral Int>
+constexpr unsigned
+magnitude(Int n, Int base = 10) noexcept
+{
+    unsigned ret = 0;
+    Int      m   = base;
+
+    while(m <= n)
+    {
+        m *= base;
+        ++ret;
+    };
+
+    return ret;
+}
 } // namespace lucid
