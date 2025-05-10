@@ -244,6 +244,16 @@ print_program(Program, bool ts = false, unsigned margin = 5) noexcept
                        });
 }
 
+template <typename Program>
+void
+print_variables(Program, bool ts = true)
+{
+    using variables = Program::variables;
+    typelist::for_each(variables{},
+                       [=]<typename Var>()
+                       { fmt::print("{}\n", prettify<Var>{}(ts, 0, 0)); });
+}
+
 constexpr char
 mod_ctrl(char c) noexcept
 {

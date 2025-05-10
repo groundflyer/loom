@@ -7,8 +7,6 @@
 
 #include <cctype>
 
-#define MOD_CTRL(k) ((k) & 0x1f)
-
 using namespace std;
 using namespace lucid;
 
@@ -17,15 +15,20 @@ using cubic_fz_p = cubic_fz_program<T, typename constants<T>::errt>;
 
 int main(/*int argc, char* argv[]*/)
 {
-    print_program(cubic_fz_p<float>{});
+    using p = cubic_fz_p<float>;
+    fmt::print("Program:\n");
+    print_program(p{});
+    fmt::print("Variables:\n");
+    print_variables(p{});
 
     RawTerminalReader reader(false);
+    fmt::print("Ctrl+Q to quit.\n");
 
     while(true)
     {
         char c = reader();
         if(std::iscntrl(c))
-            fmt::print("{:d}\r\n", c);
+            fmt::print("{}\r\n", c);
         else
             fmt::print("{c:d} {c}\r\n", fmt::arg("c", c));
         if(quit_condition(c)) break;
