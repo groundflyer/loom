@@ -12,8 +12,13 @@
 using namespace std;
 using namespace lucid;
 
+template <floating_point T>
+using cubic_fz_p = cubic_fz_program<T, typename constants<T>::errt>;
+
 int main(/*int argc, char* argv[]*/)
 {
+    print_program(cubic_fz_p<float>{});
+
     RawTerminalReader reader(false);
 
     while(true)

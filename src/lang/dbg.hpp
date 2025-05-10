@@ -32,7 +32,7 @@ template <typename T, typename N>
 struct prettify<Variable<T, N>>
 {
     std::string
-    operator()(bool type_signature, unsigned) const noexcept
+    operator()(bool type_signature, unsigned, unsigned) const noexcept
     {
         if(type_signature)
             return fmt::format("{}: {}",
@@ -58,13 +58,14 @@ template <typename Op, typename Dst, typename... Args>
 struct prettify<Compute<Op, Dst, Args...>>
 {
     std::string
-    operator()(bool ts, unsigned a) const noexcept
+    operator()(bool ts, unsigned margin, unsigned width) const noexcept
     {
-        return fmt::format("{:<{}} <- {}({})",
-                           prettify<Dst>{}(ts, a),
-                           a,
-                           prettify<Op>{}(ts, a),
-                           prettify<type_sequence<Args...>>{}(ts, a));
+        return fmt::format(
+            "{:<{}} <- {}({})",
+            prettify<Dst>{}(ts, margin, width),
+            margin,
+            prettify<Op>{}(ts, margin, width),
+            prettify<type_sequence<Args...>>{}(ts, margin, width));
     }
 };
 
@@ -84,11 +85,14 @@ struct prettify<ParmJump<Var, Labels>>
 {
     template <typename... Ts>
     std::string
-    operator()(Ts... args) const noexcept
+    operator()(bool ts, unsigned margin, unsigned) const noexcept
     {
         return fmt::format("JUMP ({})[{}]",
-                           prettify<typelist::enumerate<Labels>>{}(args...),
-                           prettify<Var>{}(args...));
+                           prettify<typelist::enumerate<Labels>>{}(
+                               ts,
+                               margin,
+                               magnitude(typelist::length<Labels>) + 1),
+                           prettify<Var>{}(ts, margin, 0));
     }
 };
 
@@ -97,9 +101,12 @@ struct prettify<type_pair<T1, std::integral_constant<Int, val>>>
 {
     template <typename... Ts>
     std::string
-    operator()(Ts... args) const noexcept
+    operator()(bool ts, unsigned margin, unsigned width) const noexcept
     {
-        return fmt::format("{}: {}", val, prettify<T1>{}(args...));
+        return fmt::format("{:0{}d}: {}",
+                           val,
+                           width,
+                           prettify<T1>{}(ts, margin, 0));
     }
 };
 
@@ -204,41 +211,37 @@ MK_OPS_PRETTIFY(cos)
 #undef MK_STD_PRETTIFY
 #undef MK_OPS_PRETTIFY
 
-template <typename T>
-struct decorator
-{
-    template <typename... Ts>
-    std::string
-    operator()(Ts... args) const noexcept
-    {
-        return fmt::format("\t{}", prettify<T>{}(args...));
-    }
-};
-
-template <typename Name>
-struct decorator<Label<Name>>
-{
-    template <typename... Ts>
-    std::string
-    operator()(Ts... args) const noexcept
-    {
-        return fmt::format("{}:", prettify<Label<Name>>{}(args...));
-    }
-};
-
-template <typename... Ts>
+template <typename Cell>
 void
-print_program(Program<Ts...>) noexcept
+print_cell(bool ts = false, unsigned margin = 5)
 {
-    using instructions = Program<Ts...>::instructions;
-    typelist::for_each(typelist::map<decorator, instructions>{},
-                       []<typename D>() { fmt::print("{}\n", D{}(false, 5)); });
+    typelist::for_each(
+        typelist::enumerate<Cell, unsigned, 1u>{},
+        [=]<typename T>()
+        {
+            fmt::print("\t{}\n",
+                       prettify<T>{}(ts,
+                                     margin,
+                                     magnitude(typelist::length<Cell>) + 1u));
+        });
 }
 
-template <typename... _>
-std::optional<std::string>
-get_var_value(const bse::Memory<_...>& mem, const unsigned var) noexcept
+/// @brief Pretty print program.
+/// @param ts print types
+/// @param margin arrow margin
+template <typename Program>
+void
+print_program(Program, bool ts = false, unsigned margin = 5) noexcept
 {
+    using labels = Program::labels;
+    using cells  = Program::cells;
+    typelist::for_each(typelist::zip<labels, cells>{},
+                       [=]<typename LC>()
+                       {
+                           fmt::print("{}:\n",
+                                      prettify<fst_t<LC>>{}(ts, margin, 0));
+                           print_cell<snd_t<LC>>(ts, margin);
+                       });
 }
 
 constexpr char
