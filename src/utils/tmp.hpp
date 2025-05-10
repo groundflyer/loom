@@ -1604,11 +1604,14 @@ struct enumerate
 
 /// @ingroup Typelist
 /// @brief Enumerate types in @p List with indices of type @p Index
-/// @f$[(T_0, 0), (T_1, 1), ... (T_n, n)]@f$
+/// @f$[(T_0, S + 0), (T_1, S + 1), ... (T_n, S + n)]@f$
+/// @tparam L list to enumerate.
+/// @tparam I index type.
+/// @tparam S start number.
 ///
-/// Type of the index member is std::integer_constant<Index, value>
-template <typename List, typename Index = std::size_t, Index start = 0>
-using enumerate = detail::enumerate<List, Index, start>::type;
+/// Type of the index member is std::integer_constant<Index, value>.
+template <typename L, std::integral I = std::size_t, I S = 0>
+using enumerate = detail::enumerate<L, I, S>::type;
 
 /// @brief Masked version of typelist::for_each.
 template <typename F, typename L, std::size_t N, typename... Args>
