@@ -15,23 +15,29 @@ using cubic_fz_p = cubic_fz_program<T, typename constants<T>::errt>;
 
 int main(/*int argc, char* argv[]*/)
 {
-    using p = cubic_fz_p<float>;
+    using p_t = cubic_fz_p<float>;
+    constexpr p_t p{};
     fmt::print("Program:\n");
-    print_program(p{});
+    print_program(p);
     fmt::print("Variables:\n");
-    print_variables(p{});
+    print_variables(p_t::variables{});
+    print_header(p,
+                 std::bitset<typelist::length<p_t::variables>>(-1),
+                 4,
+                 false);
+    fmt::print("\n");
 
-    RawTerminalReader reader(false);
     fmt::print("Ctrl+Q to quit.\n");
+    RawTerminalReader reader(false);
 
-    while(true)
+    char c = reader();
+    while(!quit_condition(c))
     {
-        char c = reader();
         if(std::iscntrl(c))
             fmt::print("{}\r\n", c);
         else
             fmt::print("{c:d} {c}\r\n", fmt::arg("c", c));
-        if(quit_condition(c)) break;
+        c = reader();
     }
 
     return 0;

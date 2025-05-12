@@ -14,6 +14,7 @@
 #include <fmt/format.h>
 #include <fmt/ranges.h>
 
+#include <algorithm>
 #include <bitset>
 #include <cerrno>
 #include <cstdio>
@@ -35,7 +36,7 @@ struct prettify<Variable<T, N>>
     operator()(bool type_signature, unsigned, unsigned) const noexcept
     {
         if(type_signature)
-            return fmt::format("{}: {}",
+            return fmt::format("{}::{}",
                                Variable<T, N>::nameview,
                                TypeInfo<T>::chars);
         else
@@ -211,6 +212,13 @@ MK_OPS_PRETTIFY(cos)
 #undef MK_STD_PRETTIFY
 #undef MK_OPS_PRETTIFY
 
+/// @brief Instruction number width for a cell.
+template <typename Cell>
+struct instruction_number_width
+{
+    static constexpr unsigned value = magnitude(typelist::length<Cell>) + 1u;
+};
+
 template <typename Cell>
 void
 print_cell(bool ts = false, unsigned margin = 5)
@@ -222,7 +230,7 @@ print_cell(bool ts = false, unsigned margin = 5)
             fmt::print("\t{}\n",
                        prettify<T>{}(ts,
                                      margin,
-                                     magnitude(typelist::length<Cell>) + 1u));
+                                     instruction_number_width<Cell>::value));
         });
 }
 
@@ -244,14 +252,61 @@ print_program(Program, bool ts = false, unsigned margin = 5) noexcept
                        });
 }
 
-template <typename Program>
+template <typename Variables>
 void
-print_variables(Program, bool ts = true)
+print_variables(Variables, bool ts = true)
 {
-    using variables = Program::variables;
-    typelist::for_each(variables{},
+    typelist::for_each(typelist::enumerate<Variables>{},
                        [=]<typename Var>()
                        { fmt::print("{}\n", prettify<Var>{}(ts, 0, 0)); });
+}
+
+template <typename _Label>
+struct label_length
+{
+    static constexpr std::size_t value = _Label::name::size();
+};
+
+template <typename Program, std::size_t N>
+    requires(N == typelist::length<typename Program::variables>)
+void
+print_header(Program, const std::bitset<N>& mask, unsigned cw, bool ts)
+{
+    using labels    = Program::labels;
+    using cells     = Program::cells;
+    using variables = Program::variables;
+
+    auto word_printer = [](std::string_view s, unsigned cw)
+    { fmt::print("{:^{}}|", s, cw); };
+    auto dash_printer = [](unsigned cw)
+    { fmt::print("{:\u2015^{}}|", "", cw); };
+
+    // max label width
+    constexpr unsigned mlw = *std::ranges::max_element(
+        intlist::stdarray<typelist::map<label_length, labels>>);
+    // instruction number width
+    constexpr unsigned inw = *std::ranges::max_element(
+        intlist::stdarray<typelist::map<instruction_number_width, cells>>);
+
+    word_printer("CELL", mlw);
+    word_printer("#i", inw);
+
+    typelist::for_each_masked(
+        variables{},
+        [word_printer]<typename Var>(unsigned cw, bool ts)
+        { word_printer(prettify<Var>{}(ts, 0, 0), cw); },
+        mask,
+        cw,
+        ts);
+
+    fmt::print("\n");
+    dash_printer(std::max(mlw, 4u));
+    dash_printer(std::max(inw, 2u));
+    typelist::for_each_masked(
+        variables{},
+        [dash_printer]<typename Var>(unsigned cw) { dash_printer(cw); },
+        mask,
+        cw);
 }
 
 constexpr char
