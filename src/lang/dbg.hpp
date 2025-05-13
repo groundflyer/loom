@@ -36,7 +36,7 @@ struct prettify<Variable<T, N>>
     operator()(bool type_signature, unsigned, unsigned) const noexcept
     {
         if(type_signature)
-            return fmt::format("{}::{}",
+            return fmt::format("{}:{}",
                                Variable<T, N>::nameview,
                                TypeInfo<T>::chars);
         else
@@ -304,9 +304,15 @@ print_header(Program, const std::bitset<N>& mask, unsigned cw, bool ts)
     dash_printer(std::max(inw, 2u));
     typelist::for_each_masked(
         variables{},
-        [dash_printer]<typename Var>(unsigned cw) { dash_printer(cw); },
+        [dash_printer]<typename Var>(unsigned cw, bool ts)
+        {
+            dash_printer(std::max(
+                static_cast<unsigned>(prettify<Var>{}(ts, 0, 0).size()),
+                cw));
+        },
         mask,
-        cw);
+        cw,
+        ts);
 }
 
 constexpr char
