@@ -273,7 +273,6 @@ void
 print_header(Program, const std::bitset<N>& mask, unsigned cw, bool ts)
 {
     using labels    = Program::labels;
-    using cells     = Program::cells;
     using variables = Program::variables;
 
     auto word_printer = [](std::string_view s, unsigned cw)
@@ -284,12 +283,8 @@ print_header(Program, const std::bitset<N>& mask, unsigned cw, bool ts)
     // max label width
     constexpr unsigned mlw = *std::ranges::max_element(
         intlist::stdarray<typelist::map<label_length, labels>>);
-    // instruction number width
-    constexpr unsigned inw = *std::ranges::max_element(
-        intlist::stdarray<typelist::map<instruction_number_width, cells>>);
 
     word_printer("CELL", mlw);
-    word_printer("#i", inw);
 
     typelist::for_each_masked(
         variables{},
@@ -301,7 +296,6 @@ print_header(Program, const std::bitset<N>& mask, unsigned cw, bool ts)
 
     fmt::print("\n");
     dash_printer(std::max(mlw, 4u));
-    dash_printer(std::max(inw, 2u));
     typelist::for_each_masked(
         variables{},
         [dash_printer]<typename Var>(unsigned cw, bool ts)

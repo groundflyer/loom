@@ -21,7 +21,10 @@ int main(/*int argc, char* argv[]*/)
     print_program(p);
     fmt::print("Variables:\n");
     print_variables(p_t::variables{});
-    print_header(p, std::bitset<typelist::length<p_t::variables>>(-1), 4, true);
+    print_header(p,
+                 std::bitset<typelist::length<p_t::variables>>(-1ull << 1),
+                 4,
+                 true);
     fmt::print("\n");
 
     fmt::print("Ctrl+Q to quit.\n");
