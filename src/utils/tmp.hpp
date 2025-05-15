@@ -96,6 +96,16 @@ namespace typelist
 {
 namespace detail
 {
+template <typename T>
+struct is_type_sequence : std::bool_constant<false>
+{
+};
+
+template <typename... Ts>
+struct is_type_sequence<type_sequence<Ts...>> : std::bool_constant<true>
+{
+};
+
 template <typename T, typename List>
 struct cons;
 
@@ -711,94 +721,98 @@ struct self_caller
 /// @ingroup TMP
 /// @{
 
-/// @brief Add class @p T to the beginning of type_sequence @p List.
-template <typename T, typename List>
-using cons = detail::cons<T, List>::type;
+/// @brief type_sequence constraint.
+template <typename T>
+concept List = detail::is_type_sequence<T>::value;
+
+/// @brief Add class @p T to the beginning of type_sequence @p L.
+template <typename T, List L>
+using cons = detail::cons<T, L>::type;
 
 /// @brief Concatenate two lists of types.
-template <typename List1, typename List2>
-using join = detail::join<List1, List2>::type;
+template <List L1, List L2>
+using join = detail::join<L1, L2>::type;
 
-/// @brief Add class @p T to the end of type_sequence @p List.
-template <typename T, typename List>
-using append = join<List, type_sequence<T>>;
+/// @brief Add class @p T to the end of type_sequence @p L.
+template <typename T, List L>
+using append = join<L, type_sequence<T>>;
 
 /// @brief Constructs type_sequence repeating classes @p Ts @p N times.
 template <std::size_t N, typename... Ts>
 using repeat = detail::repeat<N, Ts...>::type;
 
-/// @brief Number of types in @p List.
-template <typename List>
-inline constexpr std::size_t length = detail::length<List>::value;
+/// @brief Number of types in @p L.
+template <List L>
+inline constexpr std::size_t length = detail::length<L>::value;
 
-/// @brief Extract the @p Ith class from @p List.
+/// @brief Extract the @p Ith class from @p L.
 ///
-/// If @p List is too short, the resulting type is void.
-template <std::size_t I, typename List>
-using at = detail::at<I, List>::type;
+/// If @p L is too short, the resulting type is void.
+template <std::size_t I, List L>
+using at = detail::at<I, L>::type;
 
-/// @brief Extract the first class from @p List.
-template <typename List>
-using head = at<0, List>;
+/// @brief Extract the first class from @p L.
+template <List L>
+using head = at<0, L>;
 
-/// @brief Extract the last element from @p List.
-template <typename List>
-using last = at<length<List> - 1, List>;
+/// @brief Extract the last element from @p L.
+template <List L>
+using last = at<length<L> - 1, L>;
 
 /// @brief Extract the elements after the head of @p list as type_sequence.
-template <typename List>
-using tail = detail::tail<List>::type;
+template <List L>
+using tail = detail::tail<L>::type;
 
-/// @brief Check whether @p T occur in @p List.
-template <typename T, typename List>
-inline constexpr bool elem = detail::elem<T, List>::value;
+/// @brief Check whether @p T occur in @p L.
+template <typename T, List L>
+inline constexpr bool elem = detail::elem<T, L>::value;
 
 /// @brief The index of the first occurence of type @p T.
 /// If there is no such type, the value is -1ul.
-template <typename T, typename List>
-inline constexpr std::size_t index = detail::index<0ul, T, List>::value;
+template <typename T, List L>
+inline constexpr std::size_t index = detail::index<0ul, T, L>::value;
 
-/// @brief std::index_sequence for @p List.
-template <typename List>
-using indices = std::make_index_sequence<length<List>>;
+/// @brief std::index_sequence for @p L.
+template <List L>
+using indices = std::make_index_sequence<length<L>>;
 
-/// @brief Left-associative fold of a type_sequence @p List.
-template <template <typename, typename> typename F, typename Acc, typename List>
-using foldl = detail::foldl<F, Acc, List>::type;
+/// @brief Left-associative fold of a type_sequence @p L.
+template <template <typename, typename> typename F, typename Acc, List L>
+using foldl = detail::foldl<F, Acc, L>::type;
 
-/// @brief Right-associative fold of a type_sequence @p List.
-template <template <typename, typename> typename F, typename Acc, typename List>
-using foldr = detail::foldr<F, Acc, List>::type;
+/// @brief Right-associative fold of a type_sequence @p L.
+template <template <typename, typename> typename F, typename Acc, List L>
+using foldr = detail::foldr<F, Acc, L>::type;
 
 /// @brief Reverse the order of elements.
-template <typename List>
-using reverse = foldr<append, type_sequence<>, List>;
+template <List L>
+using reverse = foldr<append, type_sequence<>, L>;
 
-/// @brief Apply @p F to each element of @p List.
+/// @brief Apply @p F to each element of @p L.
 ///
 /// When @p F<T> has static public member @p value of integral type
 /// the result is std::integer_sequence containing these values.
 /// Otherwise - type_sequence.
-template <template <typename> typename F, typename List>
-using map = detail::map<F, List>::type;
+template <template <typename> typename F, List L>
+using map = detail::map<F, L>::type;
 
-/// @brief Remove all occurences of type @p T from @p List.
+/// @brief Remove all occurences of type @p T from @p L.
 ///
-/// Does nothing if there is no @p T in @p List.
-template <typename T, typename List>
-using purge = detail::purge<T, List>::type;
+/// Does nothing if there is no @p T in @p L.
+template <typename T, List L>
+using purge = detail::purge<T, L>::type;
 
-/// @brief Prefix of @p List of length @p N.
+/// @brief Prefix of @p L of length @p N.
 ///
-/// @p N must be less than or equal of length of @p List.
-template <std::size_t N, typename List>
-using take = detail::take<N, List>::type;
+/// @p N must be less than or equal of length of @p L.
+template <std::size_t N, List L>
+using take = detail::take<N, L>::type;
 
-/// @brief Suffix of @p List after the first @p N elements.
+/// @brief Suffix of @p L after the first @p N elements.
 ///
-/// @p N must be less than or equal of length of @p List.
-template <std::size_t N, typename List>
-using drop = detail::drop<N, List>::type;
+/// @p N must be less than or equal of length of @p L.
+template <std::size_t N, List L>
+using drop = detail::drop<N, L>::type;
 
 /// @brief Generalization of zip. Zips with the meta-function
 /// given as the first argument, instead of type_pair.
@@ -816,30 +830,30 @@ using zip_with = detail::zip_with<F, Xs, Ys>::type;
 template <typename Xs, typename Ys>
 using zip = zip_with<type_pair, Xs, Ys>;
 
-/// @brief The concatenation of all the elements of a list @p List of lists.
-template <typename List>
-using concat = foldr<join, type_sequence<>, List>;
+/// @brief The concatenation of all the elements of a list @p L of lists.
+template <List L>
+using concat = foldr<join, type_sequence<>, L>;
 
 /// @brief Flatten list that possibly contains lists of arbitrary nesting depth.
-template <typename List>
-using flatten = detail::flatten<List, type_sequence<>>::type;
+template <List L>
+using flatten = detail::flatten<L, type_sequence<>>::type;
 
 /// @brief Given a list zipper (a pair of lists) take a step forward moving
 /// the head element from @p a to @p b.
 template <typename ListZipper>
 using list_zipper_step_forward = detail::lz_step_forward<ListZipper>::type;
 
-/// @brief Replace items occuring as keys of @p Dict in @p List with
+/// @brief Replace items occuring as keys of @p Dict in @p L with
 /// corresponding values.
 ///
 /// @tparam Dict type_sequence<type_pair<Key, Value>....>
-/// @tparam List type_sequence<...>
-template <typename Dict, typename List>
-using replace_with_dict = detail::replace_with_dict<Dict, List>::type;
+/// @tparam L type_sequence<...>
+template <typename Dict, List L>
+using replace_with_dict = detail::replace_with_dict<Dict, L>::type;
 
-/// @brief Check whether the classes of @p List are the same.
-template <typename List>
-inline constexpr bool same = detail::same<List>::value;
+/// @brief Check whether the classes of @p L are the same.
+template <List L>
+inline constexpr bool same = detail::same<L>::value;
 
 /// @brief Considering the classes of type_sequence @p Fs as functions
 /// get the list of return types by applying the functions to
@@ -850,36 +864,36 @@ inline constexpr bool same = detail::same<List>::value;
 template <typename Fs, typename... Args>
 using result_of = detail::result_of<Fs, Args...>;
 
-/// @brief Check if there are duplicates in @p List.
-template <typename List>
-inline constexpr bool has_duplicates = detail::has_duplicates<List>::value;
+/// @brief Check if there are duplicates in @p L.
+template <List L>
+inline constexpr bool has_duplicates = detail::has_duplicates<L>::value;
 
-/// @brief Determines whether all elements of the @p List satisfy the predicate
+/// @brief Determines whether all elements of the @p L satisfy the predicate
 /// @p P.
 ///
 /// @tparam P must have static constexpr bool value member.
-template <template <typename> typename P, typename List>
-inline constexpr bool all = detail::all<P, List>::value;
+template <template <typename> typename P, List L>
+inline constexpr bool all = detail::all<P, L>::value;
 
-/// @brief Determines whether any element of the @p List satisfy the predicate
+/// @brief Determines whether any element of the @p L satisfy the predicate
 /// @p P.
 ///
 /// @tparam P must have static constexpr bool value member.
-template <template <typename> typename P, typename List>
-inline constexpr bool any = detail::any<P, List>::value;
+template <template <typename> typename P, List L>
+inline constexpr bool any = detail::any<P, L>::value;
 
-/// @brief Remove duplicate elements from @p List.
-template <typename List>
-using nub = detail::nub<List>::type;
+/// @brief Remove duplicate elements from @p L.
+template <List L>
+using nub = detail::nub<L>::type;
 
-/// @brief Filter @p List elements with a predicate @p P.
+/// @brief Filter @p L elements with a predicate @p P.
 ///
 /// @tparam P must have static constexpr bool value member.
 ///
 /// The resulting type_sequence contains elements that
 /// satisfy P, i.e. P<T>::value == true.
-template <template <typename> typename P, typename List>
-using filter = detail::filter<P, List>::type;
+template <template <typename> typename P, List L>
+using filter = detail::filter<P, L>::type;
 
 /// @brief Lookup a key @p Key in association list @p Map.
 ///
@@ -889,17 +903,17 @@ using filter = detail::filter<P, List>::type;
 template <typename Key, typename Map>
 using lookup = detail::lookup<Key, Map>::type;
 
-/// @brief Get the leftmost type from @p List matching predicate @p P.
+/// @brief Get the leftmost type from @p L matching predicate @p P.
 ///
 /// @tparam P must have static constexpr bool value member.
 ///
 /// If there is no type matching @p P the resulting type is void.
-template <template <typename> typename P, typename List>
-using find = detail::find<P, List>::type;
+template <template <typename> typename P, List L>
+using find = detail::find<P, L>::type;
 
-/// @brief Check if @p List is empty.
-template <typename List>
-inline constexpr bool empty = length<List> == 0;
+/// @brief Check if @p L is empty.
+template <List L>
+inline constexpr bool empty = length<L> == 0;
 
 /// @brief Split typelist into sublists with a predicate.
 ///
@@ -907,14 +921,14 @@ inline constexpr bool empty = length<List> == 0;
 ///
 /// The delimeter elements are such that satisfy predicate @p P,
 /// i.e. P<T>::value == true.
-template <template <typename> typename P, typename List>
-using split_when = detail::split_when<P, List>::type;
+template <template <typename> typename P, List L>
+using split_when = detail::split_when<P, L>::type;
 
 /// @brief Split typelist into sublists with a delimeter.
 ///
 /// The resulting type is type_sequence<type_sequence<...>...>.
-template <typename Delimeter, typename List>
-using split_up = detail::split_up<Delimeter, List>::type;
+template <typename Delimeter, List L>
+using split_up = detail::split_up<Delimeter, L>::type;
 
 /// @brief Convert a class template @p Source into type_sequence.
 template <typename Source>
@@ -924,30 +938,29 @@ using from = detail::from<Source>::type;
 template <typename Source, template <typename...> typename Target>
 using to = detail::to<Source, Target>::type;
 
-/// @brief If @p List consists of single element it's the resulting type,
+/// @brief If @p L consists of single element it's the resulting type,
 /// otherwise it's @p Target of the elements.
-template <typename List, template <typename...> typename Target>
-    requires(length<List> != 0)
-using maybe_to =
-    std::conditional_t<length<List> == 1, head<List>, to<List, Target>>;
+template <List L, template <typename...> typename Target>
+    requires(length<L> != 0)
+using maybe_to = std::conditional_t<length<L> == 1, head<L>, to<L, Target>>;
 
 /// @brief Convert type_sequence of std::integer_constant into a
 /// std::integer_sequence.
 ///
 /// The value type of the first element is used as the value type for the
 /// resulting std::integer_sequence.
-template <typename List>
-using to_integer_sequence = detail::to_integer_seq<List>::type;
+template <List L>
+using to_integer_sequence = detail::to_integer_seq<L>::type;
 
 /// @brief Size of the biggest type in the list.
-template <typename List>
-constexpr inline std::size_t max_sizeof = detail::max_sizeof<List>::value;
+template <List L>
+constexpr inline std::size_t max_sizeof = detail::max_sizeof<L>::value;
 
-/// @brief Check if all types in @p List have the same size.
-template <typename List>
-constexpr inline bool of_same_size = detail::of_same_size<List>::value;
+/// @brief Check if all types in @p L have the same size.
+template <List L>
+constexpr inline bool of_same_size = detail::of_same_size<L>::value;
 
-/// @brief Invoke @p f with each class of @p List as template parameter.
+/// @brief Invoke @p f with each class of @p L as template parameter.
 template <typename F, typename... Ts, typename... Args>
 constexpr void
 for_each(type_sequence<Ts...> /* list */, F&& f, Args&&... args) noexcept(
@@ -1058,24 +1071,24 @@ first_of(type_sequence<Fs...> /*list*/, Args&&... args) noexcept(
     return (... || std::invoke(Fs{}, std::forward<Args>(args)...));
 }
 
-/// @brief Invoke @p visitor on the @p i'th element of @p List.
+/// @brief Invoke @p visitor on the @p i'th element of @p L.
 ///
-/// @p visitor is incoked with an element of the @p List as a template
+/// @p visitor is incoked with an element of the @p L as a template
 /// parameter.
 ///
-/// @param i which @p List element to invoke @p visitor on.
-/// @param visitor callable to invoke. Is called with @p List element
+/// @param i which @p L element to invoke @p visitor on.
+/// @param visitor callable to invoke. Is called with @p L element
 /// as template argument.
 /// @param def function that invoked without arguments if @p i out of range.
 /// @param args arguments passed to @p visitor on invocation.
-/// @tparam List contains elements to invoke @p visitor on.
+/// @tparam L contains elements to invoke @p visitor on.
 template <std::unsigned_integral I,
           typename Visitor,
-          typename List,
+          List L,
           typename Default,
           typename... Args>
 constexpr decltype(auto)
-visit_at(const I i, Visitor&& visitor, List list, Default&& def, Args&&... args)
+visit_at(const I i, Visitor&& visitor, L list, Default&& def, Args&&... args)
 {
     return detail::visit_at_impl<I, 0u>(i,
                                         std::forward<Visitor>(visitor),
@@ -1084,17 +1097,14 @@ visit_at(const I i, Visitor&& visitor, List list, Default&& def, Args&&... args)
                                         std::forward<Args>(args)...);
 }
 
-/// @brief Same as typelist::visit_at , but typelist @p List contains callables.
-/// @tparam List consists of callable types.
-/// @param i which @p List element to invoke @p visitor on.
+/// @brief Same as typelist::visit_at , but typelist @p L contains callables.
+/// @tparam L consists of callable types.
+/// @param i which @p L element to invoke @p visitor on.
 /// @param def function that invoked without arguments if @p i out of range.
 /// @param args arguments passed to the invoked element.
-template <std::unsigned_integral I,
-          typename List,
-          typename Default,
-          typename... Args>
+template <std::unsigned_integral I, List L, typename Default, typename... Args>
 constexpr decltype(auto)
-visit_funcs_at(const I i, List list, Default&& def, Args&&... args)
+visit_funcs_at(const I i, L list, Default&& def, Args&&... args)
 {
     return visit_at(i,
                     detail::self_caller{},
@@ -1109,6 +1119,17 @@ namespace intlist
 {
 namespace detail
 {
+template <typename T>
+struct is_integer_sequence : std::bool_constant<false>
+{
+};
+
+template <std::integral Int, Int... Is>
+struct is_integer_sequence<std::integer_sequence<Int, Is...>> :
+    std::bool_constant<true>
+{
+};
+
 template <auto Val, typename List>
 struct cons;
 
@@ -1393,109 +1414,113 @@ struct powersof2s
 /// @ingroup TMP
 /// @{
 
-/// @brief Add integer value @p Val to the beginning of @p List.
-template <auto Val, typename List>
-using cons = detail::cons<Val, List>::type;
+/// @brief std::integer_sequence constraint.
+template <typename T>
+concept List = detail::is_integer_sequence<T>::value;
+
+/// @brief Add integer value @p Val to the beginning of @p L.
+template <auto Val, List L>
+using cons = detail::cons<Val, L>::type;
 
 /// @brief Concatenate two std::integer_sequence.
-template <typename List1, typename List2>
-using join = detail::join<List1, List2>::type;
+template <List L1, List L2>
+using join = detail::join<L1, L2>::type;
 
 /// @brief Constructs std::integer_sequence repeating @p Vals @p N
 /// times.
 template <std::size_t N, typename Int, Int... Vals>
 using repeat = detail::repeat<N, Int, Vals...>::type;
 
-/// @brief Reverse the order of the elements in @p List.
-template <typename List>
-using reverse = detail::reverse<List>::type;
+/// @brief Reverse the order of the elements in @p L.
+template <List L>
+using reverse = detail::reverse<L>::type;
 
-/// @brief Apply @p F to each element of @p List.
+/// @brief Apply @p F to each element of @p L.
 ///
 /// @f$\mathrm{F}(\mathrm{I}) \rightarrow \mathrm{T}@f$,
 /// The resulting type @f$\mathrm{T}@f$ must be integer.
-template <typename F, typename List>
-using map_f = detail::map_f<F, List>::type;
+template <typename F, List L>
+using map_f = detail::map_f<F, L>::type;
 
-/// @brief Make types from elements of @p List by
+/// @brief Make types from elements of @p L by
 /// specializing template class F with the values.
 ///
 /// The resulting type is type_sequence<F<Int>...>.
-template <template <auto> typename F, typename List>
-using map_t = detail::map_t<F, List>::type;
+template <template <auto> typename F, List L>
+using map_t = detail::map_t<F, L>::type;
 
-/// @brief Add @p Val @p N times to the end of @p List.
-template <typename List, std::size_t N, auto Val>
-using nappend = detail::nappend<List, N, Val>::type;
+/// @brief Add @p Val @p N times to the end of @p L.
+template <List L, std::size_t N, auto Val>
+using nappend = detail::nappend<L, N, Val>::type;
 
-/// @brief Add @p Val to the end of @p List.
-template <typename List, auto Val>
-using append = nappend<List, 1, Val>;
+/// @brief Add @p Val to the end of @p L.
+template <List L, auto Val>
+using append = nappend<L, 1, Val>;
 
 /// @brief Length of an std::integer_sequence.
-template <typename List>
-inline constexpr std::size_t length = detail::length<List>::value;
+template <List L>
+inline constexpr std::size_t length = detail::length<L>::value;
 
-/// @brief Extract the @p Ith elementh from @p List.
-template <std::size_t I, typename List>
-inline constexpr auto at = detail::at<I, List>::value;
+/// @brief Extract the @p Ith elementh from @p L.
+template <std::size_t I, List L>
+inline constexpr auto at = detail::at<I, L>::value;
 
-/// @brief Extract the first element from @p List.
-template <typename List>
-inline constexpr auto head = at<0, List>;
+/// @brief Extract the first element from @p L.
+template <List L>
+inline constexpr auto head = at<0, L>;
 
-/// @brief Extract the last element from @p List.
-template <typename List>
-inline constexpr auto last = at<length<List> - 1, List>;
+/// @brief Extract the last element from @p L.
+template <List L>
+inline constexpr auto last = at<length<L> - 1, L>;
 
 /// @brief Extract the elements after the head of @p list as type_sequence.
-template <typename List>
-using tail = detail::tail<List>::type;
+template <List L>
+using tail = detail::tail<L>::type;
 
-/// @brief Check whether @p X occur in @p List.
-template <auto X, typename List>
-inline constexpr bool elem = detail::elem<X, List>::value;
+/// @brief Check whether @p X occur in @p L.
+template <std::integral auto X, List L>
+inline constexpr bool elem = detail::elem<X, L>::value;
 
 /// @brief The index of the first occurence of @p X.
-/// If there is no @p X in @p List the value is -1ul.
-template <auto X, typename List>
-inline constexpr std::size_t index = detail::index<0ul, X, List>::value;
+/// If there is no @p X in @p L the value is -1ul.
+template <std::integral auto X, List L>
+inline constexpr std::size_t index = detail::index<0ul, X, L>::value;
 
-/// @brief std::index_sequence for @p List.
-template <typename List>
-using indices = std::make_index_sequence<length<List>>;
+/// @brief std::index_sequence for @p L.
+template <List L>
+using indices = std::make_index_sequence<length<L>>;
 
 /// @brief Make std::integer_sequence without @p X.
-template <auto X, typename List>
-using purge = detail::purge<X, List>::type;
+template <std::integral auto X, List L>
+using purge = detail::purge<X, L>::type;
 
-/// @brief Prefix of @p List of length @p N.
+/// @brief Prefix of @p L of length @p N.
 ///
-/// @p N must be less than or equal of length of @p List.
-template <std::size_t N, typename List>
-using take = detail::take<N, List>::type;
+/// @p N must be less than or equal of length of @p L.
+template <std::size_t N, List L>
+using take = detail::take<N, L>::type;
 
-/// @brief Suffix of @p List after the first @p N elements.
+/// @brief Suffix of @p L after the first @p N elements.
 ///
-/// @p N must be less than or equal of length of @p List.
-template <std::size_t N, typename List>
-using drop = detail::drop<N, List>::type;
+/// @p N must be less than or equal of length of @p L.
+template <std::size_t N, List L>
+using drop = detail::drop<N, L>::type;
 
 /// @brief Convert std::integer_sequence into C array.
-template <typename List>
-inline constexpr auto array = detail::array<List>::value;
+template <List L>
+inline constexpr auto array = detail::array<L>::value;
 
 /// @brief Convert std::integer_sequence into std::array.
-template <typename List>
-inline constexpr auto stdarray = detail::stdarray<List>::value;
+template <List L>
+inline constexpr auto stdarray = detail::stdarray<L>::value;
 
-/// @brief Check if there are duplicates in @p List.
-template <typename List>
-inline constexpr bool has_duplicates = detail::has_duplicates<List>::value;
+/// @brief Check if there are duplicates in @p L.
+template <List L>
+inline constexpr bool has_duplicates = detail::has_duplicates<L>::value;
 
-/// @brief Remove duplicate elements from @p List.
-template <typename List>
-using nub = detail::nub<List>::type;
+/// @brief Remove duplicate elements from @p L.
+template <List L>
+using nub = detail::nub<L>::type;
 
 template <std::size_t N, std::size_t I>
 struct lehmer_code_impl
@@ -1514,16 +1539,16 @@ struct lehmer_code_impl<0, I>
     using type = std::index_sequence<>;
 };
 
-template <typename Idxs, typename FacNum>
+template <List Idxs, typename FacNum>
 struct lehmer_perm_impl;
 
-template <typename Idxs>
+template <List Idxs>
 struct lehmer_perm_impl<Idxs, std::index_sequence<>>
 {
     using type = std::index_sequence<>;
 };
 
-template <typename Idxs, std::size_t Head, std::size_t... Rest>
+template <List Idxs, std::size_t Head, std::size_t... Rest>
 struct lehmer_perm_impl<Idxs, std::index_sequence<Head, Rest...>>
 {
   private:
@@ -1545,7 +1570,7 @@ using lehmer_code = lehmer_code_impl<N, 1>::type;
 
 /// @brief Generate a permutation of index array @p Idxs from
 /// its factorial representation @p FacNum.
-template <typename Idxs, typename FacNum>
+template <List Idxs, typename FacNum>
 using lehmer_perm = lehmer_perm_impl<Idxs, FacNum>::type;
 
 template <std::size_t N, std::size_t L>
@@ -1571,11 +1596,11 @@ using nlperm = nlperm_impl<N, L>::type;
 template <std::integral auto N>
 using powerof2s = typename detail::powersof2s<N>::type;
 
-/// @brief Invoke @p f with each value of @p List as template parameter.
+/// @brief Invoke @p f with each value of @p L as template parameter.
 template <typename F, typename Int, Int... Is, typename... Args>
 constexpr void
 for_each(F&& f,
-         std::integer_sequence<Int, Is...> /*List*/,
+         std::integer_sequence<Int, Is...> /*L*/,
          Args&&... args) noexcept((... &&
                                    noexcept(f.template operator()<Is>(
                                        std::forward<Args>(args)...))))
@@ -1589,32 +1614,32 @@ namespace typelist
 {
 namespace detail
 {
-template <typename List, std::integral Index, Index start>
+template <typename L, std::integral Index, Index start>
 struct enumerate
 {
     template <Index i>
     using index_type = std::integral_constant<Index, start + i>;
 
     using type = typelist::zip<
-        List,
+        L,
         intlist::map_t<index_type,
-                       std::make_index_sequence<typelist::length<List>>>>;
+                       std::make_index_sequence<typelist::length<L>>>>;
 };
 } // namespace detail
 
 /// @ingroup Typelist
-/// @brief Enumerate types in @p List with indices of type @p Index
+/// @brief Enumerate types in @p L with indices of type @p Index
 /// @f$[(T_0, S + 0), (T_1, S + 1), ... (T_n, S + n)]@f$
 /// @tparam L list to enumerate.
 /// @tparam I index type.
 /// @tparam S start number.
 ///
 /// Type of the index member is std::integer_constant<Index, value>.
-template <typename L, std::integral I = std::size_t, I S = 0>
+template <List L, std::integral I = std::size_t, I S = 0>
 using enumerate = detail::enumerate<L, I, S>::type;
 
 /// @brief Masked version of typelist::for_each.
-template <typename F, typename L, std::size_t N, typename... Args>
+template <typename F, List L, std::size_t N, typename... Args>
     requires(N == length<L>)
 constexpr void
 for_each_masked(L /* list */, F&& f, const std::bitset<N>& mask, Args&&... args)
@@ -1630,7 +1655,7 @@ for_each_masked(L /* list */, F&& f, const std::bitset<N>& mask, Args&&... args)
 }
 
 /// @brief Masked version of typelist::for_each_arg.
-template <typename F, typename L, std::size_t N, typename... Args>
+template <typename F, List L, std::size_t N, typename... Args>
     requires(N == length<L>)
 constexpr void
 for_each_arg_masked(L /* list */,
