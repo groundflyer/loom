@@ -246,6 +246,19 @@ almost_equal(const T a, const T b, const ULP ulp)
            amb < std::numeric_limits<T>::min();
 }
 
+/// @brief ULP equal comparator. Uses lucid::almost_equal internally.
+struct ulp_cmp
+{
+    unsigned ulp;
+
+    template <std::floating_point T>
+    constexpr bool
+    operator()(const T a, const T b) const noexcept
+    {
+        return almost_equal(a, b, ulp);
+    }
+};
+
 /// @brief Compute order of magnitude.
 template <std::unsigned_integral Int>
 constexpr unsigned

@@ -736,7 +736,7 @@ struct ParmTestMaker
     }
 
     /// @brief Special case for ParmTestMaker::fuzzy_with_ref with
-    /// lucid::almost_equal as the comparator.
+    /// lucid::ulp_cmp as the comparator.
     /// @copydetails fuzzy_with_ref
     ///
     /// @param ulp unit in the last place.
@@ -747,8 +747,7 @@ struct ParmTestMaker
         return fuzzy_with_ref(std::forward<G>(g),
                               std::forward<T>(t),
                               std::forward<RI>(ri),
-                              [ulp](auto t, auto v) noexcept
-                              { return almost_equal(t, v, ulp); });
+                              ulp_cmp{ulp});
     }
 };
 
