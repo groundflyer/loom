@@ -32,6 +32,7 @@ MK_NAMED_TYPEINFO(float, f32)
 MK_NAMED_TYPEINFO(double, f64)
 MK_NAMED_TYPEINFO(long double, f80)
 MK_TYPEINFO(bool)
+MK_TYPEINFO(long long)
 
 #define MK_TYPEINFO_STRING(TYPE) \
     constexpr auto get_typeinfo_string(TYPE) noexcept { return #TYPE; }
