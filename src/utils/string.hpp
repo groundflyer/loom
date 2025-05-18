@@ -70,13 +70,18 @@ struct sl2cs_impl<s, std::index_sequence<Idxs...>>
 };
 } // namespace detail
 
+// @brief Constraint of char_sequence.
+template <typename T>
+concept CharSequence =
+    intlist::List<T> && std::same_as<typename T::value_type, char>;
+
 /// @brief Convert StringLiteral into char_sequence.
 template <StringLiteral s>
 using sl2cs =
     typename detail::sl2cs_impl<s, std::make_index_sequence<s.size()>>::type;
 
 /// @brief Convert char_sequence @p S to std::string_view.
-template <typename S>
+template <CharSequence S>
 inline constexpr std::string_view cs2sv =
     std::string_view(intlist::array<S>, intlist::length<S>);
 /// @}

@@ -19,7 +19,7 @@ namespace lucid
 ///
 /// @tparam Type must be of fundamental type or SIMD type.
 /// @tparam Name must be char_sequence.
-template <typename Type, typename Name>
+template <typename Type, CharSequence Name>
 struct Variable
 {
     using type                                 = Type;
@@ -68,7 +68,7 @@ struct Compute
 /// @brief Describes a label.
 ///
 /// @tparam Name name of the label, char_sequence.
-template <typename Name>
+template <CharSequence Name>
 struct Label
 {
     using name = Name;
