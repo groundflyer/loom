@@ -70,7 +70,7 @@ struct sl2cs_impl<s, std::index_sequence<Idxs...>>
 };
 } // namespace detail
 
-// @brief Constraint of char_sequence.
+/// @brief Constraint of char_sequence.
 template <typename T>
 concept CharSequence =
     intlist::List<T> && std::same_as<typename T::value_type, char>;
