@@ -125,7 +125,6 @@ class basic_scalar_compiler
         static constexpr typelist::head<compiled_cells> cell{};
 
       public:
-        using program = _Program;
         template <typename... Args>
         constexpr auto
         operator()(const Args&... args) noexcept
@@ -141,7 +140,6 @@ class basic_scalar_compiler
         static constexpr typelist::to<compiled_cells, std::tuple> cells{};
 
       public:
-        using program = _Program;
         template <typename... Args>
         constexpr auto
         operator()(const Args&... args) noexcept

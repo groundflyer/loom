@@ -257,127 +257,107 @@ zip_with_for_each_impl(
 }
 
 template <typename F, typename T, template <typename...> typename M>
-struct is_applicable_mod
+struct is_applicable_mod : std::false_type
 {
-    static constexpr bool value = false;
 };
 
 template <typename F, template <typename...> typename M, typename... Ts>
-struct is_applicable_mod<F, unique_tuple<Ts...>, M>
+struct is_applicable_mod<F, unique_tuple<Ts...>, M> : M<F, Ts...>
 {
-    static constexpr bool value = M<F, Ts...>::value;
 };
 
 template <typename F, template <typename...> typename M, typename... Ts>
-struct is_applicable_mod<F, std::tuple<Ts...>, M>
+struct is_applicable_mod<F, std::tuple<Ts...>, M> : M<F, Ts...>
 {
-    static constexpr bool value = M<F, Ts...>::value;
 };
 
 template <typename F,
-          template <typename...>
-          typename M,
+          template <typename...> typename M,
           typename T1,
           typename T2>
-struct is_applicable_mod<F, std::pair<T1, T2>, M>
+struct is_applicable_mod<F, std::pair<T1, T2>, M> : M<F, T1, T2>
 {
-    static constexpr bool value = M<F, T1, T2>::value;
 };
 
 template <typename F, typename R, typename T, template <typename...> typename M>
-struct is_applicable_mod_r
+struct is_applicable_mod_r : std::false_type
 {
-    static constexpr bool value = false;
 };
 
 template <typename F,
           typename R,
-          template <typename...>
-          typename M,
+          template <typename...> typename M,
           typename... Ts>
-struct is_applicable_mod_r<F, R, unique_tuple<Ts...>, M>
+struct is_applicable_mod_r<F, R, unique_tuple<Ts...>, M> : M<F, R, Ts...>
 {
-    static constexpr bool value = M<F, R, Ts...>::value;
 };
 
 template <typename F,
           typename R,
-          template <typename...>
-          typename M,
+          template <typename...> typename M,
           typename... Ts>
-struct is_applicable_mod_r<F, R, std::tuple<Ts...>, M>
+struct is_applicable_mod_r<F, R, std::tuple<Ts...>, M> : M<F, R, Ts...>
 {
-    static constexpr bool value = M<F, R, Ts...>::value;
 };
 
 template <typename F,
           typename R,
-          template <typename...>
-          typename M,
+          template <typename...> typename M,
           typename T1,
           typename T2>
-struct is_applicable_mod_r<F, R, std::pair<T1, T2>, M>
+struct is_applicable_mod_r<F, R, std::pair<T1, T2>, M> : M<F, R, T1, T2>
 {
-    static constexpr bool value = M<F, R, T1, T2>::value;
 };
 
 template <typename T>
-struct is_tuple
+struct is_tuple : std::false_type
 {
-    static constexpr bool value = false;
 };
 
 template <typename... Ts>
-struct is_tuple<std::pair<Ts...>>
+struct is_tuple<std::pair<Ts...>> : std::true_type
 {
-    static constexpr bool value = true;
 };
 
 template <typename... Ts>
-struct is_tuple<std::tuple<Ts...>>
+struct is_tuple<std::tuple<Ts...>> : std::true_type
 {
-    static constexpr bool value = true;
 };
 
 template <typename... Ts>
-struct is_tuple<unique_tuple<Ts...>>
+struct is_tuple<unique_tuple<Ts...>> : std::true_type
 {
-    static constexpr bool value = true;
 };
 
 template <typename F, typename... Args>
-struct is_invocable_non_void
+struct is_invocable_non_void :
+    std::bool_constant<std::is_invocable_v<F, Args...> &&
+                       !std::is_void_v<std::invoke_result_t<F, Args...>>>
 {
-    static constexpr bool value =
-        std::is_invocable_v<F, Args...> &&
-        !std::is_void_v<std::invoke_result_t<F, Args...>>;
 };
 
 template <typename F, typename T>
-struct is_mappable
+struct is_mappable : std::true_type
 {
-    static constexpr bool value = true;
 };
 
 template <typename F, typename T1, typename T2>
-struct is_mappable<F, std::pair<T1, T2>>
+struct is_mappable<F, std::pair<T1, T2>> :
+    std::bool_constant<is_invocable_non_void<F, T1>::value &&
+                       is_invocable_non_void<F, T2>::value>
 {
-    static constexpr bool value = is_invocable_non_void<F, T1>::value &&
-                                  is_invocable_non_void<F, T2>::value;
 };
 
 template <typename F, typename... Ts>
-struct is_mappable<F, std::tuple<Ts...>>
+struct is_mappable<F, std::tuple<Ts...>> :
+    std::bool_constant<std::conjunction_v<is_invocable_non_void<F, Ts>...>>
 {
-    static constexpr bool value =
-        std::conjunction_v<is_invocable_non_void<F, Ts>...>;
 };
 
 template <typename F, typename... Ts>
-struct is_mappable<F, unique_tuple<Ts...>>
+struct is_mappable<F, unique_tuple<Ts...>> :
+    std::bool_constant<std::conjunction_v<is_invocable_non_void<F, Ts>...>>
 {
-    static constexpr bool value =
-        std::conjunction_v<is_invocable_non_void<F, Ts>...>;
 };
 } // namespace detail
 
@@ -422,13 +402,18 @@ inline constexpr bool is_maybe_nothrow_applicable_r_v =
 template <typename F, typename T>
 inline constexpr bool is_mappable_v = detail::is_mappable<F, T>::value;
 
+/// @brief If @p T is tuple checks whether we can use std::apply(F, T) or at
+/// lease F(T).
 template <typename F, typename T>
 concept maybe_applicable = is_applicable_v<F, T> || std::is_invocable_v<F, T>;
 
+/// @brief Same as lucid::maybe_applicable, but with return type.
 template <typename F, typename R, typename T>
 concept maybe_applicable_r =
     is_applicable_r_v<F, R, T> || std::is_invocable_r_v<F, R, T>;
 
+/// @brief Checks if result types of applying @p F to elements of tuple @p T are
+/// valid.
 template <typename F, typename T>
 concept mappable_tuple = is_mappable_v<F, T>;
 

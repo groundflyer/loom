@@ -97,12 +97,12 @@ namespace typelist
 namespace detail
 {
 template <typename T>
-struct is_type_sequence : std::bool_constant<false>
+struct is_type_sequence : std::false_type
 {
 };
 
 template <typename... Ts>
-struct is_type_sequence<type_sequence<Ts...>> : std::bool_constant<true>
+struct is_type_sequence<type_sequence<Ts...>> : std::true_type
 {
 };
 
@@ -141,9 +141,9 @@ template <typename List>
 struct length;
 
 template <typename... Ts>
-struct length<type_sequence<Ts...>>
+struct length<type_sequence<Ts...>> :
+    std::integral_constant<std::size_t, sizeof...(Ts)>
 {
-    static constexpr std::size_t value = sizeof...(Ts);
 };
 
 template <std::size_t I, typename List>
@@ -186,26 +186,26 @@ template <typename T, typename List>
 struct elem;
 
 template <typename T, typename... Ts>
-struct elem<T, type_sequence<Ts...>>
+struct elem<T, type_sequence<Ts...>> :
+    std::bool_constant<std::disjunction_v<std::is_same<T, Ts>...>>
 {
-    static constexpr bool value = std::disjunction_v<std::is_same<T, Ts>...>;
 };
 
 template <std::size_t I, typename S, typename List>
 struct index;
 
 template <std::size_t I, typename S>
-struct index<I, S, type_sequence<>>
+struct index<I, S, type_sequence<>> : std::integral_constant<std::size_t, -1ul>
 {
-    static constexpr std::size_t value = -1ul;
 };
 
 template <std::size_t I, typename S, typename T, typename... Ts>
-struct index<I, S, type_sequence<T, Ts...>>
+struct index<I, S, type_sequence<T, Ts...>> :
+    std::integral_constant<std::size_t,
+                           std::is_same_v<S, T> ?
+                               I :
+                               index<I + 1ul, S, type_sequence<Ts...>>::value>
 {
-    static constexpr std::size_t value =
-        std::is_same_v<S, T> ? I :
-                               index<I + 1ul, S, type_sequence<Ts...>>::value;
 };
 
 template <template <typename, typename> typename F, typename Acc, typename List>
@@ -353,9 +353,9 @@ template <typename List>
 struct same;
 
 template <typename T, typename... Ts>
-struct same<type_sequence<T, Ts...>>
+struct same<type_sequence<T, Ts...>> :
+    std::bool_constant<std::conjunction_v<std::is_same<T, Ts>...>>
 {
-    static constexpr bool value = std::conjunction_v<std::is_same<T, Ts>...>;
 };
 
 template <typename List, typename... Args>
@@ -371,35 +371,33 @@ template <typename List>
 struct has_duplicates;
 
 template <>
-struct has_duplicates<type_sequence<>>
+struct has_duplicates<type_sequence<>> : std::false_type
 {
-    static constexpr bool value = false;
 };
 
 template <typename T, typename... Ts>
-struct has_duplicates<type_sequence<T, Ts...>>
+struct has_duplicates<type_sequence<T, Ts...>> :
+    std::bool_constant<elem<T, type_sequence<Ts...>>::value ||
+                       has_duplicates<type_sequence<Ts...>>::value>
 {
-    using ts = type_sequence<Ts...>;
-    static constexpr bool value =
-        elem<T, ts>::value || has_duplicates<ts>::value;
 };
 
 template <template <typename> typename P, typename List>
 struct all;
 
 template <template <typename> typename P, typename... Ts>
-struct all<P, type_sequence<Ts...>>
+struct all<P, type_sequence<Ts...>> :
+    std::bool_constant<std::conjunction_v<P<Ts>...>>
 {
-    static constexpr bool value = std::conjunction_v<P<Ts>...>;
 };
 
 template <template <typename> typename P, typename List>
 struct any;
 
 template <template <typename> typename P, typename... Ts>
-struct any<P, type_sequence<Ts...>>
+struct any<P, type_sequence<Ts...>> :
+    std::bool_constant<std::disjunction_v<P<Ts>...>>
 {
-    static constexpr bool value = std::disjunction_v<P<Ts>...>;
 };
 
 template <template <typename> typename P, typename List>
@@ -647,24 +645,23 @@ template <typename List>
 struct max_sizeof;
 
 template <typename... Ts>
-struct max_sizeof<type_sequence<Ts...>>
+struct max_sizeof<type_sequence<Ts...>> :
+    std::integral_constant<std::size_t, std::max({sizeof(Ts)...})>
 {
-    static constexpr std::size_t value = std::max({sizeof(Ts)...});
 };
 
 template <typename List>
 struct of_same_size;
 
 template <typename T>
-struct of_same_size<type_sequence<T>>
+struct of_same_size<type_sequence<T>> : std::true_type
 {
-    static constexpr bool value = true;
 };
 
 template <typename T, typename... Ts>
-struct of_same_size<type_sequence<T, Ts...>>
+struct of_same_size<type_sequence<T, Ts...>> :
+    std::bool_constant<(... && (sizeof(T) == sizeof(Ts)))>
 {
-    static constexpr bool value = (... && (sizeof(T) == sizeof(Ts)));
 };
 
 template <typename Dict, typename List>
@@ -1120,13 +1117,12 @@ namespace intlist
 namespace detail
 {
 template <typename T>
-struct is_integer_sequence : std::bool_constant<false>
+struct is_integer_sequence : std::false_type
 {
 };
 
 template <std::integral Int, Int... Is>
-struct is_integer_sequence<std::integer_sequence<Int, Is...>> :
-    std::bool_constant<true>
+struct is_integer_sequence<std::integer_sequence<Int, Is...>> : std::true_type
 {
 };
 
@@ -1183,26 +1179,27 @@ template <typename List>
 struct length;
 
 template <typename Int, Int... Nums>
-struct length<std::integer_sequence<Int, Nums...>>
+struct length<std::integer_sequence<Int, Nums...>> :
+    std::integral_constant<std::size_t, sizeof...(Nums)>
 {
-    static constexpr std::size_t value = sizeof...(Nums);
 };
 
 template <std::size_t I, typename List>
 struct at;
 
 template <typename Int, Int Head, Int... Vals>
-struct at<0, std::integer_sequence<Int, Head, Vals...>>
+struct at<0, std::integer_sequence<Int, Head, Vals...>> :
+    std::integral_constant<Int, Head>
 {
-    static constexpr Int value = Head;
 };
 
 template <std::size_t I, typename Int, Int Head, Int... Vals>
     requires(I < length<std::integer_sequence<Int, Head, Vals...>>::value)
-struct at<I, std::integer_sequence<Int, Head, Vals...>>
+struct at<I, std::integer_sequence<Int, Head, Vals...>> :
+    std::integral_constant<
+        Int,
+        at<I - 1, std::integer_sequence<Int, Vals...>>::value>
 {
-    static constexpr Int value =
-        at<I - 1, std::integer_sequence<Int, Vals...>>::value;
 };
 
 template <typename List>
@@ -1218,26 +1215,27 @@ template <auto V, typename List>
 struct elem;
 
 template <typename Int, Int V, Int... Is>
-struct elem<V, std::integer_sequence<Int, Is...>>
+struct elem<V, std::integer_sequence<Int, Is...>> :
+    std::bool_constant<(... || (V == Is))>
 {
-    static constexpr bool value = (... || (V == Is));
 };
 
 template <std::size_t I, auto S, typename List>
 struct index;
 
 template <std::size_t I, typename Int, Int S>
-struct index<I, S, std::integer_sequence<Int>>
+struct index<I, S, std::integer_sequence<Int>> :
+    std::integral_constant<std::size_t, -1ul>
 {
-    static constexpr std::size_t value = -1ul;
 };
 
 template <std::size_t I, typename Int, Int S, Int X, Int... Xs>
-struct index<I, S, std::integer_sequence<Int, X, Xs...>>
-{
-    static constexpr std::size_t value =
+struct index<I, S, std::integer_sequence<Int, X, Xs...>> :
+    std::integral_constant<
+        std::size_t,
         S == X ? I :
-                 index<I + 1ul, S, std::integer_sequence<Int, Xs...>>::value;
+                 index<I + 1ul, S, std::integer_sequence<Int, Xs...>>::value>
+{
 };
 
 template <typename List>
@@ -1367,17 +1365,15 @@ template <typename List>
 struct has_duplicates;
 
 template <typename Int, Int I>
-struct has_duplicates<std::integer_sequence<Int, I>>
+struct has_duplicates<std::integer_sequence<Int, I>> : std::false_type
 {
-    static constexpr bool value = false;
 };
 
 template <typename Int, Int X, Int... Xs>
-struct has_duplicates<std::integer_sequence<Int, X, Xs...>>
+struct has_duplicates<std::integer_sequence<Int, X, Xs...>> :
+    std::bool_constant<elem<X, std::integer_sequence<Int, Xs...>>::value ||
+                       has_duplicates<std::integer_sequence<Int, Xs...>>::value>
 {
-    using xs = std::integer_sequence<Int, Xs...>;
-    static constexpr bool value =
-        elem<X, xs>::value || has_duplicates<xs>::value;
 };
 
 template <typename List>
@@ -1679,9 +1675,8 @@ template <std::size_t N>
 class uint_of_bits
 {
     template <typename C>
-    struct p
+    struct p : std::bool_constant<sizeof(C) * 8 >= N>
     {
-        static constexpr bool value = sizeof(C) * 8 >= N;
     };
 
   public:

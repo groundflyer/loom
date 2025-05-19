@@ -82,15 +82,13 @@ using StartLabel = Label<sl2cs<"START">>;
 
 /// @brief Checks if @p T is Label.
 template <typename T>
-struct is_label
+struct is_label : std::false_type
 {
-    static constexpr bool value = false;
 };
 
 template <typename S>
-struct is_label<Label<S>>
+struct is_label<Label<S>> : std::true_type
 {
-    static constexpr bool value = true;
 };
 
 /// @brief Describes a multiway conditional jump.
@@ -120,34 +118,29 @@ struct Jump
 
 /// @brief Check if @p T is Compute command.
 template <typename T>
-struct is_compute
+struct is_compute : std::false_type
 {
-    static constexpr bool value = false;
 };
 
 template <typename... Ts>
-struct is_compute<Compute<Ts...>>
+struct is_compute<Compute<Ts...>> : std::true_type
 {
-    static constexpr bool value = true;
 };
 
 /// @brief Check if @p T is Jump command.
 template <typename T>
-struct is_jump
+struct is_jump : std::false_type
 {
-    static constexpr bool value = false;
 };
 
 template <typename T>
-struct is_jump<Jump<T>>
+struct is_jump<Jump<T>> : std::true_type
 {
-    static constexpr bool value = true;
 };
 
 template <typename... Ts>
-struct is_jump<ParmJump<Ts...>>
+struct is_jump<ParmJump<Ts...>> : std::true_type
 {
-    static constexpr bool value = true;
 };
 
 /// @brief Get the variable @p Instruction stores result to.
@@ -397,9 +390,8 @@ parse_literal() noexcept
 }
 
 template <typename _Variable>
-struct is_literal
+struct is_literal : std::bool_constant<parse_literal<_Variable>().has_value()>
 {
-    static constexpr bool value = parse_literal<_Variable>().has_value();
 };
 
 template <typename _Variable>
@@ -801,15 +793,14 @@ template <typename Instructions>
 using optimize_labels_t = optimize_labels<Instructions>::type;
 
 template <typename T>
-struct same_size_union
+struct same_size_union : std::true_type
 {
-    static constexpr bool value = true;
 };
 
 template <typename... Ts>
-struct same_size_union<Union<Ts...>>
+struct same_size_union<Union<Ts...>> :
+    std::bool_constant<typelist::of_same_size<type_sequence<Ts...>>>
 {
-    static constexpr bool value = typelist::of_same_size<type_sequence<Ts...>>;
 };
 
 /// @brief Program representation.

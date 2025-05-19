@@ -45,21 +45,22 @@ template <char Key, typename Options>
 struct key_index;
 
 template <char Key, typename... Options>
-struct key_index<Key, std::tuple<Options...>>
+struct key_index<Key, std::tuple<Options...>> :
+    std::integral_constant<std::size_t,
+                           intlist::index<Key, char_sequence<Options::key...>>>
 {
-    static constexpr std::size_t value =
-        intlist::index<Key, char_sequence<Options::key...>>;
 };
 
 template <typename Keyword, typename Options>
 struct keyword_index;
 
 template <typename Keyword, typename... Options>
-struct keyword_index<Keyword, std::tuple<Options...>>
-{
-    static constexpr std::size_t value =
+struct keyword_index<Keyword, std::tuple<Options...>> :
+    std::integral_constant<
+        std::size_t,
         typelist::index<Keyword,
-                        type_sequence<typename Options::keyword_type...>>;
+                        type_sequence<typename Options::keyword_type...>>>
+{
 };
 
 template <std::size_t Idx, typename FirstOption, typename... RestOptions>
@@ -107,10 +108,9 @@ template <typename S>
 struct keyword_ok_impl;
 
 template <char... cs>
-struct keyword_ok_impl<char_sequence<cs...>>
+struct keyword_ok_impl<char_sequence<cs...>> :
+    std::bool_constant<(... && (is_alphadigit(cs) || cs == '-' || cs == '_'))>
 {
-    static constexpr bool value =
-        (... && (is_alphadigit(cs) || cs == '-' || cs == '_'));
 };
 } // namespace detail
 
@@ -155,54 +155,52 @@ using wrap_string =
 /// @brief Get the index of an Option with character key @p Key in the list of
 /// @p Options
 template <char Key, typename Options>
-constexpr std::size_t key_index = detail::key_index<Key, Options>::value;
+inline constexpr std::size_t key_index = detail::key_index<Key, Options>::value;
 
 /// @brief Get the index of an Option with keyword @p Keyword in the list of @p
 /// Options
 template <typename Keyword, typename Options>
-constexpr std::size_t keyword_index =
+inline constexpr std::size_t keyword_index =
     detail::keyword_index<Keyword, Options>::value;
 
 /// @brief Check if keyword @p s meets requirements.
 template <StringLiteral s>
-constexpr bool keyword_ok = detail::keyword_ok_impl<sl2cs<s>>::value;
+inline constexpr bool keyword_ok = detail::keyword_ok_impl<sl2cs<s>>::value;
 
 // Empty class tag type to indicate that there is no keyword defined.
 using missing_keyword = char_sequence<' '>;
 
 // This character is used to indicate that character key is not defined.
-constexpr inline char missing_keychar = ' ';
+inline constexpr char missing_keychar = ' ';
 
 template <typename O>
-struct has_keychar
+struct has_keychar : std::bool_constant<O::key != missing_keychar>
 {
-    static constexpr bool value = O::key != missing_keychar;
 };
 
 template <typename O>
-struct has_keyword
+struct has_keyword :
+    std::bool_constant<
+        !std::is_same_v<typename O::keyword_type, missing_keyword>>
 {
-    static constexpr bool value =
-        !std::is_same_v<typename O::keyword_type, missing_keyword>;
 };
 
 template <typename O>
-struct is_flag
+struct is_flag : std::bool_constant<O::is_flag && has_keychar<O>::value>
 {
-    static constexpr bool value = O::is_flag && has_keychar<O>::value;
 };
 
 template <typename O>
-constexpr bool has_keychar_v = has_keychar<O>::value;
+inline constexpr bool has_keychar_v = has_keychar<O>::value;
 
 template <typename O>
-constexpr bool has_keyword_v = has_keyword<O>::value;
+inline constexpr bool has_keyword_v = has_keyword<O>::value;
 
 template <typename O>
-constexpr bool is_flag_v = is_flag<O>::value;
+inline constexpr bool is_flag_v = is_flag<O>::value;
 
 template <typename O>
-constexpr bool is_option = !is_flag_v<O>;
+inline constexpr bool is_option = !is_flag_v<O>;
 
 class ArgsIterator : public std::random_access_iterator_tag
 {
