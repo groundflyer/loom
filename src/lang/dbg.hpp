@@ -24,7 +24,7 @@
 #include <termios.h>
 #include <unistd.h>
 
-namespace lucid
+namespace lucid::dbg
 {
 template <typename T>
 struct prettify;
@@ -262,51 +262,97 @@ print_variables(Variables, bool ts = true)
 }
 
 template <typename _Label>
-struct label_length
+struct label_length : std::integral_constant<unsigned, _Label::name::size()>
 {
-    static constexpr std::size_t value = _Label::name::size();
 };
 
-template <typename Program, std::size_t N>
-    requires(N == typelist::length<typename Program::variables>)
-void
-print_header(Program, const std::bitset<N>& mask, unsigned cw, bool ts)
-{
-    using labels    = Program::labels;
-    using variables = Program::variables;
+// 3 is for "N/A"
+template <typename Labels>
+inline constexpr unsigned max_label_width =
+    std::max(*std::ranges::max_element(
+                 intlist::stdarray<typelist::map<label_length, Labels>>),
+             3u);
 
-    auto word_printer = [](std::string_view s, unsigned cw)
-    { fmt::print("{:^{}}|", s, cw); };
-    auto dash_printer = [](unsigned cw)
-    { fmt::print("{:\u2015^{}}|", "", cw); };
+template <typename S>
+void
+print_word(S&& s, unsigned cw) noexcept
+{
+    fmt::print("{:<{}}|", std::forward<S>(s), cw);
+}
+
+void
+print_dash(unsigned cw) noexcept
+{
+    fmt::print("{:\u2015^{}}|", "", cw);
+};
+
+template <typename _Program, std::size_t N>
+    requires(N == typelist::length<typename _Program::variables>)
+void
+print_header(_Program, const std::bitset<N>& mask, unsigned cw, bool ts)
+{
+    using labels    = _Program::labels;
+    using variables = _Program::variables;
 
     // max label width
-    constexpr unsigned mlw = *std::ranges::max_element(
-        intlist::stdarray<typelist::map<label_length, labels>>);
+    constexpr unsigned mlw = max_label_width<labels>;
 
-    word_printer("CELL", mlw);
+    print_word("CELL", mlw);
 
     typelist::for_each_masked(
         variables{},
-        [word_printer]<typename Var>(unsigned cw, bool ts)
-        { word_printer(prettify<Var>{}(ts, 0, 0), cw); },
+        []<typename Var>(unsigned cw, bool ts)
+        { print_word(prettify<Var>{}(ts, 0, 0), cw); },
         mask,
         cw,
         ts);
 
-    fmt::print("\n");
-    dash_printer(std::max(mlw, 4u));
+    fmt::print("\r\n");
+    print_dash(std::max(mlw, 4u));
     typelist::for_each_masked(
         variables{},
-        [dash_printer]<typename Var>(unsigned cw, bool ts)
+        []<typename Var>(unsigned cw, bool ts)
         {
-            dash_printer(std::max(
+            print_dash(std::max(
                 static_cast<unsigned>(prettify<Var>{}(ts, 0, 0).size()),
                 cw));
         },
         mask,
         cw,
         ts);
+
+    fmt::print("\r\n");
+}
+
+template <typename _Labels, std::unsigned_integral I>
+std::string_view
+get_label_name(_Labels, I i) noexcept
+{
+    return typelist::visit_at(
+        i,
+        []<typename L>() noexcept -> std::string_view
+        { return prettify<L>{}(); },
+        _Labels{},
+        []() noexcept -> std::string_view { return "N/A"; });
+}
+
+template <typename _Program, std::size_t N, typename _Mem>
+    requires(N == typelist::length<typename _Program::variables>)
+void
+print_state(_Program, const _Mem& mem, const std::bitset<N>& mask, unsigned cw)
+{
+    using labels    = _Program::labels;
+    using variables = _Program::variables;
+
+    print_word(get_label_name(labels{}, mem.cp()), max_label_width<labels>);
+    typelist::for_each_masked(
+        variables{},
+        [&mem]<typename Var>(unsigned cw)
+        { print_word(mem.template get<Var>(), cw); },
+        mask,
+        cw);
+
+    fmt::print("\r\n");
 }
 
 constexpr char
@@ -333,7 +379,7 @@ class RawTerminalReader
     }
 
   public:
-    FORBID_COPY(RawTerminalReader);
+    RawTerminalReader() = default;
 
     RawTerminalReader(bool echo = false) noexcept
     {
@@ -364,5 +410,81 @@ class RawTerminalReader
     {
         if(tcsetattr(STDIN_FILENO, TCSAFLUSH, &m_orig) == -1) die("tcsetattr");
     }
+};
+
+template <typename _Program>
+    requires(!_Program::singular)
+class debug_compiler
+{
+    using labelmap  = _Program::labelmap;
+    using cells     = _Program::cells;
+    using variables = _Program::variables;
+
+    static constexpr auto halt_pos = _Program::halt_pos;
+
+    template <typename C>
+    using compile_cell = standard_compiler<C, labelmap>;
+
+    using compiled_cells = typelist::map<compile_cell, cells>;
+    using facade         = bse::MemoryFacade<_Program>;
+    using var_mask       = std::bitset<typelist::length<variables>>;
+
+    static constexpr char stop = 'q';
+    static constexpr char step = ' ';
+
+  public:
+    class inspector : facade
+    {
+        static constexpr typelist::to<compiled_cells, std::tuple> cells{};
+
+        RawTerminalReader m_reader{false};
+        unsigned          m_cw;
+        bool              m_ts;
+        var_mask          m_mask;
+
+        void
+        print_help() const noexcept
+        {
+            fmt::print("Key bindings:\r\n");
+            fmt::print("SPACE: step\r\n");
+            fmt::print("s: stop\r\n");
+        }
+
+      public:
+        inspector(unsigned cw, bool ts, var_mask mask = var_mask{-1ull << 1}) :
+            m_cw(cw), m_ts(ts), m_mask(mask)
+        {
+        }
+
+        template <typename... Args>
+        void
+        operator()(const Args&... args) noexcept
+        {
+            facade::set_inputs(args...);
+
+            print_help();
+            print_header(_Program{}, m_mask, m_cw, m_ts);
+
+            char c = m_reader();
+            while(facade::cp() != halt_pos && c != stop)
+            {
+                if(c == step)
+                {
+                    visit_at(
+                        facade::cp(),
+                        [&](auto cell) noexcept { facade::step(cell); },
+                        cells,
+                        sink);
+                    facade::step(
+                        [mask = m_mask, cw = m_cw](const auto& mem) noexcept
+                        { print_state(_Program{}, mem, mask, cw); });
+                }
+                else if(c != stop)
+                    fmt::print("Unknown command: {}\r\n", c);
+
+                c = m_reader();
+            }
+        }
+    };
 };
 } // namespace lucid
