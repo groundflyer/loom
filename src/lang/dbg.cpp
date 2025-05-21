@@ -9,6 +9,7 @@
 
 using namespace std;
 using namespace lucid;
+using namespace dbg;
 
 template <floating_point T>
 using cubic_fz_p = cubic_fz_program<T, typename constants<T>::errt>;
@@ -19,11 +20,10 @@ int main(/*int argc, char* argv[]*/)
     constexpr p_t p{};
     fmt::print("Program:\n");
     dbg::print_program(p);
-    fmt::print("Variables:\n");
-    dbg::print_variables(p_t::variables{});
+    auto mask = get_mask(p_t::variables{});
 
-    using Inspector = dbg::debug_compiler<p_t>::inspector;
-    Inspector insp{5, true};
+    using Inspector = debug_compiler<p_t>::inspector;
+    Inspector insp{5, true, mask};
     insp(1, 2, 3, 4);
 
     return 0;

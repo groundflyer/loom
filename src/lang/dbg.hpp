@@ -18,6 +18,7 @@
 #include <bitset>
 #include <cerrno>
 #include <cstdio>
+#include <iostream>
 #include <optional>
 #include <string>
 
@@ -253,12 +254,29 @@ print_program(Program, bool ts = false, unsigned margin = 5) noexcept
 }
 
 template <typename Variables>
-void
-print_variables(Variables, bool ts = true)
+std::bitset<typelist::length<Variables>>
+get_mask(Variables)
 {
-    typelist::for_each(typelist::enumerate<Variables>{},
-                       [=]<typename Var>()
-                       { fmt::print("{}\n", prettify<Var>{}(ts, 0, 0)); });
+    constexpr typelist::enumerate<Variables> enumerated{};
+    fmt::print("Select variables\nCtrl-D to finish\n");
+    auto printer = []<typename Var>()
+    { fmt::print("{}\n", prettify<Var>{}(true, 0, 0)); };
+    typelist::for_each(enumerated, printer);
+    std::bitset<typelist::length<Variables>> ret;
+    std::size_t                              n;
+    while(std::cin >> n)
+        if(n < ret.size())
+        {
+            ret.set(n);
+            typelist::visit_at(n, printer, enumerated, sink);
+        }
+        else
+            fmt::print("{} out of range\n", n);
+
+    fmt::print("Selected variables:\n");
+    typelist::for_each_masked(enumerated, printer, ret);
+    ret.reset(0); // ignore CP
+    return ret;
 }
 
 template <typename _Label>
@@ -447,7 +465,7 @@ class debug_compiler
         {
             fmt::print("Key bindings:\r\n");
             fmt::print("SPACE: step\r\n");
-            fmt::print("s: stop\r\n");
+            fmt::print("{}: stop\r\n", stop);
         }
 
       public:
@@ -487,4 +505,4 @@ class debug_compiler
         }
     };
 };
-} // namespace lucid
+} // namespace lucid::dbg
