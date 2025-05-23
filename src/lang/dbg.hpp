@@ -295,7 +295,11 @@ template <typename S>
 void
 print_word(S&& s, unsigned cw) noexcept
 {
-    fmt::print("{:<{}}|", std::forward<S>(s), cw);
+    std::string w = fmt::format("{:<{}}", std::forward<S>(s), cw);
+    if(w.size() == cw)
+        fmt::print("{}|", w);
+    else
+        fmt::print("{}\u2026|", std::string_view(w).substr(0, cw - 1));
 }
 
 void
