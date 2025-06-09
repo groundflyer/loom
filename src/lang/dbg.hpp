@@ -451,7 +451,7 @@ class RawTerminalReader
     }
 };
 
-template <typename _Program>
+template <typename _Program, bool interactive>
     requires(!_Program::singular)
 class debug_compiler
 {
@@ -471,15 +471,42 @@ class debug_compiler
     static constexpr char stop = 'q';
     static constexpr char step = ' ';
 
-  public:
-    class inspector : facade
+    class base : public facade
     {
         static constexpr typelist::to<compiled_cells, std::tuple> cells{};
 
+        unsigned m_cw;
+        bool     m_ts;
+        var_mask m_mask;
+
+      public:
+        base(unsigned cw, bool ts, var_mask mask = var_mask{-1ull << 1}) :
+            m_cw(cw), m_ts(ts), m_mask(mask)
+        {
+        }
+
+        void
+        header() const
+        {
+            print_header(_Program{}, m_mask, m_cw, m_ts);
+        }
+
+        void
+        step()
+        {
+            visit_at(
+                facade::cp(),
+                [&](auto cell) noexcept { facade::step(cell); },
+                cells,
+                sink);
+            facade::step([mask = m_mask, cw = m_cw](const auto& mem) noexcept
+                         { print_state(_Program{}, mem, mask, cw); });
+        }
+    };
+
+    class interactive_inspector : base
+    {
         RawTerminalReader m_reader{false};
-        unsigned          m_cw;
-        bool              m_ts;
-        var_mask          m_mask;
 
         void
         print_help() const noexcept
@@ -490,34 +517,22 @@ class debug_compiler
         }
 
       public:
-        inspector(unsigned cw, bool ts, var_mask mask = var_mask{-1ull << 1}) :
-            m_cw(cw), m_ts(ts), m_mask(mask)
-        {
-        }
+        using base::base;
 
         template <typename... Args>
         void
         operator()(const Args&... args) noexcept
         {
-            facade::set_inputs(args...);
+            base::set_inputs(args...);
 
             print_help();
-            print_header(_Program{}, m_mask, m_cw, m_ts);
+            base::header();
 
             char c = m_reader();
-            while(facade::cp() != halt_pos && c != stop)
+            while(base::cp() != halt_pos && c != stop)
             {
                 if(c == step)
-                {
-                    visit_at(
-                        facade::cp(),
-                        [&](auto cell) noexcept { facade::step(cell); },
-                        cells,
-                        sink);
-                    facade::step(
-                        [mask = m_mask, cw = m_cw](const auto& mem) noexcept
-                        { print_state(_Program{}, mem, mask, cw); });
-                }
+                    base::step();
                 else if(c != stop)
                     fmt::print("Unknown command: {}\r\n", c);
 
@@ -525,5 +540,34 @@ class debug_compiler
             }
         }
     };
+
+    class fast_inspector : base
+    {
+        unsigned m_max_steps;
+        unsigned m_step_number = 0;
+
+      public:
+        template <typename... Args>
+        fast_inspector(unsigned max_steps, Args... args) :
+            m_max_steps(max_steps), base(args...)
+        {
+        }
+
+        template <typename... Args>
+        void
+        operator()(const Args&... args) noexcept
+        {
+            base::set_inputs(args...);
+
+            base::header();
+
+            while(base::cp() != halt_pos && m_step_number < m_max_steps)
+                base::step();
+        }
+    };
+
+  public:
+    using inspector =
+        std::conditional_t<interactive, interactive_inspector, fast_inspector>;
 };
 } // namespace lucid::dbg

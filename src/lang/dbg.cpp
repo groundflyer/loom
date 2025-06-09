@@ -22,8 +22,8 @@ int main(/*int argc, char* argv[]*/)
     dbg::print_program(p);
     auto inputs     = get_inputs(p_t{});
     auto mask       = get_mask(p_t::variables{});
-    using Inspector = debug_compiler<p_t>::inspector;
-    Inspector insp{5, true, mask};
+    using Inspector = debug_compiler<p_t, true>::inspector;
+    Inspector insp{20, true, mask};
     maybe_apply(insp, inputs);
 
     return 0;
