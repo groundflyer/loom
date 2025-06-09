@@ -20,11 +20,11 @@ int main(/*int argc, char* argv[]*/)
     constexpr p_t p{};
     fmt::print("Program:\n");
     dbg::print_program(p);
-    auto mask = get_mask(p_t::variables{});
-
+    auto inputs     = get_inputs(p_t{});
+    auto mask       = get_mask(p_t::variables{});
     using Inspector = debug_compiler<p_t>::inspector;
     Inspector insp{5, true, mask};
-    insp(1, 2, 3, 4);
+    maybe_apply(insp, inputs);
 
     return 0;
 }

@@ -63,7 +63,7 @@ struct prettify<Compute<Op, Dst, Args...>>
     operator()(bool ts, unsigned margin, unsigned width) const noexcept
     {
         return fmt::format(
-            "{:<{}} <- {}({})",
+            "{:<{}} = {}({})",
             prettify<Dst>{}(ts, margin, width),
             margin,
             prettify<Op>{}(ts, margin, width),
@@ -277,6 +277,23 @@ get_mask(Variables)
     typelist::for_each_masked(enumerated, printer, ret);
     ret.reset(0); // ignore CP
     return ret;
+}
+
+template <typename P>
+input_type<P>
+get_inputs(P)
+{
+    using input_vars = P::input_vars;
+
+    return typelist::maybe_collect(input_vars{},
+                                   []<typename Var>()
+                                   {
+                                       fmt::print("Set value for {}:\n",
+                                                  prettify<Var>{}(true, 0, 0));
+                                       vartype<Var> value;
+                                       std::cin >> value;
+                                       return value;
+                                   });
 }
 
 template <typename _Label>
