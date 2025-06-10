@@ -19,3 +19,9 @@ FetchContent_Declare(
   URL       https://github.com/glfw/glfw/archive/refs/tags/3.3.8.tar.gz
   URL_HASH  MD5=55d99dc968f4cec01a412562a7cf851c
 )
+
+FetchContent_Declare(
+  fast_float
+  URL       https://github.com/fastfloat/fast_float/archive/refs/tags/v7.0.0.tar.gz
+  URL_HASH  MD5=b5accc3951d38b22179cf29d9459079a
+)
