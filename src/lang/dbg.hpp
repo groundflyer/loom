@@ -549,7 +549,7 @@ class debug_compiler
       public:
         template <typename... Args>
         fast_inspector(unsigned max_steps, Args... args) :
-            m_max_steps(max_steps), base(args...)
+            base(args...), m_max_steps(max_steps)
         {
         }
 
@@ -561,7 +561,7 @@ class debug_compiler
 
             base::header();
 
-            while(base::cp() != halt_pos && m_step_number < m_max_steps)
+            while(base::cp() != halt_pos && m_step_number++ < m_max_steps)
                 base::step();
         }
     };
