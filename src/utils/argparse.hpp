@@ -1460,7 +1460,11 @@ descend(ArgsIterator& iter,
                                          KeyMatcher>,
                            type_sequence<TerminatorMatcher, HelpMatcher>>;
 
-    return typelist::first_of(matchers{}, iter, opt_state, pos_state, error);
+    return typelist::first_of_funcs(matchers{},
+                                    iter,
+                                    opt_state,
+                                    pos_state,
+                                    error);
 }
 
 // -------------------- Printing help --------------------
@@ -1857,7 +1861,7 @@ parse(const std::tuple<Options...>&     options,
     // skip first argv - it's the command name
     auto iter = std::next(std::ranges::begin(args));
     while(r && iter != std::ranges::end(args) && !error.has_value())
-        r = typelist::first_of(ms, iter, opt_state, pos_state, error);
+        r = typelist::first_of_funcs(ms, iter, opt_state, pos_state, error);
 
     if constexpr(num_poss)
         if(!(error.has_value() || pos_state.complete()))

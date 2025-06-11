@@ -1055,6 +1055,18 @@ instantiate(type_sequence<Fs...> list, Args&&... args) noexcept(
     for_each(list, detail::self_caller{}, std::forward<Args>(args)...);
 }
 
+/// @brief Invoke @p f with elements of typelist::type_sequence as template
+/// parameter with @p args until the result is true or control reaches end of
+/// the list.
+///
+/// @return true if at least one invocation returns true, otherwise false.
+template <typename... Ts, typename F, typename... Args>
+constexpr bool
+first_of(type_sequence<Ts...> /*list*/, F&& f, Args&&... args)
+{
+    return (... || f.template operator()<Ts>(std::forward<Args>(args)...));
+}
+
 /// @brief Invoke every functional object @p Fs in the typelist with @p args
 /// until the result is true or control reaches end of the list.
 ///
@@ -1062,10 +1074,10 @@ instantiate(type_sequence<Fs...> list, Args&&... args) noexcept(
 template <typename... Fs, typename... Args>
     requires(std::conjunction_v<std::is_invocable_r<bool, Fs, Args...>...>)
 constexpr bool
-first_of(type_sequence<Fs...> /*list*/, Args&&... args) noexcept(
+first_of_funcs(type_sequence<Fs...> list, Args&&... args) noexcept(
     std::conjunction_v<std::is_nothrow_invocable<Fs, Args...>...>)
 {
-    return (... || std::invoke(Fs{}, std::forward<Args>(args)...));
+    return first_of(list, detail::self_caller{}, std::forward<Args>(args)...);
 }
 
 /// @brief Invoke @p visitor on the @p i'th element of @p L.
