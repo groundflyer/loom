@@ -43,8 +43,8 @@ main(int argc, char* argv[])
     dbg::print_program(p);
     if(pr.get_opt<'i'>())
     {
-        auto inputs     = get_inputs(p_t{});
-        auto mask       = get_mask(p_t::variables{});
+        auto mask       = interactive_get_mask(p_t::variables{});
+        auto inputs     = interactive_get_inputs(p_t{});
         using Inspector = debug_compiler<p_t, true>::inspector;
         Inspector insp{20, true, mask};
         std::apply(insp, inputs);

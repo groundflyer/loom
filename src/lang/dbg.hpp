@@ -17,9 +17,11 @@
 #include <algorithm>
 #include <bitset>
 #include <cerrno>
+#include <charconv>
 #include <cstdio>
 #include <iostream>
 #include <optional>
+#include <ranges>
 #include <string>
 
 #include <termios.h>
@@ -253,35 +255,89 @@ print_program(Program, bool ts = false, unsigned margin = 5) noexcept
                        });
 }
 
+struct UnknownVar
+{
+    std::string_view value;
+};
+
+template <typename Variables, std::ranges::input_range R>
+std::bitset<typelist::length<Variables>>
+read_var_mask(Variables vars, R&& words)
+{
+    using ret_t = std::bitset<typelist::length<Variables>>;
+    ret_t ret{};
+
+    std::ranges::for_each(
+        std::forward<R>(words),
+        [&](const auto& v)
+        {
+            std::string_view s{std::ranges::begin(v), std::ranges::end(v)};
+            std::size_t      n;
+
+            // try to parse number
+            auto r = std::from_chars(s.data(), s.data() + s.size(), n);
+
+            if(r.ec == std::errc{})
+                ret.set(n);
+            else if(typelist::first_of(
+                        vars,
+                        []<typename Var>(std::string_view s)
+                        { return s == Var::nameview; },
+                        s))
+                typelist::for_each(
+                    vars,
+                    []<typename Var>(ret_t& ret, std::string_view s)
+                    {
+                        if(s == Var::nameview)
+                            ret.set(typelist::index<Var, Variables>);
+                    },
+                    ret,
+                    s);
+            else
+                throw UnknownVar{s};
+        });
+
+    return ret;
+}
+
 template <typename Variables>
 std::bitset<typelist::length<Variables>>
-get_mask(Variables)
+interactive_get_mask(Variables vars)
 {
     constexpr typelist::enumerate<Variables> enumerated{};
-    fmt::print("Select variables\nCtrl-D to finish\n");
+    fmt::print(
+        "Select variables. Enter numbers or names separated with space:\n");
     auto printer = []<typename Var>()
     { fmt::print("{}\n", prettify<Var>{}(true, 0, 0)); };
     typelist::for_each(enumerated, printer);
-    std::bitset<typelist::length<Variables>> ret;
-    std::size_t                              n;
-    while(std::cin >> n)
-        if(n < ret.size())
+
+    using ret_t = std::bitset<typelist::length<Variables>>;
+    ret_t ret;
+    bool  success = false;
+    while(!success) try
         {
-            ret.set(n);
-            typelist::visit_at(n, printer, enumerated, sink);
+            std::string line;
+            std::getline(std::cin, line);
+            ret = read_var_mask(vars, std::views::split(line, ' '));
+            if(ret.any())
+                success = true;
+            else
+                fmt::print("No variables selected. Try again:\n");
         }
-        else
-            fmt::print("{} out of range\n", n);
+        catch(const UnknownVar& ex)
+        {
+            fmt::print("Unknown variable {}. Try again:\n", ex.value);
+        }
 
     fmt::print("Selected variables:\n");
     typelist::for_each_masked(enumerated, printer, ret);
-    ret.reset(0); // ignore CP
+    ret.reset(0); // guarantee unset CP variable
     return ret;
 }
 
 template <typename P>
 input_type<P>
-get_inputs(P)
+interactive_get_inputs(P)
 {
     using input_vars = P::input_vars;
 
