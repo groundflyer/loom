@@ -14,6 +14,8 @@
 #include <fmt/format.h>
 #include <fmt/ranges.h>
 
+#include <fast_float/fast_float.h>
+
 #include <algorithm>
 #include <bitset>
 #include <cerrno>
@@ -23,6 +25,7 @@
 #include <optional>
 #include <ranges>
 #include <string>
+#include <vector>
 
 #include <termios.h>
 #include <unistd.h>
@@ -306,7 +309,7 @@ interactive_get_mask(Variables vars)
 {
     constexpr typelist::enumerate<Variables> enumerated{};
     fmt::print(
-        "Select variables. Enter numbers or names separated with space:\n");
+        "[Inspected Variables] Enter numbers or names separated with space:\n");
     auto printer = []<typename Var>()
     { fmt::print("{}\n", prettify<Var>{}(true, 0, 0)); };
     typelist::for_each(enumerated, printer);
@@ -341,15 +344,96 @@ interactive_get_inputs(P)
 {
     using input_vars = P::input_vars;
 
-    return typelist::maybe_collect(input_vars{},
-                                   []<typename Var>()
-                                   {
-                                       fmt::print("Set value for {}:\n",
-                                                  prettify<Var>{}(true, 0, 0));
-                                       vartype<Var> value;
-                                       std::cin >> value;
-                                       return value;
-                                   });
+    bool          success = false;
+    input_type<P> ret;
+
+    const auto eprint = [](std::errc ec, std::string_view sv) noexcept
+    {
+        switch(ec)
+        {
+        case std::errc::invalid_argument:
+            fmt::print("Invalid argument {}. Try again.\n", sv);
+            break;
+        case std::errc::result_out_of_range:
+            fmt::print("Result out of range {}. Try again.\n", sv);
+        default:
+        {
+        }
+        }
+    };
+
+    if constexpr(typelist::length<input_vars> > 1)
+    {
+        while(!success)
+        {
+            fmt::print("[Inputs: {}] Enter values separated with space:\n",
+                       fmt::join(typelist::maybe_collect(
+                                     input_vars{},
+                                     []<typename Var>()
+                                     { return prettify<Var>{}(true, 0, 0); }),
+                                 " "));
+
+            std::string line;
+            std::getline(std::cin, line);
+            auto rng =
+                std::views::split(line, ' ') |
+                std::views::transform(
+                    [](const auto& r) -> std::string_view
+                    { return {std::ranges::begin(r), std::ranges::end(r)}; });
+            std::vector<std::string_view> v{std::ranges::begin(rng),
+                                            std::ranges::end(rng)};
+
+            if(v.size() != typelist::length<input_vars>)
+            {
+                fmt::print("Number of values doesn't match! Try again.\n");
+                continue;
+            }
+
+            bool svar = true;
+
+            ret = typelist::maybe_collect(
+                input_vars{},
+                [&]<typename Var>()
+                {
+                    vartype<Var>     value;
+                    std::string_view sv = v[typelist::index<Var, input_vars>];
+                    auto             pr = fast_float::from_chars(sv.data(),
+                                                     sv.data() + sv.size(),
+                                                     value);
+
+                    svar &= pr.ec == std::errc{};
+                    eprint(pr.ec, sv);
+                    return value;
+                });
+
+            success = svar;
+        }
+    }
+    else
+    {
+        while(!success)
+        {
+            using var = typelist::head<input_vars>;
+            fmt::print("[Input: {}] Enter value:\n",
+                       prettify<var>{}(true, 0, 0));
+            std::string line;
+            std::getline(std::cin, line);
+            if(line.empty())
+            {
+                fmt::print("Try again.\n");
+                continue;
+            }
+
+            auto pr = fast_float::from_chars(line.data(),
+                                             line.data() + line.size(),
+                                             ret);
+            success = pr.ec == std::errc{};
+            eprint(pr.ec);
+        }
+    }
+
+    fmt::print("Input values: {}\n", ret);
+    return ret;
 }
 
 template <typename _Label>
