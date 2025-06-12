@@ -32,13 +32,36 @@ constexpr auto input_option     = option<"input", 4>(
         fast_float::from_chars(s.data(), s.data() + s.size(), ret);
         return ret;
     });
+constexpr auto cw_option = option<'w', "column-width">(
+    "Column width. Default 20",
+    "CW",
+    20u,
+    [](std::string_view s)
+    {
+        unsigned ret;
+        auto pr = fast_float::from_chars(s.data(), s.data() + s.size(), ret);
+        if(pr.ec != std::errc{}) throw ParseEx{pr.ec, s};
+        return ret;
+    });
 
 int
 main(int argc, char* argv[])
 {
-    const auto pr =
-        parse(std::tuple{interactive_flag, input_option}, {argc, argv});
+    const auto pr = parse(std::tuple{interactive_flag, input_option, cw_option},
+                          {argc, argv});
     constexpr p_t p{};
+
+    unsigned cw = 20;
+    try
+    {
+        cw = pr.get_opt<'w'>();
+    }
+    catch(const ParseEx& ex)
+    {
+        print_errc(ex.ec, ex.value);
+        return 1;
+    }
+
     fmt::print("Program:\n");
     dbg::print_program(p);
     if(pr.get_opt<'i'>())
@@ -46,13 +69,13 @@ main(int argc, char* argv[])
         auto mask       = interactive_get_mask(p_t::variables{});
         auto inputs     = interactive_get_inputs(p_t{});
         using Inspector = debug_compiler<p_t, true>::inspector;
-        Inspector insp{20, true, mask};
+        Inspector insp{cw, true, mask};
         std::apply(insp, inputs);
     }
     else
     {
         using Inspector = debug_compiler<p_t, false>::inspector;
-        Inspector insp{100, 20, true};
+        Inspector insp{100, cw, true};
         std::apply(insp, pr.get_opt<"input">());
     }
 
