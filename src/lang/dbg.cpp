@@ -21,49 +21,50 @@ using cubic_fz_p = cubic_fz_program<T, typename constants<T>::errt>;
 
 using p_t = cubic_fz_p<float>;
 
-constexpr auto interactive_flag = flag<'i', "interactive">("Run interactive");
-constexpr auto input_option     = option<"input", 4>(
-    "Input values",
-    {"a", "b", "c", "d"},
-    {1.f, 2.f, 3.f, 4.f},
-    [](std::string_view s)
-    {
-        float ret;
-        fast_float::from_chars(s.data(), s.data() + s.size(), ret);
-        return ret;
-    });
-constexpr auto cw_option = option<'w', "column-width">(
-    "Column width. Default 20",
-    "CW",
-    20u,
-    [](std::string_view s)
-    {
-        unsigned ret;
-        auto pr = fast_float::from_chars(s.data(), s.data() + s.size(), ret);
-        if(pr.ec != std::errc{}) throw ParseEx{pr.ec, s};
-        return ret;
-    });
-
 int
 main(int argc, char* argv[])
 {
-    const auto pr = parse(std::tuple{interactive_flag, input_option, cw_option},
-                          {argc, argv});
+    const auto pr = parse(
+        std::tuple{
+            flag<'p', "print">("Print program"),
+            flag<'i', "interactive">("Run interactive"),
+            option<"input", 4>("Input values",
+                               {"a", "b", "c", "d"},
+                               {1.f, 2.f, 3.f, 4.f},
+                               read_number<float, true>),
+            option<'w', "column-width">("Column width. Default is 20",
+                                        "N",
+                                        20u,
+                                        read_number<unsigned, true>),
+            option<'s', "max-steps">("Maximum number of steps. Default is 100",
+                                     "N",
+                                     100u,
+                                     read_number<unsigned, true>)},
+        {argc, argv});
     constexpr p_t p{};
 
-    unsigned cw = 20;
+    unsigned                        cw = 20;
+    unsigned                        ms = 100;
+    decltype(pr.get_opt<"input">()) fi{1, 2, 3, 4};
+
     try
     {
         cw = pr.get_opt<'w'>();
+        ms = pr.get_opt<'s'>();
+        fi = pr.get_opt<"input">();
     }
-    catch(const ParseEx& ex)
+    catch(const ReadException& ex)
     {
-        print_errc(ex.ec, ex.value);
+        print_errc(ex.ec, ex.sv);
         return 1;
     }
 
-    fmt::print("Program:\n");
-    dbg::print_program(p);
+    if(pr.get_opt<'p'>())
+    {
+        fmt::print("Program:\n");
+        dbg::print_program(p);
+    }
+
     if(pr.get_opt<'i'>())
     {
         auto mask       = interactive_get_mask(p_t::variables{});
@@ -75,8 +76,8 @@ main(int argc, char* argv[])
     else
     {
         using Inspector = debug_compiler<p_t, false>::inspector;
-        Inspector insp{100, cw, true};
-        std::apply(insp, pr.get_opt<"input">());
+        Inspector insp{ms, cw, true};
+        std::apply(insp, fi);
     }
 
     return 0;

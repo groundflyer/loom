@@ -8,6 +8,7 @@
 #include "core.hpp"
 
 #include <utils/common.hpp>
+#include <utils/string.hpp>
 #include <utils/typeinfo.hpp>
 
 #include <fmt/core.h>
@@ -323,12 +324,6 @@ struct SizeEx
 {
 };
 
-struct ParseEx
-{
-    std::errc        ec;
-    std::string_view value;
-};
-
 template <typename InputVars>
 auto
 read_input_vars(InputVars input_vars, std::string_view line)
@@ -342,19 +337,12 @@ read_input_vars(InputVars input_vars, std::string_view line)
 
     if(v.size() != typelist::length<InputVars>) throw SizeEx{};
 
-    return typelist::maybe_collect(
-        input_vars,
-        [&]<typename Var>()
-        {
-            vartype<Var>     value;
-            std::string_view sv = v[typelist::index<Var, InputVars>];
-            auto             pr =
-                fast_float::from_chars(sv.data(), sv.data() + sv.size(), value);
-
-            if(pr.ec != std::errc{}) throw ParseEx{pr.ec, sv};
-
-            return value;
-        });
+    return typelist::maybe_collect(input_vars,
+                                   [&v]<typename Var>()
+                                   {
+                                       return read_number<vartype<Var>, true>(
+                                           v[typelist::index<Var, InputVars>]);
+                                   });
 }
 
 template <typename Variables>
@@ -425,9 +413,9 @@ interactive_get_inputs(P)
                 fmt::print("Number of values doesn't match. Try again.\n");
                 continue;
             }
-            catch(const ParseEx& ex)
+            catch(const ReadException& ex)
             {
-                print_errc(ex.ec, ex.value);
+                print_errc(ex.ec, ex.sv);
                 continue;
             }
         }
@@ -451,7 +439,7 @@ interactive_get_inputs(P)
                                              line.data() + line.size(),
                                              ret);
             success = pr.ec == std::errc{};
-            print_errc(pr.ec);
+            print_errc(pr.ec, line);
         }
     }
 
