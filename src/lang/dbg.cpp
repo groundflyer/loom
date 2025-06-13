@@ -76,12 +76,15 @@ main(int argc, char* argv[])
     }
     else
     {
+        std::apply(val_cubic_fz, fi);
         using Inspector = debug_compiler<p_t, false>::inspector;
-        Inspector insp{
-            ms,
-            cw,
-            true,
-            read_var_mask(typename p_t::variables{}, pr.get_opt<'t'>())};
+        auto mask = read_var_mask(typename p_t::variables{}, pr.get_opt<'t'>());
+        if(!mask.any())
+        {
+            mask.set();
+            mask.reset(0);
+        }
+        Inspector insp{ms, cw, true, mask};
         std::apply(insp, fi);
     }
 
