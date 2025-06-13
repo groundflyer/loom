@@ -310,10 +310,10 @@ print_errc(std::errc ec, std::string_view sv) noexcept
     switch(ec)
     {
     case std::errc::invalid_argument:
-        fmt::print("Invalid argument {}. Try again.\n", sv);
+        fmt::print("Invalid argument: '{}'. Try again.\n", sv);
         break;
     case std::errc::result_out_of_range:
-        fmt::print("Result out of range {}. Try again.\n", sv);
+        fmt::print("Result out of range: '{}'. Try again.\n", sv);
     default:
     {
     }
