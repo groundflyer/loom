@@ -26,20 +26,21 @@ main(int argc, char* argv[])
 {
     const auto pr = parse(
         std::tuple{
-            flag<'p', "print">("Print program"),
-            flag<'i', "interactive">("Run interactive"),
-            option<"input", 4>("Input values",
+            flag<'p', "print">("print program"),
+            flag<'i', "interactive">("run interactive"),
+            option<"input", 4>("input values",
                                {"a", "b", "c", "d"},
                                {1.f, 2.f, 3.f, 4.f},
                                read_number<float, true>),
-            option<'w', "column-width">("Column width. Default is 20",
+            option<'w', "column-width">("column width. Default is 20",
                                         "N",
                                         20u,
                                         read_number<unsigned, true>),
-            option<'s', "max-steps">("Maximum number of steps. Default is 100",
+            option<'s', "max-steps">("maximum number of steps. Default is 100",
                                      "N",
                                      100u,
-                                     read_number<unsigned, true>)},
+                                     read_number<unsigned, true>),
+            option_list<'t', "track">("variables to track", "vars")},
         {argc, argv});
     constexpr p_t p{};
 
@@ -76,7 +77,11 @@ main(int argc, char* argv[])
     else
     {
         using Inspector = debug_compiler<p_t, false>::inspector;
-        Inspector insp{ms, cw, true};
+        Inspector insp{
+            ms,
+            cw,
+            true,
+            read_var_mask(typename p_t::variables{}, pr.get_opt<'t'>())};
         std::apply(insp, fi);
     }
 
