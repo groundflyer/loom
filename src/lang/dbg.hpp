@@ -501,15 +501,9 @@ print_header(_Program, const std::bitset<N>& mask, unsigned cw, bool ts)
     print_dash(std::max(mlw, 4u));
     typelist::for_each_masked(
         variables{},
-        []<typename Var>(unsigned cw, bool ts)
-        {
-            print_dash(std::max(
-                static_cast<unsigned>(prettify<Var>{}(ts, 0, 0).size()),
-                cw));
-        },
+        []<typename Var>(unsigned cw) { print_dash(cw); },
         mask,
-        cw,
-        ts);
+        cw);
 
     fmt::print("\r\n");
 }
