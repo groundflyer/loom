@@ -10,6 +10,9 @@
 
 #include <static_math/cmath.h>
 
+#include <fast_float/fast_float.h>
+
+#include <cerrno>
 #include <optional>
 #include <string_view>
 #include <type_traits>
@@ -85,6 +88,12 @@ template <CharSequence S>
 inline constexpr std::string_view cs2sv =
     std::string_view(intlist::array<S>, intlist::length<S>);
 /// @}
+
+struct ReadException
+{
+    std::errc        ec;
+    std::string_view sv;
+};
 
 namespace fn
 {
@@ -349,6 +358,49 @@ struct s2f_fn
 
     COMPOSE_OP
 };
+
+template <typename T, bool throws>
+struct read_number_fn;
+
+template <std::integral T, bool throws>
+struct read_number_fn<T, throws>
+{
+    constexpr std::conditional_t<throws, T, std::optional<T>>
+    operator()(std::string_view s, int base = 10) const noexcept(!throws)
+    {
+        T    ret;
+        auto pr =
+            fast_float::from_chars(s.data(), s.data() + s.size(), ret, base);
+
+        if(pr.ec == std::errc{})
+            return ret;
+        else if constexpr(throws)
+            throw ReadException{pr.ec, s};
+        else
+            return std::nullopt;
+    }
+};
+
+template <std::floating_point T, bool throws>
+struct read_number_fn<T, throws>
+{
+    constexpr std::conditional_t<throws, T, std::optional<T>>
+    operator()(std::string_view         s,
+               fast_float::chars_format fmt =
+                   fast_float::chars_format::general) const noexcept(!throws)
+    {
+        T    ret;
+        auto pr =
+            fast_float::from_chars(s.data(), s.data() + s.size(), ret, fmt);
+
+        if(pr.ec == std::errc{})
+            return ret;
+        else if constexpr(throws)
+            throw ReadException{pr.ec, s};
+        else
+            return std::nullopt;
+    }
+};
 } // namespace fn
 
 MK_NIEBLOID(is_alpha_upper);
@@ -370,4 +422,7 @@ constexpr inline fn::s2i_base_prefix_fn<Int> s2i_base_prefix{};
 
 template <std::floating_point T = float>
 constexpr inline fn::s2f_fn<T> s2f{};
+
+template <typename T, bool throws = false>
+constexpr inline fn::read_number_fn<T, throws> read_number{};
 } // namespace lucid

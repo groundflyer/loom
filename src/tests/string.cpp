@@ -15,6 +15,10 @@ using namespace lucid;
 #define TEST_s2f(T, VAL) \
     static_assert(s2f<T>(#VAL).value() == static_cast<T>(VAL))
 
+#define FAIL_read_number(VAL) static_assert(!s2f<float>(VAL).has_value())
+#define TEST_read_number(T, VAL) \
+    static_assert(s2f<T>(#VAL).value() == static_cast<T>(VAL))
+
 TEST_s2f(float, 0);
 TEST_s2f(float, 1);
 TEST_s2f(float, 1234.567);
@@ -32,6 +36,24 @@ TEST_s2f(double, -2430.5e4);
 FAIL_s2f("e334g");
 FAIL_s2f("-");
 FAIL_s2f("+");
+
+TEST_read_number(float, 0);
+TEST_read_number(float, 1);
+TEST_read_number(float, 1234.567);
+TEST_read_number(float, 1e2);
+TEST_read_number(float, 0.5e2);
+TEST_read_number(float, 0.5e-2);
+TEST_read_number(float, 1e-8);
+TEST_read_number(double, 0);
+TEST_read_number(double, -1234.567);
+TEST_read_number(double, -1e2);
+TEST_read_number(double, -0.5e2);
+TEST_read_number(double, -0.5e-2);
+TEST_read_number(double, -2430.5e4);
+
+FAIL_read_number("e334g");
+FAIL_read_number("-");
+FAIL_read_number("+");
 
 static_assert(std::is_same_v<char_sequence<'t', 'e', 's', 't'>, sl2cs<"test">>);
 
