@@ -8,27 +8,29 @@
 #include <lang/macros.hpp>
 #include <utils/functional.hpp>
 
+#include <fmt/core.h>
+
 // clang-format off
 // a * x^3 + b * x^2 + c * x + d
-TMACRO_BEGIN4(cubic_eval, result, x, x2, x3)
-    TMUL_CS(x2, x, x),
-    TMUL_CS(x3, x2, x),
-    TMUL_CS(result, CS(a), x3),
-    TMUL_CS(x3, CS(b), x2),
-    TADD_CS(result, result, x3),
-    TMUL_CS(x3, CS(c), x),
-    TADD_CS(result, result, x3),
+TMACRO_BEGIN4(cubic_eval, result, x, t2, t3)
+    TMUL_CS(t2, x, x),
+    TMUL_CS(t3, t2, x),
+    TMUL_CS(result, CS(a), t3),
+    TMUL_CS(t3, CS(b), t2),
+    TADD_CS(result, result, t3),
+    TMUL_CS(t3, CS(c), x),
+    TADD_CS(result, result, t3),
     TADD_CS(result, result, CS(d))
 MACRO_END;
 
-// signbit(eval_at(ks, l)) != signbit(eval_at(ks, r))
 // root condition
-TMACRO_BEGIN4(cubic_rc, result, t1, t2, t3)
-    INSERT_TMACRO(cubic_eval, result, CS(l), t2, t3),
-    TLT_CS(result, result, CS(0)),
-    INSERT_TMACRO(cubic_eval, t1, CS(r), t2, t3),
+// signbit(eval_at(ks, l)) != signbit(eval_at(ks, r))
+TMACRO_BEGIN6(cubic_rc, y, l, r, t1, t2, t3)
+    INSERT_TMACRO(cubic_eval, y, l, t2, t3),
+    INSERT_TMACRO(cubic_eval, t1, r, t2, t3),
+    TLT_CS(y, y, CS(0)),
     TLT_CS(t1, t1, CS(0)),
-    TNEQ_CS(result, result, t1)
+    TNEQ_CS(y, y, t1)
 MACRO_END;
 
 // find_bounds
@@ -48,14 +50,14 @@ MACRO_END;
 TMACRO_BEGIN4(cubic_fb, rc, t1, t2, t3)
     TMOV_CS(CS(l), CS(-10)),
     TMOV_CS(CS(r), CS(10)),
-    INSERT_TMACRO(cubic_rc, rc, t1, t2, t3),
+    INSERT_TMACRO(cubic_rc, rc, CS(l), CS(r), t1, t2, t3),
     TNEQ_CS(rc, rc, CS(0)),
     PJMP2_CS(rc, fb_loop, fb_end),
     LABEL(useless),             // to test label optimizations
     LABEL(fb_loop),
     TMUL_CS(CS(l), CS(l), CS(10)),
     TMUL_CS(CS(r), CS(r), CS(10)),
-    INSERT_TMACRO(cubic_rc, rc, t1, t2, t3),
+    INSERT_TMACRO(cubic_rc, rc, CS(l), CS(r), t1, t2, t3),
     TNEQ_CS(rc, rc, CS(0)),
     PJMP2_CS(rc, fb_loop, fb_end),
     LABEL(fb_end)               // will be replaced with HaltLabel
@@ -71,23 +73,23 @@ MACRO_END;
 
 // find zero
 TMACRO_BEGIN4(cubic_fz, t1, t2, t3, errt)
-    INSERT_TMACRO(cubic_fb, CS(rc), t1, t2, t3),
+    INSERT_TMACRO(cubic_fb, CS(y), t1, t2, t3),
     INSERT_TMACRO(median, CS(s)),
     INSERT_TMACRO(cubic_eval, CS(y), CS(s), t1, t2),
     // IMOV(i, 0),
     TABS(y, y),
-    TGE_CS(CS(lc), CS(y), errt),
-    PJMP2(lc, fz_end, fz_loop),
+    TGE_CS(CS(y), CS(y), errt),
+    PJMP2(y, fz_end, fz_loop),
     LABEL(fz_loop),
-    INSERT_TMACRO(cubic_rc, CS(rc), t1, t2, t3),
-    TCHOICE(r, rc, s, r),
-    TCHOICE(l, rc, l, s),
+    INSERT_TMACRO(cubic_rc, CS(y), CS(l), CS(s), t1, t2, t3),
+    TCHOICE(r, y, s, r),
+    TCHOICE(l, y, l, s),
     INSERT_TMACRO(median, CS(s)),
     INSERT_TMACRO(cubic_eval, CS(y), CS(s), t1, t2),
     TABS(y, y),
-    TGE_CS(CS(lc), CS(y), errt),
+    TGE_CS(CS(y), CS(y), errt),
     // IADD(i, i, 1),
-    PJMP2(lc, fz_end, fz_loop),
+    PJMP2(y, fz_end, fz_loop),
     LABEL(fz_end)
 MACRO_END;
 
@@ -98,7 +100,7 @@ TEND1(r);
 
 template <std::floating_point T>
 TBEGIN6(cubic_rc_program, a, b, c, d, l, r)
-    INSERT_TMACRO(cubic_rc, CS(rc), CS(t1), CS(t2), CS(t3))
+    INSERT_TMACRO(cubic_rc, CS(rc), CS(l), CS(r), CS(t1), CS(t2), CS(t3))
 END(IVAR(rc));
 
 template <std::floating_point T>
@@ -118,21 +120,21 @@ struct constants;
 template <>
 struct constants<float>
 {
-    static constexpr float err_threshold = 1e-3;
+    static constexpr float err_threshold = 1e-1;
     static constexpr float lbound        = -100;
     static constexpr float rbound        = 100;
 
-    using errt = CS(1e-3);
+    using errt = CS(1e-1);
 };
 
 template <>
 struct constants<double>
 {
-    static constexpr double err_threshold = 1e-8;
+    static constexpr double err_threshold = 1e-3;
     static constexpr double lbound        = -1e6;
     static constexpr double rbound        = 1e6;
 
-    using errt = CS(1e-8);
+    using errt = CS(1e-3);
 };
 
 namespace fn
@@ -183,9 +185,9 @@ val_cubic_fz(T a, T b, T c, T d) noexcept
 {
     auto [l, r] = val_cubic_fb(a, b, c, d);
     auto s      = median(l, r);
-    auto y      = val_cubic_eval(a, b, c, d, s);
+    auto y      = abs(val_cubic_eval(a, b, c, d, s));
     // unsigned i  = 0;
-    while(abs(y) >= constants<T>::err_threshold)
+    while(y >= constants<T>::err_threshold)
     {
         const bool rc = val_cubic_rc(a, b, c, d, l, s);
         // if (rc)
@@ -196,7 +198,7 @@ val_cubic_fz(T a, T b, T c, T d) noexcept
         l = rc ? l : s;
 
         s = median(l, r);
-        y = val_cubic_eval(a, b, c, d, s);
+        y = abs(val_cubic_eval(a, b, c, d, s));
         // ++i;
     }
 
