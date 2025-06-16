@@ -13,6 +13,8 @@
 // convert to char_sequence
 #define CS(S)            lucid::sl2cs<#S>
 
+#define CS_JOIN(A, B)    lucid::intlist::join<A, B>
+
 // NAME - char_sequence
 #define NVAR(TYPE, NAME) lucid::Variable<TYPE, NAME>
 // NAME - literal without quotes
@@ -94,7 +96,10 @@
 #define TMOV_CS(a, b)            MOV(NTVAR(a), NTVAR(b))
 #define IMOV_CS(a, b)            MOV(NIVAR(a), NIVAR(b))
 
-#define LABEL(NAME)              lucid::Label<CS(NAME)>
+#define LABEL_CS(NAME)           lucid::Label<NAME>
+#define LABEL(NAME)              LABEL_CS(CS(NAME))
+#define PREFIX_LABEL_CS(_P, _L)  LABEL_CS(CS_JOIN(_P, _L))
+
 #define JMP(TARGET)             \
     lucid::Jump < LABEL(TARGET) \
     >
