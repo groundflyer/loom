@@ -452,12 +452,12 @@ struct label_length : std::integral_constant<unsigned, _Label::name::size()>
 {
 };
 
-// 3 is for "N/A"
+// 4 is for "HALT"
 template <typename Labels>
 inline constexpr unsigned max_label_width =
     std::max(*std::ranges::max_element(
                  intlist::stdarray<typelist::map<label_length, Labels>>),
-             3u);
+             4u);
 
 template <typename S>
 void
@@ -510,14 +510,15 @@ print_header(_Program, const std::bitset<N>& mask, unsigned cw, bool ts)
 
 template <typename _Labels, std::unsigned_integral I>
 std::string_view
-get_label_name(_Labels, I i) noexcept
+get_label_name(_Labels, I i, I halt_pos) noexcept
 {
     return typelist::visit_at(
         i,
         []<typename L>() noexcept -> std::string_view
         { return prettify<L>{}(); },
         _Labels{},
-        []() noexcept -> std::string_view { return "N/A"; });
+        [=]() noexcept -> std::string_view
+        { return i == halt_pos ? "HALT" : "N/A"; });
 }
 
 template <typename _Program, std::size_t N, typename _Mem>
@@ -528,7 +529,8 @@ print_state(_Program, const _Mem& mem, const std::bitset<N>& mask, unsigned cw)
     using labels    = _Program::labels;
     using variables = _Program::variables;
 
-    print_word(get_label_name(labels{}, mem.cp()), max_label_width<labels>);
+    print_word(get_label_name(labels{}, mem.cp(), _Program::halt_pos),
+               max_label_width<labels>);
     typelist::for_each_masked(
         variables{},
         [&mem]<typename Var>(unsigned cw)
