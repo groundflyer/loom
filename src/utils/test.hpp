@@ -875,4 +875,14 @@ struct tuple_cmp<std::tuple<Ts...>, Cmp>
                                       std::index_sequence_for<Ts...>{});
     }
 };
+
+template <typename T>
+struct poly_cmp : std::equal_to<T>
+{
+};
+
+template <std::floating_point T>
+struct poly_cmp<T> : ulp_cmp
+{
+};
 } // namespace lucid::test
