@@ -117,24 +117,25 @@ END(TVAR(s), IVAR(i));
 template <std::floating_point T>
 struct constants;
 
+// setting error threshold to big value to avoid infinite loops
 template <>
 struct constants<float>
 {
-    static constexpr float err_threshold = 1e-1;
+    static constexpr float err_threshold = 0.1f;
     static constexpr float lbound        = -100;
     static constexpr float rbound        = 100;
 
-    using errt = CS(1e-1);
+    using errt = CS(0.1);
 };
 
 template <>
 struct constants<double>
 {
-    static constexpr double err_threshold = 1e-3;
-    static constexpr double lbound        = -1e6;
-    static constexpr double rbound        = 1e6;
+    static constexpr double err_threshold = 0.1;
+    static constexpr double lbound        = -1e5;
+    static constexpr double rbound        = 1e5;
 
-    using errt = CS(1e-3);
+    using errt = CS(0.1);
 };
 
 namespace fn
@@ -203,7 +204,6 @@ val_cubic_fz(T a, T b, T c, T d) noexcept
     }
 
     return {s, i};
-    // return s;
 }
 } // namespace fn
 

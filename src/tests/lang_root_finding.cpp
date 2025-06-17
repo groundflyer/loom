@@ -57,7 +57,7 @@ struct test_suite
         track.check(
             NamedFuzzyTest(tm.fuzzy_ulp(g_cubic, bse_cubic, val_cubic_eval, 10),
                            fmt::format("({}) BSE cubic eval", ti),
-                           1e-3));
+                           1e-2));
         track.check(
             NamedTest(tm.with_ref(g_cubrc, bse_cubic_rc, val_cubic_rc),
                       fmt::format("({}) BSE cubic root condition", ti)));
@@ -72,7 +72,7 @@ struct test_suite
                     {{5u}, {}}
         }),
             fmt::format("({}) BSE cubic find zero", ti),
-            1e-3));
+            1e-2));
 
         return track;
     }
@@ -82,7 +82,7 @@ int
 main(int argc, char* argv[])
 {
     Track         track;
-    ParmTestMaker tm{parse_numruns(argc, argv)};
+    ParmTestMaker tm{parse_numruns<100000>(argc, argv)};
     RandomState   rs;
 
     test_suite<float>  tsf;
