@@ -7,6 +7,7 @@
 #include "bse.hpp"
 #include "bve.hpp"
 #include "core.hpp"
+#include "operators.hpp"
 
 #include <utils/debug.hpp>
 #include <utils/tmp.hpp>
@@ -62,7 +63,7 @@ struct get_native_vector_align
 #if defined(__AVX__) && defined(NARROW_AVX_INT)
     static constexpr fsize_t value = std::is_integral_v<T> ? 16 : simd_align;
 #else
-    static constexpr fsize_t value  = simd_align;
+    static constexpr fsize_t value = simd_align;
 #endif
 };
 
@@ -686,7 +687,8 @@ class make_minikernel_runner
             Storage storage;
             typelist::for_each(
                 load_vars{},
-                []<typename Var>(_MemoryView view, Storage& storage) noexcept {
+                []<typename Var>(_MemoryView view, Storage& storage) noexcept
+                {
                     storage.template get<Var>() =
                         load<N>(view.template get<Var>().data());
                 },
@@ -702,7 +704,8 @@ class make_minikernel_runner
         {
             typelist::for_each(
                 store_vars{},
-                []<typename Var>(_MemoryView view, Storage& storage) noexcept {
+                []<typename Var>(_MemoryView view, Storage& storage) noexcept
+                {
                     store<N>(view.template get<Var>().data(),
                              storage.template get<Var>());
                 },

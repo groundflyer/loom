@@ -9,6 +9,7 @@
 #pragma once
 
 #include "bve.hpp"
+#include "operators.hpp"
 
 #include <bit>
 
@@ -352,6 +353,20 @@ struct remap_comp<ops::choice>
         };                                      \
     };
 
+#define MK_REMAP_BIN_FUNC_F_PS(PREFIX, FUNC, SUFFIX)       \
+    template <>                                            \
+    struct remap_comp<ops::FUNC<float>>                    \
+    {                                                      \
+        struct type                                        \
+        {                                                  \
+            __device__ float                               \
+            operator()(const float a, const float b) const \
+            {                                              \
+                return PREFIX##FUNC##SUFFIX(a, b);         \
+            }                                              \
+        };                                                 \
+    };
+
 #define MK_REMAP_BIN_FUNC_D(FUNC)                            \
     template <>                                              \
     struct remap_comp<ops::FUNC<double>>                     \
@@ -381,7 +396,8 @@ struct remap_comp<ops::choice>
     };
 
 #define MK_REMAP_BIN_FUNC_F(FUNC) MK_REMAP_BIN_FUNC_F_SUFFIX(FUNC, f)
-#define MK_REMAP_UN_FUNC_F(FUNC)  MK_REMAP_UN_FUNC_F_SUFFIX(FUNC, f)
+#define MK_REMAP_UN_FUNC_F(FUNC)   MK_REMAP_UN_FUNC_F_SUFFIX(FUNC, f)
+#define MK_REMAP_BIN_FUNC_FF(FUNC) MK_REMAP_BIN_FUNC_F_PS(f, FUNC, f)
 
 MK_REMAP_BINOP(std::plus, +)
 MK_REMAP_BINOP(std::minus, -)
@@ -409,7 +425,6 @@ MK_REMAP_UNOP(std::bit_not, ~)
 MK_REMAP_BINOP(ops::lshift, <<)
 MK_REMAP_BINOP(ops::rshift, >>)
 
-MK_REMAP_UN_FUNC_F(abs)
 MK_REMAP_UN_FUNC_F(round)
 MK_REMAP_UN_FUNC_F(ceil)
 MK_REMAP_UN_FUNC_F(floor)
@@ -417,10 +432,9 @@ MK_REMAP_UN_FUNC_F(trunc)
 MK_REMAP_UN_FUNC_F(sin)
 MK_REMAP_UN_FUNC_F(cos)
 
-MK_REMAP_BIN_FUNC_F(min)
-MK_REMAP_BIN_FUNC_F(max)
+MK_REMAP_BIN_FUNC_FF(min)
+MK_REMAP_BIN_FUNC_FF(max)
 
-MK_REMAP_UN_FUNC_D(abs)
 MK_REMAP_UN_FUNC_D(round)
 MK_REMAP_UN_FUNC_D(ceil)
 MK_REMAP_UN_FUNC_D(floor)
@@ -1362,6 +1376,8 @@ class cuda_evaluator
         visitor step;
 
       public:
+        using program = _Program;
+
         FORBID_ALL(stream);
 
         stream(const gsize_t n) : stream_facade(n), step(stream_facade::mem) {}

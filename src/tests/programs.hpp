@@ -6,6 +6,7 @@
 
 #include <lang/core.hpp>
 #include <lang/macros.hpp>
+#include <lang/operators.hpp>
 #include <utils/debug.hpp>
 #include <utils/functional.hpp>
 #include <utils/math.hpp>
