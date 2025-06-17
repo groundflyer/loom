@@ -50,6 +50,16 @@ struct abs
     }
 };
 
+struct fma
+{
+    template <std::floating_point T>
+    T
+    operator()(const T x, const T y, const T z) const noexcept
+    {
+        return std::fma(x, y, z);
+    }
+};
+
 #define MK_STD_BINOP(NAME)                              \
     template <typename T>                               \
     struct NAME                                         \

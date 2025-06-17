@@ -185,6 +185,21 @@ struct remap_comp<N, ops::choice, T, I, T, T>
     };
 };
 
+template <fsize_t N, std::floating_point T>
+struct remap_comp<N, ops::fma, T, T, T, T>
+{
+    struct type
+    {
+        constexpr packed_vector<T, N>
+        operator()(const packed_vector<T, N> x,
+                   const packed_vector<T, N> y,
+                   const packed_vector<T, N> z) const noexcept
+        {
+            return __builtin_elementwise_fma(x, y, z);
+        }
+    };
+};
+
 #define MK_REMAP_BINOP(FUNC, OP, R)                                \
     template <fsize_t N, typename T>                               \
     struct remap_comp<N, FUNC<T>, R, T, T>                         \

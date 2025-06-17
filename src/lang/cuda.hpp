@@ -297,6 +297,19 @@ struct remap_comp<ops::choice>
     };
 };
 
+template <>
+struct remap_comp<ops::fma>
+{
+    struct type
+    {
+        __device__ float
+        operator()(const float x, const float y, const float z) const
+        {
+            return fmaf(x, y, z);
+        }
+    };
+};
+
 #define MK_REMAP_BINOP(FUNC, OP)                   \
     template <typename T>                          \
     struct remap_comp<FUNC<T>>                     \
