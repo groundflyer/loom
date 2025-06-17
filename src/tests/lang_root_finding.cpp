@@ -63,10 +63,16 @@ struct test_suite
                       fmt::format("({}) BSE cubic root condition", ti)));
         track.check(NamedTest(tm.with_ref(g_c4, bse_cubic_fb, val_cubic_fb),
                               fmt::format("({}) BSE cubic find bounds", ti)));
-        track.check(
-            NamedFuzzyTest(tm.fuzzy_ulp(g_c4, bse_cubic_fz, val_cubic_fz, 10),
-                           fmt::format("({}) BSE cubic find zero", ti),
-                           1e-3));
+        track.check(NamedFuzzyTest(
+            tm.fuzzy_with_ref(
+                g_c4,
+                bse_cubic_fz,
+                val_cubic_fz,
+                tuple_cmp<std::tuple<T, uint_of_size_t<sizeof(T)>>, poly_cmp>{
+                    {{5u}, {}}
+        }),
+            fmt::format("({}) BSE cubic find zero", ti),
+            1e-3));
 
         return track;
     }

@@ -76,7 +76,7 @@ TMACRO_BEGIN4(cubic_fz, t1, t2, t3, errt)
     INSERT_TMACRO(cubic_fb, CS(y), t1, t2, t3),
     INSERT_TMACRO(median, CS(s)),
     INSERT_TMACRO(cubic_eval, CS(y), CS(s), t1, t2),
-    // IMOV(i, 0),
+    IMOV(i, 0),
     TABS(y, y),
     TGE_CS(CS(y), CS(y), errt),
     PJMP2(y, fz_end, fz_loop),
@@ -88,7 +88,7 @@ TMACRO_BEGIN4(cubic_fz, t1, t2, t3, errt)
     INSERT_TMACRO(cubic_eval, CS(y), CS(s), t1, t2),
     TABS(y, y),
     TGE_CS(CS(y), CS(y), errt),
-    // IADD(i, i, 1),
+    IADD(i, i, 1),
     PJMP2(y, fz_end, fz_loop),
     LABEL(fz_end)
 MACRO_END;
@@ -111,7 +111,7 @@ TEND2(l, r);
 template <std::floating_point T, typename errt>
 TBEGIN4(cubic_fz_program, a, b, c, d)
     INSERT_TMACRO(cubic_fz, CS(t1), CS(t2), CS(t3), errt)
-END(TVAR(s));
+END(TVAR(s), IVAR(i));
 // clang-format on
 
 template <std::floating_point T>
@@ -180,13 +180,13 @@ median(const T l, const T r) noexcept
 }
 
 template <std::floating_point T>
-T
+std::tuple<T, lucid::uint_of_size_t<sizeof(T)>>
 val_cubic_fz(T a, T b, T c, T d) noexcept
 {
-    auto [l, r] = val_cubic_fb(a, b, c, d);
-    auto s      = median(l, r);
-    auto y      = abs(val_cubic_eval(a, b, c, d, s));
-    // unsigned i  = 0;
+    auto [l, r]                        = val_cubic_fb(a, b, c, d);
+    auto                             s = median(l, r);
+    auto                             y = abs(val_cubic_eval(a, b, c, d, s));
+    lucid::uint_of_size_t<sizeof(T)> i = 0;
     while(y >= constants<T>::err_threshold)
     {
         const bool rc = val_cubic_rc(a, b, c, d, l, s);
@@ -199,11 +199,11 @@ val_cubic_fz(T a, T b, T c, T d) noexcept
 
         s = median(l, r);
         y = abs(val_cubic_eval(a, b, c, d, s));
-        // ++i;
+        ++i;
     }
 
-    // return {s, i};
-    return s;
+    return {s, i};
+    // return s;
 }
 } // namespace fn
 
