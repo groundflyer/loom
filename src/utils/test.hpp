@@ -7,6 +7,7 @@
 
 #include "argparse.hpp"
 #include "functional.hpp"
+#include "string.hpp"
 #include "tuple.hpp"
 
 #include <range/v3/numeric/accumulate.hpp>
@@ -179,8 +180,7 @@ struct NamedFuzzyTest : NamedTest<Test, Name>
     constexpr NamedFuzzyTest(Test                       _t,
                              Name                       _n,
                              std::invoke_result_t<Test> _thr) noexcept :
-        NamedTest<Test, Name>(_t, _n),
-        threshold(_thr)
+        NamedTest<Test, Name>(_t, _n), threshold(_thr)
     {
     }
 };
@@ -571,7 +571,8 @@ struct ParmTestMaker
     {
         return test(
             std::forward<GH>(gh),
-            [t = std::move(t)]<typename Feed>(Feed&& feed) noexcept {
+            [t = std::move(t)]<typename Feed>(Feed&& feed) noexcept
+            {
                 return maybe_apply(std::move(t),
                                    std::get<0>(std::forward<Feed>(feed)));
             },
@@ -599,7 +600,8 @@ struct ParmTestMaker
         return test(
             std::forward<G>(g),
             std::forward<T>(t),
-            [&, ri, cmp]<typename Tr, typename Gr>(Tr&& tr, Gr&& gr) noexcept {
+            [&, ri, cmp]<typename Tr, typename Gr>(Tr&& tr, Gr&& gr) noexcept
+            {
                 return cmp(std::forward<Tr>(tr),
                            maybe_apply(ri, std::forward<Gr>(gr)));
             });
@@ -674,7 +676,8 @@ struct ParmTestMaker
         return rng_with_ref<do_sort>(
             std::forward<G>(g),
             std::forward<T>(t),
-            [&ri, n = num_runs]<typename... Grs>(Grs&&... grs) noexcept {
+            [&ri, n = num_runs]<typename... Grs>(Grs&&... grs) noexcept
+            {
                 return multi_gen(n,
                                  std::forward<RI>(ri),
                                  std::forward<Grs>(grs)...);
@@ -783,18 +786,16 @@ struct RandomState
     }
 };
 
-template <int def = 1000>
+template <unsigned def = 1000>
 unsigned
 parse_numruns(int argc, char* argv[]) noexcept
 {
-    return argparse::parse(
-               std::tuple{argparse::option<'n', "numruns">(
-                   "Number of runs for parametric tests. Default: 1000",
-                   "N",
-                   def,
-                   [](std::string_view word) noexcept
-                   { return std::atoi(word.data()); })},
-               {argc, argv})
+    return argparse::parse(std::tuple{argparse::option<'n', "numruns">(
+                               "number of runs for parametric tests",
+                               "N",
+                               def,
+                               read_number<unsigned, true>)},
+                           {argc, argv})
         .template get_opt<'n'>();
 }
 
