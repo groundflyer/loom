@@ -132,6 +132,16 @@ struct maybe_toa<Array, std::tuple<Ts...>>
 {
     using type = std::tuple<Array<Ts>...>;
 };
+
+template <typename Tuple, typename Cmp, std::size_t... Idxs>
+constexpr bool
+tuple_cmp_impl(const Tuple& a,
+               const Tuple& b,
+               const Cmp&   cmps,
+               std::index_sequence<Idxs...>) noexcept
+{
+    return (... && std::get<Idxs>(cmps)(std::get<Idxs>(a), std::get<Idxs>(b)));
+}
 } // namespace detail
 
 /// @brief Tuple of arrays.
@@ -828,6 +838,41 @@ struct transparent_range_cmp
                 ret &= eq;
             });
         return ret;
+    }
+};
+
+template <typename Tuple, template <typename> typename Cmp = std::equal_to>
+struct tuple_cmp;
+
+template <typename T1, typename T2, template <typename> typename Cmp>
+struct tuple_cmp<std::pair<T1, T2>, Cmp>
+{
+    using t = std::pair<T1, T2>;
+
+    Cmp<T1> cmp1;
+    Cmp<T2> cmp2;
+
+    constexpr bool
+    operator()(const t& a, const t& b) const noexcept
+    {
+        return cmp1(a.first, b.first) && cmp2(a.second, b.second);
+    }
+};
+
+template <typename... Ts, template <typename> typename Cmp>
+struct tuple_cmp<std::tuple<Ts...>, Cmp>
+{
+    using t = std::tuple<Ts...>;
+
+    std::tuple<Cmp<Ts>...> cmps;
+
+    constexpr bool
+    operator()(const t& a, const t& b) const noexcept
+    {
+        return detail::tuple_cmp_impl(a,
+                                      b,
+                                      cmps,
+                                      std::index_sequence_for<Ts...>{});
     }
 };
 } // namespace lucid::test
