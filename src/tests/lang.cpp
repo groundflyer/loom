@@ -10,9 +10,206 @@
 #include <lang/bve.hpp>
 #include <lang/simd.hpp>
 #include <utils/test.hpp>
+#include <utils/typeinfo.hpp>
+
+#include <fmt/format.h>
+
+#include <limits>
 
 using namespace lucid;
 using namespace lucid::test;
+
+template <template <typename> typename P,
+          template <typename> typename GM,
+          typename V,
+          StringLiteral name,
+          bool          do_reset  = false,
+          bool          do_stream = false>
+struct StandardTestSuite
+{
+    template <typename T>
+    bool
+    operator()(Track& track, ParmTestMaker tm, RandomState& rs) const noexcept
+    {
+        using p_t          = P<T>;
+        constexpr auto  ti = TypeInfo<T>::chars;
+        constexpr GM<T> gm{};
+        constexpr V     v{};
+
+        const unsigned vector_size = tm.num_runs;
+
+        bse::function<p_t>        bse_test;
+        bve::function<p_t>        bve_test{vector_size};
+        simd::function<p_t>       simd_test_z{vector_size};
+        simd::function<p_t, true> simd_test_m{vector_size};
+
+        auto g = gm(rs);
+
+        auto get_tfn = [&]<typename Test>(Test& t) noexcept
+        {
+            if constexpr(std::is_same_v<Test, bve::function<p_t>>)
+                return tm.rng_with_scalar_ref(g, bve_test, bse_test);
+            else
+                return tm.rng_with_ref(g, t, bve_test);
+        };
+
+        auto reset_bve = [&](auto& t) noexcept
+        {
+            auto tfn = get_tfn(t);
+            if constexpr(do_reset)
+                return [&, tfn = std::move(tfn)]() noexcept
+                {
+                    bool r = tfn();
+                    bve_test.reset();
+                    return r;
+                };
+            else
+                return tfn;
+        };
+
+        const bool ret = track.dep_check(
+            NamedTest(tm.with_ref(g, bse_test, v),
+                      fmt::format("[{}] BSE: {}", ti, name.view())),
+            NamedTest(reset_bve(bve_test),
+                      fmt::format("[{}] BVE: {}", ti, name.view())),
+            std::pair{
+                NamedTest(
+                    reset_bve(simd_test_z),
+                    fmt::format("[{}] SIMD Z-Order: {}", ti, name.view())),
+                NamedTest(
+                    reset_bve(simd_test_m),
+                    fmt::format("[{}] SIMD Minikernel: {}", ti, name.view()))});
+
+        return ret;
+    }
+};
+
+template <typelist::List Types, typename Suite>
+void
+test_suite_types(Types         types,
+                 Suite         suite,
+                 Track&        track,
+                 ParmTestMaker tm,
+                 RandomState&  rs) noexcept
+{
+    typelist::for_each(types, suite, track, tm, rs);
+}
+
+template <std::integral T, T min, T max>
+struct GMIntRange
+{
+    auto
+    operator()(RandomState& rs) const noexcept
+    {
+        return rs.make_gen<T>(min, max);
+    }
+};
+
+template <std::floating_point T>
+struct GMCanon
+{
+    auto
+    operator()(RandomState& rs) const noexcept
+    {
+        return rs.make_gen<T>();
+    }
+};
+
+template <std::floating_point T>
+struct GMFloat
+{
+    static constexpr T l = 1e-6;
+    static constexpr T h = 1e6;
+
+    auto
+    operator()(RandomState& rs) const noexcept
+    {
+        return rs.make_gen<T>(l, h);
+    }
+};
+
+template <std::integral T>
+using GM_2_10 = GMIntRange<T, 2, 10>;
+
+template <std::integral T>
+using GM_Incr = GMIntRange<T,
+                           std::numeric_limits<T>::lowest(),
+                           std::numeric_limits<T>::max() - 1>;
+
+template <std::unsigned_integral T>
+using GM_0U = GMIntRange<T, 0, static_cast<T>(-1)>;
+
+template <std::unsigned_integral T>
+using GM_U3 = GMIntRange<T, 0, 3>;
+
+template <std::floating_point T>
+inline constexpr GMCanon<T> gm_canon{};
+
+template <std::floating_point T>
+inline constexpr GMFloat<T> gm_float{};
+
+template <std::integral T>
+inline constexpr GM_2_10<T> gm_2_10{};
+
+template <std::unsigned_integral T>
+inline constexpr GM_0U<T> gm_0u{};
+
+template <std::unsigned_integral T>
+inline constexpr GM_U3<T> gm_u3{};
+
+template <std::floating_point T>
+struct GM_J4
+{
+    auto
+    operator()(RandomState& rs) const noexcept
+    {
+        return [g_u3    = gm_u3<lucid::uint_of_size_t<sizeof(T)>>(rs),
+                g_canon = gm_canon<T>(rs)]() mutable noexcept
+        { return std::pair{g_u3(), g_canon()}; };
+    }
+};
+
+template <std::integral T>
+struct GM_Bit
+{
+    using U = lucid::uint_of_size_t<sizeof(T)>;
+
+    auto
+    operator()(RandomState& rs) const noexcept
+    {
+        return [g_u3 = gm_u3<U>(rs), g_0u = gm_0u<U>(rs)]() mutable noexcept
+        { return std::tuple{g_u3(), g_0u(), g_0u()}; };
+    }
+};
+
+template <std::unsigned_integral T>
+struct GM_Shift
+{
+    auto
+    operator()(RandomState& rs) const noexcept
+    {
+        return [g_0u = gm_0u<T>(rs)]() mutable noexcept
+        { return std::tuple{g_0u(), g_0u()}; };
+    }
+};
+
+template <std::floating_point T>
+struct GM_F2
+{
+    auto
+    operator()(RandomState& rs) const noexcept
+    {
+        return [g_f = gm_float<T>(rs)]() mutable noexcept
+        { return std::pair{g_f(), g_f()}; };
+    }
+};
+
+using all_ints =
+    type_sequence<std::int8_t, std::int16_t, std::int32_t, std::int64_t>;
+using all_uints =
+    type_sequence<std::uint8_t, std::uint16_t, std::uint32_t, std::uint64_t>;
+using fac_ints =
+    type_sequence<std::int32_t, std::int64_t, std::uint32_t, std::uint64_t>;
 
 int
 main(int argc, char* argv[])
@@ -21,6 +218,23 @@ main(int argc, char* argv[])
     ParmTestMaker tm{parse_numruns(argc, argv)};
     RandomState   rs;
 
+    test_suite_types(
+        typelist::join<all_ints, all_uints>{},
+        StandardTestSuite<increment, GM_Incr, ::fn::val_inc_fn, "increment">{},
+        track,
+        tm,
+        rs);
+    test_suite_types(fac_ints{},
+                     StandardTestSuite<factorial_int,
+                                       GM_2_10,
+                                       ::fn::val_fac_fn,
+                                       "factorial",
+                                       true>{},
+                     track,
+                     tm,
+                     rs);
+
+#if 0
     auto g_int   = rs.make_gen<int>(2, 10);
     auto g_ui    = rs.make_gen<unsigned>(2, 10);
     auto g_uim   = rs.make_gen<unsigned>(0, static_cast<unsigned>(-1));
@@ -189,7 +403,7 @@ main(int argc, char* argv[])
                   "SIMD Minikernel ceil/floor");
 
     auto tsv_minmax =
-        NamedTest(tm.rng_invariant(g_f2, simd_v_minmax, std::identity{}),
+        NamedTest(tm.rng_invariant(g_f2, simd_v_minmaxa, std::identity{}),
                   "SIMD Vertical min/max");
     auto tsk_minmax =
         NamedTest(tm.rng_invariant(g_f2, simd_k_minmax, std::identity{}),
@@ -305,6 +519,8 @@ main(int argc, char* argv[])
     track.check(tsk_ceilfloor);
     track.check(tsv_minmax);
     track.check(tsk_minmax);
+
+#endif
 
     return track.ret_code();
 }

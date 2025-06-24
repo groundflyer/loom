@@ -197,22 +197,26 @@ val_fac(T i) noexcept
 }
 
 // simple union validation
-constexpr unsigned
-val_sut(float i) noexcept
+template <std::floating_point T>
+constexpr lucid::uint_of_size_t<sizeof(T)>
+val_sut(T i) noexcept
 {
-    return static_cast<unsigned>(i);
+    return static_cast<lucid::uint_of_size_t<sizeof(T)>>(i);
 }
 
 // complex union validation
-constexpr unsigned
-val_cut(float i) noexcept
+template <std::floating_point T>
+constexpr lucid::uint_of_size_t<sizeof(T)>
+val_cut(T i) noexcept
 {
-    return i < 0.5f ? 200 : 100;
+    using R = lucid::uint_of_size_t<sizeof(T)>;
+    return i < static_cast<T>(0.5) ? static_cast<R>(200) : static_cast<R>(100);
 }
 
 // jump4 validation
-constexpr float
-val_jmp4(unsigned i, float a) noexcept
+template <std::floating_point T>
+constexpr T
+val_jmp4(lucid::uint_of_size_t<sizeof(T)> i, T a) noexcept
 {
     switch(i)
     {
@@ -225,8 +229,9 @@ val_jmp4(unsigned i, float a) noexcept
 }
 
 // bitwise ops validation
-constexpr unsigned
-val_bit(unsigned i, unsigned a, unsigned b)
+template <std::unsigned_integral T>
+constexpr T
+val_bit(T i, T a, T b)
 {
     switch(i)
     {
@@ -236,22 +241,25 @@ val_bit(unsigned i, unsigned a, unsigned b)
     case 3: return ~a;
     }
     return a;
-};
-
-constexpr float
-val_choice(unsigned i, float a) noexcept
-{
-    return !i && (a > 0.5f) ? -a : a;
 }
 
-constexpr unsigned
-val_lshift(unsigned a, unsigned b) noexcept
+template <std::floating_point T>
+constexpr T
+val_choice(lucid::uint_of_size_t<sizeof(T)> i, T a) noexcept
+{
+    return !i && (a > static_cast<T>(0.5)) ? -a : a;
+}
+
+template <std::unsigned_integral T>
+constexpr T
+val_lshift(T a, T b) noexcept
 {
     return a << b;
 }
 
-constexpr unsigned
-val_rshift(unsigned a, unsigned b) noexcept
+template <std::unsigned_integral T>
+constexpr T
+val_rshift(T a, T b) noexcept
 {
     return a >> b;
 }

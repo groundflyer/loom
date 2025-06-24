@@ -228,8 +228,10 @@ if(BUILD_TESTS)
     threadpool.cpp
   )
 
+  # my system fmtlib linked against stdlibc++, but we use libc++
+  # this is temporary workaround
   # header-only fmt
-  set(fmt_ho test_string test_linal)
+  set(fmt_ho test_string test_linal test_lang)
 
   set(TESTS_SRC_DIR src/tests)
 
