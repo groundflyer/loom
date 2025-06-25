@@ -1188,7 +1188,13 @@ struct vector_eval<ParmJump<Var, Labels>, LabelMap>
     }
 };
 
-template <typename _Program, bool use_counting_sort>
+enum class SORT
+{
+    INTROSORT,
+    COUNTING
+};
+
+template <typename _Program, SORT sort_method>
 class basic_vector_compiler
 {
     using labelmap  = _Program::labelmap;
@@ -1209,7 +1215,7 @@ class basic_vector_compiler
     using memory        = Memory<reg_types, reg_names, cp>;
     using simple_sorter = SimpleSorter<memory, singular>;
     using sorter        = std::conditional_t<
-               use_counting_sort,
+               sort_method == SORT::COUNTING,
                std::conditional_t<
                    singular,
                    simple_sorter,
@@ -1341,10 +1347,10 @@ class basic_vector_compiler
     };
 };
 
-template <typename _Program, bool use_counting_sort = false>
-using function = basic_vector_compiler<_Program, use_counting_sort>::function;
+template <typename _Program, SORT sort_method>
+using function = basic_vector_compiler<_Program, sort_method>::function;
 
-template <typename _Program, bool use_counting_sort = false>
+template <typename _Program, SORT sort_method>
     requires(!_Program::singular)
-using stream = basic_vector_compiler<_Program, use_counting_sort>::stream;
+using stream = basic_vector_compiler<_Program, sort_method>::stream;
 } // namespace lucid::bve
