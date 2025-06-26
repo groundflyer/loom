@@ -19,12 +19,59 @@
 using namespace lucid;
 using namespace lucid::test;
 
+template <typename P, bool complex>
+struct StandardState;
+
+template <typename P>
+struct StandardState<P, false>
+{
+    bse::function<P>                       bse_func;
+    bve::function<P, bve::SORT::INTROSORT> bve_func_is;
+
+    simd::function<P, simd::N_ORDER, bve::INTROSORT>    simd_func_N_is;
+    simd::function<P, simd::MINIKERNEL, bve::INTROSORT> simd_func_m_is;
+
+    StandardState(unsigned n) noexcept :
+        bve_func_is(n), simd_func_N_is(n), simd_func_m_is(n)
+    {
+    }
+};
+
+template <typename P>
+struct StandardState<P, true> : StandardState<P, false>
+{
+    static constexpr unsigned d = 8; // divisor
+
+    bve::function<P, bve::COUNTING_SORT> bve_func_cs;
+
+    bve::stream<P, bve::INTROSORT>     bve_stream_is;
+    bve::stream<P, bve::COUNTING_SORT> bve_stream_cs;
+
+    simd::function<P, simd::N_ORDER, bve::COUNTING_SORT>    simd_func_N_cs;
+    simd::function<P, simd::MINIKERNEL, bve::COUNTING_SORT> simd_func_m_cs;
+
+    simd::stream<P, simd::N_ORDER, bve::INTROSORT>    simd_stream_N_is;
+    simd::stream<P, simd::MINIKERNEL, bve::INTROSORT> simd_stream_m_is;
+
+    simd::stream<P, simd::N_ORDER, bve::COUNTING_SORT>    simd_stream_N_cs;
+    simd::stream<P, simd::MINIKERNEL, bve::COUNTING_SORT> simd_stream_m_cs;
+
+    using base = StandardState<P, false>;
+
+    StandardState(unsigned n) noexcept :
+        base(n), bve_func_cs(n), bve_stream_is(n / d), bve_stream_cs(n / d),
+        simd_func_N_cs(n), simd_func_m_cs(n), simd_stream_N_is(n / d),
+        simd_stream_m_is(n / d), simd_stream_N_cs(n / d),
+        simd_stream_m_cs(n / d)
+    {
+    }
+};
+
 template <template <typename> typename P,
           template <typename> typename GM,
           typename V,
           StringLiteral name,
-          bool          do_reset  = false,
-          bool          do_stream = false>
+          bool          complex = false>
 struct StandardTestSuite
 {
     template <typename T>
@@ -38,29 +85,31 @@ struct StandardTestSuite
 
         const unsigned vector_size = tm.num_runs;
 
-        bse::function<p_t>        bse_test;
-        bve::function<p_t>        bve_test{vector_size};
-        simd::function<p_t>       simd_test_z{vector_size};
-        simd::function<p_t, true> simd_test_m{vector_size};
+        StandardState<p_t, complex> state(vector_size);
 
         auto g = gm(rs);
 
         auto get_tfn = [&]<typename Test>(Test& t) noexcept
         {
-            if constexpr(std::is_same_v<Test, bve::function<p_t>>)
-                return tm.rng_with_scalar_ref(g, bve_test, bse_test);
+            if constexpr(std::is_same_v<Test,
+                                        bve::function<p_t, bve::INTROSORT>> ||
+                         std::is_same_v<Test,
+                                        bve::function<p_t, bve::COUNTING_SORT>>)
+                return tm.rng_with_scalar_ref(g,
+                                              state.bve_func_is,
+                                              state.bse_func);
             else
-                return tm.rng_with_ref(g, t, bve_test);
+                return tm.rng_with_ref(g, t, state.bve_func_is);
         };
 
         auto reset_bve = [&](auto& t) noexcept
         {
             auto tfn = get_tfn(t);
-            if constexpr(do_reset)
+            if constexpr(complex)
                 return [&, tfn = std::move(tfn)]() noexcept
                 {
                     bool r = tfn();
-                    bve_test.reset();
+                    state.bve_func_is.reset();
                     return r;
                 };
             else
@@ -68,16 +117,16 @@ struct StandardTestSuite
         };
 
         const bool ret = track.dep_check(
-            NamedTest(tm.with_ref(g, bse_test, v),
+            NamedTest(tm.with_ref(g, state.bse_func, v),
                       fmt::format("[{}] BSE: {}", ti, name.view())),
-            NamedTest(reset_bve(bve_test),
+            NamedTest(reset_bve(state.bve_func_is),
                       fmt::format("[{}] BVE: {}", ti, name.view())),
             std::pair{
                 NamedTest(
-                    reset_bve(simd_test_z),
+                    reset_bve(state.simd_func_N_is),
                     fmt::format("[{}] SIMD Z-Order: {}", ti, name.view())),
                 NamedTest(
-                    reset_bve(simd_test_m),
+                    reset_bve(state.simd_func_m_is),
                     fmt::format("[{}] SIMD Minikernel: {}", ti, name.view()))});
 
         return ret;

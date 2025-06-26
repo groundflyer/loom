@@ -594,33 +594,40 @@ class BulkDispatcher
     }
 };
 
+/// @brief Methods of succession of SIMD instructions.
+enum STITCH
+{
+    N_ORDER,   /*! column-wise execution */
+    MINIKERNEL /*! minikernels execution */
+};
+
 /// @brief Executes a single instruction @p I through the whole view.
-template <typename I, typename LabelMap, typename CPVar, fsize_t unroll_exp>
-class make_vertical_instruction_runner
+template <typename I, typename LabelMap, typename CPVar>
+class make_N_order_instruction_runner
 {
     static constexpr fsize_t N = native_instruction_width_v<I, vartype<CPVar>>;
 
   public:
-    using type = BulkDispatcher<eval<I, LabelMap, N>,
-                                standard_eval<I, LabelMap>,
-                                N,
-                                unroll_exp>;
+    using type =
+        BulkDispatcher<eval<I, LabelMap, N>, standard_eval<I, LabelMap>, N, 1>;
 };
 
-template <typename Cell, typename LabelMap, typename CPVar, fsize_t unroll_exp>
-class make_vertical_runner
+template <STITCH stitch, typename... Args>
+class make_runner;
+
+template <typename Cell, typename LabelMap, typename CPVar>
+class make_runner<STITCH::N_ORDER, Cell, LabelMap, CPVar>
 {
     template <typename I, typename _LabelMap>
-    using eval =
-        make_vertical_instruction_runner<I, _LabelMap, CPVar, unroll_exp>::type;
+    using eval = make_N_order_instruction_runner<I, _LabelMap, CPVar>::type;
 
   public:
     using type = standard_compiler<Cell, LabelMap, eval>;
 };
 
 /// @brief Executes @p Cell as SIMD kernel.
-template <typename Cell, typename LabelMap, typename CPVar, fsize_t unroll_exp>
-class make_minikernel_runner
+template <typename Cell, typename LabelMap, typename CPVar>
+class make_runner<STITCH::MINIKERNEL, Cell, LabelMap, CPVar>
 {
     template <typename Var>
     using p = std::negation<is_literal<Var>>;
@@ -741,16 +748,11 @@ class make_minikernel_runner
     };
 
   public:
-    using type = BulkDispatcher<SIMDRunner, SerialRunner, N, unroll_exp>;
+    using type = BulkDispatcher<SIMDRunner, SerialRunner, N, 1>;
 };
 
-template <typename Cell, typename LabelMap, typename CPVar, fsize_t unroll_exp>
-using vertical_runner =
-    make_vertical_runner<Cell, LabelMap, CPVar, unroll_exp>::type;
-
-template <typename Cell, typename LabelMap, typename CPVar, fsize_t unroll_exp>
-using minikernel_runner =
-    make_minikernel_runner<Cell, LabelMap, CPVar, unroll_exp>::type;
+template <STITCH stitch, typename Cell, typename LabelMap, typename CPVar>
+using runner = make_runner<stitch, Cell, LabelMap, CPVar>::type;
 
 template <typename _Memory>
 class memory_chunks : public std::ranges::view_interface<memory_chunks<_Memory>>
@@ -928,9 +930,7 @@ template <typename T>
 using SIMDAlignedAllocator =
     AlignedAllocator<T, get_native_vector_align<T>::value>;
 
-template <typename _Program,
-          template <typename...> typename Runner,
-          bool use_counting_sort>
+template <typename _Program, STITCH stitch, bve::SORT sort_method>
     requires(typelist::of_same_size<typename _Program::reg_types>)
 class simd_compiler
 {
@@ -945,7 +945,7 @@ class simd_compiler
     static constexpr fsize_t align    = simd_align;
 
     template <typename Cell>
-    using compile_cell = Runner<Cell, labelmap, cp>;
+    using compile_cell = runner<stitch, Cell, labelmap, cp>;
 
     using compiled_cells = typelist::map<compile_cell, cells>;
 
@@ -953,7 +953,7 @@ class simd_compiler
         Memory<reg_types, reg_names, cp, std::vector, SIMDAlignedAllocator>;
     using simple_sorter = bve::SimpleSorter<memory, singular>;
     using sorter        = std::conditional_t<
-               use_counting_sort,
+               sort_method == bve::COUNTING_SORT,
                std::conditional_t<
                    singular,
                    simple_sorter,
@@ -1046,39 +1046,10 @@ class simd_compiler
     };
 };
 
-template <typename _Program,
-          bool    use_minikernel,
-          fsize_t unroll_exp,
-          bool    use_counting_sort>
-    requires(unroll_exp > 0)
-class select_runner
-{
-    template <typename Cell, typename LabelMap, typename CPVar>
-    using runner =
-        std::conditional_t<use_minikernel,
-                           minikernel_runner<Cell, LabelMap, CPVar, unroll_exp>,
-                           vertical_runner<Cell, LabelMap, CPVar, unroll_exp>>;
+template <typename _Program, STITCH stitch, bve::SORT sort_method>
+using function = simd_compiler<_Program, stitch, sort_method>::function;
 
-  public:
-    using function =
-        simd_compiler<_Program, runner, use_counting_sort>::function;
-    using stream = simd_compiler<_Program, runner, use_counting_sort>::stream;
-};
-
-template <typename _Program,
-          bool    use_minikernel    = false,
-          bool    use_counting_sort = false,
-          fsize_t unroll_exp        = 8>
-using function =
-    select_runner<_Program, use_minikernel, unroll_exp, use_counting_sort>::
-        function;
-
-template <typename _Program,
-          bool    use_minikernel    = false,
-          bool    use_counting_sort = false,
-          fsize_t unroll_exp        = 8>
+template <typename _Program, STITCH stitch, bve::SORT sort_method>
     requires(!_Program::singular)
-using stream =
-    select_runner<_Program, use_minikernel, unroll_exp, use_counting_sort>::
-        stream;
+using stream = simd_compiler<_Program, stitch, sort_method>::stream;
 } // namespace lucid::simd

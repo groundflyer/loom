@@ -1188,10 +1188,10 @@ struct vector_eval<ParmJump<Var, Labels>, LabelMap>
     }
 };
 
-enum class SORT
+enum SORT
 {
     INTROSORT,
-    COUNTING
+    COUNTING_SORT
 };
 
 template <typename _Program, SORT sort_method>
@@ -1215,7 +1215,7 @@ class basic_vector_compiler
     using memory        = Memory<reg_types, reg_names, cp>;
     using simple_sorter = SimpleSorter<memory, singular>;
     using sorter        = std::conditional_t<
-               sort_method == SORT::COUNTING,
+               sort_method == COUNTING_SORT,
                std::conditional_t<
                    singular,
                    simple_sorter,
