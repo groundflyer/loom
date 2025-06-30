@@ -391,6 +391,7 @@ class MemoryIterator : public std::contiguous_iterator_tag
     value_type
     operator*() const noexcept
     {
+        CHECK_INDEX(m_pos, m_size);
         return {*p_data, m_pos};
     }
 
@@ -740,23 +741,24 @@ swap_only_heap_sort(I first, I last, Cmp cmp = Cmp{}) noexcept
 
     difference_type n = last - first;
 
-    for(difference_type i = n - 1; i > 0; --i)
+    for(difference_type i = n; i > 1; --i)
     {
-        std::iter_swap(first, first + i);
+        std::iter_swap(first, first + i - 1);
 
-        difference_type j = 0;
-        difference_type idx;
+        difference_type j   = 0;
+        difference_type idx = 1;
 
-        do {
+        while(idx < i - 1)
+        {
+            if(idx + 1 < i - 1 && cmp(*(first + idx), *(first + idx + 1)))
+                ++idx;
+
+            if(!cmp(*(first + j), *(first + idx))) break;
+
+            std::iter_swap(first + j, first + idx);
+            j   = idx;
             idx = 2 * j + 1;
-
-            if(cmp(*(first + idx), *(first + idx + 1)) && idx < (i - 1)) ++idx;
-
-            if(cmp(*(first + j), *(first + idx)) && idx < i)
-                std::iter_swap(first + j, first + idx);
-
-            j = idx;
-        } while(idx < i);
+        }
     }
 }
 
@@ -802,11 +804,12 @@ template <std::random_access_iterator I>
 void
 swap_only_introsort_impl(I first, I last, const unsigned depth) noexcept
 {
-    using difference_type     = std::iterator_traits<I>::difference_type;
-    const difference_type len = last - first;
+    using difference_type = std::iterator_traits<I>::difference_type;
+    if(first == last) return;
+    const difference_type     len       = last - first;
+    constexpr difference_type ins_limit = 24;
 
-    if(len < static_cast<difference_type>(16))
-        return swap_only_insertion_sort(first, last);
+    if(len <= ins_limit) return swap_only_insertion_sort(first, last);
 
     if(depth == 0u)
     {
@@ -818,6 +821,7 @@ swap_only_introsort_impl(I first, I last, const unsigned depth) noexcept
     I m     = swap_only_partition(first,
                               last,
                               [p = *pivot](auto val) { return val < p; });
+
     swap_only_introsort_impl(first, m, depth - 1);
     swap_only_introsort_impl(m, last, depth - 1);
 }
