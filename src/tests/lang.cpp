@@ -86,7 +86,8 @@ template <template <typename> typename P,
           template <typename> typename GM,
           typename V,
           StringLiteral name,
-          bool          complex = false>
+          bool          do_reset = false,
+          bool          complex  = false>
 struct StandardTestSuite
 {
     template <typename T>
@@ -122,7 +123,7 @@ struct StandardTestSuite
         auto reset_bve = [&](auto&& t) noexcept
         {
             auto tfn = get_tfn(t);
-            if constexpr(complex)
+            if constexpr(do_reset || complex)
                 return [&state, tfn = std::move(tfn)]() noexcept
                 {
                     bool r = tfn();
@@ -219,6 +220,27 @@ test_suite_types(Types         types,
                  RandomState&  rs) noexcept
 {
     typelist::for_each(types, suite, track, tm, rs);
+}
+
+template <typelist::List Types, typelist::List Suites>
+void
+test_suites_types(Types         types,
+                  Suites        suites,
+                  Track&        track,
+                  ParmTestMaker tm,
+                  RandomState&  rs) noexcept
+{
+    typelist::for_each(
+        suites,
+        []<typename Suite>(Types         types,
+                           Track&        track,
+                           ParmTestMaker tm,
+                           RandomState&  rs) noexcept
+        { test_suite_types(types, Suite{}, track, tm, rs); },
+        types,
+        track,
+        tm,
+        rs);
 }
 
 template <std::integral T, T min, T max>
@@ -336,6 +358,7 @@ using all_uints =
     type_sequence<std::uint8_t, std::uint16_t, std::uint32_t, std::uint64_t>;
 using fac_ints =
     type_sequence<std::int32_t, std::int64_t, std::uint32_t, std::uint64_t>;
+using all_floats = type_sequence<float, double>;
 
 int
 main(int argc, char* argv[])
@@ -355,10 +378,24 @@ main(int argc, char* argv[])
                                        GM_2_10,
                                        ::fn::val_fac_fn,
                                        "factorial",
+                                       true,
                                        true>{},
                      track,
                      tm,
                      rs);
+    test_suites_types(all_floats{},
+                      type_sequence<StandardTestSuite<simple_union_test,
+                                                      GMCanon,
+                                                      ::fn::val_sut_fn,
+                                                      "simple union">,
+                                    StandardTestSuite<complex_union_test,
+                                                      GMCanon,
+                                                      ::fn::val_cut_fn,
+                                                      "complex union",
+                                                      true>>{},
+                      track,
+                      tm,
+                      rs);
 
 #if 0
     auto g_int   = rs.make_gen<int>(2, 10);
