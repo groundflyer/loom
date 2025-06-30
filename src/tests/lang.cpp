@@ -137,24 +137,27 @@ struct StandardTestSuite
         auto get_bve_tests = [&]() noexcept
         {
             auto one = NamedTest(reset_bve(state.bve_func_is),
-                                 fmt::format("[{}] BVE function introsort: {}",
-                                             ti,
-                                             name.view()));
+                                 fmt::format("{}: BVE function introsort [{}]",
+                                             name.view(),
+                                             ti));
             if constexpr(complex)
                 return std::tuple{
                     std::move(one),
                     NamedTest(reset_bve(state.bve_func_cs),
-                              fmt::format("[{}] BVE function counting sort: {}",
-                                          ti,
-                                          name.view())),
+                              fmt::format("{}: BVE function counting sort [{}]",
+
+                                          name.view(),
+                                          ti)),
                     NamedTest(reset_bve(state.bve_stream_is_w),
-                              fmt::format("[{}] BVE stream introsort: {}",
-                                          ti,
-                                          name.view())),
+                              fmt::format("{}: BVE stream introsort [{}]",
+
+                                          name.view(),
+                                          ti)),
                     NamedTest(reset_bve(state.bve_stream_cs_w),
-                              fmt::format("[{}] BVE stream counting sort: {}",
-                                          ti,
-                                          name.view()))};
+                              fmt::format("{}: BVE stream counting sort [{}]",
+
+                                          name.view(),
+                                          ti))};
             else
                 return one;
         };
@@ -163,14 +166,16 @@ struct StandardTestSuite
         {
             auto n = NamedTest(
                 reset_bve(state.simd_func_N_is),
-                fmt::format("[{}] SIMD function N-order introsort: {}",
-                            ti,
-                            name.view()));
+                fmt::format("{}: SIMD function N-order introsort [{}]",
+
+                            name.view(),
+                            ti));
             auto m = NamedTest(
                 reset_bve(state.simd_func_m_is),
-                fmt::format("[{}] SIMD function minikernel introsort: {}",
-                            ti,
-                            name.view()));
+                fmt::format("{}: SIMD function minikernel introsort [{}]",
+
+                            name.view(),
+                            ti));
 
             if constexpr(complex)
                 return std::tuple{
@@ -178,32 +183,36 @@ struct StandardTestSuite
                     std::move(m),
                     NamedTest(
                         reset_bve(state.simd_stream_N_is_w),
-                        fmt::format("[{}] SIMD stream N-order introsort: {}",
-                                    ti,
-                                    name.view())),
+                        fmt::format("{}: SIMD stream N-order introsort [{}]",
+
+                                    name.view(),
+                                    ti)),
                     NamedTest(
                         reset_bve(state.simd_stream_m_is_w),
-                        fmt::format("[{}] SIMD stream minikernel introsort: {}",
-                                    ti,
-                                    name.view())),
+                        fmt::format("{}: SIMD stream minikernel introsort [{}]",
+
+                                    name.view(),
+                                    ti)),
                     NamedTest(reset_bve(state.simd_stream_N_cs_w),
                               fmt::format(
-                                  "[{}] SIMD stream N-order counting_sort: {}",
-                                  ti,
-                                  name.view())),
+                                  "{}: SIMD stream N-order counting_sort [{}]",
+
+                                  name.view(),
+                                  ti)),
                     NamedTest(
                         reset_bve(state.simd_stream_m_cs_w),
                         fmt::format(
-                            "[{}] SIMD stream minikernel counting sort: {}",
-                            ti,
-                            name.view()))};
+                            "{}: SIMD stream minikernel counting sort [{}]",
+
+                            name.view(),
+                            ti))};
             else
                 return std::pair{n, m};
         };
 
         const bool ret = track.dep_check(
             NamedTest(tm.with_ref(g, state.bse_func, v),
-                      fmt::format("[{}] BSE: {}", ti, name.view())),
+                      fmt::format("{}: BSE [{}]", name.view(), ti)),
             get_bve_tests(),
             get_simd_tests());
 
