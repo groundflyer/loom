@@ -158,17 +158,53 @@ struct StandardTestSuite
                 return one;
         };
 
+        auto get_simd_tests = [&]() noexcept
+        {
+            auto n = NamedTest(
+                reset_bve(state.simd_func_N_is),
+                fmt::format("[{}] SIMD function N-order introsort: {}",
+                            ti,
+                            name.view()));
+            auto m = NamedTest(
+                reset_bve(state.simd_func_m_is),
+                fmt::format("[{}] SIMD function minikernel introsort: {}",
+                            ti,
+                            name.view()));
+
+            if constexpr(complex)
+                return std::tuple{
+                    std::move(n),
+                    std::move(m),
+                    NamedTest(
+                        reset_bve(state.simd_stream_N_is_w),
+                        fmt::format("[{}] SIMD stream N-order introsort: {}",
+                                    ti,
+                                    name.view())),
+                    NamedTest(
+                        reset_bve(state.simd_stream_m_is_w),
+                        fmt::format("[{}] SIMD stream minikernel introsort: {}",
+                                    ti,
+                                    name.view())),
+                    NamedTest(reset_bve(state.simd_stream_N_cs_w),
+                              fmt::format(
+                                  "[{}] SIMD stream N-order counting_sort: {}",
+                                  ti,
+                                  name.view())),
+                    NamedTest(
+                        reset_bve(state.simd_stream_m_cs_w),
+                        fmt::format(
+                            "[{}] SIMD stream minikernel counting sort: {}",
+                            ti,
+                            name.view()))};
+            else
+                return std::pair{n, m};
+        };
+
         const bool ret = track.dep_check(
             NamedTest(tm.with_ref(g, state.bse_func, v),
                       fmt::format("[{}] BSE: {}", ti, name.view())),
             get_bve_tests(),
-            std::pair{
-                NamedTest(
-                    reset_bve(state.simd_func_N_is),
-                    fmt::format("[{}] SIMD N-Order: {}", ti, name.view())),
-                NamedTest(
-                    reset_bve(state.simd_func_m_is),
-                    fmt::format("[{}] SIMD Minikernel: {}", ti, name.view()))});
+            get_simd_tests());
 
         return ret;
     }
