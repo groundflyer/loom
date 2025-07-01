@@ -345,8 +345,8 @@ struct GM_Shift
     auto
     operator()(RandomState& rs) const noexcept
     {
-        return [g_0u = gm_0u<T>(rs)]() mutable noexcept
-        { return std::tuple{g_0u(), g_0u()}; };
+        return [g = gm_2_10<T>(rs)]() mutable noexcept
+        { return std::tuple{g(), g()}; };
     }
 };
 
@@ -392,19 +392,51 @@ main(int argc, char* argv[])
                      track,
                      tm,
                      rs);
-    test_suites_types(all_floats{},
-                      type_sequence<StandardTestSuite<simple_union_test,
-                                                      GMCanon,
-                                                      ::fn::val_sut_fn,
-                                                      "simple union">,
-                                    StandardTestSuite<complex_union_test,
-                                                      GMCanon,
-                                                      ::fn::val_cut_fn,
-                                                      "complex union",
-                                                      true>>{},
-                      track,
-                      tm,
-                      rs);
+    test_suites_types(
+        all_floats{},
+        type_sequence<StandardTestSuite<simple_union_test,
+                                        GMCanon,
+                                        ::fn::val_sut_fn,
+                                        "simple union">,
+                      StandardTestSuite<complex_union_test,
+                                        GMCanon,
+                                        ::fn::val_cut_fn,
+                                        "complex union",
+                                        true>,
+                      StandardTestSuite<jmp4_test,
+                                        GM_J4,
+                                        ::fn::val_jmp4_fn,
+                                        "multi-way (4) jump",
+                                        true>,
+                      StandardTestSuite<choice_test,
+                                        GM_J4,
+                                        ::fn::val_choice_fn,
+                                        "choice (conditional move)">>{},
+        track,
+        tm,
+        rs);
+    test_suite_types(all_uints{},
+                     StandardTestSuite<bit_test,
+                                       GM_Bit,
+                                       ::fn::val_bit_fn,
+                                       "bit (and, or, xor, not)",
+                                       true>{},
+                     track,
+                     tm,
+                     rs);
+    test_suites_types(
+        type_sequence<std::uint16_t, std::uint32_t, std::uint64_t>{},
+        type_sequence<StandardTestSuite<lshift_test,
+                                        GM_Shift,
+                                        ::fn::val_lshift_fn,
+                                        "left shift">,
+                      StandardTestSuite<rshift_test,
+                                        GM_Shift,
+                                        ::fn::val_rshift_fn,
+                                        "right shift">>{},
+        track,
+        tm,
+        rs);
 
 #if 0
     auto g_int   = rs.make_gen<int>(2, 10);
