@@ -4,10 +4,10 @@
 
 #pragma once
 
-#include <lang/core.hpp>
-#include <lang/macros.hpp>
-#include <lang/operators.hpp>
 #include <utils/functional.hpp>
+#include <vm/core.hpp>
+#include <vm/macros.hpp>
+#include <vm/operators.hpp>
 
 #include <fmt/core.h>
 

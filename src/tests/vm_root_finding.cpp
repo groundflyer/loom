@@ -2,9 +2,9 @@
 // lang_root_finding.cpp
 #include "root_finding.hpp"
 
-#include <lang/bse.hpp>
 #include <utils/test.hpp>
 #include <utils/typeinfo.hpp>
+#include <vm/bse.hpp>
 
 #include <fmt/core.h>
 

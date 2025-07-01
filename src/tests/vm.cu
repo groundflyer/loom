@@ -16,13 +16,28 @@ isnan(long double)
 
 #include "programs.hpp"
 
-#include <lang/cuda.hpp>
+#include <vm/cuda.hpp>
 #include <utils/test.hpp>
 
 #include <bit>
 
 using namespace lucid;
 using namespace lucid::test;
+
+using incr_int     = increment<int>;
+using fac_int      = factorial_int<int>;
+using fac_unsigned = factorial_int<unsigned>;
+using sut          = simple_union_test<float>;
+using cut          = complex_union_test<float>;
+using jmp4_float   = jmp4_test<float>;
+using choice_float = choice_test<float>;
+using bit_u        = bit_test<unsigned>;
+using lshift_u     = lshift_test<unsigned>;
+using rshift_u     = rshift_test<unsigned>;
+using abs_float    = abs_test<float>;
+using trunc_float  = trunc_test<float>;
+using ceilfloor_f  = ceilfloor<float>;
+using minmax_float = minmax_test<float>;
 
 int
 main(int argc, char* argv[])
@@ -55,7 +70,7 @@ main(int argc, char* argv[])
     {
         cuda::stream<P> stream(stream_size);
         return track.check(
-            NamedTest(tm.rng_with_scalar_ref(g, wrap_stream(stream), val),
+            NamedTest(tm.rng_with_scalar_ref(g, StreamWrapper(&stream), val),
                       name));
     };
 

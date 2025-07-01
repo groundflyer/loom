@@ -4,12 +4,12 @@
 
 #pragma once
 
-#include <lang/core.hpp>
-#include <lang/macros.hpp>
-#include <lang/operators.hpp>
 #include <utils/debug.hpp>
 #include <utils/functional.hpp>
 #include <utils/math.hpp>
+#include <vm/core.hpp>
+#include <vm/macros.hpp>
+#include <vm/operators.hpp>
 
 #include <range/v3/view/subrange.hpp>
 

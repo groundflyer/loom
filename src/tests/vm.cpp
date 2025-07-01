@@ -6,11 +6,11 @@
 
 #include "programs.hpp"
 
-#include <lang/bse.hpp>
-#include <lang/bve.hpp>
-#include <lang/simd.hpp>
 #include <utils/test.hpp>
 #include <utils/typeinfo.hpp>
+#include <vm/bse.hpp>
+#include <vm/bve.hpp>
+#include <vm/simd.hpp>
 
 #include <fmt/format.h>
 
