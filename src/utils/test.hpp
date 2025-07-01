@@ -607,9 +607,9 @@ struct ParmTestMaker
             });
     }
 
-    template <std::invocable G, typename T, typename V>
+    template <std::invocable G, typename T, typename V = std::identity>
     auto
-    rng_invariant(G&& g, T&& t, V&& v) const noexcept
+    rng_invariant(G&& g, T&& t, V&& v = V{}) const noexcept
     {
         return [&]() noexcept
         {
