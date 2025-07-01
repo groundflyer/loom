@@ -215,8 +215,8 @@ if(BUILD_TESTS)
   set(test_srcs
     argparse.cpp
     functional.cpp
-    lang.cpp
-    lang_root_finding.cpp
+    vm.cpp
+    vm_root_finding.cpp
     linal.cpp
     string.cpp
     tmp.cpp
@@ -231,7 +231,7 @@ if(BUILD_TESTS)
   # my system fmtlib linked against stdlibc++, but we use libc++
   # this is temporary workaround
   # header-only fmt
-  set(fmt_ho test_string test_linal test_lang)
+  set(fmt_ho test_string test_linal test_vm)
 
   set(TESTS_SRC_DIR src/tests)
 
@@ -252,15 +252,15 @@ if(BUILD_TESTS)
     add_dependencies(tests ${name})
   endforeach()
 
-  target_compile_definitions(test_lang PUBLIC NUM_THREADS=${STREAMER_NUM_THREADS})
+  target_compile_definitions(test_vm PUBLIC NUM_THREADS=${STREAMER_NUM_THREADS})
 
   if(USE_CUDA)
-    add_executable(test_lang_cuda ${TESTS_SRC_DIR}/lang.cu)
-    target_compile_definitions(test_lang_cuda PUBLIC USE_CUDA FMT_USE_FLOAT128=0)
-    target_link_libraries(test_lang_cuda PRIVATE CUDA::cudart_static fmt::fmt)
-    target_include_directories(test_lang_cuda PUBLIC src)
-    add_dependencies(tests test_lang_cuda)
-    add_test(NAME test_lang_cuda COMMAND test_lang_cuda)
+    add_executable(test_vm_cuda ${TESTS_SRC_DIR}/vm.cu)
+    target_compile_definitions(test_vm_cuda PUBLIC USE_CUDA FMT_USE_FLOAT128=0)
+    target_link_libraries(test_vm_cuda PRIVATE CUDA::cudart_static fmt::fmt)
+    target_include_directories(test_vm_cuda PUBLIC src)
+    add_dependencies(tests test_vm_cuda)
+    add_test(NAME test_vm_cuda COMMAND test_vm_cuda)
   endif()
 
   target_include_directories(test_viewport PUBLIC ${OPENGL_INCLUDE_DIR})
@@ -270,24 +270,24 @@ if(BUILD_TESTS)
   target_link_options(test_argparse PUBLIC -fno-exceptions)
   target_link_libraries(test_threadpool PUBLIC Threads::Threads)
 
-  # target_compile_options(test_lang PUBLIC -save-temps)
-  # target_compile_options(test_lang PUBLIC -fverbose-asm)
-  target_compile_options(test_lang PUBLIC $<$<CONFIG:RelWithDebInfo>:-fsanitize=address>)
-  target_compile_options(test_lang PUBLIC $<$<CONFIG:RelWithDebInfo>:-fsanitize=alignment>)
-  target_link_options(test_lang PUBLIC $<$<CONFIG:RelWithDebInfo>:-fsanitize=address>)
-  target_link_options(test_lang PUBLIC $<$<CONFIG:RelWithDebInfo>:-fsanitize=alignment>)
+  # target_compile_options(test_vm PUBLIC -save-temps)
+  # target_compile_options(test_vm PUBLIC -fverbose-asm)
+  target_compile_options(test_vm PUBLIC $<$<CONFIG:RelWithDebInfo>:-fsanitize=address>)
+  target_compile_options(test_vm PUBLIC $<$<CONFIG:RelWithDebInfo>:-fsanitize=alignment>)
+  target_link_options(test_vm PUBLIC $<$<CONFIG:RelWithDebInfo>:-fsanitize=address>)
+  target_link_options(test_vm PUBLIC $<$<CONFIG:RelWithDebInfo>:-fsanitize=alignment>)
   target_compile_options(test_argparse PUBLIC $<$<CONFIG:RelWithDebInfo>:-fsanitize=address>)
   target_link_options(test_argparse PUBLIC $<$<CONFIG:RelWithDebInfo>:-fsanitize=address>)
   target_compile_options(test_string PUBLIC $<$<CONFIG:RelWithDebInfo>:-fsanitize=address>)
   target_link_options(test_string PUBLIC $<$<CONFIG:RelWithDebInfo>:-fsanitize=address>)
-  # target_compile_options(test_lang_root_finding PUBLIC -save-temps -ftemplate-depth=128)
-  target_compile_definitions(test_lang_root_finding PUBLIC FMT_HEADER_ONLY)
-  target_compile_options(test_lang_root_finding PUBLIC $<$<CONFIG:RelWithDebInfo>:-fsanitize=address>)
-  target_link_options(test_lang_root_finding PUBLIC $<$<CONFIG:RelWithDebInfo>:-fsanitize=address>)
+  # target_compile_options(test_vm_root_finding PUBLIC -save-temps -ftemplate-depth=128)
+  target_compile_definitions(test_vm_root_finding PUBLIC FMT_HEADER_ONLY)
+  target_compile_options(test_vm_root_finding PUBLIC $<$<CONFIG:RelWithDebInfo>:-fsanitize=address>)
+  target_link_options(test_vm_root_finding PUBLIC $<$<CONFIG:RelWithDebInfo>:-fsanitize=address>)
 endif()
 
 if(BUILD_DEBUGGER)
-  add_executable(dbg src/lang/dbg.cpp)
+  add_executable(dbg src/vm/dbg.cpp)
   target_include_directories(dbg PUBLIC src)
   target_link_libraries(dbg PUBLIC fmt::fmt FastFloat::fast_float)
   target_compile_definitions(dbg PUBLIC FMT_HEADER_ONLY)
