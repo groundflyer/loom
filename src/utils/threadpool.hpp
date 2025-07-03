@@ -4,9 +4,12 @@
 
 #pragma once
 
+#include "common.hpp"
 #include "tmp.hpp"
 #include "tuple.hpp"
 
+#include <concepts>
+#include <ranges>
 #include <thread>
 #include <vector>
 
@@ -28,16 +31,19 @@ class thread_pool
     }
 
   public:
-    thread_pool()                   = delete;
-    thread_pool(const thread_pool&) = delete;
-    thread_pool&
-    operator=(const thread_pool&) = delete;
+    FORBID_DEFAULT(thread_pool);
+    FORBID_COPY(thread_pool);
 
-    template <typename Worker, typename... Args>
-    thread_pool(Worker&& worker, Args&&... args) noexcept :
-        m_threads(lucid::uniform_init,
-                  std::forward<Worker>(worker),
-                  std::forward<Args>(args)...)
+    template <typename... Args, std::regular_invocable<Args...> Worker>
+    thread_pool(Worker worker, Args... args) noexcept :
+        m_threads(lucid::uniform_init, worker, args...)
+    {
+    }
+
+    template <std::regular_invocable... Workers>
+        requires(sizeof...(Workers) == N)
+    thread_pool(Workers&&... workers) noexcept :
+        m_threads(std::move(workers)...)
     {
     }
 
@@ -67,18 +73,27 @@ class thread_pool<dynamic_size>
     }
 
   public:
-    thread_pool()                   = delete;
-    thread_pool(const thread_pool&) = delete;
-    thread_pool&
-    operator=(const thread_pool&) = delete;
+    FORBID_DEFAULT(thread_pool);
+    FORBID_COPY(thread_pool);
 
-    template <typename Worker, typename... Args>
-    thread_pool(std::size_t n, Worker&& worker, Args&&... args) noexcept
+    template <typename... Args, std::regular_invocable<Args...> Worker>
+    thread_pool(std::size_t n, Worker worker, Args... args) noexcept
     {
         m_threads.reserve(n);
         for(std::size_t i = 0; i < n; ++i)
-            m_threads.emplace_back(std::forward<Worker>(worker),
-                                   std::forward<Args>(args)...);
+            m_threads.emplace_back(worker, args...);
+    }
+
+    template <std::ranges::input_range Workers, typename... Args>
+        requires(std::regular_invocable<std::ranges::range_value_t<Workers>,
+                                        Args...>)
+    thread_pool(Workers&& workers, Args... args) noexcept
+    {
+        std::ranges::for_each(
+            std::forward<Workers>(workers),
+            [&threads = this->m_threads, args...](auto&& worker)
+            { threads.emplace_back(std::move(worker), args...); });
+        m_threads.shrink_to_fit();
     }
 
     thread_pool(thread_pool&& other) noexcept :
