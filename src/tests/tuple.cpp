@@ -1,5 +1,6 @@
 // -*- C++ -*-
 // tuple.cpp
+#include <utils/common.hpp>
 #include <utils/test.hpp>
 #include <utils/tuple.hpp>
 
@@ -11,6 +12,10 @@ struct A
 {
     int           a;
     unsigned long b;
+
+    FORBID_DEFAULT(A);
+    FORBID_COPY(A);
+
     A(int _a, unsigned long _b) : a(_a), b(_b) {}
     A(A&& other) : a(std::move(other.a)), b(std::move(other.b)) {}
 
@@ -21,17 +26,16 @@ struct A
         b = std::move(other.b);
         return *this;
     }
-
-    A()         = delete;
-    A(const A&) = delete;
-    A&
-    operator=(const A&) = delete;
 };
 
 struct B
 {
     long          a;
     unsigned char b;
+
+    FORBID_DEFAULT(B);
+    FORBID_COPY(B);
+
     B(long _a, unsigned char _b) : a(_a), b(_b) {}
 
     B(B&& other) : a(std::move(other.a)), b(std::move(other.b)) {}
@@ -43,14 +47,21 @@ struct B
         b = std::move(other.b);
         return *this;
     }
-
-    B()         = delete;
-    B(const B&) = delete;
 };
 
 struct C
 {
     explicit C(unsigned& i) noexcept { ++i; }
+};
+
+struct D
+{
+    bool value;
+
+    D(bool v) : value(v) {}
+
+    FORBID_DEFAULT(D);
+    FORBID_COPY(D);
 };
 
 using namespace lucid::test;
@@ -192,6 +203,19 @@ main()
             return a6.a == 5 && a6.b == 6ul && b6.a == 7l && b6.b == 8;
         },
         "unique_tuple structured binding"));
+
+    track.check(NamedTest(
+        []() noexcept
+        {
+            lucid::unique_tuple<D, D> t(false, false);
+            lucid::for_each(
+                t,
+                [](D& e, bool value) noexcept { e.value = value; },
+                true);
+            const auto& [d1, d2] = t;
+            return d1.value && d2.value;
+        },
+        "unique_tuple for_each"));
 
     track.check(NamedTest(
         []() noexcept

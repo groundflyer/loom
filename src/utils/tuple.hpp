@@ -214,19 +214,19 @@ array_cat_impl(const std::array<T, N1>& first,
     return std::array<T, N1 + N2>{array_cat_idx<Is>(first, second)...};
 }
 
-template <typename F, typename Tuple, typename... Args, std::size_t... I>
+template <typename Tuple, typename F, typename... Args, std::size_t... I>
 constexpr void
-for_each_impl(F&&     f,
-              Tuple&& tuple,
-              Args&&... args,
-              std::index_sequence<
-                  I...>) noexcept(std::
-                                      conjunction_v<std::is_nothrow_invocable<
-                                          F,
-                                          std::tuple_element_t<
-                                              I,
-                                              std::remove_cvref_t<Tuple>>,
-                                          std::remove_cvref_t<Args>...>...>)
+for_each_impl(
+    std::index_sequence<I...>,
+    Tuple&& tuple,
+    F&&     f,
+    Args&&... args) noexcept(std::
+                                 conjunction_v<std::is_nothrow_invocable<
+                                     F,
+                                     std::tuple_element_t<
+                                         I,
+                                         std::remove_cvref_t<Tuple>>,
+                                     std::remove_cvref_t<Args>...>...>)
 {
     (...,
      std::invoke(std::forward<F>(f),
@@ -630,13 +630,13 @@ generate(G&& g, Args&&... args) noexcept
     return ret;
 }
 
-#define _FOR_EACH_EXPR               \
-    detail::for_each_impl(           \
-        std::forward<F>(f),          \
-        std::forward<Tuple>(tuple),  \
-        std::forward<Args>(args)..., \
-        std::make_index_sequence<    \
-            std::tuple_size_v<std::remove_cvref_t<Tuple>>>{})
+#define _FOR_EACH_EXPR                                        \
+    detail::for_each_impl(                                    \
+        std::make_index_sequence<                             \
+            std::tuple_size_v<std::remove_cvref_t<Tuple>>>{}, \
+        std::forward<Tuple>(tuple),                           \
+        std::forward<F>(f),                                   \
+        std::forward<Args>(args)...)
 
 #define _ZIP_WITH_FOR_EACH_EXPR                               \
     detail::zip_with_for_each_impl(                           \
@@ -647,7 +647,7 @@ generate(G&& g, Args&&... args) noexcept
         std::forward<Rest>(tuples)...)
 
 /// @brief Invoke @p F on every element of @p tuple.
-template <typename F, typename Tuple, typename... Args>
+template <typename Tuple, typename F, typename... Args>
 constexpr void
 for_each(Tuple&& tuple,
          F&&     f,
