@@ -308,15 +308,15 @@ read_var_mask(Variables vars, R&& words)
 }
 
 void
-print_errc(std::errc ec, std::string_view sv) noexcept
+print_errc(std::errc ec, std::string_view sv, std::FILE* file = stdout) noexcept
 {
     switch(ec)
     {
     case std::errc::invalid_argument:
-        fmt::print("Invalid argument: '{}'. Try again.\n", sv);
+        fmt::print(file, "Invalid argument: '{}'. Try again.\n", sv);
         break;
     case std::errc::result_out_of_range:
-        fmt::print("Result out of range: '{}'. Try again.\n", sv);
+        fmt::print(file, "Result out of range: '{}'. Try again.\n", sv);
     default:
     {
     }
@@ -348,16 +348,35 @@ read_input_vars(InputVars input_vars, std::string_view line)
                                    });
 }
 
+struct VarPrinter
+{
+    template <typename Var>
+    void
+    operator()(std::FILE* file = stdout) const noexcept
+    {
+        fmt::print(file, "{}\n", prettify<Var>{}(true, 0, 0));
+    }
+};
+
+inline constexpr VarPrinter var_printer{};
+
+template <typename Variables>
+constexpr inline typelist::enumerate<Variables> enumerated{};
+
+template <typename Variables>
+void
+print_variables(Variables, std::FILE* file = stdout) noexcept
+{
+    typelist::for_each(enumerated<Variables>, var_printer, file);
+}
+
 template <typename Variables>
 std::bitset<typelist::length<Variables>>
 interactive_get_mask(Variables vars)
 {
-    constexpr typelist::enumerate<Variables> enumerated{};
     fmt::print(
         "[Inspected Variables] Enter numbers or names separated with space:\n");
-    auto printer = []<typename Var>()
-    { fmt::print("{}\n", prettify<Var>{}(true, 0, 0)); };
-    typelist::for_each(enumerated, printer);
+    print_variables(Variables{});
 
     using ret_t = std::bitset<typelist::length<Variables>>;
     ret_t ret;
@@ -378,7 +397,7 @@ interactive_get_mask(Variables vars)
         }
 
     fmt::print("Selected variables:\n");
-    typelist::for_each_masked(enumerated, printer, ret);
+    typelist::for_each_masked(enumerated<Variables>, var_printer, ret);
     ret.reset(0); // guarantee unset CP variable
     return ret;
 }
@@ -413,7 +432,8 @@ interactive_get_inputs(P)
             }
             catch(const SizeEx&)
             {
-                fmt::print("Number of values doesn't match. Try again.\n");
+                fmt::print(stderr,
+                           "Number of values doesn't match. Try again.\n");
                 continue;
             }
             catch(const ReadException& ex)
@@ -725,7 +745,8 @@ template <typename P, typename InputOpt>
 int
 inspect(InputOpt inopt, int argc, char* argv[]) noexcept
 {
-    const auto pr = argparse::parse(
+    constexpr auto vars = typename P::variables{};
+    const auto     pr   = argparse::parse(
         std::tuple{
             inopt,
             argparse::flag<'p', "print">("print program"),
@@ -756,7 +777,7 @@ inspect(InputOpt inopt, int argc, char* argv[]) noexcept
     }
     catch(const ReadException& ex)
     {
-        print_errc(ex.ec, ex.sv);
+        print_errc(ex.ec, ex.sv, stderr);
         return 1;
     }
 
@@ -768,7 +789,7 @@ inspect(InputOpt inopt, int argc, char* argv[]) noexcept
 
     if(pr.template get_opt<'i'>())
     {
-        auto mask       = interactive_get_mask(typename P::variables{});
+        auto mask       = interactive_get_mask(vars);
         auto inputs     = interactive_get_inputs(P{});
         using Inspector = debug_compiler<P, true>::inspector;
         Inspector insp{cw, true, mask};
@@ -777,15 +798,25 @@ inspect(InputOpt inopt, int argc, char* argv[]) noexcept
     else
     {
         using Inspector = debug_compiler<P, false>::inspector;
-        auto mask =
-            read_var_mask(typename P::variables{}, pr.template get_opt<'t'>());
-        if(!mask.any())
+        try
         {
-            mask.set();
-            mask.reset(0);
+            auto mask = read_var_mask(vars, pr.template get_opt<'t'>());
+            if(!mask.any())
+            {
+                mask.set();
+                mask.reset(0);
+            }
+            Inspector insp{ms, cw, true, mask};
+            std::apply(insp, fi);
         }
-        Inspector insp{ms, cw, true, mask};
-        std::apply(insp, fi);
+        catch(const UnknownVar& ex)
+        {
+            fmt::print(stderr, "Unknown variable: {}\n", ex.value);
+            fmt::print(stderr,
+                       "Use variable number or name. Available variables:\n");
+            print_variables(vars, stderr);
+            return 2;
+        }
     }
 
     return 0;
