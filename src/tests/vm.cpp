@@ -327,6 +327,10 @@ using GM_0U = GMIntRange<T, 0, static_cast<T>(-1)>;
 template <std::unsigned_integral T>
 using GM_U3 = GMIntRange<T, 0, 3>;
 
+template <std::unsigned_integral T>
+    requires(::fn::val_fib(T(80)) < std::numeric_limits<T>::max())
+using GM_FIB = GMIntRange<T, 0, 80>;
+
 template <std::floating_point T>
 inline constexpr GMCanon<T> gm_canon{};
 
@@ -420,6 +424,16 @@ main(int argc, char* argv[])
                      track,
                      tm,
                      rs);
+    {
+        StandardTestSuite<fib,
+                          GM_FIB,
+                          ::fn::val_fib_fn,
+                          "fibonacci",
+                          true,
+                          true>
+                      test;
+        test.template operator()<std::uint64_t>(track, tm, rs);
+    }
     test_suites_types(
         all_floats{},
         type_sequence<StandardTestSuite<simple_union_test,

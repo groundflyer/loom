@@ -175,6 +175,25 @@ TBEGIN2(minmax_test, a, b)
     TGT(r, x, n)
 END(IVAR(r));
 
+// fibonacci number
+template <std::unsigned_integral T>
+TBEGIN1(fib, n)
+    TLE(cmp, n, 1),
+    TCHOICE(c, cmp, n, 1),
+    PJMP2(cmp, work, HALT),
+    LABEL(work),
+    TMOV(p, 0),
+    TMOV(c, 1),
+    TMOV(i, 2),
+    LABEL(loop),
+    TADD(t, p, c),
+    TMOV(p, c),
+    TMOV(c, t),
+    TADD(i, i, 1),
+    TLE(cmp, i, n),
+    PJMP2(cmp, HALT, loop)
+TEND1(c);
+
 // clang-format on
 
 // validation programs
@@ -263,6 +282,23 @@ val_rshift(T a, T b) noexcept
 {
     return a >> b;
 }
+
+template <std::unsigned_integral T>
+constexpr T
+val_fib(T n) noexcept
+{
+    if(n <= 1) return n;
+
+    T p = 0, c = 1;
+    for(T i = 2; i <= n; ++i)
+    {
+        T t = p + c;
+        p   = c;
+        c   = t;
+    }
+
+    return c;
+}
 } // namespace fn
 
 MK_NIEBLOID(val_inc);
@@ -274,6 +310,7 @@ MK_NIEBLOID(val_choice);
 MK_NIEBLOID(val_bit);
 MK_NIEBLOID(val_lshift);
 MK_NIEBLOID(val_rshift);
+MK_NIEBLOID(val_fib);
 
 template <typename S>
 class StreamWrapper
