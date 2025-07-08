@@ -6,7 +6,9 @@
 
 #include "bse.hpp"
 #include "core.hpp"
+#include "operators.hpp"
 
+#include <utils/argparse.hpp>
 #include <utils/common.hpp>
 #include <utils/string.hpp>
 #include <utils/typeinfo.hpp>
@@ -19,6 +21,7 @@
 
 #include <algorithm>
 #include <bitset>
+#include <cctype>
 #include <cerrno>
 #include <charconv>
 #include <cstdio>
@@ -717,4 +720,74 @@ class debug_compiler
     using inspector =
         std::conditional_t<interactive, interactive_inspector, fast_inspector>;
 };
+
+template <typename P, typename InputOpt>
+int
+inspect(InputOpt inopt, int argc, char* argv[]) noexcept
+{
+    const auto pr = argparse::parse(
+        std::tuple{
+            inopt,
+            argparse::flag<'p', "print">("print program"),
+            argparse::flag<'i', "interactive">("run interactive"),
+            argparse::option<'w', "column-width">("column width. Default is 20",
+                                                  "N",
+                                                  20u,
+                                                  read_number<unsigned, true>),
+            argparse::option<'s', "max-steps">(
+                "maximum number of steps. Default is 100",
+                "N",
+                100u,
+                read_number<unsigned, true>),
+            argparse::option_list<'t', "track">("variables to track", "vars")},
+        {argc, argv});
+    constexpr P p{};
+
+    unsigned cw = 20;
+    unsigned ms = 100;
+
+    decltype(pr.template get_opt<"input">()) fi;
+
+    try
+    {
+        cw = pr.template get_opt<'w'>();
+        ms = pr.template get_opt<'s'>();
+        fi = pr.template get_opt<"input">();
+    }
+    catch(const ReadException& ex)
+    {
+        print_errc(ex.ec, ex.sv);
+        return 1;
+    }
+
+    if(pr.template get_opt<'p'>())
+    {
+        fmt::print("Program:\n");
+        print_program(p);
+    }
+
+    if(pr.template get_opt<'i'>())
+    {
+        auto mask       = interactive_get_mask(typename P::variables{});
+        auto inputs     = interactive_get_inputs(P{});
+        using Inspector = debug_compiler<P, true>::inspector;
+        Inspector insp{cw, true, mask};
+        std::apply(insp, inputs);
+    }
+    else
+    {
+        using Inspector = debug_compiler<P, false>::inspector;
+        auto mask =
+            read_var_mask(typename P::variables{}, pr.template get_opt<'t'>());
+        if(!mask.any())
+        {
+            mask.set();
+            mask.reset(0);
+        }
+        Inspector insp{ms, cw, true, mask};
+        std::apply(insp, fi);
+    }
+
+    return 0;
+}
 } // namespace lucid::dbg
