@@ -267,11 +267,11 @@ struct UnknownVar
     std::string_view value;
 };
 
-template <typename Variables, std::ranges::input_range R>
-std::bitset<typelist::length<Variables>>
-read_var_mask(Variables vars, R&& words)
+template <typename VariablesTail, std::ranges::input_range R>
+std::bitset<typelist::length<VariablesTail>>
+read_var_mask(VariablesTail vars, R&& words)
 {
-    using ret_t = std::bitset<typelist::length<Variables>>;
+    using ret_t = std::bitset<typelist::length<VariablesTail>>;
     ret_t ret{};
 
     std::ranges::for_each(
@@ -296,7 +296,7 @@ read_var_mask(Variables vars, R&& words)
                     []<typename Var>(ret_t& ret, std::string_view s)
                     {
                         if(s == Var::nameview)
-                            ret.set(typelist::index<Var, Variables>);
+                            ret.set(typelist::index<Var, VariablesTail>);
                     },
                     ret,
                     s);
@@ -360,25 +360,25 @@ struct VarPrinter
 
 inline constexpr VarPrinter var_printer{};
 
-template <typename Variables>
-constexpr inline typelist::enumerate<Variables> enumerated{};
+template <typename VariablesTail>
+constexpr inline typelist::enumerate<VariablesTail> enumerated{};
 
-template <typename Variables>
+template <typename VariablesTail>
 void
-print_variables(Variables, std::FILE* file = stdout) noexcept
+print_variables(VariablesTail, std::FILE* file = stdout) noexcept
 {
-    typelist::for_each(enumerated<Variables>, var_printer, file);
+    typelist::for_each(enumerated<VariablesTail>, var_printer, file);
 }
 
-template <typename Variables>
-std::bitset<typelist::length<Variables>>
-interactive_get_mask(Variables vars)
+template <typename VariablesTail>
+std::bitset<typelist::length<VariablesTail>>
+interactive_get_mask(VariablesTail vars)
 {
-    fmt::print(
-        "[Inspected Variables] Enter numbers or names separated with space:\n");
-    print_variables(Variables{});
+    fmt::print("[Inspected Variables] Enter numbers or names separated with "
+               "space (leave empty to track all variables):\n");
+    print_variables(VariablesTail{});
 
-    using ret_t = std::bitset<typelist::length<Variables>>;
+    using ret_t = std::bitset<typelist::length<VariablesTail>>;
     ret_t ret;
     bool  success = false;
     while(!success) try
@@ -386,10 +386,8 @@ interactive_get_mask(Variables vars)
             std::string line;
             std::getline(std::cin, line);
             ret = read_var_mask(vars, std::views::split(line, ' '));
-            if(ret.any())
-                success = true;
-            else
-                fmt::print("No variables selected. Try again:\n");
+            if(!ret.any()) ret.set();
+            success = true;
         }
         catch(const UnknownVar& ex)
         {
@@ -397,8 +395,7 @@ interactive_get_mask(Variables vars)
         }
 
     fmt::print("Selected variables:\n");
-    typelist::for_each_masked(enumerated<Variables>, var_printer, ret);
-    ret.reset(0); // guarantee unset CP variable
+    typelist::for_each_masked(enumerated<VariablesTail>, var_printer, ret);
     return ret;
 }
 
@@ -500,12 +497,12 @@ print_dash(unsigned cw) noexcept
 };
 
 template <typename _Program, std::size_t N>
-    requires(N == typelist::length<typename _Program::variables>)
+    requires(N == typelist::length<typename _Program::variables> - 1)
 void
 print_header(_Program, const std::bitset<N>& mask, unsigned cw, bool ts)
 {
-    using labels    = _Program::labels;
-    using variables = _Program::variables;
+    using labels = _Program::labels;
+    constexpr typelist::tail<typename _Program::variables> vars{};
 
     // max label width
     constexpr unsigned mlw = max_label_width<labels>;
@@ -513,7 +510,7 @@ print_header(_Program, const std::bitset<N>& mask, unsigned cw, bool ts)
     print_word("CELL", mlw);
 
     typelist::for_each_masked(
-        variables{},
+        vars,
         []<typename Var>(unsigned cw, bool ts)
         { print_word(prettify<Var>{}(ts, 0, 0), cw); },
         mask,
@@ -523,7 +520,7 @@ print_header(_Program, const std::bitset<N>& mask, unsigned cw, bool ts)
     fmt::print("\r\n");
     print_dash(std::max(mlw, 4u));
     typelist::for_each_masked(
-        variables{},
+        vars,
         []<typename Var>(unsigned cw) { print_dash(cw); },
         mask,
         cw);
@@ -545,12 +542,12 @@ get_label_name(_Labels, I i, I halt_pos) noexcept
 }
 
 template <typename _Program, std::size_t N, typename _Mem>
-    requires(N == typelist::length<typename _Program::variables>)
+    requires(N == typelist::length<typename _Program::variables> - 1)
 void
 print_state(_Program, const _Mem& mem, const std::bitset<N>& mask, unsigned cw)
 {
     using labels    = _Program::labels;
-    using variables = _Program::variables;
+    using variables = typelist::tail<typename _Program::variables>;
 
     print_word(get_label_name(labels{}, mem.cp(), _Program::halt_pos),
                max_label_width<labels>);
@@ -636,7 +633,7 @@ class debug_compiler
 
     using compiled_cells = typelist::map<compile_cell, cells>;
     using facade         = bse::MemoryFacade<_Program>;
-    using var_mask       = std::bitset<typelist::length<variables>>;
+    using var_mask       = std::bitset<typelist::length<variables> - 1>;
 
     static constexpr char stop = 'q';
     static constexpr char step = ' ';
@@ -650,7 +647,7 @@ class debug_compiler
         var_mask m_mask;
 
       public:
-        base(unsigned cw, bool ts, var_mask mask = var_mask{-1ull << 1}) :
+        base(unsigned cw, bool ts, var_mask mask = var_mask{-1ull}) :
             m_cw(cw), m_ts(ts), m_mask(mask)
         {
         }
@@ -745,8 +742,10 @@ template <typename P, typename InputOpt>
 int
 inspect(InputOpt inopt, int argc, char* argv[]) noexcept
 {
-    constexpr auto vars = typename P::variables{};
-    const auto     pr   = argparse::parse(
+    // ignore CP
+    constexpr auto vars = typelist::tail<typename P::variables>{};
+
+    const auto pr = argparse::parse(
         std::tuple{
             inopt,
             argparse::flag<'p', "print">("print program"),
@@ -793,7 +792,7 @@ inspect(InputOpt inopt, int argc, char* argv[]) noexcept
         auto inputs     = interactive_get_inputs(P{});
         using Inspector = debug_compiler<P, true>::inspector;
         Inspector insp{cw, true, mask};
-        std::apply(insp, inputs);
+        maybe_apply(insp, inputs);
     }
     else
     {
@@ -807,7 +806,7 @@ inspect(InputOpt inopt, int argc, char* argv[]) noexcept
                 mask.reset(0);
             }
             Inspector insp{ms, cw, true, mask};
-            std::apply(insp, fi);
+            maybe_apply(insp, fi);
         }
         catch(const UnknownVar& ex)
         {
