@@ -162,6 +162,15 @@ class unique_tuple_impl<std::index_sequence<Idxs...>, Ts...> :
     }
 };
 
+template <typename F, typename Tuple, std::size_t... Idxs>
+constexpr auto
+apply_impl(F&& f, Tuple&& t, std::index_sequence<Idxs...>) noexcept(noexcept(
+    std::invoke(std::forward<F>(f), std::get<Idxs>(std::forward<Tuple>(t))...)))
+{
+    return std::invoke(std::forward<F>(f),
+                       std::get<Idxs>(std::forward<Tuple>(t))...);
+}
+
 template <typename Tuple, std::size_t... Ids>
 constexpr auto
 enumerate_impl(const Tuple& tuple, std::index_sequence<Ids...>) noexcept
@@ -513,6 +522,22 @@ class unique_tuple
             .get();
     }
 };
+
+/// @brief Drop-in substitute for std::apply with unique_tuple.
+// WTF???!!! We've defined std::get. std::apply should work with unique_tuple!!!
+template <typename F, typename Tuple>
+constexpr auto
+apply(F&& f, Tuple&& t) noexcept(noexcept(detail::apply_impl(
+    std::forward<F>(f),
+    std::forward<Tuple>(t),
+    std::make_index_sequence<std::tuple_size_v<std::remove_cvref_t<Tuple>>>{})))
+{
+    return detail::apply_impl(
+        std::forward<F>(f),
+        std::forward<Tuple>(t),
+        std::make_index_sequence<
+            std::tuple_size_v<std::remove_cvref_t<Tuple>>>{});
+}
 
 // @brief Apply @p op to every element of @p tuple and return result as a tuple.
 template <template <typename...> typename ResultTuple = std::tuple,
