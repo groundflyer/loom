@@ -1,6 +1,6 @@
 // -*- C++ -*-
-// immovable_vector.hpp
-//
+/// @file immovable_vector.hpp
+/// @brief vector for non copy/move-constructible objects.
 
 #pragma once
 
@@ -12,6 +12,15 @@
 
 namespace lucid
 {
+/// @brief Dynamic size container for non copy/move-constructible objects.
+///
+/// ImmovableVector is capable of holding objects that aren't
+/// default-constructible, copy-constructible, move-constructible,
+/// copy-assignable, move-assignable. As a result it is not resizeable, copyable
+/// or moveable itself.
+///
+/// Containing objects are constructed and initialized in-place only once, in
+/// the constructor.
 template <typename T, typename Allocator = std::allocator<T>>
 class ImmovableVector
 {
@@ -37,6 +46,10 @@ class ImmovableVector
 
     FORBID_ALL(ImmovableVector);
 
+    /// @brief Constructs ImmovableVector.
+    /// @param alloc allocator to use.
+    /// @param size the number of elements to hold.
+    /// @param args arguments passed to the constructors of the elements.
     template <typename... Args>
     ImmovableVector(const Allocator& alloc, size_type size, Args&&... args) :
         m_alloc(alloc), m_size(size)
@@ -47,6 +60,11 @@ class ImmovableVector
             std::construct_at(p_data + i, std::forward<Args>(args)...);
     }
 
+    /// @brief Constructs ImmovableVector.
+    ///
+    /// Allocator is default-constructed.
+    /// @param size the number of elements to hold.
+    /// @param args arguments passed to the constructors of the elements.
     template <typename... Args>
     ImmovableVector(size_type size, Args&&... args) :
         ImmovableVector(Allocator{}, size, std::forward<Args>(args)...)
