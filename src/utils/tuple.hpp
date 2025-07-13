@@ -686,8 +686,8 @@ template <typename F, typename Tuple, typename... Rest>
     requires(... && (std::tuple_size_v<std::remove_cvref_t<Tuple>> ==
                      std::tuple_size_v<std::remove_cvref_t<Rest>>))
 constexpr void
-zip_with_for_each(Tuple&& tuple,
-                  F&&     f,
+zip_with_for_each(F&&     f,
+                  Tuple&& tuple,
                   Rest&&... tuples) noexcept(noexcept(_ZIP_WITH_FOR_EACH_EXPR))
 {
     _ZIP_WITH_FOR_EACH_EXPR;
