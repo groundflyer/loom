@@ -172,6 +172,28 @@ apply_impl(F&& f, Tuple&& t, std::index_sequence<Idxs...>) noexcept(noexcept(
                        std::get<Idxs>(std::forward<Tuple>(t))...);
 }
 
+template <std::size_t I, typename Tuple, typename... Args, typename F>
+constexpr auto
+invoke_elem(F&& f, Tuple&& t, Args&&... args)
+{
+    return std::invoke(std::forward<F>(f),
+                       std::get<I>(std::forward<Tuple>(t)),
+                       std::forward<Args>(args)...);
+}
+
+template <typename R,
+          typename F,
+          typename Tuple,
+          std::size_t... Idxs,
+          typename... Args>
+constexpr R
+map_impl(F&& f, Tuple&& t, std::index_sequence<Idxs...>, Args&&... args)
+{
+    return R{invoke_elem<Idxs>(std::forward<F>(f),
+                               std::forward<Tuple>(t),
+                               std::forward<Args>(args)...)...};
+}
+
 template <typename Tuple, std::size_t... Ids>
 constexpr auto
 enumerate_impl(const Tuple& tuple, std::index_sequence<Ids...>) noexcept
@@ -351,27 +373,35 @@ struct is_invocable_non_void :
 {
 };
 
-template <typename F, typename T>
-struct is_mappable : std::true_type
+template <typename F, typename T, typename... Args>
+struct is_mappable : std::false_type
 {
 };
 
-template <typename F, typename T1, typename T2>
-struct is_mappable<F, std::pair<T1, T2>> :
-    std::bool_constant<is_invocable_non_void<F, T1>::value &&
-                       is_invocable_non_void<F, T2>::value>
+template <typename F, typename T1, typename T2, typename... Args>
+struct is_mappable<F, std::pair<T1, T2>, Args...> :
+    std::bool_constant<is_invocable_non_void<F, T1, Args...>::value &&
+                       is_invocable_non_void<F, T2, Args...>::value>
 {
 };
 
-template <typename F, typename... Ts>
-struct is_mappable<F, std::tuple<Ts...>> :
-    std::bool_constant<std::conjunction_v<is_invocable_non_void<F, Ts>...>>
+template <typename F, typename... Ts, typename... Args>
+struct is_mappable<F, std::tuple<Ts...>, Args...> :
+    std::bool_constant<
+        std::conjunction_v<is_invocable_non_void<F, Ts, Args...>...>>
 {
 };
 
-template <typename F, typename... Ts>
-struct is_mappable<F, unique_tuple<Ts...>> :
-    std::bool_constant<std::conjunction_v<is_invocable_non_void<F, Ts>...>>
+template <typename F, std::size_t N, typename T, typename... Args>
+struct is_mappable<F, std::array<T, N>, Args...> :
+    std::bool_constant<is_invocable_non_void<F, T, Args...>::value>
+{
+};
+
+template <typename F, typename... Ts, typename... Args>
+struct is_mappable<F, unique_tuple<Ts...>, Args...> :
+    std::bool_constant<
+        std::conjunction_v<is_invocable_non_void<F, Ts, Args...>...>>
 {
 };
 
@@ -434,8 +464,8 @@ inline constexpr bool is_maybe_nothrow_applicable_r_v =
     is_nothrow_applicable_r_v<F, R, T> ||
     std::is_nothrow_invocable_r_v<F, R, T>;
 
-template <typename F, typename T>
-inline constexpr bool is_mappable_v = detail::is_mappable<F, T>::value;
+template <typename F, typename T, typename... Args>
+inline constexpr bool is_mappable_v = detail::is_mappable<F, T, Args...>::value;
 
 /// @brief If @p T is tuple checks whether we can use std::apply(F, T) or at
 /// lease F(T).
@@ -446,11 +476,6 @@ concept maybe_applicable = is_applicable_v<F, T> || std::is_invocable_v<F, T>;
 template <typename F, typename R, typename T>
 concept maybe_applicable_r =
     is_applicable_r_v<F, R, T> || std::is_invocable_r_v<F, R, T>;
-
-/// @brief Checks if result types of applying @p F to elements of tuple @p T are
-/// valid.
-template <typename F, typename T>
-concept mappable_tuple = is_mappable_v<F, T>;
 
 /// @brief Tuple class template
 /// for objects that aren't default- or copy-constructible.
@@ -552,10 +577,7 @@ class unique_tuple
 /// @brief Drop-in substitute for std::apply with unique_tuple.
 template <typename F, typename Tuple>
 constexpr auto
-apply(F&& f, Tuple&& t) noexcept(noexcept(detail::apply_impl(
-    std::forward<F>(f),
-    std::forward<Tuple>(t),
-    std::make_index_sequence<std::tuple_size_v<std::remove_cvref_t<Tuple>>>{})))
+apply(F&& f, Tuple&& t)
 {
     if constexpr(detail::use_std_apply<std::remove_cvref_t<Tuple>>::value)
         return std::apply(std::forward<F>(f), std::forward<Tuple>(t));
@@ -570,8 +592,8 @@ apply(F&& f, Tuple&& t) noexcept(noexcept(detail::apply_impl(
 /// @brief Apply @p op to every element of @p tuple and return result as a
 /// tuple.
 template <template <typename...> typename ResultTuple = std::tuple,
-          typename UnaryOp,
-          mappable_tuple<UnaryOp> InputTuple>
+          typename InputTuple,
+          typename UnaryOp>
 constexpr decltype(auto)
 map_tuple(InputTuple&& tuple, UnaryOp&& op)
 {
@@ -582,16 +604,18 @@ map_tuple(InputTuple&& tuple, UnaryOp&& op)
         std::forward<InputTuple>(tuple));
 }
 
-/// @brief Same as map, but @p ResultType doesn't have to be a tuple and the
-/// input tuple @p tuple can be of type unique_tuple.
-template <typename ResultType, typename UnaryOp, mappable_tuple<UnaryOp> Tuple>
-constexpr ResultType
-map_collect(Tuple&& tuple, UnaryOp&& op)
+/// @brief Invoke @p f with every element of tuple @p t and @p args and collect
+/// results.
+template <typename R, typename F, typename... Args, typename Tuple>
+constexpr R
+map_collect(F&& f, Tuple&& t, Args&&... args)
 {
-    return lucid::apply(
-        [op = std::move(op)]<typename... Args>(Args&&... args) -> ResultType
-        { return {std::invoke(op, std::forward<Args>(args))...}; },
-        std::forward<Tuple>(tuple));
+    return detail::map_impl<R>(
+        std::forward<F>(f),
+        std::forward<Tuple>(t),
+        std::make_index_sequence<
+            std::tuple_size_v<std::remove_cvref_t<Tuple>>>{},
+        std::forward<Args>(args)...);
 }
 
 /// @brief Left-assotiative fold of a @p tuple.
