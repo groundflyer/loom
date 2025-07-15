@@ -337,7 +337,7 @@ class StreamWrapper
         };
 
         // set initial data
-        auto [i, _] = p_stream->set_inputs(input);
+        auto i = p_stream->set_inputs(input);
         step();
 
         // feed all the input data

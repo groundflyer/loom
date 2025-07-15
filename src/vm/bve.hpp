@@ -959,13 +959,14 @@ class MemoryFacade : public Sorter
         explicit var_setter(_Memory* _mem) noexcept : mem(_mem) {}
 
         template <typename Var, std::ranges::input_range Rng>
-        auto
+        std::ranges::iterator_t<Rng>
         operator()(Rng&& rng) const noexcept
         {
             decltype(auto) column = mem->template get<Var>();
             return std::ranges::copy_n(std::ranges::begin(rng),
                                        column.size(),
-                                       column.begin());
+                                       column.begin())
+                .in;
         }
 
         template <typename Var, typename Val>
@@ -1013,20 +1014,19 @@ class MemoryFacade : public Sorter
             is_tuple_v<std::ranges::range_value_t<Input>> &&
             std::is_nothrow_convertible_v<std::ranges::range_value_t<Input>,
                                           input_type<_Program>>)
-    auto
+    std::ranges::iterator_t<Input>
     set_inputs(Input&& input) noexcept
     {
-        auto i = std::ranges::begin(input);
-        auto o = std::ranges::for_each(
-            Sorter::mem(),
-            [&i](auto row) noexcept
-            {
-                std::apply([row](const auto... args) noexcept
-                           { set_row_input(row, args...); },
-                           *i++);
-            });
+        std::ranges::iterator_t<Input> i = std::ranges::begin(input);
+        std::ranges::for_each(Sorter::mem(),
+                              [&i](auto row) noexcept
+                              {
+                                  std::apply([row](const auto... args) noexcept
+                                             { set_row_input(row, args...); },
+                                             *i++);
+                              });
 
-        return std::ranges::in_out_result<decltype(i), decltype(o)>{i, o};
+        return i;
     }
 
     template <typename... Args>
