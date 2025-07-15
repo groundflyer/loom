@@ -60,10 +60,10 @@ struct multi_pusher<std::tuple<Ts...>>
     operator()(std::tuple<std::vector<Ts>...>& vs,
                const std::tuple<Ts...>&        grs) const noexcept
     {
-        zip_with_for_each(
-            vs,
-            [](auto& v, const auto& gr) noexcept { v.push_back(gr); },
-            grs);
+        zip_with_for_each([](auto& v, const auto& gr) noexcept
+                          { v.push_back(gr); },
+                          vs,
+                          grs);
     }
 };
 
