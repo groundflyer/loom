@@ -7,6 +7,7 @@
 #include "functional.hpp"
 #include "tmp.hpp"
 
+#include <array>
 #include <concepts>
 #include <tuple>
 #include <variant>
@@ -333,6 +334,11 @@ struct is_tuple<std::tuple<Ts...>> : std::true_type
 {
 };
 
+template <typename T, std::size_t N>
+struct is_tuple<std::array<T, N>> : std::true_type
+{
+};
+
 template <typename... Ts>
 struct is_tuple<unique_tuple<Ts...>> : std::true_type
 {
@@ -366,6 +372,26 @@ struct is_mappable<F, std::tuple<Ts...>> :
 template <typename F, typename... Ts>
 struct is_mappable<F, unique_tuple<Ts...>> :
     std::bool_constant<std::conjunction_v<is_invocable_non_void<F, Ts>...>>
+{
+};
+
+template <typename T>
+struct use_std_apply : std::false_type
+{
+};
+
+template <typename... Ts>
+struct use_std_apply<std::pair<Ts...>> : std::true_type
+{
+};
+
+template <typename... Ts>
+struct use_std_apply<std::tuple<Ts...>> : std::true_type
+{
+};
+
+template <typename T, std::size_t N>
+struct use_std_apply<std::array<T, N>> : std::true_type
 {
 };
 } // namespace detail
@@ -524,7 +550,6 @@ class unique_tuple
 };
 
 /// @brief Drop-in substitute for std::apply with unique_tuple.
-// WTF???!!! We've defined std::get. std::apply should work with unique_tuple!!!
 template <typename F, typename Tuple>
 constexpr auto
 apply(F&& f, Tuple&& t) noexcept(noexcept(detail::apply_impl(
@@ -532,34 +557,51 @@ apply(F&& f, Tuple&& t) noexcept(noexcept(detail::apply_impl(
     std::forward<Tuple>(t),
     std::make_index_sequence<std::tuple_size_v<std::remove_cvref_t<Tuple>>>{})))
 {
-    return detail::apply_impl(
-        std::forward<F>(f),
-        std::forward<Tuple>(t),
-        std::make_index_sequence<
-            std::tuple_size_v<std::remove_cvref_t<Tuple>>>{});
+    if constexpr(detail::use_std_apply<std::remove_cvref_t<Tuple>>::value)
+        return std::apply(std::forward<F>(f), std::forward<Tuple>(t));
+    else
+        return detail::apply_impl(
+            std::forward<F>(f),
+            std::forward<Tuple>(t),
+            std::make_index_sequence<
+                std::tuple_size_v<std::remove_cvref_t<Tuple>>>{});
 }
 
-// @brief Apply @p op to every element of @p tuple and return result as a tuple.
+/// @brief Apply @p op to every element of @p tuple and return result as a
+/// tuple.
 template <template <typename...> typename ResultTuple = std::tuple,
           typename UnaryOp,
           mappable_tuple<UnaryOp> InputTuple>
 constexpr decltype(auto)
 map_tuple(InputTuple&& tuple, UnaryOp&& op)
 {
-    return std::apply([op = std::move(op)]<typename... Ts>(Ts&&... args)
-                          -> ResultTuple<std::invoke_result_t<UnaryOp, Ts>...>
-                      { return {std::invoke(op, std::forward<Ts>(args))...}; },
-                      std::forward<InputTuple>(tuple));
+    return lucid::apply(
+        [op = std::move(op)]<typename... Ts>(
+            Ts&&... args) -> ResultTuple<std::invoke_result_t<UnaryOp, Ts>...>
+        { return {std::invoke(op, std::forward<Ts>(args))...}; },
+        std::forward<InputTuple>(tuple));
+}
+
+/// @brief Same as map, but @p ResultType doesn't have to be a tuple and the
+/// input tuple @p tuple can be of type unique_tuple.
+template <typename ResultType, typename UnaryOp, mappable_tuple<UnaryOp> Tuple>
+constexpr ResultType
+map_collect(Tuple&& tuple, UnaryOp&& op)
+{
+    return lucid::apply(
+        [op = std::move(op)]<typename... Args>(Args&&... args) -> ResultType
+        { return {std::invoke(op, std::forward<Args>(args))...}; },
+        std::forward<Tuple>(tuple));
 }
 
 /// @brief Left-assotiative fold of a @p tuple.
-template <typename BinaryOp, typename T, typename... Ts>
+template <typename BinaryOp, typename Tuple, typename T>
 constexpr decltype(auto)
-fold_tuple(const std::tuple<Ts...>& tuple, BinaryOp&& op, const T& init)
+fold_tuple(const Tuple& tuple, BinaryOp&& op, const T& init)
 {
-    return std::apply([&](const Ts&... args)
-                      { return fold(op, init, args...); },
-                      tuple);
+    return lucid::apply([&](const auto&... args)
+                        { return fold(op, init, args...); },
+                        tuple);
 }
 
 /// @brief Left-assotiative fold of a non-empty @p tuple.
@@ -567,8 +609,8 @@ template <typename BinaryOp, typename Tuple>
 constexpr decltype(auto)
 fold_tuple(const Tuple& tuple, BinaryOp&& op)
 {
-    return std::apply([&](const auto&... args) { return fold(op, args...); },
-                      tuple);
+    return lucid::apply([&](const auto&... args) { return fold(op, args...); },
+                        tuple);
 }
 
 /// @brief Make tuple of pairs (i, elem).
@@ -703,7 +745,7 @@ constexpr decltype(auto)
 maybe_apply(F&& f, MaybeTuple&& mt)
 {
     if constexpr(is_applicable_v<F, std::remove_cvref_t<MaybeTuple>>)
-        return std::apply(std::forward<F>(f), std::forward<MaybeTuple>(mt));
+        return lucid::apply(std::forward<F>(f), std::forward<MaybeTuple>(mt));
     else
         return std::invoke(std::forward<F>(f), std::forward<MaybeTuple>(mt));
 }
