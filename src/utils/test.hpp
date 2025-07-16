@@ -68,31 +68,33 @@ struct multi_pusher<std::tuple<Ts...>>
 };
 
 template <typename T>
-struct total_counter_helper
+struct total_counter_helper : std::integral_constant<std::size_t, 1>
 {
-    static constexpr std::size_t value = 1;
 };
 
 template <typename... Ts>
-struct total_counter_helper<std::tuple<Ts...>>
+struct total_counter_helper<std::tuple<Ts...>> :
+    std::integral_constant<
+        std::size_t,
+        (... + total_counter_helper<std::remove_cvref_t<Ts>>::value)>
 {
-    static constexpr std::size_t value =
-        (... + total_counter_helper<std::remove_cvref_t<Ts>>::value);
 };
 
 template <typename T1, typename T2>
-struct total_counter_helper<std::pair<T1, T2>>
-{
-    static constexpr std::size_t value =
+struct total_counter_helper<std::pair<T1, T2>> :
+    std::integral_constant<
+        std::size_t,
         total_counter_helper<std::remove_cvref_t<T1>>::value +
-        total_counter_helper<std::remove_cvref_t<T2>>::value;
+            total_counter_helper<std::remove_cvref_t<T2>>::value>
+{
 };
 
 template <typename... Ts>
-struct total_counter_helper<unique_tuple<Ts...>>
+struct total_counter_helper<unique_tuple<Ts...>> :
+    std::integral_constant<
+        std::size_t,
+        (... + total_counter_helper<std::remove_cvref_t<Ts>>::value)>
 {
-    static constexpr std::size_t value =
-        (... + total_counter_helper<std::remove_cvref_t<Ts>>::value);
 };
 
 template <typename T>
