@@ -217,6 +217,7 @@ if(BUILD_TESTS)
     functional.cpp
     vm.cpp
     vm_root_finding.cpp
+    vm_mp.cpp
     linal.cpp
     string.cpp
     tmp.cpp
@@ -231,7 +232,7 @@ if(BUILD_TESTS)
   # my system fmtlib linked against stdlibc++, but we use libc++
   # this is temporary workaround
   # header-only fmt
-  set(fmt_ho test_string test_linal test_vm)
+  set(fmt_ho test_string test_linal test_vm test_vm_mp)
 
   set(TESTS_SRC_DIR src/tests)
 
@@ -252,7 +253,7 @@ if(BUILD_TESTS)
     add_dependencies(tests ${name})
   endforeach()
 
-  target_compile_definitions(test_vm PUBLIC NUM_THREADS=${STREAMER_NUM_THREADS})
+  target_compile_definitions(test_vm_mp PUBLIC NUM_THREADS=${STREAMER_NUM_THREADS})
 
   if(USE_CUDA)
     add_executable(test_vm_cuda ${TESTS_SRC_DIR}/vm.cu)
