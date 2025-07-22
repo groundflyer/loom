@@ -25,7 +25,7 @@ namespace lucid::mp
 namespace detail
 {
 template <std::ranges::input_range Input>
-std::pair<std::ranges::iterator_t<Input>, std::ranges::iterator_t<Input>>
+auto
 make_input_pair(Input&& input) noexcept
 {
     return std::pair{std::ranges::begin(input), std::ranges::end(input)};
@@ -93,12 +93,7 @@ struct Worker
 };
 
 template <std::ranges::input_range... Inputs>
-using input_collection =
-    std::tuple<std::pair<std::ranges::iterator_t<Inputs>,
-                         std::ranges::iterator_t<Inputs>>...>;
-
-template <std::ranges::input_range... Inputs>
-input_collection<Inputs...>
+auto
 make_input_collection(Inputs&&... inputs) noexcept
 {
     return std::tuple{detail::make_input_pair(std::forward<Inputs>(inputs))...};
@@ -129,14 +124,14 @@ class ShopBase
     {
     }
 
-    template <std::invocable<bench_t&> F>
+    template <typename F>
     void
     visit(F&& f)
     {
         lucid::for_each(m_benches, std::forward<F>(f));
     }
 
-    template <std::invocable<bench_t&> F>
+    template <typename F>
     void
     visit(F&& f) const
     {
@@ -169,14 +164,14 @@ class ShopBase<_Ps, _Context, dynamic_size>
         ASSERT(_num_workers != 0, "make more workers");
     }
 
-    template <std::invocable<bench_t&> F>
+    template <typename F>
     void
     visit(F&& f)
     {
         std::ranges::for_each(m_benches, std::forward<F>(f));
     }
 
-    template <std::invocable<bench_t&> F>
+    template <typename F>
     void
     visit(F&& f) const
     {
@@ -204,11 +199,10 @@ class Shop : public ShopBase<_Ps, _Context, N>
 
     template <std::ranges::input_range... Inputs>
         requires(sizeof...(Inputs) == typelist::length<_Ps>)
-    [[nodiscard]] input_collection<Inputs...>
+    [[nodiscard]] auto
     bind_inputs(Inputs&&... inputs)
     {
-        input_collection<Inputs...> ret =
-            make_input_collection(std::forward<Inputs>(inputs)...);
+        auto ret = make_input_collection(std::forward<Inputs>(inputs)...);
         base::visit(
             [&ret](auto& bench) noexcept
             {
@@ -239,8 +233,14 @@ class Shop : public ShopBase<_Ps, _Context, N>
                             auto& [ib, ie] = in;
                             auto exs =
                                 ctx.stream.exchange(ranges::subrange(ib, ie));
-                            ib += std::ranges::size(exs);
-                            out = std::ranges::copy(exs, out).out;
+                            std::ranges::for_each(
+                                exs,
+                                [&ib, &out](const auto& ex) noexcept
+                                {
+                                    out = ex;
+                                    ++out;
+                                    ++ib;
+                                });
                             ctx.lock.unlock();
                         }
                     },
