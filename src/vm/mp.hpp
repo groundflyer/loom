@@ -31,6 +31,13 @@ make_input_pair(Input&& input) noexcept
     return std::pair{std::ranges::begin(input), std::ranges::end(input)};
 }
 
+template <typename InputCollection, std::size_t... Idxs>
+bool
+is_complete_impl(std::index_sequence<Idxs...>,
+                 const InputCollection& ic) noexcept
+{
+    return (... && (std::get<Idxs>(ic).first == std::get<Idxs>(ic).second));
+}
 } // namespace detail
 
 #ifdef NUM_THREADS
@@ -106,9 +113,16 @@ make_output_collection(Containers&... containers) noexcept
     return std::tuple{std::back_inserter(containers)...};
 }
 
-template <typename _Ps,
-          template <typename> typename _Context,
-          std::size_t N = num_workers>
+template <typename InputCollection>
+bool
+is_complete(const InputCollection& ic) noexcept
+{
+    return detail::is_complete_impl(
+        std::make_index_sequence<std::tuple_size_v<InputCollection>>{},
+        ic);
+}
+
+template <typename _Ps, template <typename> typename _Context, std::size_t N>
     requires(N != 0)
 class ShopBase
 {
@@ -187,7 +201,9 @@ class ShopBase<_Ps, _Context, dynamic_size>
     }
 };
 
-template <typename _Ps, template <typename> typename _Context, std::size_t N>
+template <typename _Ps,
+          template <typename> typename _Context,
+          std::size_t N = num_workers>
 class Shop : public ShopBase<_Ps, _Context, N>
 {
     using base = ShopBase<_Ps, _Context, N>;
