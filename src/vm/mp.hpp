@@ -15,6 +15,7 @@
 #include <range/v3/view/subrange.hpp>
 
 #include <algorithm>
+#include <atomic>
 #include <bitset>
 #include <mutex>
 #include <ranges>
@@ -54,11 +55,31 @@ struct Context
     StreamCompiler<_Program> stream;
     Lock                     lock;
     bool                     exchanged = false;
-    bool                     done      = false;
 
     FORBID_ALL(Context);
 
     Context(unsigned n) noexcept : stream(n) {}
+};
+
+class Signal
+{
+    std::atomic_flag m_flag{};
+
+  public:
+    Signal() noexcept = default;
+    FORBID_COPY(Signal);
+    FORBID_MOVE(Signal);
+
+    operator bool() const noexcept
+    {
+        return m_flag.test(std::memory_order_relaxed);
+    }
+
+    bool
+    set() noexcept
+    {
+        return m_flag.test_and_set(std::memory_order_relaxed);
+    }
 };
 
 template <typename Bench>
@@ -66,7 +87,8 @@ struct Worker
 {
     using types = typelist::from<Bench>;
 
-    Bench* const bench;
+    Bench* const  bench;
+    Signal* const signal;
 
     void
     operator()() const noexcept
@@ -74,28 +96,28 @@ struct Worker
         std::bitset<typelist::length<types>> done_flags;
 
         while(!done_flags.all())
-            lucid::for_each(*bench,
-                            [&done_flags]<typename C>(C& context) noexcept
-                            {
-                                if(context.lock.try_lock())
-                                {
-                                    if(context.done)
-                                    {
-                                        done_flags.set(
-                                            typelist::index<C, types>);
-                                        // don't ulock the context - we don't
-                                        // need it anymore
-                                        // context.lock.unlock();
-                                        return;
-                                    }
+            lucid::for_each(
+                *bench,
+                [&done_flags, signal = signal]<typename C>(C& ctx) noexcept
+                {
+                    if(ctx.lock.try_lock())
+                    {
+                        if(*signal && ctx.stream.done())
+                        {
+                            done_flags.set(typelist::index<C, types>);
+                            // don't ulock the context - we don't
+                            // need it anymore
+                            // ctx.lock.unlock();
+                            return;
+                        }
 
-                                    if(context.exchanged) context.stream.sort();
+                        if(ctx.exchanged) ctx.stream.sort();
 
-                                    context.stream();
-                                    context.stream.sort();
-                                    context.lock.unlock();
-                                }
-                            });
+                        ctx.stream();
+                        ctx.stream.sort();
+                        ctx.lock.unlock();
+                    }
+                });
     }
 };
 
@@ -129,6 +151,7 @@ class ShopBase
     using bench_t   = typelist::to<typelist::map<_Context, _Ps>, unique_tuple>;
     using benches_t = typelist::to<typelist::repeat<N, bench_t>, unique_tuple>;
     benches_t m_benches;
+    Signal    m_signal;
 
   public:
     FORBID_ALL(ShopBase);
@@ -155,9 +178,16 @@ class ShopBase
     [[nodiscard]] thread_pool<N>
     get_thread_pool() noexcept
     {
-        return map_collect<thread_pool<N>>([]<typename Bench>(Bench& b) noexcept
-                                           { return Worker<Bench>{&b}; },
-                                           m_benches);
+        return map_collect<thread_pool<N>>(
+            [s = &m_signal]<typename Bench>(Bench& b) noexcept
+            { return Worker<Bench>{&b, s}; },
+            m_benches);
+    }
+
+    bool
+    set_signal() noexcept
+    {
+        return m_signal.set();
     }
 };
 
@@ -168,6 +198,7 @@ class ShopBase<_Ps, _Context, dynamic_size>
     using benches_t = ImmovableVector<bench_t>;
 
     benches_t m_benches;
+    Signal    m_signal;
 
   public:
     FORBID_ALL(ShopBase);
@@ -196,8 +227,14 @@ class ShopBase<_Ps, _Context, dynamic_size>
     get_thread_pool() noexcept
     {
         return {std::views::transform(m_benches,
-                                      []<typename W>(W& w) noexcept
-                                      { return Worker<W>{&w}; })};
+                                      [s = &m_signal]<typename W>(W& w) noexcept
+                                      { return Worker<W>{&w, s}; })};
+    }
+
+    bool
+    set_signal() noexcept
+    {
+        return m_signal.set();
     }
 };
 

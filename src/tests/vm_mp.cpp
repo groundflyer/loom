@@ -110,6 +110,7 @@ main(int argc, char* argv[])
         {
             auto tp = shop.get_thread_pool();
             while(!mp::is_complete(ic)) shop.exchange(ic, oc);
+            shop.set_signal();
         }
         shop.finalize(oc);
         sort_outs();
