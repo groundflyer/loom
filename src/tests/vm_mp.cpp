@@ -67,7 +67,7 @@ main(int argc, char* argv[])
 {
     Track          track;
     RandomState    rs;
-    const unsigned num_runs = parse_numruns<100000>(argc, argv);
+    const unsigned num_runs = parse_numruns<1000000>(argc, argv);
 
     auto g_fac = GM_2_10<std::uint64_t>{}(rs);
     auto g_fib = GM_FIB<std::uint64_t>{}(rs);
@@ -110,7 +110,7 @@ main(int argc, char* argv[])
         {
             auto tp = shop.get_thread_pool();
             while(!mp::is_complete(ic)) shop.exchange(ic, oc);
-            shop.set_signal();
+            shop.set();
         }
         shop.finalize(oc);
         sort_outs();

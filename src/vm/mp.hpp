@@ -146,12 +146,11 @@ is_complete(const InputCollection& ic) noexcept
 
 template <typename _Ps, template <typename> typename _Context, std::size_t N>
     requires(N != 0)
-class ShopBase
+class ShopBase : public Signal
 {
     using bench_t   = typelist::to<typelist::map<_Context, _Ps>, unique_tuple>;
     using benches_t = typelist::to<typelist::repeat<N, bench_t>, unique_tuple>;
     benches_t m_benches;
-    Signal    m_signal;
 
   public:
     FORBID_ALL(ShopBase);
@@ -179,26 +178,19 @@ class ShopBase
     get_thread_pool() noexcept
     {
         return map_collect<thread_pool<N>>(
-            [s = &m_signal]<typename Bench>(Bench& b) noexcept
+            [s = static_cast<Signal*>(this)]<typename Bench>(Bench& b) noexcept
             { return Worker<Bench>{&b, s}; },
             m_benches);
-    }
-
-    bool
-    set_signal() noexcept
-    {
-        return m_signal.set();
     }
 };
 
 template <typename _Ps, template <typename> typename _Context>
-class ShopBase<_Ps, _Context, dynamic_size>
+class ShopBase<_Ps, _Context, dynamic_size> : public Signal
 {
     using bench_t   = typelist::to<typelist::map<_Context, _Ps>, unique_tuple>;
     using benches_t = ImmovableVector<bench_t>;
 
     benches_t m_benches;
-    Signal    m_signal;
 
   public:
     FORBID_ALL(ShopBase);
@@ -226,15 +218,10 @@ class ShopBase<_Ps, _Context, dynamic_size>
     [[nodiscard]] thread_pool<dynamic_size>
     get_thread_pool() noexcept
     {
-        return {std::views::transform(m_benches,
-                                      [s = &m_signal]<typename W>(W& w) noexcept
-                                      { return Worker<W>{&w, s}; })};
-    }
-
-    bool
-    set_signal() noexcept
-    {
-        return m_signal.set();
+        return {std::views::transform(
+            m_benches,
+            [s = static_cast<Signal*>(this)]<typename W>(W& w) noexcept
+            { return Worker<W>{&w, s}; })};
     }
 };
 
