@@ -1,6 +1,6 @@
 // -*- C++ -*-
 /// @file simd.hpp
-/// SIMD backend.
+/// @brief SIMD backend.
 
 #pragma once
 

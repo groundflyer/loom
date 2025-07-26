@@ -1,6 +1,6 @@
 // -*- C++ -*-
-// cuda.hpp
-//
+/// @file cuda.hpp
+/// @brief CUDA backend.
 
 #ifndef __CUDA__
 #error "This header requires CUDA"

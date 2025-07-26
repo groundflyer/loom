@@ -1,6 +1,6 @@
 // -*- C++ -*-
 /// @file threadpool.hpp
-/// Basic thread pool.
+/// @brief Basic thread pool.
 
 #pragma once
 

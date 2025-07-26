@@ -1,9 +1,6 @@
 // -*- C++ -*-
-// math.hpp
-//
-
 /// @file
-/// Mathematical functions.
+/// @brief Mathematical functions.
 
 #pragma once
 

@@ -1,6 +1,6 @@
 // -*- C++ -*-
 /// @file logging.hpp
-/// Logging facilities.
+/// @brief Logging facilities.
 
 #pragma once
 

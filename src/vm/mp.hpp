@@ -1,6 +1,6 @@
 // -*- C++ -*-
-// mp.hpp
-//
+/// @file mp.hpp
+/// @brief Multi-processor evaluation.
 
 #pragma once
 
