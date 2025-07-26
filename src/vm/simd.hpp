@@ -18,11 +18,11 @@
 #include <memory>
 
 #if defined(__clang__)
-#define _SHUFFLE  __builtin_shufflevector
-#define _FN_ATTRS __attribute__((always_inline, nodebug))
+#define _SHUFFLE      __builtin_shufflevector
+#define _FORCE_INLINE __attribute__((always_inline, nodebug))
 #elif defined(__GNUG__)
 #define _SHUFFLE __builtin_shuffle
-#define _FN_ATTRS
+#define _FORCE_INLINE
 #endif
 
 namespace lucid::simd
@@ -129,7 +129,7 @@ constexpr inline fsize_t native_instruction_width_v =
 /// @brief Load @p N values and pack them into vector of width @p N
 /// from aligned memory location @p src.
 template <fsize_t N, typename T>
-packed_vector<T, N> _FN_ATTRS
+packed_vector<T, N> _FORCE_INLINE
 load(const T* p) noexcept
 {
     return *(packed_vector<T, N>*)p;
@@ -137,7 +137,7 @@ load(const T* p) noexcept
 
 /// @brief Store values from packed vector into aligned memory location @p dst.
 template <fsize_t N, typename T>
-void _FN_ATTRS
+void _FORCE_INLINE
 store(T* dst, packed_vector<T, N> src) noexcept
 {
     *(packed_vector<T, N>*)dst = src;
@@ -159,7 +159,7 @@ struct remap_comp<N, std::identity, Dst, Src>
 {
     struct type
     {
-        constexpr packed_vector<Dst, N>
+        constexpr packed_vector<Dst, N> _FORCE_INLINE
         operator()(const packed_vector<Src, N> src) const noexcept
         {
             if constexpr(std::is_same_v<Dst, Src>)
@@ -175,7 +175,7 @@ struct remap_comp<N, ops::choice, T, I, T, T>
 {
     struct type
     {
-        constexpr packed_vector<T, N>
+        constexpr packed_vector<T, N> _FORCE_INLINE
         operator()(const packed_vector<I, N> c,
                    const packed_vector<T, N> a,
                    const packed_vector<T, N> b) const noexcept
@@ -190,7 +190,7 @@ struct remap_comp<N, ops::fma, T, T, T, T>
 {
     struct type
     {
-        constexpr packed_vector<T, N>
+        constexpr packed_vector<T, N> _FORCE_INLINE
         operator()(const packed_vector<T, N> x,
                    const packed_vector<T, N> y,
                    const packed_vector<T, N> z) const noexcept
@@ -206,7 +206,7 @@ struct remap_comp<N, ops::fma, T, T, T, T>
     {                                                              \
         struct type                                                \
         {                                                          \
-            constexpr packed_vector<R, N>                          \
+            constexpr packed_vector<R, N> _FORCE_INLINE            \
             operator()(const packed_vector<T, N> a,                \
                        const packed_vector<T, N> b) const noexcept \
             {                                                      \
@@ -221,7 +221,7 @@ struct remap_comp<N, ops::fma, T, T, T, T>
     {                                                              \
         struct type                                                \
         {                                                          \
-            constexpr packed_vector<R, N>                          \
+            constexpr packed_vector<R, N> _FORCE_INLINE            \
             operator()(const packed_vector<T, N> a) const noexcept \
             {                                                      \
                 return OP a;                                       \
@@ -235,7 +235,7 @@ struct remap_comp<N, ops::fma, T, T, T, T>
     {                                                              \
         struct type                                                \
         {                                                          \
-            constexpr packed_vector<T, N>                          \
+            constexpr packed_vector<T, N> _FORCE_INLINE            \
             operator()(const packed_vector<T, N> a,                \
                        const packed_vector<T, N> b) const noexcept \
             {                                                      \
@@ -250,7 +250,7 @@ struct remap_comp<N, ops::fma, T, T, T, T>
     {                                                              \
         struct type                                                \
         {                                                          \
-            constexpr packed_vector<T, N>                          \
+            constexpr packed_vector<T, N> _FORCE_INLINE            \
             operator()(const packed_vector<T, N> a) const noexcept \
             {                                                      \
                 return NEW(a);                                     \
@@ -397,7 +397,7 @@ class eval<Jump<Target>, LabelMap, N>
 
   public:
     template <typename _Memory>
-    void
+    void _FORCE_INLINE
     operator()(_Memory&& mem) const noexcept
     {
         if constexpr(pv_extent<std::remove_cvref_t<_Memory>> == N)
@@ -422,7 +422,7 @@ class eval<Compute<Op, Dst, Args...>, LabelMap, N>
     static constexpr loader_t loader{};
 
     template <typename _Memory>
-    packed_vector<T, N>
+    packed_vector<T, N> _FORCE_INLINE
     compute(_Memory&& mem) const noexcept
     {
         auto vars = typelist::maybe_collect(type_sequence<Args...>{},
@@ -433,7 +433,7 @@ class eval<Compute<Op, Dst, Args...>, LabelMap, N>
 
   public:
     template <typename _Memory>
-    void
+    void _FORCE_INLINE
     operator()(_Memory&& mem) const noexcept
     {
         if constexpr(pv_extent<std::remove_cvref_t<_Memory>> == N)
@@ -456,7 +456,7 @@ struct shuffler<std::integer_sequence<index_t, a, b>, N>
     static constexpr IdxVec va = broadcast<N>(a);
     static constexpr IdxVec vb = broadcast<N>(b);
 
-    IdxVec
+    IdxVec _FORCE_INLINE
     operator()(IdxVec var) const noexcept
     {
         return var ? vb : va;
@@ -470,7 +470,7 @@ struct shuffler<std::integer_sequence<index_t, is...>, N>
     using IdxVec                  = packed_vector<index_t, N>;
     static constexpr IdxVec table = {is...};
 
-    IdxVec
+    IdxVec _FORCE_INLINE
     operator()(IdxVec var) const noexcept
     {
         return _SHUFFLE(table, var);
@@ -486,7 +486,7 @@ class eval<ParmJump<Var, Labels>, LabelMap, N>
 
   public:
     template <typename _Memory>
-    void
+    void _FORCE_INLINE
     operator()(_Memory&& mem) const noexcept
     {
         if constexpr(pv_extent<std::remove_cvref_t<_Memory>> == N)
@@ -655,7 +655,7 @@ class make_runner<STITCH::MINIKERNEL, Cell, LabelMap, CPVar>
         static constexpr Kernel kernel{};
 
         template <typename _ProxyRow>
-        static Storage
+        static Storage _FORCE_INLINE
         alloc(_ProxyRow row) noexcept
         {
             Storage storage;
@@ -669,7 +669,7 @@ class make_runner<STITCH::MINIKERNEL, Cell, LabelMap, CPVar>
         }
 
         template <typename _ProxyRow>
-        static void
+        static void _FORCE_INLINE
         spill(_ProxyRow row, Storage& storage) noexcept
         {
             typelist::for_each(
@@ -682,7 +682,7 @@ class make_runner<STITCH::MINIKERNEL, Cell, LabelMap, CPVar>
 
       public:
         template <typename _ProxyRow>
-        void
+        void _FORCE_INLINE
         operator()(_ProxyRow row) const noexcept
         {
             Storage storage = alloc(row);
@@ -703,7 +703,7 @@ class make_runner<STITCH::MINIKERNEL, Cell, LabelMap, CPVar>
 
         template <typename _MemoryView>
             requires(pv_extent<_MemoryView> == N)
-        static Storage
+        static Storage _FORCE_INLINE
         alloc(_MemoryView view) noexcept
         {
             Storage storage;
@@ -721,7 +721,7 @@ class make_runner<STITCH::MINIKERNEL, Cell, LabelMap, CPVar>
 
         template <typename _MemoryView>
             requires(pv_extent<_MemoryView> == N)
-        static void
+        static void _FORCE_INLINE
         spill(_MemoryView view, Storage& storage) noexcept
         {
             typelist::for_each(
@@ -738,7 +738,7 @@ class make_runner<STITCH::MINIKERNEL, Cell, LabelMap, CPVar>
       public:
         template <typename _MemoryView>
             requires(pv_extent<_MemoryView> == N)
-        void
+        void _FORCE_INLINE
         operator()(_MemoryView view) const noexcept
         {
             Storage storage = alloc(view);
