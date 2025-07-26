@@ -9,6 +9,7 @@
 #include <utils/common.hpp>
 #include <utils/debug.hpp>
 #include <utils/immovable_vector.hpp>
+#include <utils/memory.hpp>
 #include <utils/threadpool.hpp>
 #include <utils/tuple.hpp>
 
@@ -45,12 +46,6 @@ is_complete_impl(std::index_sequence<Idxs...>,
 constexpr inline std::size_t num_workers = NUM_THREADS;
 #else
 constexpr inline std::size_t num_workers = dynamic_size;
-#endif
-
-#ifdef CACHE_LINE_SIZE
-constexpr inline std::size_t cache_line_size = CACHE_LINE_SIZE;
-#else
-constexpr inline std::size_t cache_line_size = 64;
 #endif
 
 template <typename _Program,
