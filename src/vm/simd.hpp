@@ -597,8 +597,8 @@ class BulkDispatcher
 /// @brief Methods of succession of SIMD instructions.
 enum STITCH
 {
-    N_ORDER,   /*! column-wise execution */
-    MINIKERNEL /*! minikernels execution */
+    N_ORDER,   /*!< column-wise execution */
+    MINIKERNEL /*!< minikernels execution */
 };
 
 /// @brief Executes a single instruction @p I through the whole view.

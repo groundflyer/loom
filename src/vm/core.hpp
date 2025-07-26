@@ -1,6 +1,6 @@
 // -*- C++ -*-
-// lang.hpp
-//
+/// @file core.hpp
+/// @brief Foundation of the virtual machine
 
 #pragma once
 
@@ -213,6 +213,7 @@ struct collect<Name, VarTypes, type_sequence<Var, Vars...>>
                 type_sequence<Vars...>>::type;
 };
 
+/// @brief Select unique types of register @p Name from variables @p Vars.
 template <typename Name, typename Vars>
 class collect_types
 {
@@ -876,14 +877,14 @@ struct Program
                            ensure_last_jumps_t<cells_statements, labels>>;
 };
 
-/// @brief Helper meta-function to obtain type of input.
+/// @brief The type accepted to input for the program @p P.
 /// @tparam P program.
 template <typename P>
 using input_type =
     typelist::maybe_to<typelist::map<vartype, typename P::input_vars>,
                        std::tuple>;
 
-/// @brief Helper meta-function to obtain type of output.
+/// @brief The resulting type of the program @p P.
 /// @tparam P program.
 template <typename P>
 using output_type =
