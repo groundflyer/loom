@@ -47,6 +47,12 @@ constexpr inline std::size_t num_workers = NUM_THREADS;
 constexpr inline std::size_t num_workers = dynamic_size;
 #endif
 
+#ifdef CACHE_LINE_SIZE
+constexpr inline std::size_t cache_line_size = CACHE_LINE_SIZE;
+#else
+constexpr inline std::size_t cache_line_size = 64;
+#endif
+
 template <typename _Program,
           template <typename> typename StreamCompiler,
           typename Lock = std::mutex>
@@ -61,9 +67,13 @@ struct Context
     Context(unsigned n) noexcept : stream(n) {}
 };
 
-class Signal
+class alignas(cache_line_size) Signal
 {
-    std::atomic_flag m_flag{};
+    union
+    {
+        std::atomic_flag m_flag{};
+        std::uint8_t     __padding[cache_line_size];
+    };
 
   public:
     Signal() noexcept = default;
