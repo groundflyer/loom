@@ -12,7 +12,6 @@
 
 #include <range/v3/numeric/accumulate.hpp>
 #include <range/v3/view/generate_n.hpp>
-#include <range/v3/view/zip.hpp>
 
 #include <fmt/color.h>
 
@@ -812,35 +811,39 @@ struct transparent_id
     }
 };
 
+template <typename Cmp = std::equal_to<>>
 struct transparent_cmp
 {
+    static constexpr Cmp cmp{};
+
     template <typename T>
     bool
     operator()(const T& a, const T& b) const noexcept
     {
-        bool eq = a == b;
-        fmt::print("{:>8} {}= {:>8}\n", a, eq ? '=' : '!', b);
-        return eq;
+        const bool r = cmp(a, b);
+        fmt::print("{:>8} {}= {:>8}\n", a, r ? '=' : '!', b);
+        return r;
     }
 };
 
+template <typename Cmp = std::equal_to<>>
 struct transparent_range_cmp
 {
+    static constexpr Cmp cmp{};
+
     template <std::ranges::range A, std::ranges::range B>
     bool
     operator()(A&& a, B&& b) const noexcept
     {
-        bool ret = true;
-        std::ranges::for_each(
-            ranges::views::zip(std::forward<A>(a), std::forward<B>(b)),
-            [&ret](const auto& elem) noexcept
+        return std::ranges::equal(
+            std::forward<A>(a),
+            std::forward<B>(b),
+            [](const auto& a, const auto& b) noexcept
             {
-                const auto& [a, b] = elem;
-                const bool eq      = a == b;
-                fmt::print("{:>8} {}= {:>8}\n", a, eq ? '=' : '!', b);
-                ret &= eq;
+                const bool r = cmp(a, b);
+                fmt::print("{:>8} {}= {:>8}\n", a, r ? '=' : '!', b);
+                return r;
             });
-        return ret;
     }
 };
 
