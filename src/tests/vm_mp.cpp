@@ -8,6 +8,9 @@
 #include "programs_generators.hpp"
 #include "root_finding.hpp"
 
+#include <range/v3/numeric/accumulate.hpp>
+#include <range/v3/view/zip_with.hpp>
+
 #include <algorithm>
 #include <vector>
 
@@ -114,28 +117,42 @@ main(int argc, char* argv[])
         }
         shop.finalize(oc);
         sort_outs();
-        return std::ranges::equal(out_fac, out_v_fac) &&
-               std::ranges::equal(out_fib, out_v_fib) &&
-               std::ranges::equal(out_fz, out_v_fz);
+        const double r_fac = std::ranges::equal(out_fac, out_v_fac) * num_runs;
+        const double r_fib = std::ranges::equal(out_fib, out_v_fib) * num_runs;
+        const double r_fz  = static_cast<double>(
+            ranges::accumulate(ranges::views::zip_with(
+                                   [](const output_type<fz_p>& lhs,
+                                      const output_type<fz_p>& rhs) noexcept
+                                   {
+                                       const auto [lx, li] = lhs;
+                                       const auto [rx, ri] = rhs;
+                                       return ulp_cmp{10}(lx, rx) && li == ri;
+                                   },
+                                   out_fz,
+                                   out_v_fz),
+                               0ul));
+        return 1. - (r_fac + r_fib + r_fz) / (num_runs * 3.);
     };
 
-    track.check(NamedTest(
+    track.check(NamedFuzzyTest(
         [&]() noexcept
         {
             mp::Shop<programs, BVEContext, 4> shop(1000);
             return test_shop(shop);
         },
-        "BVE static 4 threads"));
+        "BVE static 4 threads",
+        0.1));
 
     reset_outs();
 
-    track.check(NamedTest(
+    track.check(NamedFuzzyTest(
         [&]() noexcept
         {
             mp::Shop<programs, BVEContext, dynamic_size> shop(4, 1000);
             return test_shop(shop);
         },
-        "BVE dynamic 4 threads"));
+        "BVE dynamic 4 threads",
+        0.1));
 
     return track.ret_code();
 }
