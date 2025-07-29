@@ -870,9 +870,11 @@ counting_sort(Memory<RegTypes, RegNames, _CP, _Vector, Allocator>& in,
         out[--bins[fit(in.cp()[i])]] = in[i];
 }
 
-template <typename _Memory, bool singular>
+template <typename _Program, typename _Memory>
 class SimpleSorter
 {
+    static constexpr bool singular = _Program::singular;
+
     _Memory m_mem;
 
   protected:
@@ -899,9 +901,16 @@ class SimpleSorter
     }
 };
 
-template <typename _Memory, fsize_t num_bins, auto halt_pos>
+template <typename _Program, typename _Memory>
 class CountingSorter
 {
+    using reg_names = _Program::reg_names;
+    using reg_types = _Program::reg_types;
+    using cp        = _Program::cp;
+
+    static constexpr vartype<cp> halt_pos = _Program::halt_pos;
+    static constexpr std::size_t num_bins = _Program::num_cells + 1;
+
     _Memory  m_buf0;
     _Memory  m_buf1;
     _Memory* p_main = &m_buf0;
@@ -935,12 +944,12 @@ class CountingSorter
 template <typename _Program,
           template <typename, typename> typename _Vector = std::vector,
           template <typename> typename Allocator         = std::allocator,
-          typename Sorter = SimpleSorter<Memory<typename _Program::reg_types,
+          typename Sorter = SimpleSorter<_Program,
+                                         Memory<typename _Program::reg_types,
                                                 typename _Program::reg_names,
                                                 typename _Program::cp,
                                                 _Vector,
-                                                Allocator>,
-                                         _Program::singular>>
+                                                Allocator>>>
 class MemoryFacade : public Sorter
 {
     using reg_names   = _Program::reg_names;
@@ -949,7 +958,7 @@ class MemoryFacade : public Sorter
     using input_vars  = _Program::input_vars;
     using output_vars = _Program::output_vars;
 
-    static constexpr auto halt_pos = _Program::halt_pos;
+    static constexpr vartype<cp_var> halt_pos = _Program::halt_pos;
 
     template <typename _Memory>
     struct var_setter
@@ -1116,12 +1125,12 @@ class MemoryFacade : public Sorter
 template <typename _Program,
           template <typename, typename> typename _Vector = std::vector,
           template <typename> typename Allocator         = std::allocator,
-          typename Sorter = SimpleSorter<Memory<typename _Program::reg_types,
+          typename Sorter = SimpleSorter<_Program,
+                                         Memory<typename _Program::reg_types,
                                                 typename _Program::reg_names,
                                                 typename _Program::cp,
                                                 _Vector,
-                                                Allocator>,
-                                         _Program::singular>>
+                                                Allocator>>>
 class StreamFacade : public MemoryFacade<_Program, _Vector, Allocator, Sorter>
 {
     using reg_names   = _Program::reg_names;
@@ -1130,7 +1139,7 @@ class StreamFacade : public MemoryFacade<_Program, _Vector, Allocator, Sorter>
     using input_vars  = _Program::input_vars;
     using output_vars = _Program::output_vars;
 
-    static constexpr auto halt_pos = _Program::halt_pos;
+    static constexpr vartype<cp_var> halt_pos = _Program::halt_pos;
 
     using facade = MemoryFacade<_Program, _Vector, Allocator, Sorter>;
 
@@ -1221,6 +1230,23 @@ enum SORT
     COUNTING_SORT
 };
 
+template <SORT sort_method>
+struct select_sorter;
+
+template <>
+struct select_sorter<INTROSORT>
+{
+    template <typename _Program, typename _Memory>
+    using type = SimpleSorter<_Program, _Memory>;
+};
+
+template <>
+struct select_sorter<COUNTING_SORT>
+{
+    template <typename _Program, typename _Memory>
+    using type = CountingSorter<_Program, _Memory>;
+};
+
 template <typename _Program, SORT sort_method>
 class basic_vector_compiler
 {
@@ -1239,15 +1265,12 @@ class basic_vector_compiler
 
     using compiled_cells = typelist::map<compile_cell, cells>;
 
-    using memory        = Memory<reg_types, reg_names, cp>;
-    using simple_sorter = SimpleSorter<memory, singular>;
-    using sorter        = std::conditional_t<
-               sort_method == COUNTING_SORT,
-               std::conditional_t<
-                   singular,
-                   simple_sorter,
-                   CountingSorter<memory, _Program::num_cells + 1, halt_pos>>,
-               simple_sorter>;
+    using memory = Memory<reg_types, reg_names, cp>;
+
+    static constexpr SORT final_sort_method =
+        singular ? INTROSORT : sort_method;
+    using sorter =
+        select_sorter<final_sort_method>::template type<_Program, memory>;
 
     using memory_facade =
         MemoryFacade<_Program, std::vector, std::allocator, sorter>;

@@ -913,14 +913,11 @@ class simd_compiler
 
     using memory = bve::
         Memory<reg_types, reg_names, cp, std::vector, SIMDAlignedAllocator>;
-    using simple_sorter = bve::SimpleSorter<memory, singular>;
-    using sorter        = std::conditional_t<
-               sort_method == bve::COUNTING_SORT,
-               std::conditional_t<
-                   singular,
-                   simple_sorter,
-                   bve::CountingSorter<memory, _Program::num_cells + 1, halt_pos>>,
-               simple_sorter>;
+
+    static constexpr bve::SORT final_sort_method =
+        singular ? bve::INTROSORT : sort_method;
+    using sorter =
+        bve::select_sorter<final_sort_method>::template type<_Program, memory>;
 
     using stream_facade =
         bve::StreamFacade<_Program, std::vector, SIMDAlignedAllocator, sorter>;
