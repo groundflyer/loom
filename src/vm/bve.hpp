@@ -877,7 +877,10 @@ class SimpleSorter
 
     _Memory m_mem;
 
-  protected:
+  public:
+    SimpleSorter() noexcept = default;
+    explicit SimpleSorter(fsize_t n) : m_mem(n) {};
+
     _Memory&
     mem() noexcept
     {
@@ -889,10 +892,6 @@ class SimpleSorter
     {
         return m_mem;
     }
-
-  public:
-    SimpleSorter() noexcept = default;
-    explicit SimpleSorter(fsize_t n) : m_mem(n) {};
 
     void
     sort() noexcept
@@ -916,7 +915,10 @@ class CountingSorter
     _Memory* p_main = &m_buf0;
     _Memory* p_aux  = &m_buf1;
 
-  protected:
+  public:
+    CountingSorter() noexcept = default;
+    CountingSorter(fsize_t n) : m_buf0(n), m_buf1(n) {}
+
     _Memory&
     mem() noexcept
     {
@@ -928,10 +930,6 @@ class CountingSorter
     {
         return *p_main;
     }
-
-  public:
-    CountingSorter() noexcept = default;
-    CountingSorter(fsize_t n) : m_buf0(n), m_buf1(n) {}
 
     void
     sort() noexcept
@@ -990,7 +988,9 @@ class MemoryFacade : public Sorter
     template <typename _Memory>
     var_setter(_Memory*) -> var_setter<_Memory>;
 
-  protected:
+  public:
+    using Sorter::Sorter;
+
     template <typename _ProxyRow, typename... Args>
     static void
     set_row_input(_ProxyRow row, Args&&... args) noexcept
@@ -1014,9 +1014,6 @@ class MemoryFacade : public Sorter
             [row]<typename Var>() constexpr noexcept
             { return row.template get<Var>(); });
     }
-
-  public:
-    using Sorter::Sorter;
 
     template <std::ranges::input_range Input>
         requires(
@@ -1122,6 +1119,25 @@ class MemoryFacade : public Sorter
     }
 };
 
+template <typename _MemoryFacade, typename Input, typename Iter>
+auto
+exchange_from(_MemoryFacade& facade, Input&& input, Iter bgn) noexcept
+{
+    return ranges::views::zip_with(
+        [](auto row, auto inputs)
+        {
+            auto val = _MemoryFacade::get_row_output(row);
+
+            maybe_apply([row](auto... args) constexpr noexcept
+                        { _MemoryFacade::set_row_input(row, args...); },
+                        inputs);
+
+            return val;
+        },
+        ranges::subrange(bgn, std::ranges::end(facade.mem())),
+        std::forward<Input>(input));
+}
+
 template <typename _Program,
           template <typename, typename> typename _Vector = std::vector,
           template <typename> typename Allocator         = std::allocator,
@@ -1150,26 +1166,15 @@ class StreamFacade : public MemoryFacade<_Program, _Vector, Allocator, Sorter>
         requires(
             std::is_nothrow_convertible_v<std::ranges::range_value_t<Input>,
                                           input_type<_Program>>)
-    constexpr auto
+    auto
     exchange(Input&& input) noexcept
     {
-        return ranges::views::zip_with(
-            [](auto row, auto inputs)
-            {
-                auto val = facade::get_row_output(row);
-
-                maybe_apply([row](auto... args) constexpr noexcept
-                            { facade::set_row_input(row, args...); },
-                            inputs);
-
-                return val;
-            },
-            ranges::subrange(
-                std::ranges::find_if(facade::mem(),
-                                     [](auto row) constexpr noexcept
-                                     { return row.cp() == halt_pos; }),
-                std::ranges::end(facade::mem())),
-            std::forward<Input>(input));
+        return exchange_from(
+            static_cast<facade&>(*this),
+            std::forward<Input>(input),
+            std::ranges::find_if(facade::mem(),
+                                 [](auto row) constexpr noexcept
+                                 { return row.cp() == halt_pos; }));
     }
 };
 
