@@ -57,6 +57,15 @@ struct StandardState<P, true> : StandardState<P, false>
     simd::stream<P, simd::N_ORDER, bve::COUNTING_SORT>    simd_stream_N_cs;
     simd::stream<P, simd::MINIKERNEL, bve::COUNTING_SORT> simd_stream_m_cs;
 
+    simd::stream<P, simd::N_ORDER, bve::INTROSORT, true> simd_stream_N_is_async;
+    simd::stream<P, simd::MINIKERNEL, bve::INTROSORT, true>
+        simd_stream_m_is_async;
+
+    simd::stream<P, simd::N_ORDER, bve::COUNTING_SORT, true>
+        simd_stream_N_cs_async;
+    simd::stream<P, simd::MINIKERNEL, bve::COUNTING_SORT, true>
+        simd_stream_m_cs_async;
+
     StreamWrapper<bve::stream<P, bve::INTROSORT>> bve_stream_is_w{
         &bve_stream_is};
     StreamWrapper<bve::stream<P, bve::COUNTING_SORT>> bve_stream_cs_w{
@@ -72,13 +81,25 @@ struct StandardState<P, true> : StandardState<P, false>
     StreamWrapper<simd::stream<P, simd::MINIKERNEL, bve::COUNTING_SORT>>
         simd_stream_m_cs_w{&simd_stream_m_cs};
 
+    StreamWrapper<simd::stream<P, simd::N_ORDER, bve::INTROSORT, true>>
+        simd_stream_N_is_async_w{&simd_stream_N_is_async};
+    StreamWrapper<simd::stream<P, simd::MINIKERNEL, bve::INTROSORT, true>>
+        simd_stream_m_is_async_w{&simd_stream_m_is_async};
+
+    StreamWrapper<simd::stream<P, simd::N_ORDER, bve::COUNTING_SORT, true>>
+        simd_stream_N_cs_async_w{&simd_stream_N_cs_async};
+    StreamWrapper<simd::stream<P, simd::MINIKERNEL, bve::COUNTING_SORT, true>>
+        simd_stream_m_cs_async_w{&simd_stream_m_cs_async};
+
     using base = StandardState<P, false>;
 
     StandardState(unsigned n) noexcept :
         base(n), bve_func_cs(n), bve_stream_is(n / d), bve_stream_cs(n / d),
         simd_func_N_cs(n), simd_func_m_cs(n), simd_stream_N_is(n / d),
         simd_stream_m_is(n / d), simd_stream_N_cs(n / d),
-        simd_stream_m_cs(n / d)
+        simd_stream_m_cs(n / d), simd_stream_N_is_async(n / d),
+        simd_stream_m_is_async(n / d), simd_stream_N_cs_async(n / d),
+        simd_stream_m_cs_async(n / d)
     {
     }
 };
@@ -196,7 +217,7 @@ struct StandardTestSuite
                                     ti)),
                     NamedTest(reset_bve(state.simd_stream_N_cs_w),
                               fmt::format(
-                                  "{}: SIMD stream N-order counting_sort [{}]",
+                                  "{}: SIMD stream N-order counting sort [{}]",
 
                                   name.view(),
                                   ti)),
@@ -206,7 +227,34 @@ struct StandardTestSuite
                             "{}: SIMD stream minikernel counting sort [{}]",
 
                             name.view(),
-                            ti))};
+                            ti)),
+                    NamedTest(
+                        reset_bve(state.simd_stream_N_is_async_w),
+                        fmt::format(
+                            "{}: SIMD stream N-order introsort async [{}]",
+
+                            name.view(),
+                            ti)),
+                    NamedTest(
+                        reset_bve(state.simd_stream_m_is_async_w),
+                        fmt::format(
+                            "{}: SIMD stream minikernel introsort async [{}]",
+
+                            name.view(),
+                            ti)),
+                    NamedTest(
+                        reset_bve(state.simd_stream_N_cs_async_w),
+                        fmt::format(
+                            "{}: SIMD stream N-order counting sort async [{}]",
+
+                            name.view(),
+                            ti)),
+                    NamedTest(reset_bve(state.simd_stream_m_cs_async_w),
+                              fmt::format("{}: SIMD stream minikernel counting "
+                                          "sort async [{}]",
+
+                                          name.view(),
+                                          ti))};
             else
                 return std::pair{n, m};
         };

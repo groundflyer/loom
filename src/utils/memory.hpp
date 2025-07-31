@@ -56,4 +56,21 @@ class AlignedAllocator
         std::free(p);
     }
 };
+
+/// @brief Allocates memory aligned to cache line size.
+template <typename T>
+using CacheLineAlignedAllocator = AlignedAllocator<T, cache_line_size>;
+
+/// @brief The number of values of type @p T that can fit into cache line.
+template <typename T>
+    requires(sizeof(T) % alignof(T) == 0 && alignof(T) <= sizeof(T))
+struct cache_line_capacity
+{
+    static constexpr std::size_t value = cache_line_size / sizeof(T);
+};
+
+/// @brief Helper template variable for cache_line_capacity.
+template <typename T>
+inline constexpr std::size_t cache_line_capacity_v =
+    cache_line_capacity<T>::value;
 } // namespace lucid

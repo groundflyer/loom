@@ -1,6 +1,6 @@
 // -*- C++ -*-
 /// @file simd.hpp
-/// @brief SIMD backend.
+/// @brief SIMD backend implementation.
 
 #pragma once
 
@@ -625,6 +625,74 @@ class make_runner<STITCH::N_ORDER, Cell, LabelMap, CPVar>
     using type = standard_compiler<Cell, LabelMap, eval>;
 };
 
+/// @brief Stream facade that allows asynchronous exchange.
+template <typename _Program,
+          template <typename, typename> typename _Vector,
+          template <typename> typename Allocator,
+          typename Sorter>
+    requires(cache_line_size % simd_width == 0)
+class AsyncStreamFacade :
+    public bve::MemoryFacade<_Program, _Vector, Allocator, Sorter>
+{
+    using reg_names   = _Program::reg_names;
+    using reg_types   = _Program::reg_types;
+    using cp_var      = _Program::cp;
+    using input_vars  = _Program::input_vars;
+    using output_vars = _Program::output_vars;
+
+    using cp_t = vartype<cp_var>;
+
+    static constexpr cp_t    halt_pos = _Program::halt_pos;
+    static constexpr fsize_t npos     = static_cast<fsize_t>(-1);
+
+    using facade = bve::MemoryFacade<_Program, _Vector, Allocator, Sorter>;
+
+    fsize_t m_pos = npos;
+
+    // we're looking for the first cache-aligned segment in the memory that's
+    // filled with halts
+    void
+    find_halt_segments() noexcept
+    {
+        constexpr fsize_t step_size = cache_line_capacity_v<cp_t>;
+        const auto&       cps       = facade::mem().cp();
+        const fsize_t     size      = cps.size();
+        const fsize_t     init_pos  = size / step_size;
+        auto real_pos = [](const fsize_t p) noexcept { return p * step_size; };
+
+        fsize_t pos = init_pos;
+        while(cps[real_pos(pos - 1)] == halt_pos && pos - 1 != 0) --pos;
+
+        m_pos = pos != init_pos ? real_pos(pos) : npos;
+    }
+
+  public:
+    using facade::facade;
+
+    void
+    sort() noexcept
+    {
+        facade::sort();
+        // we do this with here, because only sort is protected with a lock in
+        // multithreaded stream
+        find_halt_segments();
+    }
+
+    template <std::ranges::input_range Input>
+        requires(
+            std::is_nothrow_convertible_v<std::ranges::range_value_t<Input>,
+                                          input_type<_Program>>)
+    auto
+    exchange(Input&& input) noexcept
+    {
+        return bve::exchange_from(static_cast<facade&>(*this),
+                                  std::forward<Input>(input),
+                                  m_pos == npos ?
+                                      facade::mem().end() : // empty exchange
+                                      facade::mem().begin() + m_pos);
+    }
+};
+
 /// @brief Executes @p Cell as SIMD kernel.
 template <typename Cell, typename LabelMap, typename CPVar>
 class make_runner<STITCH::MINIKERNEL, Cell, LabelMap, CPVar>
@@ -888,11 +956,20 @@ class memory_chunks : public std::ranges::view_interface<memory_chunks<_Memory>>
     }
 };
 
+/// @brief Allocates memory aligned to native SIMD vector size.
 template <typename T>
 using SIMDAlignedAllocator =
     AlignedAllocator<T, get_native_vector_align<T>::value>;
 
-template <typename _Program, STITCH stitch, bve::SORT sort_method>
+/// @brief SIMD backend.
+/// @tparam _Program program to compile.
+/// @tparam stitch execution method.
+/// @tparam sort_method sorting algorithm to use.
+/// @tparam async allow asynchronous exchange in resulting stream.
+template <typename _Program,
+          STITCH    stitch,
+          bve::SORT sort_method,
+          bool      async = false>
     requires(typelist::of_same_size<typename _Program::reg_types>)
 class simd_compiler
 {
@@ -911,18 +988,25 @@ class simd_compiler
 
     using compiled_cells = typelist::map<compile_cell, cells>;
 
-    using memory = bve::
-        Memory<reg_types, reg_names, cp, std::vector, SIMDAlignedAllocator>;
+    template <typename T>
+    using allocator = std::conditional_t<async,
+                                         CacheLineAlignedAllocator<T>,
+                                         SIMDAlignedAllocator<T>>;
+
+    using memory =
+        bve::Memory<reg_types, reg_names, cp, std::vector, allocator>;
 
     static constexpr bve::SORT final_sort_method =
         singular ? bve::INTROSORT : sort_method;
     using sorter =
         bve::select_sorter<final_sort_method>::template type<_Program, memory>;
 
-    using stream_facade =
-        bve::StreamFacade<_Program, std::vector, SIMDAlignedAllocator, sorter>;
+    using stream_facade = std::conditional_t<
+        async,
+        AsyncStreamFacade<_Program, std::vector, allocator, sorter>,
+        bve::StreamFacade<_Program, std::vector, allocator, sorter>>;
     using memory_facade =
-        bve::MemoryFacade<_Program, std::vector, SIMDAlignedAllocator, sorter>;
+        bve::MemoryFacade<_Program, std::vector, allocator, sorter>;
 
     class single_cell_evaluator : public memory_facade
     {
@@ -1006,9 +1090,12 @@ class simd_compiler
 };
 
 template <typename _Program, STITCH stitch, bve::SORT sort_method>
-using function = simd_compiler<_Program, stitch, sort_method>::function;
+using function = simd_compiler<_Program, stitch, sort_method, false>::function;
 
-template <typename _Program, STITCH stitch, bve::SORT sort_method>
+template <typename _Program,
+          STITCH    stitch,
+          bve::SORT sort_method,
+          bool      async = false>
     requires(!_Program::singular)
-using stream = simd_compiler<_Program, stitch, sort_method>::stream;
+using stream = simd_compiler<_Program, stitch, sort_method, async>::stream;
 } // namespace lucid::simd
