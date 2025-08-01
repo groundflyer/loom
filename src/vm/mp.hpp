@@ -55,7 +55,7 @@ struct Context
 {
     StreamCompiler<_Program> stream;
     Lock                     lock;
-    bool                     exchanged = false;
+    bool                     need_sort = false;
 
     FORBID_ALL(Context);
 
@@ -105,23 +105,40 @@ struct Worker
                 *bench,
                 [&done_flags, signal = signal]<typename C>(C& ctx) noexcept
                 {
-                    if(ctx.lock.try_lock())
+                    constexpr std::size_t idx     = typelist::index<C, types>;
+                    bool                  is_done = done_flags.test(idx);
+                    if(is_done) return;
+
+                    if(!is_done && *signal && ctx.lock.try_lock())
                     {
-                        if(*signal && ctx.stream.done())
+                        if(ctx.stream.done())
                         {
-                            done_flags.set(typelist::index<C, types>);
-                            // don't ulock the context - we don't
-                            // need it anymore
-                            // ctx.lock.unlock();
+                            done_flags.set(idx);
+                            ctx.lock.unlock();
                             return;
                         }
-
-                        if(ctx.exchanged) ctx.stream.sort();
-
-                        ctx.stream();
-                        ctx.stream.sort();
                         ctx.lock.unlock();
                     }
+
+                    auto try_sort = [&ctx]() noexcept
+                    {
+                        if(ctx.lock.try_lock())
+                        {
+                            ctx.stream.sort();
+                            ctx.need_sort = false;
+                            ctx.lock.unlock();
+                        }
+                        else
+                            ctx.need_sort = true;
+
+                        return ctx.need_sort;
+                    };
+
+                    if(ctx.need_sort)
+                        if(try_sort()) return; // will try next time
+
+                    ctx.stream();
+                    try_sort();
                 });
     }
 };
@@ -273,11 +290,12 @@ class Shop : public ShopBase<_Ps, _Context, N>
                 lucid::zip_with_for_each(
                     [](auto& ctx, auto& in, auto& out) noexcept
                     {
-                        if(ctx.lock.try_lock())
+                        auto& [ib, ie] = in;
+                        if(ib != ie && ctx.lock.try_lock())
                         {
-                            auto& [ib, ie] = in;
                             auto exs =
                                 ctx.stream.exchange(ranges::subrange(ib, ie));
+                            // copy and update input and output iterators
                             std::ranges::for_each(
                                 exs,
                                 [&ib, &out](const auto& ex) noexcept
