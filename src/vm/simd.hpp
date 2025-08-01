@@ -7,6 +7,7 @@
 #include "bse.hpp"
 #include "bve.hpp"
 #include "core.hpp"
+#include "macros.hpp"
 #include "operators.hpp"
 
 #include <utils/debug.hpp>
@@ -656,14 +657,13 @@ class AsyncStreamFacade :
     {
         constexpr fsize_t step_size = cache_line_capacity_v<cp_t>;
         const auto&       cps       = facade::mem().cp();
-        const fsize_t     size      = cps.size();
-        const fsize_t     init_pos  = size / step_size;
-        auto real_pos = [](const fsize_t p) noexcept { return p * step_size; };
-
-        fsize_t pos = init_pos;
-        while(cps[real_pos(pos - 1)] == halt_pos && pos - 1 != 0) --pos;
-
-        m_pos = pos != init_pos ? real_pos(pos) : npos;
+        m_pos                       = npos;
+        for(fsize_t pos = 0; pos < cps.size(); pos += step_size)
+            if(cps[pos] == halt_pos)
+            {
+                m_pos = pos;
+                return;
+            }
     }
 
   public:
@@ -673,7 +673,7 @@ class AsyncStreamFacade :
     sort() noexcept
     {
         facade::sort();
-        // we do this with here, because only sort is protected with a lock in
+        // we do this here, because only sort is protected with a lock in
         // multithreaded stream
         find_halt_segments();
     }
@@ -690,6 +690,15 @@ class AsyncStreamFacade :
                                   m_pos == npos ?
                                       facade::mem().end() : // empty exchange
                                       facade::mem().begin() + m_pos);
+    }
+
+    template <typename F>
+    void
+    visit(F&& f) noexcept
+    {
+        std::invoke(std::forward<F>(f),
+                    m_pos == npos ? facade::mem().view() :
+                                    facade::mem().view(0, m_pos));
     }
 };
 
@@ -941,7 +950,7 @@ class memory_chunks : public std::ranges::view_interface<memory_chunks<_Memory>>
 
   public:
     memory_chunks() = default;
-    memory_chunks(_Memory& mem) noexcept : m_view(mem.view()) {}
+    memory_chunks(proxy_view view) noexcept : m_view(view) {}
 
     _iterator
     begin() const
@@ -995,6 +1004,7 @@ class simd_compiler
 
     using memory =
         bve::Memory<reg_types, reg_names, cp, std::vector, allocator>;
+    using memory_view = memory::view_type;
 
     static constexpr bve::SORT final_sort_method =
         singular ? bve::INTROSORT : sort_method;
@@ -1032,10 +1042,10 @@ class simd_compiler
         static constexpr typelist::to<compiled_cells, std::tuple> cells{};
 
         void
-        operator()(memory& mem) const noexcept
+        operator()(memory_view view) const noexcept
         {
-            std::ranges::for_each(memory_chunks(mem),
-                                  [](auto view) noexcept
+            std::ranges::for_each(memory_chunks<memory>(view),
+                                  [](memory_view view) noexcept
                                   {
                                       visit_at(
                                           view.cp().front(),
@@ -1044,6 +1054,12 @@ class simd_compiler
                                           cells,
                                           sink);
                                   });
+        }
+
+        void
+        operator()(memory& mem) const noexcept
+        {
+            operator()(mem.view());
         }
     };
 
