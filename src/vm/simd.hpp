@@ -15,6 +15,10 @@
 #include <utils/tmp.hpp>
 #include <utils/tuple.hpp>
 
+#if 0
+#include <fmt/core.h>
+#endif
+
 #include <algorithm>
 #include <cstdlib>
 
@@ -1026,14 +1030,17 @@ class simd_compiler
         using program = _Program;
         using memory_facade::memory_facade;
 
-        template <typename... Args>
+        template <bool zip_outputs = false, typename... Args>
         auto
         operator()(Args&&... args) noexcept
         {
             memory_facade::set_inputs(std::forward<Args>(args)...);
             memory_facade::visit([](memory& mem) noexcept
                                  { cell(mem.view()); });
-            return memory_facade::get_outputs();
+            if constexpr(zip_outputs)
+                return memory_facade::get_output_zipped();
+            else
+                return memory_facade::get_outputs();
         }
     };
 
@@ -1065,11 +1072,44 @@ class simd_compiler
 
     class evaluator : public memory_facade
     {
+#if 0
+        using vars = _Program::variables;
+        void
+        dump() const noexcept
+        {
+            auto columns = typelist::maybe_collect<std::tuple>(
+                vars{},
+                [&]<typename Var>() constexpr noexcept
+                {
+                    return std::views::all(
+                        memory_facade::mem().template get<Var>());
+                });
+
+            typelist::for_each(vars{},
+                               []<typename Var>()
+                               {
+                                   using name       = varname<Var>;
+                                   constexpr auto l = intlist::length<name>;
+                                   constexpr auto a = intlist::array<name>;
+                                   constexpr std::string_view s(a, l);
+                                   fmt::print("{},", s);
+                               });
+            putchar('\n');
+            for(fsize_t i = 0; i < memory_facade::size(); ++i)
+            {
+                lucid::for_each(columns,
+                                [i](const auto& c)
+                                { fmt::print("{},", c[i]); });
+                putchar('\n');
+            }
+        }
+#endif
+
       public:
         using program = _Program;
         using memory_facade::memory_facade;
 
-        template <typename... Args>
+        template <bool zip_outputs = false, typename... Args>
         auto
         operator()(Args&&... args) noexcept
         {
@@ -1077,11 +1117,17 @@ class simd_compiler
 
             while(!memory_facade::done())
             {
+#if 0
+                dump();
+#endif
                 memory_facade::visit(visitor{});
                 memory_facade::sort();
             }
 
-            return memory_facade::get_outputs();
+            if constexpr(zip_outputs)
+                return memory_facade::get_output_zipped();
+            else
+                return memory_facade::get_outputs();
         }
     };
 

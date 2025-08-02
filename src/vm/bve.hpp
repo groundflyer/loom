@@ -1290,13 +1290,16 @@ class basic_vector_compiler
         using program = _Program;
         using memory_facade::memory_facade;
 
-        template <typename... Args>
+        template <bool zip_outputs = false, typename... Args>
         auto
         operator()(Args&&... args) noexcept
         {
             memory_facade::set_inputs(std::forward<Args>(args)...);
             memory_facade::visit(cell);
-            return memory_facade::get_outputs();
+            if constexpr(zip_outputs)
+                return memory_facade::get_output_zipped();
+            else
+                return memory_facade::get_outputs();
         }
     };
 
@@ -1366,7 +1369,7 @@ class basic_vector_compiler
         using program = _Program;
         using memory_facade::memory_facade;
 
-        template <typename... Args>
+        template <bool zip_outputs = false, typename... Args>
         auto
         operator()(Args&&... args) noexcept
         {
@@ -1378,7 +1381,10 @@ class basic_vector_compiler
                 memory_facade::sort();
             }
 
-            return memory_facade::get_outputs();
+            if constexpr(zip_outputs)
+                return memory_facade::get_output_zipped();
+            else
+                return memory_facade::get_outputs();
         }
     };
 
