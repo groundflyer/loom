@@ -3,6 +3,7 @@
 #include <utils/test.hpp>
 #include <vm/bve.hpp>
 #include <vm/mp.hpp>
+#include <vm/simd.hpp>
 
 #include "programs.hpp"
 #include "programs_generators.hpp"
@@ -21,11 +22,18 @@ template <typename P>
 using BVEStreamCompiler = bve::stream<P, bve::INTROSORT>;
 
 template <typename P>
+using SIMDStreamCompiler =
+    simd::stream<P, simd::MINIKERNEL, bve::COUNTING_SORT, true>;
+
+template <typename P>
 using BVEContext = mp::Context<P, BVEStreamCompiler>;
+
+template <typename P>
+using SIMDContext = mp::Context<P, SIMDStreamCompiler>;
 
 using fac_p = factorial_int<std::uint64_t>;
 using fib_p = fib<std::uint64_t>;
-using fz_p  = cubic_fz_program<double, CS(0.1)>;
+using fz_p  = cubic_fz_program<double, CS(10)>;
 
 using programs = type_sequence<fac_p, fib_p, fz_p>;
 
@@ -137,7 +145,7 @@ main(int argc, char* argv[])
     track.check(NamedFuzzyTest(
         [&]() noexcept
         {
-            mp::Shop<programs, BVEContext, 4> shop(1000);
+            mp::Shop<programs, SIMDContext, 4> shop(1000);
             return test_shop(shop);
         },
         "BVE static 4 threads",
@@ -148,7 +156,7 @@ main(int argc, char* argv[])
     track.check(NamedFuzzyTest(
         [&]() noexcept
         {
-            mp::Shop<programs, BVEContext, dynamic_size> shop(4, 1000);
+            mp::Shop<programs, SIMDContext, dynamic_size> shop(4, 1000);
             return test_shop(shop);
         },
         "BVE dynamic 4 threads",

@@ -5,11 +5,41 @@
 #include <utils/test.hpp>
 #include <utils/typeinfo.hpp>
 #include <vm/bse.hpp>
+#include <vm/simd.hpp>
 
 #include <fmt/core.h>
 
+#include <range/v3/numeric/accumulate.hpp>
+#include <range/v3/view/zip_with.hpp>
+
+#include <algorithm>
+#include <vector>
+
 using namespace lucid;
 using namespace lucid::test;
+
+template <typename G, typename F>
+double
+val_fz_x_rng(F& f, G& g, unsigned n) noexcept
+{
+    std::vector<decltype(g())> in;
+    in.reserve(n);
+    std::ranges::generate_n(std::back_inserter(in), n, g);
+    const auto [xs, _] = f(in);
+    return 1. -
+           static_cast<double>(ranges::accumulate(
+               ranges::views::zip_with(
+                   []<std::floating_point T>(const auto& gs, const T x) noexcept
+                   {
+                       const auto [a, b, c, d] = gs;
+                       return val_cubic_eval(a, b, c, d, x) <
+                              constants<T>::err_threshold;
+                   },
+                   in,
+                   xs),
+               0u)) /
+               static_cast<double>(n);
+}
 
 template <std::floating_point T>
 struct test_suite
@@ -54,6 +84,9 @@ struct test_suite
         bse::function<cubic_fb_p>   bse_cubic_fb;
         bse::function<cubic_fz_p>   bse_cubic_fz;
 
+        simd::function<cubic_fz_p, simd::N_ORDER, bve::INTROSORT> simd_cubic_fz(
+            tm.num_runs);
+
         track.check(
             NamedFuzzyTest(tm.fuzzy_ulp(g_cubic, bse_cubic, val_cubic_eval, 10),
                            fmt::format("({}) BSE cubic eval", ti),
@@ -72,6 +105,11 @@ struct test_suite
                     {{5u}, {}}
         }),
             fmt::format("({}) BSE cubic find zero", ti),
+            1e-2));
+        track.check(NamedFuzzyTest(
+            [&]() noexcept
+            { return val_fz_x_rng(simd_cubic_fz, g_c4, tm.num_runs); },
+            fmt::format("({}) SIMD cubic find zero", ti),
             1e-2));
 
         return track;
