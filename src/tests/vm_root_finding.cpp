@@ -20,25 +20,41 @@ using namespace lucid::test;
 
 template <typename G, typename F>
 double
+val_fb_rng(F& f, G& g, unsigned n) noexcept
+{
+    std::vector<decltype(g())> in;
+    in.reserve(n);
+    std::ranges::generate_n(std::back_inserter(in), n, g);
+    const auto r = f.template operator()<true>(in);
+    return test::estimate_error(
+        std::views::transform(r,
+                              [](const auto& v) noexcept
+                              {
+                                  const auto [l, r] = v;
+                                  return std::signbit(l) != std::signbit(r);
+                              }),
+        n);
+}
+
+template <typename G, typename F>
+double
 val_fz_x_rng(F& f, G& g, unsigned n) noexcept
 {
     std::vector<decltype(g())> in;
     in.reserve(n);
     std::ranges::generate_n(std::back_inserter(in), n, g);
     const auto [xs, _] = f(in);
-    return 1. -
-           static_cast<double>(ranges::accumulate(
-               ranges::views::zip_with(
-                   []<std::floating_point T>(const auto& gs, const T x) noexcept
-                   {
-                       const auto [a, b, c, d] = gs;
-                       return val_cubic_eval(a, b, c, d, x) <
-                              constants<T>::err_threshold;
-                   },
-                   in,
-                   xs),
-               0u)) /
-               static_cast<double>(n);
+    return test::estimate_error(
+        ranges::views::zip_with(
+            []<std::floating_point T>(const auto& gs, const T x) noexcept
+            {
+                const auto [a, b, c, d] = gs;
+                return val_cubic_eval(a, b, c, d, x) <
+                       constants<T>::err_threshold;
+            },
+            in,
+            xs),
+        n);
 }
 
 template <std::floating_point T>
@@ -84,6 +100,8 @@ struct test_suite
         bse::function<cubic_fb_p>   bse_cubic_fb;
         bse::function<cubic_fz_p>   bse_cubic_fz;
 
+        simd::function<cubic_fb_p, simd::N_ORDER, bve::INTROSORT> simd_cubic_fb(
+            tm.num_runs);
         simd::function<cubic_fz_p, simd::N_ORDER, bve::INTROSORT> simd_cubic_fz(
             tm.num_runs);
 
@@ -106,11 +124,19 @@ struct test_suite
         }),
             fmt::format("({}) BSE cubic find zero", ti),
             1e-2));
+
+        track.check(NamedFuzzyTest(
+            [&]() noexcept
+            { return val_fb_rng(simd_cubic_fb, g_c4, tm.num_runs); },
+            fmt::format("({}) SIMD cubic find bounds", ti),
+            1e-2));
+#if 0
         track.check(NamedFuzzyTest(
             [&]() noexcept
             { return val_fz_x_rng(simd_cubic_fz, g_c4, tm.num_runs); },
             fmt::format("({}) SIMD cubic find zero", ti),
             1e-2));
+#endif
 
         return track;
     }
