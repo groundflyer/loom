@@ -476,17 +476,24 @@ gen_test_val_rng_inv(const unsigned n, G&& g, T&& t, V&& v) noexcept
            std::views::transform(std::forward<V>(v));
 }
 
+template <std::ranges::input_range Rng>
+double
+estimate_error(Rng&& rng, const unsigned count) noexcept
+{
+    return 1. -
+           static_cast<double>(ranges::accumulate(std::forward<Rng>(rng), 0u)) /
+               static_cast<double>(count);
+}
+
 template <std::invocable G, typename T, typename V>
 double
 estimate(const unsigned n, G&& g, T&& t, V&& v) noexcept
 {
-    return 1. - static_cast<double>(
-                    ranges::accumulate(gen_test_val(n,
-                                                    std::forward<G>(g),
-                                                    std::forward<T>(t),
-                                                    std::forward<V>(v)),
-                                       0u)) /
-                    static_cast<double>(n);
+    return estimate_error(gen_test_val(n,
+                                       std::forward<G>(g),
+                                       std::forward<T>(t),
+                                       std::forward<V>(v)),
+                          n);
 }
 
 /// @brief Helper class to make parametric tests.
