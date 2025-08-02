@@ -467,7 +467,7 @@ class MemoryIterator : public std::contiguous_iterator_tag
     operator[](difference_type n) const noexcept
     {
         CHECK_INDEX(n, count());
-        return {*p_data, m_pos + n};
+        return {*p_data, static_cast<fsize_t>(m_pos + n)};
     }
 
     fsize_t
