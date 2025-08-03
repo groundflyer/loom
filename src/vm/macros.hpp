@@ -75,6 +75,15 @@
                  CLASS T4,                                 \
                  CLASS T5,                                 \
                  CLASS T6)
+#define PMACRO_BEGIN7(NAME, CLASS, T1, T2, T3, T4, T5, T6, T7) \
+    PMACRO_BEGIN(NAME,                                         \
+                 CLASS T1,                                     \
+                 CLASS T2,                                     \
+                 CLASS T3,                                     \
+                 CLASS T4,                                     \
+                 CLASS T5,                                     \
+                 CLASS T6,                                     \
+                 CLASS T7)
 #define TMACRO_BEGIN1(NAME, T1)     PMACRO_BEGIN1(NAME, typename, T1)
 #define TMACRO_BEGIN2(NAME, T1, T2) PMACRO_BEGIN2(NAME, typename, T1, T2)
 #define TMACRO_BEGIN3(NAME, T1, T2, T3) \
@@ -85,6 +94,8 @@
     PMACRO_BEGIN5(NAME, typename, T1, T2, T3, T4, T5)
 #define TMACRO_BEGIN6(NAME, T1, T2, T3, T4, T5, T6) \
     PMACRO_BEGIN6(NAME, typename, T1, T2, T3, T4, T5, T6)
+#define TMACRO_BEGIN7(NAME, T1, T2, T3, T4, T5, T6, T7) \
+    PMACRO_BEGIN7(NAME, typename, T1, T2, T3, T4, T5, T6, T7)
 #define MACRO_END                >
 
 #define INSERT_MACRO(NAME, ...)  NAME __VA_OPT__(<__VA_ARGS__>)
