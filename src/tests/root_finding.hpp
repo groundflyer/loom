@@ -31,7 +31,7 @@ TMACRO_BEGIN6(cubic_rc, y, l, r, t1, t2, t3)
     INSERT_TMACRO(cubic_eval, t1, r, t2, t3),
     TLT_CS(y, y, CS(0)),
     TLT_CS(t1, t1, CS(0)),
-    TNEQ_CS(y, y, t1)
+    INEQ_CS(y, y, t1)
 MACRO_END;
 
 // find_bounds
@@ -52,14 +52,12 @@ TMACRO_BEGIN4(cubic_fb, rc, t1, t2, t3)
     TMOV_CS(CS(l), CS(-10)),
     TMOV_CS(CS(r), CS(10)),
     INSERT_TMACRO(cubic_rc, rc, CS(l), CS(r), t1, t2, t3),
-    TNEQ_CS(rc, rc, CS(0)),
-    PJMP2_CS(rc, fb_loop, fb_end),
+    PJMP2_CS(rc, useless, fb_end),
     LABEL(useless),             // to test label optimizations
     LABEL(fb_loop),
     TMUL_CS(CS(l), CS(l), CS(10)),
     TMUL_CS(CS(r), CS(r), CS(10)),
     INSERT_TMACRO(cubic_rc, rc, CS(l), CS(r), t1, t2, t3),
-    TNEQ_CS(rc, rc, CS(0)),
     PJMP2_CS(rc, fb_loop, fb_end),
     LABEL(fb_end)               // will be replaced with HaltLabel
 MACRO_END;
