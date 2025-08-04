@@ -13,6 +13,7 @@
 #include <range/v3/numeric/accumulate.hpp>
 #include <range/v3/view/generate_n.hpp>
 #include <range/v3/view/zip.hpp>
+#include <range/v3/view/zip_with.hpp>
 
 #include <fmt/color.h>
 #include <fmt/ranges.h>
@@ -480,16 +481,16 @@ gen_test_val_rng_inv(const unsigned n, G&& g, T&& t, V&& v) noexcept
 
 template <std::ranges::input_range Rng>
 double
-estimate_error(Rng&& rng, const unsigned count) noexcept
+estimate_error(Rng&& rng, const std::size_t count) noexcept
 {
-    return 1. -
-           static_cast<double>(ranges::accumulate(std::forward<Rng>(rng), 0u)) /
-               static_cast<double>(count);
+    return 1. - static_cast<double>(
+                    ranges::accumulate(std::forward<Rng>(rng), 0ul)) /
+                    static_cast<double>(count);
 }
 
 template <std::invocable G, typename T, typename V>
 double
-estimate(const unsigned n, G&& g, T&& t, V&& v) noexcept
+estimate(const std::size_t n, G&& g, T&& t, V&& v) noexcept
 {
     return estimate_error(gen_test_val(n,
                                        std::forward<G>(g),
@@ -497,6 +498,22 @@ estimate(const unsigned n, G&& g, T&& t, V&& v) noexcept
                                        std::forward<V>(v)),
                           n);
 }
+
+template <typename Cmp = std::equal_to<>>
+struct range_cmp_estimator
+{
+    template <std::ranges::input_range Lhs, std::ranges::input_range Rhs>
+        requires(std::predicate<Cmp,
+                                std::ranges::range_value_t<Lhs>,
+                                std::ranges::range_value_t<Rhs>>)
+    constexpr double
+    operator()(const Lhs& lhs, const Rhs& rhs) const noexcept
+    {
+        return estimate_error(
+            ranges::views::zip_with(Cmp{}, lhs, rhs),
+            std::min(std::ranges::size(lhs), std::ranges::size(rhs)));
+    }
+};
 
 /// @brief Helper class to make parametric tests.
 struct ParmTestMaker
@@ -678,10 +695,10 @@ struct ParmTestMaker
               typename RI,
               typename Cmp = decltype(std::ranges::equal)>
     auto
-    rng_with_scalar_ref(G&& g,
-                        T&& t,
-                        RI& ri,
-                        Cmp cmp = std::ranges::equal) const noexcept
+    rng_with_scalar_ref(G&&  g,
+                        T&&  t,
+                        RI&& ri,
+                        Cmp  cmp = std::ranges::equal) const noexcept
     {
         return rng_with_ref<do_sort>(
             std::forward<G>(g),
@@ -709,8 +726,6 @@ struct ParmTestMaker
     /// std::pair or std::tuple.
     /// @param t testing function.
     /// @param v validation function.
-    ///
-    ///
     template <std::invocable G, typename T, typename V>
     auto
     fuzzy(G&& g, T&& t, V&& v) const noexcept
@@ -778,6 +793,39 @@ struct ParmTestMaker
                               std::forward<T>(t),
                               std::forward<RI>(ri),
                               ulp_cmp{ulp});
+    }
+
+    /// @brief Fuzzy version of rng_with_ref.
+    /// @copydetails rng_with_ref
+    /// @tparam comparison function for elements.
+    template <bool do_sort     = true,
+              typename ElemCmp = std::equal_to<>,
+              std::invocable G,
+              typename T,
+              typename RI>
+    auto
+    fuzzy_rng_with_ref(G&& g, T&& t, RI&& ri) const noexcept
+    {
+        return rng_with_ref<do_sort>(std::forward<G>(g),
+                                     std::forward<T>(t),
+                                     std::forward<RI>(ri),
+                                     range_cmp_estimator<ElemCmp>{});
+    }
+
+    /// @brief Fuzzy version of rng_with_scalar_ref.
+    /// @copydetails fuzzy_rng_with_ref
+    template <bool do_sort     = true,
+              typename ElemCmp = std::equal_to<>,
+              std::invocable G,
+              typename T,
+              typename RI>
+    auto
+    fuzzy_rng_with_scalar_ref(G&& g, T&& t, RI&& ri) const noexcept
+    {
+        return rng_with_scalar_ref<do_sort>(std::forward<G>(g),
+                                            std::forward<T>(t),
+                                            std::forward<RI>(ri),
+                                            range_cmp_estimator<ElemCmp>{});
     }
 };
 

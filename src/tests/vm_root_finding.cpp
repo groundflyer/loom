@@ -36,27 +36,6 @@ val_fb_rng(F& f, G& g, unsigned n) noexcept
         n);
 }
 
-template <typename G, typename F>
-double
-val_fz_x_rng(F& f, G& g, unsigned n) noexcept
-{
-    std::vector<decltype(g())> in;
-    in.reserve(n);
-    std::ranges::generate_n(std::back_inserter(in), n, g);
-    const auto [xs, _] = f(in);
-    return test::estimate_error(
-        ranges::views::zip_with(
-            []<std::floating_point T>(const auto& gs, const T x) noexcept
-            {
-                const auto [a, b, c, d] = gs;
-                return val_cubic_eval(a, b, c, d, x) <
-                       constants<T>::err_threshold;
-            },
-            in,
-            xs),
-        n);
-}
-
 template <std::floating_point T>
 struct test_suite
 {
@@ -130,13 +109,21 @@ struct test_suite
             { return val_fb_rng(simd_cubic_fb, g_c4, tm.num_runs); },
             fmt::format("({}) SIMD cubic find bounds", ti),
             1e-2));
-#if 0
         track.check(NamedFuzzyTest(
-            [&]() noexcept
-            { return val_fz_x_rng(simd_cubic_fz, g_c4, tm.num_runs); },
+            tm.fuzzy_rng_with_scalar_ref(
+                g_c4,
+                [&simd_cubic_fz, n = tm.num_runs](auto&&... vs) noexcept
+                {
+                    auto view = simd_cubic_fz.template operator()<true>(
+                        std::forward<decltype(vs)>(vs)...);
+                    std::vector<output_type<cubic_fz_p>> out;
+                    out.reserve(n);
+                    std::ranges::copy(view, std::back_inserter(out));
+                    return out;
+                },
+                val_cubic_fz),
             fmt::format("({}) SIMD cubic find zero", ti),
             1e-2));
-#endif
 
         return track;
     }
