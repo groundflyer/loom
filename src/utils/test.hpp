@@ -12,8 +12,10 @@
 
 #include <range/v3/numeric/accumulate.hpp>
 #include <range/v3/view/generate_n.hpp>
+#include <range/v3/view/zip.hpp>
 
 #include <fmt/color.h>
+#include <fmt/ranges.h>
 
 #include <concepts>
 #include <functional>
@@ -676,19 +678,26 @@ struct ParmTestMaker
               typename RI,
               typename Cmp = decltype(std::ranges::equal)>
     auto
-    rng_with_scalar_ref(G&&  g,
-                        T&&  t,
-                        RI&& ri,
-                        Cmp  cmp = std::ranges::equal) const noexcept
+    rng_with_scalar_ref(G&& g,
+                        T&& t,
+                        RI& ri,
+                        Cmp cmp = std::ranges::equal) const noexcept
     {
         return rng_with_ref<do_sort>(
             std::forward<G>(g),
             std::forward<T>(t),
-            [&ri, n = num_runs]<typename... Grs>(Grs&&... grs) noexcept
+            [&ri, n = num_runs]<std::ranges::input_range... Grs>(
+                const Grs&... grs) noexcept
             {
-                return multi_gen(n,
-                                 std::forward<RI>(ri),
-                                 std::forward<Grs>(grs)...);
+                auto view =
+                    ranges::views::zip(grs...) |
+                    std::views::transform(
+                        [&ri](const auto& t) noexcept
+                        { return std::apply(std::forward<RI>(ri), t); });
+                std::vector<std::ranges::range_value_t<decltype(view)>> out;
+                out.reserve(n);
+                std::ranges::copy(view, std::back_inserter(out));
+                return out;
             },
             cmp);
     }
