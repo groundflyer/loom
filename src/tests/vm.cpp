@@ -6,6 +6,7 @@
 
 #include "programs.hpp"
 #include "programs_generators.hpp"
+#include "stream_wrapper.hpp"
 
 #include <utils/test.hpp>
 #include <utils/typeinfo.hpp>
