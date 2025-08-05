@@ -55,11 +55,58 @@ struct Context
 {
     StreamCompiler<_Program> stream;
     Lock                     lock;
-    bool                     need_sort = false;
+    std::atomic_flag         need_sort{};
 
     FORBID_ALL(Context);
 
     Context(unsigned n) noexcept : stream(n) {}
+
+    bool
+    try_sort() noexcept
+    {
+        if(need_sort.test(std::memory_order_acquire))
+        {
+            if(lock.try_lock())
+            {
+                stream.sort();
+                lock.unlock();
+                need_sort.clear(std::memory_order_release);
+                return false;
+            }
+            else
+                return true;
+        }
+        return false;
+    }
+
+    template <typename InputIter, typename Sentinel, typename OutIter>
+    void
+    try_exchange(InputIter& ib, const Sentinel s, OutIter& out) noexcept
+    {
+        if(ib != s && !need_sort.test(std::memory_order_acquire) &&
+           lock.try_lock())
+        {
+            auto exs = stream.exchange(ranges::subrange(ib, s));
+            // copy and update input and output iterators
+            std::ranges::for_each(exs,
+                                  [&ib, &out](const auto& ex) noexcept
+                                  {
+                                      out = ex;
+                                      ++out;
+                                      ++ib;
+                                  });
+            lock.unlock();
+            need_sort.test_and_set(std::memory_order_release);
+        }
+    }
+
+    void
+    step() noexcept
+    {
+        stream();
+        need_sort.test_and_set(std::memory_order_release);
+        try_sort();
+    }
 };
 
 class alignas(cache_line_size) Signal
@@ -111,34 +158,14 @@ struct Worker
 
                     if(!is_done && *signal && ctx.lock.try_lock())
                     {
-                        if(ctx.stream.done())
-                        {
-                            done_flags.set(idx);
-                            ctx.lock.unlock();
-                            return;
-                        }
+                        if(ctx.stream.done()) done_flags.set(idx);
+
                         ctx.lock.unlock();
                     }
 
-                    auto try_sort = [&ctx]() noexcept
-                    {
-                        if(ctx.lock.try_lock())
-                        {
-                            ctx.stream.sort();
-                            ctx.need_sort = false;
-                            ctx.lock.unlock();
-                        }
-                        else
-                            ctx.need_sort = true;
+                    if(ctx.try_sort()) return; // will try next time
 
-                        return ctx.need_sort;
-                    };
-
-                    if(ctx.need_sort)
-                        if(try_sort()) return; // will try next time
-
-                    ctx.stream();
-                    try_sort();
+                    ctx.step();
                 });
     }
 };
@@ -282,7 +309,7 @@ class Shop : public ShopBase<_Ps, _Context, N>
 
     template <typename InputCollection, typename OutputCollection>
     void
-    exchange(InputCollection& ic, OutputCollection& oc)
+    exchange(InputCollection& ic, OutputCollection& oc) noexcept
     {
         base::visit(
             [&ic, &oc](auto& bench) noexcept
@@ -291,21 +318,7 @@ class Shop : public ShopBase<_Ps, _Context, N>
                     [](auto& ctx, auto& in, auto& out) noexcept
                     {
                         auto& [ib, ie] = in;
-                        if(ib != ie && ctx.lock.try_lock())
-                        {
-                            auto exs =
-                                ctx.stream.exchange(ranges::subrange(ib, ie));
-                            // copy and update input and output iterators
-                            std::ranges::for_each(
-                                exs,
-                                [&ib, &out](const auto& ex) noexcept
-                                {
-                                    out = ex;
-                                    ++out;
-                                    ++ib;
-                                });
-                            ctx.lock.unlock();
-                        }
+                        ctx.try_exchange(ib, ie, out);
                     },
                     bench,
                     ic,

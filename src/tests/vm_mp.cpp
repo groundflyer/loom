@@ -22,8 +22,7 @@ template <typename P>
 using BVEStreamCompiler = bve::stream<P, bve::INTROSORT>;
 
 template <typename P>
-using SIMDStreamCompiler =
-    simd::stream<P, simd::MINIKERNEL, bve::COUNTING_SORT, true>;
+using SIMDStreamCompiler = simd::stream<P, simd::N_ORDER, bve::INTROSORT, true>;
 
 template <typename P>
 using BVEContext = mp::Context<P, BVEStreamCompiler>;
@@ -124,22 +123,17 @@ main(int argc, char* argv[])
             shop.set();
         }
         shop.finalize(oc);
+        ASSERT(out_fac.size() == out_v_fac.size(), "sizes don't match");
+        ASSERT(out_fib.size() == out_v_fib.size(), "sizes don't match");
+        ASSERT(out_fz.size() == out_v_fz.size(), "sizes don't match");
         sort_outs();
-        const double r_fac = std::ranges::equal(out_fac, out_v_fac) * num_runs;
-        const double r_fib = std::ranges::equal(out_fib, out_v_fib) * num_runs;
-        const double r_fz  = static_cast<double>(
-            ranges::accumulate(ranges::views::zip_with(
-                                   [](const output_type<fz_p>& lhs,
-                                      const output_type<fz_p>& rhs) noexcept
-                                   {
-                                       const auto [lx, li] = lhs;
-                                       const auto [rx, ri] = rhs;
-                                       return ulp_cmp{10}(lx, rx) && li == ri;
-                                   },
-                                   out_fz,
-                                   out_v_fz),
-                               0ul));
-        return 1. - (r_fac + r_fib + r_fz) / (num_runs * 3.);
+
+        constexpr test::range_cmp_estimator rng_cmp{};
+
+        const double r_fac = rng_cmp(out_fac, out_v_fac);
+        const double r_fib = rng_cmp(out_fib, out_v_fib);
+        const double r_fz  = rng_cmp(out_fz, out_v_fz);
+        return (r_fac + r_fib + r_fz) / 3.;
     };
 
     track.check(NamedFuzzyTest(
@@ -148,7 +142,7 @@ main(int argc, char* argv[])
             mp::Shop<programs, SIMDContext, 4> shop(1000);
             return test_shop(shop);
         },
-        "BVE static 4 threads",
+        "SIMD static 4 threads",
         0.1));
 
     reset_outs();
@@ -159,7 +153,7 @@ main(int argc, char* argv[])
             mp::Shop<programs, SIMDContext, dynamic_size> shop(4, 1000);
             return test_shop(shop);
         },
-        "BVE dynamic 4 threads",
+        "SIMD dynamic 4 threads",
         0.1));
 
     return track.ret_code();
