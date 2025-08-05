@@ -873,7 +873,10 @@ struct transparent_id
     bool
     operator()(T val) const noexcept
     {
-        fmt::print("{:>8}\n", val);
+        if constexpr(is_tuple_v<T>)
+            fmt::print("{}\n", val);
+        else
+            fmt::print("{:>8}\n", val);
         return val;
     }
 };
@@ -888,7 +891,14 @@ struct transparent_cmp
     operator()(const T& a, const T& b) const noexcept
     {
         const bool r = cmp(a, b);
-        fmt::print("{:>8} {}= {:>8}\n", a, r ? '=' : '!', b);
+        if(!r)
+        {
+            if constexpr(is_tuple_v<T>)
+                fmt::print("{} != {}\n", a, b);
+            else
+                fmt::print("{:>8} != {:>8}\n", a, b);
+        }
+
         return r;
     }
 };
@@ -908,7 +918,14 @@ struct transparent_range_cmp
             [](const auto& a, const auto& b) noexcept
             {
                 const bool r = cmp(a, b);
-                fmt::print("{:>8} {}= {:>8}\n", a, r ? '=' : '!', b);
+                if(!r)
+                {
+                    if constexpr(is_tuple_v<std::remove_cvref_t<decltype(a)>> ||
+                                 is_tuple_v<std::remove_cvref_t<decltype(b)>>)
+                        fmt::print("{} != {}\n", a, b);
+                    else
+                        fmt::print("{:>8} != {:>8}\n", a, b);
+                }
                 return r;
             });
     }
