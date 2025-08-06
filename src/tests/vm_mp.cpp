@@ -1,16 +1,12 @@
 // -*- C++ -*-
 // vm_mp.cpp
 #include <utils/test.hpp>
-#include <vm/bve.hpp>
 #include <vm/mp.hpp>
 #include <vm/simd.hpp>
 
 #include "programs.hpp"
 #include "programs_generators.hpp"
 #include "root_finding.hpp"
-
-#include <range/v3/numeric/accumulate.hpp>
-#include <range/v3/view/zip_with.hpp>
 
 #include <algorithm>
 #include <vector>
@@ -19,20 +15,14 @@ using namespace lucid;
 using namespace test;
 
 template <typename P>
-using BVEStreamCompiler = bve::stream<P, bve::INTROSORT>;
-
-template <typename P>
 using SIMDStreamCompiler = simd::stream<P, simd::N_ORDER, bve::INTROSORT, true>;
-
-template <typename P>
-using BVEContext = mp::Context<P, BVEStreamCompiler>;
 
 template <typename P>
 using SIMDContext = mp::Context<P, SIMDStreamCompiler>;
 
 using fac_p = factorial_int<std::uint64_t>;
 using fib_p = fib<std::uint64_t>;
-using fz_p  = cubic_fz_program<double, CS(10)>;
+using fz_p  = cubic_fz_program<double, constants<double>::errt>;
 
 using programs = type_sequence<fac_p, fib_p, fz_p>;
 
@@ -128,7 +118,7 @@ main(int argc, char* argv[])
         ASSERT(out_fz.size() == out_v_fz.size(), "sizes don't match");
         sort_outs();
 
-        constexpr test::range_cmp_estimator rng_cmp{};
+        constexpr test::range_cmp_estimator<> rng_cmp{};
 
         const double r_fac = rng_cmp(out_fac, out_v_fac);
         const double r_fib = rng_cmp(out_fib, out_v_fib);
