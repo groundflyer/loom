@@ -18,9 +18,9 @@
 #include <algorithm>
 #include <atomic>
 #include <bitset>
+#include <iterator>
 #include <mutex>
 #include <ranges>
-#include <vector>
 
 namespace lucid::mp
 {
