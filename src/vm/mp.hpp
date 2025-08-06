@@ -55,7 +55,12 @@ struct Context
 {
     StreamCompiler<_Program> stream;
     Lock                     lock;
-    std::atomic_flag         need_sort{};
+
+    union alignas(cache_line_size)
+    {
+        std::atomic_flag need_sort{};
+        std::uint8_t     __padding[cache_line_size];
+    };
 
     FORBID_ALL(Context);
 
