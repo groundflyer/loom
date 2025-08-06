@@ -1,6 +1,7 @@
 // -*- C++ -*-
 // lang_root_finding.cpp
 #include "root_finding.hpp"
+#include "stream_wrapper.hpp"
 
 #include <utils/test.hpp>
 #include <utils/typeinfo.hpp>
@@ -8,9 +9,6 @@
 #include <vm/simd.hpp>
 
 #include <fmt/core.h>
-
-#include <range/v3/numeric/accumulate.hpp>
-#include <range/v3/view/zip_with.hpp>
 
 #include <algorithm>
 #include <vector>
@@ -84,6 +82,10 @@ struct test_suite
         simd::function<cubic_fz_p, simd::N_ORDER, bve::INTROSORT> simd_cubic_fz(
             tm.num_runs);
 
+        simd::stream<cubic_fz_p, simd::N_ORDER, bve::INTROSORT, true>
+                      simd_stream_fz(tm.num_runs / 4);
+        StreamWrapper simd_stream_wrapper_fz{&simd_stream_fz};
+
         track.check(
             NamedFuzzyTest(tm.fuzzy_ulp(g_cubic, bse_cubic, val_cubic_eval, 10),
                            fmt::format("({}) BSE cubic eval", ti),
@@ -123,6 +125,28 @@ struct test_suite
                 },
                 val_cubic_fz),
             fmt::format("({}) SIMD cubic find zero", ti),
+            1e-2));
+        track.check(NamedFuzzyTest(
+            [&simd_stream_wrapper_fz, &g_c4, n = tm.num_runs]() noexcept
+            {
+                std::vector<input_type<cubic_fz_p>> grs;
+                grs.reserve(n);
+                std::ranges::generate_n(std::back_inserter(grs), n, g_c4);
+
+                auto vals = simd_stream_wrapper_fz(grs);
+                std::ranges::sort(vals);
+
+                std::vector<output_type<cubic_fz_p>> ts;
+                ts.reserve(n);
+                std::ranges::transform(
+                    grs,
+                    std::back_inserter(ts),
+                    [](const auto& gs) noexcept
+                    { return std::apply(val_cubic_fz, gs); });
+                std::ranges::sort(ts);
+                return range_cmp_estimator<>{}(vals, ts);
+            },
+            fmt::format("({}) SIMD stream find zero", ti),
             1e-2));
 
         return track;

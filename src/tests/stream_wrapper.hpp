@@ -55,7 +55,7 @@ class StreamWrapper
         // compute the rest
         while(!p_stream->done()) step();
 
-        std::ranges::copy(p_stream->get_outputs(), inserter);
+        std::ranges::copy(p_stream->get_output_zipped(), inserter);
 
         ASSERT(out.size() == input.size(), "Output size doesn't match");
 
