@@ -1863,6 +1863,17 @@ constexpr fn::multiplies_fn multiplies;
 
 template <typename T,
           std::size_t N,
+          template <typename, std::size_t> typename Container,
+          template <typename, std::size_t> typename Container2>
+constexpr auto
+operator*(const Vector<T, N, Container>&  lhs,
+          const Vector<T, N, Container2>& rhs) noexcept
+{
+    return multiplies(lhs, rhs);
+}
+
+template <typename T,
+          std::size_t N,
           template <typename, std::size_t>
           typename Container>
 constexpr auto

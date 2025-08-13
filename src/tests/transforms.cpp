@@ -1,6 +1,7 @@
 // -*- C++ -*-
 // transforms.cpp --
 #include "property_test.hpp"
+#include <base/linal.hpp>
 #include <base/transforms.hpp>
 #include <utils/tuple.hpp>
 
@@ -38,7 +39,7 @@ main(int argc, char* argv[])
         {
             const auto& [origin, delta] = feed;
             const auto origin2          = testing - delta;
-            return any(!almost_equal(origin2, origin, ULP)) ||
+            return any(!almost_equal_vec(origin2, origin, ULP)) ||
                    !all(lucid::isfinite(origin2));
         });
 
@@ -51,13 +52,14 @@ main(int argc, char* argv[])
         {
             const auto& [origin, delta] = feed;
             const auto& origin2         = testing / delta;
-            return any(!almost_equal(origin2, origin, ULP)) ||
+            return any(!almost_equal_vec(origin2, origin, ULP)) ||
                    !all(lucid::isfinite(origin2));
         });
 
     ret += test_property_n(
         "rotate",
-        [&]() noexcept {
+        [&]() noexcept
+        {
             return pair{Pi * generate_canonical<real, 10>(g),
                         make_normal(argen())};
         },
@@ -70,7 +72,8 @@ main(int argc, char* argv[])
             const real lt = length(ot);
             return !(almost_equal(1_r, det(Mat3(testing)), ULP) &&
                      almost_equal(l, lt, ULP)) ||
-                   all(almost_equal(o, ot, ULP)) || !all(lucid::isfinite(ot));
+                   all(almost_equal_vec(o, ot, ULP)) ||
+                   !all(lucid::isfinite(ot));
         });
 
     ret += test_property(
@@ -88,7 +91,7 @@ main(int argc, char* argv[])
         {
             const auto& [eye, target] = feed;
             const Vec3 expected       = normalize(target - eye);
-            return any(!almost_equal(expected, testing, ULP)) ||
+            return any(!almost_equal_vec(expected, testing, ULP)) ||
                    !all(lucid::isfinite(testing));
         });
 
@@ -102,7 +105,7 @@ main(int argc, char* argv[])
             const Mat3             mm{a, b, feed};
             const Mat3             zero = Mat3::identity() - mm * transpose(mm);
             const constexpr size_t ulp  = static_pow<sizeof(real)>(60ul);
-            return any(!almost_equal(flat_ref(zero), 0_r, ulp));
+            return any(!almost_equal_vec(flat_ref(zero), 0_r, ulp));
         });
 
     if(ret)

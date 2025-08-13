@@ -431,8 +431,9 @@ vector_bool_test(RandomEngine& g, const size_t num_tests) noexcept
         [](const Vector<bool, N, array>& feed) noexcept { return any(feed); },
         [](const bool testing, const Vector<bool, N, array>& feed) noexcept
         {
-            return testing != apply([](auto... vals) { return (... || vals); },
-                                    feed.data());
+            return testing != std::apply([](auto... vals)
+                                         { return (... || vals); },
+                                         feed.data());
         });
 
     /// @test @f$\mathrm{all}(\mathbf{v}(a,b,c\dots)) = a \wedge b \wedge \dots
@@ -443,8 +444,9 @@ vector_bool_test(RandomEngine& g, const size_t num_tests) noexcept
         [](const Vector<bool, N, array>& feed) noexcept { return all(feed); },
         [](const bool testing, const Vector<bool, N, array>& feed) noexcept
         {
-            return testing != apply([](auto... vals) { return (... && vals); },
-                                    feed.data());
+            return testing != std::apply([](auto... vals)
+                                         { return (... && vals); },
+                                         feed.data());
         });
 
     return ret;
