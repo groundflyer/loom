@@ -439,7 +439,7 @@ gen_full(C& cgen, W& wgen, L& lgen, RandomState& rs)
         else
         {
             args.push_back(gen_key(o, cgen));
-            val ^= true;
+            val = o.default_value ^ true;
         }
     };
 
@@ -871,9 +871,9 @@ int main(/*int argc, char* argv[]*/)
         unsigned n1 = lgen();
         unsigned n2 = lgen();
         return std::pair{
-            ArgvMock({kcs_multi_flags(n1,       n2)}
+            ArgvMock({kcs_multi_flags(n1,   n2)}
             ),
-            std::pair{            n1 & 1, !(n2 & 1)}
+            std::pair{              true, false}
         };
     };
     auto of_kcs_pr_test = [&](ArgvMock&& mock)

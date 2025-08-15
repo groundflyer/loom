@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include <utils/common.hpp>
 #include <utils/debug.hpp>
 #include <utils/functional.hpp>
 #include <utils/string.hpp>
@@ -385,6 +386,8 @@ class Binding
     ArgsIterator m_iter;
 
   public:
+    FORBID_DEFAULT(Binding);
+
     Binding(R reader, const value_type& value) noexcept :
         m_reader(reader), m_default_value(value)
     {
@@ -426,15 +429,21 @@ class Binding<FlagReader, 0>
 {
     static constexpr FlagReader reader{};
 
-    bool m_flag = false;
+    const bool m_default;
+    bool       m_value;
 
   public:
-    Binding(FlagReader, bool default_value = false) : m_flag(default_value) {}
+    FORBID_DEFAULT(Binding);
+
+    Binding(FlagReader, bool default_value = false) :
+        m_default(default_value), m_value(default_value)
+    {
+    }
 
     void
     set(std::string_view word) noexcept
     {
-        m_flag = word.empty() ? m_flag ^ true : reader(word);
+        m_value = word.empty() ? m_default ^ true : reader(word);
     }
 
     // sink for tokenize
@@ -446,7 +455,7 @@ class Binding<FlagReader, 0>
     bool
     operator()() const noexcept
     {
-        return m_flag;
+        return m_value;
     }
 };
 
@@ -461,6 +470,8 @@ class Binding<R, 1>
     bool             m_is_set = false;
 
   public:
+    FORBID_DEFAULT(Binding);
+
     Binding(R reader, const value_type& value) noexcept :
         m_reader(reader), m_default_value(value)
     {
@@ -497,6 +508,8 @@ class Binding<R, npos>
     bool         m_first_is_set = false;
 
   public:
+    FORBID_DEFAULT(Binding);
+
     explicit Binding(R reader) noexcept : m_reader(reader) {}
 
     void
@@ -534,6 +547,8 @@ class ValuelessBinding
     bool         m_set = false;
 
   public:
+    FORBID_DEFAULT(ValuelessBinding);
+
     ValuelessBinding(R reader) noexcept : m_reader(reader) {}
 
     void
@@ -567,6 +582,8 @@ class ValuelessBinding<R, 1>
     std::string_view m_word;
 
   public:
+    FORBID_DEFAULT(ValuelessBinding);
+
     ValuelessBinding(R reader) noexcept : m_reader(reader) {}
 
     void
@@ -599,8 +616,8 @@ struct Option
                            std::array<singular_value_type, nvals>,
                            singular_value_type>;
     using var_type     = std::conditional_t<(nvals > 1),
-                                        std::array<std::string_view, nvals>,
-                                        std::string_view>;
+                                            std::array<std::string_view, nvals>,
+                                            std::string_view>;
     using keyword_type = Keyword;
     using binding_type = Binding<R, nvals>;
 
@@ -619,8 +636,7 @@ struct Option
                      const value_type&      _default_value,
                      const std::string_view _doc,
                      const var_type&        _var) noexcept :
-        reader(_reader),
-        default_value(_default_value), doc(_doc), var(_var)
+        reader(_reader), default_value(_default_value), doc(_doc), var(_var)
     {
     }
 
@@ -650,8 +666,7 @@ struct Option<Key, Keyword, R, npos>
     consteval Option(R                      _reader,
                      const std::string_view _doc,
                      const std::string_view _var) noexcept :
-        reader(_reader),
-        doc(_doc), var(_var)
+        reader(_reader), doc(_doc), var(_var)
     {
     }
 
@@ -667,8 +682,8 @@ template <Reader R, std::size_t nvals>
 struct Positional
 {
     using var_type     = std::conditional_t<(nvals > 1 && nvals != npos),
-                                        std::array<std::string_view, nvals>,
-                                        std::string_view>;
+                                            std::array<std::string_view, nvals>,
+                                            std::string_view>;
     using binding_type = std::conditional_t<nvals == npos,
                                             Binding<R, nvals>,
                                             ValuelessBinding<R, nvals>>;
@@ -681,8 +696,7 @@ struct Positional
     consteval Positional(R                      _reader,
                          const std::string_view _doc,
                          const var_type&        _var) noexcept :
-        reader(_reader),
-        doc(_doc), var(_var)
+        reader(_reader), doc(_doc), var(_var)
     {
     }
 
@@ -901,8 +915,7 @@ class ParseResults
     ParseResults(const OptBindings& opt_bindings,
                  const PosBindings& pos_bindings,
                  Options) noexcept :
-        m_opt_bindings(opt_bindings),
-        m_pos_bindings(pos_bindings)
+        m_opt_bindings(opt_bindings), m_pos_bindings(pos_bindings)
     {
     }
 
@@ -1597,11 +1610,10 @@ show_help(std::string_view                  program_name,
         });
 
     // print positionals short description
-    lucid::for_each(positionals,
-                    [&](const auto& p) noexcept {
-                        column =
-                            print_vars<true>(p, try_newline1, column, file);
-                    });
+    lucid::for_each(
+        positionals,
+        [&](const auto& p) noexcept
+        { column = print_vars<true>(p, try_newline1, column, file); });
 
     // options details
     std::fputs("\n\nOptions:\n", file);
@@ -1650,7 +1662,8 @@ show_help(std::string_view                  program_name,
         std::ranges::for_each(
             doc | std::views::split(' ') |
                 std::views::transform(
-                    [](auto&& rng) {
+                    [](auto&& rng)
+                    {
                         return std::string_view(&*rng.begin(),
                                                 std::ranges::distance(rng));
                     }) |
@@ -1730,11 +1743,8 @@ show_help(std::string_view                  program_name,
                         [&](const auto& o) noexcept
                         {
                             opt_align();
-                            column = print_vars<false>(
-                                o,
-                                []() {},
-                                column,
-                                file);
+                            column =
+                                print_vars<false>(o, []() {}, column, file);
                             doc_print(o.doc);
                         });
     }
@@ -1770,8 +1780,7 @@ class StandardErrorHandler
     StandardErrorHandler(const Options&     opts,
                          const Positionals& poss,
                          std::string_view   program_name) noexcept :
-        p_opts(&opts),
-        p_poss(&poss), m_program_name(program_name)
+        p_opts(&opts), p_poss(&poss), m_program_name(program_name)
     {
     }
 
