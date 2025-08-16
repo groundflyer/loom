@@ -62,28 +62,30 @@ mk_val(const std::vector<T>& i, V v) noexcept
     return ret;
 }
 
-int
-main(int argc, char* argv[])
+using v_in_fac = std::vector<input_type<fac_p>>;
+using v_in_fib = std::vector<input_type<fib_p>>;
+using v_in_fz  = std::vector<input_type<fz_p>>;
+
+using v_out_fac = std::vector<output_type<fac_p>>;
+using v_out_fib = std::vector<output_type<fib_p>>;
+using v_out_fz  = std::vector<output_type<fz_p>>;
+
+template <template <typename> typename _Context, std::size_t threads_number>
+void
+test_stream(std::string_view compiler_name,
+            Track&           track,
+            const unsigned   stream_size,
+            const unsigned   num_runs,
+            const v_in_fac&  in_fac,
+            const v_in_fib&  in_fib,
+            const v_in_fz&   in_fz,
+            const v_out_fac& out_val_fac,
+            const v_out_fib& out_val_fib,
+            const v_out_fz&  out_val_fz) noexcept
 {
-    Track          track;
-    RandomState    rs;
-    const unsigned num_runs = parse_numruns<1000000>(argc, argv);
-
-    auto g_fac = GM_2_10<std::uint64_t>{}(rs);
-    auto g_fib = GM_FIB<std::uint64_t>{}(rs);
-    auto g_fz  = gm_fz<double>(rs);
-
-    const std::vector<input_type<fac_p>> in_fac = gen_input(num_runs, g_fac);
-    const std::vector<input_type<fib_p>> in_fib = gen_input(num_runs, g_fib);
-    const std::vector<input_type<fz_p>>  in_fz  = gen_input(num_runs, g_fz);
-
-    const std::vector<output_type<fac_p>> out_v_fac = mk_val(in_fac, val_fac);
-    const std::vector<output_type<fib_p>> out_v_fib = mk_val(in_fib, val_fib);
-    const std::vector<output_type<fz_p>> out_v_fz = mk_val(in_fz, val_cubic_fz);
-
-    std::vector<output_type<fac_p>> out_fac;
-    std::vector<output_type<fib_p>> out_fib;
-    std::vector<output_type<fz_p>>  out_fz;
+    v_out_fac out_fac;
+    v_out_fib out_fib;
+    v_out_fz  out_fz;
 
     auto sort_outs = [&]() noexcept
     {
@@ -113,26 +115,26 @@ main(int argc, char* argv[])
             shop.set();
         }
         shop.finalize(oc);
-        ASSERT(out_fac.size() == out_v_fac.size(), "sizes don't match");
-        ASSERT(out_fib.size() == out_v_fib.size(), "sizes don't match");
-        ASSERT(out_fz.size() == out_v_fz.size(), "sizes don't match");
+        ASSERT(out_fac.size() == out_val_fac.size(), "sizes don't match");
+        ASSERT(out_fib.size() == out_val_fib.size(), "sizes don't match");
+        ASSERT(out_fz.size() == out_val_fz.size(), "sizes don't match");
         sort_outs();
 
         constexpr test::range_cmp_estimator<> rng_cmp{};
 
-        const double r_fac = rng_cmp(out_fac, out_v_fac);
-        const double r_fib = rng_cmp(out_fib, out_v_fib);
-        const double r_fz  = rng_cmp(out_fz, out_v_fz);
+        const double r_fac = rng_cmp(out_fac, out_val_fac);
+        const double r_fib = rng_cmp(out_fib, out_val_fib);
+        const double r_fz  = rng_cmp(out_fz, out_val_fz);
         return (r_fac + r_fib + r_fz) / 3.;
     };
 
     track.check(NamedFuzzyTest(
         [&]() noexcept
         {
-            mp::Shop<programs, SIMDContext, 4> shop(1000);
+            mp::Shop<programs, _Context, threads_number> shop(stream_size);
             return test_shop(shop);
         },
-        "SIMD static 4 threads",
+        fmt::format("Static {} {} threads", compiler_name, threads_number),
         0.1));
 
     reset_outs();
@@ -140,11 +142,124 @@ main(int argc, char* argv[])
     track.check(NamedFuzzyTest(
         [&]() noexcept
         {
-            mp::Shop<programs, SIMDContext, dynamic_size> shop(4, 1000);
+            mp::Shop<programs, _Context, dynamic_size> shop(threads_number,
+                                                            stream_size);
             return test_shop(shop);
         },
-        "SIMD dynamic 4 threads",
+        fmt::format("Dynamic {} {} threads", compiler_name, threads_number),
         0.1));
+}
+
+template <simd::STITCH stitch>
+struct stitch_name;
+
+template <>
+struct stitch_name<simd::N_ORDER>
+{
+    static constexpr char chars[] = "N-order";
+};
+
+template <>
+struct stitch_name<simd::MINIKERNEL>
+{
+    static constexpr char chars[] = "Minikernel";
+};
+
+template <bve::SORT>
+struct sort_name;
+
+template <>
+struct sort_name<bve::INTROSORT>
+{
+    static constexpr char chars[] = "introsort";
+};
+
+template <>
+struct sort_name<bve::COUNTING_SORT>
+{
+    static constexpr char chars[] = "counting sort";
+};
+
+template <simd::STITCH stitch, bve::SORT sort_method>
+struct make_simd_context
+{
+    static std::string
+    get_name() noexcept
+    {
+        return fmt::format("SIMD {} {}",
+                           stitch_name<stitch>::chars,
+                           sort_name<sort_method>::chars);
+    }
+
+    template <typename P>
+    using compiler = simd::stream<P, stitch, sort_method, true>;
+
+    template <typename P>
+    using context = mp::Context<P, compiler>;
+};
+
+template <simd::STITCH stitch,
+          bve::SORT    sort_method,
+          std::size_t... tns,
+          typename... Args>
+void
+test_simd_stream(std::integer_sequence<std::size_t, tns...>,
+                 Args&&... args) noexcept
+{
+    using helper = make_simd_context<stitch, sort_method>;
+    (...,
+     test_stream<helper::template context, tns>(helper::get_name(),
+                                                std::forward<Args>(args)...));
+}
+
+template <simd::STITCH stitch, auto... sorts, typename... Args>
+void
+test_1stitch(Args&&... args) noexcept
+{
+    (...,
+     test_simd_stream<stitch, sorts>(
+         std::integer_sequence<std::size_t, 2, 4, 8>{},
+         std::forward<Args>(args)...));
+}
+
+template <auto... stitches, typename... Args>
+void
+test_simd_all(Args&&... args) noexcept
+{
+    (...,
+     test_1stitch<stitches, bve::INTROSORT, bve::COUNTING_SORT>(
+         std::forward<Args>(args)...));
+}
+
+int
+main(int argc, char* argv[])
+{
+    Track          track;
+    RandomState    rs;
+    const unsigned num_runs    = parse_numruns<1000000>(argc, argv);
+    const unsigned stream_size = num_runs / 1000;
+
+    auto g_fac = GM_2_10<std::uint64_t>{}(rs);
+    auto g_fib = GM_FIB<std::uint64_t>{}(rs);
+    auto g_fz  = gm_fz<double>(rs);
+
+    const v_in_fac in_fac = gen_input(num_runs, g_fac);
+    const v_in_fib in_fib = gen_input(num_runs, g_fib);
+    const v_in_fz  in_fz  = gen_input(num_runs, g_fz);
+
+    const v_out_fac out_val_fac = mk_val(in_fac, val_fac);
+    const v_out_fib out_val_fib = mk_val(in_fib, val_fib);
+    const v_out_fz  out_val_fz  = mk_val(in_fz, val_cubic_fz);
+
+    test_simd_all<simd::N_ORDER, simd::MINIKERNEL>(track,
+                                                   stream_size,
+                                                   num_runs,
+                                                   in_fac,
+                                                   in_fib,
+                                                   in_fz,
+                                                   out_val_fac,
+                                                   out_val_fib,
+                                                   out_val_fz);
 
     return track.ret_code();
 }
