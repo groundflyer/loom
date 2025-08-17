@@ -296,9 +296,7 @@ MK_REMAP_BINOP_I(ops::lshift, <<)
 MK_REMAP_BINOP_I(ops::rshift, >>)
 
 MK_REMAP_UN_FUNC(ops::abs, __builtin_elementwise_abs)
-MK_REMAP_UN_FUNC(
-    ops::round,
-    __builtin_elementwise_roundeven) // FIXME: roundeven is not exactly round
+MK_REMAP_UN_FUNC(ops::round, __builtin_elementwise_round)
 MK_REMAP_UN_FUNC(ops::ceil, __builtin_elementwise_ceil)
 MK_REMAP_UN_FUNC(ops::floor, __builtin_elementwise_floor)
 MK_REMAP_UN_FUNC(ops::trunc, __builtin_elementwise_trunc)
