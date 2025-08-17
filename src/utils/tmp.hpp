@@ -1436,7 +1436,7 @@ using join = detail::join<L1, L2>::type;
 
 /// @brief Constructs std::integer_sequence repeating @p Vals @p N
 /// times.
-template <std::size_t N, typename Int, Int... Vals>
+template <std::size_t N, std::integral Int, Int... Vals>
 using repeat = detail::repeat<N, Int, Vals...>::type;
 
 /// @brief Reverse the order of the elements in @p L.
@@ -1458,11 +1458,11 @@ template <template <auto> typename F, List L>
 using map_t = detail::map_t<F, L>::type;
 
 /// @brief Add @p Val @p N times to the end of @p L.
-template <List L, std::size_t N, auto Val>
+template <List L, std::size_t N, std::integral auto Val>
 using nappend = detail::nappend<L, N, Val>::type;
 
 /// @brief Add @p Val to the end of @p L.
-template <List L, auto Val>
+template <List L, std::integral auto Val>
 using append = nappend<L, 1, Val>;
 
 /// @brief Length of an std::integer_sequence.
