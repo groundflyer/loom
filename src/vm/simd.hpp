@@ -508,13 +508,12 @@ class eval<ParmJump<Var, Labels>, LabelMap, N>
 template <typename SIMDRunner,
           typename SerialRunner,
           fsize_t N,
-          fsize_t unroll_exp>
+          fsize_t max_bulk_size>
 class BulkDispatcher
 {
-    using bulk_sizes =
-        intlist::map_f<decltype([](fsize_t n) constexpr noexcept -> fsize_t
-                                { return n * N; }),
-                       intlist::reverse<intlist::powerof2s<unroll_exp>>>;
+    using bulk_sizes = intlist::map_f<
+        decltype([](fsize_t i) constexpr noexcept { return i * N; }),
+        intlist::range<static_cast<fsize_t>(1), max_bulk_size + 1>>;
 
     static constexpr bulk_sizes   seq{};
     static constexpr SIMDRunner   simd_runner{};
@@ -611,8 +610,10 @@ class make_N_order_instruction_runner
     static constexpr fsize_t N = native_instruction_width_v<I, vartype<CPVar>>;
 
   public:
-    using type =
-        BulkDispatcher<eval<I, LabelMap, N>, standard_eval<I, LabelMap>, N, 1>;
+    using type = BulkDispatcher<eval<I, LabelMap, N>,
+                                standard_eval<I, LabelMap>,
+                                N,
+                                cache_line_capacity_v<vartype<CPVar>>>;
 };
 
 template <STITCH stitch, typename... Args>
@@ -643,9 +644,9 @@ class AsyncStreamFacade :
     using input_vars  = _Program::input_vars;
     using output_vars = _Program::output_vars;
 
-    using cp_t = vartype<cp_var>;
+    using index_t = vartype<cp_var>;
 
-    static constexpr cp_t    halt_pos = _Program::halt_pos;
+    static constexpr index_t halt_pos = _Program::halt_pos;
     static constexpr fsize_t npos     = static_cast<fsize_t>(-1);
 
     using facade = bve::MemoryFacade<_Program, _Vector, Allocator, Sorter>;
@@ -657,7 +658,7 @@ class AsyncStreamFacade :
     void
     find_halt_segments() noexcept
     {
-        constexpr fsize_t step_size = cache_line_capacity_v<cp_t>;
+        constexpr fsize_t step_size = cache_line_capacity_v<index_t>;
         const auto&       cps       = facade::mem().cp();
         m_pos                       = npos;
         for(fsize_t pos = 0; pos < cps.size(); pos += step_size)
@@ -827,7 +828,10 @@ class make_runner<STITCH::MINIKERNEL, Cell, LabelMap, CPVar>
     };
 
   public:
-    using type = BulkDispatcher<SIMDRunner, SerialRunner, N, 1>;
+    using type = BulkDispatcher<SIMDRunner,
+                                SerialRunner,
+                                N,
+                                cache_line_capacity_v<index_t>>;
 };
 
 template <STITCH stitch, typename Cell, typename LabelMap, typename CPVar>
