@@ -1415,6 +1415,18 @@ struct powersof2s
     using type = typelist::to_integer_sequence<
         typename map_t<f, std::make_index_sequence<N>>::type>;
 };
+
+template <auto A, auto B, typename List>
+struct range_impl
+{
+    using type = range_impl<A + 1, B, typename nappend<List, 1, A>::type>::type;
+};
+
+template <auto A, typename List>
+struct range_impl<A, A, List>
+{
+    using type = List;
+};
 } // namespace detail
 
 /// @defgroup Intlist Intlist
@@ -1438,6 +1450,12 @@ using join = detail::join<L1, L2>::type;
 /// times.
 template <std::size_t N, std::integral Int, Int... Vals>
 using repeat = detail::repeat<N, Int, Vals...>::type;
+
+/// @brief Constructs std::integer_sequence of range [A, B).
+template <std::integral auto A, std::integral auto B>
+    requires(std::is_same_v<decltype(A), decltype(B)> && A < B)
+using range =
+    detail::range_impl<A, B, std::integer_sequence<decltype(A)>>::type;
 
 /// @brief Reverse the order of the elements in @p L.
 template <List L>

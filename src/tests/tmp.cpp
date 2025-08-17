@@ -22,6 +22,7 @@ using testlist1_ts = type_sequence<int_constant<1>,
                                    int_constant<3>,
                                    int_constant<4>>;
 
+static_assert(is_same_v<testlist1, range<1, 5>>);
 static_assert(is_same_v<reverse<testlist1>, integer_sequence<int, 4, 3, 2, 1>>);
 static_assert(
     is_same_v<nappend<integer_sequence<int, 1, 2, 3, 4>, 3, 0>, testlist2>);
