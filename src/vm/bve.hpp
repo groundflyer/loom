@@ -852,18 +852,18 @@ counting_sort(Memory<RegTypes, RegNames, _CP, _Vector, Allocator>& in,
 {
     ASSERT(in.size() == out.size(), "Sizes must match");
 
-    using cp_t = vartype<_CP>;
+    using index_t = vartype<_CP>;
 
-    cp_t bins[num_bins] = {};
+    index_t bins[num_bins] = {};
 
-    auto fit = [](cp_t cp) noexcept
+    auto fit = [](index_t cp) noexcept
     { return cp != halt_pos ? cp : num_bins - 1; };
 
     // histogram
-    for(cp_t cp: in.cp()) ++bins[fit(cp)];
+    for(index_t cp: in.cp()) ++bins[fit(cp)];
 
     // prefix sum
-    for(cp_t i = 1; i < num_bins; ++i) bins[i] += bins[i - 1];
+    for(index_t i = 1; i < num_bins; ++i) bins[i] += bins[i - 1];
 
     // fill out
     for(int i = in.size() - 1; i >= 0; --i)
