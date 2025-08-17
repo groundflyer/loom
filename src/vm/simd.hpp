@@ -508,12 +508,17 @@ class eval<ParmJump<Var, Labels>, LabelMap, N>
 template <typename SIMDRunner,
           typename SerialRunner,
           fsize_t N,
-          fsize_t max_bulk_size>
+          fsize_t type_size>
 class BulkDispatcher
 {
+    // range starts with number of elements that can fit into SIMD register,
+    // ends with the number of elements that can fit into cache line
+    // e. g., for int32 in AVX it will be (32, 64)
     using bulk_sizes = intlist::map_f<
         decltype([](fsize_t i) constexpr noexcept { return i * N; }),
-        intlist::range<static_cast<fsize_t>(1), max_bulk_size + 1>>;
+        intlist::range<static_cast<fsize_t>(1),
+                       static_cast<fsize_t>(cache_line_size / (type_size * N) +
+                                            1)>>;
 
     static constexpr bulk_sizes   seq{};
     static constexpr SIMDRunner   simd_runner{};
@@ -613,7 +618,7 @@ class make_N_order_instruction_runner
     using type = BulkDispatcher<eval<I, LabelMap, N>,
                                 standard_eval<I, LabelMap>,
                                 N,
-                                cache_line_capacity_v<vartype<CPVar>>>;
+                                sizeof(vartype<CPVar>)>;
 };
 
 template <STITCH stitch, typename... Args>
@@ -828,10 +833,7 @@ class make_runner<STITCH::MINIKERNEL, Cell, LabelMap, CPVar>
     };
 
   public:
-    using type = BulkDispatcher<SIMDRunner,
-                                SerialRunner,
-                                N,
-                                cache_line_capacity_v<index_t>>;
+    using type = BulkDispatcher<SIMDRunner, SerialRunner, N, sizeof(index_t)>;
 };
 
 template <STITCH stitch, typename Cell, typename LabelMap, typename CPVar>
