@@ -1165,9 +1165,30 @@ template <typename _Program,
     requires(!_Program::singular)
 using stream = simd_compiler<_Program, stitch, sort_method, async>::stream;
 
-/// @brief Fast and lightweight set for cell numbers.
+/// @brief Count the number of logical 1 in packed vector @p vec.
+template <std::integral T, fsize_t N>
+_FORCE_INLINE T
+popcnt(const packed_vector<T, N> vec) noexcept
+{
+    // only AVX512VL + AVX512VPOPCNTDQ has dedicated popcnt
+    // this is workaround for older vector extensions
+    // FIXME: add AVX512 implementation
+    return __builtin_reduce_add(
+        __builtin_elementwise_min(vec, broadcast<N>(static_cast<T>(1))));
+}
+
+/// @brief Compute similarity between two packed vectors @p a and @p b.
+template <std::integral T, fsize_t N>
+_FORCE_INLINE T
+similarity(const packed_vector<T, N> a, const packed_vector<T, N> b) noexcept
+{
+    return popcnt<T, N>(a == b);
+}
+
+/// @brief Fast and lightweight set for cell indices.
 ///
-/// Takes native SIMD vector of cell numbers as input and optionally initial postion in case of sorted input.
+/// Takes native SIMD vector of cell indices as input and optional initial
+/// postion in case of sorted input.
 ///
 /// @tparam P program to make set for.
 template <typename P>
@@ -1184,28 +1205,32 @@ class cell_set
 
     class _iterator : public std::input_iterator_tag
     {
-        const index_vector_t m_cps;
-
-        index_t m_pos{};
-        index_t m_sum{};
-
         static constexpr index_t N = native_vector_extent_v<index_t>;
 
+        index_t              m_sum{};
+        const index_vector_t m_cps;
+        index_t              m_pos{};
+
+        static _FORCE_INLINE index_t
+        fit_inc(const index_t i) noexcept
+        {
+            return fit_cell_index<P>(i + static_cast<index_t>(1));
+        }
+
         _FORCE_INLINE bool
-        sum() noexcept
+        sum(const index_t pos) noexcept
         {
             const index_t ret =
-                __builtin_reduce_add(m_cps == broadcast<N>(m_pos));
+                similarity<index_t, N>(m_cps, broadcast<N>(pos));
             m_sum += ret;
             return ret;
         }
 
         _FORCE_INLINE index_t
-        next() noexcept
+        next(index_t pos) noexcept
         {
-            while(!sum())
-                m_pos = fit_cell_index<P>(m_pos + static_cast<index_t>(1));
-            return m_pos;
+            while(!sum(pos)) pos = fit_inc(pos);
+            return pos;
         }
 
       public:
@@ -1215,14 +1240,14 @@ class cell_set
         _iterator() noexcept = default;
         _iterator(const index_vector_t cps,
                   const index_t        initial_pos = 0) noexcept :
-            m_cps(cps), m_pos(initial_pos)
+            m_sum(0), m_cps(cps), m_pos(next(initial_pos))
         {
         }
 
         bool
         operator==(std::default_sentinel_t) const noexcept
         {
-            return m_sum == N || m_pos == halt_pos;
+            return m_sum > N;
         }
 
         value_type
@@ -1234,7 +1259,7 @@ class cell_set
         _iterator&
         operator++() noexcept
         {
-            next();
+            m_pos = next(fit_inc(m_pos));
             return *this;
         }
 
@@ -1242,7 +1267,7 @@ class cell_set
         operator++(int) noexcept
         {
             _iterator ret(*this);
-            next();
+            m_pos = next(fit_inc(m_pos));
             return ret;
         }
     };

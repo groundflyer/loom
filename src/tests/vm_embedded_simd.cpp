@@ -11,6 +11,8 @@
 #include <array>
 #include <set>
 
+#include <fmt/core.h>
+
 using namespace lucid;
 using namespace lucid::test;
 
@@ -71,7 +73,7 @@ test_set(Track& track, ParmTestMaker tm, RandomState& rs) noexcept
                                       for(const index_t v: r) sr.insert(v);
                                       return sa == sr;
                                   }),
-                          fmt::format("cells range [{}]", ti)));
+                          fmt::format("cell set [{}]", ti)));
 }
 
 int
