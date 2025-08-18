@@ -890,4 +890,18 @@ template <typename P>
 using output_type =
     typelist::maybe_to<typelist::map<vartype, typename P::output_vars>,
                        std::tuple>;
+
+/// @brief Helper function. Ensures that the result value is valid cell number
+/// or halt position.
+/// @tparam P program.
+template <typename P>
+static constexpr P::index_t
+fit_cell_index(const typename P::index_t c) noexcept
+{
+    using index_t        = P::index_t;
+    constexpr index_t num_cells = P::num_cells;
+    constexpr index_t halt_pos  = P::halt_pos;
+
+    return c < num_cells ? c : halt_pos;
+}
 } // namespace lucid

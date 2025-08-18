@@ -220,6 +220,7 @@ if(BUILD_TESTS)
     vm.cpp
     vm_root_finding.cpp
     vm_mp.cpp
+    vm_embedded_simd.cpp
     linal.cpp
     string.cpp
     tmp.cpp
@@ -231,10 +232,10 @@ if(BUILD_TESTS)
     threadpool.cpp
   )
 
-  # my system fmtlib linked against stdlibc++, but we use libc++
+  # FIXME: my system fmtlib linked against stdlibc++, but we use libc++
   # this is temporary workaround
   # header-only fmt
-  set(fmt_ho test_string test_linal test_vm test_vm_mp)
+  set(fmt_ho test_string test_linal test_vm test_vm_mp test_vm_embedded_simd)
 
   set(TESTS_SRC_DIR src/tests)
 

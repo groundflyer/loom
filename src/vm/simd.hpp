@@ -1164,4 +1164,106 @@ template <typename _Program,
           bool      async = false>
     requires(!_Program::singular)
 using stream = simd_compiler<_Program, stitch, sort_method, async>::stream;
+
+/// @brief Fast and lightweight set for cell numbers.
+///
+/// Takes native SIMD vector of cell numbers as input and optionally initial postion in case of sorted input.
+///
+/// @tparam P program to make set for.
+template <typename P>
+class cell_set
+{
+    using index_t        = P::index_t;
+    using index_vector_t = native_vector<index_t>;
+
+    static constexpr index_t num_cells = P::num_cells;
+    static constexpr index_t halt_pos  = P::halt_pos;
+
+    const index_vector_t m_cps;
+    const index_t        m_init_pos{};
+
+    class _iterator : public std::input_iterator_tag
+    {
+        const index_vector_t m_cps;
+
+        index_t m_pos{};
+        index_t m_sum{};
+
+        static constexpr index_t N = native_vector_extent_v<index_t>;
+
+        _FORCE_INLINE bool
+        sum() noexcept
+        {
+            const index_t ret =
+                __builtin_reduce_add(m_cps == broadcast<N>(m_pos));
+            m_sum += ret;
+            return ret;
+        }
+
+        _FORCE_INLINE index_t
+        next() noexcept
+        {
+            while(!sum())
+                m_pos = fit_cell_index<P>(m_pos + static_cast<index_t>(1));
+            return m_pos;
+        }
+
+      public:
+        using difference_type = std::make_signed_t<index_t>;
+        using value_type      = index_t;
+
+        _iterator() noexcept = default;
+        _iterator(const index_vector_t cps,
+                  const index_t        initial_pos = 0) noexcept :
+            m_cps(cps), m_pos(initial_pos)
+        {
+        }
+
+        bool
+        operator==(std::default_sentinel_t) const noexcept
+        {
+            return m_sum == N || m_pos == halt_pos;
+        }
+
+        value_type
+        operator*() const noexcept
+        {
+            return m_pos;
+        }
+
+        _iterator&
+        operator++() noexcept
+        {
+            next();
+            return *this;
+        }
+
+        _iterator
+        operator++(int) noexcept
+        {
+            _iterator ret(*this);
+            next();
+            return ret;
+        }
+    };
+
+  public:
+    cell_set() noexcept = default;
+    cell_set(const index_vector_t cps, const index_t initial_pos = 0) noexcept :
+        m_cps(cps), m_init_pos(initial_pos)
+    {
+    }
+
+    _iterator
+    begin() const noexcept
+    {
+        return {m_cps, m_init_pos};
+    }
+
+    std::default_sentinel_t
+    end() const noexcept
+    {
+        return std::default_sentinel;
+    }
+};
 } // namespace lucid::simd
