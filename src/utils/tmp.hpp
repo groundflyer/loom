@@ -1702,7 +1702,7 @@ for_each_arg_masked(L /* list */,
 } // namespace typelist
 
 template <std::size_t N>
-class uint_of_bits
+class int_of_bits
 {
     template <typename C>
     struct p : std::bool_constant<sizeof(C) * 8 >= N>
@@ -1710,23 +1710,41 @@ class uint_of_bits
     };
 
   public:
-    using type = typelist::find<p,
-                                type_sequence<std::uint8_t,
-                                              std::uint16_t,
-                                              std::uint32_t,
-                                              std::uint64_t,
-                                              std::uintmax_t>>;
+    using uint_t = typelist::find<p,
+                                  type_sequence<std::uint8_t,
+                                                std::uint16_t,
+                                                std::uint32_t,
+                                                std::uint64_t,
+                                                std::uintmax_t>>;
+    using int_t  = typelist::find<p,
+                                  type_sequence<std::int8_t,
+                                                std::int16_t,
+                                                std::int32_t,
+                                                std::int64_t,
+                                                std::intmax_t>>;
 };
 
 /// @brief Unsigned integer type capable of holding @p N bits.
 ///
 /// void if there is no such.
 template <std::size_t N>
-using uint_of_bits_t = uint_of_bits<N>::type;
+using uint_of_bits_t = int_of_bits<N>::uint_t;
 
-/// @brief Unsigned integer type of at least size @p S.
+/// @brief Unsigned integer type at least of size @p S bytes.
 ///
 /// void if there is no such.
 template <std::size_t S>
 using uint_of_size_t = uint_of_bits_t<S * 8>;
+
+/// @brief Integer type capable of holding @p N bits.
+///
+/// void if there is no such.
+template <std::size_t N>
+using int_of_bits_t = int_of_bits<N>::int_t;
+
+/// @brief Integer type of at leas size @p S bytes.
+///
+/// void if there is no such.
+template <std::size_t S>
+using int_of_size_t = int_of_bits_t<S * 8>;
 } // namespace lucid
