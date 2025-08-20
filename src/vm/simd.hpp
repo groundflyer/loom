@@ -823,7 +823,10 @@ class make_runner<STITCH::MINIKERNEL, Cell, LabelMap, CPVar>
     template <typename Var>
     using p = std::negation<is_literal<Var>>;
 
-    using vars    = typelist::filter<p, cell_vars_t<Cell, CPVar>>;
+    using load_vars  = load_list_t<Cell, CPVar>;
+    using store_vars = store_list_t<Cell, CPVar>;
+
+    using vars    = typelist::nub<typelist::join<load_vars, store_vars>>;
     using index_t = vartype<CPVar>;
 
     template <typename I>
@@ -835,9 +838,6 @@ class make_runner<STITCH::MINIKERNEL, Cell, LabelMap, CPVar>
 
     using reg_names = typelist::nub<typelist::map<varname, vars>>;
     using reg_types = infer_reg_types_t<vars, reg_names>;
-
-    using load_vars  = load_list_t<Cell, CPVar>;
-    using store_vars = store_list_t<Cell, CPVar>;
 
     class SerialRunner
     {
