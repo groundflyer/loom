@@ -49,7 +49,11 @@ class Memory
     }
 };
 
-template <typename _Program>
+template <typename _Program,
+          template <typename, typename, typename> typename _Memory = Memory,
+          typename GetResetVal =
+              decltype([]() constexpr noexcept -> _Program::index_t
+                       { return 0; })>
 class MemoryFacade
 {
     using reg_names   = _Program::reg_names;
@@ -57,14 +61,17 @@ class MemoryFacade
     using cp_var      = _Program::cp;
     using input_vars  = _Program::input_vars;
     using output_vars = _Program::output_vars;
+    using index_t     = _Program::index_t;
 
-    Memory<reg_types, reg_names, cp_var> memory;
+    static constexpr auto reset_val = GetResetVal{}();
+
+    _Memory<reg_types, reg_names, cp_var> memory;
 
     void
     reset() noexcept
     {
         // no-op when singular
-        if constexpr(!_Program::singular) memory.cp() = 0;
+        if constexpr(!_Program::singular) memory.cp() = reset_val;
     }
 
   public:
@@ -98,7 +105,7 @@ class MemoryFacade
     }
 
     constexpr auto
-    cp() noexcept
+    cp() const noexcept
     {
         // no-op when singular
         if constexpr(!_Program::singular) return memory.cp();
