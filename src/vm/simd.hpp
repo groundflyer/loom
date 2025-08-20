@@ -1297,11 +1297,11 @@ similarity(const packed_vector<T, N> a, const packed_vector<T, N> b) noexcept
 /// postion in case of sorted input.
 ///
 /// @tparam P program to make set for.
-template <typename P>
+template <typename P, fsize_t N>
 class cell_set
 {
     using index_t        = P::index_t;
-    using index_vector_t = native_vector<index_t>;
+    using index_vector_t = packed_vector<index_t, N>;
 
     static constexpr index_t num_cells = P::num_cells;
     static constexpr index_t halt_pos  = P::halt_pos;
@@ -1311,11 +1311,10 @@ class cell_set
 
     class _iterator : public std::input_iterator_tag
     {
-        static constexpr index_t N = native_vector_extent_v<index_t>;
-
         index_t              m_sum{};
         const index_vector_t m_cps;
         index_t              m_pos{};
+        index_vector_t       m_mask;
 
         static _FORCE_INLINE index_t
         fit_inc(const index_t i) noexcept
@@ -1326,8 +1325,8 @@ class cell_set
         _FORCE_INLINE bool
         sum(const index_t pos) noexcept
         {
-            const index_t ret =
-                similarity<index_t, N>(m_cps, broadcast<N>(pos));
+            m_mask            = m_cps == broadcast<N>(pos);
+            const index_t ret = popcnt<index_t, N>(m_mask);
             m_sum += ret;
             return ret;
         }
@@ -1341,7 +1340,7 @@ class cell_set
 
       public:
         using difference_type = std::make_signed_t<index_t>;
-        using value_type      = index_t;
+        using value_type      = std::pair<index_t, index_vector_t>;
 
         _iterator() noexcept = default;
         _iterator(const index_vector_t cps,
@@ -1359,7 +1358,7 @@ class cell_set
         value_type
         operator*() const noexcept
         {
-            return m_pos;
+            return {m_pos, m_mask};
         }
 
         _iterator&
@@ -1397,4 +1396,165 @@ class cell_set
         return std::default_sentinel;
     }
 };
+
+template <typename Cell, typename LabelMap, typename CPVar, fsize_t N>
+class make_masked_runner
+{
+    template <typename Var>
+    using p = std::negation<is_literal<Var>>;
+
+    using load_vars  = load_list_t<Cell, CPVar>;
+    using store_vars = store_list_t<Cell, CPVar>;
+
+    using vars    = typelist::nub<typelist::join<load_vars, store_vars>>;
+    using index_t = vartype<CPVar>;
+
+    using reg_names = typelist::nub<typelist::map<varname, vars>>;
+    using reg_types = infer_reg_types_t<vars, reg_names>;
+
+    using mask_type = packed_vector<index_t, N>;
+
+    template <typename I, typename _LabelMap>
+    using simd_eval = eval<I, _LabelMap, N>;
+
+    using Kernel      = standard_compiler<Cell, LabelMap, simd_eval>;
+    using TempStorage = KernelMemory<reg_types, reg_names, CPVar, N>;
+
+    static constexpr Kernel kernel{};
+
+    template <typename _MainStorage>
+    static TempStorage _FORCE_INLINE
+    alloc(const _MainStorage& main_storage) noexcept
+    {
+        TempStorage ret;
+        typelist::for_each(
+            load_vars{},
+            []<typename Var>(const _MainStorage& main_storage,
+                             TempStorage&        tmp_storage) noexcept
+            {
+                tmp_storage.template get<Var>() =
+                    main_storage.template get<Var>();
+            },
+            main_storage,
+            ret);
+        return ret;
+    }
+
+    template <typename _MainStorage>
+    static void _FORCE_INLINE
+    spill(_MainStorage&   main_storage,
+          TempStorage&    tmp_storage,
+          const mask_type mask) noexcept
+    {
+        typelist::for_each(
+            store_vars{},
+            []<typename Var>(_MainStorage&   main_storage,
+                             TempStorage&    tmp_storage,
+                             const mask_type mask) noexcept
+            {
+                auto& orig = main_storage.template get<Var>();
+                orig       = mask ? tmp_storage.template get<Var>() : orig;
+            },
+            main_storage,
+            tmp_storage,
+            mask);
+    }
+
+  public:
+    struct type
+    {
+        const mask_type mask;
+
+        template <typename _MainStorage>
+        void _FORCE_INLINE
+        operator()(_MainStorage& main_storage) const noexcept
+        {
+            TempStorage tmp_storage = alloc(main_storage);
+            kernel(tmp_storage);
+            spill(main_storage, tmp_storage, mask);
+        }
+    };
+};
+
+template <typename Cell, typename LabelMap, typename CPVar, fsize_t N>
+using masked_runner = make_masked_runner<Cell, LabelMap, CPVar, N>::type;
+
+template <typename _Program>
+class embedded_compiler
+{
+    using labelmap  = _Program::labelmap;
+    using cells     = _Program::cells;
+    using reg_names = _Program::reg_names;
+    using reg_types = _Program::reg_types;
+    using cp        = _Program::cp;
+    using index_t   = _Program::index_t;
+
+    static constexpr bool                      singular = _Program::singular;
+    static constexpr fsize_t                   N        = simd_width;
+    static constexpr packed_vector<index_t, N> halt_pos =
+        broadcast<N>(_Program::halt_pos);
+
+    template <typename... Ts>
+    using memory = KernelMemory<Ts..., N>;
+
+    using facade = bse::MemoryFacade<
+        _Program,
+        memory,
+        decltype([]() constexpr noexcept -> packed_vector<index_t, N>
+                 { return broadcast<N>(static_cast<index_t>(0)); })>;
+
+    class single_cell_evaluator : facade
+    {
+        template <typename I, typename _LabelMap>
+        using simd_eval = eval<I, _LabelMap, N>;
+
+        using Kernel =
+            standard_compiler<typelist::head<cells>, labelmap, simd_eval>;
+
+        static constexpr Kernel cell{};
+
+      public:
+        using program = _Program;
+
+        template <typename... Args>
+        auto
+        operator()(const Args... args) noexcept
+        {
+            facade::set_input(args...);
+            facade::step(cell);
+            return facade::get_outputs();
+        }
+    };
+
+    class evaluator : facade
+    {
+        template <typename Cell>
+        using compile_cell = masked_runner<Cell, labelmap, cp, N>;
+
+        using compiled_cells = typelist::map<compile_cell, cells>;
+
+      public:
+        template <typename... Args>
+        auto
+        operator()(const Args... args) noexcept
+        {
+            facade::set_inputs(args...);
+            while(!__builtin_reduce_and(facade::cp() == halt_pos))
+                for(const auto [cp, mask]: cell_set<_Program, N>{facade::cp()})
+                    typelist::visit_at(
+                        cp,
+                        [&]<typename Runner>() noexcept
+                        { facade::step(Runner{mask}); },
+                        compiled_cells{},
+                        sink);
+            return facade::get_outputs();
+        }
+    };
+
+  public:
+    using type = std::conditional_t<singular, single_cell_evaluator, evaluator>;
+};
+
+template <typename _Program>
+using embedded_function = embedded_compiler<_Program>::type;
 } // namespace lucid::simd

@@ -61,7 +61,7 @@ test_set(Track& track, ParmTestMaker tm, RandomState& rs) noexcept
     auto test = [](const arr_t& a) noexcept
     {
         const vec_t v = a2v(a);
-        return simd::cell_set<P>{v};
+        return simd::cell_set<P, N>{v};
     };
 
     track.check(NamedTest(tm.test(gen,
@@ -70,7 +70,7 @@ test_set(Track& track, ParmTestMaker tm, RandomState& rs) noexcept
                                   {
                                       set_t sa{a.cbegin(), a.cend()};
                                       set_t sr;
-                                      for(const index_t v: r) sr.insert(v);
+                                      for(const auto [v, _]: r) sr.insert(v);
                                       return sa == sr;
                                   }),
                           fmt::format("cell set [{}]", ti)));
