@@ -16,12 +16,9 @@
 TMACRO_BEGIN4(cubic_eval, result, x, t2, t3)
     TMUL_CS(t2, x, x),
     TMUL_CS(t3, t2, x),
-    TMUL_CS(result, CS(a), t3),
-    TMUL_CS(t3, CS(b), t2),
-    TADD_CS(result, result, t3),
-    TMUL_CS(t3, CS(c), x),
-    TADD_CS(result, result, t3),
-    TADD_CS(result, result, CS(d))
+    TFMA_CS(result, CS(c), x, CS(d)),
+    TFMA_CS(result, CS(b), t2, result),
+    TFMA_CS(result, CS(a), t3, result)
 MACRO_END;
 
 // root condition
@@ -145,7 +142,10 @@ val_cubic_eval(T a, T b, T c, T d, T x) noexcept
 {
     T x2 = x * x;
     T x3 = x2 * x;
-    return a * x3 + b * x2 + c * x + d;
+    return std::fma(
+        a,
+        x3,
+        std::fma(b, x2, std::fma(c, x, d))); // a * x3 + b * x2 + c * x + d;
 }
 
 template <std::floating_point T>
