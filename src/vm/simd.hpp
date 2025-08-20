@@ -22,6 +22,8 @@
 #include <algorithm>
 #include <cstdlib>
 
+#include <immintrin.h>
+
 #if defined(__clang__)
 #define _SHUFFLE      __builtin_shufflevector
 #define _FORCE_INLINE __attribute__((always_inline, nodebug))
@@ -135,7 +137,7 @@ constexpr inline fsize_t native_instruction_width_v =
 /// from aligned memory location @p src.
 template <fsize_t N, typename T>
 packed_vector<T, N> _FORCE_INLINE
-load(const T* p) noexcept
+load(T const* p) noexcept
 {
     return *(packed_vector<T, N>*)p;
 }
@@ -155,6 +157,110 @@ broadcast(const T v) noexcept
 {
     return std::apply(maker<packed_vector<T, N>, true>, repeat_to_tuple<N>(v));
 }
+
+/// @brief Loads packed vector with a mask.
+template <typename T, fsize_t N>
+struct mask_io_intrinsics_wrangler
+{
+    using vector_type = packed_vector<T, N>;
+    using mask_type   = packed_vector<int_of_size_t<sizeof(T)>, N>;
+
+    /// @brief Fallback implementation for mask load.
+    static vector_type _FORCE_INLINE
+    mask_load(T const* p, const mask_type mask) noexcept
+    {
+        return mask ? load<N>(p) : broadcast<N>(static_cast<T>(0));
+    }
+
+    /// @brief Fallback implementation for mask store.
+    static void _FORCE_INLINE
+    mask_store(T* dest, const mask_type mask, const vector_type value) noexcept
+    {
+        store<N>(dest, mask ? value : load<N>(dest));
+    }
+};
+
+#define MK_MASK_IO_INTRINSICS_WRANGLER(TYPE, EXT, LOAD_INTR, STORE_INTR)     \
+    template <>                                                              \
+    struct mask_io_intrinsics_wrangler<TYPE, EXT>                            \
+    {                                                                        \
+        using vector_type = packed_vector<TYPE, EXT>;                        \
+        using mask_type   = packed_vector<int_of_size_t<sizeof(TYPE)>, EXT>; \
+        static vector_type _FORCE_INLINE                                     \
+        mask_load(TYPE const* p, const mask_type mask) noexcept              \
+        {                                                                    \
+            return LOAD_INTR(p, mask);                                       \
+        }                                                                    \
+        static void _FORCE_INLINE                                            \
+        mask_store(TYPE*             dest,                                   \
+                   const mask_type   mask,                                   \
+                   const vector_type value) noexcept                         \
+        {                                                                    \
+            STORE_INTR(dest, mask, value);                                   \
+        }                                                                    \
+    };
+
+// assume that a CPU with newer extensions has old extensions too
+#if defined(__AVX__) || defined(__AVX2__) || defined(__AVX512F__)
+// starting from AVX
+MK_MASK_IO_INTRINSICS_WRANGLER(double, 2, _mm_maskload_pd, _mm_maskstore_pd)
+MK_MASK_IO_INTRINSICS_WRANGLER(float, 4, _mm_maskload_ps, _mm_maskstore_ps)
+MK_MASK_IO_INTRINSICS_WRANGLER(double,
+                               4,
+                               _mm256_maskload_pd,
+                               _mm256_maskstore_pd)
+MK_MASK_IO_INTRINSICS_WRANGLER(float,
+                               8,
+                               _mm256_maskload_ps,
+                               _mm256_maskstore_ps)
+
+#if defined(__AVX2__) || defined(__AVX512F__)
+MK_MASK_IO_INTRINSICS_WRANGLER(std::int64_t,
+                               2,
+                               _mm_maskload_epi64,
+                               _mm_maskstore_epi64)
+MK_MASK_IO_INTRINSICS_WRANGLER(std::int32_t,
+                               4,
+                               _mm_maskload_epi32,
+                               _mm_maskstore_epi32)
+MK_MASK_IO_INTRINSICS_WRANGLER(std::int64_t,
+                               4,
+                               _mm256_maskload_epi64,
+                               _mm256_maskstore_epi64)
+MK_MASK_IO_INTRINSICS_WRANGLER(std::int32_t,
+                               8,
+                               _mm256_maskload_epi32,
+                               _mm256_maskstore_epi32)
+
+template <>
+struct mask_io_intrinsics_wrangler<std::uint64_t, 2> :
+    mask_io_intrinsics_wrangler<std::int64_t, 2>
+{
+};
+
+template <>
+struct mask_io_intrinsics_wrangler<std::uin32_t, 4> :
+    mask_io_intrinsics_wrangler<std::int32_t, 4>
+{
+};
+
+template <>
+struct mask_io_intrinsics_wrangler<std::uint64_t, 4> :
+    mask_io_intrinsics_wrangler<std::int64_t, 4>
+{
+};
+
+template <>
+struct mask_io_intrinsics_wrangler<std::uint32_t, 8> :
+    mask_io_intrinsics_wrangler<std::int32_t, 8>
+{
+};
+
+// FIXME: implement for avx-512
+#endif
+#endif
+
+#undef MK_MASK_IO_INTRINSICS_WRANGLER
 
 template <fsize_t N, typename Op, typename Ret, typename... Args>
 struct remap_comp;
