@@ -76,6 +76,170 @@ test_set(Track& track, ParmTestMaker tm, RandomState& rs) noexcept
                           fmt::format("cell set [{}]", ti)));
 }
 
+template <typename T, std::size_t N>
+struct helper
+{
+    using array_type  = std::array<T, N>;
+    using vector_type = simd::packed_vector<T, N>;
+
+    template <typename V>
+    static void
+    set(V& v, const std::size_t i, const T val) noexcept
+    {
+        v[i] = val;
+    }
+
+    template <typename V>
+    [[nodiscard]] static auto
+    get(const V& v, const std::size_t i) noexcept
+    {
+        return v[i];
+    }
+
+    struct cmp
+    {
+        bool
+        operator()(const vector_type lhs, const vector_type rhs) const noexcept
+        {
+            return __builtin_reduce_and(lhs == rhs);
+        }
+    };
+};
+
+template <typename... Ts, std::size_t N>
+struct helper<std::tuple<Ts...>, N>
+{
+    using array_type  = std::tuple<typename helper<Ts, N>::array_type...>;
+    using vector_type = std::tuple<typename helper<Ts, N>::vector_type...>;
+
+    template <typename V>
+    static void
+    set(V& v, const std::size_t i, const std::tuple<Ts...>& vals) noexcept
+    {
+        lucid::zip_with_for_each([i](auto& v, const auto& s) noexcept
+                                 { v[i] = s; },
+                                 v,
+                                 vals);
+    }
+
+    template <typename V>
+    [[nodiscard]] static auto
+    get(const V& v, const std::size_t i) noexcept
+    {
+        return map_tuple(v, [i](const auto v) noexcept { return v[i]; });
+    }
+
+    struct cmp
+    {
+        bool
+        operator()(const vector_type& lhs,
+                   const vector_type& rhs) const noexcept
+        {
+            return fold_tuple(map_tuple(zip_tuples(lhs, rhs),
+                                        [](const auto& lr) noexcept
+                                        {
+                                            const auto [l, r] = lr;
+                                            return __builtin_reduce_and(l == r);
+                                        }),
+                              std::logical_and<>{});
+        }
+    };
+};
+
+template <typename P, std::size_t N>
+class program_types
+{
+    using hi = helper<input_type<P>, N>;
+    using ho = helper<output_type<P>, N>;
+
+  public:
+    using input_array  = hi::array_type;
+    using output_array = ho::array_type;
+
+    using input_simd  = hi::vector_type;
+    using output_simd = ho::vector_type;
+
+    template <typename... Ts>
+    static void
+    set_input(Ts&&... args) noexcept
+    {
+        hi::set(std::forward<Ts>(args)...);
+    }
+
+    template <typename... Ts>
+    [[nodiscard]] static auto
+    get_input(Ts&&... args) noexcept
+    {
+        return hi::get(std::forward<Ts>(args)...);
+    }
+
+    template <typename... Ts>
+    static void
+    set_output(Ts&&... args) noexcept
+    {
+        ho::set(std::forward<Ts>(args)...);
+    }
+
+    template <typename... Ts>
+    [[nodiscard]] static auto
+    get_output(Ts&&... args) noexcept
+    {
+        return ho::get(std::forward<Ts>(args)...);
+    }
+
+    using cmp = ho::cmp;
+};
+
+template <template <typename> typename P,
+          template <typename> typename GM,
+          typename V,
+          StringLiteral name>
+struct StandardTestSuite
+{
+    static constexpr V val{};
+
+    template <typename T>
+    bool
+    operator()(Track& track, ParmTestMaker tm, RandomState& rs) const noexcept
+    {
+        constexpr std::size_t N = simd::native_vector_extent_v<T>;
+
+        using p_t     = P<T>;
+        using types   = program_types<p_t, N>;
+        using in_vec  = types::input_simd;
+        using out_vec = types::output_simd;
+        using cmp_t   = types::cmp;
+
+        constexpr auto  ti = TypeInfo<T>::chars;
+        constexpr GM<T> gm{};
+        constexpr cmp_t cmp{};
+
+        auto gs = gm(rs);
+
+        auto gen = [&gs]() noexcept
+        {
+            in_vec ret;
+            for(std::size_t i = 0; i < N; ++i) types::set_input(ret, i, gs());
+            return ret;
+        };
+
+        auto ref = [](const auto& inp) noexcept
+        {
+            out_vec ret;
+            for(std::size_t i = 0; i < N; ++i)
+                types::set_output(ret,
+                                  i,
+                                  maybe_apply(val, types::get_input(inp, i)));
+            return ret;
+        };
+
+        simd::embedded_function<p_t> test;
+        return track.check(
+            NamedTest{tm.with_ref(gen, test, ref, cmp),
+                      fmt::format("{}: {}[{}]", name.view(), ti, N)});
+    }
+};
+
 int
 main(int argc, char* argv[])
 {
@@ -85,5 +249,9 @@ main(int argc, char* argv[])
 
     test_set<mock_program<unsigned, 9>>(track, tm, rs);
 
-    return 0;
+    StandardTestSuite<increment, GM_Incr, ::fn::val_inc_fn, "increment">
+                      test_inc{};
+    test_inc.template operator()<std::uint64_t>(track, tm, rs);
+
+    return track.ret_code();
 }
