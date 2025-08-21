@@ -1348,25 +1348,32 @@ struct multiplies_fn
 /// @brief Compute dot product of the given vectors.
 template <typename T,
           std::size_t N,
-          template <typename, std::size_t>
-          typename Container1,
-          template <typename, std::size_t>
-          typename Container2>
+          template <typename, std::size_t> typename Container1,
+          template <typename, std::size_t> typename Container2>
 constexpr T
 dot(const Vector<T, N, Container1>& a,
     const Vector<T, N, Container2>& b) noexcept
 {
-    return transform_reduce(std::multiplies<T>(), std::plus<T>(), a, b, T{0});
+    if constexpr(std::is_floating_point_v<T>)
+    {
+        T ret{};
+        for(std::size_t i = 0; i < N; ++i) ret = std::fma(a[i], b[i], ret);
+        return ret;
+    }
+    else
+        return transform_reduce(std::multiplies<T>(),
+                                std::plus<T>(),
+                                a,
+                                b,
+                                T{0});
 }
 
 /// @brief Compute product of matrix and column-vector.
 template <typename T,
           std::size_t M,
           std::size_t N,
-          template <typename, std::size_t>
-          typename MContainer,
-          template <typename, std::size_t>
-          typename VContainer>
+          template <typename, std::size_t> typename MContainer,
+          template <typename, std::size_t> typename VContainer>
 constexpr Vector<T, N, std::array>
 dot(const Matrix<T, M, N, MContainer>& lhs,
     const Vector<T, N, VContainer>&    rhs) noexcept
@@ -1374,7 +1381,8 @@ dot(const Matrix<T, M, N, MContainer>& lhs,
     Vector<T, N, std::array> ret{};
 
     for(std::size_t i = 0; i < M; ++i)
-        for(std::size_t j = 0; j < N; ++j) ret[i] += lhs.at(i, j) * rhs[j];
+        for(std::size_t j = 0; j < N; ++j)
+            ret[i] = std::fma(lhs.at(i, j), rhs[j], ret[i]);
 
     return ret;
 }
@@ -1385,10 +1393,8 @@ template <typename T,
           std::size_t N1,
           std::size_t M2,
           std::size_t N2,
-          template <typename, std::size_t>
-          typename Container1,
-          template <typename, std::size_t>
-          typename Container2>
+          template <typename, std::size_t> typename Container1,
+          template <typename, std::size_t> typename Container2>
 constexpr typename std::enable_if_t<N1 == M2, Matrix<T, M1, N2, std::array>>
 dot(const Matrix<T, M1, N1, Container1>& lhs,
     const Matrix<T, M2, N2, Container2>& rhs) noexcept
@@ -1398,7 +1404,8 @@ dot(const Matrix<T, M1, N1, Container1>& lhs,
     for(std::size_t i = 0; i < M1; ++i)
         for(std::size_t j = 0; j < N2; ++j)
             for(std::size_t r = 0; r < N1; ++r)
-                ret.at(i, j) += lhs.at(i, r) * rhs.at(r, j);
+                ret.at(i, j) =
+                    std::fma(lhs.at(i, r), rhs.at(r, j), ret.at(i, j));
 
     return ret;
 }
@@ -1429,12 +1436,18 @@ cross(const Vector<T, N, Container1>& a,
 /// @brief Compute squared length of a vector.
 template <typename T,
           std::size_t N,
-          template <typename, std::size_t>
-          typename Container>
+          template <typename, std::size_t> typename Container>
 constexpr T
 length2(const Vector<T, N, Container>& a) noexcept
 {
-    return transform_reduce(static_pow<2, T>, std::plus<T>(), a, T{0});
+    if constexpr(std::is_floating_point_v<T>)
+    {
+        T ret{};
+        for(std::size_t i = 0; i < N; ++i) ret = std::fma(a[i], a[i], ret);
+        return ret;
+    }
+    else
+        return transform_reduce(static_pow<2, T>, std::plus<T>(), a, T{0});
 }
 
 /// @brief Compute length of a vector.
