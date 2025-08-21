@@ -233,5 +233,22 @@ main()
         },
         "zip_with_for_each"));
 
+    track.check(NamedTest(
+        []() noexcept
+        {
+            TT t1{0, 0, 0};
+            TT t2{1, 1.f, 1.};
+
+            auto t = lucid::zip_tuples(t1, t2);
+
+            return std::get<0>(t) ==
+                       std::tuple{std::get<0>(t1), std::get<0>(t2)} &&
+                   std::get<1>(t) ==
+                       std::tuple{std::get<1>(t1), std::get<1>(t2)} &&
+                   std::get<2>(t) ==
+                       std::tuple{std::get<2>(t1), std::get<2>(t2)};
+        },
+        "zip_tuples"));
+
     return track.ret_code();
 }

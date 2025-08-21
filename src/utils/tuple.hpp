@@ -281,11 +281,26 @@ constexpr void
 zip_with_for_each_impl(
     std::index_sequence<I...>,
     F&& f,
-    Ts&&... tuples) noexcept((...&& noexcept(multi_invoke<I>(std::forward<F>(f),
-                                                             std::forward<Ts>(
-                                                                 tuples)...))))
+    Ts&&... tuples) noexcept((... &&
+                              noexcept(multi_invoke<I>(
+                                  std::forward<F>(f),
+                                  std::forward<Ts>(tuples)...))))
 {
     (..., multi_invoke<I>(std::forward<F>(f), std::forward<Ts>(tuples)...));
+}
+
+template <std::size_t I, typename... Ts>
+constexpr auto
+join_elems(const Ts&... tuples) noexcept
+{
+    return std::tuple{std::get<I>(tuples)...};
+}
+
+template <typename... Ts, std::size_t... I>
+constexpr auto
+zip_tuples_impl(std::index_sequence<I...>, const Ts&... tuples) noexcept
+{
+    return std::tuple{join_elems<I>(tuples...)...};
 }
 
 template <typename F, typename T, template <typename...> typename M>
@@ -761,6 +776,18 @@ zip_with_for_each(F&&     f,
 
 #undef _FOR_EACH_EXPR
 #undef _ZIP_WITH_FOR_EACH_EXPR
+
+template <typename Tuple, typename... Rest>
+    requires(... && (std::tuple_size_v<std::remove_cvref_t<Tuple>> ==
+                     std::tuple_size_v<std::remove_cvref_t<Rest>>))
+constexpr auto
+zip_tuples(const Tuple& tuple, const Rest&... tuples) noexcept
+{
+    return detail::zip_tuples_impl(
+        std::make_index_sequence<std::tuple_size_v<Tuple>>{},
+        tuple,
+        tuples...);
+}
 
 /// @brief Invoke @p f with elements of @p mt as arguments if
 /// possible otherwise just pass @p mt directly to @p f.
