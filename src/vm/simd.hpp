@@ -468,6 +468,19 @@ class KernelMemory
     {
         return get<CPVar>();
     }
+
+    template <typename Var>
+    vec<vartype<Var>>
+    get() const noexcept
+    {
+        return helper::template get<vec_var<Var>>(m_data);
+    }
+
+    vec<vartype<CPVar>>
+    cp() const noexcept
+    {
+        return get<CPVar>();
+    }
 };
 
 template <fsize_t N>
@@ -1480,6 +1493,7 @@ template <typename Cell, typename LabelMap, typename CPVar, fsize_t N>
 using masked_runner = make_masked_runner<Cell, LabelMap, CPVar, N>::type;
 
 template <typename _Program>
+    requires(typelist::of_same_size<typename _Program::reg_types>)
 class embedded_compiler
 {
     using labelmap  = _Program::labelmap;
@@ -1489,8 +1503,8 @@ class embedded_compiler
     using cp        = _Program::cp;
     using index_t   = _Program::index_t;
 
-    static constexpr bool                      singular = _Program::singular;
-    static constexpr fsize_t                   N        = simd_width;
+    static constexpr bool    singular = _Program::singular;
+    static constexpr fsize_t N        = native_vector_extent_v<index_t>;
     static constexpr packed_vector<index_t, N> halt_pos =
         broadcast<N>(_Program::halt_pos);
 
@@ -1520,7 +1534,7 @@ class embedded_compiler
         auto
         operator()(const Args... args) noexcept
         {
-            facade::set_input(args...);
+            facade::set_inputs(args...);
             facade::step(cell);
             return facade::get_outputs();
         }
