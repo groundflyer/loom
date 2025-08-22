@@ -241,6 +241,61 @@ struct StandardTestSuite
     }
 };
 
+struct RootFindingSuite
+{
+    template <std::floating_point T>
+    bool
+    operator()(Track& track, ParmTestMaker tm, RandomState& rs) const noexcept
+    {
+        using cnsts        = constants<T>;
+        constexpr T lbound = cnsts::lbound;
+        constexpr T rbound = cnsts::rbound;
+        using errt         = cnsts::errt;
+
+        constexpr std::size_t N = simd::native_vector_extent_v<T>;
+
+        using p_t     = cubic_fz_program<T, errt>;
+        using types   = program_types<p_t, N>;
+        using in_vec  = types::input_simd;
+        using out_vec = types::output_simd;
+        using cmp_t   = types::cmp;
+
+        constexpr auto  ti = TypeInfo<T>::chars;
+        constexpr cmp_t cmp{};
+
+        auto g_f  = rs.make_gen<T>(lbound, rbound);
+        auto g_b  = rs.make_gen<bool>(0.5);
+        auto g_a  = rs.make_gen<T>(1, rbound);
+        auto g_a1 = [&]() noexcept { return g_a() * (g_b() ? T(-1) : T(1)); };
+        auto g_c4 = [&]() noexcept
+        { return std::tuple{g_a1(), g_f(), g_f(), g_f()}; };
+
+        auto gen = [&]() noexcept
+        {
+            in_vec ret;
+            for(std::size_t i = 0; i < N; ++i) types::set_input(ret, i, g_c4());
+            return ret;
+        };
+
+        auto ref = [](const auto& inp) noexcept
+        {
+            out_vec ret;
+            for(std::size_t i = 0; i < N; ++i)
+                types::set_output(
+                    ret,
+                    i,
+                    maybe_apply(val_cubic_fz, types::get_input(inp, i)));
+            return ret;
+        };
+
+        simd::embedded_function<p_t> test;
+        return track.check(
+            NamedFuzzyTest{tm.fuzzy_with_ref(gen, test, ref, cmp),
+                           fmt::format("root finding: {}[{}]", ti, N),
+                           0.1});
+    }
+};
+
 int
 main(int argc, char* argv[])
 {
@@ -313,6 +368,8 @@ main(int argc, char* argv[])
         track,
         tm,
         rs);
+
+    test_suite_types(all_floats{}, RootFindingSuite{}, track, tm, rs);
 
     return track.ret_code();
 }
