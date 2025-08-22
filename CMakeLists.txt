@@ -225,6 +225,7 @@ if(BUILD_TESTS)
     string.cpp
     tmp.cpp
     transforms.cpp
+    primitives.cpp
     tuple.cpp
     union.cpp
     viewport.cpp

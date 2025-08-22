@@ -23,43 +23,43 @@ constexpr real operator"" _r(unsigned long long d)
     return static_cast<real>(d);
 }
 
-template <template <typename, size_t> typename Container>
+template <template <typename, std::size_t> typename Container>
 using Vec2_ = Vector<real, 2, Container>;
 
-template <template <typename, size_t> typename Container>
+template <template <typename, std::size_t> typename Container>
 using Vec2i_ = Vector<int, 2, Container>;
 
-template <template <typename, size_t> typename Container>
+template <template <typename, std::size_t> typename Container>
 using Vec2u_ = Vector<unsigned, 2, Container>;
 
-template <template <typename, size_t> typename Container>
+template <template <typename, std::size_t> typename Container>
 using Vec3_ = Vector<real, 3, Container>;
 
-template <template <typename, size_t> typename Container>
+template <template <typename, std::size_t> typename Container>
 using Vec4_ = Vector<real, 4, Container>;
 
-template <template <typename, size_t> typename Container>
+template <template <typename, std::size_t> typename Container>
 using Vec3i_ = Vector<int, 3, Container>;
 
-template <template <typename, size_t> typename Container>
+template <template <typename, std::size_t> typename Container>
 using Mat2_ = Matrix<real, 2, 2, Container>;
 
-template <template <typename, size_t> typename Container>
+template <template <typename, std::size_t> typename Container>
 using Mat3_ = Matrix<real, 3, 3, Container>;
 
-template <template <typename, size_t> typename Container>
+template <template <typename, std::size_t> typename Container>
 using Mat4_ = Matrix<real, 4, 4, Container>;
 
-template <template <typename, size_t> typename Container>
+template <template <typename, std::size_t> typename Container>
 using RGB_ = Vector<float, 3, Container>;
 
-template <template <typename, size_t> typename Container>
+template <template <typename, std::size_t> typename Container>
 using RGBA_ = Vector<float, 4, Container>;
 
-template <template <typename, size_t> typename Container>
+template <template <typename, std::size_t> typename Container>
 using RGB8_ = Vector<std::uint8_t, 3, Container>;
 
-template <template <typename, size_t> typename Container>
+template <template <typename, std::size_t> typename Container>
 using RGBA8_ = Vector<std::uint8_t, 4, Container>;
 
 using Vec2  = Vec2_<std::array>;
@@ -76,7 +76,7 @@ using RGBA  = RGBA_<std::array>;
 using RGB8  = RGB8_<std::array>;
 using RGBA8 = RGBA8_<std::array>;
 
-constexpr real Pi      = Pi_<real>;
-constexpr Mat3 Mat3_id = Mat3::identity();
-constexpr Mat4 Mat4_id = Mat4::identity();
+inline constexpr real Pi      = Pi_<real>;
+inline constexpr Mat3 Mat3_id = Mat3::identity();
+inline constexpr Mat4 Mat4_id = Mat4::identity();
 } // namespace lucid

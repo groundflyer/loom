@@ -13,11 +13,11 @@
 
 namespace lucid
 {
-MK_FN_OBJ(intersect)
-MK_FN_OBJ(normal)
-MK_FN_OBJ(sample)
-MK_FN_OBJ(centroid)
-MK_FN_OBJ(bound)
+MK_NIEBLOID(intersect)
+MK_NIEBLOID(normal)
+MK_NIEBLOID(sample)
+MK_NIEBLOID(centroid)
+MK_NIEBLOID(bound)
 
 namespace fn
 {
@@ -46,31 +46,35 @@ constexpr std::pair<std::size_t, Intersection>
 closest(const Intersections& isects) noexcept
 {
     return fold_tuple(
-        [](const auto& a, const auto& b) noexcept { return a.second.t < b.second.t ? a : b; },
-        std::pair{0ul, detail::miss},
-        enumerate(isects));
+        enumerate(isects),
+        [](const auto& a, const auto& b) noexcept
+        { return a.second.t < b.second.t ? a : b; },
+        std::pair{0ul, detail::miss});
 }
 
-template <template <typename, std::size_t> typename Container, typename PrimsTuple>
+template <template <typename, std::size_t> typename Container,
+          typename PrimsTuple>
 constexpr std::pair<std::size_t, Intersection>
 hider(const Ray_<Container>& ray, const PrimsTuple& prims) noexcept
 {
     return detail::hider_impl(
-        ray, prims, std::make_index_sequence<std::tuple_size_v<PrimsTuple>>{});
+        ray,
+        prims,
+        std::make_index_sequence<std::tuple_size_v<PrimsTuple>>{});
 }
 
 template <template <typename, std::size_t> typename RayContainer,
-          template <typename, std::size_t>
-          typename IsectContainer>
+          template <typename, std::size_t> typename IsectContainer>
 constexpr Vec3
-hit_pos(const Ray_<RayContainer>& ray, const Intersection_<IsectContainer>& isect) noexcept
+hit_pos(const Ray_<RayContainer>&            ray,
+        const Intersection_<IsectContainer>& isect) noexcept
 {
     const auto& [o, d] = ray;
     return o + d * isect.t;
 }
 } // namespace fn
 
-MK_FN_OBJ(closest)
-MK_FN_OBJ(hider)
-MK_FN_OBJ(hit_pos)
+MK_NIEBLOID(closest)
+MK_NIEBLOID(hider)
+MK_NIEBLOID(hit_pos)
 } // namespace lucid

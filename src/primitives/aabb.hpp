@@ -8,6 +8,7 @@
 #pragma once
 
 #include <ray_traversal/ray_traversal.hpp>
+#include <utils/math.hpp>
 
 namespace lucid
 {
@@ -122,16 +123,20 @@ diag(const AABB_<Container>& prim, const unsigned shift, const bool side) noexce
 
 /// @brief Uniformly sample position on AABB surface.
 template <template <typename, std::size_t> typename SContainer,
-          template <typename, std::size_t>
-          typename PContainer>
+          template <typename, std::size_t> typename PContainer>
 constexpr Vec3
 sample(const Vec2_<SContainer>& s, const AABB_<PContainer>& prim) noexcept
 {
     const auto& [s1, s2] = s;
     const real     s3    = fmod(2_r * (s1 + s2), 1_r);
-    const unsigned shift = static_cast<unsigned>(300_r * fmod(s1 + s2 + s3, 1_r));
-    const auto [a, b]    = detail::diag(prim, shift, s3 > 0.5_r);
-    return lerp(a, b, roll(Vec3(resample(s1), resample(s2), 0_r), shift));
+    const unsigned shift =
+        static_cast<unsigned>(300_r * fmod(s1 + s2 + s3, 1_r));
+    const auto [a, b] = detail::diag(prim, shift, s3 > 0.5_r);
+    return lucid::transform([](const auto&... args) noexcept
+                            { return lucid::lerp(args...); },
+                            a,
+                            b,
+                            roll(Vec3(resample(s1), resample(s2), 0_r), shift));
 }
 
 /// @brief Compute AABB centroid.

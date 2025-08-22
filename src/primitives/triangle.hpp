@@ -106,8 +106,8 @@ template <typename Prim>
 constexpr AABB
 bound(const Prim& prim) noexcept
 {
-    const Vec3 vmin = fold_tuple(lucid::min, prim);
-    const Vec3 vmax = fold_tuple(lucid::max, prim);
+    const Vec3 vmin = fold_tuple(prim, lucid::min);
+    const Vec3 vmax = fold_tuple(prim, lucid::max);
     return AABB{vmin, vmax};
 }
 } // namespace detail
