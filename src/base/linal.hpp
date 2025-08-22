@@ -1551,14 +1551,13 @@ avg(const Vector<T, N, Container>& a) noexcept
 /// defines the direction, i.e. (-) to the left, otherwise - to the right.
 template <typename T,
           std::size_t N,
-          template <typename, std::size_t>
-          typename Container>
+          template <typename, std::size_t> typename Container>
 constexpr Vector<T, N, std::array>
 roll(const Vector<T, N, Container>& v, const int shift) noexcept
 {
     Vector<T, N, std::array> ret{};
 
-    for(int i = 0; i < N; ++i) ret[i] = v[(i - shift) % N];
+    for(std::size_t i = 0; i < N; ++i) ret[i] = v[(i - shift) % N];
 
     return ret;
 }
