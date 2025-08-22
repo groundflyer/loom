@@ -7,6 +7,7 @@
 #include "programs.hpp"
 #include "programs_generators.hpp"
 #include "stream_wrapper.hpp"
+#include "vm_test_suite_utils.hpp"
 
 #include <utils/test.hpp>
 #include <utils/typeinfo.hpp>
@@ -297,46 +298,6 @@ struct SimpleSIMDSuite
                    fmt::format("{}: SIMD minikernel [{}]", name.view(), ti)));
     }
 };
-
-template <typelist::List Types, typename Suite>
-void
-test_suite_types(Types         types,
-                 Suite         suite,
-                 Track&        track,
-                 ParmTestMaker tm,
-                 RandomState&  rs) noexcept
-{
-    typelist::for_each(types, suite, track, tm, rs);
-}
-
-template <typelist::List Types, typelist::List Suites>
-void
-test_suites_types(Types         types,
-                  Suites        suites,
-                  Track&        track,
-                  ParmTestMaker tm,
-                  RandomState&  rs) noexcept
-{
-    typelist::for_each(
-        suites,
-        []<typename Suite>(Types         types,
-                           Track&        track,
-                           ParmTestMaker tm,
-                           RandomState&  rs) noexcept
-        { test_suite_types(types, Suite{}, track, tm, rs); },
-        types,
-        track,
-        tm,
-        rs);
-}
-
-using all_ints =
-    type_sequence<std::int8_t, std::int16_t, std::int32_t, std::int64_t>;
-using all_uints =
-    type_sequence<std::uint8_t, std::uint16_t, std::uint32_t, std::uint64_t>;
-using fac_ints =
-    type_sequence<std::int32_t, std::int64_t, std::uint32_t, std::uint64_t>;
-using all_floats = type_sequence<float, double>;
 
 int
 main(int argc, char* argv[])
