@@ -3,6 +3,7 @@
 #include "programs.hpp"
 #include "programs_generators.hpp"
 #include "root_finding.hpp"
+#include "vm_test_suite_utils.hpp"
 
 #include <utils/test.hpp>
 #include <utils/typeinfo.hpp>
@@ -249,9 +250,69 @@ main(int argc, char* argv[])
 
     test_set<mock_program<unsigned, 9>>(track, tm, rs);
 
-    StandardTestSuite<increment, GM_Incr, ::fn::val_inc_fn, "increment">
-                      test_inc{};
-    test_inc.template operator()<std::uint64_t>(track, tm, rs);
+    test_suite_types(
+        typelist::join<all_ints, all_uints>{},
+        StandardTestSuite<increment, GM_Incr, ::fn::val_inc_fn, "increment">{},
+        track,
+        tm,
+        rs);
+
+    test_suite_types(fac_ints{},
+                     StandardTestSuite<factorial_int,
+                                       GM_2_10,
+                                       ::fn::val_fac_fn,
+                                       "factorial">{},
+                     track,
+                     tm,
+                     rs);
+
+    {
+        constexpr StandardTestSuite<fib, GM_FIB, ::fn::val_fib_fn, "fibonacci">
+                      test;
+        test.template operator()<std::uint64_t>(track, tm, rs);
+    }
+    test_suites_types(
+        all_floats{},
+        type_sequence<StandardTestSuite<simple_union_test,
+                                        GMCanon,
+                                        ::fn::val_sut_fn,
+                                        "simple union">,
+                      StandardTestSuite<complex_union_test,
+                                        GMCanon,
+                                        ::fn::val_cut_fn,
+                                        "complex union">,
+                      StandardTestSuite<jmp4_test,
+                                        GM_J4,
+                                        ::fn::val_jmp4_fn,
+                                        "multi-way (4) jump">,
+                      StandardTestSuite<choice_test,
+                                        GM_J4,
+                                        ::fn::val_choice_fn,
+                                        "choice (conditional move)">>{},
+        track,
+        tm,
+        rs);
+    test_suite_types(all_uints{},
+                     StandardTestSuite<bit_test,
+                                       GM_Bit,
+                                       ::fn::val_bit_fn,
+                                       "bit (and, or, xor, not)">{},
+                     track,
+                     tm,
+                     rs);
+    test_suites_types(
+        type_sequence<std::uint16_t, std::uint32_t, std::uint64_t>{},
+        type_sequence<StandardTestSuite<lshift_test,
+                                        GM_Shift,
+                                        ::fn::val_lshift_fn,
+                                        "left shift">,
+                      StandardTestSuite<rshift_test,
+                                        GM_Shift,
+                                        ::fn::val_rshift_fn,
+                                        "right shift">>{},
+        track,
+        tm,
+        rs);
 
     return track.ret_code();
 }
