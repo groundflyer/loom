@@ -1092,6 +1092,117 @@ class memory_chunks : public std::ranges::view_interface<memory_chunks<_Memory>>
     }
 };
 
+template <typename _Memory, fsize_t N, auto halt_pos>
+class aligned_chunks :
+    public std::ranges::view_interface<aligned_chunks<_Memory, N, halt_pos>>
+{
+    using proxy_view = _Memory::view_type;
+
+    proxy_view m_view;
+
+    class _iterator : public std::input_iterator_tag
+    {
+        proxy_view m_view{};
+        fsize_t    m_pos{};
+
+      public:
+        using difference_type = std::ptrdiff_t;
+        using value_type      = proxy_view;
+
+        _iterator() noexcept = default;
+
+        _iterator(proxy_view view, fsize_t pos = 0) noexcept :
+            m_view(view), m_pos(pos)
+        {
+        }
+        _iterator(const _iterator& other) noexcept :
+            m_view(other.m_view), m_pos(other.m_pos)
+        {
+        }
+        _iterator(_iterator&& other) noexcept :
+            m_view(other.m_view), m_pos(other.m_pos)
+        {
+        }
+
+        _iterator&
+        operator=(const _iterator& rhs) noexcept
+        {
+            m_view = rhs.m_view;
+            m_pos  = rhs.m_pos;
+
+            return *this;
+        }
+
+        _iterator&
+        operator=(_iterator&& rhs) noexcept
+        {
+            m_view = rhs.m_view;
+            m_pos  = rhs.m_pos;
+
+            return *this;
+        }
+
+        bool
+        operator==(std::default_sentinel_t) const noexcept
+        {
+            return m_view.cp()[m_pos] == halt_pos || m_pos == m_view.size();
+        }
+
+        bool
+        operator==(const _iterator& rhs) const noexcept
+        {
+            return m_pos == rhs.m_pos;
+        }
+
+        std::strong_ordering
+        operator<=>(const _iterator& rhs) const noexcept
+        {
+            return m_pos <=> rhs.m_pos;
+        }
+
+        value_type
+        operator*() const noexcept
+        {
+            return m_view.template view<N>(m_pos);
+        }
+
+        _iterator&
+        operator++() noexcept
+        {
+            m_pos += N;
+            return *this;
+        }
+
+        _iterator
+        operator++(int) noexcept
+        {
+            _iterator ret(*this);
+            m_pos += N;
+            return ret;
+        }
+    };
+
+  public:
+    aligned_chunks() = default;
+    aligned_chunks(proxy_view view) noexcept : m_view(view)
+    {
+        ASSERT(view.size() % N == 0,
+               "view size is not divisible by vector size");
+    }
+
+    _iterator
+    begin() const
+    {
+        return _iterator(m_view);
+    }
+
+    std::default_sentinel_t
+    end() const
+    {
+        return std::default_sentinel;
+    }
+};
+
 /// @brief Allocates memory aligned to native SIMD vector size.
 template <typename T>
 using SIMDAlignedAllocator =
