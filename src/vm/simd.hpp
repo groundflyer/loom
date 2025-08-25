@@ -628,7 +628,7 @@ template <typename SIMDRunner,
           typename SerialRunner,
           fsize_t N,
           fsize_t type_size>
-class BulkDispatcher
+class bulk_dispatcher
 {
     // range starts with number of elements that can fit into SIMD register,
     // ends with the number of elements that can fit into cache line
@@ -734,10 +734,10 @@ class make_N_order_instruction_runner
     static constexpr fsize_t N = native_instruction_width_v<I, vartype<CPVar>>;
 
   public:
-    using type = BulkDispatcher<eval<I, LabelMap, N>,
-                                standard_eval<I, LabelMap>,
-                                N,
-                                sizeof(vartype<CPVar>)>;
+    using type = bulk_dispatcher<eval<I, LabelMap, N>,
+                                 standard_eval<I, LabelMap>,
+                                 N,
+                                 sizeof(vartype<CPVar>)>;
 };
 
 template <STITCH stitch, typename... Args>
@@ -952,7 +952,7 @@ class make_runner<STITCH::MINIKERNEL, Cell, LabelMap, CPVar>
     };
 
   public:
-    using type = BulkDispatcher<SIMDRunner, SerialRunner, N, sizeof(index_t)>;
+    using type = bulk_dispatcher<SIMDRunner, SerialRunner, N, sizeof(index_t)>;
 };
 
 template <STITCH stitch, typename Cell, typename LabelMap, typename CPVar>
