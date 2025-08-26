@@ -167,14 +167,14 @@ struct mask_io_intrinsics_wrangler
 
     /// @brief Fallback implementation for mask load.
     static vector_type _FORCE_INLINE
-    mask_load(T const* p, const mask_type mask) noexcept
+    load(T const* p, const mask_type mask) noexcept
     {
         return mask ? load<N>(p) : broadcast<N>(static_cast<T>(0));
     }
 
     /// @brief Fallback implementation for mask store.
     static void _FORCE_INLINE
-    mask_store(T* dest, const mask_type mask, const vector_type value) noexcept
+    store(T* dest, const mask_type mask, const vector_type value) noexcept
     {
         store<N>(dest, mask ? value : load<N>(dest));
     }
@@ -187,14 +187,14 @@ struct mask_io_intrinsics_wrangler
         using vector_type = packed_vector<TYPE, EXT>;                        \
         using mask_type   = packed_vector<int_of_size_t<sizeof(TYPE)>, EXT>; \
         static vector_type _FORCE_INLINE                                     \
-        mask_load(TYPE const* p, const mask_type mask) noexcept              \
+        load(TYPE const* p, const mask_type mask) noexcept                   \
         {                                                                    \
             return LOAD_INTR(p, mask);                                       \
         }                                                                    \
         static void _FORCE_INLINE                                            \
-        mask_store(TYPE*             dest,                                   \
-                   const mask_type   mask,                                   \
-                   const vector_type value) noexcept                         \
+        store(TYPE*             dest,                                        \
+              const mask_type   mask,                                        \
+              const vector_type value) noexcept                              \
         {                                                                    \
             STORE_INTR(dest, mask, value);                                   \
         }                                                                    \
@@ -723,8 +723,9 @@ class bulk_dispatcher
 /// @brief Methods of succession of SIMD instructions.
 enum STITCH
 {
-    N_ORDER,   /*!< column-wise execution */
-    MINIKERNEL /*!< minikernels execution */
+    N_ORDER,    /*!< column-wise execution */
+    MINIKERNEL, /*!< minikernels execution */
+    MASKED      /*!< masked minikernel execution */
 };
 
 /// @brief Executes a single instruction @p I through the whole view.
@@ -757,9 +758,6 @@ class make_runner<STITCH::N_ORDER, Cell, LabelMap, CPVar>
 template <typename Cell, typename LabelMap, typename CPVar>
 class make_runner<STITCH::MINIKERNEL, Cell, LabelMap, CPVar>
 {
-    template <typename Var>
-    using p = std::negation<is_literal<Var>>;
-
     using load_vars  = load_list_t<Cell, CPVar>;
     using store_vars = store_list_t<Cell, CPVar>;
 
@@ -877,6 +875,90 @@ class make_runner<STITCH::MINIKERNEL, Cell, LabelMap, CPVar>
 
   public:
     using type = bulk_dispatcher<SIMDRunner, SerialRunner, N, sizeof(index_t)>;
+};
+
+template <typename Cell, typename LabelMap, typename CPVar>
+class make_runner<STITCH::MASKED, Cell, LabelMap, CPVar>
+{
+    using load_vars  = load_list_t<Cell, CPVar>;
+    using store_vars = store_list_t<Cell, CPVar>;
+
+    using vars    = typelist::nub<typelist::join<load_vars, store_vars>>;
+    using index_t = vartype<CPVar>;
+
+    using reg_names = typelist::nub<typelist::map<varname, vars>>;
+    using reg_types = infer_reg_types_t<vars, reg_names>;
+
+    static constexpr fsize_t N = native_vector_extent_v<index_t>;
+
+    using mask_type = packed_vector<index_t, N>;
+
+    template <typename I, typename _LabelMap>
+    using simd_eval = eval<I, _LabelMap, N>;
+
+    using Kernel  = standard_compiler<Cell, LabelMap, simd_eval>;
+    using Storage = KernelMemory<reg_types, reg_names, CPVar, N>;
+
+    static constexpr Kernel kernel{};
+
+    template <typename _MemoryView>
+        requires(pv_extent<_MemoryView> == N)
+    static Storage _FORCE_INLINE
+    alloc(_MemoryView view, const mask_type mask) noexcept
+    {
+        Storage storage;
+        typelist::for_each(
+            load_vars{},
+            []<typename Var>(_MemoryView     view,
+                             Storage&        storage,
+                             const mask_type mask) noexcept
+            {
+                using wrangler = mask_io_intrinsics_wrangler<vartype<Var>, N>;
+                storage.template get<Var>() =
+                    wrangler::load(view.template get<Var>().data(), mask);
+            },
+            view,
+            storage,
+            mask);
+        return storage;
+    }
+
+    template <typename _MemoryView>
+        requires(pv_extent<_MemoryView> == N)
+    static void _FORCE_INLINE
+    spill(_MemoryView view, Storage& storage, const mask_type mask) noexcept
+    {
+        typelist::for_each(
+            store_vars{},
+            []<typename Var>(_MemoryView     view,
+                             Storage&        storage,
+                             const mask_type mask) noexcept
+            {
+                using wrangler = mask_io_intrinsics_wrangler<vartype<Var>, N>;
+                wrangler::store(view.template get<Var>().data(),
+                                mask,
+                                storage.template get<Var>());
+            },
+            view,
+            storage,
+            mask);
+    }
+
+  public:
+    struct type
+    {
+        const mask_type mask;
+
+        template <typename _MemoryView>
+            requires(pv_extent<_MemoryView> == N)
+        void _FORCE_INLINE
+        operator()(_MemoryView view) const noexcept
+        {
+            Storage storage = alloc(view, mask);
+            kernel(storage);
+            spill(view, storage, mask);
+        }
+    };
 };
 
 template <STITCH stitch, typename Cell, typename LabelMap, typename CPVar>
