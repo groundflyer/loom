@@ -753,82 +753,6 @@ class make_runner<STITCH::N_ORDER, Cell, LabelMap, CPVar>
     using type = standard_compiler<Cell, LabelMap, eval>;
 };
 
-/// @brief Stream facade that allows asynchronous exchange.
-template <typename _Program,
-          template <typename, typename> typename _Vector,
-          template <typename> typename Allocator,
-          typename Sorter>
-    requires(cache_line_size % simd_width == 0)
-class AsyncStreamFacade :
-    public bve::MemoryFacade<_Program, _Vector, Allocator, Sorter>
-{
-    using reg_names   = _Program::reg_names;
-    using reg_types   = _Program::reg_types;
-    using cp_var      = _Program::cp;
-    using input_vars  = _Program::input_vars;
-    using output_vars = _Program::output_vars;
-
-    using index_t = vartype<cp_var>;
-
-    static constexpr index_t halt_pos = _Program::halt_pos;
-    static constexpr fsize_t npos     = static_cast<fsize_t>(-1);
-
-    using facade = bve::MemoryFacade<_Program, _Vector, Allocator, Sorter>;
-
-    fsize_t m_pos = npos;
-
-    // we're looking for the first cache-aligned segment in the memory that's
-    // filled with halts
-    void
-    find_halt_segments() noexcept
-    {
-        constexpr fsize_t step_size = cache_line_capacity_v<index_t>;
-        const auto&       cps       = facade::mem().cp();
-        m_pos                       = npos;
-        for(fsize_t pos = 0; pos < cps.size(); pos += step_size)
-            if(cps[pos] == halt_pos)
-            {
-                m_pos = pos;
-                return;
-            }
-    }
-
-  public:
-    using facade::facade;
-
-    void
-    sort() noexcept
-    {
-        facade::sort();
-        // we do this here, because only sort is protected with a lock in
-        // multithreaded stream
-        find_halt_segments();
-    }
-
-    template <std::ranges::input_range Input>
-        requires(
-            std::is_nothrow_convertible_v<std::ranges::range_value_t<Input>,
-                                          input_type<_Program>>)
-    auto
-    exchange(Input&& input) noexcept
-    {
-        return bve::exchange_from(static_cast<facade&>(*this),
-                                  std::forward<Input>(input),
-                                  m_pos == npos ?
-                                      facade::mem().end() : // empty exchange
-                                      facade::mem().begin() + m_pos);
-    }
-
-    template <typename F>
-    void
-    visit(F&& f) noexcept
-    {
-        std::invoke(std::forward<F>(f),
-                    m_pos == npos ? facade::mem().view() :
-                                    facade::mem().view(0, m_pos));
-    }
-};
-
 /// @brief Executes @p Cell as SIMD kernel.
 template <typename Cell, typename LabelMap, typename CPVar>
 class make_runner<STITCH::MINIKERNEL, Cell, LabelMap, CPVar>
@@ -957,6 +881,82 @@ class make_runner<STITCH::MINIKERNEL, Cell, LabelMap, CPVar>
 
 template <STITCH stitch, typename Cell, typename LabelMap, typename CPVar>
 using runner = make_runner<stitch, Cell, LabelMap, CPVar>::type;
+
+/// @brief Stream facade that allows asynchronous exchange.
+template <typename _Program,
+          template <typename, typename> typename _Vector,
+          template <typename> typename Allocator,
+          typename Sorter>
+    requires(cache_line_size % simd_width == 0)
+class AsyncStreamFacade :
+    public bve::MemoryFacade<_Program, _Vector, Allocator, Sorter>
+{
+    using reg_names   = _Program::reg_names;
+    using reg_types   = _Program::reg_types;
+    using cp_var      = _Program::cp;
+    using input_vars  = _Program::input_vars;
+    using output_vars = _Program::output_vars;
+
+    using index_t = vartype<cp_var>;
+
+    static constexpr index_t halt_pos = _Program::halt_pos;
+    static constexpr fsize_t npos     = static_cast<fsize_t>(-1);
+
+    using facade = bve::MemoryFacade<_Program, _Vector, Allocator, Sorter>;
+
+    fsize_t m_pos = npos;
+
+    // we're looking for the first cache-aligned segment in the memory that's
+    // filled with halts
+    void
+    find_halt_segments() noexcept
+    {
+        constexpr fsize_t step_size = cache_line_capacity_v<index_t>;
+        const auto&       cps       = facade::mem().cp();
+        m_pos                       = npos;
+        for(fsize_t pos = 0; pos < cps.size(); pos += step_size)
+            if(cps[pos] == halt_pos)
+            {
+                m_pos = pos;
+                return;
+            }
+    }
+
+  public:
+    using facade::facade;
+
+    void
+    sort() noexcept
+    {
+        facade::sort();
+        // we do this here, because only sort is protected with a lock in
+        // multithreaded stream
+        find_halt_segments();
+    }
+
+    template <std::ranges::input_range Input>
+        requires(
+            std::is_nothrow_convertible_v<std::ranges::range_value_t<Input>,
+                                          input_type<_Program>>)
+    auto
+    exchange(Input&& input) noexcept
+    {
+        return bve::exchange_from(static_cast<facade&>(*this),
+                                  std::forward<Input>(input),
+                                  m_pos == npos ?
+                                      facade::mem().end() : // empty exchange
+                                      facade::mem().begin() + m_pos);
+    }
+
+    template <typename F>
+    void
+    visit(F&& f) noexcept
+    {
+        std::invoke(std::forward<F>(f),
+                    m_pos == npos ? facade::mem().view() :
+                                    facade::mem().view(0, m_pos));
+    }
+};
 
 template <typename _Memory>
 class memory_chunks : public std::ranges::view_interface<memory_chunks<_Memory>>
