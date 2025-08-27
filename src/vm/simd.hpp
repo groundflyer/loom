@@ -886,7 +886,7 @@ class make_runner<STITCH::MINIKERNEL, Cell, LabelMap, CPVar>
 };
 
 template <typename Cell, typename LabelMap, typename CPVar, fsize_t N>
-class make_masked_evaluator
+class make_masked_runner
 {
     using index_t = vartype<CPVar>;
 
@@ -1602,7 +1602,7 @@ class cell_set
 };
 
 template <typename Cell, typename LabelMap, typename CPVar, fsize_t N>
-class make_masked_runner
+class make_embedded_masked_runner
 {
     using index_t = vartype<CPVar>;
 
@@ -1670,7 +1670,8 @@ class make_masked_runner
 };
 
 template <typename Cell, typename LabelMap, typename CPVar, fsize_t N>
-using masked_runner = make_masked_runner<Cell, LabelMap, CPVar, N>::type;
+using embedded_masked_runner =
+    make_embedded_masked_runner<Cell, LabelMap, CPVar, N>::type;
 
 template <typename _Program>
     requires(typelist::of_same_size<typename _Program::reg_types>)
@@ -1723,7 +1724,7 @@ class embedded_compiler
     class evaluator : facade
     {
         template <typename Cell>
-        using compile_cell = masked_runner<Cell, labelmap, cp, N>;
+        using compile_cell = embedded_masked_runner<Cell, labelmap, cp, N>;
 
         using compiled_cells = typelist::map<compile_cell, cells>;
 
