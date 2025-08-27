@@ -723,9 +723,30 @@ class bulk_dispatcher
 /// @brief Methods of succession of SIMD instructions.
 enum STITCH
 {
-    N_ORDER,    /*!< column-wise execution */
-    MINIKERNEL, /*!< minikernels execution */
-    MASKED      /*!< masked minikernel execution */
+    N_ORDER,   /*!< column-wise execution */
+    MINIKERNEL /*!< minikernels execution */
+};
+
+template <typename Cell, typename LabelMap, typename CPVar, fsize_t N>
+struct minikernel_helper
+{
+    using load_vars  = load_list_t<Cell, CPVar>;
+    using store_vars = store_list_t<Cell, CPVar>;
+
+    using vars    = typelist::nub<typelist::join<load_vars, store_vars>>;
+    using index_t = vartype<CPVar>;
+
+    using reg_names = typelist::nub<typelist::map<varname, vars>>;
+    using reg_types = infer_reg_types_t<vars, reg_names>;
+
+    using serial_kernel  = standard_compiler<Cell, LabelMap>;
+    using serial_storage = bse::Memory<reg_types, reg_names, CPVar>;
+
+    template <typename I, typename _LabelMap>
+    using simd_eval = eval<I, _LabelMap, N>;
+
+    using simd_kernel  = standard_compiler<Cell, LabelMap, simd_eval>;
+    using simd_storage = KernelMemory<reg_types, reg_names, CPVar, N>;
 };
 
 /// @brief Executes a single instruction @p I through the whole view.
@@ -758,26 +779,16 @@ class make_runner<STITCH::N_ORDER, Cell, LabelMap, CPVar>
 template <typename Cell, typename LabelMap, typename CPVar>
 class make_runner<STITCH::MINIKERNEL, Cell, LabelMap, CPVar>
 {
-    using load_vars  = load_list_t<Cell, CPVar>;
-    using store_vars = store_list_t<Cell, CPVar>;
-
-    using vars    = typelist::nub<typelist::join<load_vars, store_vars>>;
     using index_t = vartype<CPVar>;
 
-    template <typename I>
-    using f = native_instruction_width<I, index_t>;
+    static constexpr fsize_t N = native_vector_extent_v<index_t>;
 
-    // SIMD width/stride
-    static constexpr fsize_t N =
-        *std::ranges::min_element(intlist::stdarray<typelist::map<f, Cell>>);
-
-    using reg_names = typelist::nub<typelist::map<varname, vars>>;
-    using reg_types = infer_reg_types_t<vars, reg_names>;
+    using helper = minikernel_helper<Cell, LabelMap, CPVar, N>;
 
     class SerialRunner
     {
-        using Kernel  = standard_compiler<Cell, LabelMap>;
-        using Storage = bse::Memory<reg_types, reg_names, CPVar>;
+        using Kernel  = helper::serial_kernel;
+        using Storage = helper::serial_storage;
         static constexpr Kernel kernel{};
 
         template <typename _ProxyRow>
@@ -786,7 +797,7 @@ class make_runner<STITCH::MINIKERNEL, Cell, LabelMap, CPVar>
         {
             Storage storage;
             typelist::for_each(
-                load_vars{},
+                typename helper::load_vars{},
                 []<typename Var>(_ProxyRow row, Storage& storage) noexcept
                 { storage.template get<Var>() = row.template get<Var>(); },
                 row,
@@ -799,7 +810,7 @@ class make_runner<STITCH::MINIKERNEL, Cell, LabelMap, CPVar>
         spill(_ProxyRow row, Storage& storage) noexcept
         {
             typelist::for_each(
-                store_vars{},
+                typename helper::store_vars{},
                 []<typename Var>(_ProxyRow row, Storage& storage) noexcept
                 { row.template get<Var>() = storage.template get<Var>(); },
                 row,
@@ -819,11 +830,8 @@ class make_runner<STITCH::MINIKERNEL, Cell, LabelMap, CPVar>
 
     class SIMDRunner
     {
-        template <typename I, typename _LabelMap>
-        using simd_eval = eval<I, _LabelMap, N>;
-
-        using Kernel  = standard_compiler<Cell, LabelMap, simd_eval>;
-        using Storage = KernelMemory<reg_types, reg_names, CPVar, N>;
+        using Kernel  = helper::simd_kernel;
+        using Storage = helper::simd_storage;
 
         static constexpr Kernel kernel{};
 
@@ -834,7 +842,7 @@ class make_runner<STITCH::MINIKERNEL, Cell, LabelMap, CPVar>
         {
             Storage storage;
             typelist::for_each(
-                load_vars{},
+                typename helper::load_vars{},
                 []<typename Var>(_MemoryView view, Storage& storage) noexcept
                 {
                     storage.template get<Var>() =
@@ -851,7 +859,7 @@ class make_runner<STITCH::MINIKERNEL, Cell, LabelMap, CPVar>
         spill(_MemoryView view, Storage& storage) noexcept
         {
             typelist::for_each(
-                store_vars{},
+                typename helper::store_vars{},
                 []<typename Var>(_MemoryView view, Storage& storage) noexcept
                 {
                     store<N>(view.template get<Var>().data(),
@@ -877,27 +885,17 @@ class make_runner<STITCH::MINIKERNEL, Cell, LabelMap, CPVar>
     using type = bulk_dispatcher<SIMDRunner, SerialRunner, N, sizeof(index_t)>;
 };
 
-template <typename Cell, typename LabelMap, typename CPVar>
-class make_runner<STITCH::MASKED, Cell, LabelMap, CPVar>
+template <typename Cell, typename LabelMap, typename CPVar, fsize_t N>
+class make_masked_evaluator
 {
-    using load_vars  = load_list_t<Cell, CPVar>;
-    using store_vars = store_list_t<Cell, CPVar>;
-
-    using vars    = typelist::nub<typelist::join<load_vars, store_vars>>;
     using index_t = vartype<CPVar>;
 
-    using reg_names = typelist::nub<typelist::map<varname, vars>>;
-    using reg_types = infer_reg_types_t<vars, reg_names>;
+    using helper = minikernel_helper<Cell, LabelMap, CPVar, N>;
 
-    static constexpr fsize_t N = native_vector_extent_v<index_t>;
+    using Kernel  = helper::simd_kernel;
+    using Storage = helper::simd_storage;
 
     using mask_type = packed_vector<index_t, N>;
-
-    template <typename I, typename _LabelMap>
-    using simd_eval = eval<I, _LabelMap, N>;
-
-    using Kernel  = standard_compiler<Cell, LabelMap, simd_eval>;
-    using Storage = KernelMemory<reg_types, reg_names, CPVar, N>;
 
     static constexpr Kernel kernel{};
 
@@ -908,7 +906,7 @@ class make_runner<STITCH::MASKED, Cell, LabelMap, CPVar>
     {
         Storage storage;
         typelist::for_each(
-            load_vars{},
+            typename helper::load_vars{},
             []<typename Var>(_MemoryView     view,
                              Storage&        storage,
                              const mask_type mask) noexcept
@@ -929,7 +927,7 @@ class make_runner<STITCH::MASKED, Cell, LabelMap, CPVar>
     spill(_MemoryView view, Storage& storage, const mask_type mask) noexcept
     {
         typelist::for_each(
-            store_vars{},
+            typename helper::store_vars{},
             []<typename Var>(_MemoryView     view,
                              Storage&        storage,
                              const mask_type mask) noexcept
@@ -1606,25 +1604,14 @@ class cell_set
 template <typename Cell, typename LabelMap, typename CPVar, fsize_t N>
 class make_masked_runner
 {
-    template <typename Var>
-    using p = std::negation<is_literal<Var>>;
-
-    using load_vars  = load_list_t<Cell, CPVar>;
-    using store_vars = store_list_t<Cell, CPVar>;
-
-    using vars    = typelist::nub<typelist::join<load_vars, store_vars>>;
     using index_t = vartype<CPVar>;
 
-    using reg_names = typelist::nub<typelist::map<varname, vars>>;
-    using reg_types = infer_reg_types_t<vars, reg_names>;
+    using helper = minikernel_helper<Cell, LabelMap, CPVar, N>;
+
+    using Kernel      = helper::simd_kernel;
+    using TempStorage = helper::simd_storage;
 
     using mask_type = packed_vector<index_t, N>;
-
-    template <typename I, typename _LabelMap>
-    using simd_eval = eval<I, _LabelMap, N>;
-
-    using Kernel      = standard_compiler<Cell, LabelMap, simd_eval>;
-    using TempStorage = KernelMemory<reg_types, reg_names, CPVar, N>;
 
     static constexpr Kernel kernel{};
 
@@ -1634,7 +1621,7 @@ class make_masked_runner
     {
         TempStorage ret;
         typelist::for_each(
-            load_vars{},
+            typename helper::load_vars{},
             []<typename Var>(const _MainStorage& main_storage,
                              TempStorage&        tmp_storage) noexcept
             {
@@ -1653,7 +1640,7 @@ class make_masked_runner
           const mask_type mask) noexcept
     {
         typelist::for_each(
-            store_vars{},
+            typename helper::store_vars{},
             []<typename Var>(_MainStorage&   main_storage,
                              TempStorage&    tmp_storage,
                              const mask_type mask) noexcept
