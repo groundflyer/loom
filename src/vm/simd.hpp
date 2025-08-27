@@ -723,8 +723,9 @@ class bulk_dispatcher
 /// @brief Methods of succession of SIMD instructions.
 enum STITCH
 {
-    N_ORDER,   /*!< column-wise execution */
-    MINIKERNEL /*!< minikernels execution */
+    N_ORDER,    /*!< column-wise execution */
+    MINIKERNEL, /*!< minikernels execution */
+    MASKED      /*!< masked minikerenel */
 };
 
 template <typename Cell, typename LabelMap, typename CPVar, fsize_t N>
@@ -763,10 +764,10 @@ class make_N_order_instruction_runner
 };
 
 template <STITCH stitch, typename... Args>
-class make_runner;
+class make_cell_compiler;
 
 template <typename Cell, typename LabelMap, typename CPVar>
-class make_runner<STITCH::N_ORDER, Cell, LabelMap, CPVar>
+class make_cell_compiler<STITCH::N_ORDER, Cell, LabelMap, CPVar>
 {
     template <typename I, typename _LabelMap>
     using eval = make_N_order_instruction_runner<I, _LabelMap, CPVar>::type;
@@ -777,7 +778,7 @@ class make_runner<STITCH::N_ORDER, Cell, LabelMap, CPVar>
 
 /// @brief Executes @p Cell as SIMD kernel.
 template <typename Cell, typename LabelMap, typename CPVar>
-class make_runner<STITCH::MINIKERNEL, Cell, LabelMap, CPVar>
+class make_cell_compiler<STITCH::MINIKERNEL, Cell, LabelMap, CPVar>
 {
     using index_t = vartype<CPVar>;
 
@@ -885,10 +886,12 @@ class make_runner<STITCH::MINIKERNEL, Cell, LabelMap, CPVar>
     using type = bulk_dispatcher<SIMDRunner, SerialRunner, N, sizeof(index_t)>;
 };
 
-template <typename Cell, typename LabelMap, typename CPVar, fsize_t N>
-class make_masked_runner
+template <typename Cell, typename LabelMap, typename CPVar>
+class make_cell_compiler<STITCH::MASKED, Cell, LabelMap, CPVar>
 {
     using index_t = vartype<CPVar>;
+
+    static constexpr fsize_t N = native_vector_extent_v<index_t>;
 
     using helper = minikernel_helper<Cell, LabelMap, CPVar, N>;
 
@@ -960,7 +963,7 @@ class make_masked_runner
 };
 
 template <STITCH stitch, typename Cell, typename LabelMap, typename CPVar>
-using runner = make_runner<stitch, Cell, LabelMap, CPVar>::type;
+using cell_compiler = make_cell_compiler<stitch, Cell, LabelMap, CPVar>::type;
 
 /// @brief Stream facade that allows asynchronous exchange.
 template <typename _Program,
@@ -1283,198 +1286,6 @@ class aligned_chunks :
     }
 };
 
-/// @brief Allocates memory aligned to native SIMD vector size.
-template <typename T>
-using SIMDAlignedAllocator =
-    AlignedAllocator<T, get_native_vector_align<T>::value>;
-
-/// @brief SIMD backend.
-/// @tparam _Program program to compile.
-/// @tparam stitch execution method.
-/// @tparam sort_method sorting algorithm to use.
-/// @tparam async allow asynchronous exchange in resulting stream.
-template <typename _Program,
-          STITCH    stitch,
-          bve::SORT sort_method,
-          bool      async = false>
-    requires(typelist::of_same_size<typename _Program::reg_types>)
-class simd_compiler
-{
-    using labelmap  = _Program::labelmap;
-    using cells     = _Program::cells;
-    using reg_names = _Program::reg_names;
-    using reg_types = _Program::reg_types;
-    using cp        = _Program::cp;
-
-    static constexpr bool    singular = _Program::singular;
-    static constexpr auto    halt_pos = _Program::halt_pos;
-    static constexpr fsize_t align    = simd_align;
-
-    template <typename Cell>
-    using compile_cell = runner<stitch, Cell, labelmap, cp>;
-
-    using compiled_cells = typelist::map<compile_cell, cells>;
-
-    template <typename T>
-    using allocator = std::conditional_t<async,
-                                         CacheLineAlignedAllocator<T>,
-                                         SIMDAlignedAllocator<T>>;
-
-    using memory =
-        bve::Memory<reg_types, reg_names, cp, std::vector, allocator>;
-    using memory_view = memory::view_type;
-
-    static constexpr bve::SORT final_sort_method =
-        singular ? bve::INTROSORT : sort_method;
-    using sorter =
-        bve::select_sorter<final_sort_method>::template type<_Program, memory>;
-
-    using stream_facade = std::conditional_t<
-        async,
-        AsyncStreamFacade<_Program, std::vector, allocator, sorter>,
-        bve::StreamFacade<_Program, std::vector, allocator, sorter>>;
-    using memory_facade =
-        bve::MemoryFacade<_Program, std::vector, allocator, sorter>;
-
-    class single_cell_evaluator : public memory_facade
-    {
-        static constexpr typelist::head<compiled_cells> cell{};
-
-      public:
-        using program = _Program;
-        using memory_facade::memory_facade;
-
-        template <bool zip_outputs = false, typename... Args>
-        auto
-        operator()(Args&&... args) noexcept
-        {
-            memory_facade::set_inputs(std::forward<Args>(args)...);
-            memory_facade::visit([](memory& mem) noexcept
-                                 { cell(mem.view()); });
-            if constexpr(zip_outputs)
-                return memory_facade::get_output_zipped();
-            else
-                return memory_facade::get_outputs();
-        }
-    };
-
-    struct visitor
-    {
-        static constexpr typelist::to<compiled_cells, std::tuple> cells{};
-
-        void
-        operator()(memory_view view) const noexcept
-        {
-            std::ranges::for_each(memory_chunks<memory>(view),
-                                  [](memory_view view) noexcept
-                                  {
-                                      visit_at(
-                                          view.cp().front(),
-                                          [&](auto cell) noexcept
-                                          { cell(view); },
-                                          cells,
-                                          sink);
-                                  });
-        }
-
-        void
-        operator()(memory& mem) const noexcept
-        {
-            operator()(mem.view());
-        }
-    };
-
-    class evaluator : public memory_facade
-    {
-#if 0
-        using vars = _Program::variables;
-        void
-        dump() const noexcept
-        {
-            auto columns = typelist::maybe_collect<std::tuple>(
-                vars{},
-                [&]<typename Var>() constexpr noexcept
-                {
-                    return std::views::all(
-                        memory_facade::mem().template get<Var>());
-                });
-
-            typelist::for_each(vars{},
-                               []<typename Var>()
-                               {
-                                   using name       = varname<Var>;
-                                   constexpr auto l = intlist::length<name>;
-                                   constexpr auto a = intlist::array<name>;
-                                   constexpr std::string_view s(a, l);
-                                   fmt::print("{},", s);
-                               });
-            putchar('\n');
-            for(fsize_t i = 0; i < memory_facade::size(); ++i)
-            {
-                lucid::for_each(columns,
-                                [i](const auto& c)
-                                { fmt::print("{},", c[i]); });
-                putchar('\n');
-            }
-        }
-#endif
-
-      public:
-        using program = _Program;
-        using memory_facade::memory_facade;
-
-        template <bool zip_outputs = false, typename... Args>
-        auto
-        operator()(Args&&... args) noexcept
-        {
-            memory_facade::set_inputs(std::forward<Args>(args)...);
-
-            while(!memory_facade::done())
-            {
-#if 0
-                dump();
-#endif
-                memory_facade::visit(visitor{});
-                memory_facade::sort();
-            }
-
-            if constexpr(zip_outputs)
-                return memory_facade::get_output_zipped();
-            else
-                return memory_facade::get_outputs();
-        }
-    };
-
-  public:
-    using function = std::
-        conditional_t<_Program::singular, single_cell_evaluator, evaluator>;
-
-    class stream : public stream_facade
-    {
-        static_assert(!_Program::singular);
-
-      public:
-        using program = _Program;
-        using stream_facade::stream_facade;
-
-        constexpr void
-        operator()() noexcept
-        {
-            stream_facade::visit(visitor{});
-        }
-    };
-};
-
-template <typename _Program, STITCH stitch, bve::SORT sort_method>
-using function = simd_compiler<_Program, stitch, sort_method, false>::function;
-
-template <typename _Program,
-          STITCH    stitch,
-          bve::SORT sort_method,
-          bool      async = false>
-    requires(!_Program::singular)
-using stream = simd_compiler<_Program, stitch, sort_method, async>::stream;
-
 /// @brief Count the number of logical 1 in packed vector @p vec.
 template <std::integral T, fsize_t N>
 _FORCE_INLINE T
@@ -1600,6 +1411,248 @@ class cell_set
         return std::default_sentinel;
     }
 };
+
+template <STITCH stitch>
+struct visitor_selector
+{
+    template <typename _Memory, typename _CompiledCells, typename...>
+    struct type
+    {
+        using memory_view = _Memory::view_type;
+
+        void
+        operator()(memory_view view) const noexcept
+        {
+            std::ranges::for_each(memory_chunks<_Memory>(view),
+                                  [](memory_view view) noexcept
+                                  {
+                                      typelist::visit_at(
+                                          view.cp().front(),
+                                          [&]<typename Cell>() noexcept
+                                          { Cell{}(view); },
+                                          _CompiledCells{},
+                                          sink);
+                                  });
+        }
+
+        void
+        operator()(_Memory& mem) const noexcept
+        {
+            operator()(mem.view());
+        }
+    };
+};
+
+template <>
+struct visitor_selector<STITCH::MASKED>
+{
+    template <typename _Memory, typename _CompiledCells, typename _Program>
+    struct type
+    {
+        using memory_view = _Memory::view_type;
+        using index_t     = _Program::index_t;
+
+        static constexpr fsize_t N = native_vector_extent_v<index_t>;
+
+        using index_vector_t = packed_vector<index_t, N>;
+
+        void
+        operator()(memory_view view) const noexcept
+        {
+            std::ranges::for_each(
+                aligned_memory_chunks<_Memory>(view),
+                [](auto view) noexcept
+                    requires(pv_extent<decltype(view)> == N)
+                {
+                    const index_vector_t cps = load<N>(view.cp().data());
+
+                    for(const auto [cp, mask]: cell_set<_Program, N>{cps})
+                        typelist::visit_at(
+                            cp,
+                            [&]<typename Cell>() noexcept { Cell{mask}(view); },
+                            _CompiledCells{},
+                            sink);
+                });
+        }
+
+        void
+        operator()(_Memory& mem) const noexcept
+        {
+            operator()(mem.view());
+        }
+    };
+};
+
+template <STITCH stitch, typename... Args>
+using select_visitor = visitor_selector<stitch>::template type<Args...>;
+
+/// @brief Allocates memory aligned to native SIMD vector size.
+template <typename T>
+using SIMDAlignedAllocator =
+    AlignedAllocator<T, get_native_vector_align<T>::value>;
+
+/// @brief SIMD backend.
+/// @tparam _Program program to compile.
+/// @tparam stitch execution method.
+/// @tparam sort_method sorting algorithm to use.
+/// @tparam async allow asynchronous exchange in resulting stream.
+template <typename _Program,
+          STITCH    stitch,
+          bve::SORT sort_method,
+          bool      async = false>
+    requires(typelist::of_same_size<typename _Program::reg_types>)
+class compiler
+{
+    using labelmap  = _Program::labelmap;
+    using cells     = _Program::cells;
+    using reg_names = _Program::reg_names;
+    using reg_types = _Program::reg_types;
+    using cp        = _Program::cp;
+
+    static constexpr bool    singular = _Program::singular;
+    static constexpr auto    halt_pos = _Program::halt_pos;
+    static constexpr fsize_t align    = simd_align;
+
+    template <typename Cell>
+    using compile_cell = cell_compiler<stitch, Cell, labelmap, cp>;
+
+    using compiled_cells = typelist::map<compile_cell, cells>;
+
+    template <typename T>
+    using allocator = std::conditional_t<async,
+                                         CacheLineAlignedAllocator<T>,
+                                         SIMDAlignedAllocator<T>>;
+
+    using memory =
+        bve::Memory<reg_types, reg_names, cp, std::vector, allocator>;
+    using memory_view = memory::view_type;
+
+    static constexpr bve::SORT final_sort_method =
+        singular ? bve::INTROSORT : sort_method;
+    using sorter =
+        bve::select_sorter<final_sort_method>::template type<_Program, memory>;
+
+    using stream_facade = std::conditional_t<
+        async,
+        AsyncStreamFacade<_Program, std::vector, allocator, sorter>,
+        bve::StreamFacade<_Program, std::vector, allocator, sorter>>;
+    using memory_facade =
+        bve::MemoryFacade<_Program, std::vector, allocator, sorter>;
+
+    using visitor = select_visitor<stitch, memory, compiled_cells, _Program>;
+
+    class single_cell_evaluator : public memory_facade
+    {
+        static constexpr typelist::head<compiled_cells> cell{};
+
+      public:
+        using program = _Program;
+        using memory_facade::memory_facade;
+
+        template <bool zip_outputs = false, typename... Args>
+        auto
+        operator()(Args&&... args) noexcept
+        {
+            memory_facade::set_inputs(std::forward<Args>(args)...);
+            memory_facade::visit([](memory& mem) noexcept
+                                 { cell(mem.view()); });
+            if constexpr(zip_outputs)
+                return memory_facade::get_output_zipped();
+            else
+                return memory_facade::get_outputs();
+        }
+    };
+
+    class evaluator : public memory_facade
+    {
+#if 0
+        using vars = _Program::variables;
+        void
+        dump() const noexcept
+        {
+            auto columns = typelist::maybe_collect<std::tuple>(
+                vars{},
+                [&]<typename Var>() constexpr noexcept
+                {
+                    return std::views::all(
+                        memory_facade::mem().template get<Var>());
+                });
+
+            typelist::for_each(vars{},
+                               []<typename Var>()
+                               {
+                                   using name       = varname<Var>;
+                                   constexpr auto l = intlist::length<name>;
+                                   constexpr auto a = intlist::array<name>;
+                                   constexpr std::string_view s(a, l);
+                                   fmt::print("{},", s);
+                               });
+            putchar('\n');
+            for(fsize_t i = 0; i < memory_facade::size(); ++i)
+            {
+                lucid::for_each(columns,
+                                [i](const auto& c)
+                                { fmt::print("{},", c[i]); });
+                putchar('\n');
+            }
+        }
+#endif
+
+      public:
+        using program = _Program;
+        using memory_facade::memory_facade;
+
+        template <bool zip_outputs = false, typename... Args>
+        auto
+        operator()(Args&&... args) noexcept
+        {
+            memory_facade::set_inputs(std::forward<Args>(args)...);
+
+            while(!memory_facade::done())
+            {
+#if 0
+                dump();
+#endif
+                memory_facade::visit(visitor{});
+                memory_facade::sort();
+            }
+
+            if constexpr(zip_outputs)
+                return memory_facade::get_output_zipped();
+            else
+                return memory_facade::get_outputs();
+        }
+    };
+
+  public:
+    using function = std::
+        conditional_t<_Program::singular, single_cell_evaluator, evaluator>;
+
+    class stream : public stream_facade
+    {
+        static_assert(!_Program::singular);
+
+      public:
+        using program = _Program;
+        using stream_facade::stream_facade;
+
+        constexpr void
+        operator()() noexcept
+        {
+            stream_facade::visit(visitor{});
+        }
+    };
+};
+
+template <typename _Program, STITCH stitch, bve::SORT sort_method>
+using function = compiler<_Program, stitch, sort_method, false>::function;
+
+template <typename _Program,
+          STITCH    stitch,
+          bve::SORT sort_method,
+          bool      async = false>
+    requires(!_Program::singular)
+using stream = compiler<_Program, stitch, sort_method, async>::stream;
 
 template <typename Cell, typename LabelMap, typename CPVar, fsize_t N>
 class make_embedded_masked_runner
