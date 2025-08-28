@@ -4,6 +4,8 @@
 
 #pragma once
 
+#include "math.hpp"
+
 #include <memory>
 
 namespace lucid
@@ -21,8 +23,7 @@ class AlignedAllocator
     static constexpr std::size_t
     align_size(std::size_t n) noexcept
     {
-        const std::size_t m = n % alignment;
-        return m == 0 ? n : n + alignment - m;
+        return align_top(n, alignment);
     }
 
   public:

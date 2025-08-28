@@ -40,6 +40,15 @@ is_even(const T val) noexcept
     return val % 2 == 0;
 }
 
+/// @brief Make value that is bigger or equal and divisible by @p div.
+template <std::integral T>
+constexpr T
+align_top(const T n, const T div) noexcept
+{
+    const T m = n % div;
+    return m == 0 ? n : n + div - m;
+}
+
 /// @brief Return result of @f$(-1)^{a}@f$.
 template <std::integral T>
 constexpr int
