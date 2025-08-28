@@ -17,14 +17,14 @@
 template <typename S>
 class StreamWrapper
 {
-    S* p_stream;
+    S* const p_stream;
 
   public:
     StreamWrapper(S* stream) noexcept : p_stream(stream) {}
 
     template <typename Input>
     auto
-    operator()(const Input& input) noexcept
+    operator()(const Input& input) const noexcept
     {
         // prepare result container
         using program = S::program;
