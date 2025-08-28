@@ -22,6 +22,102 @@
 using namespace lucid;
 using namespace lucid::test;
 
+template <bve::SORT>
+struct sort_name;
+
+template <>
+struct sort_name<bve::INTROSORT>
+{
+    static constexpr char chars[] = "introsort";
+};
+
+template <>
+struct sort_name<bve::COUNTING_SORT>
+{
+    static constexpr char chars[] = "counting sort";
+};
+
+template <simd::STITCH>
+struct stitch_name;
+
+template <>
+struct stitch_name<simd::N_ORDER>
+{
+    static constexpr char chars[] = "N-order";
+};
+
+template <>
+struct stitch_name<simd::MINIKERNEL>
+{
+    static constexpr char chars[] = "minikernel";
+};
+
+template <>
+struct stitch_name<simd::MASKED>
+{
+    static constexpr char chars[] = "masked minikernel";
+};
+
+template <typename P, simd::STITCH stitch, bve::SORT sort_method, bool async>
+struct StreamPair
+{
+    std::string
+    get_name() const noexcept
+    {
+        return fmt::format("SIMD stream {} {}{}",
+                           stitch_name<stitch>::chars,
+                           sort_name<sort_method>::chars,
+                           async ? " async" : "");
+    }
+
+    using stream_type = simd::stream<P, stitch, sort_method, async>;
+
+    stream_type                stream;
+    StreamWrapper<stream_type> wrapper{&stream};
+
+    StreamPair(unsigned n) noexcept : stream(n) {}
+};
+
+template <typename P,
+          bve::SORT __sort,
+          bool      __async,
+          simd::STITCH... __stitches>
+struct stream_product_stitches
+{
+    using type = type_sequence<StreamPair<P, __stitches, __sort, __async>...>;
+};
+
+template <typename P, bool __async, bve::SORT... __sorts>
+struct stream_product_sorts
+{
+    using type =
+        type_sequence<typename stream_product_stitches<P,
+                                                       __sorts,
+                                                       __async,
+                                                       simd::N_ORDER,
+                                                       simd::MINIKERNEL,
+                                                       simd::MASKED>::type...>;
+};
+
+template <typename P, bool... __asyncs>
+struct stream_product_asyncs
+{
+    using type = type_sequence<
+        typename stream_product_sorts<P,
+                                      __asyncs,
+                                      bve::INTROSORT,
+                                      bve::COUNTING_SORT>::type...>;
+};
+
+template <typename P>
+struct stream_product
+{
+    using streams =
+        typelist::flatten<typename stream_product_asyncs<P, false, true>::type>;
+
+    using tuple_type = typelist::to<streams, unique_tuple>;
+};
+
 template <typename P, bool complex>
 struct StandardState;
 
@@ -50,58 +146,23 @@ struct StandardState<P, true> : StandardState<P, false>
     bve::stream<P, bve::INTROSORT>     bve_stream_is;
     bve::stream<P, bve::COUNTING_SORT> bve_stream_cs;
 
-    simd::function<P, simd::N_ORDER, bve::COUNTING_SORT>    simd_func_N_cs;
-    simd::function<P, simd::MINIKERNEL, bve::COUNTING_SORT> simd_func_m_cs;
-
-    simd::stream<P, simd::N_ORDER, bve::INTROSORT>    simd_stream_N_is;
-    simd::stream<P, simd::MINIKERNEL, bve::INTROSORT> simd_stream_m_is;
-
-    simd::stream<P, simd::N_ORDER, bve::COUNTING_SORT>    simd_stream_N_cs;
-    simd::stream<P, simd::MINIKERNEL, bve::COUNTING_SORT> simd_stream_m_cs;
-
-    simd::stream<P, simd::N_ORDER, bve::INTROSORT, true> simd_stream_N_is_async;
-    simd::stream<P, simd::MINIKERNEL, bve::INTROSORT, true>
-        simd_stream_m_is_async;
-
-    simd::stream<P, simd::N_ORDER, bve::COUNTING_SORT, true>
-        simd_stream_N_cs_async;
-    simd::stream<P, simd::MINIKERNEL, bve::COUNTING_SORT, true>
-        simd_stream_m_cs_async;
-
     StreamWrapper<bve::stream<P, bve::INTROSORT>> bve_stream_is_w{
         &bve_stream_is};
     StreamWrapper<bve::stream<P, bve::COUNTING_SORT>> bve_stream_cs_w{
         &bve_stream_cs};
 
-    StreamWrapper<simd::stream<P, simd::N_ORDER, bve::INTROSORT>>
-        simd_stream_N_is_w{&simd_stream_N_is};
-    StreamWrapper<simd::stream<P, simd::MINIKERNEL, bve::INTROSORT>>
-        simd_stream_m_is_w{&simd_stream_m_is};
+    simd::function<P, simd::N_ORDER, bve::COUNTING_SORT>    simd_func_N_cs;
+    simd::function<P, simd::MINIKERNEL, bve::COUNTING_SORT> simd_func_m_cs;
 
-    StreamWrapper<simd::stream<P, simd::N_ORDER, bve::COUNTING_SORT>>
-        simd_stream_N_cs_w{&simd_stream_N_cs};
-    StreamWrapper<simd::stream<P, simd::MINIKERNEL, bve::COUNTING_SORT>>
-        simd_stream_m_cs_w{&simd_stream_m_cs};
+    using sp = stream_product<P>;
 
-    StreamWrapper<simd::stream<P, simd::N_ORDER, bve::INTROSORT, true>>
-        simd_stream_N_is_async_w{&simd_stream_N_is_async};
-    StreamWrapper<simd::stream<P, simd::MINIKERNEL, bve::INTROSORT, true>>
-        simd_stream_m_is_async_w{&simd_stream_m_is_async};
-
-    StreamWrapper<simd::stream<P, simd::N_ORDER, bve::COUNTING_SORT, true>>
-        simd_stream_N_cs_async_w{&simd_stream_N_cs_async};
-    StreamWrapper<simd::stream<P, simd::MINIKERNEL, bve::COUNTING_SORT, true>>
-        simd_stream_m_cs_async_w{&simd_stream_m_cs_async};
+    typename sp::tuple_type simd_streams;
 
     using base = StandardState<P, false>;
 
     StandardState(unsigned n) noexcept :
         base(n), bve_func_cs(n), bve_stream_is(n / d), bve_stream_cs(n / d),
-        simd_func_N_cs(n), simd_func_m_cs(n), simd_stream_N_is(n / d),
-        simd_stream_m_is(n / d), simd_stream_N_cs(n / d),
-        simd_stream_m_cs(n / d), simd_stream_N_is_async(n / d),
-        simd_stream_m_is_async(n / d), simd_stream_N_cs_async(n / d),
-        simd_stream_m_cs_async(n / d)
+        simd_func_N_cs(n), simd_func_m_cs(n), simd_streams(uniform_init, n / d)
     {
     }
 };
@@ -202,61 +263,18 @@ struct StandardTestSuite
                             ti));
 
             if constexpr(complex)
-                return std::tuple{
-                    std::move(n),
-                    std::move(m),
-                    NamedTest(
-                        reset_bve(state.simd_stream_N_is_w),
-                        fmt::format("{}: SIMD stream N-order introsort [{}]",
-
-                                    name.view(),
-                                    ti)),
-                    NamedTest(
-                        reset_bve(state.simd_stream_m_is_w),
-                        fmt::format("{}: SIMD stream minikernel introsort [{}]",
-
-                                    name.view(),
-                                    ti)),
-                    NamedTest(reset_bve(state.simd_stream_N_cs_w),
-                              fmt::format(
-                                  "{}: SIMD stream N-order counting sort [{}]",
-
-                                  name.view(),
-                                  ti)),
-                    NamedTest(
-                        reset_bve(state.simd_stream_m_cs_w),
-                        fmt::format(
-                            "{}: SIMD stream minikernel counting sort [{}]",
-
-                            name.view(),
-                            ti)),
-                    NamedTest(
-                        reset_bve(state.simd_stream_N_is_async_w),
-                        fmt::format(
-                            "{}: SIMD stream N-order introsort async [{}]",
-
-                            name.view(),
-                            ti)),
-                    NamedTest(
-                        reset_bve(state.simd_stream_m_is_async_w),
-                        fmt::format(
-                            "{}: SIMD stream minikernel introsort async [{}]",
-
-                            name.view(),
-                            ti)),
-                    NamedTest(
-                        reset_bve(state.simd_stream_N_cs_async_w),
-                        fmt::format(
-                            "{}: SIMD stream N-order counting sort async [{}]",
-
-                            name.view(),
-                            ti)),
-                    NamedTest(reset_bve(state.simd_stream_m_cs_async_w),
-                              fmt::format("{}: SIMD stream minikernel counting "
-                                          "sort async [{}]",
-
-                                          name.view(),
-                                          ti))};
+                return std::tuple_cat(
+                    std::tuple{std::move(n), std::move(m)},
+                    lucid::map_tuple(state.simd_streams,
+                                     [&](const auto& sp) noexcept
+                                     {
+                                         return NamedTest(
+                                             reset_bve(sp.wrapper),
+                                             fmt::format("{}: {} [{}]",
+                                                         name.view(),
+                                                         sp.get_name(),
+                                                         ti));
+                                     }));
             else
                 return std::pair{n, m};
         };
@@ -303,7 +321,7 @@ int
 main(int argc, char* argv[])
 {
     Track         track;
-    ParmTestMaker tm{parse_numruns(argc, argv)};
+    ParmTestMaker tm{align_top(parse_numruns(argc, argv), 32u)};
     RandomState   rs;
 
     test_suite_types(
