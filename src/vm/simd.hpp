@@ -169,14 +169,14 @@ struct mask_io_intrinsics_wrangler
     static vector_type _FORCE_INLINE
     load(T const* p, const mask_type mask) noexcept
     {
-        return mask ? load<N>(p) : broadcast<N>(static_cast<T>(0));
+        return mask ? simd::load<N>(p) : broadcast<N>(static_cast<T>(0));
     }
 
     /// @brief Fallback implementation for mask store.
     static void _FORCE_INLINE
     store(T* dest, const mask_type mask, const vector_type value) noexcept
     {
-        store<N>(dest, mask ? value : load<N>(dest));
+        simd::store<N>(dest, mask ? value : simd::load<N>(dest));
     }
 };
 
@@ -1190,7 +1190,7 @@ class aligned_chunks :
 
       public:
         using difference_type = std::ptrdiff_t;
-        using value_type      = proxy_view;
+        using value_type      = decltype(m_view.template view<N>(m_pos));
 
         _iterator() noexcept = default;
 
@@ -1228,7 +1228,7 @@ class aligned_chunks :
         bool
         operator==(std::default_sentinel_t) const noexcept
         {
-            return m_view.cp()[m_pos] == halt_pos || m_pos == m_view.size();
+            return m_pos >= m_view.size() || m_view.cp()[m_pos] == halt_pos;
         }
 
         bool
@@ -1460,7 +1460,7 @@ struct visitor_selector<STITCH::MASKED>
         operator()(memory_view view) const noexcept
         {
             std::ranges::for_each(
-                aligned_memory_chunks<_Memory>(view),
+                aligned_chunks<_Memory, N, _Program::halt_pos>(view),
                 [](auto view) noexcept
                     requires(pv_extent<decltype(view)> == N)
                 {
