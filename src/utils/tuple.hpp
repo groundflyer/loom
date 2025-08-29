@@ -303,6 +303,15 @@ zip_tuples_impl(std::index_sequence<I...>, const Ts&... tuples) noexcept
     return std::tuple{join_elems<I>(tuples...)...};
 }
 
+template <typelist::List L, template <typename...> typename M, typename... Head>
+struct is_applicable_mod_array_helper;
+
+template <typename... Ts, template <typename...> typename M, typename... Head>
+struct is_applicable_mod_array_helper<type_sequence<Ts...>, M, Head...> :
+    M<Head..., Ts...>
+{
+};
+
 template <typename F, typename T, template <typename...> typename M>
 struct is_applicable_mod : std::false_type
 {
@@ -323,6 +332,15 @@ template <typename F,
           typename T1,
           typename T2>
 struct is_applicable_mod<F, std::pair<T1, T2>, M> : M<F, T1, T2>
+{
+};
+
+template <typename F,
+          template <typename...> typename M,
+          typename T,
+          std::size_t N>
+struct is_applicable_mod<F, std::array<T, N>, M> :
+    is_applicable_mod_array_helper<typelist::repeat<N, T>, M, F>
 {
 };
 
@@ -353,6 +371,16 @@ template <typename F,
           typename T1,
           typename T2>
 struct is_applicable_mod_r<F, R, std::pair<T1, T2>, M> : M<F, R, T1, T2>
+{
+};
+
+template <typename F,
+          typename R,
+          template <typename...> typename M,
+          typename T,
+          std::size_t N>
+struct is_applicable_mod_r<F, R, std::array<T, N>, M> :
+    is_applicable_mod_array_helper<typelist::repeat<N, T>, M, F, R>
 {
 };
 
