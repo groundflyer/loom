@@ -160,6 +160,19 @@ struct prettify<std::identity>
     }
 };
 
+template <>
+struct prettify<ops::fma>
+{
+    static constexpr std::string_view value = "fma";
+
+    template <typename... Ts>
+    std::string_view
+    operator()(Ts...) const noexcept
+    {
+        return value;
+    }
+};
+
 #define MK_STD_PRETTIFY(OP, NAME)                        \
     template <typename T>                                \
     struct prettify<std::OP<T>>                          \
