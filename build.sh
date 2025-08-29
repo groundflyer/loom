@@ -41,7 +41,7 @@ enable_benchmarks() {
 }
 
 enable_debugger() {
-    CMAKE_ARGS+=(-DBUILD_DEBUGGER=ON)
+    CMAKE_ARGS+=(-DBUILD_DEBUGGERS=ON)
 }
 
 enable_docs() {
