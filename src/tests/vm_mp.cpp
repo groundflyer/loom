@@ -7,6 +7,7 @@
 #include "programs.hpp"
 #include "programs_generators.hpp"
 #include "root_finding.hpp"
+#include "vm_test_suite_utils.hpp"
 
 #include <algorithm>
 #include <vector>
@@ -150,36 +151,6 @@ test_stream(std::string_view compiler_name,
         0.1));
 }
 
-template <simd::STITCH stitch>
-struct stitch_name;
-
-template <>
-struct stitch_name<simd::N_ORDER>
-{
-    static constexpr char chars[] = "N-order";
-};
-
-template <>
-struct stitch_name<simd::MINIKERNEL>
-{
-    static constexpr char chars[] = "Minikernel";
-};
-
-template <bve::SORT>
-struct sort_name;
-
-template <>
-struct sort_name<bve::INTROSORT>
-{
-    static constexpr char chars[] = "introsort";
-};
-
-template <>
-struct sort_name<bve::COUNTING_SORT>
-{
-    static constexpr char chars[] = "counting sort";
-};
-
 template <simd::STITCH stitch, bve::SORT sort_method>
 struct make_simd_context
 {
@@ -251,15 +222,15 @@ main(int argc, char* argv[])
     const v_out_fib out_val_fib = mk_val(in_fib, val_fib);
     const v_out_fz  out_val_fz  = mk_val(in_fz, val_cubic_fz);
 
-    test_simd_all<simd::N_ORDER, simd::MINIKERNEL>(track,
-                                                   stream_size,
-                                                   num_runs,
-                                                   in_fac,
-                                                   in_fib,
-                                                   in_fz,
-                                                   out_val_fac,
-                                                   out_val_fib,
-                                                   out_val_fz);
+    test_simd_all<simd::N_ORDER, simd::MINIKERNEL, simd::MASKED>(track,
+                                                                 stream_size,
+                                                                 num_runs,
+                                                                 in_fac,
+                                                                 in_fib,
+                                                                 in_fz,
+                                                                 out_val_fac,
+                                                                 out_val_fib,
+                                                                 out_val_fz);
 
     return track.ret_code();
 }

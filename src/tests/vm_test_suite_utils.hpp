@@ -4,6 +4,9 @@
 
 #pragma once
 
+#include <vm/bve.hpp>
+#include <vm/simd.hpp>
+
 #include <utils/test.hpp>
 #include <utils/tmp.hpp>
 
@@ -48,4 +51,40 @@ using all_uints =
 using fac_ints =
     type_sequence<std::int32_t, std::int64_t, std::uint32_t, std::uint64_t>;
 using all_floats = type_sequence<float, double>;
+
+template <bve::SORT>
+struct sort_name;
+
+template <>
+struct sort_name<bve::INTROSORT>
+{
+    static constexpr char chars[] = "introsort";
+};
+
+template <>
+struct sort_name<bve::COUNTING_SORT>
+{
+    static constexpr char chars[] = "counting sort";
+};
+
+template <simd::STITCH>
+struct stitch_name;
+
+template <>
+struct stitch_name<simd::N_ORDER>
+{
+    static constexpr char chars[] = "N-order";
+};
+
+template <>
+struct stitch_name<simd::MINIKERNEL>
+{
+    static constexpr char chars[] = "minikernel";
+};
+
+template <>
+struct stitch_name<simd::MASKED>
+{
+    static constexpr char chars[] = "masked minikernel";
+};
 } // namespace lucid

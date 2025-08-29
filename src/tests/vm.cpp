@@ -22,42 +22,6 @@
 using namespace lucid;
 using namespace lucid::test;
 
-template <bve::SORT>
-struct sort_name;
-
-template <>
-struct sort_name<bve::INTROSORT>
-{
-    static constexpr char chars[] = "introsort";
-};
-
-template <>
-struct sort_name<bve::COUNTING_SORT>
-{
-    static constexpr char chars[] = "counting sort";
-};
-
-template <simd::STITCH>
-struct stitch_name;
-
-template <>
-struct stitch_name<simd::N_ORDER>
-{
-    static constexpr char chars[] = "N-order";
-};
-
-template <>
-struct stitch_name<simd::MINIKERNEL>
-{
-    static constexpr char chars[] = "minikernel";
-};
-
-template <>
-struct stitch_name<simd::MASKED>
-{
-    static constexpr char chars[] = "masked minikernel";
-};
-
 template <typename P, simd::STITCH stitch, bve::SORT sort_method, bool async>
 struct StreamPair
 {
