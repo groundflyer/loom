@@ -1464,9 +1464,11 @@ struct visitor_selector<STITCH::MASKED>
                 [](auto view) noexcept
                     requires(pv_extent<decltype(view)> == N)
                 {
-                    const index_vector_t cps = load<N>(view.cp().data());
+                    const index_t        start = view.cp()[0];
+                    const index_vector_t cps   = load<N>(view.cp().data());
 
-                    for(const auto [cp, mask]: cell_set<_Program, N>{cps})
+                    for(const auto [cp, mask]:
+                        cell_set<_Program, N>{cps, start})
                         typelist::visit_at(
                             cp,
                             [&]<typename Cell>() noexcept { Cell{mask}(view); },
