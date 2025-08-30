@@ -885,7 +885,7 @@ using input_types = typelist::map<vartype, typename P::input_vars>;
 /// @brief Helper shortcut type_sequence with output types of program @p P.
 /// @tparam P program.
 template <typename P>
-using output_types = typelist::map<vartype, typename P::input_vars>;
+using output_types = typelist::map<vartype, typename P::output_vars>;
 
 /// @brief The type accepted to input for the program @p P.
 /// @tparam P program.
