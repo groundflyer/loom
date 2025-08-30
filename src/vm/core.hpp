@@ -877,19 +877,25 @@ struct Program
                            ensure_last_jumps_t<cells_statements, labels>>;
 };
 
+/// @brief Helper shortcut type_sequence with input types of program @p P.
+/// @tparam P program.
+template <typename P>
+using input_types = typelist::map<vartype, typename P::input_vars>;
+
+/// @brief Helper shortcut type_sequence with output types of program @p P.
+/// @tparam P program.
+template <typename P>
+using output_types = typelist::map<vartype, typename P::input_vars>;
+
 /// @brief The type accepted to input for the program @p P.
 /// @tparam P program.
 template <typename P>
-using input_type =
-    typelist::maybe_to<typelist::map<vartype, typename P::input_vars>,
-                       std::tuple>;
+using input_type = typelist::maybe_to<input_types<P>, std::tuple>;
 
 /// @brief The resulting type of the program @p P.
 /// @tparam P program.
 template <typename P>
-using output_type =
-    typelist::maybe_to<typelist::map<vartype, typename P::output_vars>,
-                       std::tuple>;
+using output_type = typelist::maybe_to<output_types<P>, std::tuple>;
 
 /// @brief Helper function. Ensures that the result value is valid cell number
 /// or halt position.
