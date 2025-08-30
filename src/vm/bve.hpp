@@ -1055,27 +1055,7 @@ class MemoryFacade : public Sorter
     }
 
     auto
-    get_outputs() noexcept
-    {
-        return typelist::maybe_collect<std::tuple>(
-            output_vars{},
-            [&mem = Sorter::mem()]<typename Var>() noexcept
-            { return std::views::all(mem.template get<Var>()); });
-    }
-
-    auto
     get_output_zipped() const noexcept
-    {
-        if constexpr(typelist::length<output_vars> > 1)
-            return std::views::transform(Sorter::mem(),
-                                         [](auto row) noexcept
-                                         { return get_row_output(row); });
-        else
-            return get_outputs();
-    }
-
-    auto
-    get_output_zipped() noexcept
     {
         if constexpr(typelist::length<output_vars> > 1)
             return std::views::transform(Sorter::mem(),
