@@ -15,9 +15,7 @@
 #include <utils/tmp.hpp>
 #include <utils/tuple.hpp>
 
-#if 0
 #include <fmt/core.h>
-#endif
 
 #include <algorithm>
 #include <cstdlib>
@@ -48,6 +46,21 @@ constexpr inline fsize_t simd_align = 32;
 constexpr inline fsize_t simd_width = 16; // 128
 constexpr inline fsize_t simd_align = 16;
 #endif
+
+void
+print_info() noexcept
+{
+#if defined(__AVX512F__)
+    constexpr char info[] = "avx512f";
+#elif defined(__AVX2__)
+    constexpr char info[] = "avx2";
+#elif defined(__AVX__)
+    constexpr char info[] = "avx";
+#else
+    constexpr char info[] = "sse4.2 or older";
+#endif
+    fmt::print("Using x86-64 vector extensions: {}\n", info);
+}
 
 template <typename _ProxyView>
 struct proxy_view_extent

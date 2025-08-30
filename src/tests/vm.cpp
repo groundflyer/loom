@@ -284,6 +284,7 @@ struct SimpleSIMDSuite
 int
 main(int argc, char* argv[])
 {
+    simd::print_info();
     Track         track;
     ParmTestMaker tm{align_top(parse_numruns(argc, argv), 32u)};
     RandomState   rs;

@@ -205,6 +205,7 @@ test_simd_all(Args&&... args) noexcept
 int
 main(int argc, char* argv[])
 {
+    simd::print_info();
     Track          track;
     RandomState    rs;
     const unsigned num_runs =

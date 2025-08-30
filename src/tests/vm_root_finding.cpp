@@ -156,6 +156,7 @@ struct test_suite
 int
 main(int argc, char* argv[])
 {
+    simd::print_info();
     Track         track;
     ParmTestMaker tm{parse_numruns<100000>(argc, argv)};
     RandomState   rs;
