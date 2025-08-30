@@ -838,6 +838,13 @@ swap_only_introsort(I first, I last) noexcept
         2u * static_cast<unsigned>(std::floor(std::log(last - first))));
 }
 
+template <auto halt_pos, auto num_bins, std::integral T>
+constexpr T
+fit_in_bins(T cp) noexcept
+{
+    return cp != halt_pos ? cp : num_bins - 1;
+}
+
 template <fsize_t num_bins,
           auto    halt_pos,
           typename RegTypes,
@@ -856,11 +863,8 @@ counting_sort(Memory<RegTypes, RegNames, _CP, _Vector, Allocator>& in,
 
     index_t bins[num_bins] = {};
 
-    auto fit = [](index_t cp) noexcept
-    { return cp != halt_pos ? cp : num_bins - 1; };
-
     // histogram
-    for(index_t cp: in.cp()) ++bins[fit(cp)];
+    for(index_t cp: in.cp()) ++bins[fit_in_bins<halt_pos, num_bins>(cp)];
 
     // prefix sum
     for(index_t i = 1; i < num_bins; ++i) bins[i] += bins[i - 1];
@@ -903,12 +907,8 @@ class SimpleSorter
 template <typename _Program, typename _Memory>
 class CountingSorter
 {
-    using reg_names = _Program::reg_names;
-    using reg_types = _Program::reg_types;
-    using cp        = _Program::cp;
-
-    static constexpr vartype<cp> halt_pos = _Program::halt_pos;
-    static constexpr std::size_t num_bins = _Program::num_cells + 1;
+    static constexpr auto    halt_pos = _Program::halt_pos;
+    static constexpr fsize_t num_bins = _Program::num_cells + 1;
 
     _Memory  m_buf0;
     _Memory  m_buf1;

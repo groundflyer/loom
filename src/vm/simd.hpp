@@ -978,7 +978,230 @@ class make_cell_compiler<STITCH::MASKED, Cell, LabelMap, CPVar>
 template <STITCH stitch, typename Cell, typename LabelMap, typename CPVar>
 using cell_compiler = make_cell_compiler<stitch, Cell, LabelMap, CPVar>::type;
 
-/// @brief Stream facade that allows asynchronous exchange.
+/// @brief Count the number of logical 1 in packed vector @p vec.
+template <std::integral T, fsize_t N>
+_FORCE_INLINE T
+popcnt(const packed_vector<T, N> vec) noexcept
+{
+    // only AVX512VL + AVX512VPOPCNTDQ has dedicated popcnt
+    // this is workaround for older vector extensions
+    // FIXME: add AVX512 implementation
+    return __builtin_reduce_add(
+        __builtin_elementwise_min(vec, broadcast<N>(static_cast<T>(1))));
+}
+
+/// @brief Fast and lightweight set for cell indices.
+///
+/// Takes native SIMD vector of cell indices as input and optional initial
+/// postion in case of sorted input.
+/// Iterates over the set and returns a pair of cell pointer number and its
+/// vector mask. If @p ret_sum is set, the second value is the number of
+/// repetitions of the cell number in the input.
+///
+/// @tparam P program to make set for.
+/// @tparam N vector width.
+/// @tparam ret_sum if enabled iterated value is pair consisting of cell pointer
+/// and the number of repetitions of this cell, otherwise the latter value is
+/// vector mask fot this cell.
+template <typename P, fsize_t N, bool ret_sum = false>
+class cell_set : public std::ranges::view_interface<cell_set<P, N, ret_sum>>
+{
+    using index_t        = P::index_t;
+    using index_vector_t = packed_vector<index_t, N>;
+
+    static constexpr index_t num_cells = P::num_cells;
+    static constexpr index_t halt_pos  = P::halt_pos;
+
+    const index_vector_t m_cps;
+    const index_t        m_init_pos{};
+
+    class _iterator : public std::input_iterator_tag
+    {
+        using ret_t = std::conditional_t<ret_sum, index_t, index_vector_t>;
+
+        index_t              m_sum{};
+        const index_vector_t m_cps;
+        index_t              m_pos{};
+        ret_t                m_ret;
+
+        static _FORCE_INLINE index_t
+        fit_inc(const index_t i) noexcept
+        {
+            return fit_cell_index<P>(i + static_cast<index_t>(1));
+        }
+
+        _FORCE_INLINE bool
+        sum(const index_t pos) noexcept
+        {
+            if constexpr(ret_sum)
+            {
+                const index_vector_t mask = m_cps == broadcast<N>(pos);
+                m_ret                     = popcnt<index_t, N>(mask);
+                m_sum += m_ret;
+                return m_ret;
+            }
+            else
+            {
+                m_ret             = m_cps == broadcast<N>(pos);
+                const index_t ret = popcnt<index_t, N>(m_ret);
+                m_sum += ret;
+                return ret;
+            }
+        }
+
+        _FORCE_INLINE index_t
+        next(index_t pos) noexcept
+        {
+            while(!sum(pos)) pos = fit_inc(pos);
+            return pos;
+        }
+
+      public:
+        using difference_type = std::make_signed_t<index_t>;
+        using value_type      = std::pair<index_t, ret_t>;
+
+        _iterator() noexcept = default;
+        _iterator(const index_vector_t cps,
+                  const index_t        initial_pos = 0) noexcept :
+            m_sum(0), m_cps(cps), m_pos(next(initial_pos))
+        {
+        }
+
+        bool
+        operator==(std::default_sentinel_t) const noexcept
+        {
+            return m_sum > N;
+        }
+
+        value_type
+        operator*() const noexcept
+        {
+            return {m_pos, m_ret};
+        }
+
+        _iterator&
+        operator++() noexcept
+        {
+            m_pos = next(fit_inc(m_pos));
+            return *this;
+        }
+
+        _iterator
+        operator++(int) noexcept
+        {
+            _iterator ret(*this);
+            m_pos = next(fit_inc(m_pos));
+            return ret;
+        }
+    };
+
+  public:
+    cell_set() noexcept = default;
+    cell_set(const index_vector_t cps, const index_t initial_pos = 0) noexcept :
+        m_cps(cps), m_init_pos(initial_pos)
+    {
+    }
+
+    _iterator
+    begin() const noexcept
+    {
+        return {m_cps, m_init_pos};
+    }
+
+    std::default_sentinel_t
+    end() const noexcept
+    {
+        return std::default_sentinel;
+    }
+};
+
+/// @brief Vectorized counting sort.
+/// @return number of halted cells.
+template <typename P, typename _Memory>
+typename P::index_t
+counting_sort(_Memory& in, _Memory& out) noexcept
+{
+    ASSERT(in.size() == out.size(), "Sizes must match");
+
+    using index_t = P::index_t;
+
+    constexpr fsize_t num_bins = P::num_cells + 1;
+    constexpr fsize_t N        = native_vector_extent_v<index_t>;
+
+    ASSERT(in.size() % N == 0, "Size be aligned to vector width");
+
+    using vector_index_t = packed_vector<index_t, N>;
+
+    constexpr index_t halt_pos = broadcast<N>(P::halt_pos);
+
+    index_t bins[num_bins] = {};
+
+    // histogram
+    for(index_t pos = 0; pos < in.size(); pos += N)
+    {
+        const vector_index_t cps = load<N>(in.template view<N>(pos).data());
+        for(const auto [cp, sum]: cell_set<P, N, true>(cps))
+            bins[bve::fit_in_bins<halt_pos, num_bins>(cp)] += sum;
+    }
+
+    const index_t ret = bins[num_bins - 1];
+
+    // prefix sum
+    // no point in vectorizing this - num_bins is usually to small
+    for(index_t i = 1; i < num_bins; ++i) bins[i] += bins[i - 1];
+
+    // fill out
+    // FIXME: for avx512 implement using scatter
+    for(int i = in.size() - 1; i >= 0; --i)
+        out[--bins[fit(in.cp()[i])]] = in[i];
+
+    return ret;
+}
+
+template <typename _Program, typename _Memory>
+class CountingSorter
+{
+    _Memory  m_buf0;
+    _Memory  m_buf1;
+    _Memory* p_main = &m_buf0;
+    _Memory* p_aux  = &m_buf1;
+
+  public:
+    CountingSorter() noexcept = default;
+    CountingSorter(fsize_t n) : m_buf0(n), m_buf1(n) {}
+
+    _Memory&
+    mem() noexcept
+    {
+        return *p_main;
+    }
+
+    const _Memory&
+    mem() const noexcept
+    {
+        return *p_main;
+    }
+
+    auto
+    sort() noexcept
+    {
+        const auto ret = counting_sort<_Program>(*p_main, *p_aux);
+        std::swap(p_main, p_aux);
+        return ret;
+    }
+};
+
+template <typename _Sorter>
+struct is_simd_counting_sorter : std::false_type
+{
+};
+
+template <typename P, typename M>
+struct is_simd_counting_sorter<CountingSorter<P, M>> : std::true_type
+{
+};
+
+/// @brief Stream facade that allows asynchronous exchange/computation.
 template <typename _Program,
           template <typename, typename> typename _Vector,
           template <typename> typename Allocator,
@@ -1024,10 +1247,19 @@ class AsyncStreamFacade :
     void
     sort() noexcept
     {
-        facade::sort();
-        // we do this here, because only sort is protected with a lock in
-        // multithreaded stream
-        find_halt_segments();
+        if constexpr(is_simd_counting_sorter<Sorter>::value)
+            // here sort returns the number of halts
+            m_pos =
+                align_top(facade::mem().size() - facade::sort(),
+                          static_cast<fsize_t>(cache_line_capacity_v<index_t>));
+        else
+        {
+            facade::sort();
+
+            // we do this here, because only sort is protected with a lock in
+            // multithreaded stream
+            find_halt_segments();
+        }
     }
 
     template <std::ranges::input_range Input>
@@ -1294,132 +1526,6 @@ class aligned_chunks :
 
     std::default_sentinel_t
     end() const
-    {
-        return std::default_sentinel;
-    }
-};
-
-/// @brief Count the number of logical 1 in packed vector @p vec.
-template <std::integral T, fsize_t N>
-_FORCE_INLINE T
-popcnt(const packed_vector<T, N> vec) noexcept
-{
-    // only AVX512VL + AVX512VPOPCNTDQ has dedicated popcnt
-    // this is workaround for older vector extensions
-    // FIXME: add AVX512 implementation
-    return __builtin_reduce_add(
-        __builtin_elementwise_min(vec, broadcast<N>(static_cast<T>(1))));
-}
-
-/// @brief Compute similarity between two packed vectors @p a and @p b.
-template <std::integral T, fsize_t N>
-_FORCE_INLINE T
-similarity(const packed_vector<T, N> a, const packed_vector<T, N> b) noexcept
-{
-    return popcnt<T, N>(a == b);
-}
-
-/// @brief Fast and lightweight set for cell indices.
-///
-/// Takes native SIMD vector of cell indices as input and optional initial
-/// postion in case of sorted input.
-///
-/// @tparam P program to make set for.
-template <typename P, fsize_t N>
-class cell_set
-{
-    using index_t        = P::index_t;
-    using index_vector_t = packed_vector<index_t, N>;
-
-    static constexpr index_t num_cells = P::num_cells;
-    static constexpr index_t halt_pos  = P::halt_pos;
-
-    const index_vector_t m_cps;
-    const index_t        m_init_pos{};
-
-    class _iterator : public std::input_iterator_tag
-    {
-        index_t              m_sum{};
-        const index_vector_t m_cps;
-        index_t              m_pos{};
-        index_vector_t       m_mask;
-
-        static _FORCE_INLINE index_t
-        fit_inc(const index_t i) noexcept
-        {
-            return fit_cell_index<P>(i + static_cast<index_t>(1));
-        }
-
-        _FORCE_INLINE bool
-        sum(const index_t pos) noexcept
-        {
-            m_mask            = m_cps == broadcast<N>(pos);
-            const index_t ret = popcnt<index_t, N>(m_mask);
-            m_sum += ret;
-            return ret;
-        }
-
-        _FORCE_INLINE index_t
-        next(index_t pos) noexcept
-        {
-            while(!sum(pos)) pos = fit_inc(pos);
-            return pos;
-        }
-
-      public:
-        using difference_type = std::make_signed_t<index_t>;
-        using value_type      = std::pair<index_t, index_vector_t>;
-
-        _iterator() noexcept = default;
-        _iterator(const index_vector_t cps,
-                  const index_t        initial_pos = 0) noexcept :
-            m_sum(0), m_cps(cps), m_pos(next(initial_pos))
-        {
-        }
-
-        bool
-        operator==(std::default_sentinel_t) const noexcept
-        {
-            return m_sum > N;
-        }
-
-        value_type
-        operator*() const noexcept
-        {
-            return {m_pos, m_mask};
-        }
-
-        _iterator&
-        operator++() noexcept
-        {
-            m_pos = next(fit_inc(m_pos));
-            return *this;
-        }
-
-        _iterator
-        operator++(int) noexcept
-        {
-            _iterator ret(*this);
-            m_pos = next(fit_inc(m_pos));
-            return ret;
-        }
-    };
-
-  public:
-    cell_set() noexcept = default;
-    cell_set(const index_vector_t cps, const index_t initial_pos = 0) noexcept :
-        m_cps(cps), m_init_pos(initial_pos)
-    {
-    }
-
-    _iterator
-    begin() const noexcept
-    {
-        return {m_cps, m_init_pos};
-    }
-
-    std::default_sentinel_t
-    end() const noexcept
     {
         return std::default_sentinel;
     }

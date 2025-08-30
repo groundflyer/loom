@@ -40,13 +40,24 @@ is_even(const T val) noexcept
     return val % 2 == 0;
 }
 
-/// @brief Make value that is bigger or equal and divisible by @p div.
+/// @brief Ensures that result value is bigger or equal of @p n and divisible by
+/// @p div.
 template <std::integral T>
 constexpr T
 align_top(const T n, const T div) noexcept
 {
     const T m = n % div;
     return m == 0 ? n : n + div - m;
+}
+
+/// @brief Ensures that result value is less or equal of @p n and divisible by
+/// @p div.
+template <std::integral T>
+constexpr T
+align_bottom(const T n, const T div) noexcept
+{
+    const T m = n % div;
+    return m == 0 ? n : n - m;
 }
 
 /// @brief Return result of @f$(-1)^{a}@f$.
