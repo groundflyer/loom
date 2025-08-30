@@ -550,7 +550,7 @@ class eval<Compute<Op, Dst, Args...>, LabelMap, N>
         auto vars = typelist::maybe_collect(type_sequence<Args...>{},
                                             loader,
                                             std::forward<_Memory>(mem));
-        return maybe_apply(vector_op{}, vars);
+        return invopply(vector_op{}, vars);
     }
 
   public:

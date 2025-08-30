@@ -55,7 +55,7 @@ template <typename T, typename V>
 auto
 mk_val(const std::vector<T>& i, V v) noexcept
 {
-    auto l = [v](const auto& in) noexcept { return maybe_apply(v, in); };
+    auto l = [v](const auto& in) noexcept { return invopply(v, in); };
     std::vector<decltype(l(i[0]))> ret;
     ret.reserve(i.size());
     std::ranges::transform(i, std::back_inserter(ret), l);

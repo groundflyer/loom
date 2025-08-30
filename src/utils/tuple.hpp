@@ -485,7 +485,7 @@ inline constexpr bool is_nothrow_applicable_v =
                               std::is_nothrow_invocable>::value;
 
 template <typename F, typename T>
-inline constexpr bool is_maybe_nothrow_applicable_v =
+inline constexpr bool is_nothrow_invopplicable_v =
     is_nothrow_applicable_v<F, T> || std::is_nothrow_invocable_v<F, T>;
 
 template <typename F, typename R, typename T>
@@ -503,7 +503,7 @@ inline constexpr bool is_nothrow_applicable_r_v =
                                 std::is_nothrow_invocable_r>::value;
 
 template <typename F, typename R, typename T>
-inline constexpr bool is_maybe_nothrow_applicable_r_v =
+inline constexpr bool is_nothrow_invopplicable_r_v =
     is_nothrow_applicable_r_v<F, R, T> ||
     std::is_nothrow_invocable_r_v<F, R, T>;
 
@@ -513,11 +513,11 @@ inline constexpr bool is_mappable_v = detail::is_mappable<F, T, Args...>::value;
 /// @brief If @p T is tuple checks whether we can use std::apply(F, T) or at
 /// lease F(T).
 template <typename F, typename T>
-concept maybe_applicable = is_applicable_v<F, T> || std::is_invocable_v<F, T>;
+concept invopplicable = is_applicable_v<F, T> || std::is_invocable_v<F, T>;
 
-/// @brief Same as lucid::maybe_applicable, but with return type.
+/// @brief Same as lucid::invopplicable, but with return type.
 template <typename F, typename R, typename T>
-concept maybe_applicable_r =
+concept invopplicable_r =
     is_applicable_r_v<F, R, T> || std::is_invocable_r_v<F, R, T>;
 
 /// @brief Tuple class template
@@ -817,28 +817,31 @@ zip_tuples(const Tuple& tuple, const Rest&... tuples) noexcept
         tuples...);
 }
 
-/// @brief Invoke @p f with elements of @p mt as arguments if
-/// possible otherwise just pass @p mt directly to @p f.
-template <typename F, typename MaybeTuple>
+/// @brief Apply @p f to elements of @p mt if
+/// @p mt is a tuple and application is possible, otherwise invoke @p f with @p
+/// mt directly.
+template <typename F, typename ValOrTuple>
 constexpr decltype(auto)
-maybe_apply(F&& f, MaybeTuple&& mt)
+invopply(F&& f, ValOrTuple&& mt)
 {
-    if constexpr(is_applicable_v<F, std::remove_cvref_t<MaybeTuple>>)
-        return lucid::apply(std::forward<F>(f), std::forward<MaybeTuple>(mt));
+    if constexpr(is_applicable_v<F, std::remove_cvref_t<ValOrTuple>>)
+        return lucid::apply(std::forward<F>(f), std::forward<ValOrTuple>(mt));
     else
-        return std::invoke(std::forward<F>(f), std::forward<MaybeTuple>(mt));
+        return std::invoke(std::forward<F>(f), std::forward<ValOrTuple>(mt));
 }
 
+/// @brief Map elements of tuple @p mt with @p f if possible, otherwise invoke
+/// @p f with @p mt directly.
 template <template <typename...> typename ResultTuple = std::tuple,
           typename F,
-          typename MaybeTuple>
+          typename ValOrTuple>
 constexpr decltype(auto)
-maybe_map(F&& f, MaybeTuple&& mt)
+invomap(F&& f, ValOrTuple&& mt)
 {
-    if constexpr(is_mappable_v<F, std::remove_cvref_t<MaybeTuple>>)
-        return map_tuple<ResultTuple>(std::forward<MaybeTuple>(mt),
+    if constexpr(is_mappable_v<F, std::remove_cvref_t<ValOrTuple>>)
+        return map_tuple<ResultTuple>(std::forward<ValOrTuple>(mt),
                                       std::forward<F>(f));
     else
-        return std::invoke(std::forward<F>(f), std::forward<MaybeTuple>(mt));
+        return std::invoke(std::forward<F>(f), std::forward<ValOrTuple>(mt));
 }
 } // namespace lucid

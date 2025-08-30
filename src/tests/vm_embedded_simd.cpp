@@ -230,7 +230,7 @@ struct StandardTestSuite
             for(std::size_t i = 0; i < N; ++i)
                 types::set_output(ret,
                                   i,
-                                  maybe_apply(val, types::get_input(inp, i)));
+                                  invopply(val, types::get_input(inp, i)));
             return ret;
         };
 
@@ -284,7 +284,7 @@ struct RootFindingSuite
                 types::set_output(
                     ret,
                     i,
-                    maybe_apply(val_cubic_fz, types::get_input(inp, i)));
+                    invopply(val_cubic_fz, types::get_input(inp, i)));
             return ret;
         };
 

@@ -449,10 +449,10 @@ gen_test_val(const unsigned n, G&& g, T&& t, V&& v) noexcept
            std::ranges::views::transform(
                [&]<typename Feed>(Feed&& feed) noexcept
                {
-                   return std::invoke(std::forward<V>(v),
-                                      maybe_apply(std::forward<T>(t),
-                                                  std::forward<Feed>(feed)),
-                                      std::forward<Feed>(feed));
+                   return std::invoke(
+                       std::forward<V>(v),
+                       invopply(std::forward<T>(t), std::forward<Feed>(feed)),
+                       std::forward<Feed>(feed));
                });
 }
 
@@ -464,8 +464,8 @@ gen_test_val_inv(const unsigned n, G&& g, T&& t, V&& v) noexcept
            std::ranges::views::transform(
                [&](auto&& feed) noexcept
                {
-                   return maybe_apply(std::forward<T>(t),
-                                      std::forward<decltype(feed)>(feed));
+                   return invopply(std::forward<T>(t),
+                                   std::forward<decltype(feed)>(feed));
                }) |
            std::ranges::views::transform(std::forward<V>(v));
 }
@@ -543,8 +543,8 @@ struct ParmTestMaker
     /// of test invocation deciding if check was successful.
     ///
     /// To pass requires all runs to succeed.
-    template <std::invocable                            G,
-              maybe_applicable<std::invoke_result_t<G>> T,
+    template <std::invocable                         G,
+              invopplicable<std::invoke_result_t<G>> T,
               typename V>
     auto
     test(G&& g, T&& t, V&& v) const noexcept
@@ -568,8 +568,8 @@ struct ParmTestMaker
     ///
     /// Unlike in ParmTestMaker::test validation can be done without test data.
     /// Only the result of test run @p t is passed to validator @p v.
-    template <std::invocable                            G,
-              maybe_applicable<std::invoke_result_t<G>> T,
+    template <std::invocable                         G,
+              invopplicable<std::invoke_result_t<G>> T,
               typename V>
     auto
     invariant(G&& g, T&& t, V&& v) const noexcept
@@ -605,8 +605,8 @@ struct ParmTestMaker
             std::forward<GH>(gh),
             [t = std::move(t)]<typename Feed>(Feed&& feed) noexcept
             {
-                return maybe_apply(std::move(t),
-                                   std::get<0>(std::forward<Feed>(feed)));
+                return invopply(std::move(t),
+                                std::get<0>(std::forward<Feed>(feed)));
             },
             [cmp](auto tr, const auto& feed) noexcept
             { return cmp(tr, std::get<1>(feed)); });
@@ -622,9 +622,9 @@ struct ParmTestMaker
     ///
     /// The test is passed when comparator @p cmp invoked with the results
     /// produced by @p t and @p ri with the same data returns true.
-    template <std::invocable                            G,
-              maybe_applicable<std::invoke_result_t<G>> T,
-              maybe_applicable<std::invoke_result_t<G>> RI,
+    template <std::invocable                         G,
+              invopplicable<std::invoke_result_t<G>> T,
+              invopplicable<std::invoke_result_t<G>> RI,
               typename Cmp = std::equal_to<>>
     auto
     with_ref(G&& g, T&& t, RI ri, Cmp cmp = Cmp{}) const noexcept
@@ -635,7 +635,7 @@ struct ParmTestMaker
             [&, ri, cmp]<typename Tr, typename Gr>(Tr&& tr, Gr&& gr) noexcept
             {
                 return cmp(std::forward<Tr>(tr),
-                           maybe_apply(ri, std::forward<Gr>(gr)));
+                           invopply(ri, std::forward<Gr>(gr)));
             });
     }
 
@@ -674,8 +674,8 @@ struct ParmTestMaker
     {
 #define LAMBDA_BODY(MY_V)                                                   \
     const auto              args = multi_gen(num_runs, std::forward<G>(g)); \
-    std::ranges::range auto tr   = maybe_apply(std::forward<T>(t), args);   \
-    std::ranges::range auto vr   = maybe_apply(MY_V, args);                 \
+    std::ranges::range auto tr   = invopply(std::forward<T>(t), args);      \
+    std::ranges::range auto vr   = invopply(MY_V, args);                    \
     if constexpr(do_sort)                                                   \
     {                                                                       \
         std::ranges::sort(tr);                                              \
@@ -771,7 +771,7 @@ struct ParmTestMaker
                 {
                     return std::invoke(cmp,
                                        std::forward<Tr>(tr),
-                                       maybe_apply(ri, std::forward<Gr>(gr)));
+                                       invopply(ri, std::forward<Gr>(gr)));
                 });
         else
             return fuzzy(
@@ -781,7 +781,7 @@ struct ParmTestMaker
                 {
                     return std::invoke(cmp,
                                        std::forward<Tr>(tr),
-                                       maybe_apply(ri, std::forward<Gr>(gr)));
+                                       invopply(ri, std::forward<Gr>(gr)));
                 });
     }
 

@@ -779,7 +779,7 @@ run_cell_kernel(CompiledCell  cc,
         cudaDeviceSynchronize();
     };
 
-    maybe_apply(launcher,
+    invopply(launcher,
                 typelist::maybe_collect(typename CompiledCell::vars{},
                                         memory_accessor{},
 
@@ -810,7 +810,7 @@ sort(Vars vars, _Memory& mem) noexcept
         cudaDeviceSynchronize();
     };
 
-    maybe_apply(launcher,
+    invopply(launcher,
                 typelist::maybe_collect(vars, memory_accessor{}, mem));
 }
 

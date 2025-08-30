@@ -805,7 +805,7 @@ inspect(InputOpt inopt, int argc, char* argv[]) noexcept
         auto inputs     = interactive_get_inputs(P{});
         using Inspector = debug_compiler<P, true>::inspector;
         Inspector insp{cw, true, mask};
-        maybe_apply(insp, inputs);
+        invopply(insp, inputs);
     }
     else
     {
@@ -819,7 +819,7 @@ inspect(InputOpt inopt, int argc, char* argv[]) noexcept
                 mask.reset(0);
             }
             Inspector insp{ms, cw, true, mask};
-            maybe_apply(insp, fi);
+            invopply(insp, fi);
         }
         catch(const UnknownVar& ex)
         {

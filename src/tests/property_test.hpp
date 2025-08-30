@@ -66,7 +66,7 @@ test_property(const std::size_t n,
     for(std::size_t i = 0; i < n; ++i)
     {
         const auto feed   = generator();
-        const bool result = property(lucid::maybe_apply(testing, feed), feed);
+        const bool result = property(lucid::invopply(testing, feed), feed);
         sum += static_cast<size_t>(result);
     }
 

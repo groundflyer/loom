@@ -1128,7 +1128,7 @@ exchange_from(_MemoryFacade& facade, Input&& input, Iter bgn) noexcept
         {
             auto val = _MemoryFacade::get_row_output(row);
 
-            maybe_apply([row](auto... args) constexpr noexcept
+            invopply([row](auto... args) constexpr noexcept
                         { _MemoryFacade::set_row_input(row, args...); },
                         inputs);
 
