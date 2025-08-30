@@ -1027,10 +1027,53 @@ class MemoryFacade
 
     static constexpr bool singular = _Program::singular;
 
+    template <typename T>
+    using hv_t = SimpleVector<T, HostAllocator<T>>;
+
+    template <typename Types>
+    using tmp_vecs = typelist::to<typelist::map<hv_t, Types>, unique_tuple>;
+
+    using in_tmp_vecs_t  = tmp_vecs<input_types<_Program>>;
+    using out_tmp_vecs_t = tmp_vecs<output_types<_Program>>;
+
     memory mem;
 
   public:
     explicit MemoryFacade(gsize_t n) : mem(n) {}
+
+    template <std::ranges::input_range Input>
+        requires(
+            is_tuple_v<std::ranges::range_value_t<Input>> &&
+            std::is_nothrow_convertible_v<std::ranges::range_value_t<Input>,
+                                          input_type<_Program>>)
+    std::ranges::iterator_t<Input>
+    set_inputs(Input&& input) noexcept
+    {
+        std::ranges::iterator_t<Input> iter = std::ranges::begin(input);
+
+        // copy to pinned memory buffers
+        in_tmp_vecs_t buffers{uniform_init, mem.size()};
+        for(gsize_t i = 0; i < mem.size() && iter != std::ranges::end(input);
+            ++i, ++iter)
+        {
+            zip_with_for_each([i](auto& tmp_vec, const auto& inval) noexcept
+                              { tmp_vec[i] = inval; },
+                              buffers,
+                              *iter);
+        }
+
+        // copy to device
+        typelist::for_each(
+            typelist::enumerate<input_vars>{},
+            [&]<typename VarNum>() noexcept
+            {
+                auto& column = mem.template get<fst_t<VarNum>>();
+                auto& buffer = buffers.template get<snd_t<VarNum>::value>();
+                HOST_TO_DEVICE(column.data(), buffer.data(), column.size());
+            });
+
+        return iter;
+    }
 
     template <typename... Args>
     auto
@@ -1040,11 +1083,10 @@ class MemoryFacade
 
         return typelist::maybe_collect_arg<std::tuple>(
             input_vars{},
-            [&mem = mem]<typename Var, typename T>(
-                const T& value) noexcept requires(std::ranges::input_range<T> ||
-                                                  std::is_nothrow_convertible_v<
-                                                      T,
-                                                      vartype<Var>>) {
+            [&mem = mem]<typename Var, typename T>(const T& value) noexcept
+                requires(std::ranges::input_range<T> ||
+                         std::is_nothrow_convertible_v<T, vartype<Var>>)
+            {
                 using t     = vartype<Var>;
                 auto column = mem.template get<Var>();
                 // fill pinned memory buffer first
@@ -1057,7 +1099,7 @@ class MemoryFacade
                     // now copy to device
                     HOST_TO_DEVICE(column.data(), buffer.data(), column.size());
 
-                    return r;
+                    return r.in;
                 }
                 else
                 {
@@ -1073,7 +1115,7 @@ class MemoryFacade
     }
 
     auto
-    get_outputs() noexcept
+    get_outputs() const noexcept
     {
         return typelist::maybe_collect<std::tuple>(
             output_vars{},
@@ -1087,6 +1129,31 @@ class MemoryFacade
                 std::ranges::copy(buffer, ret.begin());
                 return ret;
             });
+    }
+
+    auto
+    get_output_zipped() const noexcept
+    {
+        auto buffers = get_outputs();
+        if constexpr(typelist::length<output_vars> == 1)
+            return buffers;
+        else
+        {
+            // FIXME: too many copies. Use pinned memory buffer.
+            const gsize_t size = std::get<0>(buffers.size());
+            std::vector<output_type<_Program>> ret(size);
+            for(gsize_t i = 0; i < size; ++i)
+                typelist::for_each(typelist::enumerate<output_vars>{},
+                                   [&]<typename VarNum>() noexcept
+                                   {
+                                       constexpr std::size_t idx =
+                                           snd_t<VarNum>::value;
+                                       std::get<idx>(ret[i]) =
+                                           std::get<idx>(buffers)[i];
+                                   });
+
+            return ret;
+        }
     }
 
     gsize_t

@@ -15,6 +15,7 @@ isnan(long double)
 } // namespace std
 
 #include "programs.hpp"
+#include "stream_wrapper.hpp"
 
 #include <vm/cuda.hpp>
 #include <utils/test.hpp>
