@@ -521,6 +521,11 @@ struct ParmTestMaker
     /// @brief Number of runs.
     unsigned num_runs;
 
+    ParmTestMaker(unsigned n) noexcept : num_runs(n)
+    {
+        fmt::print("Number of test iterations {}\n", n);
+    }
+
     /// @brief Make standard parametric test.
     ///
     /// @param g test data generator. If @p t accepts few parameters must return
@@ -855,16 +860,13 @@ template <unsigned def = 1000>
 unsigned
 parse_numruns(int argc, char* argv[]) noexcept
 {
-    const unsigned n =
-        argparse::parse(std::tuple{argparse::option<'n', "numruns">(
-                            "number of runs for parametric tests",
-                            "N",
-                            def,
-                            read_number<unsigned, true>)},
-                        {argc, argv})
-            .template get_opt<'n'>();
-    fmt::print("{} runs for every test.\n", n);
-    return n;
+    return argparse::parse(std::tuple{argparse::option<'n', "numruns">(
+                               "number of runs for parametric tests",
+                               "N",
+                               def,
+                               read_number<unsigned, true>)},
+                           {argc, argv})
+        .template get_opt<'n'>();
 }
 
 struct transparent_id
