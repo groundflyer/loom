@@ -22,7 +22,7 @@
 using namespace lucid;
 using namespace lucid::test;
 
-template <typename P, simd::STITCH stitch, bve::SORT sort_method, bool async>
+template <typename P, simd::STITCH stitch, simd::SORT sort_method, bool async>
 struct StreamPair
 {
     std::string
@@ -43,15 +43,15 @@ struct StreamPair
 };
 
 template <typename P,
-          bve::SORT __sort,
-          bool      __async,
+          simd::SORT __sort,
+          bool       __async,
           simd::STITCH... __stitches>
 struct stream_product_stitches
 {
     using type = type_sequence<StreamPair<P, __stitches, __sort, __async>...>;
 };
 
-template <typename P, bool __async, bve::SORT... __sorts>
+template <typename P, bool __async, simd::SORT... __sorts>
 struct stream_product_sorts
 {
     using type =
@@ -69,8 +69,9 @@ struct stream_product_asyncs
     using type = type_sequence<
         typename stream_product_sorts<P,
                                       __asyncs,
-                                      bve::INTROSORT,
-                                      bve::COUNTING_SORT>::type...>;
+                                      simd::bve_INTROSORT,
+                                      simd::bve_COUNTING_SORT,
+                                      simd::COUNTING_SORT>::type...>;
 };
 
 template <typename P>
@@ -91,8 +92,8 @@ struct StandardState<P, false>
     bse::function<P>                       bse_func;
     bve::function<P, bve::SORT::INTROSORT> bve_func_is;
 
-    simd::function<P, simd::N_ORDER, bve::INTROSORT>    simd_func_N_is;
-    simd::function<P, simd::MINIKERNEL, bve::INTROSORT> simd_func_m_is;
+    simd::function<P, simd::N_ORDER, simd::bve_INTROSORT>    simd_func_N_is;
+    simd::function<P, simd::MINIKERNEL, simd::bve_INTROSORT> simd_func_m_is;
 
     StandardState(unsigned n) noexcept :
         bve_func_is(n), simd_func_N_is(n), simd_func_m_is(n)
@@ -115,8 +116,8 @@ struct StandardState<P, true> : StandardState<P, false>
     StreamWrapper<bve::stream<P, bve::COUNTING_SORT>> bve_stream_cs_w{
         &bve_stream_cs};
 
-    simd::function<P, simd::N_ORDER, bve::COUNTING_SORT>    simd_func_N_cs;
-    simd::function<P, simd::MINIKERNEL, bve::COUNTING_SORT> simd_func_m_cs;
+    simd::function<P, simd::N_ORDER, simd::COUNTING_SORT>    simd_func_N_cs;
+    simd::function<P, simd::MINIKERNEL, simd::COUNTING_SORT> simd_func_m_cs;
 
     using sp = stream_product<P>;
 
@@ -268,8 +269,9 @@ struct SimpleSIMDSuite
 
         const unsigned vector_size = tm.num_runs;
 
-        simd::function<p_t, simd::N_ORDER, bve::INTROSORT> simd_N(vector_size);
-        simd::function<p_t, simd::MINIKERNEL, bve::INTROSORT> simd_m(
+        simd::function<p_t, simd::N_ORDER, simd::bve_INTROSORT> simd_N(
+            vector_size);
+        simd::function<p_t, simd::MINIKERNEL, simd::bve_INTROSORT> simd_m(
             vector_size);
 
         return track.check(NamedTest(

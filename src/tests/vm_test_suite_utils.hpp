@@ -52,7 +52,7 @@ using fac_ints =
     type_sequence<std::int32_t, std::int64_t, std::uint32_t, std::uint64_t>;
 using all_floats = type_sequence<float, double>;
 
-template <bve::SORT>
+template <auto>
 struct sort_name;
 
 template <>
@@ -65,6 +65,22 @@ template <>
 struct sort_name<bve::COUNTING_SORT>
 {
     static constexpr char chars[] = "counting sort";
+};
+
+template <>
+struct sort_name<simd::bve_INTROSORT> : sort_name<bve::INTROSORT>
+{
+};
+
+template <>
+struct sort_name<simd::bve_COUNTING_SORT> : sort_name<bve::COUNTING_SORT>
+{
+};
+
+template <>
+struct sort_name<simd::COUNTING_SORT>
+{
+    static constexpr char chars[] = "vectorized counting sort";
 };
 
 template <simd::STITCH>

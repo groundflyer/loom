@@ -871,7 +871,7 @@ counting_sort(Memory<RegTypes, RegNames, _CP, _Vector, Allocator>& in,
 
     // fill out
     for(int i = in.size() - 1; i >= 0; --i)
-        out[--bins[fit(in.cp()[i])]] = in[i];
+        out[--bins[fit_in_bins<halt_pos, num_bins>(in.cp()[i])]] = in[i];
 }
 
 template <typename _Program, typename _Memory>

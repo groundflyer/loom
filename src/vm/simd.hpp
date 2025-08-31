@@ -1118,7 +1118,7 @@ class cell_set : public std::ranges::view_interface<cell_set<P, N, ret_sum>>
 /// @brief Vectorized counting sort.
 /// @return number of halted cells.
 template <typename P, typename _Memory>
-typename P::index_t
+fsize_t
 counting_sort(_Memory& in, _Memory& out) noexcept
 {
     ASSERT(in.size() == out.size(), "Sizes must match");
@@ -1132,28 +1132,29 @@ counting_sort(_Memory& in, _Memory& out) noexcept
 
     using vector_index_t = packed_vector<index_t, N>;
 
-    constexpr index_t halt_pos = broadcast<N>(P::halt_pos);
+    constexpr index_t halt_pos = P::halt_pos;
 
     index_t bins[num_bins] = {};
 
     // histogram
     for(index_t pos = 0; pos < in.size(); pos += N)
     {
-        const vector_index_t cps = load<N>(in.template view<N>(pos).data());
+        const vector_index_t cps =
+            load<N>(in.template view<N>(pos).cp().data());
         for(const auto [cp, sum]: cell_set<P, N, true>(cps))
             bins[bve::fit_in_bins<halt_pos, num_bins>(cp)] += sum;
     }
 
-    const index_t ret = bins[num_bins - 1];
+    const fsize_t ret = bins[num_bins - 1];
 
     // prefix sum
-    // no point in vectorizing this - num_bins is usually to small
+    // no point in vectorizing this - num_bins is usually too small
     for(index_t i = 1; i < num_bins; ++i) bins[i] += bins[i - 1];
 
     // fill out
     // FIXME: for avx512 implement using scatter
     for(int i = in.size() - 1; i >= 0; --i)
-        out[--bins[fit(in.cp()[i])]] = in[i];
+        out[--bins[bve::fit_in_bins<halt_pos, num_bins>(in.cp()[i])]] = in[i];
 
     return ret;
 }
@@ -1199,6 +1200,37 @@ struct is_simd_counting_sorter : std::false_type
 template <typename P, typename M>
 struct is_simd_counting_sorter<CountingSorter<P, M>> : std::true_type
 {
+};
+
+enum SORT
+{
+    bve_INTROSORT     = bve::INTROSORT,
+    bve_COUNTING_SORT = bve::COUNTING_SORT,
+    COUNTING_SORT
+};
+
+template <SORT sort_method>
+struct select_sorter;
+
+template <>
+struct select_sorter<bve_INTROSORT>
+{
+    template <typename _Program, typename _Memory>
+    using type = bve::SimpleSorter<_Program, _Memory>;
+};
+
+template <>
+struct select_sorter<bve_COUNTING_SORT>
+{
+    template <typename _Program, typename _Memory>
+    using type = bve::CountingSorter<_Program, _Memory>;
+};
+
+template <>
+struct select_sorter<COUNTING_SORT>
+{
+    template <typename _Program, typename _Memory>
+    using type = CountingSorter<_Program, _Memory>;
 };
 
 /// @brief Stream facade that allows asynchronous exchange/computation.
@@ -1618,9 +1650,9 @@ using SIMDAlignedAllocator =
 /// @tparam sort_method sorting algorithm to use.
 /// @tparam async allow asynchronous exchange in resulting stream.
 template <typename _Program,
-          STITCH    stitch,
-          bve::SORT sort_method,
-          bool      async = false>
+          STITCH stitch,
+          SORT   sort_method,
+          bool   async = false>
     requires(typelist::of_same_size<typename _Program::reg_types>)
 class compiler
 {
@@ -1648,10 +1680,10 @@ class compiler
         bve::Memory<reg_types, reg_names, cp, std::vector, allocator>;
     using memory_view = memory::view_type;
 
-    static constexpr bve::SORT final_sort_method =
-        singular ? bve::INTROSORT : sort_method;
+    static constexpr SORT final_sort_method =
+        singular ? bve_INTROSORT : sort_method;
     using sorter =
-        bve::select_sorter<final_sort_method>::template type<_Program, memory>;
+        select_sorter<final_sort_method>::template type<_Program, memory>;
 
     using stream_facade = std::conditional_t<
         async,
@@ -1765,13 +1797,13 @@ class compiler
     };
 };
 
-template <typename _Program, STITCH stitch, bve::SORT sort_method>
+template <typename _Program, STITCH stitch, SORT sort_method>
 using function = compiler<_Program, stitch, sort_method, false>::function;
 
 template <typename _Program,
-          STITCH    stitch,
-          bve::SORT sort_method,
-          bool      async = false>
+          STITCH stitch,
+          SORT   sort_method,
+          bool   async = false>
     requires(!_Program::singular)
 using stream = compiler<_Program, stitch, sort_method, async>::stream;
 

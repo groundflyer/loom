@@ -16,7 +16,8 @@ using namespace lucid;
 using namespace test;
 
 template <typename P>
-using SIMDStreamCompiler = simd::stream<P, simd::N_ORDER, bve::INTROSORT, true>;
+using SIMDStreamCompiler =
+    simd::stream<P, simd::N_ORDER, simd::bve_INTROSORT, true>;
 
 template <typename P>
 using SIMDContext = mp::Context<P, SIMDStreamCompiler>;
@@ -151,7 +152,7 @@ test_stream(std::string_view compiler_name,
         0.1));
 }
 
-template <simd::STITCH stitch, bve::SORT sort_method>
+template <simd::STITCH stitch, simd::SORT sort_method>
 struct make_simd_context
 {
     static std::string
@@ -170,7 +171,7 @@ struct make_simd_context
 };
 
 template <simd::STITCH stitch,
-          bve::SORT    sort_method,
+          simd::SORT   sort_method,
           std::size_t... tns,
           typename... Args>
 void
@@ -198,8 +199,10 @@ void
 test_simd_all(Args&&... args) noexcept
 {
     (...,
-     test_1stitch<stitches, bve::INTROSORT, bve::COUNTING_SORT>(
-         std::forward<Args>(args)...));
+     test_1stitch<stitches,
+                  simd::bve_INTROSORT,
+                  simd::bve_COUNTING_SORT,
+                  simd::COUNTING_SORT>(std::forward<Args>(args)...));
 }
 
 int
