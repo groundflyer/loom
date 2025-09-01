@@ -1250,8 +1250,9 @@ class AsyncStreamFacade :
 
     using index_t = vartype<cp_var>;
 
-    static constexpr index_t halt_pos = _Program::halt_pos;
-    static constexpr fsize_t npos     = static_cast<fsize_t>(-1);
+    static constexpr index_t halt_pos  = _Program::halt_pos;
+    static constexpr fsize_t npos      = static_cast<fsize_t>(-1);
+    static constexpr fsize_t step_size = cache_line_capacity_v<index_t>;
 
     using facade = bve::MemoryFacade<_Program, _Vector, Allocator, Sorter>;
 
@@ -1262,9 +1263,8 @@ class AsyncStreamFacade :
     void
     find_halt_segments() noexcept
     {
-        constexpr fsize_t step_size = cache_line_capacity_v<index_t>;
-        const auto&       cps       = facade::mem().cp();
-        m_pos                       = npos;
+        const auto& cps = facade::mem().cp();
+        m_pos           = npos;
         for(fsize_t pos = 0; pos < cps.size(); pos += step_size)
             if(cps[pos] == halt_pos)
             {
@@ -1280,10 +1280,14 @@ class AsyncStreamFacade :
     sort() noexcept
     {
         if constexpr(is_simd_counting_sorter<Sorter>::value)
+        {
             // here sort returns the number of halts
-            m_pos =
-                align_top(facade::mem().size() - facade::sort(),
-                          static_cast<fsize_t>(cache_line_capacity_v<index_t>));
+            const fsize_t nhalts = facade::sort();
+
+            m_pos = nhalts >= step_size ?
+                        align_top(facade::mem().size() - nhalts, step_size) :
+                        npos;
+        }
         else
         {
             facade::sort();
