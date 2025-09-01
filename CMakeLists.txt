@@ -228,7 +228,7 @@ if(BUILD_TESTS)
     primitives.cpp
     tuple.cpp
     union.cpp
-    viewport.cpp
+    # viewport.cpp
     test.cpp
     threadpool.cpp
   )
@@ -236,7 +236,7 @@ if(BUILD_TESTS)
   # FIXME: my system fmtlib linked against stdlibc++, but we use libc++
   # this is temporary workaround
   # header-only fmt
-  set(fmt_ho test_string test_linal test_vm test_vm_mp test_vm_embedded_simd)
+  set(fmt_ho test_string test_linal test_vm test_vm_root_finding test_vm_mp test_vm_embedded_simd)
 
   set(TESTS_SRC_DIR src/tests)
 
@@ -269,10 +269,10 @@ if(BUILD_TESTS)
     add_test(NAME test_vm_cuda COMMAND test_vm_cuda)
   endif()
 
-  target_include_directories(test_viewport PUBLIC ${OPENGL_INCLUDE_DIR})
-  target_link_libraries(test_viewport PUBLIC ${GL_LIBS})
-  target_compile_definitions(test_viewport PUBLIC ${GL_DEFS})
-  target_link_libraries(test_threadpool PUBLIC Threads::Threads)
+  # target_include_directories(test_viewport PUBLIC ${OPENGL_INCLUDE_DIR})
+  # target_link_libraries(test_viewport PUBLIC ${GL_LIBS})
+  # target_compile_definitions(test_viewport PUBLIC ${GL_DEFS})
+  # target_link_libraries(test_threadpool PUBLIC Threads::Threads)
 
   # target_compile_options(test_vm PUBLIC -save-temps)
   # target_compile_options(test_vm PUBLIC -fverbose-asm)
@@ -284,7 +284,6 @@ if(BUILD_TESTS)
   target_link_options(test_argparse PUBLIC $<$<CONFIG:RelWithDebInfo>:-fsanitize=address>)
   target_compile_options(test_string PUBLIC $<$<CONFIG:RelWithDebInfo>:-fsanitize=address>)
   target_link_options(test_string PUBLIC $<$<CONFIG:RelWithDebInfo>:-fsanitize=address>)
-  target_compile_definitions(test_vm_root_finding PUBLIC FMT_HEADER_ONLY)
   target_compile_options(test_vm_root_finding PUBLIC $<$<CONFIG:RelWithDebInfo>:-fsanitize=address>)
   target_link_options(test_vm_root_finding PUBLIC $<$<CONFIG:RelWithDebInfo>:-fsanitize=address>)
   target_compile_options(test_vm_mp PUBLIC $<$<CONFIG:RelWithDebInfo>:-fsanitize=thread>)
