@@ -72,7 +72,9 @@ using v_out_fac = std::vector<output_type<fac_p>>;
 using v_out_fib = std::vector<output_type<fib_p>>;
 using v_out_fz  = std::vector<output_type<fz_p>>;
 
-template <template <typename> typename _Context, std::size_t threads_number>
+template <template <typename> typename _Context,
+          std::size_t threads_number,
+          bool        affine_threads>
 void
 test_stream(std::string_view compiler_name,
             Track&           track,
@@ -113,6 +115,11 @@ test_stream(std::string_view compiler_name,
         auto ic = shop.bind_inputs(in_fac, in_fib, in_fz);
         {
             auto tp = shop.get_thread_pool();
+            if constexpr(affine_threads)
+                if(threads_number <= std::thread::hardware_concurrency())
+                    tp.affine(std::thread::hardware_concurrency() /
+                              threads_number);
+
             while(!mp::is_complete(ic)) shop.exchange(ic, oc);
             shop.set();
         }
@@ -130,13 +137,20 @@ test_stream(std::string_view compiler_name,
         return (r_fac + r_fib + r_fz) / 3.;
     };
 
+    const bool really_affine =
+        affine_threads && threads_number <= std::thread::hardware_concurrency();
+    const std::string_view affine_s = really_affine ? "affine" : "";
+
     track.check(NamedFuzzyTest(
         [&]() noexcept
         {
             mp::Shop<programs, _Context, threads_number> shop(stream_size);
             return test_shop(shop);
         },
-        fmt::format("Static {} {} threads", compiler_name, threads_number),
+        fmt::format("Static {} {} {} threads",
+                    compiler_name,
+                    threads_number,
+                    affine_s),
         0.1));
 
     reset_outs();
@@ -148,7 +162,10 @@ test_stream(std::string_view compiler_name,
                                                             stream_size);
             return test_shop(shop);
         },
-        fmt::format("Dynamic {} {} threads", compiler_name, threads_number),
+        fmt::format("Dynamic {} {} {} threads",
+                    compiler_name,
+                    threads_number,
+                    affine_s),
         0.1));
 }
 
@@ -172,16 +189,31 @@ struct make_simd_context
 
 template <simd::STITCH stitch,
           simd::SORT   sort_method,
+          std::size_t  tn,
+          typename... Args>
+void
+test_stream_affines(Args&&... args) noexcept
+{
+    using helper = make_simd_context<stitch, sort_method>;
+    test_stream<helper::template context, tn, false>(
+        helper::get_name(),
+        std::forward<Args>(args)...);
+    test_stream<helper::template context, tn, true>(
+        helper::get_name(),
+        std::forward<Args>(args)...);
+}
+
+template <simd::STITCH stitch,
+          simd::SORT   sort_method,
           std::size_t... tns,
           typename... Args>
 void
 test_simd_stream(std::integer_sequence<std::size_t, tns...>,
                  Args&&... args) noexcept
 {
-    using helper = make_simd_context<stitch, sort_method>;
     (...,
-     test_stream<helper::template context, tns>(helper::get_name(),
-                                                std::forward<Args>(args)...));
+     test_stream_affines<stitch, sort_method, tns>(
+         std::forward<Args>(args)...));
 }
 
 template <simd::STITCH stitch, auto... sorts, typename... Args>
@@ -212,7 +244,7 @@ main(int argc, char* argv[])
     Track          track;
     RandomState    rs;
     const unsigned num_runs =
-        align_top(parse_numruns<1000000>(argc, argv), 32u * 8u);
+        align_top(parse_numruns<100000>(argc, argv), 32u * 8u);
     const unsigned stream_size = align_top(num_runs / 1000, 32u * 8u);
     fmt::print("Input size: {}\n", num_runs);
     fmt::print("Stream size: {}\n", stream_size);

@@ -5,6 +5,7 @@
 #pragma once
 
 #include "common.hpp"
+#include "debug.hpp"
 #include "tmp.hpp"
 #include "tuple.hpp"
 
@@ -13,8 +14,23 @@
 #include <thread>
 #include <vector>
 
+#include <pthread.h>
+
 namespace lucid
 {
+namespace detail
+{
+static int
+set_thread_affinity(pthread_t thread, std::size_t i) noexcept
+{
+    cpu_set_t set;
+    CPU_ZERO(&set);
+    CPU_SET(i, &set);
+    const int s = pthread_setaffinity_np(thread, sizeof(set), &set);
+    ASSERT(s == 0, "pthread_setaffinity_np failed");
+    return s;
+}
+} // namespace detail
 constexpr inline std::size_t dynamic_size = static_cast<std::size_t>(-1);
 
 template <std::size_t N>
@@ -56,6 +72,22 @@ class thread_pool
     {
         join_all();
         m_threads = std::move(rhs.m_threads);
+    }
+
+    thread_pool&
+    affine(const std::size_t step = 1) noexcept
+    {
+        std::size_t idx = 0;
+        lucid::for_each(
+            m_threads,
+            [step](std::thread& t, std::size_t& idx) noexcept
+            {
+                detail::set_thread_affinity(t.native_handle(), idx);
+                idx += step;
+            },
+            idx);
+
+        return *this;
     }
 
     ~thread_pool() { join_all(); }
@@ -100,11 +132,26 @@ class thread_pool<dynamic_size>
         m_threads(std::move(other.m_threads))
     {
     }
+
     thread_pool&
     operator=(thread_pool&& rhs) noexcept
     {
         join_all();
         m_threads = std::move(rhs.m_threads);
+        return *this;
+    }
+
+    thread_pool&
+    affine(const std::size_t step = 1) noexcept
+    {
+        std::size_t idx = 0;
+        std::ranges::for_each(m_threads,
+                              [step, &idx](std::thread& t) noexcept
+                              {
+                                  detail::set_thread_affinity(t.native_handle(),
+                                                              idx);
+                                  idx += step;
+                              });
         return *this;
     }
 
