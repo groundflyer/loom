@@ -15,13 +15,6 @@
 using namespace lucid;
 using namespace test;
 
-template <typename P>
-using SIMDStreamCompiler =
-    simd::stream<P, simd::N_ORDER, simd::bve_INTROSORT, true>;
-
-template <typename P>
-using SIMDContext = mp::Context<P, SIMDStreamCompiler>;
-
 using fac_p = factorial_int<std::uint64_t>;
 using fib_p = fib<std::uint64_t>;
 using fz_p  = cubic_fz_program<double, constants<double>::errt>;
