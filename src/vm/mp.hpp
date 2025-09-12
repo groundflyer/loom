@@ -58,8 +58,12 @@ struct Context
 
     union alignas(cache_line_size)
     {
-        std::atomic_flag need_sort{};
-        std::uint8_t     __padding[cache_line_size];
+        struct
+        {
+            std::atomic_flag need_sort{};
+            std::atomic_flag exchanged{};
+        };
+        std::uint8_t __padding[cache_line_size];
     };
 
     FORBID_ALL(Context);
@@ -76,6 +80,7 @@ struct Context
                 stream.sort();
                 lock.unlock();
                 need_sort.clear(std::memory_order_release);
+                exchanged.clear(std::memory_order_release);
                 return false;
             }
             else
@@ -88,8 +93,8 @@ struct Context
     void
     try_exchange(InputIter& ib, const Sentinel s, OutIter& out) noexcept
     {
-        if(ib != s && !need_sort.test(std::memory_order_acquire) &&
-           lock.try_lock())
+        if(ib != s && !exchanged.test(std::memory_order_acquire) &&
+           !need_sort.test(std::memory_order_acquire) && lock.try_lock())
         {
             auto exs = stream.exchange(ranges::subrange(ib, s));
             // copy and update input and output iterators
@@ -101,7 +106,7 @@ struct Context
                                       ++ib;
                                   });
             lock.unlock();
-            need_sort.test_and_set(std::memory_order_release);
+            exchanged.test_and_set(std::memory_order_release);
         }
     }
 
