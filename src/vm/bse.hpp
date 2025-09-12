@@ -8,7 +8,7 @@
 
 namespace lucid::bse
 {
-template <typename RegTypes, typename RegNames, typename CPVar>
+template <typename RegTypes, typename RegNames, typename BPVar>
 class Memory
 {
     using helper = MemoryHelper<RegTypes, RegNames>;
@@ -26,11 +26,11 @@ class Memory
         return helper::template get<Var>(m_data);
     }
 
-    /// @brief Access cell pointer.
-    std::add_lvalue_reference_t<vartype<CPVar>>
-    cp() noexcept
+    /// @brief Access block pointer.
+    std::add_lvalue_reference_t<vartype<BPVar>>
+    bp() noexcept
     {
-        return get<CPVar>();
+        return get<BPVar>();
     }
 
     /// @brief Access a variable.
@@ -41,11 +41,11 @@ class Memory
         return helper::template get<Var>(m_data);
     }
 
-    /// @brief Access cell pointer.
-    std::add_lvalue_reference_t<std::add_const_t<vartype<CPVar>>>
-    cp() const noexcept
+    /// @brief Access block pointer.
+    std::add_lvalue_reference_t<std::add_const_t<vartype<BPVar>>>
+    bp() const noexcept
     {
-        return get<CPVar>();
+        return get<BPVar>();
     }
 };
 
@@ -58,20 +58,20 @@ class MemoryFacade
 {
     using reg_names   = _Program::reg_names;
     using reg_types   = _Program::reg_types;
-    using cp_var      = _Program::cp;
+    using bp_var      = _Program::bp;
     using input_vars  = _Program::input_vars;
     using output_vars = _Program::output_vars;
     using index_t     = _Program::index_t;
 
     static constexpr auto reset_val = GetResetVal{}();
 
-    _Memory<reg_types, reg_names, cp_var> memory;
+    _Memory<reg_types, reg_names, bp_var> memory;
 
     void
     reset() noexcept
     {
         // no-op when singular
-        if constexpr(!_Program::singular) memory.cp() = reset_val;
+        if constexpr(!_Program::singular) memory.bp() = reset_val;
     }
 
   public:
@@ -97,18 +97,18 @@ class MemoryFacade
             { return mem.template get<Var>(); });
     }
 
-    template <typename Cell>
+    template <typename Block>
     constexpr void
-    step(Cell cell) noexcept
+    step(Block block) noexcept
     {
-        cell(memory);
+        block(memory);
     }
 
     constexpr auto
-    cp() const noexcept
+    bp() const noexcept
     {
         // no-op when singular
-        if constexpr(!_Program::singular) return memory.cp();
+        if constexpr(!_Program::singular) return memory.bp();
     }
 };
 
@@ -116,20 +116,20 @@ template <typename _Program>
 class basic_scalar_compiler
 {
     using labelmap = _Program::labelmap;
-    using cells    = _Program::cells;
+    using blocks   = _Program::blocks;
 
     static constexpr auto halt_pos = _Program::halt_pos;
 
     template <typename C>
-    using compile_cell = standard_compiler<C, labelmap>;
+    using compile_block = standard_compiler<C, labelmap>;
 
-    using compiled_cells = typelist::map<compile_cell, cells>;
+    using compiled_blocks = typelist::map<compile_block, blocks>;
 
     using facade = MemoryFacade<_Program>;
 
-    class single_cell_evaluator : facade
+    class single_block_evaluator : facade
     {
-        static constexpr typelist::head<compiled_cells> cell{};
+        static constexpr typelist::head<compiled_blocks> block{};
 
       public:
         template <typename... Args>
@@ -137,14 +137,14 @@ class basic_scalar_compiler
         operator()(const Args&... args) noexcept
         {
             facade::set_inputs(args...);
-            facade::step(cell);
+            facade::step(block);
             return facade::get_outputs();
         }
     };
 
     class simple_evaluator : facade
     {
-        static constexpr typelist::to<compiled_cells, std::tuple> cells{};
+        static constexpr typelist::to<compiled_blocks, std::tuple> blocks{};
 
       public:
         template <typename... Args>
@@ -152,11 +152,11 @@ class basic_scalar_compiler
         operator()(const Args&... args) noexcept
         {
             facade::set_inputs(args...);
-            while(facade::cp() != halt_pos)
+            while(facade::bp() != halt_pos)
                 visit_at(
-                    facade::cp(),
-                    [&](auto cell) constexpr noexcept { facade::step(cell); },
-                    cells,
+                    facade::bp(),
+                    [&](auto block) constexpr noexcept { facade::step(block); },
+                    blocks,
                     sink);
 
             return facade::get_outputs();
@@ -165,7 +165,7 @@ class basic_scalar_compiler
 
   public:
     using function = std::conditional_t<_Program::singular,
-                                        single_cell_evaluator,
+                                        single_block_evaluator,
                                         simple_evaluator>;
 };
 

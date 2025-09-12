@@ -472,9 +472,9 @@ using remap_comp_t = remap_comp<Op>::type;
 
 /// @brief Initializes ranges with @p n_pos.
 /// @param bgns contains ranges' starts, the index of the first range element in
-/// @p cps.
+/// @p bps.
 /// @param ends contains ranges' ends, the index after the last range element in
-/// @p cps.
+/// @p bps.
 /// @tparam N size of arrays @p bgns and @p ends.
 template <gsize_t N>
 void
@@ -485,14 +485,14 @@ pre_counter(gsize_t* bgns, gsize_t* ends) noexcept
 
 /// @brief Ensures that the ranges set correctly.
 /// @copydetails cuda::pre_counter
-/// @param cps_size maximum possible value for a range.
-/// @param dcp default cell pointer.
+/// @param bps_size maximum possible value for a range.
+/// @param dbp default block pointer.
 template <gsize_t N>
 void
 post_counter(gsize_t*      bgns,
              gsize_t*      ends,
-             const gsize_t cps_size,
-             const gsize_t dcp) noexcept
+             const gsize_t bps_size,
+             const gsize_t dbp) noexcept
 {
     // none of ranges are set
     bool none = true;
@@ -507,60 +507,60 @@ post_counter(gsize_t*      bgns,
         if(b == n_pos && e != n_pos) b = 0;
         // beginning is set, but end is not set
         else if(b != n_pos && e == n_pos)
-            e = cps_size;
+            e = bps_size;
 
 #ifdef DEBUG
         // both points must be either n_pos or of a valid range
-        assert(b == n_pos || b < cps_size);
-        assert(e == n_pos || e < cps_size);
+        assert(b == n_pos || b < bps_size);
+        assert(e == n_pos || e < bps_size);
         assert(b <= e);
 #endif
     }
 
     if(none)
     {
-        bgns[dcp] = 0;
-        ends[dcp] = cps_size;
+        bgns[dbp] = 0;
+        ends[dbp] = bps_size;
     }
 }
 
 /// @brief Computes ranges of chunks containing equal values saving them to @p
 /// bgns and @p ends.
 /// @param bgns contains ranges' starts, the index of the first range element in
-/// @p cps.
+/// @p bps.
 /// @param ends contains ranges' ends, the index after the last range element in
-/// @p cps.
+/// @p bps.
 /// @param N size of @p bgns and @p ends.
-/// @param cps cell pointers.
-/// @param cps_size size of @p cps.
-/// @tparam cp_t cell pointer type.
+/// @param bps block pointers.
+/// @param bps_size size of @p bps.
+/// @tparam bp_t block pointer type.
 ///
 /// Basically parallel version of @p groupby / @p chunkby(==) with known number
-/// of chunks which is @f$N = C + 1@f$ where @p C is number of cells. The last
-/// range is for terminated cells.
+/// of chunks which is @f$N = C + 1@f$ where @p C is number of blocks. The last
+/// range is for terminated blocks.
 ///
 /// The beginning of the first and end of the last ranges are no set here.
-template <std::unsigned_integral cp_t>
+template <std::unsigned_integral index_t>
 __global__ void
 chunk_counter(gsize_t* bgns,
               gsize_t* ends,
               gsize_t  N,
-              cp_t*    cps,
-              gsize_t  cps_size,
-              cp_t     halt_pos)
+              index_t*    bps,
+              gsize_t  bps_size,
+              index_t     halt_pos)
 {
     const gsize_t idxl = blockIdx.x * blockDim.x + threadIdx.x;
 
-    const cp_t cpl = cps[idxl];
+    const index_t bpl = bps[idxl];
 
-    auto get_pos = [&](cp_t p) -> gsize_t
+    auto get_pos = [&](index_t p) -> gsize_t
     { return p == halt_pos ? (N - 1) : p; };
 
-    if(idxl < cps_size - 1)
+    if(idxl < bps_size - 1)
     {
         const gsize_t idxr = idxl + 1;
-        const cp_t    cpr  = cps[idxr];
-        if(cpl != cpr) ends[get_pos(cpl)] = bgns[get_pos(cpr)] = idxr;
+        const index_t    bpr  = bps[idxr];
+        if(bpl != bpr) ends[get_pos(bpl)] = bgns[get_pos(bpr)] = idxr;
     }
 }
 
@@ -600,10 +600,10 @@ __device__ void
 cmp_swap_rows(std::index_sequence<Idxs...>, const bool ascending, Ts&... rows)
 {
     constexpr std::size_t offset = sizeof...(Idxs);
-    /// cell pointer should be at 0
-    const std::unsigned_integral auto cpl = select_arg<0>(rows...);
-    const std::unsigned_integral auto cpr = select_arg<offset>(rows...);
-    if(ascending == (cpl > cpr))
+    /// block pointer should be at 0
+    const std::unsigned_integral auto bpl = select_arg<0>(rows...);
+    const std::unsigned_integral auto bpr = select_arg<offset>(rows...);
+    if(ascending == (bpl > bpr))
         (...,
          swap(select_arg<Idxs>(rows...), select_arg<Idxs + offset>(rows...)));
 }
@@ -636,7 +636,7 @@ bitonic_merge(const unsigned msl,
                   columns[e]...);
 }
 
-template <typename C, typename LabelMap, typename VarMap, typename CPVar>
+template <typename C, typename LabelMap, typename VarMap, typename BPVar>
 struct eval;
 
 template <typename Op,
@@ -644,8 +644,8 @@ template <typename Op,
           typename... VarArgs,
           typename LabelMap,
           typename VarMap,
-          typename CPVar>
-struct eval<Compute<Op, Dst, VarArgs...>, LabelMap, VarMap, CPVar>
+          typename BPVar>
+struct eval<Compute<Op, Dst, VarArgs...>, LabelMap, VarMap, BPVar>
 {
     template <typename Var>
         requires(typelist::elem<Var, typelist::map<fst_t, VarMap>>)
@@ -663,17 +663,17 @@ struct eval<Compute<Op, Dst, VarArgs...>, LabelMap, VarMap, CPVar>
     }
 };
 
-template <typename Target, typename LabelMap, typename VarMap, typename CPVar>
-struct eval<Jump<Target>, LabelMap, VarMap, CPVar>
+template <typename Target, typename LabelMap, typename VarMap, typename BPVar>
+struct eval<Jump<Target>, LabelMap, VarMap, BPVar>
 {
     static constexpr auto value = typelist::lookup<Target, LabelMap>::value;
-    static constexpr auto cpi   = typelist::lookup<CPVar, VarMap>::value;
+    static constexpr auto bpi   = typelist::lookup<BPVar, VarMap>::value;
 
     template <typename... Args>
     __device__ void
     operator()(Args&... args) const
     {
-        select_arg<cpi>(args...) = value;
+        select_arg<bpi>(args...) = value;
     }
 };
 
@@ -681,31 +681,31 @@ template <typename Var,
           typename Labels,
           typename LabelMap,
           typename VarMap,
-          typename CPVar>
-struct eval<ParmJump<Var, Labels>, LabelMap, VarMap, CPVar>
+          typename BPVar>
+struct eval<ParmJump<Var, Labels>, LabelMap, VarMap, BPVar>
 {
     static constexpr auto vari  = typelist::lookup<Var, VarMap>::value;
-    static constexpr auto cpi   = typelist::lookup<CPVar, VarMap>::value;
+    static constexpr auto bpi   = typelist::lookup<BPVar, VarMap>::value;
     static constexpr auto table = pjmp_arr<ParmJump<Var, Labels>, LabelMap>;
 
     template <typename... Args>
     __device__ void
     operator()(Args&... args) const
     {
-        select_arg<cpi>(args...) = table[select_arg<vari>(args...)];
+        select_arg<bpi>(args...) = table[select_arg<vari>(args...)];
     }
 };
 
-template <typename Cell, typename LabelMap, typename CPVar>
+template <typename Block, typename LabelMap, typename BPVar>
 struct compiler
 {
-    using vars = cell_vars_t<Cell, CPVar>;
+    using vars = block_vars_t<Block, BPVar>;
 
     template <typename Command>
     using cuda_eval =
-        cuda::eval<Command, LabelMap, typelist::enumerate<vars>, CPVar>;
+        cuda::eval<Command, LabelMap, typelist::enumerate<vars>, BPVar>;
 
-    using instructions = typelist::map<cuda_eval, Cell>;
+    using instructions = typelist::map<cuda_eval, Block>;
 
     template <typename... Args>
     __device__ void
@@ -755,18 +755,18 @@ set_constant(gsize_t begin, gsize_t end, T* arr, T def_val)
     if(i < end) arr[i] = def_val;
 }
 
-template <typename CompiledCell, typename... Args>
+template <typename CompiledBlock, typename... Args>
 __global__ void
-cell_kernel(gsize_t begin, gsize_t end, CompiledCell cc, Args... args)
+block_kernel(gsize_t begin, gsize_t end, CompiledBlock cc, Args... args)
 {
     const auto i = blockIdx.x * blockDim.x + threadIdx.x + begin;
     if(i < end) cc(args[i]...);
 }
 
-/// @brief Runs kernel of cell @p cc.
-template <typename CompiledCell, typename _Memory>
+/// @brief Runs kernel of block @p cc.
+template <typename CompiledBlock, typename _Memory>
 void
-run_cell_kernel(CompiledCell  cc,
+run_block_kernel(CompiledBlock  cc,
                 _Memory&      mem,
                 const gsize_t begin,
                 const gsize_t end) noexcept
@@ -775,12 +775,12 @@ run_cell_kernel(CompiledCell  cc,
 
     auto launcher = [&](auto... columns) noexcept
     {
-        LAUNCH_KERNEL(cell_kernel, size, begin, end, cc, columns...);
+        LAUNCH_KERNEL(block_kernel, size, begin, end, cc, columns...);
         cudaDeviceSynchronize();
     };
 
     invopply(launcher,
-                typelist::maybe_collect(typename CompiledCell::vars{},
+                typelist::maybe_collect(typename CompiledBlock::vars{},
                                         memory_accessor{},
 
                                         mem));
@@ -814,13 +814,13 @@ sort(Vars vars, _Memory& mem) noexcept
                 typelist::maybe_collect(vars, memory_accessor{}, mem));
 }
 
-template <gsize_t N, std::unsigned_integral cp_t, cp_t halt_pos>
+template <gsize_t N, std::unsigned_integral index_t, index_t halt_pos>
 class chunk_ranges :
-    public std::ranges::view_interface<chunk_ranges<N, cp_t, halt_pos>>
+    public std::ranges::view_interface<chunk_ranges<N, index_t, halt_pos>>
 {
     struct range
     {
-        cp_t    cp;
+        index_t    bp;
         gsize_t bgn;
         gsize_t end;
     };
@@ -829,29 +829,29 @@ class chunk_ranges :
     {
         gsize_t* p_bgns;
         gsize_t* p_ends;
-        cp_t     m_cp = 0;
+        index_t     m_bp = 0;
 
         /// @brief Checks if current range is empty.
         bool
         empty() const noexcept
         {
-            return p_ends[m_cp] - p_bgns[m_cp] == 0;
+            return p_ends[m_bp] - p_bgns[m_bp] == 0;
         }
 
         /// @brief Checks if current range can be jumped to and executed.
         ///
-        /// The last range contains terminated cells. We ignore it.
+        /// The last range contains terminated blocks. We ignore it.
         bool
         executable() const noexcept
         {
-            return m_cp < N - 1;
+            return m_bp < N - 1;
         }
 
-        /// @brief Find next usefull cell.
+        /// @brief Find next usefull block.
         void
         next() noexcept
         {
-            do ++m_cp;
+            do ++m_bp;
             while(empty() && executable());
         }
 
@@ -861,11 +861,11 @@ class chunk_ranges :
 
         _iterator() noexcept = default;
 
-        _iterator(cp_t* bgns, cp_t* ends, cp_t cp = 0) noexcept :
-            p_bgns(bgns), p_ends(ends), m_cp(cp)
+        _iterator(index_t* bgns, index_t* ends, index_t bp = 0) noexcept :
+            p_bgns(bgns), p_ends(ends), m_bp(bp)
         {
-            // find first useful cell
-            while(empty() && executable()) ++m_cp;
+            // find first useful block
+            while(empty() && executable()) ++m_bp;
         }
 
         bool
@@ -877,19 +877,19 @@ class chunk_ranges :
         bool
         operator==(const _iterator& rhs) const noexcept
         {
-            return m_cp == rhs.m_cp;
+            return m_bp == rhs.m_bp;
         }
 
         std::strong_ordering
         operator<=>(const _iterator& rhs) const noexcept
         {
-            return m_cp <=> rhs.m_cp;
+            return m_bp <=> rhs.m_bp;
         }
 
         value_type
         operator*() const noexcept
         {
-            return {m_cp, p_bgns[m_cp], p_ends[m_cp]};
+            return {m_bp, p_bgns[m_bp], p_ends[m_bp]};
         }
 
         _iterator&
@@ -918,9 +918,9 @@ class chunk_ranges :
     gsize_t*                 pd_bgns;
     gsize_t*                 pd_ends;
 
-    // cell pointers columns
-    cp_t*   pd_cps;
-    cp_t*   ph_cp0;
+    // block pointers columns
+    index_t*   pd_bps;
+    index_t*   ph_bp0;
     gsize_t m_size;
 
     template <typename A>
@@ -950,18 +950,18 @@ class chunk_ranges :
                       pd_bgns,
                       pd_ends,
                       N,
-                      pd_cps,
+                      pd_bps,
                       m_size,
                       halt_pos);
         cudaDeviceSynchronize();
 
         DEVICE_TO_HOST(ph_bgns, pd_bgns, N);
         DEVICE_TO_HOST(ph_ends, pd_ends, N);
-        DEVICE_TO_HOST(ph_cp0, pd_cps, 1);
+        DEVICE_TO_HOST(ph_bp0, pd_bps, 1);
 
-        const gsize_t dcp = *ph_cp0 == halt_pos ? N - 1 : *ph_cp0;
+        const gsize_t dbp = *ph_bp0 == halt_pos ? N - 1 : *ph_bp0;
 
-        post_counter<N>(ph_bgns, ph_ends, m_size, dcp);
+        post_counter<N>(ph_bgns, ph_ends, m_size, dbp);
     }
 
   public:
@@ -970,13 +970,13 @@ class chunk_ranges :
 
     chunk_ranges() = default;
 
-    chunk_ranges(cp_t* cps, gsize_t cps_size) :
+    chunk_ranges(index_t* bps, gsize_t bps_size) :
         ph_bgns(alloc(m_ha)), ph_ends(alloc(m_ha)), pd_bgns(alloc(m_da)),
-        pd_ends(alloc(m_da)), pd_cps(cps), ph_cp0(alloc(m_ha, 1)),
-        m_size(cps_size)
+        pd_ends(alloc(m_da)), pd_bps(bps), ph_bp0(alloc(m_ha, 1)),
+        m_size(bps_size)
     {
         ph_bgns[0]     = 0;
-        ph_ends[0]     = cps_size;
+        ph_ends[0]     = bps_size;
         ph_bgns[N - 1] = ph_ends[N - 1] = n_pos;
     }
 
@@ -993,7 +993,7 @@ class chunk_ranges :
         return std::default_sentinel;
     }
 
-    /// @brief Returns the left boundary of terminated cells.
+    /// @brief Returns the left boundary of terminated blocks.
     gsize_t
     terminated() const
     {
@@ -1006,7 +1006,7 @@ class chunk_ranges :
         dealloc(ph_ends, m_ha);
         dealloc(pd_bgns, m_da);
         dealloc(pd_ends, m_da);
-        dealloc(ph_cp0, m_ha);
+        dealloc(ph_bp0, m_ha);
     }
 };
 
@@ -1019,11 +1019,11 @@ class MemoryFacade
     using input_vars  = _Program::input_vars;
     using output_vars = _Program::output_vars;
     using vars        = _Program::variables;
-    using cp_var      = _Program::cp;
-    using cp_t        = vartype<cp_var>;
+    using bp_var      = _Program::bp;
+    using index_t        = _Program::index_t;
 
     using memory = bve::
-        Memory<reg_types, reg_names, cp_var, SimpleVector, DeviceAllocator>;
+        Memory<reg_types, reg_names, bp_var, SimpleVector, DeviceAllocator>;
 
     static constexpr bool singular = _Program::singular;
 
@@ -1173,10 +1173,10 @@ class MemoryFacade
     {
         if constexpr(!singular)
         {
-            cp_t*          cps = mem.cp().data();
+            index_t*          bps = mem.bp().data();
             const unsigned n   = mem.size();
 
-            LAUNCH_KERNEL(set_constant, n, 0, n, cps, static_cast<cp_t>(0));
+            LAUNCH_KERNEL(set_constant, n, 0, n, bps, static_cast<index_t>(0));
             cudaDeviceSynchronize();
         }
     }
@@ -1201,12 +1201,12 @@ class StreamFacade : public MemoryFacade<_Program>
     using facade      = MemoryFacade<_Program>;
     using input_vars  = facade::input_vars;
     using output_vars = facade::output_vars;
-    using cp_var      = facade::cp_var;
-    using cp_t        = facade::cp_t;
+    using bp_var      = facade::bp_var;
+    using index_t        = facade::index_t;
     using memory      = facade::memory;
 
-    static constexpr gsize_t num_chunks = _Program::num_cells + 1;
-    static constexpr auto    halt_pos   = _Program::halt_pos;
+    static constexpr gsize_t num_chunks = _Program::num_blocks + 1;
+    static constexpr index_t    halt_pos   = _Program::halt_pos;
 
     template <typename T>
     using buffer_t = SimpleVector<T, HostAllocator<T>>;
@@ -1219,9 +1219,9 @@ class StreamFacade : public MemoryFacade<_Program>
   protected:
     using input_buffer_t  = make_buffer_t<input_vars>;
     using output_buffer_t = make_buffer_t<output_vars>;
-    using cp_buffer_t     = buffer_t<cp_t>;
+    using bp_buffer_t     = buffer_t<index_t>;
 
-    cp_buffer_t     m_cpbuf;
+    bp_buffer_t     m_bpbuf;
     input_buffer_t  m_inbuf;
     output_buffer_t m_outbuf;
 
@@ -1280,14 +1280,14 @@ class StreamFacade : public MemoryFacade<_Program>
     void
     reset_range(gsize_t begin, gsize_t end) noexcept
     {
-        cp_t* cps = facade::mem.cp().data();
+        index_t* bps = facade::mem.bp().data();
 
         LAUNCH_KERNEL(set_constant,
                       facade::mem.size(),
                       begin,
                       end,
-                      cps,
-                      static_cast<cp_t>(0));
+                      bps,
+                      static_cast<index_t>(0));
         cudaDeviceSynchronize();
     }
 
@@ -1314,34 +1314,34 @@ template <typename _Program>
 class cuda_evaluator
 {
     using labelmap    = _Program::labelmap;
-    using cells       = _Program::cells;
+    using blocks       = _Program::blocks;
     using reg_names   = _Program::reg_names;
     using reg_types   = _Program::reg_types;
-    using cp          = _Program::cp;
-    using cp_t        = vartype<cp>;
+    using bp          = _Program::bp;
+    using index_t        = _Program::index_t;
     using vars        = _Program::variables;
     using input_vars  = _Program::input_vars;
     using output_vars = _Program::output_vars;
 
-    static constexpr gsize_t num_chunks = _Program::num_cells + 1;
+    static constexpr gsize_t num_chunks = _Program::num_blocks + 1;
     static constexpr auto    halt_pos   = _Program::halt_pos;
 
     template <typename C>
-    using compile_cell = cuda::compiler<C, labelmap, cp>;
+    using compile_block = cuda::compiler<C, labelmap, bp>;
 
-    using compiled_cells = typelist::map<compile_cell, cells>;
+    using compiled_blocks = typelist::map<compile_block, blocks>;
 
     using memory =
-        bve::Memory<reg_types, reg_names, cp, SimpleVector, DeviceAllocator>;
+        bve::Memory<reg_types, reg_names, bp, SimpleVector, DeviceAllocator>;
     using memory_facade = MemoryFacade<_Program>;
     using stream_facade = StreamFacade<_Program>;
 
-    class single_cell_evaluator : public memory_facade
+    class single_block_evaluator : public memory_facade
     {
-        static constexpr typelist::head<compiled_cells> cell{};
+        static constexpr typelist::head<compiled_blocks> block{};
 
       public:
-        FORBID_ALL(single_cell_evaluator);
+        FORBID_ALL(single_block_evaluator);
 
         using memory_facade::memory_facade;
 
@@ -1352,20 +1352,20 @@ class cuda_evaluator
             memory_facade::set_inputs(std::forward<Args>(args)...);
             memory_facade::visit(
                 [](memory& mem) noexcept
-                { run_cell_kernel(cell, mem, 0, mem.size()); });
+                { run_block_kernel(block, mem, 0, mem.size()); });
             return memory_facade::get_outputs();
         }
     };
 
     struct visitor
     {
-        static constexpr typename typelist::to<compiled_cells, std::tuple>
-            cells{};
+        static constexpr typename typelist::to<compiled_blocks, std::tuple>
+            blocks{};
 
-        chunk_ranges<num_chunks, cp_t, halt_pos> chunks;
+        chunk_ranges<num_chunks, index_t, halt_pos> chunks;
 
         explicit visitor(memory& mem) noexcept :
-            chunks(mem.cp().data(), mem.size())
+            chunks(mem.bp().data(), mem.size())
         {
         }
 
@@ -1376,12 +1376,12 @@ class cuda_evaluator
                 chunks,
                 [&](auto rng) noexcept
                 {
-                    auto [cp, bgn, end] = rng;
+                    auto [bp, bgn, end] = rng;
                     visit_at(
-                        cp,
-                        [&](auto cell) noexcept
-                        { run_cell_kernel(cell, mem, bgn, end); },
-                        cells,
+                        bp,
+                        [&](auto block) noexcept
+                        { run_block_kernel(block, mem, bgn, end); },
+                        blocks,
                         sink);
                 });
         }
@@ -1447,7 +1447,7 @@ class cuda_evaluator
 
   public:
     using function = std::
-        conditional_t<_Program::singular, single_cell_evaluator, evaluator>;
+        conditional_t<_Program::singular, single_block_evaluator, evaluator>;
 
     class stream : public stream_facade
     {

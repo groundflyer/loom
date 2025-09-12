@@ -68,8 +68,8 @@ struct proxy_view_extent
     static constexpr fsize_t value = 1;
 };
 
-template <typename Data, typename Helper, typename CPVar, fsize_t N>
-struct proxy_view_extent<bve::ProxyView<Data, Helper, CPVar, N>>
+template <typename Data, typename Helper, typename BPVar, fsize_t N>
+struct proxy_view_extent<bve::ProxyView<Data, Helper, BPVar, N>>
 {
     static constexpr fsize_t value = N;
 };
@@ -450,7 +450,7 @@ struct vectorize_union<Union<Ts...>, N>
     using type = Union<packed_vector<Ts, N>...>;
 };
 
-template <typename RegTypes, typename RegNames, typename CPVar, fsize_t N>
+template <typename RegTypes, typename RegNames, typename BPVar, fsize_t N>
 class KernelMemory
 {
     template <typename T>
@@ -476,10 +476,10 @@ class KernelMemory
         return helper::template get<vec_var<Var>>(m_data);
     }
 
-    std::add_lvalue_reference_t<vec<vartype<CPVar>>>
-    cp() noexcept
+    std::add_lvalue_reference_t<vec<vartype<BPVar>>>
+    bp() noexcept
     {
-        return get<CPVar>();
+        return get<BPVar>();
     }
 
     template <typename Var>
@@ -489,10 +489,10 @@ class KernelMemory
         return helper::template get<vec_var<Var>>(m_data);
     }
 
-    vec<vartype<CPVar>>
-    cp() const noexcept
+    vec<vartype<BPVar>>
+    bp() const noexcept
     {
-        return get<CPVar>();
+        return get<BPVar>();
     }
 };
 
@@ -536,9 +536,9 @@ class eval<Jump<Target>, LabelMap, N>
     operator()(_Memory&& mem) const noexcept
     {
         if constexpr(pv_extent<std::remove_cvref_t<_Memory>> == N)
-            store<N>(std::forward<_Memory>(mem).cp().data(), get());
+            store<N>(std::forward<_Memory>(mem).bp().data(), get());
         else
-            std::forward<_Memory>(mem).cp() = get();
+            std::forward<_Memory>(mem).bp() = get();
     }
 };
 
@@ -626,13 +626,13 @@ class eval<ParmJump<Var, Labels>, LabelMap, N>
     {
         if constexpr(pv_extent<std::remove_cvref_t<_Memory>> == N)
         {
-            index_t* dst = std::forward<_Memory>(mem).cp().data();
+            index_t* dst = std::forward<_Memory>(mem).bp().data();
             index_t* src =
                 std::forward<_Memory>(mem).template get<Var>().data();
             store<N>(dst, op(load<N>(src)));
         }
         else
-            std::forward<_Memory>(mem).cp() =
+            std::forward<_Memory>(mem).bp() =
                 op(std::forward<_Memory>(mem).template get<Var>());
     }
 };
@@ -741,63 +741,63 @@ enum STITCH
     MASKED      /*!< masked minikerenel */
 };
 
-template <typename Cell, typename LabelMap, typename CPVar, fsize_t N>
+template <typename Block, typename LabelMap, typename BPVar, fsize_t N>
 struct minikernel_helper
 {
-    using load_vars  = load_list_t<Cell, CPVar>;
-    using store_vars = store_list_t<Cell, CPVar>;
+    using load_vars  = load_list_t<Block, BPVar>;
+    using store_vars = store_list_t<Block, BPVar>;
 
     using vars    = typelist::nub<typelist::join<load_vars, store_vars>>;
-    using index_t = vartype<CPVar>;
+    using index_t = vartype<BPVar>;
 
     using reg_names = typelist::nub<typelist::map<varname, vars>>;
     using reg_types = infer_reg_types_t<vars, reg_names>;
 
-    using serial_kernel  = standard_compiler<Cell, LabelMap>;
-    using serial_storage = bse::Memory<reg_types, reg_names, CPVar>;
+    using serial_kernel  = standard_compiler<Block, LabelMap>;
+    using serial_storage = bse::Memory<reg_types, reg_names, BPVar>;
 
     template <typename I, typename _LabelMap>
     using simd_eval = eval<I, _LabelMap, N>;
 
-    using simd_kernel  = standard_compiler<Cell, LabelMap, simd_eval>;
-    using simd_storage = KernelMemory<reg_types, reg_names, CPVar, N>;
+    using simd_kernel  = standard_compiler<Block, LabelMap, simd_eval>;
+    using simd_storage = KernelMemory<reg_types, reg_names, BPVar, N>;
 };
 
 /// @brief Executes a single instruction @p I through the whole view.
-template <typename I, typename LabelMap, typename CPVar>
+template <typename I, typename LabelMap, typename BPVar>
 class make_N_order_instruction_runner
 {
-    static constexpr fsize_t N = native_instruction_width_v<I, vartype<CPVar>>;
+    static constexpr fsize_t N = native_instruction_width_v<I, vartype<BPVar>>;
 
   public:
     using type = bulk_dispatcher<eval<I, LabelMap, N>,
                                  standard_eval<I, LabelMap>,
                                  N,
-                                 sizeof(vartype<CPVar>)>;
+                                 sizeof(vartype<BPVar>)>;
 };
 
 template <STITCH stitch, typename... Args>
-class make_cell_compiler;
+class make_block_compiler;
 
-template <typename Cell, typename LabelMap, typename CPVar>
-class make_cell_compiler<STITCH::N_ORDER, Cell, LabelMap, CPVar>
+template <typename Block, typename LabelMap, typename BPVar>
+class make_block_compiler<STITCH::N_ORDER, Block, LabelMap, BPVar>
 {
     template <typename I, typename _LabelMap>
-    using eval = make_N_order_instruction_runner<I, _LabelMap, CPVar>::type;
+    using eval = make_N_order_instruction_runner<I, _LabelMap, BPVar>::type;
 
   public:
-    using type = standard_compiler<Cell, LabelMap, eval>;
+    using type = standard_compiler<Block, LabelMap, eval>;
 };
 
-/// @brief Executes @p Cell as SIMD kernel.
-template <typename Cell, typename LabelMap, typename CPVar>
-class make_cell_compiler<STITCH::MINIKERNEL, Cell, LabelMap, CPVar>
+/// @brief Executes @p Block as SIMD kernel.
+template <typename Block, typename LabelMap, typename BPVar>
+class make_block_compiler<STITCH::MINIKERNEL, Block, LabelMap, BPVar>
 {
-    using index_t = vartype<CPVar>;
+    using index_t = vartype<BPVar>;
 
     static constexpr fsize_t N = native_vector_extent_v<index_t>;
 
-    using helper = minikernel_helper<Cell, LabelMap, CPVar, N>;
+    using helper = minikernel_helper<Block, LabelMap, BPVar, N>;
 
     class SerialRunner
     {
@@ -899,14 +899,14 @@ class make_cell_compiler<STITCH::MINIKERNEL, Cell, LabelMap, CPVar>
     using type = bulk_dispatcher<SIMDRunner, SerialRunner, N, sizeof(index_t)>;
 };
 
-template <typename Cell, typename LabelMap, typename CPVar>
-class make_cell_compiler<STITCH::MASKED, Cell, LabelMap, CPVar>
+template <typename Block, typename LabelMap, typename BPVar>
+class make_block_compiler<STITCH::MASKED, Block, LabelMap, BPVar>
 {
-    using index_t = vartype<CPVar>;
+    using index_t = vartype<BPVar>;
 
     static constexpr fsize_t N = native_vector_extent_v<index_t>;
 
-    using helper = minikernel_helper<Cell, LabelMap, CPVar, N>;
+    using helper = minikernel_helper<Block, LabelMap, BPVar, N>;
 
     using Kernel  = helper::simd_kernel;
     using Storage = helper::simd_storage;
@@ -975,8 +975,9 @@ class make_cell_compiler<STITCH::MASKED, Cell, LabelMap, CPVar>
     };
 };
 
-template <STITCH stitch, typename Cell, typename LabelMap, typename CPVar>
-using cell_compiler = make_cell_compiler<stitch, Cell, LabelMap, CPVar>::type;
+template <STITCH stitch, typename Block, typename LabelMap, typename BPVar>
+using block_compiler =
+    make_block_compiler<stitch, Block, LabelMap, BPVar>::type;
 
 /// @brief Count the number of logical 1 in packed vector @p vec.
 template <std::integral T, fsize_t N>
@@ -990,29 +991,29 @@ popcnt(const packed_vector<T, N> vec) noexcept
         __builtin_elementwise_min(vec, broadcast<N>(static_cast<T>(1))));
 }
 
-/// @brief Fast and lightweight set for cell indices.
+/// @brief Fast and lightweight set for block indices.
 ///
-/// Takes native SIMD vector of cell indices as input and optional initial
+/// Takes native SIMD vector of block indices as input and optional initial
 /// postion in case of sorted input.
-/// Iterates over the set and returns a pair of cell pointer number and its
+/// Iterates over the set and returns a pair of block pointer number and its
 /// vector mask. If @p ret_sum is set, the second value is the number of
-/// repetitions of the cell number in the input.
+/// repetitions of the block number in the input.
 ///
 /// @tparam P program to make set for.
 /// @tparam N vector width.
-/// @tparam ret_sum if enabled iterated value is pair consisting of cell pointer
-/// and the number of repetitions of this cell, otherwise the latter value is
-/// vector mask fot this cell.
+/// @tparam ret_sum if enabled iterated value is pair consisting of block
+/// pointer and the number of repetitions of this block, otherwise the latter
+/// value is vector mask fot this block.
 template <typename P, fsize_t N, bool ret_sum = false>
-class cell_set : public std::ranges::view_interface<cell_set<P, N, ret_sum>>
+class block_set : public std::ranges::view_interface<block_set<P, N, ret_sum>>
 {
     using index_t        = P::index_t;
     using index_vector_t = packed_vector<index_t, N>;
 
-    static constexpr index_t num_cells = P::num_cells;
-    static constexpr index_t halt_pos  = P::halt_pos;
+    static constexpr index_t num_blocks = P::num_blocks;
+    static constexpr index_t halt_pos   = P::halt_pos;
 
-    const index_vector_t m_cps;
+    const index_vector_t m_bps;
     const index_t        m_init_pos{};
 
     class _iterator : public std::input_iterator_tag
@@ -1020,14 +1021,14 @@ class cell_set : public std::ranges::view_interface<cell_set<P, N, ret_sum>>
         using ret_t = std::conditional_t<ret_sum, index_t, index_vector_t>;
 
         index_t              m_sum{};
-        const index_vector_t m_cps;
+        const index_vector_t m_bps;
         index_t              m_pos{};
         ret_t                m_ret;
 
         static _FORCE_INLINE index_t
         fit_inc(const index_t i) noexcept
         {
-            return fit_cell_index<P>(i + static_cast<index_t>(1));
+            return fit_block_index<P>(i + static_cast<index_t>(1));
         }
 
         _FORCE_INLINE bool
@@ -1035,14 +1036,14 @@ class cell_set : public std::ranges::view_interface<cell_set<P, N, ret_sum>>
         {
             if constexpr(ret_sum)
             {
-                const index_vector_t mask = m_cps == broadcast<N>(pos);
+                const index_vector_t mask = m_bps == broadcast<N>(pos);
                 m_ret                     = popcnt<index_t, N>(mask);
                 m_sum += m_ret;
                 return m_ret;
             }
             else
             {
-                m_ret             = m_cps == broadcast<N>(pos);
+                m_ret             = m_bps == broadcast<N>(pos);
                 const index_t ret = popcnt<index_t, N>(m_ret);
                 m_sum += ret;
                 return ret;
@@ -1061,9 +1062,9 @@ class cell_set : public std::ranges::view_interface<cell_set<P, N, ret_sum>>
         using value_type      = std::pair<index_t, ret_t>;
 
         _iterator() noexcept = default;
-        _iterator(const index_vector_t cps,
+        _iterator(const index_vector_t bps,
                   const index_t        initial_pos = 0) noexcept :
-            m_sum(0), m_cps(cps), m_pos(next(initial_pos))
+            m_sum(0), m_bps(bps), m_pos(next(initial_pos))
         {
         }
 
@@ -1096,16 +1097,16 @@ class cell_set : public std::ranges::view_interface<cell_set<P, N, ret_sum>>
     };
 
   public:
-    cell_set() noexcept = default;
-    cell_set(const index_vector_t cps, const index_t initial_pos = 0) noexcept :
-        m_cps(cps), m_init_pos(initial_pos)
+    block_set() noexcept = default;
+    block_set(const index_vector_t bps, const index_t initial_pos = 0) noexcept
+        : m_bps(bps), m_init_pos(initial_pos)
     {
     }
 
     _iterator
     begin() const noexcept
     {
-        return {m_cps, m_init_pos};
+        return {m_bps, m_init_pos};
     }
 
     std::default_sentinel_t
@@ -1116,7 +1117,7 @@ class cell_set : public std::ranges::view_interface<cell_set<P, N, ret_sum>>
 };
 
 /// @brief Vectorized counting sort.
-/// @return number of halted cells.
+/// @return number of halted blocks.
 template <typename P, typename _Memory>
 fsize_t
 counting_sort(_Memory& in, _Memory& out) noexcept
@@ -1125,7 +1126,7 @@ counting_sort(_Memory& in, _Memory& out) noexcept
 
     using index_t = P::index_t;
 
-    constexpr fsize_t num_bins = P::num_cells + 1;
+    constexpr fsize_t num_bins = P::num_blocks + 1;
     constexpr fsize_t N        = native_vector_extent_v<index_t>;
 
     ASSERT(in.size() % N == 0, "Size be aligned to vector width");
@@ -1139,10 +1140,10 @@ counting_sort(_Memory& in, _Memory& out) noexcept
     // histogram
     for(index_t pos = 0; pos < in.size(); pos += N)
     {
-        const vector_index_t cps =
-            load<N>(in.template view<N>(pos).cp().data());
-        for(const auto [cp, sum]: cell_set<P, N, true>(cps))
-            bins[bve::fit_in_bins<halt_pos, num_bins>(cp)] += sum;
+        const vector_index_t bps =
+            load<N>(in.template view<N>(pos).bp().data());
+        for(const auto [bp, sum]: block_set<P, N, true>(bps))
+            bins[bve::fit_in_bins<halt_pos, num_bins>(bp)] += sum;
     }
 
     const fsize_t ret = bins[num_bins - 1];
@@ -1154,7 +1155,7 @@ counting_sort(_Memory& in, _Memory& out) noexcept
     // fill out
     // FIXME: for avx512 implement using scatter
     for(int i = in.size() - 1; i >= 0; --i)
-        out[--bins[bve::fit_in_bins<halt_pos, num_bins>(in.cp()[i])]] = in[i];
+        out[--bins[bve::fit_in_bins<halt_pos, num_bins>(in.bp()[i])]] = in[i];
 
     return ret;
 }
@@ -1244,11 +1245,10 @@ class AsyncStreamFacade :
 {
     using reg_names   = _Program::reg_names;
     using reg_types   = _Program::reg_types;
-    using cp_var      = _Program::cp;
+    using bp_var      = _Program::bp;
     using input_vars  = _Program::input_vars;
     using output_vars = _Program::output_vars;
-
-    using index_t = vartype<cp_var>;
+    using index_t     = _Program::index_t;
 
     static constexpr index_t halt_pos  = _Program::halt_pos;
     static constexpr fsize_t npos      = static_cast<fsize_t>(-1);
@@ -1263,10 +1263,10 @@ class AsyncStreamFacade :
     void
     find_halt_segments() noexcept
     {
-        const auto& cps = facade::mem().cp();
+        const auto& bps = facade::mem().bp();
         m_pos           = npos;
-        for(fsize_t pos = 0; pos < cps.size(); pos += step_size)
-            if(cps[pos] == halt_pos)
+        for(fsize_t pos = 0; pos < bps.size(); pos += step_size)
+            if(bps[pos] == halt_pos)
             {
                 m_pos = pos;
                 return;
@@ -1331,11 +1331,11 @@ class memory_chunks : public std::ranges::view_interface<memory_chunks<_Memory>>
 
     template <typename index_t>
     static fsize_t
-    chunk_size(std::span<index_t> cps) noexcept
+    chunk_size(std::span<index_t> bps) noexcept
     {
-        const index_t cp = cps.front();
+        const index_t bp = bps.front();
         fsize_t       i  = 0;
-        while(i < cps.size() && cps[i] == cp) ++i;
+        while(i < bps.size() && bps[i] == bp) ++i;
         return i;
     }
 
@@ -1347,7 +1347,7 @@ class memory_chunks : public std::ranges::view_interface<memory_chunks<_Memory>>
         fsize_t
         offset() const noexcept
         {
-            return chunk_size(m_view.cp().subspan(m_pos));
+            return chunk_size(m_view.bp().subspan(m_pos));
         }
 
         proxy_view
@@ -1509,7 +1509,7 @@ class aligned_chunks :
         bool
         operator==(std::default_sentinel_t) const noexcept
         {
-            return m_pos >= m_view.size() || m_view.cp()[m_pos] == halt_pos;
+            return m_pos >= m_view.size() || m_view.bp()[m_pos] == halt_pos;
         }
 
         bool
@@ -1570,7 +1570,7 @@ class aligned_chunks :
 template <STITCH stitch>
 struct visitor_selector
 {
-    template <typename _Memory, typename _CompiledCells, typename...>
+    template <typename _Memory, typename _CompiledBlocks, typename...>
     struct type
     {
         using memory_view = _Memory::view_type;
@@ -1582,10 +1582,10 @@ struct visitor_selector
                                   [](memory_view view) noexcept
                                   {
                                       typelist::visit_at(
-                                          view.cp().front(),
-                                          [&]<typename Cell>() noexcept
-                                          { Cell{}(view); },
-                                          _CompiledCells{},
+                                          view.bp().front(),
+                                          [&]<typename Block>() noexcept
+                                          { Block{}(view); },
+                                          _CompiledBlocks{},
                                           sink);
                                   });
         }
@@ -1601,7 +1601,7 @@ struct visitor_selector
 template <>
 struct visitor_selector<STITCH::MASKED>
 {
-    template <typename _Memory, typename _CompiledCells, typename _Program>
+    template <typename _Memory, typename _CompiledBlocks, typename _Program>
     struct type
     {
         using memory_view = _Memory::view_type;
@@ -1619,15 +1619,15 @@ struct visitor_selector<STITCH::MASKED>
                 [](auto view) noexcept
                     requires(pv_extent<decltype(view)> == N)
                 {
-                    const index_t        start = view.cp()[0];
-                    const index_vector_t cps   = load<N>(view.cp().data());
+                    const index_t        start = view.bp()[0];
+                    const index_vector_t bps   = load<N>(view.bp().data());
 
-                    for(const auto [cp, mask]:
-                        cell_set<_Program, N>{cps, start})
+                    for(const auto [bp, mask]:
+                        block_set<_Program, N>{bps, start})
                         typelist::visit_at(
-                            cp,
-                            [&]<typename Cell>() noexcept { Cell{mask}(view); },
-                            _CompiledCells{},
+                            bp,
+                            [&]<typename Block>() noexcept { Block{mask}(view); },
+                            _CompiledBlocks{},
                             sink);
                 });
         }
@@ -1661,19 +1661,19 @@ template <typename _Program,
 class compiler
 {
     using labelmap  = _Program::labelmap;
-    using cells     = _Program::cells;
+    using blocks     = _Program::blocks;
     using reg_names = _Program::reg_names;
     using reg_types = _Program::reg_types;
-    using cp        = _Program::cp;
+    using bp        = _Program::bp;
 
     static constexpr bool    singular = _Program::singular;
     static constexpr auto    halt_pos = _Program::halt_pos;
     static constexpr fsize_t align    = simd_align;
 
-    template <typename Cell>
-    using compile_cell = cell_compiler<stitch, Cell, labelmap, cp>;
+    template <typename Block>
+    using compile_block = block_compiler<stitch, Block, labelmap, bp>;
 
-    using compiled_cells = typelist::map<compile_cell, cells>;
+    using compiled_blocks = typelist::map<compile_block, blocks>;
 
     template <typename T>
     using allocator = std::conditional_t<async,
@@ -1681,7 +1681,7 @@ class compiler
                                          SIMDAlignedAllocator<T>>;
 
     using memory =
-        bve::Memory<reg_types, reg_names, cp, std::vector, allocator>;
+        bve::Memory<reg_types, reg_names, bp, std::vector, allocator>;
     using memory_view = memory::view_type;
 
     static constexpr SORT final_sort_method =
@@ -1696,11 +1696,11 @@ class compiler
     using memory_facade =
         bve::MemoryFacade<_Program, std::vector, allocator, sorter>;
 
-    using visitor = select_visitor<stitch, memory, compiled_cells, _Program>;
+    using visitor = select_visitor<stitch, memory, compiled_blocks, _Program>;
 
-    class single_cell_evaluator : public memory_facade
+    class single_block_evaluator : public memory_facade
     {
-        static constexpr typelist::head<compiled_cells> cell{};
+        static constexpr typelist::head<compiled_blocks> block{};
 
       public:
         using program = _Program;
@@ -1712,7 +1712,7 @@ class compiler
         {
             memory_facade::set_inputs(std::forward<Args>(args)...);
             memory_facade::visit([](memory& mem) noexcept
-                                 { cell(mem.view()); });
+                                 { block(mem.view()); });
             if constexpr(zip_outputs)
                 return memory_facade::get_output_zipped();
             else
@@ -1783,7 +1783,7 @@ class compiler
 
   public:
     using function = std::
-        conditional_t<_Program::singular, single_cell_evaluator, evaluator>;
+        conditional_t<_Program::singular, single_block_evaluator, evaluator>;
 
     class stream : public stream_facade
     {
@@ -1811,12 +1811,12 @@ template <typename _Program,
     requires(!_Program::singular)
 using stream = compiler<_Program, stitch, sort_method, async>::stream;
 
-template <typename Cell, typename LabelMap, typename CPVar, fsize_t N>
+template <typename Block, typename LabelMap, typename BPVar, fsize_t N>
 class make_embedded_masked_runner
 {
-    using index_t = vartype<CPVar>;
+    using index_t = vartype<BPVar>;
 
-    using helper = minikernel_helper<Cell, LabelMap, CPVar, N>;
+    using helper = minikernel_helper<Block, LabelMap, BPVar, N>;
 
     using Kernel      = helper::simd_kernel;
     using TempStorage = helper::simd_storage;
@@ -1879,19 +1879,19 @@ class make_embedded_masked_runner
     };
 };
 
-template <typename Cell, typename LabelMap, typename CPVar, fsize_t N>
+template <typename Block, typename LabelMap, typename BPVar, fsize_t N>
 using embedded_masked_runner =
-    make_embedded_masked_runner<Cell, LabelMap, CPVar, N>::type;
+    make_embedded_masked_runner<Block, LabelMap, BPVar, N>::type;
 
 template <typename _Program>
     requires(typelist::of_same_size<typename _Program::reg_types>)
 class embedded_compiler
 {
     using labelmap  = _Program::labelmap;
-    using cells     = _Program::cells;
+    using blocks     = _Program::blocks;
     using reg_names = _Program::reg_names;
     using reg_types = _Program::reg_types;
-    using cp        = _Program::cp;
+    using bp        = _Program::bp;
     using index_t   = _Program::index_t;
 
     static constexpr bool    singular = _Program::singular;
@@ -1908,15 +1908,15 @@ class embedded_compiler
         decltype([]() constexpr noexcept -> packed_vector<index_t, N>
                  { return broadcast<N>(static_cast<index_t>(0)); })>;
 
-    class single_cell_evaluator : facade
+    class single_block_evaluator : facade
     {
         template <typename I, typename _LabelMap>
         using simd_eval = eval<I, _LabelMap, N>;
 
         using Kernel =
-            standard_compiler<typelist::head<cells>, labelmap, simd_eval>;
+            standard_compiler<typelist::head<blocks>, labelmap, simd_eval>;
 
-        static constexpr Kernel cell{};
+        static constexpr Kernel block{};
 
       public:
         using program = _Program;
@@ -1926,17 +1926,17 @@ class embedded_compiler
         operator()(const Args... args) noexcept
         {
             facade::set_inputs(args...);
-            facade::step(cell);
+            facade::step(block);
             return facade::get_outputs();
         }
     };
 
     class evaluator : facade
     {
-        template <typename Cell>
-        using compile_cell = embedded_masked_runner<Cell, labelmap, cp, N>;
+        template <typename Block>
+        using compile_block = embedded_masked_runner<Block, labelmap, bp, N>;
 
-        using compiled_cells = typelist::map<compile_cell, cells>;
+        using compiled_blocks = typelist::map<compile_block, blocks>;
 
       public:
         template <typename... Args>
@@ -1944,20 +1944,20 @@ class embedded_compiler
         operator()(const Args... args) noexcept
         {
             facade::set_inputs(args...);
-            while(!__builtin_reduce_and(facade::cp() == halt_pos))
-                for(const auto [cp, mask]: cell_set<_Program, N>{facade::cp()})
+            while(!__builtin_reduce_and(facade::bp() == halt_pos))
+                for(const auto [bp, mask]: block_set<_Program, N>{facade::bp()})
                     typelist::visit_at(
-                        cp,
+                        bp,
                         [&]<typename Runner>() noexcept
                         { facade::step(Runner{mask}); },
-                        compiled_cells{},
+                        compiled_blocks{},
                         sink);
             return facade::get_outputs();
         }
     };
 
   public:
-    using type = std::conditional_t<singular, single_cell_evaluator, evaluator>;
+    using type = std::conditional_t<singular, single_block_evaluator, evaluator>;
 };
 
 template <typename _Program>

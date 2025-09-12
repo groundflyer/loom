@@ -51,7 +51,7 @@ template <typename T,
           template <typename> typename Allocator>
 using vector_union_t = vector_union<T, Vector, Allocator>::type;
 
-template <typename Data, typename Helper, typename _CP>
+template <typename Data, typename Helper, typename _BP>
 class ProxyRow
 {
     Data&   m_data;
@@ -107,13 +107,13 @@ class ProxyRow
     bool
     operator==(const ProxyRow rhs) const noexcept
     {
-        return cp() == rhs.cp();
+        return bp() == rhs.bp();
     }
 
     std::strong_ordering
     operator<=>(const ProxyRow rhs) const noexcept
     {
-        return cp() <=> rhs.cp();
+        return bp() <=> rhs.bp();
     }
 
     template <typename Var>
@@ -123,10 +123,10 @@ class ProxyRow
         return Helper::template get<Var>(m_data)[m_pos];
     }
 
-    std::add_const_t<std::add_lvalue_reference_t<vartype<_CP>>>
-    cp() const noexcept
+    std::add_const_t<std::add_lvalue_reference_t<vartype<_BP>>>
+    bp() const noexcept
     {
-        return get<_CP>();
+        return get<_BP>();
     }
 
     template <typename Var>
@@ -136,10 +136,10 @@ class ProxyRow
         return Helper::template get<Var>(m_data)[m_pos];
     }
 
-    std::add_lvalue_reference_t<vartype<_CP>>
-    cp() noexcept
+    std::add_lvalue_reference_t<vartype<_BP>>
+    bp() noexcept
     {
-        return get<_CP>();
+        return get<_BP>();
     }
 
     friend void
@@ -151,7 +151,7 @@ class ProxyRow
     }
 };
 
-template <typename Data, typename Helper, typename _CP, fsize_t N>
+template <typename Data, typename Helper, typename _BP, fsize_t N>
 class ProxyView
 {
     Data&   m_data;
@@ -181,7 +181,7 @@ class ProxyView
 
     ProxyView(Data& data, fsize_t pos) noexcept : m_data(data), m_pos(pos) {}
 
-    ProxyRow<Data, Helper, _CP>
+    ProxyRow<Data, Helper, _BP>
     operator[](const fsize_t n) const noexcept
     {
         return {m_data, shift(n)};
@@ -189,21 +189,21 @@ class ProxyView
 
     template <fsize_t N2>
         requires(N2 <= N)
-    ProxyView<Data, Helper, _CP, N2>
+    ProxyView<Data, Helper, _BP, N2>
     view(const fsize_t pos = 0) const noexcept
     {
         ASSERT(N2 <= N - pos, "Extent too big");
         return {m_data, shift(pos)};
     }
 
-    ProxyView<Data, Helper, _CP, dynamic_extent>
+    ProxyView<Data, Helper, _BP, dynamic_extent>
     view(const fsize_t pos, const fsize_t ext) const noexcept
     {
         ASSERT(ext <= N - pos, "Extent too big");
         return {m_data, shift(pos), ext};
     }
 
-    ProxyView<Data, Helper, _CP, dynamic_extent>
+    ProxyView<Data, Helper, _BP, dynamic_extent>
     view(const fsize_t pos = 0) const noexcept
     {
         return view(pos, size() - pos);
@@ -218,10 +218,10 @@ class ProxyView
             N);
     }
 
-    std::span<vartype<_CP>, N>
-    cp() const noexcept
+    std::span<vartype<_BP>, N>
+    bp() const noexcept
     {
-        return get<_CP>();
+        return get<_BP>();
     }
 
     constexpr fsize_t
@@ -237,8 +237,8 @@ class ProxyView
     }
 };
 
-template <typename Data, typename Helper, typename _CP>
-class ProxyView<Data, Helper, _CP, dynamic_extent>
+template <typename Data, typename Helper, typename _BP>
+class ProxyView<Data, Helper, _BP, dynamic_extent>
 {
     Data&   m_data;
     fsize_t m_pos;
@@ -270,28 +270,28 @@ class ProxyView<Data, Helper, _CP, dynamic_extent>
     {
     }
 
-    ProxyRow<Data, Helper, _CP>
+    ProxyRow<Data, Helper, _BP>
     operator[](const fsize_t n) const noexcept
     {
         return {m_data, shift(n)};
     }
 
     template <fsize_t N>
-    ProxyView<Data, Helper, _CP, N>
+    ProxyView<Data, Helper, _BP, N>
     view(const fsize_t pos) const noexcept
     {
         ASSERT(N <= size() - pos, "Extent too big");
         return {m_data, shift(pos)};
     }
 
-    ProxyView<Data, Helper, _CP, dynamic_extent>
+    ProxyView<Data, Helper, _BP, dynamic_extent>
     view(const fsize_t pos, const fsize_t ext) const noexcept
     {
         ASSERT(ext <= size() - pos, "Extent too big");
         return {m_data, shift(pos), ext};
     }
 
-    ProxyView<Data, Helper, _CP, dynamic_extent>
+    ProxyView<Data, Helper, _BP, dynamic_extent>
     view(const fsize_t pos = 0) const noexcept
     {
         return view(pos, size() - pos);
@@ -305,10 +305,10 @@ class ProxyView<Data, Helper, _CP, dynamic_extent>
                 m_ext};
     }
 
-    std::span<vartype<_CP>, std::dynamic_extent>
-    cp() const noexcept
+    std::span<vartype<_BP>, std::dynamic_extent>
+    bp() const noexcept
     {
-        return get<_CP>();
+        return get<_BP>();
     }
 
     fsize_t
@@ -324,7 +324,7 @@ class ProxyView<Data, Helper, _CP, dynamic_extent>
     }
 };
 
-template <typename Data, typename Helper, typename _CP>
+template <typename Data, typename Helper, typename _BP>
 class MemoryIterator : public std::contiguous_iterator_tag
 {
     Data*   p_data = nullptr;
@@ -333,7 +333,7 @@ class MemoryIterator : public std::contiguous_iterator_tag
 
   public:
     using difference_type = std::ptrdiff_t;
-    using value_type      = ProxyRow<Data, Helper, _CP>;
+    using value_type      = ProxyRow<Data, Helper, _BP>;
 
     MemoryIterator() noexcept = default;
 
@@ -485,7 +485,7 @@ class MemoryIterator : public std::contiguous_iterator_tag
 
 template <typename RegTypes,
           typename RegNames,
-          typename _CP,
+          typename _BP,
           template <typename, typename> typename _Vector = std::vector,
           template <typename> typename Allocator         = std::allocator>
 class Memory
@@ -503,12 +503,12 @@ class Memory
     Data m_data;
 
     template <fsize_t N>
-    using proxy_view = ProxyView<Data, helper, _CP, N>;
+    using proxy_view = ProxyView<Data, helper, _BP, N>;
 
   public:
-    using value_type = bve::ProxyRow<Data, helper, _CP>;
+    using value_type = bve::ProxyRow<Data, helper, _BP>;
     using view_type  = proxy_view<dynamic_extent>;
-    using iterator   = bve::MemoryIterator<Data, helper, _CP>;
+    using iterator   = bve::MemoryIterator<Data, helper, _BP>;
 
     Memory() noexcept = default;
     explicit Memory(fsize_t n) { resize(n); }
@@ -621,16 +621,16 @@ class Memory
                 size()};
     }
 
-    std::span<vartype<_CP>>
-    cp() noexcept
+    std::span<vartype<_BP>>
+    bp() noexcept
     {
-        return get<_CP>();
+        return get<_BP>();
     }
 
-    std::span<vartype<_CP>>
-    cp() const noexcept
+    std::span<vartype<_BP>>
+    bp() const noexcept
     {
-        return get<_CP>();
+        return get<_BP>();
     }
 
     void
@@ -840,38 +840,38 @@ swap_only_introsort(I first, I last) noexcept
 
 template <auto halt_pos, auto num_bins, std::integral T>
 constexpr T
-fit_in_bins(T cp) noexcept
+fit_in_bins(T bp) noexcept
 {
-    return cp != halt_pos ? cp : num_bins - 1;
+    return bp != halt_pos ? bp : num_bins - 1;
 }
 
 template <fsize_t num_bins,
           auto    halt_pos,
           typename RegTypes,
           typename RegNames,
-          typename _CP,
+          typename _BP,
           template <typename, typename> typename _Vector,
           template <typename> typename Allocator>
-    requires(std::is_same_v<decltype(halt_pos), vartype<_CP>>)
+    requires(std::is_same_v<decltype(halt_pos), vartype<_BP>>)
 void
-counting_sort(Memory<RegTypes, RegNames, _CP, _Vector, Allocator>& in,
-              Memory<RegTypes, RegNames, _CP, _Vector, Allocator>& out) noexcept
+counting_sort(Memory<RegTypes, RegNames, _BP, _Vector, Allocator>& in,
+              Memory<RegTypes, RegNames, _BP, _Vector, Allocator>& out) noexcept
 {
     ASSERT(in.size() == out.size(), "Sizes must match");
 
-    using index_t = vartype<_CP>;
+    using index_t = vartype<_BP>;
 
     index_t bins[num_bins] = {};
 
     // histogram
-    for(index_t cp: in.cp()) ++bins[fit_in_bins<halt_pos, num_bins>(cp)];
+    for(index_t bp: in.bp()) ++bins[fit_in_bins<halt_pos, num_bins>(bp)];
 
     // prefix sum
     for(index_t i = 1; i < num_bins; ++i) bins[i] += bins[i - 1];
 
     // fill out
     for(int i = in.size() - 1; i >= 0; --i)
-        out[--bins[fit_in_bins<halt_pos, num_bins>(in.cp()[i])]] = in[i];
+        out[--bins[fit_in_bins<halt_pos, num_bins>(in.bp()[i])]] = in[i];
 }
 
 template <typename _Program, typename _Memory>
@@ -908,7 +908,7 @@ template <typename _Program, typename _Memory>
 class CountingSorter
 {
     static constexpr auto    halt_pos = _Program::halt_pos;
-    static constexpr fsize_t num_bins = _Program::num_cells + 1;
+    static constexpr fsize_t num_bins = _Program::num_blocks + 1;
 
     _Memory  m_buf0;
     _Memory  m_buf1;
@@ -945,18 +945,19 @@ template <typename _Program,
           typename Sorter = SimpleSorter<_Program,
                                          Memory<typename _Program::reg_types,
                                                 typename _Program::reg_names,
-                                                typename _Program::cp,
+                                                typename _Program::bp,
                                                 _Vector,
                                                 Allocator>>>
 class MemoryFacade : public Sorter
 {
     using reg_names   = _Program::reg_names;
     using reg_types   = _Program::reg_types;
-    using cp_var      = _Program::cp;
+    using bp_var      = _Program::bp;
     using input_vars  = _Program::input_vars;
     using output_vars = _Program::output_vars;
+    using index_t     = _Program::index_t;
 
-    static constexpr vartype<cp_var> halt_pos = _Program::halt_pos;
+    static constexpr index_t halt_pos = _Program::halt_pos;
 
     template <typename _Memory>
     struct var_setter
@@ -1002,7 +1003,7 @@ class MemoryFacade : public Sorter
             std::forward<Args>(args)...);
 
         // reset
-        if constexpr(!_Program::singular) row.cp() = 0;
+        if constexpr(!_Program::singular) row.bp() = 0;
     }
 
     template <typename _ProxyRow>
@@ -1096,14 +1097,14 @@ class MemoryFacade : public Sorter
     reset() noexcept
     {
         if constexpr(!_Program::singular)
-            std::ranges::fill(Sorter::mem().cp(), 0);
+            std::ranges::fill(Sorter::mem().bp(), 0);
     }
 
     auto
     done() noexcept
     {
         if constexpr(!_Program::singular)
-            return Sorter::mem().cp().front() == halt_pos;
+            return Sorter::mem().bp().front() == halt_pos;
     }
 
     fsize_t
@@ -1144,18 +1145,19 @@ template <typename _Program,
           typename Sorter = SimpleSorter<_Program,
                                          Memory<typename _Program::reg_types,
                                                 typename _Program::reg_names,
-                                                typename _Program::cp,
+                                                typename _Program::bp,
                                                 _Vector,
                                                 Allocator>>>
 class StreamFacade : public MemoryFacade<_Program, _Vector, Allocator, Sorter>
 {
     using reg_names   = _Program::reg_names;
     using reg_types   = _Program::reg_types;
-    using cp_var      = _Program::cp;
+    using bp_var      = _Program::bp;
     using input_vars  = _Program::input_vars;
     using output_vars = _Program::output_vars;
+    using index_t     = _Program::index_t;
 
-    static constexpr vartype<cp_var> halt_pos = _Program::halt_pos;
+    static constexpr index_t halt_pos = _Program::halt_pos;
 
     using facade = MemoryFacade<_Program, _Vector, Allocator, Sorter>;
 
@@ -1174,7 +1176,7 @@ class StreamFacade : public MemoryFacade<_Program, _Vector, Allocator, Sorter>
             std::forward<Input>(input),
             std::ranges::find_if(facade::mem(),
                                  [](auto row) constexpr noexcept
-                                 { return row.cp() == halt_pos; }));
+                                 { return row.bp() == halt_pos; }));
     }
 };
 
@@ -1210,7 +1212,7 @@ struct vector_eval<Jump<Target>, LabelMap>
     {
         std::ranges::for_each(std::forward<_Memory>(mem),
                               [](auto row) constexpr noexcept
-                              { row.cp() = std::invoke(f); });
+                              { row.bp() = std::invoke(f); });
     }
 };
 
@@ -1225,7 +1227,7 @@ struct vector_eval<ParmJump<Var, Labels>, LabelMap>
     {
         std::ranges::for_each(std::forward<_Memory>(mem),
                               [](auto row) noexcept
-                              { row.cp() = table[row.template get<Var>()]; });
+                              { row.bp() = table[row.template get<Var>()]; });
     }
 };
 
@@ -1256,21 +1258,22 @@ template <typename _Program, SORT sort_method>
 class basic_vector_compiler
 {
     using labelmap  = _Program::labelmap;
-    using cells     = _Program::cells;
+    using blocks    = _Program::blocks;
     using reg_names = _Program::reg_names;
     using reg_types = _Program::reg_types;
-    using cp        = _Program::cp;
+    using bp        = _Program::bp;
     using vars      = _Program::variables;
+    using index_t   = _Program::index_t;
 
-    static constexpr bool        singular = _Program::singular;
-    static constexpr vartype<cp> halt_pos = _Program::halt_pos;
+    static constexpr bool    singular = _Program::singular;
+    static constexpr index_t halt_pos = _Program::halt_pos;
 
     template <typename C>
-    using compile_cell = standard_compiler<C, labelmap, vector_eval>;
+    using compile_block = standard_compiler<C, labelmap, vector_eval>;
 
-    using compiled_cells = typelist::map<compile_cell, cells>;
+    using compiled_blocks = typelist::map<compile_block, blocks>;
 
-    using memory = Memory<reg_types, reg_names, cp>;
+    using memory = Memory<reg_types, reg_names, bp>;
 
     static constexpr SORT final_sort_method =
         singular ? INTROSORT : sort_method;
@@ -1282,9 +1285,9 @@ class basic_vector_compiler
     using stream_facade =
         StreamFacade<_Program, std::vector, std::allocator, sorter>;
 
-    class single_cell_evaluator : public memory_facade
+    class single_block_evaluator : public memory_facade
     {
-        static constexpr typelist::head<compiled_cells> cell{};
+        static constexpr typelist::head<compiled_blocks> block{};
 
       public:
         using program = _Program;
@@ -1295,7 +1298,7 @@ class basic_vector_compiler
         operator()(Args&&... args) noexcept
         {
             memory_facade::set_inputs(std::forward<Args>(args)...);
-            memory_facade::visit(cell);
+            memory_facade::visit(block);
             if constexpr(zip_outputs)
                 return memory_facade::get_output_zipped();
             else
@@ -1305,8 +1308,8 @@ class basic_vector_compiler
 
     struct visitor
     {
-        static constexpr typename typelist::to<compiled_cells, std::tuple>
-                              cells{};
+        static constexpr typename typelist::to<compiled_blocks, std::tuple>
+                              blocks{};
         static constexpr auto halt_pos = _Program::halt_pos;
 
         void
@@ -1315,16 +1318,16 @@ class basic_vector_compiler
             std::ranges::for_each(
                 ranges::views::filter(mem,
                                       [](auto row) constexpr noexcept
-                                      { return row.cp() != halt_pos; }) |
+                                      { return row.bp() != halt_pos; }) |
                     ranges::views::chunk_by(
                         [](auto a, auto b) constexpr noexcept
-                        { return a.cp() == b.cp(); }),
+                        { return a.bp() == b.bp(); }),
                 [](auto grp) constexpr noexcept
                 {
                     visit_at(
-                        ranges::front(grp).cp(),
-                        [grp](auto cell) constexpr noexcept { cell(grp); },
-                        cells,
+                        ranges::front(grp).bp(),
+                        [grp](auto block) constexpr noexcept { block(grp); },
+                        blocks,
                         sink);
                 });
         }
@@ -1390,7 +1393,7 @@ class basic_vector_compiler
 
   public:
     using function = std::
-        conditional_t<_Program::singular, single_cell_evaluator, evaluator>;
+        conditional_t<_Program::singular, single_block_evaluator, evaluator>;
 
     class stream : public stream_facade
     {
