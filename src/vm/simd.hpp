@@ -1263,19 +1263,12 @@ class AsyncStreamFacade :
 
     fsize_t m_pos = npos;
 
-    // we're looking for the first cache-aligned segment in the memory that's
-    // filled with halts
     void
-    find_halt_segments() noexcept
+    update_pos(const fsize_t nhalts) noexcept
     {
-        const auto& bps = facade::mem().bp();
-        m_pos           = npos;
-        for(fsize_t pos = 0; pos < bps.size(); pos += step_size)
-            if(bps[pos] == halt_pos)
-            {
-                m_pos = pos;
-                return;
-            }
+        m_pos = nhalts >= step_size ?
+                    align_top(facade::mem().size() - nhalts, step_size) :
+                    npos;
     }
 
   public:
@@ -1285,21 +1278,11 @@ class AsyncStreamFacade :
     sort() noexcept
     {
         if constexpr(is_counting_sorter<Sorter>::value)
-        {
-            // here sort returns the number of halts
-            const fsize_t nhalts = facade::sort();
-
-            m_pos = nhalts >= step_size ?
-                        align_top(facade::mem().size() - nhalts, step_size) :
-                        npos;
-        }
+            update_pos(facade::sort());
         else
         {
             facade::sort();
-
-            // we do this here, because only sort is protected with a lock in
-            // multithreaded stream
-            find_halt_segments();
+            update_pos(std::ranges::count(facade::mem().bp(), halt_pos));
         }
     }
 
