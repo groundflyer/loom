@@ -1132,11 +1132,15 @@ exchange_from(_MemoryFacade& facade, Input&& input, Iter bgn) noexcept
     return ranges::views::zip_with(
         [](auto row, auto inputs)
         {
+            ASSERT(row.bp() ==
+                       static_cast<std::remove_cvref_t<decltype(row.bp())>>(-1),
+                   "Exchanging with incomplete program!");
+
             auto val = _MemoryFacade::get_row_output(row);
 
             invopply([row](auto... args) constexpr noexcept
-                        { _MemoryFacade::set_row_input(row, args...); },
-                        inputs);
+                     { _MemoryFacade::set_row_input(row, args...); },
+                     inputs);
 
             return val;
         },
