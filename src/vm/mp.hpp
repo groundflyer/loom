@@ -70,25 +70,28 @@ struct Context
 
     Context(unsigned n) noexcept : stream(n) {}
 
-    bool
+    /// @brief Attempt to sort. Used in worker thread.
+    void
     try_sort() noexcept
     {
-        if(need_sort.test(std::memory_order_acquire))
+        if(need_sort.test(std::memory_order_acquire) && lock.try_lock())
         {
-            if(lock.try_lock())
-            {
-                stream.sort();
-                lock.unlock();
-                need_sort.clear(std::memory_order_release);
-                exchanged.clear(std::memory_order_release);
-                return false;
-            }
-            else
-                return true;
+            stream.sort();
+            lock.unlock();
+            need_sort.clear(std::memory_order_release);
+            exchanged.clear(std::memory_order_release);
         }
-        return false;
     }
 
+    /// @brief Attempt to compute and sort. Used in worker thread.
+    void
+    try_step() noexcept
+    {
+        if(!need_sort.test_and_set(std::memory_order_acq_rel)) stream();
+        try_sort();
+    }
+
+    /// @brief Attempt to exchange. Used in supervisor/main thread.
     template <typename InputIter, typename Sentinel, typename OutIter>
     void
     try_exchange(InputIter& ib, const Sentinel s, OutIter& out) noexcept
@@ -108,14 +111,6 @@ struct Context
             lock.unlock();
             exchanged.test_and_set(std::memory_order_release);
         }
-    }
-
-    void
-    step() noexcept
-    {
-        stream();
-        need_sort.test_and_set(std::memory_order_release);
-        try_sort();
     }
 };
 
@@ -173,9 +168,7 @@ struct Worker
                         ctx.lock.unlock();
                     }
 
-                    if(ctx.try_sort()) return; // will try next time
-
-                    ctx.step();
+                    ctx.try_step();
                 });
     }
 };
