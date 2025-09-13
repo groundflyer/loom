@@ -853,7 +853,7 @@ template <fsize_t num_bins,
           template <typename, typename> typename _Vector,
           template <typename> typename Allocator>
     requires(std::is_same_v<decltype(halt_pos), vartype<_BP>>)
-void
+fsize_t
 counting_sort(Memory<RegTypes, RegNames, _BP, _Vector, Allocator>& in,
               Memory<RegTypes, RegNames, _BP, _Vector, Allocator>& out) noexcept
 {
@@ -866,12 +866,16 @@ counting_sort(Memory<RegTypes, RegNames, _BP, _Vector, Allocator>& in,
     // histogram
     for(index_t bp: in.bp()) ++bins[fit_in_bins<halt_pos, num_bins>(bp)];
 
+    const fsize_t ret = bins[num_bins - 1];
+
     // prefix sum
     for(index_t i = 1; i < num_bins; ++i) bins[i] += bins[i - 1];
 
     // fill out
     for(int i = in.size() - 1; i >= 0; --i)
         out[--bins[fit_in_bins<halt_pos, num_bins>(in.bp()[i])]] = in[i];
+
+    return ret;
 }
 
 template <typename _Program, typename _Memory>
@@ -931,11 +935,12 @@ class CountingSorter
         return *p_main;
     }
 
-    void
+    fsize_t
     sort() noexcept
     {
-        counting_sort<num_bins, halt_pos>(*p_main, *p_aux);
+        const fsize_t ret = counting_sort<num_bins, halt_pos>(*p_main, *p_aux);
         std::swap(p_main, p_aux);
+        return ret;
     }
 };
 

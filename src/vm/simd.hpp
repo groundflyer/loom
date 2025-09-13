@@ -1194,12 +1194,17 @@ class CountingSorter
 };
 
 template <typename _Sorter>
-struct is_simd_counting_sorter : std::false_type
+struct is_counting_sorter : std::false_type
 {
 };
 
 template <typename P, typename M>
-struct is_simd_counting_sorter<CountingSorter<P, M>> : std::true_type
+struct is_counting_sorter<bve::CountingSorter<P, M>> : std::true_type
+{
+};
+
+template <typename P, typename M>
+struct is_counting_sorter<CountingSorter<P, M>> : std::true_type
 {
 };
 
@@ -1279,7 +1284,7 @@ class AsyncStreamFacade :
     void
     sort() noexcept
     {
-        if constexpr(is_simd_counting_sorter<Sorter>::value)
+        if constexpr(is_counting_sorter<Sorter>::value)
         {
             // here sort returns the number of halts
             const fsize_t nhalts = facade::sort();
