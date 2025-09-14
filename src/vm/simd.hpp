@@ -1310,8 +1310,9 @@ class AsyncStreamFacade :
     }
 };
 
-template <typename _Memory>
-class memory_chunks : public std::ranges::view_interface<memory_chunks<_Memory>>
+template <typename _Memory, auto halt_pos>
+class memory_chunks :
+    public std::ranges::view_interface<memory_chunks<_Memory, halt_pos>>
 {
     using proxy_view = _Memory::view_type;
 
@@ -1390,7 +1391,7 @@ class memory_chunks : public std::ranges::view_interface<memory_chunks<_Memory>>
         bool
         operator==(std::default_sentinel_t) const noexcept
         {
-            return m_pos == m_view.size();
+            return m_pos == m_view.size() || m_view.bp()[m_pos] == halt_pos;
         }
 
         bool
@@ -1558,7 +1559,7 @@ class aligned_chunks :
 template <STITCH stitch>
 struct visitor_selector
 {
-    template <typename _Memory, typename _CompiledBlocks, typename...>
+    template <typename _Memory, typename _CompiledBlocks, typename _Program>
     struct type
     {
         using memory_view = _Memory::view_type;
@@ -1566,16 +1567,16 @@ struct visitor_selector
         void
         operator()(memory_view view) const noexcept
         {
-            std::ranges::for_each(memory_chunks<_Memory>(view),
-                                  [](memory_view view) noexcept
-                                  {
-                                      typelist::visit_at(
-                                          view.bp().front(),
-                                          [&]<typename Block>() noexcept
-                                          { Block{}(view); },
-                                          _CompiledBlocks{},
-                                          sink);
-                                  });
+            std::ranges::for_each(
+                memory_chunks<_Memory, _Program::halt_pos>(view),
+                [](memory_view view) noexcept
+                {
+                    typelist::visit_at(
+                        view.bp().front(),
+                        [&]<typename Block>() noexcept { Block{}(view); },
+                        _CompiledBlocks{},
+                        sink);
+                });
         }
 
         void
