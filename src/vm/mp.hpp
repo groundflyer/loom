@@ -177,7 +177,9 @@ template <std::ranges::input_range... Inputs>
 auto
 make_input_collection(Inputs&&... inputs) noexcept
 {
-    return std::tuple{detail::make_input_pair(std::forward<Inputs>(inputs))...};
+    // using make_tuple to avoid pair converting to tuple in case of one input
+    return std::make_tuple(
+        detail::make_input_pair(std::forward<Inputs>(inputs))...);
 }
 
 template <typename... Containers>
