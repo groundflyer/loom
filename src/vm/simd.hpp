@@ -1239,13 +1239,13 @@ struct select_sorter<COUNTING_SORT>
     using type = CountingSorter<_Program, _Memory>;
 };
 
-/// @brief Stream facade that allows asynchronous exchange/computation.
+/// @brief Stream facade that allows concurrent exchange/computation.
 template <typename _Program,
           template <typename, typename> typename _Vector,
           template <typename> typename Allocator,
           typename Sorter>
     requires(cache_line_size % simd_width == 0)
-class AsyncStreamFacade :
+class ConcurrentStreamFacade :
     public bve::MemoryFacade<_Program, _Vector, Allocator, Sorter>
 {
     using reg_names   = _Program::reg_names;
@@ -1274,7 +1274,7 @@ class AsyncStreamFacade :
   public:
     using facade::facade;
 
-    void
+    bool
     sort() noexcept
     {
         if constexpr(is_counting_sorter<Sorter>::value)
@@ -1284,6 +1284,8 @@ class AsyncStreamFacade :
             facade::sort();
             update_pos(std::ranges::count(facade::mem().bp(), halt_pos));
         }
+
+        return m_pos != npos;
     }
 
     template <std::ranges::input_range Input>
@@ -1641,16 +1643,16 @@ using SIMDAlignedAllocator =
 /// @tparam _Program program to compile.
 /// @tparam stitch execution method.
 /// @tparam sort_method sorting algorithm to use.
-/// @tparam async allow asynchronous exchange in resulting stream.
+/// @tparam concurrent allow concurrent computation in the stream.
 template <typename _Program,
           STITCH stitch,
           SORT   sort_method,
-          bool   async = false>
+          bool   concurrent = false>
     requires(typelist::of_same_size<typename _Program::reg_types>)
 class compiler
 {
     using labelmap  = _Program::labelmap;
-    using blocks     = _Program::blocks;
+    using blocks    = _Program::blocks;
     using reg_names = _Program::reg_names;
     using reg_types = _Program::reg_types;
     using bp        = _Program::bp;
@@ -1665,7 +1667,7 @@ class compiler
     using compiled_blocks = typelist::map<compile_block, blocks>;
 
     template <typename T>
-    using allocator = std::conditional_t<async,
+    using allocator = std::conditional_t<concurrent,
                                          CacheLineAlignedAllocator<T>,
                                          SIMDAlignedAllocator<T>>;
 
@@ -1679,8 +1681,8 @@ class compiler
         select_sorter<final_sort_method>::template type<_Program, memory>;
 
     using stream_facade = std::conditional_t<
-        async,
-        AsyncStreamFacade<_Program, std::vector, allocator, sorter>,
+        concurrent,
+        ConcurrentStreamFacade<_Program, std::vector, allocator, sorter>,
         bve::StreamFacade<_Program, std::vector, allocator, sorter>>;
     using memory_facade =
         bve::MemoryFacade<_Program, std::vector, allocator, sorter>;
@@ -1796,9 +1798,9 @@ using function = compiler<_Program, stitch, sort_method, false>::function;
 template <typename _Program,
           STITCH stitch,
           SORT   sort_method,
-          bool   async = false>
+          bool   concurrent = false>
     requires(!_Program::singular)
-using stream = compiler<_Program, stitch, sort_method, async>::stream;
+using stream = compiler<_Program, stitch, sort_method, concurrent>::stream;
 
 template <typename Block, typename LabelMap, typename BPVar, fsize_t N>
 class make_embedded_masked_runner

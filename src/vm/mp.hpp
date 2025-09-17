@@ -61,7 +61,7 @@ struct Context
         struct
         {
             std::atomic_flag need_sort{};
-            std::atomic_flag exchanged{};
+            std::atomic_flag exchange_available{};
         };
         std::uint8_t __padding[cache_line_size];
     };
@@ -76,10 +76,11 @@ struct Context
     {
         if(need_sort.test(std::memory_order_acquire) && lock.try_lock())
         {
-            stream.sort();
+            const bool ex = stream.sort();
             lock.unlock();
             need_sort.clear(std::memory_order_release);
-            exchanged.clear(std::memory_order_release);
+
+            if(ex) exchange_available.test_and_set(std::memory_order_release);
         }
     }
 
@@ -96,7 +97,7 @@ struct Context
     void
     try_exchange(InputIter& ib, const Sentinel s, OutIter& out) noexcept
     {
-        if(ib != s && !exchanged.test(std::memory_order_acquire) &&
+        if(ib != s && exchange_available.test(std::memory_order_acquire) &&
            !need_sort.test(std::memory_order_acquire) && lock.try_lock())
         {
             auto exs = stream.exchange(ranges::subrange(ib, s));
@@ -109,7 +110,7 @@ struct Context
                                       ++ib;
                                   });
             lock.unlock();
-            exchanged.test_and_set(std::memory_order_release);
+            exchange_available.clear(std::memory_order_release);
         }
     }
 };
