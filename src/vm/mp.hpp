@@ -54,16 +54,13 @@ template <typename _Program,
 struct Context
 {
     StreamCompiler<_Program> stream;
-    Lock                     lock;
+    Lock                     lock; // protects sorting vs. exchange
+    bool                     need_sort = false;
 
     union alignas(cache_line_size)
     {
-        struct
-        {
-            std::atomic_flag need_sort{};
-            std::atomic_flag exchange_available{};
-        };
-        std::uint8_t __padding[cache_line_size];
+        std::atomic_flag exchange_available{};
+        std::uint8_t     __padding[cache_line_size];
     };
 
     FORBID_ALL(Context);
@@ -74,21 +71,26 @@ struct Context
     void
     try_sort() noexcept
     {
-        if(need_sort.test(std::memory_order_acquire) && lock.try_lock())
+        if(need_sort && lock.try_lock())
         {
             const bool ex = stream.sort();
             lock.unlock();
-            need_sort.clear(std::memory_order_release);
+            need_sort = false;
 
             if(ex) exchange_available.test_and_set(std::memory_order_release);
         }
     }
 
-    /// @brief Attempt to compute and sort. Used in worker thread.
+    /// @brief Attempt to compute and then attempts to sort. Used in worker
+    /// thread. Can be executed during exchange concurrently.
     void
     try_step() noexcept
     {
-        if(!need_sort.test_and_set(std::memory_order_acq_rel)) stream();
+        if(!need_sort)
+        {
+            stream();
+            need_sort = true;
+        }
         try_sort();
     }
 
@@ -98,7 +100,7 @@ struct Context
     try_exchange(InputIter& ib, const Sentinel s, OutIter& out) noexcept
     {
         if(ib != s && exchange_available.test(std::memory_order_acquire) &&
-           !need_sort.test(std::memory_order_acquire) && lock.try_lock())
+           lock.try_lock())
         {
             auto exs = stream.exchange(ranges::subrange(ib, s));
             // copy and update input and output iterators
