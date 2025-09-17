@@ -1263,12 +1263,13 @@ class ConcurrentStreamFacade :
 
     fsize_t m_pos = npos;
 
-    void
+    bool
     update_pos(const fsize_t nhalts) noexcept
     {
-        m_pos = nhalts >= step_size ?
-                    align_top(facade::mem().size() - nhalts, step_size) :
-                    npos;
+        const bool ret = nhalts >= step_size;
+        m_pos =
+            ret ? align_top(facade::mem().size() - nhalts, step_size) : npos;
+        return ret;
     }
 
   public:
@@ -1278,14 +1279,12 @@ class ConcurrentStreamFacade :
     sort() noexcept
     {
         if constexpr(is_counting_sorter<Sorter>::value)
-            update_pos(facade::sort());
+            return update_pos(facade::sort());
         else
         {
             facade::sort();
-            update_pos(std::ranges::count(facade::mem().bp(), halt_pos));
+            return update_pos(std::ranges::count(facade::mem().bp(), halt_pos));
         }
-
-        return m_pos != npos;
     }
 
     template <std::ranges::input_range Input>
