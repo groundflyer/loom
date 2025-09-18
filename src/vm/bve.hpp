@@ -702,76 +702,49 @@ template <std::random_access_iterator                                  I,
                          typename std::iterator_traits<I>::value_type> Cmp =
               std::less<typename std::iterator_traits<I>::value_type>>
 void
-swap_only_make_heap(I first, I last, Cmp cmp = Cmp{}) noexcept
-{
-    using difference_type = std::iterator_traits<I>::difference_type;
-
-    difference_type n = last - first;
-
-    for(difference_type i = 1; i < n; ++i)
-    {
-        I child_i  = first + i;
-        I parent_i = first + (i - 1) / 2;
-
-        if(cmp(*parent_i, *child_i))
-        {
-            difference_type j        = i;
-            I               child_j  = first + j;
-            I               parent_j = first + (j - 1) / 2;
-
-            while(cmp(*parent_j, *child_j))
-            {
-                std::iter_swap(child_j, parent_j);
-                j        = (j - 1) / 2;
-                child_j  = first + j;
-                parent_j = first + (j - 1) / 2;
-            }
-        }
-    }
-}
-
-template <std::random_access_iterator                                  I,
-          std::predicate<typename std::iterator_traits<I>::value_type,
-                         typename std::iterator_traits<I>::value_type> Cmp =
-              std::less<typename std::iterator_traits<I>::value_type>>
-void
-swap_only_heap_sort(I first, I last, Cmp cmp = Cmp{}) noexcept
-{
-    using difference_type = std::iterator_traits<I>::difference_type;
-
-    difference_type n = last - first;
-
-    for(difference_type i = n; i > 1; --i)
-    {
-        std::iter_swap(first, first + i - 1);
-
-        difference_type j   = 0;
-        difference_type idx = 1;
-
-        while(idx < i - 1)
-        {
-            if(idx + 1 < i - 1 && cmp(*(first + idx), *(first + idx + 1)))
-                ++idx;
-
-            if(!cmp(*(first + j), *(first + idx))) break;
-
-            std::iter_swap(first + j, first + idx);
-            j   = idx;
-            idx = 2 * j + 1;
-        }
-    }
-}
-
-template <std::random_access_iterator                                  I,
-          std::predicate<typename std::iterator_traits<I>::value_type,
-                         typename std::iterator_traits<I>::value_type> Cmp =
-              std::less<typename std::iterator_traits<I>::value_type>>
-void
 swap_only_insertion_sort(I first, I last, Cmp cmp = Cmp{}) noexcept
 {
     for(auto i = std::next(first); i != last; ++i)
         for(auto j = i; (j != first) && cmp(*j, *(std::prev(j))); --j)
             std::iter_swap(j, std::prev(j));
+}
+
+template <std::random_access_iterator I>
+constexpr inline std::iterator_traits<I>::difference_type insertion_sort_limit =
+    24;
+
+template <std::random_access_iterator                                  I,
+          std::predicate<typename std::iterator_traits<I>::value_type,
+                         typename std::iterator_traits<I>::value_type> Cmp =
+              std::less<typename std::iterator_traits<I>::value_type>>
+void
+swap_only_quicksort(I first, I last, Cmp cmp = Cmp{}) noexcept
+{
+    using difference_type = std::iterator_traits<I>::difference_type;
+
+    if(first == last) return;
+
+    const difference_type len = std::distance(first, last);
+
+    if(len <= insertion_sort_limit<I>)
+    {
+        swap_only_insertion_sort(first, last, cmp);
+        return;
+    }
+
+    auto pivot = *std::next(first, len / 2);
+
+    I middle1 =
+        swap_only_partition(first,
+                            last,
+                            [=](const auto& elem) { return cmp(elem, pivot); });
+    I middle2 = swap_only_partition(middle1,
+                                    last,
+                                    [=](const auto& elem)
+                                    { return !cmp(pivot, elem); });
+
+    swap_only_quicksort(first, middle1);
+    swap_only_quicksort(middle2, last);
 }
 
 template <std::random_access_iterator I>
@@ -800,42 +773,51 @@ median_of_3(I a, I b, I c) noexcept
     return b;
 }
 
-template <std::random_access_iterator I>
+template <std::random_access_iterator                                  I,
+          std::predicate<typename std::iterator_traits<I>::value_type,
+                         typename std::iterator_traits<I>::value_type> Cmp =
+              std::less<typename std::iterator_traits<I>::value_type>>
 void
-swap_only_introsort_impl(I first, I last, const unsigned depth) noexcept
+swap_only_introsort_impl(I              first,
+                         I              last,
+                         const unsigned depth,
+                         Cmp            cmp = Cmp{}) noexcept
 {
     using difference_type = std::iterator_traits<I>::difference_type;
+
     if(first == last) return;
-    const difference_type     len       = last - first;
-    constexpr difference_type ins_limit = 24;
 
-    if(len <= ins_limit) return swap_only_insertion_sort(first, last);
+    const difference_type len = last - first;
 
-    if(depth == 0u)
-    {
-        swap_only_make_heap(first, last);
-        return swap_only_heap_sort(first, last);
-    }
+    if(len <= insertion_sort_limit<I>)
+        return swap_only_insertion_sort(first, last, cmp);
+
+    if(depth == 0u) return swap_only_quicksort(first, last, cmp);
 
     I pivot = median_of_3(first, first + len / 2, last - 1);
     I m     = swap_only_partition(first,
                               last,
-                              [p = *pivot](auto val) { return val < p; });
+                              [cmp, p = *pivot](auto val)
+                              { return cmp(val, p); });
 
     swap_only_introsort_impl(first, m, depth - 1);
     swap_only_introsort_impl(m, last, depth - 1);
 }
 
-template <std::random_access_iterator I>
+template <std::random_access_iterator                                  I,
+          std::predicate<typename std::iterator_traits<I>::value_type,
+                         typename std::iterator_traits<I>::value_type> Cmp =
+              std::less<typename std::iterator_traits<I>::value_type>>
     requires(
         std::three_way_comparable<typename std::iterator_traits<I>::value_type>)
 void
-swap_only_introsort(I first, I last) noexcept
+swap_only_introsort(I first, I last, Cmp cmp = Cmp{}) noexcept
 {
     swap_only_introsort_impl(
         first,
         last,
-        2u * static_cast<unsigned>(std::floor(std::log(last - first))));
+        2u * static_cast<unsigned>(std::floor(std::log(last - first))),
+        cmp);
 }
 
 template <auto halt_pos, auto num_bins, std::integral T>

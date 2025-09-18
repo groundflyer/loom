@@ -38,59 +38,44 @@ main(int argc, char* argv[])
         return ret;
     };
 
-    const bool pts = track.check(
-        NamedTest(tm.invariant(
-                      vec_gen,
-                      [&](vec_type&& vec) noexcept
-                      {
-                          const auto p = [m = bp_gen()](unsigned val) noexcept
-                          { return val < m; };
-                          bve::swap_only_partition(vec.begin(), vec.end(), p);
-                          return std::pair{std::move(vec), p};
-                      },
-                      [](const auto& vec_p) noexcept
-                      {
-                          const auto& [vec, p] = vec_p;
-                          return std::ranges::is_partitioned(vec, p);
-                      }),
-                  "swap only partition"));
-
-    const bool iss = track.check(
+    track.dep_check(
+        std::tuple{NamedTest(tm.invariant(
+                                 vec_gen,
+                                 [&](vec_type&& vec) noexcept
+                                 {
+                                     const auto p =
+                                         [m = bp_gen()](unsigned val) noexcept
+                                     { return val < m; };
+                                     bve::swap_only_partition(vec.begin(),
+                                                              vec.end(),
+                                                              p);
+                                     return std::pair{std::move(vec), p};
+                                 },
+                                 [](const auto& vec_p) noexcept
+                                 {
+                                     const auto& [vec, p] = vec_p;
+                                     return std::ranges::is_partitioned(vec, p);
+                                 }),
+                             "swap only partition"),
+                   NamedTest(tm.invariant(
+                                 vec_gen,
+                                 [](vec_type&& vec) noexcept
+                                 {
+                                     bve::swap_only_insertion_sort(vec.begin(),
+                                                                   vec.end());
+                                     return vec;
+                                 },
+                                 std::ranges::is_sorted),
+                             "swap only insertion sort")},
         NamedTest(tm.invariant(
                       vec_gen,
                       [](vec_type&& vec) noexcept
                       {
-                          bve::swap_only_insertion_sort(vec.begin(), vec.end());
+                          bve::swap_only_quicksort(vec.begin(), vec.end());
                           return vec;
                       },
                       std::ranges::is_sorted),
-                  "swap only insertion sort"));
-
-    const auto make_heap_test =
-        NamedTest(tm.invariant(
-                      vec_gen,
-                      [](vec_type&& vec) noexcept
-                      {
-                          bve::swap_only_make_heap(vec.begin(), vec.end());
-                          return vec;
-                      },
-                      std::ranges::is_heap),
-                  "swap only make heap");
-
-    const auto heap_sort_test =
-        NamedTest(tm.invariant(
-                      vec_gen,
-                      [](vec_type&& vec) noexcept
-                      {
-                          bve::swap_only_heap_sort(vec.begin(), vec.end());
-                          return vec;
-                      },
-                      std::ranges::is_sorted),
-                  "swap only heap sort");
-
-    const bool hts = track.dep_check(make_heap_test, heap_sort_test);
-
-    const auto introsort_test =
+                  "swap only quicksort"),
         NamedTest(tm.invariant(
                       vec_gen,
                       [](vec_type&& vec) noexcept
@@ -99,13 +84,7 @@ main(int argc, char* argv[])
                           return vec;
                       },
                       std::ranges::is_sorted),
-                  "swap only instrosort");
-
-    track.dep_check(
-        std::tuple{NamedTest(constant(pts), "swap only partition"),
-                   NamedTest(constant(iss), "swap only insertion sort"),
-                   NamedTest(constant(hts), "swap only heap sort")},
-        introsort_test);
+                  "swap only introsort"));
 
     return track.ret_code();
 }
