@@ -220,4 +220,12 @@ select(Head&& head, Tail&&... tail) noexcept
     else
         return select<I - 1ul>(tail...);
 }
+
+/// @brief Creates function that always returns the value.
+template <std::copyable T>
+constexpr auto
+constant(const T val) noexcept
+{
+    return [val](auto...) noexcept { return val; };
+}
 } // namespace lucid
