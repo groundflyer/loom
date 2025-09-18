@@ -231,6 +231,7 @@ if(BUILD_TESTS)
     # viewport.cpp
     test.cpp
     threadpool.cpp
+    sort.cpp
   )
 
   # FIXME: my system fmtlib linked against stdlibc++, but we use libc++
