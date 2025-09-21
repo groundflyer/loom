@@ -113,50 +113,22 @@ test_stream(std::string_view compiler_name,
                     tp.affine(std::thread::hardware_concurrency() /
                               threads_number);
 
-            while(!mp::is_complete(ic))
-            {
-                shop.exchange(ic, oc);
-                // FIXME: Find_zero introsort tests fail in very peculiar way.
-                // This is temporal (lol) workaround. Thorough investigation is
-                // required.
-                std::this_thread::sleep_for(std::chrono::milliseconds(1));
-            }
+            while(!mp::is_complete(ic)) shop.exchange(ic, oc);
             shop.set();
         }
         shop.finalize(oc);
         ASSERT(out_fac.size() == out_val_fac.size(), "sizes don't match");
         ASSERT(out_fib.size() == out_val_fib.size(), "sizes don't match");
         ASSERT(out_fz.size() == out_val_fz.size(), "sizes don't match");
-        // {
-        //     auto _i = std::ranges::find(out_fz, output_type<fz_p>{});
-        //     while(_i != std::ranges::end(out_fz))
-        //     {
-        //         fmt::print("found zero element {} at {}\n",
-        //                    *_i,
-        //                    _i - std::ranges::begin(out_fz));
-        //         _i = std::ranges::find(_i + 1,
-        //                                std::ranges::end(out_fz),
-        //                                output_type<fz_p>{});
-        //     }
-        // }
+
         sort_outs();
 
         constexpr test::range_cmp_estimator<> rng_cmp{};
 
-        // auto report_fail = [](double r, std::string_view pr)
-        // {
-        //     if(r > 0.1) fmt::print("{} fails with {}\n", pr, r);
-        // };
-
         const double r_fac = rng_cmp(out_fac, out_val_fac);
         const double r_fib = rng_cmp(out_fib, out_val_fib);
-        const double r_fz =
-            // test::range_cmp_estimator<test::transparent_cmp<>>{}
-            rng_cmp(out_fz, out_val_fz);
+        const double r_fz  = rng_cmp(out_fz, out_val_fz);
 
-        // report_fail(r_fac, "factorial");
-        // report_fail(r_fib, "fibbonacci");
-        // report_fail(r_fz, "find zero");
         return (r_fac + r_fib + r_fz) / 3.;
     };
 

@@ -72,6 +72,8 @@ class ProxyRow
     }
 
   public:
+    using index_t = vartype<_BP>;
+
     FORBID_DEFAULT(ProxyRow);
 
     ProxyRow(const ProxyRow& other) noexcept :
@@ -104,18 +106,6 @@ class ProxyRow
         return *this;
     }
 
-    bool
-    operator==(const ProxyRow rhs) const noexcept
-    {
-        return bp() == rhs.bp();
-    }
-
-    std::strong_ordering
-    operator<=>(const ProxyRow rhs) const noexcept
-    {
-        return bp() <=> rhs.bp();
-    }
-
     template <typename Var>
     std::add_const_t<std::add_lvalue_reference_t<vartype<Var>>>
     get() const noexcept
@@ -123,7 +113,7 @@ class ProxyRow
         return Helper::template get<Var>(m_data)[m_pos];
     }
 
-    std::add_const_t<std::add_lvalue_reference_t<vartype<_BP>>>
+    std::add_const_t<std::add_lvalue_reference_t<index_t>>
     bp() const noexcept
     {
         return get<_BP>();
@@ -145,9 +135,11 @@ class ProxyRow
     friend void
     swap(ProxyRow a, ProxyRow b) noexcept
     {
-        lucid::for_each(a.m_data,
-                        [&](auto& c) noexcept
-                        { std::swap(c[a.m_pos], c[b.m_pos]); });
+        lucid::zip_with_for_each(
+            [ia = a.m_pos, ib = b.m_pos](auto& l, auto& r) noexcept
+            { std::swap(l[ia], r[ib]); },
+            a.m_data,
+            b.m_data);
     }
 };
 
@@ -683,137 +675,185 @@ class Memory
     }
 };
 
+// This specification is for fundamental types and testing sort.
+template <std::random_access_iterator I>
+struct sort_helper :
+    std::type_identity<typename std::iterator_traits<I>::value_type>,
+    std::identity
+{
+    static constexpr void
+    iter_swap(I a, I b) noexcept
+    {
+        std::iter_swap(a, b);
+    }
+};
+
+template <typename... Ts>
+struct sort_helper<MemoryIterator<Ts...>>
+{
+    using type = ProxyRow<Ts...>::index_t;
+
+    constexpr type
+    operator()(ProxyRow<Ts...> r) const noexcept
+    {
+        return r.bp();
+    }
+
+    static void
+    iter_swap(MemoryIterator<Ts...> a, MemoryIterator<Ts...> b) noexcept
+    {
+        swap(*a, *b);
+    }
+};
+
+/// @brief Implements partion that guaranteed to use only swaps.
 template <std::input_iterator                                          I,
           std::predicate<typename std::iterator_traits<I>::value_type> P>
 I
-swap_only_partition(I first, I last, P p) noexcept
+partition(I first, I last, P p) noexcept
 {
+    using helper_type = sort_helper<I>;
+
     first = std::find_if_not(first, last, p);
     if(first == last) return first;
 
-    for(auto i = std::next(first); i != last; ++i)
-        if(p(*i)) std::iter_swap(i, first++);
+    for(auto i = first + 1; i != last; ++i)
+        if(p(*i)) helper_type::iter_swap(i, first++);
 
     return first;
 }
 
-template <std::random_access_iterator                                  I,
-          std::predicate<typename std::iterator_traits<I>::value_type,
-                         typename std::iterator_traits<I>::value_type> Cmp =
-              std::less<typename std::iterator_traits<I>::value_type>>
+/// @brief Implements insertion sort that guaranteed to use only swaps.
+template <
+    std::random_access_iterator I,
+    std::predicate<typename sort_helper<I>::type, typename sort_helper<I>::type>
+        Cmp = std::less<typename sort_helper<I>::type>>
 void
-swap_only_insertion_sort(I first, I last, Cmp cmp = Cmp{}) noexcept
+insertion_sort(I first, I last, Cmp cmp = Cmp{}) noexcept
 {
-    for(auto i = std::next(first); i != last; ++i)
-        for(auto j = i; (j != first) && cmp(*j, *(std::prev(j))); --j)
-            std::iter_swap(j, std::prev(j));
+    using helper_type = sort_helper<I>;
+
+    constexpr helper_type helper{};
+
+    for(auto i = first + 1; i != last; ++i)
+        for(auto j = i; (j != first) && cmp(helper(*j), helper(*(j - 1))); --j)
+            helper_type::iter_swap(j, j - 1);
 }
 
 template <std::random_access_iterator I>
 constexpr inline std::iterator_traits<I>::difference_type insertion_sort_limit =
     24;
 
-template <std::random_access_iterator                                  I,
-          std::predicate<typename std::iterator_traits<I>::value_type,
-                         typename std::iterator_traits<I>::value_type> Cmp =
-              std::less<typename std::iterator_traits<I>::value_type>>
+/// @brief Implements quicksort that guaranteed to use only swaps.
+template <
+    std::random_access_iterator I,
+    std::predicate<typename sort_helper<I>::type, typename sort_helper<I>::type>
+        Cmp = std::less<typename sort_helper<I>::type>>
 void
-swap_only_quicksort(I first, I last, Cmp cmp = Cmp{}) noexcept
+quicksort(I first, I last, Cmp cmp = Cmp{}) noexcept
 {
+    using value_type      = std::iterator_traits<I>::value_type;
     using difference_type = std::iterator_traits<I>::difference_type;
+    using helper_type     = sort_helper<I>;
+
+    constexpr helper_type helper{};
 
     if(first == last) return;
 
     const difference_type len = std::distance(first, last);
 
-    if(len <= insertion_sort_limit<I>)
-    {
-        swap_only_insertion_sort(first, last, cmp);
-        return;
-    }
+    if(len <= insertion_sort_limit<I>) return insertion_sort(first, last, cmp);
 
-    auto pivot = *std::next(first, len / 2);
+    const auto pivot = helper(*(first + len / 2));
 
-    I middle1 =
-        swap_only_partition(first,
-                            last,
-                            [=](const auto& elem) { return cmp(elem, pivot); });
-    I middle2 = swap_only_partition(middle1,
-                                    last,
-                                    [=](const auto& elem)
-                                    { return !cmp(pivot, elem); });
+    I middle1 = bve::partition(first,
+                               last,
+                               [=](value_type elem)
+                               { return cmp(helper(elem), pivot); });
+    I middle2 = bve::partition(middle1,
+                               last,
+                               [=](value_type elem)
+                               { return !cmp(pivot, helper(elem)); });
 
-    swap_only_quicksort(first, middle1);
-    swap_only_quicksort(middle2, last);
+    quicksort(first, middle1);
+    quicksort(middle2, last);
 }
 
 template <std::random_access_iterator I>
-    requires(
-        std::three_way_comparable<typename std::iterator_traits<I>::value_type>)
+    requires(std::three_way_comparable<typename sort_helper<I>::type>)
 I
-median_of_3(I a, I b, I c) noexcept
+median_of_3(I ia, I ib, I ic) noexcept
 {
-    const bool alb = *a < *b;
-    const bool blc = *b < *c;
-    if(alb && blc) return b;
+    using helper_type = sort_helper<I>;
 
-    const bool alc  = *a < *c;
-    const bool cleb = *c <= *b;
-    if(alc && cleb) return c;
+    constexpr helper_type helper{};
 
-    const bool blea = *b <= *a;
-    if(alc && blea) return a;
+    const auto a = helper(*ia);
+    const auto b = helper(*ib);
+    const auto c = helper(*ic);
 
-    const bool clea = *c <= *a;
-    if(blc && clea) return c;
+    const bool alb = a < b;
+    const bool blc = b < c;
+    if(alb && blc) return ib;
 
-    if(clea && alb) return a;
+    const bool alc  = a < c;
+    const bool cleb = c <= b;
+    if(alc && cleb) return ic;
+
+    const bool blea = b <= a;
+    if(alc && blea) return ia;
+
+    const bool clea = c <= a;
+    if(blc && clea) return ic;
+
+    if(clea && alb) return ia;
 
     // if(cleb && blea)
-    return b;
+    return ib;
 }
 
-template <std::random_access_iterator                                  I,
-          std::predicate<typename std::iterator_traits<I>::value_type,
-                         typename std::iterator_traits<I>::value_type> Cmp =
-              std::less<typename std::iterator_traits<I>::value_type>>
+template <
+    std::random_access_iterator I,
+    std::predicate<typename sort_helper<I>::type, typename sort_helper<I>::type>
+        Cmp = std::less<typename sort_helper<I>::type>>
 void
-swap_only_introsort_impl(I              first,
-                         I              last,
-                         const unsigned depth,
-                         Cmp            cmp = Cmp{}) noexcept
+introsort_impl(I first, I last, const unsigned depth, Cmp cmp = Cmp{}) noexcept
 {
+    using value_type      = std::iterator_traits<I>::value_type;
     using difference_type = std::iterator_traits<I>::difference_type;
+    using helper_type     = sort_helper<I>;
+
+    constexpr helper_type helper{};
 
     if(first == last) return;
 
     const difference_type len = last - first;
 
-    if(len <= insertion_sort_limit<I>)
-        return swap_only_insertion_sort(first, last, cmp);
+    if(len <= insertion_sort_limit<I>) return insertion_sort(first, last, cmp);
 
-    if(depth == 0u) return swap_only_quicksort(first, last, cmp);
+    if(depth == 0u) return quicksort(first, last, cmp);
 
-    I pivot = median_of_3(first, first + len / 2, last - 1);
-    I m     = swap_only_partition(first,
-                              last,
-                              [cmp, p = *pivot](auto val)
-                              { return cmp(val, p); });
+    const auto pivot = helper(*median_of_3(first, first + len / 2, last - 1));
 
-    swap_only_introsort_impl(first, m, depth - 1);
-    swap_only_introsort_impl(m, last, depth - 1);
+    I m = bve::partition(first,
+                         last,
+                         [=](value_type val) noexcept
+                         { return cmp(helper(val), pivot); });
+
+    introsort_impl(first, m, depth - 1);
+    introsort_impl(m, last, depth - 1);
 }
 
-template <std::random_access_iterator                                  I,
-          std::predicate<typename std::iterator_traits<I>::value_type,
-                         typename std::iterator_traits<I>::value_type> Cmp =
-              std::less<typename std::iterator_traits<I>::value_type>>
-    requires(
-        std::three_way_comparable<typename std::iterator_traits<I>::value_type>)
+/// @brief Introsort that guaranteed to use only swaps.
+template <
+    std::random_access_iterator I,
+    std::predicate<typename sort_helper<I>::type, typename sort_helper<I>::type>
+        Cmp = std::less<typename sort_helper<I>::type>>
+    requires(std::three_way_comparable<typename sort_helper<I>::type>)
 void
-swap_only_introsort(I first, I last, Cmp cmp = Cmp{}) noexcept
+introsort(I first, I last, Cmp cmp = Cmp{}) noexcept
 {
-    swap_only_introsort_impl(
+    introsort_impl(
         first,
         last,
         2u * static_cast<unsigned>(std::floor(std::log(last - first))),
@@ -886,7 +926,12 @@ class SimpleSorter
     void
     sort() noexcept
     {
-        if constexpr(!singular) swap_only_introsort(m_mem.begin(), m_mem.end());
+        if constexpr(!singular)
+        {
+            introsort(m_mem.begin(), m_mem.end());
+            ASSERT(std::ranges::is_sorted(m_mem.bp()),
+                   "Block pointers aren't sorted");
+        }
     }
 };
 
@@ -921,6 +966,8 @@ class CountingSorter
     sort() noexcept
     {
         const fsize_t ret = counting_sort<num_bins, halt_pos>(*p_main, *p_aux);
+        ASSERT(std::ranges::is_sorted(p_aux->bp()),
+               "Block pointers aren't sorted");
         std::swap(p_main, p_aux);
         return ret;
     }

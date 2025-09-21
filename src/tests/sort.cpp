@@ -46,9 +46,7 @@ main(int argc, char* argv[])
                                      const auto p =
                                          [m = bp_gen()](unsigned val) noexcept
                                      { return val < m; };
-                                     bve::swap_only_partition(vec.begin(),
-                                                              vec.end(),
-                                                              p);
+                                     bve::partition(vec.begin(), vec.end(), p);
                                      return std::pair{std::move(vec), p};
                                  },
                                  [](const auto& vec_p) noexcept
@@ -56,35 +54,35 @@ main(int argc, char* argv[])
                                      const auto& [vec, p] = vec_p;
                                      return std::ranges::is_partitioned(vec, p);
                                  }),
-                             "swap only partition"),
+                             "partition"),
                    NamedTest(tm.invariant(
                                  vec_gen,
                                  [](vec_type&& vec) noexcept
                                  {
-                                     bve::swap_only_insertion_sort(vec.begin(),
-                                                                   vec.end());
+                                     bve::insertion_sort(vec.begin(),
+                                                         vec.end());
                                      return vec;
                                  },
                                  std::ranges::is_sorted),
-                             "swap only insertion sort")},
+                             "insertion sort")},
         NamedTest(tm.invariant(
                       vec_gen,
                       [](vec_type&& vec) noexcept
                       {
-                          bve::swap_only_quicksort(vec.begin(), vec.end());
+                          bve::quicksort(vec.begin(), vec.end());
                           return vec;
                       },
                       std::ranges::is_sorted),
-                  "swap only quicksort"),
+                  "quicksort"),
         NamedTest(tm.invariant(
                       vec_gen,
                       [](vec_type&& vec) noexcept
                       {
-                          bve::swap_only_introsort(vec.begin(), vec.end());
+                          bve::introsort(vec.begin(), vec.end());
                           return vec;
                       },
                       std::ranges::is_sorted),
-                  "swap only introsort"));
+                  "introsort"));
 
     return track.ret_code();
 }
