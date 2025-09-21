@@ -877,18 +877,15 @@ class Matrix
 namespace detail
 {
 template <typename T>
-struct vector_val_type
+struct vector_val_type : std::type_identity<T>
 {
-    using type = T;
 };
 
 template <typename T,
           std::size_t N,
-          template <typename, std::size_t>
-          typename Container>
-struct vector_val_type<Vector<T, N, Container>>
+          template <typename, std::size_t> typename Container>
+struct vector_val_type<Vector<T, N, Container>> : std::type_identity<T>
 {
-    using type = T;
 };
 
 template <typename T,
@@ -920,28 +917,24 @@ struct vector_dim;
 
 template <typename T,
           std::size_t N,
-          template <typename, std::size_t>
-          typename Container,
+          template <typename, std::size_t> typename Container,
           typename... Rest>
-struct vector_dim<Vector<T, N, Container>, Rest...>
+struct vector_dim<Vector<T, N, Container>, Rest...> :
+    std::integral_constant<std::size_t, N>
 {
-    static constexpr std::size_t n = N;
 };
 
 template <std::size_t N, typename T>
-struct check_dim
+struct check_dim : std::true_type
 {
-    static constexpr bool value = true;
 };
 
 template <std::size_t N1,
           typename T,
           std::size_t N2,
-          template <typename, std::size_t>
-          typename Container>
-struct check_dim<N1, Vector<T, N2, Container>>
+          template <typename, std::size_t> typename Container>
+struct check_dim<N1, Vector<T, N2, Container>> : std::bool_constant<N1 == N2>
 {
-    static constexpr bool value = N1 == N2;
 };
 
 template <typename T>
@@ -1002,8 +995,8 @@ transform_impl(const F& f,
         F,
         typename vector_val_type<
             std::tuple_element_t<Idxs, std::tuple<Vectors...>>>::type...>;
-    constexpr std::size_t N = vector_dim<Vectors...>::n;
-    static_assert((true && ... && check_dim<N, Vectors>::value),
+    constexpr std::size_t N = vector_dim<Vectors...>::value;
+    static_assert((... && check_dim<N, Vectors>::value),
                   "Vectors should have the same dimensionality");
     using pt       = promote_tuple<val_type>;
     using ret_type = typename pt::template ret_type<N>;
