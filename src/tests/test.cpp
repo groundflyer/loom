@@ -47,6 +47,6 @@ main()
                     std::pair{passing_test, passing_fuzzy},
                     passing_test);
 
-    fmt::print("14 test must fail out of total 22\n");
-    return track.total() != 22 || track.passed() != 14;
+    fmt::print("14/22 tests must pass\n");
+    return track.total() != 22 || track.passed() != 14 || track.ret_code() == 0;
 }
