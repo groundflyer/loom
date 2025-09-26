@@ -710,9 +710,10 @@ struct Positional
 #define CHECK_KEYCHAR                               \
     static_assert(is_alphadigit(Key) && Key != 'h', \
                   "Only alphanumbers except 'h' (reserved) are allowed")
-#define CHECK_KEYWORD                                                     \
-    static_assert(s.size() > 1 && keyword_ok<s> && s.view() != "help",    \
-                  "One-letter length or empty keywords are not allowed, " \
+#define CHECK_KEYWORD                                                   \
+    static_assert(s.size() > 1 && keyword_ok<s> && s.view() != "help",  \
+                  "Keyword can consists of at least two alphanumbers, " \
+                  "or '_', or '-', "                                    \
                   "('help' is reserved)")
 
 /// @brief Create an option with key @p Key and keyword @p s.
