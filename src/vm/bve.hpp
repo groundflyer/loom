@@ -900,10 +900,10 @@ counting_sort(Memory<RegTypes, RegNames, _BP, _Vector, Allocator>& in,
     return ret;
 }
 
-template <typename _Program, typename _Memory>
+template <Kernel K, typename _Memory>
 class SimpleSorter
 {
-    static constexpr bool singular = _Program::singular;
+    static constexpr bool singular = K::singular;
 
     _Memory m_mem;
 
@@ -935,11 +935,11 @@ class SimpleSorter
     }
 };
 
-template <typename _Program, typename _Memory>
+template <Kernel K, typename _Memory>
 class CountingSorter
 {
-    static constexpr auto    halt_pos = _Program::halt_pos;
-    static constexpr fsize_t num_bins = _Program::num_blocks + 1;
+    static constexpr auto    halt_pos = K::halt_pos;
+    static constexpr fsize_t num_bins = K::num_blocks + 1;
 
     _Memory  m_buf0;
     _Memory  m_buf1;
@@ -973,25 +973,25 @@ class CountingSorter
     }
 };
 
-template <typename _Program,
+template <Kernel K,
           template <typename, typename> typename _Vector = std::vector,
           template <typename> typename Allocator         = std::allocator,
-          typename Sorter = SimpleSorter<_Program,
-                                         Memory<typename _Program::reg_types,
-                                                typename _Program::reg_names,
-                                                typename _Program::bp,
-                                                _Vector,
-                                                Allocator>>>
+          typename Sorter                                = SimpleSorter<K,
+                                                                        Memory<typename K::reg_types,
+                                                                               typename K::reg_names,
+                                                                               typename K::bp,
+                                                                               _Vector,
+                                                                               Allocator>>>
 class MemoryFacade : public Sorter
 {
-    using reg_names   = _Program::reg_names;
-    using reg_types   = _Program::reg_types;
-    using bp_var      = _Program::bp;
-    using input_vars  = _Program::input_vars;
-    using output_vars = _Program::output_vars;
-    using index_t     = _Program::index_t;
+    using reg_names   = K::reg_names;
+    using reg_types   = K::reg_types;
+    using bp_var      = K::bp;
+    using input_vars  = K::input_vars;
+    using output_vars = K::output_vars;
+    using index_t     = K::index_t;
 
-    static constexpr index_t halt_pos = _Program::halt_pos;
+    static constexpr index_t halt_pos = K::halt_pos;
 
     template <typename _Memory>
     struct var_setter
@@ -1037,7 +1037,7 @@ class MemoryFacade : public Sorter
             std::forward<Args>(args)...);
 
         // reset
-        if constexpr(!_Program::singular) row.bp() = 0;
+        if constexpr(!K::singular) row.bp() = 0;
     }
 
     template <typename _ProxyRow>
@@ -1054,7 +1054,7 @@ class MemoryFacade : public Sorter
         requires(
             is_tuple_v<std::ranges::range_value_t<Input>> &&
             std::is_nothrow_convertible_v<std::ranges::range_value_t<Input>,
-                                          input_type<_Program>>)
+                                          input_type<K>>)
     std::ranges::iterator_t<Input>
     set_inputs(Input&& input) noexcept
     {
@@ -1130,14 +1130,13 @@ class MemoryFacade : public Sorter
     void
     reset() noexcept
     {
-        if constexpr(!_Program::singular)
-            std::ranges::fill(Sorter::mem().bp(), 0);
+        if constexpr(!K::singular) std::ranges::fill(Sorter::mem().bp(), 0);
     }
 
     auto
     done() noexcept
     {
-        if constexpr(!_Program::singular)
+        if constexpr(!K::singular)
             return Sorter::mem().bp().front() == halt_pos;
     }
 
@@ -1177,27 +1176,27 @@ exchange_from(_MemoryFacade& facade, Input&& input, Iter bgn) noexcept
         std::forward<Input>(input));
 }
 
-template <typename _Program,
+template <Kernel K,
           template <typename, typename> typename _Vector = std::vector,
           template <typename> typename Allocator         = std::allocator,
-          typename Sorter = SimpleSorter<_Program,
-                                         Memory<typename _Program::reg_types,
-                                                typename _Program::reg_names,
-                                                typename _Program::bp,
-                                                _Vector,
-                                                Allocator>>>
-class StreamFacade : public MemoryFacade<_Program, _Vector, Allocator, Sorter>
+          typename Sorter                                = SimpleSorter<K,
+                                                                        Memory<typename K::reg_types,
+                                                                               typename K::reg_names,
+                                                                               typename K::bp,
+                                                                               _Vector,
+                                                                               Allocator>>>
+class StreamFacade : public MemoryFacade<K, _Vector, Allocator, Sorter>
 {
-    using reg_names   = _Program::reg_names;
-    using reg_types   = _Program::reg_types;
-    using bp_var      = _Program::bp;
-    using input_vars  = _Program::input_vars;
-    using output_vars = _Program::output_vars;
-    using index_t     = _Program::index_t;
+    using reg_names   = K::reg_names;
+    using reg_types   = K::reg_types;
+    using bp_var      = K::bp;
+    using input_vars  = K::input_vars;
+    using output_vars = K::output_vars;
+    using index_t     = K::index_t;
 
-    static constexpr index_t halt_pos = _Program::halt_pos;
+    static constexpr index_t halt_pos = K::halt_pos;
 
-    using facade = MemoryFacade<_Program, _Vector, Allocator, Sorter>;
+    using facade = MemoryFacade<K, _Vector, Allocator, Sorter>;
 
   public:
     using facade::facade;
@@ -1205,7 +1204,7 @@ class StreamFacade : public MemoryFacade<_Program, _Vector, Allocator, Sorter>
     template <std::ranges::input_range Input>
         requires(
             std::is_nothrow_convertible_v<std::ranges::range_value_t<Input>,
-                                          input_type<_Program>>)
+                                          input_type<K>>)
     auto
     exchange(Input&& input) noexcept
     {
@@ -1281,30 +1280,30 @@ struct select_sorter;
 template <>
 struct select_sorter<INTROSORT>
 {
-    template <typename _Program, typename _Memory>
-    using type = SimpleSorter<_Program, _Memory>;
+    template <Kernel K, typename _Memory>
+    using type = SimpleSorter<K, _Memory>;
 };
 
 template <>
 struct select_sorter<COUNTING_SORT>
 {
-    template <typename _Program, typename _Memory>
-    using type = CountingSorter<_Program, _Memory>;
+    template <Kernel K, typename _Memory>
+    using type = CountingSorter<K, _Memory>;
 };
 
-template <typename _Program, SORT sort_method>
+template <Kernel K, SORT sort_method>
 class basic_vector_compiler
 {
-    using labelmap  = _Program::labelmap;
-    using blocks    = _Program::blocks;
-    using reg_names = _Program::reg_names;
-    using reg_types = _Program::reg_types;
-    using bp        = _Program::bp;
-    using vars      = _Program::variables;
-    using index_t   = _Program::index_t;
+    using labelmap  = K::labelmap;
+    using blocks    = K::blocks;
+    using reg_names = K::reg_names;
+    using reg_types = K::reg_types;
+    using bp        = K::bp;
+    using vars      = K::variables;
+    using index_t   = K::index_t;
 
-    static constexpr bool    singular = _Program::singular;
-    static constexpr index_t halt_pos = _Program::halt_pos;
+    static constexpr bool    singular = K::singular;
+    static constexpr index_t halt_pos = K::halt_pos;
 
     template <typename C>
     using compile_block = standard_compiler<C, labelmap, vector_eval>;
@@ -1315,20 +1314,17 @@ class basic_vector_compiler
 
     static constexpr SORT final_sort_method =
         singular ? INTROSORT : sort_method;
-    using sorter =
-        select_sorter<final_sort_method>::template type<_Program, memory>;
+    using sorter = select_sorter<final_sort_method>::template type<K, memory>;
 
-    using memory_facade =
-        MemoryFacade<_Program, std::vector, std::allocator, sorter>;
-    using stream_facade =
-        StreamFacade<_Program, std::vector, std::allocator, sorter>;
+    using memory_facade = MemoryFacade<K, std::vector, std::allocator, sorter>;
+    using stream_facade = StreamFacade<K, std::vector, std::allocator, sorter>;
 
     class single_block_evaluator : public memory_facade
     {
         static constexpr typelist::head<compiled_blocks> block{};
 
       public:
-        using program = _Program;
+        using program = K;
         using memory_facade::memory_facade;
 
         template <bool zip_outputs = false, typename... Args>
@@ -1348,7 +1344,7 @@ class basic_vector_compiler
     {
         static constexpr typename typelist::to<compiled_blocks, std::tuple>
                               blocks{};
-        static constexpr auto halt_pos = _Program::halt_pos;
+        static constexpr auto halt_pos = K::halt_pos;
 
         void
         operator()(memory& mem) const noexcept
@@ -1407,7 +1403,7 @@ class basic_vector_compiler
 #endif
 
       public:
-        using program = _Program;
+        using program = K;
         using memory_facade::memory_facade;
 
         template <bool zip_outputs = false, typename... Args>
@@ -1430,15 +1426,15 @@ class basic_vector_compiler
     };
 
   public:
-    using function = std::
-        conditional_t<_Program::singular, single_block_evaluator, evaluator>;
+    using function =
+        std::conditional_t<K::singular, single_block_evaluator, evaluator>;
 
     class stream : public stream_facade
     {
-        static_assert(!_Program::singular);
+        static_assert(!K::singular);
 
       public:
-        using program = _Program;
+        using program = K;
         using stream_facade::stream_facade;
 
         void
@@ -1449,10 +1445,10 @@ class basic_vector_compiler
     };
 };
 
-template <typename _Program, SORT sort_method>
-using function = basic_vector_compiler<_Program, sort_method>::function;
+template <Kernel K, SORT sort_method>
+using function = basic_vector_compiler<K, sort_method>::function;
 
-template <typename _Program, SORT sort_method>
-    requires(!_Program::singular)
-using stream = basic_vector_compiler<_Program, sort_method>::stream;
+template <Kernel K, SORT sort_method>
+    requires(!K::singular)
+using stream = basic_vector_compiler<K, sort_method>::stream;
 } // namespace lucid::bve

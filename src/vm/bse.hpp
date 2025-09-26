@@ -49,19 +49,18 @@ class Memory
     }
 };
 
-template <typename _Program,
+template <Kernel K,
           template <typename, typename, typename> typename _Memory = Memory,
           typename GetResetVal =
-              decltype([]() constexpr noexcept -> _Program::index_t
-                       { return 0; })>
+              decltype([]() constexpr noexcept -> K::index_t { return 0; })>
 class MemoryFacade
 {
-    using reg_names   = _Program::reg_names;
-    using reg_types   = _Program::reg_types;
-    using bp_var      = _Program::bp;
-    using input_vars  = _Program::input_vars;
-    using output_vars = _Program::output_vars;
-    using index_t     = _Program::index_t;
+    using reg_names   = K::reg_names;
+    using reg_types   = K::reg_types;
+    using bp_var      = K::bp;
+    using input_vars  = K::input_vars;
+    using output_vars = K::output_vars;
+    using index_t     = K::index_t;
 
     static constexpr auto reset_val = GetResetVal{}();
 
@@ -71,7 +70,7 @@ class MemoryFacade
     reset() noexcept
     {
         // no-op when singular
-        if constexpr(!_Program::singular) memory.bp() = reset_val;
+        if constexpr(!K::singular) memory.bp() = reset_val;
     }
 
   public:
@@ -108,24 +107,24 @@ class MemoryFacade
     bp() const noexcept
     {
         // no-op when singular
-        if constexpr(!_Program::singular) return memory.bp();
+        if constexpr(!K::singular) return memory.bp();
     }
 };
 
-template <typename _Program>
+template <typename K>
 class basic_scalar_compiler
 {
-    using labelmap = _Program::labelmap;
-    using blocks   = _Program::blocks;
+    using labelmap = K::labelmap;
+    using blocks   = K::blocks;
 
-    static constexpr auto halt_pos = _Program::halt_pos;
+    static constexpr auto halt_pos = K::halt_pos;
 
     template <typename C>
     using compile_block = standard_compiler<C, labelmap>;
 
     using compiled_blocks = typelist::map<compile_block, blocks>;
 
-    using facade = MemoryFacade<_Program>;
+    using facade = MemoryFacade<K>;
 
     class single_block_evaluator : facade
     {
@@ -164,11 +163,10 @@ class basic_scalar_compiler
     };
 
   public:
-    using function = std::conditional_t<_Program::singular,
-                                        single_block_evaluator,
-                                        simple_evaluator>;
+    using function = std::
+        conditional_t<K::singular, single_block_evaluator, simple_evaluator>;
 };
 
-template <typename _Program>
-using function = basic_scalar_compiler<_Program>::function;
+template <typename K>
+using function = basic_scalar_compiler<K>::function;
 } // namespace lucid::bse

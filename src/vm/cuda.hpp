@@ -1010,22 +1010,22 @@ class chunk_ranges :
     }
 };
 
-template <typename _Program>
+template <Kernel K>
 class MemoryFacade
 {
   protected:
-    using reg_names   = _Program::reg_names;
-    using reg_types   = _Program::reg_types;
-    using input_vars  = _Program::input_vars;
-    using output_vars = _Program::output_vars;
-    using vars        = _Program::variables;
-    using bp_var      = _Program::bp;
-    using index_t        = _Program::index_t;
+    using reg_names   = K::reg_names;
+    using reg_types   = K::reg_types;
+    using input_vars  = K::input_vars;
+    using output_vars = K::output_vars;
+    using vars        = K::variables;
+    using bp_var      = K::bp;
+    using index_t     = K::index_t;
 
     using memory = bve::
         Memory<reg_types, reg_names, bp_var, SimpleVector, DeviceAllocator>;
 
-    static constexpr bool singular = _Program::singular;
+    static constexpr bool singular = K::singular;
 
     template <typename T>
     using hv_t = SimpleVector<T, HostAllocator<T>>;
@@ -1033,8 +1033,8 @@ class MemoryFacade
     template <typename Types>
     using tmp_vecs = typelist::to<typelist::map<hv_t, Types>, unique_tuple>;
 
-    using in_tmp_vecs_t  = tmp_vecs<input_types<_Program>>;
-    using out_tmp_vecs_t = tmp_vecs<output_types<_Program>>;
+    using in_tmp_vecs_t  = tmp_vecs<input_types<K>>;
+    using out_tmp_vecs_t = tmp_vecs<output_types<K>>;
 
     memory mem;
 
@@ -1045,7 +1045,7 @@ class MemoryFacade
         requires(
             is_tuple_v<std::ranges::range_value_t<Input>> &&
             std::is_nothrow_convertible_v<std::ranges::range_value_t<Input>,
-                                          input_type<_Program>>)
+                                          input_type<K>>)
     std::ranges::iterator_t<Input>
     set_inputs(Input&& input) noexcept
     {
@@ -1140,8 +1140,8 @@ class MemoryFacade
         else
         {
             // FIXME: too many copies. Use pinned memory buffer.
-            const gsize_t size = std::get<0>(buffers.size());
-            std::vector<output_type<_Program>> ret(size);
+            const gsize_t               size = std::get<0>(buffers.size());
+            std::vector<output_type<K>> ret(size);
             for(gsize_t i = 0; i < size; ++i)
                 typelist::for_each(typelist::enumerate<output_vars>{},
                                    [&]<typename VarNum>() noexcept
@@ -1195,18 +1195,18 @@ class MemoryFacade
     }
 };
 
-template <typename _Program>
-class StreamFacade : public MemoryFacade<_Program>
+template <Kernel K>
+class StreamFacade : public MemoryFacade<K>
 {
-    using facade      = MemoryFacade<_Program>;
+    using facade      = MemoryFacade<K>;
     using input_vars  = facade::input_vars;
     using output_vars = facade::output_vars;
     using bp_var      = facade::bp_var;
-    using index_t        = facade::index_t;
+    using index_t     = facade::index_t;
     using memory      = facade::memory;
 
-    static constexpr gsize_t num_chunks = _Program::num_blocks + 1;
-    static constexpr index_t    halt_pos   = _Program::halt_pos;
+    static constexpr gsize_t num_chunks = K::num_blocks + 1;
+    static constexpr index_t halt_pos   = K::halt_pos;
 
     template <typename T>
     using buffer_t = SimpleVector<T, HostAllocator<T>>;
@@ -1310,21 +1310,21 @@ class StreamFacade : public MemoryFacade<_Program>
     explicit StreamFacade(gsize_t n) : facade(n), m_inbuf(n), m_outbuf(n) {}
 };
 
-template <typename _Program>
+template <Kernel K>
 class cuda_evaluator
 {
-    using labelmap    = _Program::labelmap;
-    using blocks       = _Program::blocks;
-    using reg_names   = _Program::reg_names;
-    using reg_types   = _Program::reg_types;
-    using bp          = _Program::bp;
-    using index_t        = _Program::index_t;
-    using vars        = _Program::variables;
-    using input_vars  = _Program::input_vars;
-    using output_vars = _Program::output_vars;
+    using labelmap    = K::labelmap;
+    using blocks      = K::blocks;
+    using reg_names   = K::reg_names;
+    using reg_types   = K::reg_types;
+    using bp          = K::bp;
+    using index_t     = K::index_t;
+    using vars        = K::variables;
+    using input_vars  = K::input_vars;
+    using output_vars = K::output_vars;
 
-    static constexpr gsize_t num_chunks = _Program::num_blocks + 1;
-    static constexpr auto    halt_pos   = _Program::halt_pos;
+    static constexpr gsize_t num_chunks = K::num_blocks + 1;
+    static constexpr auto    halt_pos   = K::halt_pos;
 
     template <typename C>
     using compile_block = cuda::compiler<C, labelmap, bp>;
@@ -1333,8 +1333,8 @@ class cuda_evaluator
 
     using memory =
         bve::Memory<reg_types, reg_names, bp, SimpleVector, DeviceAllocator>;
-    using memory_facade = MemoryFacade<_Program>;
-    using stream_facade = StreamFacade<_Program>;
+    using memory_facade = MemoryFacade<K>;
+    using stream_facade = StreamFacade<K>;
 
     class single_block_evaluator : public memory_facade
     {
@@ -1446,17 +1446,17 @@ class cuda_evaluator
     };
 
   public:
-    using function = std::
-        conditional_t<_Program::singular, single_block_evaluator, evaluator>;
+    using function =
+        std::conditional_t<K::singular, single_block_evaluator, evaluator>;
 
     class stream : public stream_facade
     {
-        static_assert(!_Program::singular);
+        static_assert(!K::singular);
 
         visitor step;
 
       public:
-        using program = _Program;
+        using program = K;
 
         FORBID_ALL(stream);
 
@@ -1515,7 +1515,7 @@ class cuda_evaluator
         template <std::ranges::input_range Input>
             requires(
                 std::is_nothrow_convertible_v<std::ranges::range_value_t<Input>,
-                                              input_type<_Program>>)
+                                              input_type<K>>)
         auto
         exchange(Input&& input) noexcept
         {
@@ -1562,10 +1562,10 @@ class cuda_evaluator
     };
 };
 
-template <typename _Program>
-using function = cuda_evaluator<_Program>::function;
+template <Kernel K>
+using function = cuda_evaluator<K>::function;
 
-template <typename _Program>
-    requires(!_Program::singular)
-using stream = cuda_evaluator<_Program>::stream;
+template <Kernel K>
+    requires(!K::singular)
+using stream = cuda_evaluator<K>::stream;
 } // namespace lucid::cuda

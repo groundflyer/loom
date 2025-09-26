@@ -806,9 +806,11 @@ struct same_size_union<Union<Ts...>> :
 {
 };
 
-/// @brief Program representation.
-template <typename InputVars, typename Statements, typename OutputVars>
-struct Program
+/// @brief Kernel preparation.
+template <typelist::List InputVars,
+          typelist::List Statements,
+          typelist::List OutputVars>
+struct kernel_blank
 {
     using input_vars  = InputVars;
     using output_vars = OutputVars;
@@ -878,36 +880,50 @@ struct Program
                            ensure_last_jumps_t<blocks_statements, labels>>;
 };
 
+template <typename K>
+struct is_kernel : std::false_type
+{
+};
+
+template <typename... _>
+struct is_kernel<kernel_blank<_...>> : std::true_type
+{
+};
+
+/// @brief Kernel ready to compile.
+template <typename T>
+concept Kernel = is_kernel<T>::value;
+
 /// @brief Helper shortcut type_sequence with input types of program @p P.
-/// @tparam P program.
-template <typename P>
-using input_types = typelist::map<vartype, typename P::input_vars>;
+/// @tparam K kernel.
+template <Kernel K>
+using input_types = typelist::map<vartype, typename K::input_vars>;
 
 /// @brief Helper shortcut type_sequence with output types of program @p P.
-/// @tparam P program.
-template <typename P>
-using output_types = typelist::map<vartype, typename P::output_vars>;
+/// @tparam K kernel.
+template <Kernel K>
+using output_types = typelist::map<vartype, typename K::output_vars>;
 
 /// @brief The type accepted to input for the program @p P.
-/// @tparam P program.
-template <typename P>
-using input_type = typelist::maybe_to<input_types<P>, std::tuple>;
+/// @tparam K kernel.
+template <Kernel K>
+using input_type = typelist::maybe_to<input_types<K>, std::tuple>;
 
 /// @brief The resulting type of the program @p P.
-/// @tparam P program.
-template <typename P>
-using output_type = typelist::maybe_to<output_types<P>, std::tuple>;
+/// @tparam K kernel.
+template <Kernel K>
+using output_type = typelist::maybe_to<output_types<K>, std::tuple>;
 
 /// @brief Helper function. Ensures that the result value is valid block number
 /// or halt position.
-/// @tparam P program.
-template <typename P>
-static constexpr P::index_t
-fit_block_index(const typename P::index_t c) noexcept
+/// @tparam K kernel.
+template <Kernel K>
+static constexpr K::index_t
+fit_block_index(const typename K::index_t c) noexcept
 {
-    using index_t                = P::index_t;
-    constexpr index_t num_blocks = P::num_blocks;
-    constexpr index_t halt_pos   = P::halt_pos;
+    using index_t                = K::index_t;
+    constexpr index_t num_blocks = K::num_blocks;
+    constexpr index_t halt_pos   = K::halt_pos;
 
     return c < num_blocks ? c : halt_pos;
 }

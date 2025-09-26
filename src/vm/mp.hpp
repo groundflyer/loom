@@ -48,14 +48,14 @@ constexpr inline std::size_t num_workers = NUM_THREADS;
 constexpr inline std::size_t num_workers = dynamic_size;
 #endif
 
-template <typename _Program,
+template <Kernel K,
           template <typename> typename StreamCompiler,
           typename Lock = std::mutex>
 struct Context
 {
-    StreamCompiler<_Program> stream;
-    Lock                     lock; // protects sorting vs. exchange
-    bool                     need_sort = false;
+    StreamCompiler<K> stream;
+    Lock              lock; // protects sorting vs. exchange
+    bool              need_sort = false;
 
     union alignas(cache_line_size)
     {

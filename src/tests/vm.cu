@@ -59,17 +59,17 @@ main(int argc, char* argv[])
 
     // wrap tests to reuse memory
     auto test_function =
-        [&]<typename P>(P, auto& g, auto val, std::string_view name) noexcept
+        [&]<Kernel K>(K, auto& g, auto val, std::string_view name) noexcept
     {
-        cuda::function<P> func(vector_size);
+        cuda::function<K> func(vector_size);
         return track.check(
             NamedTest(tm.rng_with_scalar_ref(g, func, val), name));
     };
 
     auto test_stream =
-        [&]<typename P>(P, auto& g, auto val, std::string_view name) noexcept
+        [&]<Kernel K>(K, auto& g, auto val, std::string_view name) noexcept
     {
-        cuda::stream<P> stream(stream_size);
+        cuda::stream<K> stream(stream_size);
         return track.check(
             NamedTest(tm.rng_with_scalar_ref(g, StreamWrapper(&stream), val),
                       name));

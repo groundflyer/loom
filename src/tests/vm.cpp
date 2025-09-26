@@ -22,7 +22,7 @@
 using namespace lucid;
 using namespace lucid::test;
 
-template <typename P, simd::STITCH stitch, simd::SORT sort_method, bool async>
+template <Kernel K, simd::STITCH stitch, simd::SORT sort_method, bool async>
 struct StreamPair
 {
     std::string
@@ -34,7 +34,7 @@ struct StreamPair
                            async ? " async" : "");
     }
 
-    using stream_type = simd::stream<P, stitch, sort_method, async>;
+    using stream_type = simd::stream<K, stitch, sort_method, async>;
 
     stream_type                stream;
     StreamWrapper<stream_type> wrapper{&stream};
@@ -42,20 +42,17 @@ struct StreamPair
     StreamPair(unsigned n) noexcept : stream(n) {}
 };
 
-template <typename P,
-          simd::SORT __sort,
-          bool       __async,
-          simd::STITCH... __stitches>
+template <Kernel K, simd::SORT __sort, bool __async, simd::STITCH... __stitches>
 struct stream_product_stitches
 {
-    using type = type_sequence<StreamPair<P, __stitches, __sort, __async>...>;
+    using type = type_sequence<StreamPair<K, __stitches, __sort, __async>...>;
 };
 
-template <typename P, bool __async, simd::SORT... __sorts>
+template <Kernel K, bool __async, simd::SORT... __sorts>
 struct stream_product_sorts
 {
     using type =
-        type_sequence<typename stream_product_stitches<P,
+        type_sequence<typename stream_product_stitches<K,
                                                        __sorts,
                                                        __async,
                                                        simd::N_ORDER,
@@ -63,37 +60,37 @@ struct stream_product_sorts
                                                        simd::MASKED>::type...>;
 };
 
-template <typename P, bool... __asyncs>
+template <Kernel K, bool... __asyncs>
 struct stream_product_asyncs
 {
     using type = type_sequence<
-        typename stream_product_sorts<P,
+        typename stream_product_sorts<K,
                                       __asyncs,
                                       simd::bve_INTROSORT,
                                       simd::bve_COUNTING_SORT,
                                       simd::COUNTING_SORT>::type...>;
 };
 
-template <typename P>
+template <Kernel K>
 struct stream_product
 {
     using streams =
-        typelist::flatten<typename stream_product_asyncs<P, false, true>::type>;
+        typelist::flatten<typename stream_product_asyncs<K, false, true>::type>;
 
     using tuple_type = typelist::to<streams, unique_tuple>;
 };
 
-template <typename P, bool complex>
+template <Kernel K, bool complex>
 struct StandardState;
 
-template <typename P>
-struct StandardState<P, false>
+template <Kernel K>
+struct StandardState<K, false>
 {
-    bse::function<P>                       bse_func;
-    bve::function<P, bve::SORT::INTROSORT> bve_func_is;
+    bse::function<K>                       bse_func;
+    bve::function<K, bve::SORT::INTROSORT> bve_func_is;
 
-    simd::function<P, simd::N_ORDER, simd::bve_INTROSORT>    simd_func_N_is;
-    simd::function<P, simd::MINIKERNEL, simd::bve_INTROSORT> simd_func_m_is;
+    simd::function<K, simd::N_ORDER, simd::bve_INTROSORT>    simd_func_N_is;
+    simd::function<K, simd::MINIKERNEL, simd::bve_INTROSORT> simd_func_m_is;
 
     StandardState(unsigned n) noexcept :
         bve_func_is(n), simd_func_N_is(n), simd_func_m_is(n)
@@ -101,29 +98,29 @@ struct StandardState<P, false>
     }
 };
 
-template <typename P>
-struct StandardState<P, true> : StandardState<P, false>
+template <Kernel K>
+struct StandardState<K, true> : StandardState<K, false>
 {
     static constexpr unsigned d = 8; // divisor
 
-    bve::function<P, bve::COUNTING_SORT> bve_func_cs;
+    bve::function<K, bve::COUNTING_SORT> bve_func_cs;
 
-    bve::stream<P, bve::INTROSORT>     bve_stream_is;
-    bve::stream<P, bve::COUNTING_SORT> bve_stream_cs;
+    bve::stream<K, bve::INTROSORT>     bve_stream_is;
+    bve::stream<K, bve::COUNTING_SORT> bve_stream_cs;
 
-    StreamWrapper<bve::stream<P, bve::INTROSORT>> bve_stream_is_w{
+    StreamWrapper<bve::stream<K, bve::INTROSORT>> bve_stream_is_w{
         &bve_stream_is};
-    StreamWrapper<bve::stream<P, bve::COUNTING_SORT>> bve_stream_cs_w{
+    StreamWrapper<bve::stream<K, bve::COUNTING_SORT>> bve_stream_cs_w{
         &bve_stream_cs};
 
-    simd::function<P, simd::N_ORDER, simd::COUNTING_SORT>    simd_func_N_cs;
-    simd::function<P, simd::MINIKERNEL, simd::COUNTING_SORT> simd_func_m_cs;
+    simd::function<K, simd::N_ORDER, simd::COUNTING_SORT>    simd_func_N_cs;
+    simd::function<K, simd::MINIKERNEL, simd::COUNTING_SORT> simd_func_m_cs;
 
-    using sp = stream_product<P>;
+    using sp = stream_product<K>;
 
     typename sp::tuple_type simd_streams;
 
-    using base = StandardState<P, false>;
+    using base = StandardState<K, false>;
 
     StandardState(unsigned n) noexcept :
         base(n), bve_func_cs(n), bve_stream_is(n / d), bve_stream_cs(n / d),
@@ -144,23 +141,23 @@ struct StandardTestSuite
     bool
     operator()(Track& track, ParmTestMaker tm, RandomState& rs) const noexcept
     {
-        using p_t          = P<T>;
+        using k_t          = P<T>;
         constexpr auto  ti = TypeInfo<T>::chars;
         constexpr GM<T> gm{};
         constexpr V     v{};
 
         const unsigned vector_size = tm.num_runs;
 
-        StandardState<p_t, complex> state(vector_size);
+        StandardState<k_t, complex> state(vector_size);
 
         auto g = gm(rs);
 
         auto get_tfn = [&]<typename Test>(Test&& t) noexcept
         {
             if constexpr(std::is_same_v<std::remove_cvref_t<Test>,
-                                        bve::function<p_t, bve::INTROSORT>> ||
+                                        bve::function<k_t, bve::INTROSORT>> ||
                          std::is_same_v<std::remove_cvref_t<Test>,
-                                        bve::function<p_t, bve::COUNTING_SORT>>)
+                                        bve::function<k_t, bve::COUNTING_SORT>>)
                 return tm.rng_with_scalar_ref(g,
                                               state.bve_func_is,
                                               state.bse_func);
@@ -261,7 +258,7 @@ struct SimpleSIMDSuite
     bool
     operator()(Track& track, ParmTestMaker tm, RandomState& rs) const noexcept
     {
-        using p_t         = P<T>;
+        using k_t         = P<T>;
         constexpr auto ti = TypeInfo<T>::chars;
 
         constexpr GM<T> gm{};
@@ -269,9 +266,9 @@ struct SimpleSIMDSuite
 
         const unsigned vector_size = tm.num_runs;
 
-        simd::function<p_t, simd::N_ORDER, simd::bve_INTROSORT> simd_N(
+        simd::function<k_t, simd::N_ORDER, simd::bve_INTROSORT> simd_N(
             vector_size);
-        simd::function<p_t, simd::MINIKERNEL, simd::bve_INTROSORT> simd_m(
+        simd::function<k_t, simd::MINIKERNEL, simd::bve_INTROSORT> simd_m(
             vector_size);
 
         return track.check(NamedTest(

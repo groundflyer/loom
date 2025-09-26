@@ -38,13 +38,21 @@ struct mock_program
     static constexpr index_t halt_pos   = static_cast<index_t>(-1);
 };
 
-template <typename P>
+namespace lucid
+{
+template <typename Index, Index _>
+struct is_kernel<mock_program<Index, _>> : std::true_type
+{
+};
+} // namespace lucid
+
+template <Kernel K>
 void
 test_set(Track& track, ParmTestMaker tm, RandomState& rs) noexcept
 {
-    using index_t = P::index_t;
+    using index_t = K::index_t;
 
-    constexpr index_t     num_blocks = P::num_blocks;
+    constexpr index_t     num_blocks = K::num_blocks;
     constexpr std::size_t N          = simd::native_vector_extent_v<index_t>;
     constexpr auto        ti         = TypeInfo<index_t>::chars;
 
@@ -55,14 +63,14 @@ test_set(Track& track, ParmTestMaker tm, RandomState& rs) noexcept
     auto gen = [g = rs.make_gen<index_t>(0, num_blocks)]() mutable noexcept
     {
         arr_t ret;
-        for(std::size_t i = 0; i < N; ++i) ret[i] = fit_block_index<P>(g());
+        for(std::size_t i = 0; i < N; ++i) ret[i] = fit_block_index<K>(g());
         return ret;
     };
 
     auto test = [](const arr_t& a) noexcept
     {
         const vec_t v = a2v(a);
-        return simd::block_set<P, N>{v};
+        return simd::block_set<K, N>{v};
     };
 
     track.check(NamedTest(tm.test(gen,
@@ -147,11 +155,11 @@ struct helper<std::tuple<Ts...>, N>
     };
 };
 
-template <typename P, std::size_t N>
+template <Kernel K, std::size_t N>
 class program_types
 {
-    using hi = helper<input_type<P>, N>;
-    using ho = helper<output_type<P>, N>;
+    using hi = helper<input_type<K>, N>;
+    using ho = helper<output_type<K>, N>;
 
   public:
     using input_array  = hi::array_type;
@@ -205,8 +213,8 @@ struct StandardTestSuite
     {
         constexpr std::size_t N = simd::native_vector_extent_v<T>;
 
-        using p_t     = P<T>;
-        using types   = program_types<p_t, N>;
+        using k_t     = P<T>;
+        using types   = program_types<k_t, N>;
         using in_vec  = types::input_simd;
         using out_vec = types::output_simd;
         using cmp_t   = types::cmp;
@@ -234,7 +242,7 @@ struct StandardTestSuite
             return ret;
         };
 
-        simd::embedded_function<p_t> test;
+        simd::embedded_function<k_t> test;
         return track.check(
             NamedTest{tm.with_ref(gen, test, ref, cmp),
                       fmt::format("{}: {}[{}]", name.view(), ti, N)});
@@ -254,8 +262,8 @@ struct RootFindingSuite
 
         constexpr std::size_t N = simd::native_vector_extent_v<T>;
 
-        using p_t     = cubic_fz_program<T, errt>;
-        using types   = program_types<p_t, N>;
+        using k_t     = cubic_fz_program<T, errt>;
+        using types   = program_types<k_t, N>;
         using in_vec  = types::input_simd;
         using out_vec = types::output_simd;
         using cmp_t   = types::cmp;
@@ -288,7 +296,7 @@ struct RootFindingSuite
             return ret;
         };
 
-        simd::embedded_function<p_t> test;
+        simd::embedded_function<k_t> test;
         return track.check(
             NamedFuzzyTest{tm.fuzzy_with_ref(gen, test, ref, cmp),
                            fmt::format("root finding: {}[{}]", ti, N),

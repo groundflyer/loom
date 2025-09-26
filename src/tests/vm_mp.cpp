@@ -175,11 +175,11 @@ struct make_simd_context
                            sort_name<sort_method>::chars);
     }
 
-    template <typename P>
-    using compiler = simd::stream<P, stitch, sort_method, true>;
+    template <Kernel K>
+    using compiler = simd::stream<K, stitch, sort_method, true>;
 
-    template <typename P>
-    using context = mp::Context<P, compiler>;
+    template <Kernel K>
+    using context = mp::Context<K, compiler>;
 };
 
 template <simd::STITCH stitch,

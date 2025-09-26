@@ -999,19 +999,19 @@ popcnt(const packed_vector<T, N> vec) noexcept
 /// vector mask. If @p ret_sum is set, the second value is the number of
 /// repetitions of the block number in the input.
 ///
-/// @tparam P program to make set for.
+/// @tparam K kernel to make set for.
 /// @tparam N vector width.
 /// @tparam ret_sum if enabled iterated value is pair consisting of block
 /// pointer and the number of repetitions of this block, otherwise the latter
 /// value is vector mask fot this block.
-template <typename P, fsize_t N, bool ret_sum = false>
-class block_set : public std::ranges::view_interface<block_set<P, N, ret_sum>>
+template <Kernel K, fsize_t N, bool ret_sum = false>
+class block_set : public std::ranges::view_interface<block_set<K, N, ret_sum>>
 {
-    using index_t        = P::index_t;
+    using index_t        = K::index_t;
     using index_vector_t = packed_vector<index_t, N>;
 
-    static constexpr index_t num_blocks = P::num_blocks;
-    static constexpr index_t halt_pos   = P::halt_pos;
+    static constexpr index_t num_blocks = K::num_blocks;
+    static constexpr index_t halt_pos   = K::halt_pos;
 
     const index_vector_t m_bps;
     const index_t        m_init_pos{};
@@ -1028,7 +1028,7 @@ class block_set : public std::ranges::view_interface<block_set<P, N, ret_sum>>
         static _FORCE_INLINE index_t
         fit_inc(const index_t i) noexcept
         {
-            return fit_block_index<P>(i + static_cast<index_t>(1));
+            return fit_block_index<K>(i + static_cast<index_t>(1));
         }
 
         _FORCE_INLINE bool
@@ -1118,22 +1118,22 @@ class block_set : public std::ranges::view_interface<block_set<P, N, ret_sum>>
 
 /// @brief Vectorized counting sort.
 /// @return number of halted blocks.
-template <typename P, typename _Memory>
+template <Kernel K, typename _Memory>
 fsize_t
 counting_sort(_Memory& in, _Memory& out) noexcept
 {
     ASSERT(in.size() == out.size(), "Sizes must match");
 
-    using index_t = P::index_t;
+    using index_t = K::index_t;
 
-    constexpr fsize_t num_bins = P::num_blocks + 1;
+    constexpr fsize_t num_bins = K::num_blocks + 1;
     constexpr fsize_t N        = native_vector_extent_v<index_t>;
 
     ASSERT(in.size() % N == 0, "Size be aligned to vector width");
 
     using vector_index_t = packed_vector<index_t, N>;
 
-    constexpr index_t halt_pos = P::halt_pos;
+    constexpr index_t halt_pos = K::halt_pos;
 
     index_t bins[num_bins] = {};
 
@@ -1142,7 +1142,7 @@ counting_sort(_Memory& in, _Memory& out) noexcept
     {
         const vector_index_t bps =
             load<N>(in.template view<N>(pos).bp().data());
-        for(const auto [bp, sum]: block_set<P, N, true>(bps))
+        for(const auto [bp, sum]: block_set<K, N, true>(bps))
             bins[bve::fit_in_bins<halt_pos, num_bins>(bp)] += sum;
     }
 
@@ -1160,7 +1160,7 @@ counting_sort(_Memory& in, _Memory& out) noexcept
     return ret;
 }
 
-template <typename _Program, typename _Memory>
+template <Kernel K, typename _Memory>
 class CountingSorter
 {
     _Memory  m_buf0;
@@ -1187,7 +1187,7 @@ class CountingSorter
     auto
     sort() noexcept
     {
-        const auto ret = counting_sort<_Program>(*p_main, *p_aux);
+        const auto ret = counting_sort<K>(*p_main, *p_aux);
         std::swap(p_main, p_aux);
         return ret;
     }
@@ -1198,13 +1198,13 @@ struct is_counting_sorter : std::false_type
 {
 };
 
-template <typename P, typename M>
-struct is_counting_sorter<bve::CountingSorter<P, M>> : std::true_type
+template <Kernel K, typename M>
+struct is_counting_sorter<bve::CountingSorter<K, M>> : std::true_type
 {
 };
 
-template <typename P, typename M>
-struct is_counting_sorter<CountingSorter<P, M>> : std::true_type
+template <Kernel K, typename M>
+struct is_counting_sorter<CountingSorter<K, M>> : std::true_type
 {
 };
 
@@ -1221,45 +1221,45 @@ struct select_sorter;
 template <>
 struct select_sorter<bve_INTROSORT>
 {
-    template <typename _Program, typename _Memory>
-    using type = bve::SimpleSorter<_Program, _Memory>;
+    template <Kernel K, typename _Memory>
+    using type = bve::SimpleSorter<K, _Memory>;
 };
 
 template <>
 struct select_sorter<bve_COUNTING_SORT>
 {
-    template <typename _Program, typename _Memory>
-    using type = bve::CountingSorter<_Program, _Memory>;
+    template <Kernel K, typename _Memory>
+    using type = bve::CountingSorter<K, _Memory>;
 };
 
 template <>
 struct select_sorter<COUNTING_SORT>
 {
-    template <typename _Program, typename _Memory>
-    using type = CountingSorter<_Program, _Memory>;
+    template <Kernel K, typename _Memory>
+    using type = CountingSorter<K, _Memory>;
 };
 
 /// @brief Stream facade that allows concurrent exchange/computation.
-template <typename _Program,
+template <Kernel K,
           template <typename, typename> typename _Vector,
           template <typename> typename Allocator,
           typename Sorter>
     requires(cache_line_size % simd_width == 0)
 class ConcurrentStreamFacade :
-    public bve::MemoryFacade<_Program, _Vector, Allocator, Sorter>
+    public bve::MemoryFacade<K, _Vector, Allocator, Sorter>
 {
-    using reg_names   = _Program::reg_names;
-    using reg_types   = _Program::reg_types;
-    using bp_var      = _Program::bp;
-    using input_vars  = _Program::input_vars;
-    using output_vars = _Program::output_vars;
-    using index_t     = _Program::index_t;
+    using reg_names   = K::reg_names;
+    using reg_types   = K::reg_types;
+    using bp_var      = K::bp;
+    using input_vars  = K::input_vars;
+    using output_vars = K::output_vars;
+    using index_t     = K::index_t;
 
-    static constexpr index_t halt_pos  = _Program::halt_pos;
+    static constexpr index_t halt_pos  = K::halt_pos;
     static constexpr fsize_t npos      = static_cast<fsize_t>(-1);
     static constexpr fsize_t step_size = cache_line_capacity_v<index_t>;
 
-    using facade = bve::MemoryFacade<_Program, _Vector, Allocator, Sorter>;
+    using facade = bve::MemoryFacade<K, _Vector, Allocator, Sorter>;
 
     fsize_t m_pos = npos;
 
@@ -1290,7 +1290,7 @@ class ConcurrentStreamFacade :
     template <std::ranges::input_range Input>
         requires(
             std::is_nothrow_convertible_v<std::ranges::range_value_t<Input>,
-                                          input_type<_Program>>)
+                                          input_type<K>>)
     auto
     exchange(Input&& input) noexcept
     {
@@ -1560,7 +1560,7 @@ class aligned_chunks :
 template <STITCH stitch>
 struct visitor_selector
 {
-    template <typename _Memory, typename _CompiledBlocks, typename _Program>
+    template <typename _Memory, typename _CompiledBlocks, Kernel K>
     struct type
     {
         using memory_view = _Memory::view_type;
@@ -1568,16 +1568,16 @@ struct visitor_selector
         void
         operator()(memory_view view) const noexcept
         {
-            std::ranges::for_each(
-                memory_chunks<_Memory, _Program::halt_pos>(view),
-                [](memory_view view) noexcept
-                {
-                    typelist::visit_at(
-                        view.bp().front(),
-                        [&]<typename Block>() noexcept { Block{}(view); },
-                        _CompiledBlocks{},
-                        sink);
-                });
+            std::ranges::for_each(memory_chunks<_Memory, K::halt_pos>(view),
+                                  [](memory_view view) noexcept
+                                  {
+                                      typelist::visit_at(
+                                          view.bp().front(),
+                                          [&]<typename Block>() noexcept
+                                          { Block{}(view); },
+                                          _CompiledBlocks{},
+                                          sink);
+                                  });
         }
 
         void
@@ -1591,11 +1591,11 @@ struct visitor_selector
 template <>
 struct visitor_selector<STITCH::MASKED>
 {
-    template <typename _Memory, typename _CompiledBlocks, typename _Program>
+    template <typename _Memory, typename _CompiledBlocks, Kernel K>
     struct type
     {
         using memory_view = _Memory::view_type;
-        using index_t     = _Program::index_t;
+        using index_t     = K::index_t;
 
         static constexpr fsize_t N = native_vector_extent_v<index_t>;
 
@@ -1605,18 +1605,18 @@ struct visitor_selector<STITCH::MASKED>
         operator()(memory_view view) const noexcept
         {
             std::ranges::for_each(
-                aligned_chunks<_Memory, N, _Program::halt_pos>(view),
+                aligned_chunks<_Memory, N, K::halt_pos>(view),
                 [](auto view) noexcept
                     requires(pv_extent<decltype(view)> == N)
                 {
                     const index_t        start = view.bp()[0];
                     const index_vector_t bps   = load<N>(view.bp().data());
 
-                    for(const auto [bp, mask]:
-                        block_set<_Program, N>{bps, start})
+                    for(const auto [bp, mask]: block_set<K, N>{bps, start})
                         typelist::visit_at(
                             bp,
-                            [&]<typename Block>() noexcept { Block{mask}(view); },
+                            [&]<typename Block>() noexcept
+                            { Block{mask}(view); },
                             _CompiledBlocks{},
                             sink);
                 });
@@ -1639,25 +1639,22 @@ using SIMDAlignedAllocator =
     AlignedAllocator<T, get_native_vector_align<T>::value>;
 
 /// @brief SIMD backend.
-/// @tparam _Program program to compile.
+/// @tparam K program to compile.
 /// @tparam stitch execution method.
 /// @tparam sort_method sorting algorithm to use.
 /// @tparam concurrent allow concurrent computation in the stream.
-template <typename _Program,
-          STITCH stitch,
-          SORT   sort_method,
-          bool   concurrent = false>
-    requires(typelist::of_same_size<typename _Program::reg_types>)
+template <Kernel K, STITCH stitch, SORT sort_method, bool concurrent = false>
+    requires(typelist::of_same_size<typename K::reg_types>)
 class compiler
 {
-    using labelmap  = _Program::labelmap;
-    using blocks    = _Program::blocks;
-    using reg_names = _Program::reg_names;
-    using reg_types = _Program::reg_types;
-    using bp        = _Program::bp;
+    using labelmap  = K::labelmap;
+    using blocks    = K::blocks;
+    using reg_names = K::reg_names;
+    using reg_types = K::reg_types;
+    using bp        = K::bp;
 
-    static constexpr bool    singular = _Program::singular;
-    static constexpr auto    halt_pos = _Program::halt_pos;
+    static constexpr bool    singular = K::singular;
+    static constexpr auto    halt_pos = K::halt_pos;
     static constexpr fsize_t align    = simd_align;
 
     template <typename Block>
@@ -1676,24 +1673,22 @@ class compiler
 
     static constexpr SORT final_sort_method =
         singular ? bve_INTROSORT : sort_method;
-    using sorter =
-        select_sorter<final_sort_method>::template type<_Program, memory>;
+    using sorter = select_sorter<final_sort_method>::template type<K, memory>;
 
     using stream_facade = std::conditional_t<
         concurrent,
-        ConcurrentStreamFacade<_Program, std::vector, allocator, sorter>,
-        bve::StreamFacade<_Program, std::vector, allocator, sorter>>;
-    using memory_facade =
-        bve::MemoryFacade<_Program, std::vector, allocator, sorter>;
+        ConcurrentStreamFacade<K, std::vector, allocator, sorter>,
+        bve::StreamFacade<K, std::vector, allocator, sorter>>;
+    using memory_facade = bve::MemoryFacade<K, std::vector, allocator, sorter>;
 
-    using visitor = select_visitor<stitch, memory, compiled_blocks, _Program>;
+    using visitor = select_visitor<stitch, memory, compiled_blocks, K>;
 
     class single_block_evaluator : public memory_facade
     {
         static constexpr typelist::head<compiled_blocks> block{};
 
       public:
-        using program = _Program;
+        using program = K;
         using memory_facade::memory_facade;
 
         template <bool zip_outputs = false, typename... Args>
@@ -1713,7 +1708,7 @@ class compiler
     class evaluator : public memory_facade
     {
 #if 0
-        using vars = _Program::variables;
+        using vars = K::variables;
         void
         dump() const noexcept
         {
@@ -1746,7 +1741,7 @@ class compiler
 #endif
 
       public:
-        using program = _Program;
+        using program = K;
         using memory_facade::memory_facade;
 
         template <bool zip_outputs = false, typename... Args>
@@ -1772,15 +1767,15 @@ class compiler
     };
 
   public:
-    using function = std::
-        conditional_t<_Program::singular, single_block_evaluator, evaluator>;
+    using function =
+        std::conditional_t<K::singular, single_block_evaluator, evaluator>;
 
     class stream : public stream_facade
     {
-        static_assert(!_Program::singular);
+        static_assert(!K::singular);
 
       public:
-        using program = _Program;
+        using program = K;
         using stream_facade::stream_facade;
 
         constexpr void
@@ -1791,15 +1786,15 @@ class compiler
     };
 };
 
-template <typename _Program, STITCH stitch, SORT sort_method>
-using function = compiler<_Program, stitch, sort_method, false>::function;
+template <Kernel K, STITCH stitch, SORT sort_method>
+using function = compiler<K, stitch, sort_method, false>::function;
 
-template <typename _Program,
+template <Kernel K,
           STITCH stitch,
           SORT   sort_method,
           bool   concurrent = false>
-    requires(!_Program::singular)
-using stream = compiler<_Program, stitch, sort_method, concurrent>::stream;
+    requires(!K::singular)
+using stream = compiler<K, stitch, sort_method, concurrent>::stream;
 
 template <typename Block, typename LabelMap, typename BPVar, fsize_t N>
 class make_embedded_masked_runner
@@ -1873,27 +1868,27 @@ template <typename Block, typename LabelMap, typename BPVar, fsize_t N>
 using embedded_masked_runner =
     make_embedded_masked_runner<Block, LabelMap, BPVar, N>::type;
 
-template <typename _Program>
-    requires(typelist::of_same_size<typename _Program::reg_types>)
+template <Kernel K>
+    requires(typelist::of_same_size<typename K::reg_types>)
 class embedded_compiler
 {
-    using labelmap  = _Program::labelmap;
-    using blocks     = _Program::blocks;
-    using reg_names = _Program::reg_names;
-    using reg_types = _Program::reg_types;
-    using bp        = _Program::bp;
-    using index_t   = _Program::index_t;
+    using labelmap  = K::labelmap;
+    using blocks    = K::blocks;
+    using reg_names = K::reg_names;
+    using reg_types = K::reg_types;
+    using bp        = K::bp;
+    using index_t   = K::index_t;
 
-    static constexpr bool    singular = _Program::singular;
+    static constexpr bool    singular = K::singular;
     static constexpr fsize_t N        = native_vector_extent_v<index_t>;
     static constexpr packed_vector<index_t, N> halt_pos =
-        broadcast<N>(_Program::halt_pos);
+        broadcast<N>(K::halt_pos);
 
     template <typename... Ts>
     using memory = KernelMemory<Ts..., N>;
 
     using facade = bse::MemoryFacade<
-        _Program,
+        K,
         memory,
         decltype([]() constexpr noexcept -> packed_vector<index_t, N>
                  { return broadcast<N>(static_cast<index_t>(0)); })>;
@@ -1909,7 +1904,7 @@ class embedded_compiler
         static constexpr Kernel block{};
 
       public:
-        using program = _Program;
+        using program = K;
 
         template <typename... Args>
         auto
@@ -1935,7 +1930,7 @@ class embedded_compiler
         {
             facade::set_inputs(args...);
             while(!__builtin_reduce_and(facade::bp() == halt_pos))
-                for(const auto [bp, mask]: block_set<_Program, N>{facade::bp()})
+                for(const auto [bp, mask]: block_set<K, N>{facade::bp()})
                     typelist::visit_at(
                         bp,
                         [&]<typename Runner>() noexcept
@@ -1947,9 +1942,10 @@ class embedded_compiler
     };
 
   public:
-    using type = std::conditional_t<singular, single_block_evaluator, evaluator>;
+    using type =
+        std::conditional_t<singular, single_block_evaluator, evaluator>;
 };
 
-template <typename _Program>
-using embedded_function = embedded_compiler<_Program>::type;
+template <Kernel K>
+using embedded_function = embedded_compiler<K>::type;
 } // namespace lucid::simd

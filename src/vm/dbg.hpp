@@ -1,6 +1,6 @@
 // -*- C++ -*-
-// dbg.hpp
-//
+/// @file dbg.hpp
+/// @brief Utilities for kernel debugging.
 
 #pragma once
 
@@ -235,43 +235,43 @@ MK_OPS_PRETTIFY(cos)
 #undef MK_STD_PRETTIFY
 #undef MK_OPS_PRETTIFY
 
-/// @brief Instruction number width for a cell.
-template <typename Cell>
+/// @brief Instruction number width for a block.
+template <typename Block>
 struct instruction_number_width
 {
-    static constexpr unsigned value = magnitude(typelist::length<Cell>) + 1u;
+    static constexpr unsigned value = magnitude(typelist::length<Block>) + 1u;
 };
 
-template <typename Cell>
+template <typename Block>
 void
-print_cell(bool ts = false, unsigned margin = 5)
+print_block(bool ts = false, unsigned margin = 5)
 {
     typelist::for_each(
-        typelist::enumerate<Cell, unsigned, 1u>{},
+        typelist::enumerate<Block, unsigned, 1u>{},
         [=]<typename T>()
         {
             fmt::print("\t{}\n",
                        prettify<T>{}(ts,
                                      margin,
-                                     instruction_number_width<Cell>::value));
+                                     instruction_number_width<Block>::value));
         });
 }
 
 /// @brief Pretty print program.
 /// @param ts print types
 /// @param margin arrow margin
-template <typename Program>
+template <Kernel K>
 void
-print_program(Program, bool ts = false, unsigned margin = 5) noexcept
+print_program(K, bool ts = false, unsigned margin = 5) noexcept
 {
-    using labels = Program::labels;
-    using cells  = Program::cells;
-    typelist::for_each(typelist::zip<labels, cells>{},
+    using labels = K::labels;
+    using blocks = K::blocks;
+    typelist::for_each(typelist::zip<labels, blocks>{},
                        [=]<typename LC>()
                        {
                            fmt::print("{}:\n",
                                       prettify<fst_t<LC>>{}(ts, margin, 0));
-                           print_cell<snd_t<LC>>(ts, margin);
+                           print_block<snd_t<LC>>(ts, margin);
                        });
 }
 
@@ -509,18 +509,18 @@ print_dash(unsigned cw) noexcept
     fmt::print("{:\u2015^{}}|", "", cw);
 };
 
-template <typename _Program, std::size_t N>
-    requires(N == typelist::length<typename _Program::variables> - 1)
+template <Kernel K, std::size_t N>
+    requires(N == typelist::length<typename K::variables> - 1)
 void
-print_header(_Program, const std::bitset<N>& mask, unsigned cw, bool ts)
+print_header(K, const std::bitset<N>& mask, unsigned cw, bool ts)
 {
-    using labels = _Program::labels;
-    constexpr typelist::tail<typename _Program::variables> vars{};
+    using labels = K::labels;
+    constexpr typelist::tail<typename K::variables> vars{};
 
     // max label width
     constexpr unsigned mlw = max_label_width<labels>;
 
-    print_word("CELL", mlw);
+    print_word("BLOCK", mlw);
 
     typelist::for_each_masked(
         vars,
@@ -554,15 +554,15 @@ get_label_name(_Labels, I i, I halt_pos) noexcept
         { return i == halt_pos ? "HALT" : "N/A"; });
 }
 
-template <typename _Program, std::size_t N, typename _Mem>
-    requires(N == typelist::length<typename _Program::variables> - 1)
+template <Kernel K, std::size_t N, typename _Mem>
+    requires(N == typelist::length<typename K::variables> - 1)
 void
-print_state(_Program, const _Mem& mem, const std::bitset<N>& mask, unsigned cw)
+print_state(K, const _Mem& mem, const std::bitset<N>& mask, unsigned cw)
 {
-    using labels    = _Program::labels;
-    using variables = typelist::tail<typename _Program::variables>;
+    using labels    = K::labels;
+    using variables = typelist::tail<typename K::variables>;
 
-    print_word(get_label_name(labels{}, mem.cp(), _Program::halt_pos),
+    print_word(get_label_name(labels{}, mem.bp(), K::halt_pos),
                max_label_width<labels>);
     typelist::for_each_masked(
         variables{},
@@ -631,29 +631,29 @@ class RawTerminalReader
     }
 };
 
-template <typename _Program, bool interactive>
-    requires(!_Program::singular)
+template <Kernel K, bool interactive>
+    requires(!K::singular)
 class debug_compiler
 {
-    using labelmap  = _Program::labelmap;
-    using cells     = _Program::cells;
-    using variables = _Program::variables;
+    using labelmap  = K::labelmap;
+    using blocks    = K::blocks;
+    using variables = K::variables;
 
-    static constexpr auto halt_pos = _Program::halt_pos;
+    static constexpr auto halt_pos = K::halt_pos;
 
     template <typename C>
-    using compile_cell = standard_compiler<C, labelmap>;
+    using compile_block = standard_compiler<C, labelmap>;
 
-    using compiled_cells = typelist::map<compile_cell, cells>;
-    using facade         = bse::MemoryFacade<_Program>;
-    using var_mask       = std::bitset<typelist::length<variables> - 1>;
+    using compiled_blocks = typelist::map<compile_block, blocks>;
+    using facade          = bse::MemoryFacade<K>;
+    using var_mask        = std::bitset<typelist::length<variables> - 1>;
 
     static constexpr char stop = 'q';
     static constexpr char step = ' ';
 
     class base : public facade
     {
-        static constexpr typelist::to<compiled_cells, std::tuple> cells{};
+        static constexpr typelist::to<compiled_blocks, std::tuple> blocks{};
 
         unsigned m_cw;
         bool     m_ts;
@@ -668,19 +668,19 @@ class debug_compiler
         void
         header() const
         {
-            print_header(_Program{}, m_mask, m_cw, m_ts);
+            print_header(K{}, m_mask, m_cw, m_ts);
         }
 
         void
         step()
         {
             visit_at(
-                facade::cp(),
-                [&](auto cell) noexcept { facade::step(cell); },
-                cells,
+                facade::bp(),
+                [&](auto block) noexcept { facade::step(block); },
+                blocks,
                 sink);
             facade::step([mask = m_mask, cw = m_cw](const auto& mem) noexcept
-                         { print_state(_Program{}, mem, mask, cw); });
+                         { print_state(K{}, mem, mask, cw); });
         }
     };
 
@@ -709,7 +709,7 @@ class debug_compiler
             base::header();
 
             char c = m_reader();
-            while(base::cp() != halt_pos && c != stop)
+            while(base::bp() != halt_pos && c != stop)
             {
                 if(c == step)
                     base::step();
@@ -741,7 +741,7 @@ class debug_compiler
 
             base::header();
 
-            while(base::cp() != halt_pos && m_step_number++ < m_max_steps)
+            while(base::bp() != halt_pos && m_step_number++ < m_max_steps)
                 base::step();
         }
     };
@@ -751,17 +751,17 @@ class debug_compiler
         std::conditional_t<interactive, interactive_inspector, fast_inspector>;
 };
 
-template <typename P, typename InputOpt>
+template <Kernel K, typename InputOpt>
 int
 inspect(InputOpt inopt, int argc, char* argv[]) noexcept
 {
-    // ignore CP
-    constexpr auto vars = typelist::tail<typename P::variables>{};
+    // ignore BP
+    constexpr auto vars = typelist::tail<typename K::variables>{};
 
     const auto pr = argparse::parse(
         std::tuple{
             inopt,
-            argparse::flag<'p', "print">("print program"),
+            argparse::flag<'p', "print">("print program and exit"),
             argparse::flag<'i', "interactive">("run interactive"),
             argparse::option<'w', "column-width">("column width. Default is 20",
                                                   "N",
@@ -774,7 +774,7 @@ inspect(InputOpt inopt, int argc, char* argv[]) noexcept
                 read_number<unsigned, true>),
             argparse::option_list<'t', "track">("variables to track", "vars")},
         {argc, argv});
-    constexpr P p{};
+    constexpr K p{};
 
     unsigned cw = 20;
     unsigned ms = 100;
@@ -797,19 +797,20 @@ inspect(InputOpt inopt, int argc, char* argv[]) noexcept
     {
         fmt::print("Program:\n");
         print_program(p);
+        return 0;
     }
 
     if(pr.template get_opt<'i'>())
     {
         auto mask       = interactive_get_mask(vars);
-        auto inputs     = interactive_get_inputs(P{});
-        using Inspector = debug_compiler<P, true>::inspector;
+        auto inputs     = interactive_get_inputs(K{});
+        using Inspector = debug_compiler<K, true>::inspector;
         Inspector insp{cw, true, mask};
         invopply(insp, inputs);
     }
     else
     {
-        using Inspector = debug_compiler<P, false>::inspector;
+        using Inspector = debug_compiler<K, false>::inspector;
         try
         {
             auto mask = read_var_mask(vars, pr.template get_opt<'t'>());
