@@ -762,6 +762,7 @@ inspect(InputOpt inopt, int argc, char* argv[]) noexcept
         std::tuple{
             inopt,
             argparse::flag<'p', "print">("print program and exit"),
+            argparse::flag<'T', "type-annotations">("show type annotations"),
             argparse::flag<'i', "interactive">("run interactive"),
             argparse::option<'w', "column-width">("column width. Default is 20",
                                                   "N",
@@ -778,6 +779,8 @@ inspect(InputOpt inopt, int argc, char* argv[]) noexcept
 
     unsigned cw = 20;
     unsigned ms = 100;
+
+    const bool ts = pr.template get_opt<'T'>();
 
     decltype(pr.template get_opt<"input">()) fi;
 
@@ -796,7 +799,7 @@ inspect(InputOpt inopt, int argc, char* argv[]) noexcept
     if(pr.template get_opt<'p'>())
     {
         fmt::print("Program:\n");
-        print_program(p);
+        print_program(p, ts);
         return 0;
     }
 
@@ -805,7 +808,7 @@ inspect(InputOpt inopt, int argc, char* argv[]) noexcept
         auto mask       = interactive_get_mask(vars);
         auto inputs     = interactive_get_inputs(K{});
         using Inspector = debug_compiler<K, true>::inspector;
-        Inspector insp{cw, true, mask};
+        Inspector insp{cw, ts, mask};
         invopply(insp, inputs);
     }
     else
@@ -819,7 +822,7 @@ inspect(InputOpt inopt, int argc, char* argv[]) noexcept
                 mask.set();
                 mask.reset(0);
             }
-            Inspector insp{ms, cw, true, mask};
+            Inspector insp{ms, cw, ts, mask};
             invopply(insp, fi);
         }
         catch(const UnknownVar& ex)
