@@ -48,6 +48,12 @@ constexpr inline std::size_t num_workers = NUM_THREADS;
 constexpr inline std::size_t num_workers = dynamic_size;
 #endif
 
+/// @brief Kernel execution context. Manages concurrent exchange and kernel
+/// execution.
+/// @tparam K kernel to manage.
+/// @tparam StreamCompiler class template that implements stream with support
+/// for concurrent exchange/execution, e.h. simd::stream.
+/// @tparam Lock should implement try_lock and unlock.
 template <Kernel K,
           template <typename> typename StreamCompiler,
           typename Lock = std::mutex>
@@ -117,6 +123,7 @@ struct Context
     }
 };
 
+/// @brief One-sided signal.
 class alignas(cache_line_size) Signal
 {
     union
@@ -132,16 +139,18 @@ class alignas(cache_line_size) Signal
 
     operator bool() const noexcept
     {
-        return m_flag.test(std::memory_order_relaxed);
+        return m_flag.test(std::memory_order_acquire);
     }
 
     bool
     set() noexcept
     {
-        return m_flag.test_and_set(std::memory_order_relaxed);
+        return m_flag.test_and_set(std::memory_order_release);
     }
 };
 
+/// @brief Worker thread functional object.
+/// @tparam Bench tuple of contexts of unique kernels.
 template <typename Bench>
 struct Worker
 {
@@ -176,6 +185,8 @@ struct Worker
     }
 };
 
+/// @brief Helper function that ties kernel inputs together.
+/// @return Tuple of pairs of an input iterator and a sentinel.
 template <std::ranges::input_range... Inputs>
 auto
 make_input_collection(Inputs&&... inputs) noexcept
@@ -185,6 +196,8 @@ make_input_collection(Inputs&&... inputs) noexcept
         detail::make_input_pair(std::forward<Inputs>(inputs))...);
 }
 
+/// @brief Helper function that ties together output iterators.
+/// @return tuple of output iterators.
 template <typename... Containers>
 auto
 make_output_collection(Containers&... containers) noexcept
@@ -192,6 +205,7 @@ make_output_collection(Containers&... containers) noexcept
     return std::tuple{std::back_inserter(containers)...};
 }
 
+/// @brief Checks whether kernel inputs are completely consumed.
 template <typename InputCollection>
 bool
 is_complete(const InputCollection& ic) noexcept
@@ -201,11 +215,15 @@ is_complete(const InputCollection& ic) noexcept
         ic);
 }
 
-template <typename _Ps, template <typename> typename _Context, std::size_t N>
+/// @brief Workshop basic functionality for static number of workers.
+/// @tparam Ks kernels.
+/// @tparam Ctx class template constructing context.
+/// @tparam N number of workers.
+template <typelist::List Ks, template <typename> typename Ctx, std::size_t N>
     requires(N != 0)
 class ShopBase : public Signal
 {
-    using bench_t   = typelist::to<typelist::map<_Context, _Ps>, unique_tuple>;
+    using bench_t   = typelist::to<typelist::map<Ctx, Ks>, unique_tuple>;
     using benches_t = typelist::to<typelist::repeat<N, bench_t>, unique_tuple>;
     benches_t m_benches;
 
@@ -231,6 +249,7 @@ class ShopBase : public Signal
         lucid::for_each(m_benches, std::forward<F>(f));
     }
 
+    /// @brief Constructs lucid::thread_pool of static size with Worker.
     [[nodiscard]] thread_pool<N>
     get_thread_pool() noexcept
     {
@@ -241,10 +260,13 @@ class ShopBase : public Signal
     }
 };
 
-template <typename _Ps, template <typename> typename _Context>
-class ShopBase<_Ps, _Context, dynamic_size> : public Signal
+/// @brief Workshop basic functionality for dynamic number of workers.
+/// @tparam Ks kernels.
+/// @tparam Ctx class template constructing context.
+template <typename Ks, template <typename> typename Ctx>
+class ShopBase<Ks, Ctx, dynamic_size> : public Signal
 {
-    using bench_t   = typelist::to<typelist::map<_Context, _Ps>, unique_tuple>;
+    using bench_t   = typelist::to<typelist::map<Ctx, Ks>, unique_tuple>;
     using benches_t = ImmovableVector<bench_t>;
 
     benches_t m_benches;
@@ -272,6 +294,7 @@ class ShopBase<_Ps, _Context, dynamic_size> : public Signal
         std::ranges::for_each(m_benches, std::forward<F>(f));
     }
 
+    /// @brief Constructs lucid::thread_pool of dynamic sizes with Worker.
     [[nodiscard]] thread_pool<dynamic_size>
     get_thread_pool() noexcept
     {
@@ -282,12 +305,16 @@ class ShopBase<_Ps, _Context, dynamic_size> : public Signal
     }
 };
 
-template <typename _Ps,
-          template <typename> typename _Context,
+/// @brief Implements workshop.
+/// @tparam Ks kernels.
+/// @tparam Ctx class template constructing context.
+/// @tparam N number of workers.
+template <typelist::List Ks,
+          template <typename> typename Ctx,
           std::size_t N = num_workers>
-class Shop : public ShopBase<_Ps, _Context, N>
+class Shop : public ShopBase<Ks, Ctx, N>
 {
-    using base = ShopBase<_Ps, _Context, N>;
+    using base = ShopBase<Ks, Ctx, N>;
 
   public:
     FORBID_ALL(Shop);
@@ -295,7 +322,7 @@ class Shop : public ShopBase<_Ps, _Context, N>
     using base::base;
 
     template <std::ranges::input_range... Inputs>
-        requires(sizeof...(Inputs) == typelist::length<_Ps>)
+        requires(sizeof...(Inputs) == typelist::length<Ks>)
     [[nodiscard]] auto
     bind_inputs(Inputs&&... inputs)
     {
