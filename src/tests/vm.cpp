@@ -20,7 +20,8 @@
 #include <limits>
 
 using namespace lucid;
-using namespace lucid::test;
+using namespace vm;
+using namespace test;
 
 template <Kernel K, simd::STITCH stitch, simd::SORT sort_method, bool async>
 struct StreamPair

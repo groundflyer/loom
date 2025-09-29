@@ -22,7 +22,7 @@
 #include <mutex>
 #include <ranges>
 
-namespace lucid::mp
+namespace lucid::vm::mp
 {
 namespace detail
 {
@@ -376,4 +376,4 @@ class Shop : public ShopBase<Ks, Ctx, N>
             });
     }
 };
-} // namespace lucid::mp
+} // namespace lucid::vm::mp

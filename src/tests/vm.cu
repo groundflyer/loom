@@ -23,7 +23,8 @@ isnan(long double)
 #include <bit>
 
 using namespace lucid;
-using namespace lucid::test;
+using namespace vm;
+using namespace test;
 
 using incr_int     = increment<int>;
 using fac_int      = factorial_int<int>;

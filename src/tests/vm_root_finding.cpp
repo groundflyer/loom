@@ -14,7 +14,8 @@
 #include <vector>
 
 using namespace lucid;
-using namespace lucid::test;
+using namespace vm;
+using namespace test;
 
 template <typename G, typename F>
 double

@@ -6,7 +6,7 @@
 
 #include "core.hpp"
 
-namespace lucid::bse
+namespace lucid::vm::bse
 {
 template <typename RegTypes, typename RegNames, typename BPVar>
 class Memory
@@ -169,4 +169,4 @@ class basic_scalar_compiler
 
 template <typename K>
 using function = basic_scalar_compiler<K>::function;
-} // namespace lucid::bse
+} // namespace lucid::vm::bse

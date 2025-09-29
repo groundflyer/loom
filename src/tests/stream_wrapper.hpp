@@ -28,7 +28,7 @@ class StreamWrapper
     {
         // prepare result container
         using program = S::program;
-        std::vector<lucid::output_type<program>> out;
+        std::vector<lucid::vm::output_type<program>> out;
         out.reserve(input.size());
         auto inserter = std::back_inserter(out);
 

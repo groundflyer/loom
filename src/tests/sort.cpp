@@ -8,6 +8,7 @@
 #include <vector>
 
 using namespace lucid;
+using namespace vm;
 using namespace test;
 
 int

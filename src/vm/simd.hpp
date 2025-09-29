@@ -30,7 +30,7 @@
 #define _FORCE_INLINE
 #endif
 
-namespace lucid::simd
+namespace lucid::vm::simd
 {
 using fsize_t = bve::fsize_t;
 
@@ -1789,10 +1789,7 @@ class compiler
 template <Kernel K, STITCH stitch, SORT sort_method>
 using function = compiler<K, stitch, sort_method, false>::function;
 
-template <Kernel K,
-          STITCH stitch,
-          SORT   sort_method,
-          bool   concurrent = false>
+template <Kernel K, STITCH stitch, SORT sort_method, bool concurrent = false>
     requires(!K::singular)
 using stream = compiler<K, stitch, sort_method, concurrent>::stream;
 
@@ -1948,4 +1945,4 @@ class embedded_compiler
 
 template <Kernel K>
 using embedded_function = embedded_compiler<K>::type;
-} // namespace lucid::simd
+} // namespace lucid::vm::simd

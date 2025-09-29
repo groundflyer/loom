@@ -13,6 +13,7 @@
 #include <vector>
 
 using namespace lucid;
+using namespace vm;
 using namespace test;
 
 using fac_p = factorial_int<std::uint64_t>;

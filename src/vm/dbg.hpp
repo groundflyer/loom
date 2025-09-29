@@ -34,7 +34,7 @@
 #include <termios.h>
 #include <unistd.h>
 
-namespace lucid::dbg
+namespace lucid::vm::dbg
 {
 template <typename T>
 struct prettify;
@@ -837,4 +837,4 @@ inspect(InputOpt inopt, int argc, char* argv[]) noexcept
 
     return 0;
 }
-} // namespace lucid::dbg
+} // namespace lucid::vm::dbg

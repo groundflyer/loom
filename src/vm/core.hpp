@@ -12,7 +12,7 @@
 
 #include <cstdint>
 
-namespace lucid
+namespace lucid::vm
 {
 /// @brief Describes a variable.
 ///
@@ -927,4 +927,4 @@ fit_block_index(const typename K::index_t c) noexcept
 
     return c < num_blocks ? c : halt_pos;
 }
-} // namespace lucid
+} // namespace lucid::vm

@@ -15,7 +15,8 @@
 #include <fmt/core.h>
 
 using namespace lucid;
-using namespace lucid::test;
+using namespace vm;
+using namespace test;
 
 using all_uints =
     type_sequence<std::uint8_t, std::uint16_t, std::uint32_t, std::uint64_t>;

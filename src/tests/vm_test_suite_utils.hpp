@@ -10,7 +10,7 @@
 #include <utils/test.hpp>
 #include <utils/tmp.hpp>
 
-namespace lucid
+namespace lucid::vm
 {
 template <typelist::List Types, typename Suite>
 void
@@ -103,4 +103,4 @@ struct stitch_name<simd::MASKED>
 {
     static constexpr char chars[] = "masked minikernel";
 };
-} // namespace lucid
+} // namespace lucid::vm

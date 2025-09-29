@@ -88,7 +88,7 @@ cuda_check(cudaError_t) noexcept
         }                                            \
     };
 
-namespace lucid::cuda
+namespace lucid::vm::cuda
 {
 /// @brief Index type that goes to GPU.
 using gsize_t = std::uint32_t;
@@ -408,7 +408,7 @@ struct remap_comp<ops::fma>
         };                                   \
     };
 
-#define MK_REMAP_BIN_FUNC_F(FUNC) MK_REMAP_BIN_FUNC_F_SUFFIX(FUNC, f)
+#define MK_REMAP_BIN_FUNC_F(FUNC)  MK_REMAP_BIN_FUNC_F_SUFFIX(FUNC, f)
 #define MK_REMAP_UN_FUNC_F(FUNC)   MK_REMAP_UN_FUNC_F_SUFFIX(FUNC, f)
 #define MK_REMAP_BIN_FUNC_FF(FUNC) MK_REMAP_BIN_FUNC_F_PS(f, FUNC, f)
 
@@ -545,9 +545,9 @@ __global__ void
 chunk_counter(gsize_t* bgns,
               gsize_t* ends,
               gsize_t  N,
-              index_t*    bps,
+              index_t* bps,
               gsize_t  bps_size,
-              index_t     halt_pos)
+              index_t  halt_pos)
 {
     const gsize_t idxl = blockIdx.x * blockDim.x + threadIdx.x;
 
@@ -559,7 +559,7 @@ chunk_counter(gsize_t* bgns,
     if(idxl < bps_size - 1)
     {
         const gsize_t idxr = idxl + 1;
-        const index_t    bpr  = bps[idxr];
+        const index_t bpr  = bps[idxr];
         if(bpl != bpr) ends[get_pos(bpl)] = bgns[get_pos(bpr)] = idxr;
     }
 }
@@ -766,10 +766,10 @@ block_kernel(gsize_t begin, gsize_t end, CompiledBlock cc, Args... args)
 /// @brief Runs kernel of block @p cc.
 template <typename CompiledBlock, typename _Memory>
 void
-run_block_kernel(CompiledBlock  cc,
-                _Memory&      mem,
-                const gsize_t begin,
-                const gsize_t end) noexcept
+run_block_kernel(CompiledBlock cc,
+                 _Memory&      mem,
+                 const gsize_t begin,
+                 const gsize_t end) noexcept
 {
     const gsize_t size = end - begin;
 
@@ -780,10 +780,10 @@ run_block_kernel(CompiledBlock  cc,
     };
 
     invopply(launcher,
-                typelist::maybe_collect(typename CompiledBlock::vars{},
-                                        memory_accessor{},
+             typelist::maybe_collect(typename CompiledBlock::vars{},
+                                     memory_accessor{},
 
-                                        mem));
+                                     mem));
 }
 
 /// @brief Sorts memory.
@@ -810,8 +810,7 @@ sort(Vars vars, _Memory& mem) noexcept
         cudaDeviceSynchronize();
     };
 
-    invopply(launcher,
-                typelist::maybe_collect(vars, memory_accessor{}, mem));
+    invopply(launcher, typelist::maybe_collect(vars, memory_accessor{}, mem));
 }
 
 template <gsize_t N, std::unsigned_integral index_t, index_t halt_pos>
@@ -820,7 +819,7 @@ class chunk_ranges :
 {
     struct range
     {
-        index_t    bp;
+        index_t bp;
         gsize_t bgn;
         gsize_t end;
     };
@@ -829,7 +828,7 @@ class chunk_ranges :
     {
         gsize_t* p_bgns;
         gsize_t* p_ends;
-        index_t     m_bp = 0;
+        index_t  m_bp = 0;
 
         /// @brief Checks if current range is empty.
         bool
@@ -919,9 +918,9 @@ class chunk_ranges :
     gsize_t*                 pd_ends;
 
     // block pointers columns
-    index_t*   pd_bps;
-    index_t*   ph_bp0;
-    gsize_t m_size;
+    index_t* pd_bps;
+    index_t* ph_bp0;
+    gsize_t  m_size;
 
     template <typename A>
     gsize_t*
@@ -1173,7 +1172,7 @@ class MemoryFacade
     {
         if constexpr(!singular)
         {
-            index_t*          bps = mem.bp().data();
+            index_t*       bps = mem.bp().data();
             const unsigned n   = mem.size();
 
             LAUNCH_KERNEL(set_constant, n, 0, n, bps, static_cast<index_t>(0));
@@ -1568,4 +1567,4 @@ using function = cuda_evaluator<K>::function;
 template <Kernel K>
     requires(!K::singular)
 using stream = cuda_evaluator<K>::stream;
-} // namespace lucid::cuda
+} // namespace lucid::vm::cuda

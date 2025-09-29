@@ -23,7 +23,7 @@
 #include <span>
 #include <vector>
 
-namespace lucid::bve
+namespace lucid::vm::bve
 {
 // division and modulo for 32 bit unsigned integer can be faster
 using fsize_t = std::uint32_t;
@@ -1451,4 +1451,4 @@ using function = basic_vector_compiler<K, sort_method>::function;
 template <Kernel K, SORT sort_method>
     requires(!K::singular)
 using stream = basic_vector_compiler<K, sort_method>::stream;
-} // namespace lucid::bve
+} // namespace lucid::vm::bve

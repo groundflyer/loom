@@ -8,7 +8,7 @@
 #include <cmath>
 #include <concepts>
 
-namespace lucid::ops
+namespace lucid::vm::ops
 {
 struct choice
 {
@@ -95,4 +95,4 @@ MK_STD_UNOP_FLOAT(cos)
 
 #undef MK_STD_BINOP
 #undef MK_STD_UNOP_FLOAT
-} // namespace lucid::ops
+} // namespace lucid::vm::ops
