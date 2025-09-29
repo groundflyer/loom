@@ -511,7 +511,7 @@ template <typename F, typename T, typename... Args>
 inline constexpr bool is_mappable_v = detail::is_mappable<F, T, Args...>::value;
 
 /// @brief If @p T is tuple checks whether we can use std::apply(F, T) or at
-/// lease F(T).
+/// least F(T).
 template <typename F, typename T>
 concept invopplicable = is_applicable_v<F, T> || std::is_invocable_v<F, T>;
 
