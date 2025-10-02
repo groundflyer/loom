@@ -1,5 +1,5 @@
 // -*- C++ -*-
-// dbg.cpp
+// fibonacci.cpp
 
 #include <tests/programs.hpp>
 #include <tests/root_finding.hpp>
@@ -10,9 +10,6 @@ using namespace lucid;
 using namespace vm;
 using namespace dbg;
 using namespace argparse;
-
-template <floating_point T>
-using cubic_fz_p = cubic_fz_program<T, typename constants<T>::errt>;
 
 int
 main(int argc, char* argv[])

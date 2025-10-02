@@ -1,5 +1,5 @@
 // -*- C++ -*-
-// dbg.cpp
+// root_finding.cpp
 
 #include <vm/dbg.hpp>
 

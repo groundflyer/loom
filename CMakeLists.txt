@@ -297,7 +297,7 @@ endif()
 if(BUILD_DEBUGGERS)
   add_custom_target(dbgs)
   set(DBGS_SRC_DIR src/vm/dbg)
-  set(dbg_srcs root_finding.cpp fibonacci.cpp)
+  set(dbg_srcs root_finding.cpp fibonacci.cpp factorial.cpp)
 
   foreach(src ${dbg_srcs})
     string(REPLACE ".cpp" "" name ${src})
