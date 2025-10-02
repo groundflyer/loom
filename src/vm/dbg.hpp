@@ -98,7 +98,7 @@ struct prettify<ParmJump<Var, Labels>>
     std::string
     operator()(bool ts, unsigned margin, unsigned) const noexcept
     {
-        return fmt::format("JUMP ({})[{}]",
+        return fmt::format("JUMP [{}]({})",
                            prettify<typelist::enumerate<Labels>>{}(
                                ts,
                                margin,
@@ -264,8 +264,16 @@ template <Kernel K>
 void
 print_program(K, bool ts = false, unsigned margin = 5) noexcept
 {
+    using input_vars  = K::input_vars;
+    using output_vars = K::output_vars;
+
     using labels = K::labels;
     using blocks = K::blocks;
+
+    fmt::print("Input variables: {}\n", prettify<input_vars>{}(ts, margin, 0));
+    fmt::print("Output variables: {}\n",
+               prettify<output_vars>{}(ts, margin, 0));
+    fmt::print("Program:\n");
     typelist::for_each(typelist::zip<labels, blocks>{},
                        [=]<typename LC>()
                        {
@@ -798,7 +806,6 @@ inspect(InputOpt inopt, int argc, char* argv[]) noexcept
 
     if(pr.template get_opt<'p'>())
     {
-        fmt::print("Program:\n");
         print_program(p, ts);
         return 0;
     }
