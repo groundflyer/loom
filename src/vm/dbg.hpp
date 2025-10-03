@@ -72,7 +72,7 @@ struct prettify<Compute<Op, Dst, Args...>>
     operator()(bool ts, unsigned margin, unsigned width) const noexcept
     {
         return fmt::format(
-            "{:<{}} = {}({})",
+            "{:<{}} = {} {}",
             prettify<Dst>{}(ts, margin, width),
             margin,
             prettify<Op>{}(ts, margin, width),
@@ -87,7 +87,7 @@ struct prettify<Jump<Target>>
     std::string
     operator()(Ts... args) const noexcept
     {
-        return fmt::format("JUMP {}", prettify<Target>{}(args...));
+        return fmt::format("JMP {}", prettify<Target>{}(args...));
     }
 };
 
@@ -98,7 +98,7 @@ struct prettify<ParmJump<Var, Labels>>
     std::string
     operator()(bool ts, unsigned margin, unsigned) const noexcept
     {
-        return fmt::format("JUMP [{}]({})",
+        return fmt::format("JMP [{}] {}",
                            prettify<typelist::enumerate<Labels>>{}(
                                ts,
                                margin,
