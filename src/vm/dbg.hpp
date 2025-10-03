@@ -87,7 +87,7 @@ struct prettify<Jump<Target>>
     std::string
     operator()(Ts... args) const noexcept
     {
-        return fmt::format("JMP {}", prettify<Target>{}(args...));
+        return fmt::format("jmp {}", prettify<Target>{}(args...));
     }
 };
 
@@ -98,7 +98,7 @@ struct prettify<ParmJump<Var, Labels>>
     std::string
     operator()(bool ts, unsigned margin, unsigned) const noexcept
     {
-        return fmt::format("JMP [{}] {}",
+        return fmt::format("jmp [{}] {}",
                            prettify<typelist::enumerate<Labels>>{}(
                                ts,
                                margin,
@@ -273,7 +273,6 @@ print_program(K, bool ts = false, unsigned margin = 5) noexcept
     fmt::print("Input variables: {}\n", prettify<input_vars>{}(ts, margin, 0));
     fmt::print("Output variables: {}\n",
                prettify<output_vars>{}(ts, margin, 0));
-    fmt::print("Program:\n");
     typelist::for_each(typelist::zip<labels, blocks>{},
                        [=]<typename LC>()
                        {
