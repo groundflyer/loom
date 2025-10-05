@@ -234,25 +234,24 @@ MK_OPS_PRETTIFY(cos)
 #undef MK_STD_PRETTIFY
 #undef MK_OPS_PRETTIFY
 
-/// @brief Instruction number width for a block.
-template <typename Block>
-struct instruction_number_width
-{
-    static constexpr unsigned value = magnitude(typelist::length<Block>) + 1u;
-};
-
-template <typename Block>
+/// @brief Pretty print all instructions including labels.
+template <typelist::List Instructions>
 void
-print_block(bool ts = false, unsigned margin = 5)
+print_instructions(bool ts = false, unsigned margin = 5)
 {
+    constexpr unsigned w = magnitude(typelist::length<Instructions>) + 1u;
+
     typelist::for_each(
-        typelist::enumerate<Block, unsigned, 1u>{},
-        [=]<typename T>()
+        typelist::enumerate<Instructions, unsigned, 1u>{},
+        [=]<typename TP>()
         {
-            fmt::print("\t{}\n",
-                       prettify<T>{}(ts,
-                                     margin,
-                                     instruction_number_width<Block>::value));
+            using t              = fst_t<TP>;
+            constexpr unsigned n = snd_t<TP>::value;
+
+            if constexpr(is_label<t>::value)
+                fmt::print("{:0{}d} {}:\n", n, w, prettify<t>{}(ts, margin, 0));
+            else
+                fmt::print("{:0{}d}\t{}\n", n, w, prettify<t>{}(ts, margin, 0));
         });
 }
 
@@ -261,7 +260,10 @@ print_block(bool ts = false, unsigned margin = 5)
 /// @param margin arrow margin
 template <Kernel K>
 void
-print_program(K, bool ts = false, unsigned margin = 5) noexcept
+print_program(K,
+              bool       ts     = false,
+              const bool bs     = true,
+              unsigned   margin = 5) noexcept
 {
     using input_vars  = K::input_vars;
     using output_vars = K::output_vars;
@@ -269,16 +271,22 @@ print_program(K, bool ts = false, unsigned margin = 5) noexcept
     using labels = K::labels;
     using blocks = K::blocks;
 
+    using instructions = K::instructions;
+
     fmt::print("Input variables: {}\n", prettify<input_vars>{}(ts, margin, 0));
     fmt::print("Output variables: {}\n",
                prettify<output_vars>{}(ts, margin, 0));
-    typelist::for_each(typelist::zip<labels, blocks>{},
-                       [=]<typename LC>()
-                       {
-                           fmt::print("{}:\n",
-                                      prettify<fst_t<LC>>{}(ts, margin, 0));
-                           print_block<snd_t<LC>>(ts, margin);
-                       });
+
+    if(bs)
+        typelist::for_each(typelist::zip<labels, blocks>{},
+                           [=]<typename LC>()
+                           {
+                               fmt::print("{}:\n",
+                                          prettify<fst_t<LC>>{}(ts, margin, 0));
+                               print_instructions<snd_t<LC>>(ts, margin);
+                           });
+    else
+        print_instructions<instructions>(ts, margin);
 }
 
 struct UnknownVar
@@ -769,6 +777,7 @@ inspect(InputOpt inopt, int argc, char* argv[]) noexcept
             inopt,
             argparse::flag<'p', "print">("print program and exit"),
             argparse::flag<'T', "type-annotations">("show type annotations"),
+            argparse::flag<'b', "blocks">("separate blocks"),
             argparse::flag<'i', "interactive">("run interactive"),
             argparse::option<'w', "column-width">("column width. Default is 20",
                                                   "N",
@@ -787,6 +796,7 @@ inspect(InputOpt inopt, int argc, char* argv[]) noexcept
     unsigned ms = 100;
 
     const bool ts = pr.template get_opt<'T'>();
+    const bool bs = pr.template get_opt<'b'>();
 
     decltype(pr.template get_opt<"input">()) fi;
 
@@ -804,7 +814,7 @@ inspect(InputOpt inopt, int argc, char* argv[]) noexcept
 
     if(pr.template get_opt<'p'>())
     {
-        print_program(p, ts);
+        print_program(p, ts, bs);
         return 0;
     }
 
