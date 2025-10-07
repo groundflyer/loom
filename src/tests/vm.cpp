@@ -130,22 +130,22 @@ struct StandardState<K, true> : StandardState<K, false>
     }
 };
 
-template <template <typename> typename P,
+template <template <typename> typename KT,
           template <typename> typename GM,
           typename V,
-          StringLiteral name,
-          bool          do_reset = false,
-          bool          complex  = false>
+          bool do_reset = false,
+          bool complex  = false>
 struct StandardTestSuite
 {
     template <typename T>
     bool
     operator()(Track& track, ParmTestMaker tm, RandomState& rs) const noexcept
     {
-        using k_t          = P<T>;
-        constexpr auto  ti = TypeInfo<T>::chars;
-        constexpr GM<T> gm{};
-        constexpr V     v{};
+        using k_t                           = KT<T>;
+        constexpr auto             ti       = TypeInfo<T>::chars;
+        constexpr std::string_view nameview = k_t::nameview;
+        constexpr GM<T>            gm{};
+        constexpr V                v{};
 
         const unsigned vector_size = tm.num_runs;
 
@@ -184,27 +184,26 @@ struct StandardTestSuite
 
         auto get_bve_tests = [&]() noexcept
         {
-            auto one = NamedTest(reset_bve(state.bve_func_is),
-                                 fmt::format("{}: BVE function introsort [{}]",
-                                             name.view(),
-                                             ti));
+            auto one = NamedTest(
+                reset_bve(state.bve_func_is),
+                fmt::format("{}: BVE function introsort [{}]", nameview, ti));
             if constexpr(complex)
                 return std::tuple{
                     std::move(one),
                     NamedTest(reset_bve(state.bve_func_cs),
                               fmt::format("{}: BVE function counting sort [{}]",
 
-                                          name.view(),
+                                          nameview,
                                           ti)),
                     NamedTest(reset_bve(state.bve_stream_is_w),
                               fmt::format("{}: BVE stream introsort [{}]",
 
-                                          name.view(),
+                                          nameview,
                                           ti)),
                     NamedTest(reset_bve(state.bve_stream_cs_w),
                               fmt::format("{}: BVE stream counting sort [{}]",
 
-                                          name.view(),
+                                          nameview,
                                           ti))};
             else
                 return one;
@@ -216,13 +215,13 @@ struct StandardTestSuite
                 reset_bve(state.simd_func_N_is),
                 fmt::format("{}: SIMD function N-order introsort [{}]",
 
-                            name.view(),
+                            nameview,
                             ti));
             auto m = NamedTest(
                 reset_bve(state.simd_func_m_is),
                 fmt::format("{}: SIMD function minikernel introsort [{}]",
 
-                            name.view(),
+                            nameview,
                             ti));
 
             if constexpr(complex)
@@ -234,7 +233,7 @@ struct StandardTestSuite
                                          return NamedTest(
                                              reset_bve(sp.wrapper),
                                              fmt::format("{}: {} [{}]",
-                                                         name.view(),
+                                                         nameview,
                                                          sp.get_name(),
                                                          ti));
                                      }));
@@ -244,23 +243,22 @@ struct StandardTestSuite
 
         return track.dep_check(
             NamedTest(tm.with_ref(g, state.bse_func, v),
-                      fmt::format("{}: BSE [{}]", name.view(), ti)),
+                      fmt::format("{}: BSE [{}]", nameview, ti)),
             get_bve_tests(),
             get_simd_tests());
     }
 };
 
-template <template <typename> typename P,
-          template <typename> typename GM,
-          StringLiteral name>
+template <template <typename> typename KT, template <typename> typename GM>
 struct SimpleSIMDSuite
 {
     template <typename T>
     bool
     operator()(Track& track, ParmTestMaker tm, RandomState& rs) const noexcept
     {
-        using k_t         = P<T>;
-        constexpr auto ti = TypeInfo<T>::chars;
+        using k_t                           = KT<T>;
+        constexpr auto             ti       = TypeInfo<T>::chars;
+        constexpr std::string_view nameview = k_t::nameview;
 
         constexpr GM<T> gm{};
         auto            g = gm(rs);
@@ -274,10 +272,10 @@ struct SimpleSIMDSuite
 
         return track.check(NamedTest(
                    tm.rng_invariant(g, simd_N),
-                   fmt::format("{}: SIMD N-order [{}]", name.view(), ti))) &&
+                   fmt::format("{}: SIMD N-order [{}]", nameview, ti))) &&
                track.check(NamedTest(
                    tm.rng_invariant(g, simd_m),
-                   fmt::format("{}: SIMD minikernel [{}]", name.view(), ti)));
+                   fmt::format("{}: SIMD minikernel [{}]", nameview, ti)));
     }
 };
 
@@ -289,86 +287,59 @@ main(int argc, char* argv[])
     ParmTestMaker tm{align_top(parse_numruns(argc, argv), 32u)};
     RandomState   rs;
 
-    test_suite_types(
-        typelist::join<all_ints, all_uints>{},
-        StandardTestSuite<increment, GM_Incr, ::fn::val_inc_fn, "increment">{},
-        track,
-        tm,
-        rs);
+    test_suite_types(typelist::join<all_ints, all_uints>{},
+                     StandardTestSuite<increment, GM_Incr, ::fn::val_inc_fn>{},
+                     track,
+                     tm,
+                     rs);
     test_suite_types(fac_ints{},
                      StandardTestSuite<factorial_int,
                                        GM_2_10,
                                        ::fn::val_fac_fn,
-                                       "factorial",
                                        true,
                                        true>{},
                      track,
                      tm,
                      rs);
     {
-        StandardTestSuite<fib,
-                          GM_FIB,
-                          ::fn::val_fib_fn,
-                          "fibonacci",
-                          true,
-                          true>
-                      test;
+        StandardTestSuite<fib, GM_FIB, ::fn::val_fib_fn, true, true> test;
         test.template operator()<std::uint64_t>(track, tm, rs);
     }
     test_suites_types(
         all_floats{},
-        type_sequence<StandardTestSuite<simple_union_test,
-                                        GMCanon,
-                                        ::fn::val_sut_fn,
-                                        "simple union">,
-                      StandardTestSuite<complex_union_test,
-                                        GMCanon,
-                                        ::fn::val_cut_fn,
-                                        "complex union",
-                                        true>,
-                      StandardTestSuite<jmp4_test,
-                                        GM_J4,
-                                        ::fn::val_jmp4_fn,
-                                        "multi-way (4) jump",
-                                        true>,
-                      StandardTestSuite<choice_test,
-                                        GM_J4,
-                                        ::fn::val_choice_fn,
-                                        "choice (conditional move)">>{},
+        type_sequence<
+            StandardTestSuite<simple_union_test, GMCanon, ::fn::val_sut_fn>,
+            StandardTestSuite<complex_union_test,
+                              GMCanon,
+                              ::fn::val_cut_fn,
+                              true>,
+            StandardTestSuite<jmp4_test, GM_J4, ::fn::val_jmp4_fn, true>,
+            StandardTestSuite<choice_test, GM_J4, ::fn::val_choice_fn>>{},
         track,
         tm,
         rs);
-    test_suite_types(all_uints{},
-                     StandardTestSuite<bit_test,
-                                       GM_Bit,
-                                       ::fn::val_bit_fn,
-                                       "bit (and, or, xor, not)",
-                                       true>{},
-                     track,
-                     tm,
-                     rs);
+    test_suite_types(
+        all_uints{},
+        StandardTestSuite<bit_test, GM_Bit, ::fn::val_bit_fn, true>{},
+        track,
+        tm,
+        rs);
     test_suites_types(
         type_sequence<std::uint16_t, std::uint32_t, std::uint64_t>{},
-        type_sequence<StandardTestSuite<lshift_test,
-                                        GM_Shift,
-                                        ::fn::val_lshift_fn,
-                                        "left shift">,
-                      StandardTestSuite<rshift_test,
-                                        GM_Shift,
-                                        ::fn::val_rshift_fn,
-                                        "right shift">>{},
+        type_sequence<
+            StandardTestSuite<lshift_test, GM_Shift, ::fn::val_lshift_fn>,
+            StandardTestSuite<rshift_test, GM_Shift, ::fn::val_rshift_fn>>{},
         track,
         tm,
         rs);
-    test_suites_types(
-        all_floats{},
-        type_sequence<SimpleSIMDSuite<abs_test, GMFloat, "abs">,
-                      SimpleSIMDSuite<trunc_test, GMFloat, "trunc">,
-                      SimpleSIMDSuite<ceilfloor, GMFloat, "ceil/floor">,
-                      SimpleSIMDSuite<minmax_test, GM_F2, "min/max">>{},
-        track,
-        tm,
-        rs);
+    test_suites_types(all_floats{},
+                      type_sequence<SimpleSIMDSuite<abs_test, GMFloat>,
+                                    SimpleSIMDSuite<trunc_test, GMFloat>,
+                                    SimpleSIMDSuite<ceilfloor, GMFloat>,
+                                    SimpleSIMDSuite<minmax_test, GM_F2>>{},
+                      track,
+                      tm,
+                      rs);
 
     return track.ret_code();
 }

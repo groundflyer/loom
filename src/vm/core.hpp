@@ -16,8 +16,8 @@ namespace lucid::vm
 {
 /// @brief Describes a variable.
 ///
-/// @tparam Type must be of fundamental type or SIMD type.
-/// @tparam Name must be char_sequence.
+/// @tparam Type fundamental type.
+/// @tparam Name register name.
 template <typename Type, CharSequence Name>
 struct Variable
 {
@@ -30,11 +30,11 @@ struct Variable
 template <typename _Variable>
 using vartype = _Variable::type;
 
-/// @brief Get name of a Variable as char_sequence.
+/// @brief Get register name of a Variable as char_sequence.
 template <typename _Variable>
 using varname = _Variable::name;
 
-/// @brief Get name of a Variable as std::string_view.
+/// @brief Get register name of a Variable as std::string_view.
 template <typename _Variable>
 constexpr inline std::string_view varview = _Variable::nameview;
 
@@ -806,10 +806,18 @@ struct same_size_union<Union<Ts...>> :
 {
 };
 
-/// @brief Kernel preparation.
-template <typelist::List InputVars,
+/// @brief Kernel assembler.
+///
+/// @tparam Name kernel name.
+/// @tparam InputVars input variables.
+/// @tparam Statements instruction statements.
+/// @tparam OutputVars output variables.
+template <CharSequence   Name,
+          typelist::List InputVars,
           typelist::List Statements,
           typelist::List OutputVars>
+    requires(!(typelist::empty<InputVars> || typelist::empty<Statements> ||
+               typelist::empty<OutputVars>))
 struct kernel_blank
 {
     using input_vars  = InputVars;
@@ -878,6 +886,8 @@ struct kernel_blank
         std::conditional_t<singular,
                            blocks_statements,
                            ensure_last_jumps_t<blocks_statements, labels>>;
+
+    static constexpr std::string_view nameview = cs2sv<Name>;
 };
 
 template <typename K>

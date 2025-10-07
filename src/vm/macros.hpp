@@ -24,9 +24,9 @@
 #define NTVAR(NAME)      NVAR(MAJOR_TYPE, NAME)
 #define NIVAR(NAME)      NVAR(INDEX_TYPE, NAME)
 
-#define BEGIN(NAME, ...)                                                      \
-    using NAME = lucid::vm::kernel_blank < lucid::type_sequence<__VA_ARGS__>, \
-          lucid::type_sequence <
+#define BEGIN(NAME, ...)                             \
+    using NAME = lucid::vm::kernel_blank < CS(NAME), \
+          lucid::type_sequence<__VA_ARGS__>, lucid::type_sequence <
 #define END(...)               >, lucid::type_sequence < __VA_ARGS__ >>
 #define TBEGIN1(NAME, v)       BEGIN(NAME, TVAR(v))
 #define TBEGIN2(NAME, a, b)    BEGIN(NAME, TVAR(a), TVAR(b))
