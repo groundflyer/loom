@@ -806,7 +806,40 @@ struct same_size_union<Union<Ts...>> :
 {
 };
 
-/// @brief Kernel assembler.
+/// @brief Macro definition structure.
+///
+/// Exists for pretty printing only.
+///
+/// @tparam Name macro name.
+/// @tparam Parameters Parameters names. List of CharSequence.
+/// @tparam Statements list of statements.
+template <CharSequence   Name,
+          typelist::List Parameters,
+          typelist::List Statements>
+    requires(!typelist::empty<Statements>)
+struct macro_blank
+{
+    using parameters = Parameters;
+    using statements = Statements;
+
+    static constexpr std::string_view nameview = cs2sv<Name>;
+};
+
+template <typename T>
+struct expand_macro : std::type_identity<T>
+{
+};
+
+template <typename T>
+using expand_macro_t = expand_macro<T>::type;
+
+template <typename Name, typename Parameters, typename Statements>
+struct expand_macro<macro_blank<Name, Parameters, Statements>>
+{
+    using type = typelist::map<expand_macro_t, Statements>;
+};
+
+/// @brief Kernel defenition structure.
 ///
 /// @tparam Name kernel name.
 /// @tparam InputVars input variables.
@@ -821,10 +854,12 @@ template <CharSequence   Name,
 struct kernel_blank
 {
     using input_vars  = InputVars;
+    using statements  = Statements;
     using output_vars = OutputVars;
     using index_t = uint_of_size_t<sizeof(vartype<typelist::head<InputVars>>)>;
-    using flat_instructions = typelist::flatten<Statements>;
-    using instructions      = optimize_labels_t<flat_instructions>;
+    using flat_instructions =
+        typelist::flatten<typelist::map<expand_macro_t, statements>>;
+    using instructions = optimize_labels_t<flat_instructions>;
 
     static_assert(!std::is_void_v<index_t>);
 
