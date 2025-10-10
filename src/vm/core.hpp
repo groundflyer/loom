@@ -373,7 +373,7 @@ template <typename Var, typename Labels, typename LabelMap>
 struct parm_jump_helper<ParmJump<Var, Labels>, LabelMap>
 {
     template <typename L>
-        requires(typelist::elem<L, typelist::map<fst_t, LabelMap>>)
+        requires(typelist::key_elem<L, LabelMap>)
     using jump_idx = typelist::lookup<L, LabelMap>;
 
     using jump_idxs = typelist::map<jump_idx, Labels>;

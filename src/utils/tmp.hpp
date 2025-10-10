@@ -897,8 +897,26 @@ using filter = detail::filter<P, L>::type;
 /// @tparam Map consists of key-value pairs type_sequence<Key, Value>.
 ///
 /// If @p Key not found the resulting type is void.
-template <typename Key, typename Map>
+template <typename Key, List Map>
 using lookup = detail::lookup<Key, Map>::type;
+
+/// @brief Extract list of keys from association list @p Map.
+///
+/// @tparam Map consists of key-value pairs type_sequence<Key, Value>.
+template <List Map>
+using keys = map<fst_t, Map>;
+
+/// @brief Extract list of values from association list @p Map
+///
+/// @tparam Map consists of key-value pairs type_sequence<Key, Value>.
+template <List Map>
+using values = map<snd_t, Map>;
+
+/// @brief Helper meta-function. Check if @p Map has element with key @p Key.
+///
+/// @tparam Map consists of key-value pairs type_sequence<Key, Value>.
+template <typename Key, List Map>
+inline constexpr bool key_elem = elem<Key, keys<Map>>;
 
 /// @brief Get the leftmost type from @p L matching predicate @p P.
 ///
