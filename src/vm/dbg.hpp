@@ -93,7 +93,6 @@ struct prettify<Jump<Target>>
 template <typename Var, typename Labels>
 struct prettify<ParmJump<Var, Labels>>
 {
-    template <typename... Ts>
     std::string
     operator()(bool ts, unsigned margin, unsigned) const noexcept
     {
@@ -109,7 +108,6 @@ struct prettify<ParmJump<Var, Labels>>
 template <typename Int, typename T1, Int val>
 struct prettify<type_pair<T1, std::integral_constant<Int, val>>>
 {
-    template <typename... Ts>
     std::string
     operator()(bool ts, unsigned margin, unsigned width) const noexcept
     {
@@ -130,6 +128,34 @@ struct prettify<type_sequence<Ts...>>
         return fmt::format(
             "{}",
             fmt::join(std::tuple{prettify<Ts>{}(args...)...}, ", "));
+    }
+};
+
+template <typename Name, typename... Ts>
+struct prettify<insert_macro_info<Name, Ts...>>
+{
+    using info = insert_macro_info<Name, Ts...>;
+
+    template <typename... Args>
+    std::string
+    operator()(Args... args) const noexcept
+    {
+        return fmt::format("{} {}",
+                           info::nameview,
+                           prettify<typename info::args>{}(args...));
+    }
+};
+
+template <CharSequence S>
+struct prettify<S>
+{
+    static constexpr std::string_view value = cs2sv<S>;
+
+    template <typename... Ts>
+    std::string_view
+    operator()(Ts...) const noexcept
+    {
+        return value;
     }
 };
 
@@ -255,14 +281,20 @@ print_instructions(bool ts = false, unsigned margin = 5)
         });
 }
 
+template <typename T>
+struct is_not_macro : std::negation<is_macro<T>>
+{
+};
+
 /// @brief Pretty print program.
 /// @param ts print types
 /// @param margin arrow margin
 template <Kernel K>
 void
 print_program(K,
-              bool       ts     = false,
+              const bool ts     = false,
               const bool bs     = true,
+              const bool em     = false,
               unsigned   margin = 5) noexcept
 {
     using input_vars  = K::input_vars;
@@ -271,6 +303,7 @@ print_program(K,
     using labels = K::labels;
     using blocks = K::blocks;
 
+    using statements   = typelist::filter<is_not_macro, typename K::statements>;
     using instructions = K::instructions;
 
     fmt::print("Input variables: {}\n", prettify<input_vars>{}(ts, margin, 0));
@@ -285,8 +318,10 @@ print_program(K,
                                           prettify<fst_t<LC>>{}(ts, margin, 0));
                                print_instructions<snd_t<LC>>(ts, margin);
                            });
-    else
+    else if(em)
         print_instructions<instructions>(ts, margin);
+    else
+        print_instructions<statements>(ts, margin);
 }
 
 struct UnknownVar
@@ -778,6 +813,7 @@ inspect(InputOpt inopt, int argc, char* argv[]) noexcept
             argparse::flag<'p', "print">("print program and exit"),
             argparse::flag<'T', "type-annotations">("show type annotations"),
             argparse::flag<'b', "blocks">("separate blocks"),
+            argparse::flag<'m', "macros">("expand macros"),
             argparse::flag<'i', "interactive">("run interactive"),
             argparse::option<'w', "column-width">("column width. Default is 20",
                                                   "N",
@@ -797,6 +833,7 @@ inspect(InputOpt inopt, int argc, char* argv[]) noexcept
 
     const bool ts = pr.template get_opt<'T'>();
     const bool bs = pr.template get_opt<'b'>();
+    const bool em = pr.template get_opt<'m'>();
 
     decltype(pr.template get_opt<"input">()) fi;
 
@@ -814,7 +851,7 @@ inspect(InputOpt inopt, int argc, char* argv[]) noexcept
 
     if(pr.template get_opt<'p'>())
     {
-        print_program(p, ts, bs);
+        print_program(p, ts, bs, em);
         return 0;
     }
 

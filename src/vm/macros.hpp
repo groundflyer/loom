@@ -167,20 +167,25 @@
                                CS(P7)>,                 \
           lucid::type_sequence <
 
-#define MACRO_END                >>
+#define MACRO_END >>
 
-#define INSERT_MACRO(NAME, ...)  NAME __VA_OPT__(<__VA_ARGS__>)
-#define INSERT_TMACRO(NAME, ...) INSERT_MACRO(NAME, MAJOR_TYPE, __VA_ARGS__)
+#define INSERT_MACRO_INFO(NAME, ...) \
+    lucid::vm::insert_macro_info<CS(NAME), __VA_OPT__(__VA_ARGS__)>
+#define INSERT_MACRO(NAME, ...) \
+    INSERT_MACRO_INFO(NAME, __VA_ARGS__), NAME __VA_OPT__(<__VA_ARGS__>)
+#define INSERT_TMACRO(NAME, ...)          \
+    INSERT_MACRO_INFO(NAME, __VA_ARGS__), \
+        NAME<MAJOR_TYPE __VA_OPT__(, ) __VA_ARGS__>
 
-#define MOV(a, b)                lucid::vm::Compute<std::identity, a, b>
-#define TMOV(a, b)               MOV(TVAR(a), TVAR(b))
-#define IMOV(a, b)               MOV(IVAR(a), IVAR(b))
-#define TMOV_CS(a, b)            MOV(NTVAR(a), NTVAR(b))
-#define IMOV_CS(a, b)            MOV(NIVAR(a), NIVAR(b))
+#define MOV(a, b)               lucid::vm::Compute<std::identity, a, b>
+#define TMOV(a, b)              MOV(TVAR(a), TVAR(b))
+#define IMOV(a, b)              MOV(IVAR(a), IVAR(b))
+#define TMOV_CS(a, b)           MOV(NTVAR(a), NTVAR(b))
+#define IMOV_CS(a, b)           MOV(NIVAR(a), NIVAR(b))
 
-#define LABEL_CS(NAME)           lucid::vm::Label<NAME>
-#define LABEL(NAME)              LABEL_CS(CS(NAME))
-#define PREFIX_LABEL_CS(_P, _L)  LABEL_CS(CS_JOIN(_P, _L))
+#define LABEL_CS(NAME)          lucid::vm::Label<NAME>
+#define LABEL(NAME)             LABEL_CS(CS(NAME))
+#define PREFIX_LABEL_CS(_P, _L) LABEL_CS(CS_JOIN(_P, _L))
 
 #define JMP(TARGET)                 \
     lucid::vm::Jump < LABEL(TARGET) \
