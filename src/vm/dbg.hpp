@@ -258,6 +258,32 @@ MK_OPS_PRETTIFY(cos)
 #undef MK_STD_PRETTIFY
 #undef MK_OPS_PRETTIFY
 
+template <typename T, typename Dict>
+struct update_macros_dict : std::type_identity<Dict>
+{
+};
+
+template <typelist::List Statements, typename Dict>
+struct collect_macro
+{
+    template <typename T, typename D>
+    using f = update_macros_dict<T, D>::type;
+
+    using type = typelist::foldr<f, Dict, Statements>;
+};
+
+template <typename Name, typename Ps, typename Cs, typename Dict>
+struct update_macros_dict<macro_blank<Name, Ps, Cs>, Dict>
+{
+    using macro = macro_blank<Name, Ps, Cs>;
+
+    using type = std::conditional_t<
+        typelist::key_elem<Name, Dict>,
+        Dict,
+        typelist::append<type_pair<Name, macro>,
+                         typename collect_macro<Cs, Dict>::type>>;
+};
+
 /// @brief Pretty print instructions.
 /// @param ts enable type signatures.
 template <typelist::List Instructions>
@@ -285,8 +311,13 @@ struct is_not_macro : std::negation<is_macro<T>>
 {
 };
 
+template <typelist::List Statements>
+using remove_macro_blanks = typelist::filter<is_not_macro, Statements>;
+
 /// @brief Pretty print program.
-/// @param ts enable type signatures,
+/// @param ts enable type signatures.
+/// @param bs show program as separate blocks.
+/// @param em expand macros.
 template <Kernel K>
 void
 print_program(K,
@@ -300,8 +331,9 @@ print_program(K,
     using labels = K::labels;
     using blocks = K::blocks;
 
-    using statements   = typelist::filter<is_not_macro, typename K::statements>;
-    using instructions = K::instructions;
+    using statements           = K::statements;
+    using statements_no_macros = remove_macro_blanks<statements>;
+    using instructions         = K::instructions;
 
     fmt::print("Input variables: {}\n", prettify<input_vars>{}(ts, 0));
     fmt::print("Output variables: {}\n", prettify<output_vars>{}(ts, 0));
@@ -317,7 +349,26 @@ print_program(K,
     else if(em)
         print_instructions<instructions>(ts);
     else
-        print_instructions<statements>(ts);
+    {
+        using macros = typelist::values<
+            typename collect_macro<statements, type_sequence<>>::type>;
+
+        typelist::for_each(
+            macros{},
+            [=]<typename Macro>()
+            {
+                fmt::print("%macro {} {}\n",
+                           Macro::nameview,
+                           prettify<typename Macro::parameters>{}(ts, 0));
+                print_instructions<
+                    remove_macro_blanks<typename Macro::statements>>(ts);
+                fmt::print("%endmacro\n...\n");
+            });
+
+        fmt::print("%program\n");
+        print_instructions<statements_no_macros>(ts);
+        fmt::print("%end\n");
+    }
 }
 
 struct UnknownVar
