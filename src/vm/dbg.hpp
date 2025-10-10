@@ -43,7 +43,7 @@ template <typename T, typename N>
 struct prettify<Variable<T, N>>
 {
     std::string
-    operator()(bool type_signature, unsigned, unsigned) const noexcept
+    operator()(bool type_signature, unsigned) const noexcept
     {
         if(type_signature)
             return fmt::format("{}:{}",
@@ -57,11 +57,13 @@ struct prettify<Variable<T, N>>
 template <typename Name>
 struct prettify<Label<Name>>
 {
+    static constexpr std::string_view value = cs2sv<Name>;
+
     template <typename... _>
     std::string_view
     operator()(_...) const noexcept
     {
-        return cs2sv<Name>;
+        return value;
     }
 };
 
@@ -69,13 +71,12 @@ template <typename Op, typename Dst, typename... Args>
 struct prettify<Compute<Op, Dst, Args...>>
 {
     std::string
-    operator()(bool ts, unsigned margin, unsigned width) const noexcept
+    operator()(bool ts, unsigned width) const noexcept
     {
-        return fmt::format(
-            "{} {}, {}",
-            prettify<Op>{}(ts, margin, width),
-            prettify<Dst>{}(ts, margin, width),
-            prettify<type_sequence<Args...>>{}(ts, margin, width));
+        return fmt::format("{} {}, {}",
+                           prettify<Op>{}(ts, width),
+                           prettify<Dst>{}(ts, width),
+                           prettify<type_sequence<Args...>>{}(ts, width));
     }
 };
 
@@ -94,13 +95,13 @@ template <typename Var, typename Labels>
 struct prettify<ParmJump<Var, Labels>>
 {
     std::string
-    operator()(bool ts, unsigned margin, unsigned) const noexcept
+    operator()(bool ts, unsigned) const noexcept
     {
         return fmt::format("jmp {}, {}",
-                           prettify<Var>{}(ts, margin, 0),
+                           prettify<Var>{}(ts, 0),
                            prettify<typelist::enumerate<Labels>>{}(
                                ts,
-                               margin,
+
                                magnitude(typelist::length<Labels>) + 1));
     }
 };
@@ -109,12 +110,9 @@ template <typename Int, typename T1, Int val>
 struct prettify<type_pair<T1, std::integral_constant<Int, val>>>
 {
     std::string
-    operator()(bool ts, unsigned margin, unsigned width) const noexcept
+    operator()(bool ts, unsigned width) const noexcept
     {
-        return fmt::format("{:0{}d}: {}",
-                           val,
-                           width,
-                           prettify<T1>{}(ts, margin, 0));
+        return fmt::format("{:0{}d}: {}", val, width, prettify<T1>{}(ts, 0));
     }
 };
 
@@ -260,10 +258,11 @@ MK_OPS_PRETTIFY(cos)
 #undef MK_STD_PRETTIFY
 #undef MK_OPS_PRETTIFY
 
-/// @brief Pretty print all instructions including labels.
+/// @brief Pretty print instructions.
+/// @param ts enable type signatures.
 template <typelist::List Instructions>
 void
-print_instructions(bool ts = false, unsigned margin = 5)
+print_instructions(bool ts = false)
 {
     constexpr unsigned w = magnitude(typelist::length<Instructions>) + 1u;
 
@@ -275,9 +274,9 @@ print_instructions(bool ts = false, unsigned margin = 5)
             constexpr unsigned n = snd_t<TP>::value;
 
             if constexpr(is_label<t>::value)
-                fmt::print("{:0{}d} {}:\n", n, w, prettify<t>{}(ts, margin, 0));
+                fmt::print("{:0{}d} {}:\n", n, w, prettify<t>{}(ts, 0));
             else
-                fmt::print("{:0{}d}\t{}\n", n, w, prettify<t>{}(ts, margin, 0));
+                fmt::print("{:0{}d}\t{}\n", n, w, prettify<t>{}(ts, 0));
         });
 }
 
@@ -287,15 +286,13 @@ struct is_not_macro : std::negation<is_macro<T>>
 };
 
 /// @brief Pretty print program.
-/// @param ts print types
-/// @param margin arrow margin
+/// @param ts enable type signatures,
 template <Kernel K>
 void
 print_program(K,
-              const bool ts     = false,
-              const bool bs     = true,
-              const bool em     = false,
-              unsigned   margin = 5) noexcept
+              const bool ts = false,
+              const bool bs = true,
+              const bool em = false) noexcept
 {
     using input_vars  = K::input_vars;
     using output_vars = K::output_vars;
@@ -306,22 +303,21 @@ print_program(K,
     using statements   = typelist::filter<is_not_macro, typename K::statements>;
     using instructions = K::instructions;
 
-    fmt::print("Input variables: {}\n", prettify<input_vars>{}(ts, margin, 0));
-    fmt::print("Output variables: {}\n",
-               prettify<output_vars>{}(ts, margin, 0));
+    fmt::print("Input variables: {}\n", prettify<input_vars>{}(ts, 0));
+    fmt::print("Output variables: {}\n", prettify<output_vars>{}(ts, 0));
 
     if(bs)
         typelist::for_each(typelist::zip<labels, blocks>{},
                            [=]<typename LC>()
                            {
                                fmt::print("{}:\n",
-                                          prettify<fst_t<LC>>{}(ts, margin, 0));
-                               print_instructions<snd_t<LC>>(ts, margin);
+                                          prettify<fst_t<LC>>{}(ts, 0));
+                               print_instructions<snd_t<LC>>(ts);
                            });
     else if(em)
-        print_instructions<instructions>(ts, margin);
+        print_instructions<instructions>(ts);
     else
-        print_instructions<statements>(ts, margin);
+        print_instructions<statements>(ts);
 }
 
 struct UnknownVar
@@ -416,7 +412,7 @@ struct VarPrinter
     void
     operator()(std::FILE* file = stdout) const noexcept
     {
-        fmt::print(file, "{}\n", prettify<Var>{}(true, 0, 0));
+        fmt::print(file, "{}\n", prettify<Var>{}(true, 0));
     }
 };
 
@@ -478,7 +474,7 @@ interactive_get_inputs(P)
                        fmt::join(typelist::maybe_collect(
                                      input_vars{},
                                      []<typename Var>()
-                                     { return prettify<Var>{}(true, 0, 0); }),
+                                     { return prettify<Var>{}(true, 0); }),
                                  " "));
 
             std::string line;
@@ -507,8 +503,7 @@ interactive_get_inputs(P)
         while(!success)
         {
             using var = typelist::head<input_vars>;
-            fmt::print("[Input: {}] Enter value:\n",
-                       prettify<var>{}(true, 0, 0));
+            fmt::print("[Input: {}] Enter value:\n", prettify<var>{}(true, 0));
             std::string line;
             std::getline(std::cin, line);
             if(line.empty())
@@ -574,7 +569,7 @@ print_header(K, const std::bitset<N>& mask, unsigned cw, bool ts)
     typelist::for_each_masked(
         vars,
         []<typename Var>(unsigned cw, bool ts)
-        { print_word(prettify<Var>{}(ts, 0, 0), cw); },
+        { print_word(prettify<Var>{}(ts, 0), cw); },
         mask,
         cw,
         ts);
