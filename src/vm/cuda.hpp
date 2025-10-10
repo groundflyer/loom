@@ -284,7 +284,7 @@ struct remap_comp<std::identity>
 };
 
 template <>
-struct remap_comp<ops::choice>
+struct remap_comp<ops::cmov>
 {
     struct type
     {

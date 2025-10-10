@@ -10,9 +10,9 @@
 
 namespace lucid::vm::ops
 {
-struct choice
+struct cmov
 {
-    template <typename C, typename T>
+    template <std::integral C, typename T>
     constexpr T
     operator()(const C c, const T a, const T b) const noexcept
     {

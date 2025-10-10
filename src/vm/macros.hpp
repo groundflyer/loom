@@ -240,13 +240,13 @@
     lucid::vm::Compute<OP<TYPE>, NIVAR(DST), NVAR(TYPE, A), NVAR(TYPE, B)>
 #define CMP(OP, TYPE, DST, A, B) CMP_CS(OP, TYPE, CS(DST), CS(A), CS(B))
 
-#define CHOICE_CS(TYPE, DST, C, A, B)          \
-    lucid::vm::Compute<lucid::vm::ops::choice, \
-                       NVAR(TYPE, DST),        \
-                       NIVAR(C),               \
-                       NVAR(TYPE, A),          \
+#define CMOV_CS(TYPE, DST, C, A, B)          \
+    lucid::vm::Compute<lucid::vm::ops::cmov, \
+                       NVAR(TYPE, DST),      \
+                       NIVAR(C),             \
+                       NVAR(TYPE, A),        \
                        NVAR(TYPE, B)>
-#define CHOICE(TYPE, DST, C, A, B) CHOICE_CS(TYPE, CS(DST), CS(C), CS(A), CS(B))
+#define CMOV(TYPE, DST, C, A, B) CMOV_CS(TYPE, CS(DST), CS(C), CS(A), CS(B))
 
 #define FMA_CS(TYPE, DST, X, Y, Z)          \
     lucid::vm::Compute<lucid::vm::ops::fma, \
@@ -359,11 +359,11 @@
 #define XOR_CS(...)        BINOP_CS(std::bit_xor, INDEX_TYPE, __VA_ARGS__)
 #define BNOT_CS(...)       UNOP_CS(std::bit_not, INDEX_TYPE, __VA_ARGS__)
 
-#define TCHOICE(...)       CHOICE(MAJOR_TYPE, __VA_ARGS__)
-#define ICHOICE(...)       CHOICE(INDEX_TYPE, __VA_ARGS__)
+#define TCMOV(...)         CMOV(MAJOR_TYPE, __VA_ARGS__)
+#define ICMOV(...)         CMOV(INDEX_TYPE, __VA_ARGS__)
 
-#define TCHOICE_CS(...)    CHOICE_CS(MAJOR_TYPE, __VA_ARGS__)
-#define ICHOICE_CS(...)    CHOICE_CS(INDEX_TYPE, __VA_ARGS__)
+#define TCMOV_CS(...)      CMOV_CS(MAJOR_TYPE, __VA_ARGS__)
+#define ICMOV_CS(...)      CMOV_CS(INDEX_TYPE, __VA_ARGS__)
 
 #define LSHFT(...)         BINOP(lucid::vm::ops::lshift, INDEX_TYPE, __VA_ARGS__)
 #define RSHFT(...)         BINOP(lucid::vm::ops::rshift, INDEX_TYPE, __VA_ARGS__)

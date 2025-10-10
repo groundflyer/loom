@@ -202,8 +202,7 @@ class program_types
 
 template <template <typename> typename P,
           template <typename> typename GM,
-          typename V,
-          StringLiteral name>
+          typename V>
 struct StandardTestSuite
 {
     static constexpr V val{};
@@ -220,9 +219,10 @@ struct StandardTestSuite
         using out_vec = types::output_simd;
         using cmp_t   = types::cmp;
 
-        constexpr auto  ti = TypeInfo<T>::chars;
-        constexpr GM<T> gm{};
-        constexpr cmp_t cmp{};
+        constexpr std::string_view nameview = k_t::nameview;
+        constexpr auto             ti       = TypeInfo<T>::chars;
+        constexpr GM<T>            gm{};
+        constexpr cmp_t            cmp{};
 
         auto gs = gm(rs);
 
@@ -246,7 +246,7 @@ struct StandardTestSuite
         simd::embedded_function<k_t> test;
         return track.check(
             NamedTest{tm.with_ref(gen, test, ref, cmp),
-                      fmt::format("{}: {}[{}]", name.view(), ti, N)});
+                      fmt::format("{}: {}[{}]", nameview, ti, N)});
     }
 };
 
@@ -315,66 +315,43 @@ main(int argc, char* argv[])
 
     test_set<mock_program<unsigned, 9>>(track, tm, rs);
 
-    test_suite_types(
-        typelist::join<all_ints, all_uints>{},
-        StandardTestSuite<increment, GM_Incr, ::fn::val_inc_fn, "increment">{},
-        track,
-        tm,
-        rs);
-
-    test_suite_types(fac_ints{},
-                     StandardTestSuite<factorial_int,
-                                       GM_2_10,
-                                       ::fn::val_fac_fn,
-                                       "factorial">{},
+    test_suite_types(typelist::join<all_ints, all_uints>{},
+                     StandardTestSuite<increment, GM_Incr, ::fn::val_inc_fn>{},
                      track,
                      tm,
                      rs);
 
+    test_suite_types(
+        fac_ints{},
+        StandardTestSuite<factorial_int, GM_2_10, ::fn::val_fac_fn>{},
+        track,
+        tm,
+        rs);
+
     {
-        constexpr StandardTestSuite<fib, GM_FIB, ::fn::val_fib_fn, "fibonacci">
-                      test;
+        constexpr StandardTestSuite<fib, GM_FIB, ::fn::val_fib_fn> test;
         test.template operator()<std::uint64_t>(track, tm, rs);
     }
     test_suites_types(
         all_floats{},
-        type_sequence<StandardTestSuite<simple_union_test,
-                                        GMCanon,
-                                        ::fn::val_sut_fn,
-                                        "simple union">,
-                      StandardTestSuite<complex_union_test,
-                                        GMCanon,
-                                        ::fn::val_cut_fn,
-                                        "complex union">,
-                      StandardTestSuite<jmp4_test,
-                                        GM_J4,
-                                        ::fn::val_jmp4_fn,
-                                        "multi-way (4) jump">,
-                      StandardTestSuite<choice_test,
-                                        GM_J4,
-                                        ::fn::val_choice_fn,
-                                        "choice (conditional move)">>{},
+        type_sequence<
+            StandardTestSuite<simple_union_test, GMCanon, ::fn::val_sut_fn>,
+            StandardTestSuite<complex_union_test, GMCanon, ::fn::val_cut_fn>,
+            StandardTestSuite<jmp4_test, GM_J4, ::fn::val_jmp4_fn>,
+            StandardTestSuite<cmov_test, GM_J4, ::fn::val_cmov_fn>>{},
         track,
         tm,
         rs);
     test_suite_types(all_uints{},
-                     StandardTestSuite<bit_test,
-                                       GM_Bit,
-                                       ::fn::val_bit_fn,
-                                       "bit (and, or, xor, not)">{},
+                     StandardTestSuite<bit_test, GM_Bit, ::fn::val_bit_fn>{},
                      track,
                      tm,
                      rs);
     test_suites_types(
         type_sequence<std::uint16_t, std::uint32_t, std::uint64_t>{},
-        type_sequence<StandardTestSuite<lshift_test,
-                                        GM_Shift,
-                                        ::fn::val_lshift_fn,
-                                        "left shift">,
-                      StandardTestSuite<rshift_test,
-                                        GM_Shift,
-                                        ::fn::val_rshift_fn,
-                                        "right shift">>{},
+        type_sequence<
+            StandardTestSuite<lshift_test, GM_Shift, ::fn::val_lshift_fn>,
+            StandardTestSuite<rshift_test, GM_Shift, ::fn::val_rshift_fn>>{},
         track,
         tm,
         rs);

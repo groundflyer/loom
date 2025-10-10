@@ -295,7 +295,7 @@ struct remap_comp<N, std::identity, Dst, Src>
 };
 
 template <fsize_t N, typename T, typename I>
-struct remap_comp<N, ops::choice, T, I, T, T>
+struct remap_comp<N, ops::cmov, T, I, T, T>
 {
     struct type
     {

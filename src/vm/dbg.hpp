@@ -160,9 +160,9 @@ struct prettify<S>
 };
 
 template <>
-struct prettify<ops::choice>
+struct prettify<ops::cmov>
 {
-    static constexpr std::string_view value = "choice";
+    static constexpr std::string_view value = "cmov";
 
     template <typename... Ts>
     std::string_view

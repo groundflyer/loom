@@ -314,7 +314,7 @@ main(int argc, char* argv[])
                               ::fn::val_cut_fn,
                               true>,
             StandardTestSuite<jmp4_test, GM_J4, ::fn::val_jmp4_fn, true>,
-            StandardTestSuite<choice_test, GM_J4, ::fn::val_choice_fn>>{},
+            StandardTestSuite<cmov_test, GM_J4, ::fn::val_cmov_fn>>{},
         track,
         tm,
         rs);

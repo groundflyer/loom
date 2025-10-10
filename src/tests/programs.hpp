@@ -114,12 +114,12 @@ END(IVAR(a));
 
 // !i && (a > 0.5) ? -a : a
 template <std::floating_point T>
-BEGIN(choice_test, IVAR(i), TVAR(a))
+BEGIN(cmov_test, IVAR(i), TVAR(a))
     LNOT(i, i),
     TGT(cmp, a, 0.5),
     TNEG(ma, a),
     LAND(i, i, cmp),
-    TCHOICE(ma, i, ma, a)
+    TCMOV(ma, i, ma, a)
 TEND1(ma);
 
 // (a << b)
@@ -170,7 +170,7 @@ END(IVAR(r));
 template <std::unsigned_integral T>
 TBEGIN1(fib, n)
     TLE(cmp, n, 1),
-    TCHOICE(c, cmp, n, 1),
+    TCMOV(c, cmp, n, 1),
     PJMP2(cmp, work, HALT),
     LABEL(work),
     TMOV(p, 0),
@@ -255,7 +255,7 @@ val_bit(T i, T a, T b)
 
 template <std::floating_point T>
 constexpr T
-val_choice(lucid::uint_of_size_t<sizeof(T)> i, T a) noexcept
+val_cmov(lucid::uint_of_size_t<sizeof(T)> i, T a) noexcept
 {
     return !i && (a > static_cast<T>(0.5)) ? -a : a;
 }
@@ -297,7 +297,7 @@ MK_NIEBLOID(val_fac);
 MK_NIEBLOID(val_sut);
 MK_NIEBLOID(val_cut);
 MK_NIEBLOID(val_jmp4);
-MK_NIEBLOID(val_choice);
+MK_NIEBLOID(val_cmov);
 MK_NIEBLOID(val_bit);
 MK_NIEBLOID(val_lshift);
 MK_NIEBLOID(val_rshift);

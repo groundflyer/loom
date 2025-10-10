@@ -32,7 +32,7 @@ using fac_unsigned = factorial_int<unsigned>;
 using sut          = simple_union_test<float>;
 using cut          = complex_union_test<float>;
 using jmp4_float   = jmp4_test<float>;
-using choice_float = choice_test<float>;
+using cmov_float   = cmov_test<float>;
 using bit_u        = bit_test<unsigned>;
 using lshift_u     = lshift_test<unsigned>;
 using rshift_u     = rshift_test<unsigned>;
@@ -82,7 +82,7 @@ main(int argc, char* argv[])
     test_function(sut{}, g_float, val_sut, "CUDA simple union");
     test_function(cut{}, g_float, val_cut, "CUDA complex union");
     test_function(jmp4_float{}, g_j4, val_jmp4, "CUDA jump4");
-    test_function(choice_float{}, g_j4, val_choice, "CUDA choice");
+    test_function(cmov_float{}, g_j4, val_cmov, "CUDA cmov");
     test_function(lshift_u{}, g_shift, val_lshift, "CUDA left shift");
     test_function(rshift_u{}, g_shift, val_rshift, "CUDA right shift");
     test_stream(fac_unsigned{},
