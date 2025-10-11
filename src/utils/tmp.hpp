@@ -35,6 +35,16 @@ struct type_sequence
 {
 };
 
+template <typename T>
+struct is_type_sequence : std::false_type
+{
+};
+
+template <typename... Ts>
+struct is_type_sequence<type_sequence<Ts...>> : std::true_type
+{
+};
+
 /// @brief Pair of types.
 template <typename A, typename B>
 using type_pair = type_sequence<A, B>;
@@ -96,16 +106,6 @@ namespace typelist
 {
 namespace detail
 {
-template <typename T>
-struct is_type_sequence : std::false_type
-{
-};
-
-template <typename... Ts>
-struct is_type_sequence<type_sequence<Ts...>> : std::true_type
-{
-};
-
 template <typename T, typename List>
 struct cons;
 
@@ -720,7 +720,7 @@ struct self_caller
 
 /// @brief type_sequence constraint.
 template <typename T>
-concept List = detail::is_type_sequence<T>::value;
+concept List = is_type_sequence<T>::value;
 
 /// @brief Add class @p T to the beginning of type_sequence @p L.
 template <typename T, List L>

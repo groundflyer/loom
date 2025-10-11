@@ -18,7 +18,12 @@ using cubic_fz_p = cubic_fz_program<T, typename constants<T>::errt>;
 int
 main(int argc, char* argv[])
 {
-    return inspect<cubic_fz_p<float>>(
+    return inspect<cubic_fz_p<float>,
+                   type_sequence<PRETTIFY_MACRO(float, cubic_eval),
+                                 PRETTIFY_MACRO(float, cubic_rc),
+                                 PRETTIFY_MACRO(float, cubic_fb),
+                                 PRETTIFY_MACRO(float, median),
+                                 PRETTIFY_MACRO(float, cubic_fz)>>(
         option<"input", 4>("input values",
                            {"a", "b", "c", "d"},
                            {1.f, 2.f, 3.f, 4.f},

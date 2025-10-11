@@ -52,130 +52,139 @@
     END             \
     (IVAR(a), IVAR(b))
 
-#define MACRO_BEGIN(NAME)                                                   \
-    using NAME = lucid::vm::macro_blank < CS(NAME), lucid::type_sequence<>, \
-          lucid::type_sequence <
+#define __MACRO_PREFIX __macro_decl_
 
-#define MACRO_BEGIN1(NAME, P1)                      \
-    template <typename P1>                          \
-    using NAME = lucid::vm::macro_blank < CS(NAME), \
-          lucid::type_sequence<CS(P1)>, lucid::type_sequence <
-#define MACRO_BEGIN2(NAME, P1, P2)                  \
-    template <typename P1, typename P2>             \
-    using NAME = lucid::vm::macro_blank < CS(NAME), \
-          lucid::type_sequence<CS(P1), CS(P2)>, lucid::type_sequence <
+#define __MACRO_DECLARE(MACRO_NAME, ...) \
+    using __MACRO_PREFIX##MACRO_NAME =   \
+        lucid::vm::macro_decl<CS(MACRO_NAME) __VA_OPT__(, ) __VA_ARGS__>
+// #define __MACRO_DECLARE(NAME, ...) \
+//     __MACRO_DECLARE_PREFIX(__MACRO_PREFIX, NAME, __VA_ARGS__)
+#define __MACRO_DEF_BEGIN(NAME) \
+    struct NAME                 \
+    {                           \
+        using type = lucid::type_sequence <
+
+#define MACRO_BEGIN(NAME)  \
+    __MACRO_DECLARE(NAME); \
+    __MACRO_DEF_BEGIN(NAME)
+
+#define MACRO_BEGIN1(NAME, P1)     \
+    __MACRO_DECLARE(NAME, CS(P1)); \
+    template <typename P1>         \
+    __MACRO_DEF_BEGIN(NAME)
+#define MACRO_BEGIN2(NAME, P1, P2)         \
+    __MACRO_DECLARE(NAME, CS(P1), CS(P2)); \
+    template <typename P1, typename P2>    \
+    __MACRO_DEF_BEGIN(NAME)
 #define MACRO_BEGIN3(NAME, P1, P2, P3)               \
+    __MACRO_DECLARE(NAME, CS(P1), CS(P2), CS(P3));   \
     template <typename P1, typename P2, typename P3> \
-    using NAME = lucid::vm::macro_blank < CS(NAME),  \
-          lucid::type_sequence<CS(P1), CS(P2), CS(P3)>, lucid::type_sequence <
+    __MACRO_DEF_BEGIN(NAME)
 #define MACRO_BEGIN4(NAME, P1, P2, P3, P4)                        \
+    __MACRO_DECLARE(NAME, CS(P1), CS(P2), CS(P3), CS(P4));        \
     template <typename P1, typename P2, typename P3, typename P4> \
-    using NAME = lucid::vm::macro_blank < CS(NAME),               \
-          lucid::type_sequence<CS(P1), CS(P2), CS(P3), CS(P4)>,   \
-          lucid::type_sequence <
+    __MACRO_DEF_BEGIN(NAME)
 #define MACRO_BEGIN5(NAME, P1, P2, P3, P4, P5)                                 \
+    __MACRO_DECLARE(NAME, CS(P1), CS(P2), CS(P3), CS(P4), CS(P5));             \
     template <typename P1, typename P2, typename P3, typename P4, typename P5> \
-    using NAME = lucid::vm::macro_blank < CS(NAME),                            \
-          lucid::type_sequence<CS(P1), CS(P2), CS(P3), CS(P4), CS(P5)>,        \
-          lucid::type_sequence <
-#define MACRO_BEGIN6(NAME, P1, P2, P3, P4, P5, P6)                           \
-    template <typename P1,                                                   \
-              typename P2,                                                   \
-              typename P3,                                                   \
-              typename P4,                                                   \
-              typename P5,                                                   \
-              typename P6>                                                   \
-    using NAME = lucid::vm::macro_blank < CS(NAME),                          \
-          lucid::                                                            \
-              type_sequence<CS(P1), CS(P2), CS(P3), CS(P4), CS(P5), CS(P6)>, \
-          lucid::type_sequence <
+    __MACRO_DEF_BEGIN(NAME)
+#define MACRO_BEGIN6(NAME, P1, P2, P3, P4, P5, P6)                         \
+    __MACRO_DECLARE(NAME, CS(P1), CS(P2), CS(P3), CS(P4), CS(P5), CS(P6)); \
+    template <typename P1,                                                 \
+              typename P2,                                                 \
+              typename P3,                                                 \
+              typename P4,                                                 \
+              typename P5,                                                 \
+              typename P6>                                                 \
+    __MACRO_DEF_BEGIN(NAME)
 #define MACRO_BEGIN7(NAME, P1, P2, P3, P4, P5, P6, P7) \
+    __MACRO_DECLARE(NAME,                              \
+                    CS(P1),                            \
+                    CS(P2),                            \
+                    CS(P3),                            \
+                    CS(P4),                            \
+                    CS(P5),                            \
+                    CS(P6),                            \
+                    CS(P7));                           \
     template <typename P1,                             \
               typename P2,                             \
               typename P3,                             \
               typename P4,                             \
               typename P5,                             \
-              typename P6>                             \
-    using NAME = lucid::vm::macro_blank < CS(NAME),    \
-          lucid::type_sequence<CS(P1),                 \
-                               CS(P2),                 \
-                               CS(P3),                 \
-                               CS(P4),                 \
-                               CS(P5),                 \
-                               CS(P6),                 \
-                               CS(P7)>,                \
-          lucid::type_sequence <
+              typename P6,                             \
+              typename P7>                             \
+    __MACRO_DEF_BEGIN(NAME)
 
-#define TMACRO_BEGIN1(NAME, P1)                     \
-    template <typename MAJOR_TYPE, typename P1>     \
-    using NAME = lucid::vm::macro_blank < CS(NAME), \
-          lucid::type_sequence<CS(P1)>, lucid::type_sequence <
+#define TMACRO_BEGIN1(NAME, P1)                 \
+    __MACRO_DECLARE(NAME, CS(P1));              \
+    template <typename MAJOR_TYPE, typename P1> \
+    __MACRO_DEF_BEGIN(NAME)
 #define TMACRO_BEGIN2(NAME, P1, P2)                          \
+    __MACRO_DECLARE(NAME, CS(P1), CS(P2));                   \
     template <typename MAJOR_TYPE, typename P1, typename P2> \
-    using NAME = lucid::vm::macro_blank < CS(NAME),          \
-          lucid::type_sequence<CS(P1), CS(P2)>, lucid::type_sequence <
+    __MACRO_DEF_BEGIN(NAME)
 #define TMACRO_BEGIN3(NAME, P1, P2, P3)                                   \
+    __MACRO_DECLARE(NAME, CS(P1), CS(P2), CS(P3));                        \
     template <typename MAJOR_TYPE, typename P1, typename P2, typename P3> \
-    using NAME = lucid::vm::macro_blank < CS(NAME),                       \
-          lucid::type_sequence<CS(P1), CS(P2), CS(P3)>, lucid::type_sequence <
-#define TMACRO_BEGIN4(NAME, P1, P2, P3, P4)                     \
-    template <typename MAJOR_TYPE,                              \
-              typename P1,                                      \
-              typename P2,                                      \
-              typename P3,                                      \
-              typename P4>                                      \
-    using NAME = lucid::vm::macro_blank < CS(NAME),             \
-          lucid::type_sequence<CS(P1), CS(P2), CS(P3), CS(P4)>, \
-          lucid::type_sequence <
-#define TMACRO_BEGIN5(NAME, P1, P2, P3, P4, P5)                         \
-    template <typename MAJOR_TYPE,                                      \
-              typename P1,                                              \
-              typename P2,                                              \
-              typename P3,                                              \
-              typename P4,                                              \
-              typename P5>                                              \
-    using NAME = lucid::vm::macro_blank < CS(NAME),                     \
-          lucid::type_sequence<CS(P1), CS(P2), CS(P3), CS(P4), CS(P5)>, \
-          lucid::type_sequence <
-#define TMACRO_BEGIN6(NAME, P1, P2, P3, P4, P5, P6)                          \
-    template <typename MAJOR_TYPE,                                           \
-              typename P1,                                                   \
-              typename P2,                                                   \
-              typename P3,                                                   \
-              typename P4,                                                   \
-              typename P5,                                                   \
-              typename P6>                                                   \
-    using NAME = lucid::vm::macro_blank < CS(NAME),                          \
-          lucid::                                                            \
-              type_sequence<CS(P1), CS(P2), CS(P3), CS(P4), CS(P5), CS(P6)>, \
-          lucid::type_sequence <
+    __MACRO_DEF_BEGIN(NAME)
+#define TMACRO_BEGIN4(NAME, P1, P2, P3, P4)                \
+    __MACRO_DECLARE(NAME, CS(P1), CS(P2), CS(P3), CS(P4)); \
+    template <typename MAJOR_TYPE,                         \
+              typename P1,                                 \
+              typename P2,                                 \
+              typename P3,                                 \
+              typename P4>                                 \
+    __MACRO_DEF_BEGIN(NAME)
+#define TMACRO_BEGIN5(NAME, P1, P2, P3, P4, P5)                    \
+    __MACRO_DECLARE(NAME, CS(P1), CS(P2), CS(P3), CS(P4), CS(P5)); \
+    template <typename MAJOR_TYPE,                                 \
+              typename P1,                                         \
+              typename P2,                                         \
+              typename P3,                                         \
+              typename P4,                                         \
+              typename P5>                                         \
+    __MACRO_DEF_BEGIN(NAME)
+#define TMACRO_BEGIN6(NAME, P1, P2, P3, P4, P5, P6)                        \
+    __MACRO_DECLARE(NAME, CS(P1), CS(P2), CS(P3), CS(P4), CS(P5), CS(P6)); \
+    template <typename MAJOR_TYPE,                                         \
+              typename P1,                                                 \
+              typename P2,                                                 \
+              typename P3,                                                 \
+              typename P4,                                                 \
+              typename P5,                                                 \
+              typename P6>                                                 \
+    __MACRO_DEF_BEGIN(NAME)
 #define TMACRO_BEGIN7(NAME, P1, P2, P3, P4, P5, P6, P7) \
+    __MACRO_DECLARE(NAME,                               \
+                    CS(P1),                             \
+                    CS(P2),                             \
+                    CS(P3),                             \
+                    CS(P4),                             \
+                    CS(P5),                             \
+                    CS(P6),                             \
+                    CS(P7));                            \
     template <typename MAJOR_TYPE,                      \
               typename P1,                              \
               typename P2,                              \
               typename P3,                              \
               typename P4,                              \
               typename P5,                              \
-              typename P6>                              \
-    using NAME = lucid::vm::macro_blank < CS(NAME),     \
-          lucid::type_sequence<CS(P1),                  \
-                               CS(P2),                  \
-                               CS(P3),                  \
-                               CS(P4),                  \
-                               CS(P5),                  \
-                               CS(P6),                  \
-                               CS(P7)>,                 \
-          lucid::type_sequence <
+              typename P6,                              \
+              typename P7>                              \
+    __MACRO_DEF_BEGIN(NAME)
 
-#define MACRO_END >>
+#define MACRO_END \
+    > ;           \
+    }
 
-#define INSERT_MACRO_INFO(NAME, ...) \
-    lucid::vm::insert_macro_info<CS(NAME), __VA_OPT__(__VA_ARGS__)>
-#define INSERT_MACRO(NAME, ...) \
-    INSERT_MACRO_INFO(NAME, __VA_ARGS__), NAME __VA_OPT__(<__VA_ARGS__>)
-#define INSERT_TMACRO(NAME, ...)          \
-    INSERT_MACRO_INFO(NAME, __VA_ARGS__), \
-        NAME<MAJOR_TYPE __VA_OPT__(, ) __VA_ARGS__>
+#define __INSERT_MACRO_INFO(NAME, ...) \
+    lucid::vm::macro_inv<CS(NAME) __VA_OPT__(, ) __VA_ARGS__>
+#define INSERT_MACRO(NAME, ...)             \
+    __INSERT_MACRO_INFO(NAME, __VA_ARGS__), \
+        typename NAME __VA_OPT__(<__VA_ARGS__>)::type
+#define INSERT_TMACRO(NAME, ...)            \
+    __INSERT_MACRO_INFO(NAME, __VA_ARGS__), \
+        typename NAME<MAJOR_TYPE __VA_OPT__(, ) __VA_ARGS__>::type
 
 #define MOV(a, b)               lucid::vm::Compute<std::identity, a, b>
 #define TMOV(a, b)              MOV(TVAR(a), TVAR(b))

@@ -130,9 +130,9 @@ struct prettify<type_sequence<Ts...>>
 };
 
 template <typename Name, typename... Ts>
-struct prettify<insert_macro_info<Name, Ts...>>
+struct prettify<macro_inv<Name, Ts...>>
 {
-    using info = insert_macro_info<Name, Ts...>;
+    using info = macro_inv<Name, Ts...>;
 
     template <typename... Args>
     std::string
@@ -258,31 +258,20 @@ MK_OPS_PRETTIFY(cos)
 #undef MK_STD_PRETTIFY
 #undef MK_OPS_PRETTIFY
 
-template <typename T, typename Dict>
-struct update_macros_dict : std::type_identity<Dict>
+template <typename T,
+          typename MacroDecl,
+          template <typename...> typename MacroDef>
+struct pretty_macro
 {
+    static constexpr std::string_view nameview = MacroDecl::nameview;
+
+    using parameters = MacroDecl::parameters;
+    using statements =
+        typelist::to<typelist::cons<T, parameters>, MacroDef>::type;
 };
 
-template <typelist::List Statements, typename Dict>
-struct collect_macro
-{
-    template <typename T, typename D>
-    using f = update_macros_dict<T, D>::type;
-
-    using type = typelist::foldr<f, Dict, Statements>;
-};
-
-template <typename Name, typename Ps, typename Cs, typename Dict>
-struct update_macros_dict<macro_blank<Name, Ps, Cs>, Dict>
-{
-    using macro = macro_blank<Name, Ps, Cs>;
-
-    using type = std::conditional_t<
-        typelist::key_elem<Name, Dict>,
-        Dict,
-        typelist::append<type_pair<Name, macro>,
-                         typename collect_macro<Cs, Dict>::type>>;
-};
+#define PRETTIFY_MACRO(T, MACRO_NAME) \
+    pretty_macro<T, __MACRO_PREFIX##MACRO_NAME, MACRO_NAME>
 
 /// @brief Pretty print instructions.
 /// @param ts enable type signatures.
@@ -307,21 +296,22 @@ print_instructions(bool ts = false)
 }
 
 template <typename T>
-struct is_not_macro : std::negation<is_macro<T>>
+struct is_not_ts : std::negation<is_type_sequence<T>>
 {
 };
 
-template <typelist::List Statements>
-using remove_macro_blanks = typelist::filter<is_not_macro, Statements>;
+template <typename Statements>
+using remove_ts = typelist::filter<is_not_ts, Statements>;
 
 /// @brief Pretty print program.
+/// @tparam K kernel to pretty print.
+/// @tparam Ms list of macros to pretty print.
 /// @param ts enable type signatures.
 /// @param bs show program as separate blocks.
 /// @param em expand macros.
-template <Kernel K>
+template <Kernel K, typename Ms = type_sequence<>>
 void
-print_program(K,
-              const bool ts = false,
+print_program(const bool ts = false,
               const bool bs = true,
               const bool em = false) noexcept
 {
@@ -332,7 +322,7 @@ print_program(K,
     using blocks = K::blocks;
 
     using statements           = K::statements;
-    using statements_no_macros = remove_macro_blanks<statements>;
+    using statements_no_macros = remove_ts<statements>;
     using instructions         = K::instructions;
 
     fmt::print("Input variables: {}\n", prettify<input_vars>{}(ts, 0));
@@ -350,18 +340,14 @@ print_program(K,
         print_instructions<instructions>(ts);
     else
     {
-        using macros = typelist::values<
-            typename collect_macro<statements, type_sequence<>>::type>;
-
         typelist::for_each(
-            macros{},
+            Ms{},
             [=]<typename Macro>()
             {
                 fmt::print("%macro {} {}\n",
                            Macro::nameview,
                            prettify<typename Macro::parameters>{}(ts, 0));
-                print_instructions<
-                    remove_macro_blanks<typename Macro::statements>>(ts);
+                print_instructions<remove_ts<typename Macro::statements>>(ts);
                 fmt::print("%endmacro\n...\n");
             });
 
@@ -846,7 +832,7 @@ class debug_compiler
         std::conditional_t<interactive, interactive_inspector, fast_inspector>;
 };
 
-template <Kernel K, typename InputOpt>
+template <Kernel K, typelist::List Macros = type_sequence<>, typename InputOpt>
 int
 inspect(InputOpt inopt, int argc, char* argv[]) noexcept
 {
@@ -872,7 +858,6 @@ inspect(InputOpt inopt, int argc, char* argv[]) noexcept
                 read_number<unsigned, true>),
             argparse::option_list<'t', "track">("variables to track", "vars")},
         {argc, argv});
-    constexpr K p{};
 
     unsigned cw = 20;
     unsigned ms = 100;
@@ -897,7 +882,7 @@ inspect(InputOpt inopt, int argc, char* argv[]) noexcept
 
     if(pr.template get_opt<'p'>())
     {
-        print_program(p, ts, bs, em);
+        print_program<K, Macros>(ts, bs, em);
         return 0;
     }
 
