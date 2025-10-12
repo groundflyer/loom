@@ -325,8 +325,11 @@ print_program(const bool ts = false,
     using statements_no_macros = remove_ts<statements>;
     using instructions         = K::instructions;
 
-    fmt::print("Input variables: {}\n", prettify<input_vars>{}(ts, 0));
-    fmt::print("Output variables: {}\n", prettify<output_vars>{}(ts, 0));
+    const std::string inputs  = prettify<input_vars>{}(ts, 0);
+    const std::string outputs = prettify<output_vars>{}(ts, 0);
+
+    fmt::print("Input variables: {}\n", inputs);
+    fmt::print("Output variables: {}\n", outputs);
 
     if(bs)
         typelist::for_each(typelist::zip<labels, blocks>{},
@@ -351,9 +354,9 @@ print_program(const bool ts = false,
                 fmt::print("%endmacro\n...\n");
             });
 
-        fmt::print("%program\n");
+        fmt::print("%program {} {}\n", K::nameview, inputs);
         print_instructions<statements_no_macros>(ts);
-        fmt::print("%end\n");
+        fmt::print("%endprogram {}\n", outputs);
     }
 }
 

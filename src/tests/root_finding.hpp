@@ -13,19 +13,19 @@
 
 // clang-format off
 // a * x^3 + b * x^2 + c * x + d
-TMACRO_BEGIN4(cubic_eval, result, x, t2, t3)
+TMACRO_BEGIN4(eval, y, x, t2, t3)
     TMUL_CS(t2, x, x),
     TMUL_CS(t3, t2, x),
-    TFMA_CS(result, CS(c), x, CS(d)),
-    TFMA_CS(result, CS(b), t2, result),
-    TFMA_CS(result, CS(a), t3, result)
+    TFMA_CS(y, CS(c), x, CS(d)),
+    TFMA_CS(y, CS(b), t2, y),
+    TFMA_CS(y, CS(a), t3, y)
 MACRO_END;
 
 // root condition
 // signbit(eval_at(ks, l)) != signbit(eval_at(ks, r))
-TMACRO_BEGIN6(cubic_rc, y, l, r, t1, t2, t3)
-    INSERT_TMACRO(cubic_eval, y, l, t2, t3),
-    INSERT_TMACRO(cubic_eval, t1, r, t2, t3),
+TMACRO_BEGIN6(root_condition, y, l, r, t1, t2, t3)
+    INSERT_TMACRO(eval, y, l, t2, t3),
+    INSERT_TMACRO(eval, t1, r, t2, t3),
     TLT_CS(y, y, CS(0)),
     TLT_CS(t1, t1, CS(0)),
     INEQ_CS(y, y, t1)
@@ -45,16 +45,15 @@ MACRO_END;
 // rc = rc != 0
 // pjmp2 rc loop end
 // end
-TMACRO_BEGIN4(cubic_fb, rc, t1, t2, t3)
+TMACRO_BEGIN4(find_bounds, rc, t1, t2, t3)
     TMOV_CS(CS(l), CS(-10)),
     TMOV_CS(CS(r), CS(10)),
-    INSERT_TMACRO(cubic_rc, rc, CS(l), CS(r), t1, t2, t3),
-    PJMP2_CS(rc, useless, fb_end),
-    LABEL(useless),             // to test label optimizations
+    INSERT_TMACRO(root_condition, rc, CS(l), CS(r), t1, t2, t3),
+    PJMP2_CS(rc, fb_loop, fb_end),
     LABEL(fb_loop),
     TMUL_CS(CS(l), CS(l), CS(10)),
     TMUL_CS(CS(r), CS(r), CS(10)),
-    INSERT_TMACRO(cubic_rc, rc, CS(l), CS(r), t1, t2, t3),
+    INSERT_TMACRO(root_condition, rc, CS(l), CS(r), t1, t2, t3),
     PJMP2_CS(rc, fb_loop, fb_end),
     LABEL(fb_end)               // will be replaced with HaltLabel
 MACRO_END;
@@ -67,46 +66,40 @@ TMACRO_BEGIN1(median, s)
     TADD_CS(s, s, CS(l))
 MACRO_END;
 
-// find zero
-TMACRO_BEGIN4(cubic_fz, t1, t2, t3, errt)
-    INSERT_TMACRO(cubic_fb, CS(y), t1, t2, t3),
-    INSERT_TMACRO(median, CS(s)),
-    INSERT_TMACRO(cubic_eval, CS(y), CS(s), t1, t2),
-    IMOV(i, 0),
-    TABS(y, y),
-    TGE_CS(CS(y), CS(y), errt),
-    PJMP2(y, fz_end, fz_loop),
-    LABEL(fz_loop),
-    INSERT_TMACRO(cubic_rc, CS(y), CS(l), CS(s), t1, t2, t3),
-    TCMOV(r, y, s, r),
-    TCMOV(l, y, l, s),
-    INSERT_TMACRO(median, CS(s)),
-    INSERT_TMACRO(cubic_eval, CS(y), CS(s), t1, t2),
-    TABS(y, y),
-    TGE_CS(CS(y), CS(y), errt),
-    IADD(i, i, 1),
-    PJMP2(y, fz_end, fz_loop),
-    LABEL(fz_end)
-MACRO_END;
-
 template <std::floating_point T>
-TBEGIN5(cubic_eval_program, a, b, c, d, x)
-    INSERT_TMACRO(cubic_eval, CS(r), CS(x), CS(t1), CS(t2))
+TBEGIN5(eval_program, a, b, c, d, x)
+    INSERT_TMACRO(eval, CS(r), CS(x), CS(t1), CS(t2))
 TEND1(r);
 
 template <std::floating_point T>
-TBEGIN6(cubic_rc_program, a, b, c, d, l, r)
-    INSERT_TMACRO(cubic_rc, CS(rc), CS(l), CS(r), CS(t1), CS(t2), CS(t3))
+TBEGIN6(root_condition_program, a, b, c, d, l, r)
+    INSERT_TMACRO(root_condition, CS(rc), CS(l), CS(r), CS(t1), CS(t2), CS(t3))
 END(IVAR(rc));
 
 template <std::floating_point T>
-TBEGIN4(cubic_fb_program, a, b, c, d)
-    INSERT_TMACRO(cubic_fb, CS(rc), CS(t1), CS(t2), CS(t3))
+TBEGIN4(find_bounds_program, a, b, c, d)
+    INSERT_TMACRO(find_bounds, CS(rc), CS(t1), CS(t2), CS(t3))
 TEND2(l, r);
 
 template <std::floating_point T, typename errt>
-TBEGIN4(cubic_fz_program, a, b, c, d)
-    INSERT_TMACRO(cubic_fz, CS(t1), CS(t2), CS(t3), errt)
+TBEGIN4(bisection, a, b, c, d)
+    INSERT_TMACRO(find_bounds, CS(y), CS(t1), CS(t2), CS(t3)),
+    INSERT_TMACRO(median, CS(s)),
+    INSERT_TMACRO(eval, CS(y), CS(s), CS(t1), CS(t2)),
+    IMOV(i, 0),
+    TABS(y, y),
+    TGE_CS(CS(y), CS(y), errt),
+    PJMP2(y, HALT, fz_loop),
+    LABEL(fz_loop),
+    INSERT_TMACRO(root_condition, CS(y), CS(l), CS(s), CS(t1), CS(t2), CS(t3)),
+    TCMOV(r, y, s, r),
+    TCMOV(l, y, l, s),
+    INSERT_TMACRO(median, CS(s)),
+    INSERT_TMACRO(eval, CS(y), CS(s), CS(t1), CS(t2)),
+    TABS(y, y),
+    TGE_CS(CS(y), CS(y), errt),
+    IADD(i, i, 1),
+    PJMP2(y, HALT, fz_loop)
 END(TVAR(s), IVAR(i));
 // clang-format on
 
@@ -138,7 +131,7 @@ namespace fn
 {
 template <std::floating_point T>
 constexpr T
-val_cubic_eval(T a, T b, T c, T d, T x) noexcept
+val_eval(T a, T b, T c, T d, T x) noexcept
 {
     T x2 = x * x;
     T x3 = x2 * x;
@@ -150,20 +143,20 @@ val_cubic_eval(T a, T b, T c, T d, T x) noexcept
 
 template <std::floating_point T>
 constexpr bool
-val_cubic_rc(T a, T b, T c, T d, T l, T r) noexcept
+val_root_condition(T a, T b, T c, T d, T l, T r) noexcept
 {
-    return std::signbit(val_cubic_eval(a, b, c, d, l)) !=
-           std::signbit(val_cubic_eval(a, b, c, d, r));
+    return std::signbit(val_eval(a, b, c, d, l)) !=
+           std::signbit(val_eval(a, b, c, d, r));
 }
 
 template <std::floating_point T>
 std::tuple<T, T>
-val_cubic_fb(T a, T b, T c, T d) noexcept
+val_find_bounds(T a, T b, T c, T d) noexcept
 {
     T l = -10;
     T r = 10;
 
-    while(!val_cubic_rc(a, b, c, d, l, r))
+    while(!val_root_condition(a, b, c, d, l, r))
     {
         l *= 10;
         r *= 10;
@@ -183,13 +176,13 @@ template <std::floating_point T>
 std::tuple<T, lucid::uint_of_size_t<sizeof(T)>>
 val_cubic_fz(T a, T b, T c, T d) noexcept
 {
-    auto [l, r]                        = val_cubic_fb(a, b, c, d);
+    auto [l, r]                        = val_find_bounds(a, b, c, d);
     auto                             s = median(l, r);
-    auto                             y = abs(val_cubic_eval(a, b, c, d, s));
+    auto                             y = abs(val_eval(a, b, c, d, s));
     lucid::uint_of_size_t<sizeof(T)> i = 0;
     while(y >= constants<T>::err_threshold)
     {
-        const bool rc = val_cubic_rc(a, b, c, d, l, s);
+        const bool rc = val_root_condition(a, b, c, d, l, s);
         // if (rc)
         //     r = s;
         // else
@@ -198,7 +191,7 @@ val_cubic_fz(T a, T b, T c, T d) noexcept
         l = rc ? l : s;
 
         s = median(l, r);
-        y = abs(val_cubic_eval(a, b, c, d, s));
+        y = abs(val_eval(a, b, c, d, s));
         ++i;
     }
 
@@ -206,7 +199,7 @@ val_cubic_fz(T a, T b, T c, T d) noexcept
 }
 } // namespace fn
 
-MK_NIEBLOID(val_cubic_eval);
-MK_NIEBLOID(val_cubic_rc);
-MK_NIEBLOID(val_cubic_fb);
+MK_NIEBLOID(val_eval);
+MK_NIEBLOID(val_root_condition);
+MK_NIEBLOID(val_find_bounds);
 MK_NIEBLOID(val_cubic_fz);

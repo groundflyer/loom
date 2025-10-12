@@ -18,7 +18,7 @@ using namespace test;
 
 using fac_p = factorial_int<std::uint64_t>;
 using fib_p = fib<std::uint64_t>;
-using fz_p  = cubic_fz_program<double, constants<double>::errt>;
+using fz_p  = bisection<double, constants<double>::errt>;
 
 using programs = type_sequence<fac_p, fib_p, fz_p>;
 

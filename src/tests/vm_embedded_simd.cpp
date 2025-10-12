@@ -263,7 +263,7 @@ struct RootFindingSuite
 
         constexpr std::size_t N = simd::native_vector_extent_v<T>;
 
-        using k_t     = cubic_fz_program<T, errt>;
+        using k_t     = bisection<T, errt>;
         using types   = program_types<k_t, N>;
         using in_vec  = types::input_simd;
         using out_vec = types::output_simd;

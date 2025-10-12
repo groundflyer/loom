@@ -44,10 +44,10 @@ struct test_suite
     static constexpr T rbound        = cnsts::rbound;
     using errt                       = cnsts::errt;
 
-    using cubic_eval_p = cubic_eval_program<T>;
-    using cubic_rc_p   = cubic_rc_program<T>;
-    using cubic_fb_p   = cubic_fb_program<T>;
-    using cubic_fz_p   = cubic_fz_program<T, errt>;
+    using eval_p           = eval_program<T>;
+    using root_condition_p = root_condition_program<T>;
+    using find_bounds_p    = find_bounds_program<T>;
+    using cubic_fz_p       = bisection<T, errt>;
 
     static constexpr auto ti = TypeInfo<T>::chars;
 
@@ -73,13 +73,13 @@ struct test_suite
                               b ? T(100) : T(-100)};
         };
 
-        bse::function<cubic_eval_p> bse_cubic;
-        bse::function<cubic_rc_p>   bse_cubic_rc;
-        bse::function<cubic_fb_p>   bse_cubic_fb;
-        bse::function<cubic_fz_p>   bse_cubic_fz;
+        bse::function<eval_p>           bse_cubic;
+        bse::function<root_condition_p> bse_root_condition;
+        bse::function<find_bounds_p>    bse_find_bounds;
+        bse::function<cubic_fz_p>       bse_cubic_fz;
 
-        simd::function<cubic_fb_p, simd::N_ORDER, simd::bve_INTROSORT>
-            simd_cubic_fb(tm.num_runs);
+        simd::function<find_bounds_p, simd::N_ORDER, simd::bve_INTROSORT>
+            simd_find_bounds(tm.num_runs);
         simd::function<cubic_fz_p, simd::N_ORDER, simd::bve_INTROSORT>
             simd_cubic_fz(tm.num_runs);
 
@@ -88,14 +88,15 @@ struct test_suite
         StreamWrapper simd_stream_wrapper_fz{&simd_stream_fz};
 
         track.check(
-            NamedFuzzyTest(tm.fuzzy_ulp(g_cubic, bse_cubic, val_cubic_eval, 10),
+            NamedFuzzyTest(tm.fuzzy_ulp(g_cubic, bse_cubic, val_eval, 10),
                            fmt::format("({}) BSE cubic eval", ti),
                            1e-2));
+        track.check(NamedTest(
+            tm.with_ref(g_cubrc, bse_root_condition, val_root_condition),
+            fmt::format("({}) BSE cubic root condition", ti)));
         track.check(
-            NamedTest(tm.with_ref(g_cubrc, bse_cubic_rc, val_cubic_rc),
-                      fmt::format("({}) BSE cubic root condition", ti)));
-        track.check(NamedTest(tm.with_ref(g_c4, bse_cubic_fb, val_cubic_fb),
-                              fmt::format("({}) BSE cubic find bounds", ti)));
+            NamedTest(tm.with_ref(g_c4, bse_find_bounds, val_find_bounds),
+                      fmt::format("({}) BSE cubic find bounds", ti)));
         track.check(NamedFuzzyTest(
             tm.fuzzy_with_ref(
                 g_c4,
@@ -109,7 +110,7 @@ struct test_suite
 
         track.check(NamedFuzzyTest(
             [&]() noexcept
-            { return val_fb_rng(simd_cubic_fb, g_c4, tm.num_runs); },
+            { return val_fb_rng(simd_find_bounds, g_c4, tm.num_runs); },
             fmt::format("({}) SIMD cubic find bounds", ti),
             1e-2));
         track.check(NamedFuzzyTest(
