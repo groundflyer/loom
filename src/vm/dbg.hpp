@@ -274,25 +274,38 @@ struct pretty_macro
     pretty_macro<T, __MACRO_PREFIX##MACRO_NAME, MACRO_NAME>
 
 /// @brief Pretty print instructions.
-/// @param ts enable type signatures.
-template <typelist::List Instructions>
+/// @param ts add type signatures.
+/// @param ln add line numbers.
+/// @tparam Instructions list of instructions to print.
+/// @tparam start first line number.
+template <typelist::List Instructions,
+          unsigned       start = 1,
+          unsigned       w = magnitude(typelist::length<Instructions>) + start>
 void
-print_instructions(bool ts = false)
+print_instructions(const bool ts = false, const bool ln = true)
 {
-    constexpr unsigned w = magnitude(typelist::length<Instructions>) + 1u;
+    if(ln)
+        typelist::for_each(
+            typelist::enumerate<Instructions, unsigned, start>{},
+            [=]<typename TP>()
+            {
+                using t              = fst_t<TP>;
+                constexpr unsigned n = snd_t<TP>::value;
 
-    typelist::for_each(
-        typelist::enumerate<Instructions, unsigned, 1u>{},
-        [=]<typename TP>()
-        {
-            using t              = fst_t<TP>;
-            constexpr unsigned n = snd_t<TP>::value;
-
-            if constexpr(is_label<t>::value)
-                fmt::print("{:0{}d} {}:\n", n, w, prettify<t>{}(ts, 0));
-            else
-                fmt::print("{:0{}d}\t{}\n", n, w, prettify<t>{}(ts, 0));
-        });
+                if constexpr(is_label<t>::value)
+                    fmt::print("{:0{}d} {}:\n", n, w, prettify<t>{}(ts, 0));
+                else
+                    fmt::print("{:0{}d}\t{}\n", n, w, prettify<t>{}(ts, 0));
+            });
+    else
+        typelist::for_each(Instructions{},
+                           [=]<typename T>()
+                           {
+                               if constexpr(is_label<T>::value)
+                                   fmt::print("{}:\n", prettify<T>{}(ts, 0));
+                               else
+                                   fmt::print("\t{}\n", prettify<T>{}(ts, 0));
+                           });
 }
 
 template <typename T>
@@ -309,11 +322,13 @@ using remove_ts = typelist::filter<is_not_ts, Statements>;
 /// @param ts enable type signatures.
 /// @param bs show program as separate blocks.
 /// @param em expand macros.
+/// @param ln add line numbers.
 template <Kernel K, typename Ms = type_sequence<>>
 void
 print_program(const bool ts = false,
               const bool bs = true,
-              const bool em = false) noexcept
+              const bool em = false,
+              const bool ln = true) noexcept
 {
     using input_vars  = K::input_vars;
     using output_vars = K::output_vars;
@@ -337,26 +352,54 @@ print_program(const bool ts = false,
                            {
                                fmt::print("{}:\n",
                                           prettify<fst_t<LC>>{}(ts, 0));
-                               print_instructions<snd_t<LC>>(ts);
+                               print_instructions<snd_t<LC>>(ts, ln);
                            });
     else if(em)
-        print_instructions<instructions>(ts);
+        print_instructions<instructions>(ts, ln);
     else
     {
         typelist::for_each(
             Ms{},
             [=]<typename Macro>()
             {
-                fmt::print("%macro {} {}\n",
-                           Macro::nameview,
-                           prettify<typename Macro::parameters>{}(ts, 0));
-                print_instructions<remove_ts<typename Macro::statements>>(ts);
-                fmt::print("%endmacro\n...\n");
+                const std::string pps =
+                    prettify<typename Macro::parameters>{}(ts, 0);
+
+                using mstatements    = remove_ts<typename Macro::statements>;
+                constexpr unsigned l = typelist::length<mstatements>;
+                constexpr unsigned w = magnitude(l) + 1u;
+
+                if(ln)
+                    fmt::print("{:0{}d} %macro {} {}\n",
+                               1u,
+                               w,
+                               Macro::nameview,
+                               pps);
+                else
+                    fmt::print("%macro {} {}\n", Macro::nameview, pps);
+
+                print_instructions<mstatements, 2, w>(ts, ln);
+
+                if(ln)
+                    fmt::print("{:0{}d} %endmacro\n...\n", l + 2u, w);
+                else
+                    fmt::print("%endmacro\n...\n");
             });
 
-        fmt::print("%program {} {}\n", K::nameview, inputs);
-        print_instructions<statements_no_macros>(ts);
-        fmt::print("%endprogram {}\n", outputs);
+        constexpr unsigned l = typelist::length<statements_no_macros>;
+        constexpr unsigned w = magnitude(l) + 1;
+
+        if(ln)
+            fmt::print("{:0{}d} %program {} {}\n", 1u, w, K::nameview, inputs);
+        else
+            fmt::print("%program {} {}\n", K::nameview, inputs);
+
+        print_instructions<statements_no_macros, 2u, w>(ts, ln);
+
+        if(ln)
+            fmt::print("{:0{}d} %endprogram {}\n", l + 2u, w, outputs);
+        else
+            fmt::print("%endprogram {}\n", outputs);
     }
 }
 
@@ -849,6 +892,7 @@ inspect(InputOpt inopt, int argc, char* argv[]) noexcept
             argparse::flag<'T', "type-annotations">("show type annotations"),
             argparse::flag<'b', "blocks">("separate blocks"),
             argparse::flag<'m', "macros">("expand macros"),
+            argparse::flag<'l', "line-numbers">("add line numbers"),
             argparse::flag<'i', "interactive">("run interactive"),
             argparse::option<'w', "column-width">("column width. Default is 20",
                                                   "N",
@@ -868,6 +912,7 @@ inspect(InputOpt inopt, int argc, char* argv[]) noexcept
     const bool ts = pr.template get_opt<'T'>();
     const bool bs = pr.template get_opt<'b'>();
     const bool em = pr.template get_opt<'m'>();
+    const bool ln = pr.template get_opt<'l'>();
 
     decltype(pr.template get_opt<"input">()) fi;
 
@@ -885,7 +930,7 @@ inspect(InputOpt inopt, int argc, char* argv[]) noexcept
 
     if(pr.template get_opt<'p'>())
     {
-        print_program<K, Macros>(ts, bs, em);
+        print_program<K, Macros>(ts, bs, em, ln);
         return 0;
     }
 
