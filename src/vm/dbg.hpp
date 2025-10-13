@@ -112,7 +112,7 @@ struct prettify<type_pair<T1, std::integral_constant<Int, val>>>
     std::string
     operator()(bool ts, unsigned width) const noexcept
     {
-        return fmt::format("{:0{}d}: {}", val, width, prettify<T1>{}(ts, 0));
+        return fmt::format("{:{}d}: {}", val, width, prettify<T1>{}(ts, 0));
     }
 };
 
@@ -293,9 +293,9 @@ print_instructions(const bool ts = false, const bool ln = true)
                 constexpr unsigned n = snd_t<TP>::value;
 
                 if constexpr(is_label<t>::value)
-                    fmt::print("{:0{}d} {}:\n", n, w, prettify<t>{}(ts, 0));
+                    fmt::print("{:{}d} {}:\n", n, w, prettify<t>{}(ts, 0));
                 else
-                    fmt::print("{:0{}d}\t{}\n", n, w, prettify<t>{}(ts, 0));
+                    fmt::print("{:{}d}\t{}\n", n, w, prettify<t>{}(ts, 0));
             });
     else
         typelist::for_each(Instructions{},
@@ -370,7 +370,7 @@ print_program(const bool ts = false,
                 constexpr unsigned w = magnitude(l) + 1u;
 
                 if(ln)
-                    fmt::print("{:0{}d} %macro {} {}\n",
+                    fmt::print("{:{}d} %macro {} {}\n",
                                1u,
                                w,
                                Macro::nameview,
@@ -381,7 +381,7 @@ print_program(const bool ts = false,
                 print_instructions<mstatements, 2, w>(ts, ln);
 
                 if(ln)
-                    fmt::print("{:0{}d} %endmacro\n...\n", l + 2u, w);
+                    fmt::print("{:{}d} %endmacro\n...\n", l + 2u, w);
                 else
                     fmt::print("%endmacro\n...\n");
             });
@@ -390,14 +390,14 @@ print_program(const bool ts = false,
         constexpr unsigned w = magnitude(l) + 1;
 
         if(ln)
-            fmt::print("{:0{}d} %program {} {}\n", 1u, w, K::nameview, inputs);
+            fmt::print("{:{}d} %program {} {}\n", 1u, w, K::nameview, inputs);
         else
             fmt::print("%program {} {}\n", K::nameview, inputs);
 
         print_instructions<statements_no_macros, 2u, w>(ts, ln);
 
         if(ln)
-            fmt::print("{:0{}d} %endprogram {}\n", l + 2u, w, outputs);
+            fmt::print("{:{}d} %endprogram {}\n", l + 2u, w, outputs);
         else
             fmt::print("%endprogram {}\n", outputs);
     }
