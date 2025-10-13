@@ -245,7 +245,7 @@ main(int argc, char* argv[])
     fmt::print("Input size: {}\n", num_runs);
     fmt::print("Stream size: {}\n", stream_size);
 
-    auto g_fac = GM_2_10<std::uint64_t>{}(rs);
+    auto g_fac = GM_FAC<std::uint64_t>{}(rs);
     auto g_fib = GM_FIB<std::uint64_t>{}(rs);
     auto g_fz  = gm_fz<double>(rs);
 

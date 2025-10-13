@@ -294,7 +294,7 @@ main(int argc, char* argv[])
                      rs);
     test_suite_types(fac_ints{},
                      StandardTestSuite<factorial_int,
-                                       GM_2_10,
+                                       GM_FAC,
                                        ::fn::val_fac_fn,
                                        true,
                                        true>{},

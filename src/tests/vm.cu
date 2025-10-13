@@ -27,7 +27,6 @@ using namespace vm;
 using namespace test;
 
 using incr_int     = increment<int>;
-using fac_int      = factorial_int<int>;
 using fac_unsigned = factorial_int<unsigned>;
 using sut          = simple_union_test<float>;
 using cut          = complex_union_test<float>;
@@ -52,7 +51,7 @@ main(int argc, char* argv[])
     RandomState    rs;
 
     auto g_int   = rs.make_gen<int>(2, 10);
-    auto g_ui    = rs.make_gen<unsigned>(2, 10);
+    auto g_ui    = rs.make_gen<unsigned>(0, 10);
     auto g_float = rs.make_gen<float>();
     auto g_u3    = rs.make_gen<unsigned>(0, 3);
     auto g_j4    = [&]() noexcept { return std::pair{g_u3(), g_float()}; };
@@ -78,7 +77,6 @@ main(int argc, char* argv[])
 
     test_function(incr_int{}, g_int, val_inc, "CUDA increment int");
     test_function(fac_unsigned{}, g_ui, val_fac, "CUDA factorial unsigned");
-    test_function(fac_int{}, g_int, val_fac, "CUDA factorial int");
     test_function(sut{}, g_float, val_sut, "CUDA simple union");
     test_function(cut{}, g_float, val_cut, "CUDA complex union");
     test_function(jmp4_float{}, g_j4, val_jmp4, "CUDA jump4");

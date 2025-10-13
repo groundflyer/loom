@@ -48,8 +48,7 @@ using all_ints =
     type_sequence<std::int8_t, std::int16_t, std::int32_t, std::int64_t>;
 using all_uints =
     type_sequence<std::uint8_t, std::uint16_t, std::uint32_t, std::uint64_t>;
-using fac_ints =
-    type_sequence<std::int32_t, std::int64_t, std::uint32_t, std::uint64_t>;
+using fac_ints   = type_sequence<std::uint32_t, std::uint64_t>;
 using all_floats = type_sequence<float, double>;
 
 template <auto>

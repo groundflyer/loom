@@ -17,12 +17,14 @@ TBEGIN1(increment, val)
     TADD(val, val, 1)
 TEND1(val);
 
-// T factorial(T i):
-//     T c = i - 1
-//     while c != 0:
-//         i *= c
-//         c -= 1
-//     return i
+// T factorial(T a):
+// if a <= 1:
+//  return 1
+// T c = a - 1
+// while c != 0:
+//  a *= c
+//  c -= 1
+// return a
 //
 // input: a
 // output: a
@@ -33,8 +35,12 @@ TEND1(val);
 // c = c - 1
 // cmp = c == 0
 // jump: cmp: 0 -> loop, 1 -> end
-template <std::integral T>
+template <std::unsigned_integral T>
 TBEGIN1(factorial_int, a)
+    TLE(cmp, a, 1),
+    TCMOV(a, cmp, 1, a),
+    PJMP2(cmp, cinit, HALT),
+    LABEL(cinit),
     TSUB(c, a, 1),
     LABEL(loop),
     TMUL(a, a, c),
@@ -199,7 +205,7 @@ val_inc(T i) noexcept
 }
 
 // factorial validation
-template <std::integral T>
+template <std::unsigned_integral T>
 constexpr T
 val_fac(T i) noexcept
 {

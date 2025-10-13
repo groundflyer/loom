@@ -45,6 +45,9 @@ struct GMFloat
 template <std::integral T>
 using GM_2_10 = GMIntRange<T, 2, 10>;
 
+template <std::unsigned_integral T>
+using GM_FAC = GMIntRange<T, 0, sizeof(T) == 8 ? 20 : 12>;
+
 template <std::integral T>
 using GM_Incr = GMIntRange<T,
                            std::numeric_limits<T>::lowest(),
@@ -67,6 +70,9 @@ inline constexpr GMFloat<T> gm_float{};
 
 template <std::integral T>
 inline constexpr GM_2_10<T> gm_2_10{};
+
+template <std::unsigned_integral T>
+inline constexpr GM_FAC<T> gm_fac{};
 
 template <std::unsigned_integral T>
 inline constexpr GM_0U<T> gm_0u{};

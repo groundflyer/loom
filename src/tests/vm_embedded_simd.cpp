@@ -323,7 +323,7 @@ main(int argc, char* argv[])
 
     test_suite_types(
         fac_ints{},
-        StandardTestSuite<factorial_int, GM_2_10, ::fn::val_fac_fn>{},
+        StandardTestSuite<factorial_int, GM_FAC, ::fn::val_fac_fn>{},
         track,
         tm,
         rs);
