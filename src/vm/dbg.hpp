@@ -273,11 +273,12 @@ struct pretty_macro
 #define PRETTIFY_MACRO(T, MACRO_NAME) \
     pretty_macro<T, __MACRO_PREFIX##MACRO_NAME, MACRO_NAME>
 
-/// @brief Pretty print instructions.
+/// @brief Pretty print list of instructions.
 /// @param ts add type signatures.
 /// @param ln add line numbers.
 /// @tparam Instructions list of instructions to print.
 /// @tparam start first line number.
+/// @tparam w line number padding width.
 template <typelist::List Instructions,
           unsigned       start = 1,
           unsigned       w = magnitude(typelist::length<Instructions>) + start>
@@ -313,22 +314,37 @@ struct is_not_ts : std::negation<is_type_sequence<T>>
 {
 };
 
-template <typename Statements>
+template <typelist::List Statements>
 using remove_ts = typelist::filter<is_not_ts, Statements>;
 
-/// @brief Pretty print program.
+template <typelist::List Instructions>
+struct list_mag :
+    std::integral_constant<
+        unsigned,
+        magnitude(typelist::length<remove_ts<Instructions>>) + 1u>
+{
+};
+
+template <typelist::List Macros>
+inline constexpr unsigned max_mag = *std::ranges::max_element(
+    intlist::stdarray<typelist::map<list_mag, Macros>>);
+
+template <typename Macro>
+using macro_statements = Macro::statements;
+
+/// @brief Pretty print kernel.
 /// @tparam K kernel to pretty print.
 /// @tparam Ms list of macros to pretty print.
 /// @param ts enable type signatures.
 /// @param bs show program as separate blocks.
 /// @param em expand macros.
 /// @param ln add line numbers.
-template <Kernel K, typename Ms = type_sequence<>>
+template <Kernel K, typelist::List Ms = type_sequence<>>
 void
-print_program(const bool ts = false,
-              const bool bs = true,
-              const bool em = false,
-              const bool ln = true) noexcept
+pretty_print_kernel(const bool ts = false,
+                    const bool bs = true,
+                    const bool em = false,
+                    const bool ln = true) noexcept
 {
     using input_vars  = K::input_vars;
     using output_vars = K::output_vars;
@@ -358,6 +374,10 @@ print_program(const bool ts = false,
         print_instructions<instructions>(ts, ln);
     else
     {
+        constexpr unsigned w =
+            max_mag<typelist::cons<statements_no_macros,
+                                   typelist::map<macro_statements, Ms>>>;
+
         typelist::for_each(
             Ms{},
             [=]<typename Macro>()
@@ -367,7 +387,6 @@ print_program(const bool ts = false,
 
                 using mstatements    = remove_ts<typename Macro::statements>;
                 constexpr unsigned l = typelist::length<mstatements>;
-                constexpr unsigned w = magnitude(l) + 1u;
 
                 if(ln)
                     fmt::print("{:{}d} %macro {} {}\n",
@@ -381,25 +400,24 @@ print_program(const bool ts = false,
                 print_instructions<mstatements, 2, w>(ts, ln);
 
                 if(ln)
-                    fmt::print("{:{}d} %endmacro\n...\n", l + 2u, w);
+                    fmt::print("{:{}d} %endmacro\n", l + 2u, w);
                 else
-                    fmt::print("%endmacro\n...\n");
+                    fmt::print("%endmacro\n");
             });
 
-        constexpr unsigned l = typelist::length<statements_no_macros>;
-        constexpr unsigned w = magnitude(l) + 1;
-
         if(ln)
-            fmt::print("{:{}d} %program {} {}\n", 1u, w, K::nameview, inputs);
+            fmt::print("{:{}d} %kernel {} {}\n", 1u, w, K::nameview, inputs);
         else
-            fmt::print("%program {} {}\n", K::nameview, inputs);
+            fmt::print("%kernel {} {}\n", K::nameview, inputs);
 
         print_instructions<statements_no_macros, 2u, w>(ts, ln);
 
+        constexpr unsigned l = typelist::length<statements_no_macros>;
+
         if(ln)
-            fmt::print("{:{}d} %endprogram {}\n", l + 2u, w, outputs);
+            fmt::print("{:{}d} %endkernel {}\n", l + 2u, w, outputs);
         else
-            fmt::print("%endprogram {}\n", outputs);
+            fmt::print("%endkernel {}\n", outputs);
     }
 }
 
@@ -930,7 +948,7 @@ inspect(InputOpt inopt, int argc, char* argv[]) noexcept
 
     if(pr.template get_opt<'p'>())
     {
-        print_program<K, Macros>(ts, bs, em, ln);
+        pretty_print_kernel<K, Macros>(ts, bs, em, ln);
         return 0;
     }
 
