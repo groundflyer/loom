@@ -24,32 +24,32 @@
 #define NTVAR(NAME)      NVAR(MAJOR_TYPE, NAME)
 #define NIVAR(NAME)      NVAR(INDEX_TYPE, NAME)
 
-#define BEGIN(NAME, ...)                             \
+#define KERNEL(NAME, ...)                            \
     using NAME = lucid::vm::kernel_blank < CS(NAME), \
           lucid::type_sequence<__VA_ARGS__>, lucid::type_sequence <
-#define END(...)               >, lucid::type_sequence < __VA_ARGS__ >>
-#define TBEGIN1(NAME, v)       BEGIN(NAME, TVAR(v))
-#define TBEGIN2(NAME, a, b)    BEGIN(NAME, TVAR(a), TVAR(b))
-#define TBEGIN3(NAME, a, b, c) BEGIN(NAME, TVAR(a), TVAR(b), TVAR(c))
-#define TBEGIN4(NAME, a, b, c, d) \
-    BEGIN(NAME, TVAR(a), TVAR(b), TVAR(c), TVAR(d))
-#define TBEGIN5(NAME, a, b, c, d, e) \
-    BEGIN(NAME, TVAR(a), TVAR(b), TVAR(c), TVAR(d), TVAR(e))
-#define TBEGIN6(NAME, a, b, c, d, e, f) \
-    BEGIN(NAME, TVAR(a), TVAR(b), TVAR(c), TVAR(d), TVAR(e), TVAR(f))
-#define TEND1(v) \
-    END          \
+#define KERNEL_END(...)         >, lucid::type_sequence < __VA_ARGS__ >>
+#define TKERNEL1(NAME, v)       KERNEL(NAME, TVAR(v))
+#define TKERNEL2(NAME, a, b)    KERNEL(NAME, TVAR(a), TVAR(b))
+#define TKERNEL3(NAME, a, b, c) KERNEL(NAME, TVAR(a), TVAR(b), TVAR(c))
+#define TKERNEL4(NAME, a, b, c, d) \
+    KERNEL(NAME, TVAR(a), TVAR(b), TVAR(c), TVAR(d))
+#define TKERNEL5(NAME, a, b, c, d, e) \
+    KERNEL(NAME, TVAR(a), TVAR(b), TVAR(c), TVAR(d), TVAR(e))
+#define TKERNEL6(NAME, a, b, c, d, e, f) \
+    KERNEL(NAME, TVAR(a), TVAR(b), TVAR(c), TVAR(d), TVAR(e), TVAR(f))
+#define TKERNEL_END1(v) \
+    KERNEL_END          \
     (TVAR(v))
-#define TEND2(a, b) \
-    END             \
+#define TKERNEL_END2(a, b) \
+    KERNEL_END             \
     (TVAR(a), TVAR(b))
-#define IBEGIN1(NAME, v)    BEGIN(NAME, IVAR(v))
-#define IBEGIN2(NAME, a, b) BEGIN(NAME, IVAR(a), IVAR(b))
-#define IEND1(v) \
-    END          \
+#define IKERNEL1(NAME, v)    KERNEL(NAME, IVAR(v))
+#define IKERNEL2(NAME, a, b) KERNEL(NAME, IVAR(a), IVAR(b))
+#define IKERNEL_END1(v) \
+    KERNEL_END          \
     (IVAR(v))
-#define IEND2(a, b) \
-    END             \
+#define IKERNEL_END2(a, b) \
+    KERNEL_END             \
     (IVAR(a), IVAR(b))
 
 #define __MACRO_PREFIX __macro_decl_
@@ -64,31 +64,31 @@
     {                           \
         using type = lucid::type_sequence <
 
-#define MACRO_BEGIN(NAME)  \
+#define MACRO(NAME)        \
     __MACRO_DECLARE(NAME); \
     __MACRO_DEF_BEGIN(NAME)
 
-#define MACRO_BEGIN1(NAME, P1)     \
+#define MACRO1(NAME, P1)           \
     __MACRO_DECLARE(NAME, CS(P1)); \
     template <typename P1>         \
     __MACRO_DEF_BEGIN(NAME)
-#define MACRO_BEGIN2(NAME, P1, P2)         \
+#define MACRO2(NAME, P1, P2)               \
     __MACRO_DECLARE(NAME, CS(P1), CS(P2)); \
     template <typename P1, typename P2>    \
     __MACRO_DEF_BEGIN(NAME)
-#define MACRO_BEGIN3(NAME, P1, P2, P3)               \
+#define MACRO3(NAME, P1, P2, P3)                     \
     __MACRO_DECLARE(NAME, CS(P1), CS(P2), CS(P3));   \
     template <typename P1, typename P2, typename P3> \
     __MACRO_DEF_BEGIN(NAME)
-#define MACRO_BEGIN4(NAME, P1, P2, P3, P4)                        \
+#define MACRO4(NAME, P1, P2, P3, P4)                              \
     __MACRO_DECLARE(NAME, CS(P1), CS(P2), CS(P3), CS(P4));        \
     template <typename P1, typename P2, typename P3, typename P4> \
     __MACRO_DEF_BEGIN(NAME)
-#define MACRO_BEGIN5(NAME, P1, P2, P3, P4, P5)                                 \
+#define MACRO5(NAME, P1, P2, P3, P4, P5)                                       \
     __MACRO_DECLARE(NAME, CS(P1), CS(P2), CS(P3), CS(P4), CS(P5));             \
     template <typename P1, typename P2, typename P3, typename P4, typename P5> \
     __MACRO_DEF_BEGIN(NAME)
-#define MACRO_BEGIN6(NAME, P1, P2, P3, P4, P5, P6)                         \
+#define MACRO6(NAME, P1, P2, P3, P4, P5, P6)                               \
     __MACRO_DECLARE(NAME, CS(P1), CS(P2), CS(P3), CS(P4), CS(P5), CS(P6)); \
     template <typename P1,                                                 \
               typename P2,                                                 \
@@ -97,37 +97,37 @@
               typename P5,                                                 \
               typename P6>                                                 \
     __MACRO_DEF_BEGIN(NAME)
-#define MACRO_BEGIN7(NAME, P1, P2, P3, P4, P5, P6, P7) \
-    __MACRO_DECLARE(NAME,                              \
-                    CS(P1),                            \
-                    CS(P2),                            \
-                    CS(P3),                            \
-                    CS(P4),                            \
-                    CS(P5),                            \
-                    CS(P6),                            \
-                    CS(P7));                           \
-    template <typename P1,                             \
-              typename P2,                             \
-              typename P3,                             \
-              typename P4,                             \
-              typename P5,                             \
-              typename P6,                             \
-              typename P7>                             \
+#define MACRO7(NAME, P1, P2, P3, P4, P5, P6, P7) \
+    __MACRO_DECLARE(NAME,                        \
+                    CS(P1),                      \
+                    CS(P2),                      \
+                    CS(P3),                      \
+                    CS(P4),                      \
+                    CS(P5),                      \
+                    CS(P6),                      \
+                    CS(P7));                     \
+    template <typename P1,                       \
+              typename P2,                       \
+              typename P3,                       \
+              typename P4,                       \
+              typename P5,                       \
+              typename P6,                       \
+              typename P7>                       \
     __MACRO_DEF_BEGIN(NAME)
 
-#define TMACRO_BEGIN1(NAME, P1)                 \
+#define TMACRO1(NAME, P1)                       \
     __MACRO_DECLARE(NAME, CS(P1));              \
     template <typename MAJOR_TYPE, typename P1> \
     __MACRO_DEF_BEGIN(NAME)
-#define TMACRO_BEGIN2(NAME, P1, P2)                          \
+#define TMACRO2(NAME, P1, P2)                                \
     __MACRO_DECLARE(NAME, CS(P1), CS(P2));                   \
     template <typename MAJOR_TYPE, typename P1, typename P2> \
     __MACRO_DEF_BEGIN(NAME)
-#define TMACRO_BEGIN3(NAME, P1, P2, P3)                                   \
+#define TMACRO3(NAME, P1, P2, P3)                                         \
     __MACRO_DECLARE(NAME, CS(P1), CS(P2), CS(P3));                        \
     template <typename MAJOR_TYPE, typename P1, typename P2, typename P3> \
     __MACRO_DEF_BEGIN(NAME)
-#define TMACRO_BEGIN4(NAME, P1, P2, P3, P4)                \
+#define TMACRO4(NAME, P1, P2, P3, P4)                      \
     __MACRO_DECLARE(NAME, CS(P1), CS(P2), CS(P3), CS(P4)); \
     template <typename MAJOR_TYPE,                         \
               typename P1,                                 \
@@ -135,7 +135,7 @@
               typename P3,                                 \
               typename P4>                                 \
     __MACRO_DEF_BEGIN(NAME)
-#define TMACRO_BEGIN5(NAME, P1, P2, P3, P4, P5)                    \
+#define TMACRO5(NAME, P1, P2, P3, P4, P5)                          \
     __MACRO_DECLARE(NAME, CS(P1), CS(P2), CS(P3), CS(P4), CS(P5)); \
     template <typename MAJOR_TYPE,                                 \
               typename P1,                                         \
@@ -144,7 +144,7 @@
               typename P4,                                         \
               typename P5>                                         \
     __MACRO_DEF_BEGIN(NAME)
-#define TMACRO_BEGIN6(NAME, P1, P2, P3, P4, P5, P6)                        \
+#define TMACRO6(NAME, P1, P2, P3, P4, P5, P6)                              \
     __MACRO_DECLARE(NAME, CS(P1), CS(P2), CS(P3), CS(P4), CS(P5), CS(P6)); \
     template <typename MAJOR_TYPE,                                         \
               typename P1,                                                 \
@@ -154,23 +154,23 @@
               typename P5,                                                 \
               typename P6>                                                 \
     __MACRO_DEF_BEGIN(NAME)
-#define TMACRO_BEGIN7(NAME, P1, P2, P3, P4, P5, P6, P7) \
-    __MACRO_DECLARE(NAME,                               \
-                    CS(P1),                             \
-                    CS(P2),                             \
-                    CS(P3),                             \
-                    CS(P4),                             \
-                    CS(P5),                             \
-                    CS(P6),                             \
-                    CS(P7));                            \
-    template <typename MAJOR_TYPE,                      \
-              typename P1,                              \
-              typename P2,                              \
-              typename P3,                              \
-              typename P4,                              \
-              typename P5,                              \
-              typename P6,                              \
-              typename P7>                              \
+#define TMACRO7(NAME, P1, P2, P3, P4, P5, P6, P7) \
+    __MACRO_DECLARE(NAME,                         \
+                    CS(P1),                       \
+                    CS(P2),                       \
+                    CS(P3),                       \
+                    CS(P4),                       \
+                    CS(P5),                       \
+                    CS(P6),                       \
+                    CS(P7));                      \
+    template <typename MAJOR_TYPE,                \
+              typename P1,                        \
+              typename P2,                        \
+              typename P3,                        \
+              typename P4,                        \
+              typename P5,                        \
+              typename P6,                        \
+              typename P7>                        \
     __MACRO_DEF_BEGIN(NAME)
 
 #define MACRO_END \

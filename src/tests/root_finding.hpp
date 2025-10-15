@@ -13,7 +13,7 @@
 
 // clang-format off
 // a * x^3 + b * x^2 + c * x + d
-TMACRO_BEGIN4(eval, y, x, t2, t3)
+TMACRO4(eval, y, x, t2, t3)
     TMUL_CS(t2, x, x),
     TMUL_CS(t3, t2, x),
     TFMA_CS(y, CS(c), x, CS(d)),
@@ -23,7 +23,7 @@ MACRO_END;
 
 // root condition
 // signbit(eval_at(ks, l)) != signbit(eval_at(ks, r))
-TMACRO_BEGIN6(root_condition, y, l, r, t1, t2, t3)
+TMACRO6(root_condition, y, l, r, t1, t2, t3)
     INSERT_TMACRO(eval, y, l, t2, t3),
     INSERT_TMACRO(eval, t1, r, t2, t3),
     TLT_CS(y, y, CS(0)),
@@ -45,7 +45,7 @@ MACRO_END;
 // rc = rc != 0
 // pjmp2 rc loop end
 // end
-TMACRO_BEGIN4(find_bounds, rc, t1, t2, t3)
+TMACRO4(find_bounds, rc, t1, t2, t3)
     TMOV_CS(CS(l), CS(-10)),
     TMOV_CS(CS(r), CS(10)),
     INSERT_TMACRO(root_condition, rc, CS(l), CS(r), t1, t2, t3),
@@ -60,29 +60,29 @@ MACRO_END;
 
 // median
 // l + (r - l) * 0.5
-TMACRO_BEGIN1(median, s)
+TMACRO1(median, s)
     TSUB_CS(s, CS(r), CS(l)),
     TMUL_CS(s, s, CS(0.5)),
     TADD_CS(s, s, CS(l))
 MACRO_END;
 
 template <std::floating_point T>
-TBEGIN5(eval_program, a, b, c, d, x)
+TKERNEL5(eval_program, a, b, c, d, x)
     INSERT_TMACRO(eval, CS(r), CS(x), CS(t1), CS(t2))
-TEND1(r);
+TKERNEL_END1(r);
 
 template <std::floating_point T>
-TBEGIN6(root_condition_program, a, b, c, d, l, r)
+TKERNEL6(root_condition_program, a, b, c, d, l, r)
     INSERT_TMACRO(root_condition, CS(rc), CS(l), CS(r), CS(t1), CS(t2), CS(t3))
-END(IVAR(rc));
+KERNEL_END(IVAR(rc));
 
 template <std::floating_point T>
-TBEGIN4(find_bounds_program, a, b, c, d)
+TKERNEL4(find_bounds_program, a, b, c, d)
     INSERT_TMACRO(find_bounds, CS(rc), CS(t1), CS(t2), CS(t3))
-TEND2(l, r);
+TKERNEL_END2(l, r);
 
 template <std::floating_point T, typename errt>
-TBEGIN4(bisection, a, b, c, d)
+TKERNEL4(bisection, a, b, c, d)
     INSERT_TMACRO(find_bounds, CS(y), CS(t1), CS(t2), CS(t3)),
     INSERT_TMACRO(median, CS(s)),
     INSERT_TMACRO(eval, CS(y), CS(s), CS(t1), CS(t2)),
@@ -100,7 +100,7 @@ TBEGIN4(bisection, a, b, c, d)
     TGE_CS(CS(y), CS(y), errt),
     IADD(i, i, 1),
     PJMP2(y, HALT, fz_loop)
-END(TVAR(s), IVAR(i));
+KERNEL_END(TVAR(s), IVAR(i));
 // clang-format on
 
 template <std::floating_point T>

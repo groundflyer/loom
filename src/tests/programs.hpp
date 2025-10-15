@@ -13,9 +13,9 @@
 
 // test programs
 template <typename T>
-TBEGIN1(increment, val)
+TKERNEL1(increment, val)
     TADD(val, val, 1)
-TEND1(val);
+TKERNEL_END1(val);
 
 // T factorial(T a):
 // if a <= 1:
@@ -36,7 +36,7 @@ TEND1(val);
 // cmp = c == 0
 // jump: cmp: 0 -> loop, 1 -> end
 template <std::unsigned_integral T>
-TBEGIN1(factorial_int, a)
+TKERNEL1(factorial_int, a)
     TLE(cmp, a, 1),
     TCMOV(a, cmp, 1, a),
     PJMP2(cmp, cinit, HALT),
@@ -47,17 +47,17 @@ TBEGIN1(factorial_int, a)
     TSUB(c, c, 1),
     TEQ(cmp, c, 0),
     PJMP2(cmp, loop, HALT)
-TEND1(a);
+TKERNEL_END1(a);
 
 template <std::floating_point T>
-TBEGIN1(simple_union_test, i)
+TKERNEL1(simple_union_test, i)
     TMOV(j, i),
     MOV(IVAR(j), TVAR(j))
-END(IVAR(j));
+KERNEL_END(IVAR(j));
 
 // i < 0.5 ? 200 : 100
 template <std::floating_point T>
-TBEGIN1(complex_union_test, i)
+TKERNEL1(complex_union_test, i)
     TLT(cmp, i, 0.5),
     PJMP2(cmp, l0, l1),
 
@@ -67,7 +67,7 @@ TBEGIN1(complex_union_test, i)
 
     LABEL(l1),
     MOV(IVAR(i), IVAR(200))
-END(IVAR(i));
+KERNEL_END(IVAR(i));
 
 // case i:
 // 0: a + 10
@@ -75,7 +75,7 @@ END(IVAR(i));
 // 2: a * 10
 // 3: a / 10
 template <typename T>
-BEGIN(jmp4_test, IVAR(i), TVAR(a))
+KERNEL(jmp4_test, IVAR(i), TVAR(a))
     PJMP4(i, l0, l1, l2, l3),
 
     LABEL(l0),
@@ -92,14 +92,14 @@ BEGIN(jmp4_test, IVAR(i), TVAR(a))
 
     LABEL(l3),
     TDIV(a, a, 2)
-TEND1(a);
+TKERNEL_END1(a);
 
 // 0: a & b;
 // 1: a | b;
 // 2: a ^ 5;
 // 3: ~a;
 template <std::integral T>
-BEGIN(bit_test, IVAR(i), IVAR(a), IVAR(b))
+KERNEL(bit_test, IVAR(i), IVAR(a), IVAR(b))
     PJMP4(i, l0, l1, l2, l3),
 
     LABEL(l0),
@@ -116,65 +116,65 @@ BEGIN(bit_test, IVAR(i), IVAR(a), IVAR(b))
 
     LABEL(l3),
     BNOT(a, a)
-END(IVAR(a));
+KERNEL_END(IVAR(a));
 
 // !i && (a > 0.5) ? -a : a
 template <std::floating_point T>
-BEGIN(cmov_test, IVAR(i), TVAR(a))
+KERNEL(cmov_test, IVAR(i), TVAR(a))
     LNOT(i, i),
     TGT(cmp, a, 0.5),
     TNEG(ma, a),
     LAND(i, i, cmp),
     TCMOV(ma, i, ma, a)
-TEND1(ma);
+TKERNEL_END1(ma);
 
 // (a << b)
 template <std::integral T>
-TBEGIN2(lshift_test, a, b)
+TKERNEL2(lshift_test, a, b)
     LSHFT(a, a, b)
-TEND1(a);
+TKERNEL_END1(a);
 
 // (a >> b)
 template <std::integral T>
-TBEGIN2(rshift_test, a, b)
+TKERNEL2(rshift_test, a, b)
     RSHFT(a, a, b)
-TEND1(a);
+TKERNEL_END1(a);
 
 // abs(x) > 0
 template <std::floating_point T>
-TBEGIN1(abs_test, x)
+TKERNEL1(abs_test, x)
     TABS(x, x),
     TGE(x, x, 0)
-END(IVAR(x));
+KERNEL_END(IVAR(x));
 
 // abs(trunc(x)) <= abs(x)
 template <std::floating_point T>
-TBEGIN1(trunc_test, x)
+TKERNEL1(trunc_test, x)
     TTRUNC(t, x),
     TABS(t, t),
     TABS(x, x),
     TLE(x, t, x)
-END(IVAR(x));
+KERNEL_END(IVAR(x));
 
 // ceil(x) >= floor(x)
 template <std::floating_point T>
-TBEGIN1(ceilfloor, x)
+TKERNEL1(ceilfloor, x)
     TCEIL(c, x),
     TFLOOR(x, x),
     TGE(c, c, x)
-END(IVAR(c));
+KERNEL_END(IVAR(c));
 
 // max(a, b) > min(a, b)
 template <std::floating_point T>
-TBEGIN2(minmax_test, a, b)
+TKERNEL2(minmax_test, a, b)
     TMAX(x, a, b),
     TMIN(n, a, b),
     TGT(r, x, n)
-END(IVAR(r));
+KERNEL_END(IVAR(r));
 
 // fibonacci number
 template <std::unsigned_integral T>
-TBEGIN1(fib, n)
+TKERNEL1(fib, n)
     TLE(cmp, n, 1),
     TCMOV(c, cmp, n, 1),
     PJMP2(cmp, work, HALT),
@@ -189,7 +189,7 @@ TBEGIN1(fib, n)
     TADD(i, i, 1),
     TLE(cmp, i, n),
     PJMP2(cmp, HALT, loop)
-TEND1(c);
+TKERNEL_END1(c);
 
 // clang-format on
 
