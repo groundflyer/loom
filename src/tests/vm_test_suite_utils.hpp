@@ -86,7 +86,7 @@ template <simd::STITCH>
 struct stitch_name;
 
 template <>
-struct stitch_name<simd::N_ORDER>
+struct stitch_name<simd::WAVEFRONT>
 {
     static constexpr char chars[] = "N-order";
 };

@@ -257,15 +257,15 @@ main(int argc, char* argv[])
     const v_out_fib out_val_fib = mk_val(in_fib, val_fib);
     const v_out_fz  out_val_fz  = mk_val(in_fz, val_cubic_fz);
 
-    test_simd_all<simd::N_ORDER, simd::MINIKERNEL, simd::MASKED>(track,
-                                                                 stream_size,
-                                                                 num_runs,
-                                                                 in_fac,
-                                                                 in_fib,
-                                                                 in_fz,
-                                                                 out_val_fac,
-                                                                 out_val_fib,
-                                                                 out_val_fz);
+    test_simd_all<simd::WAVEFRONT, simd::MINIKERNEL, simd::MASKED>(track,
+                                                                   stream_size,
+                                                                   num_runs,
+                                                                   in_fac,
+                                                                   in_fib,
+                                                                   in_fz,
+                                                                   out_val_fac,
+                                                                   out_val_fib,
+                                                                   out_val_fz);
 
     return track.ret_code();
 }
