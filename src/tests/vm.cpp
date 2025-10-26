@@ -56,7 +56,7 @@ struct stream_product_sorts
         type_sequence<typename stream_product_stitches<K,
                                                        __sorts,
                                                        __async,
-                                                       simd::N_ORDER,
+                                                       simd::WAVEFRONT,
                                                        simd::MINIKERNEL,
                                                        simd::MASKED>::type...>;
 };
@@ -90,7 +90,7 @@ struct StandardState<K, false>
     bse::function<K>                       bse_func;
     bve::function<K, bve::SORT::INTROSORT> bve_func_is;
 
-    simd::function<K, simd::N_ORDER, simd::bve_INTROSORT>    simd_func_N_is;
+    simd::function<K, simd::WAVEFRONT, simd::bve_INTROSORT>  simd_func_N_is;
     simd::function<K, simd::MINIKERNEL, simd::bve_INTROSORT> simd_func_m_is;
 
     StandardState(unsigned n) noexcept :
@@ -114,7 +114,7 @@ struct StandardState<K, true> : StandardState<K, false>
     StreamWrapper<bve::stream<K, bve::COUNTING_SORT>> bve_stream_cs_w{
         &bve_stream_cs};
 
-    simd::function<K, simd::N_ORDER, simd::COUNTING_SORT>    simd_func_N_cs;
+    simd::function<K, simd::WAVEFRONT, simd::COUNTING_SORT>    simd_func_N_cs;
     simd::function<K, simd::MINIKERNEL, simd::COUNTING_SORT> simd_func_m_cs;
 
     using sp = stream_product<K>;
@@ -265,7 +265,7 @@ struct SimpleSIMDSuite
 
         const unsigned vector_size = tm.num_runs;
 
-        simd::function<k_t, simd::N_ORDER, simd::bve_INTROSORT> simd_N(
+        simd::function<k_t, simd::WAVEFRONT, simd::bve_INTROSORT> simd_N(
             vector_size);
         simd::function<k_t, simd::MINIKERNEL, simd::bve_INTROSORT> simd_m(
             vector_size);

@@ -736,7 +736,7 @@ class bulk_dispatcher
 /// @brief Methods of succession of SIMD instructions.
 enum STITCH
 {
-    N_ORDER,    /*!< column-wise execution */
+    WAVEFRONT,  /*!< column-wise execution */
     MINIKERNEL, /*!< minikernels execution */
     MASKED      /*!< masked minikerenel */
 };
@@ -765,7 +765,7 @@ struct minikernel_helper
 
 /// @brief Executes a single instruction @p I through the whole view.
 template <typename I, typename LabelMap, typename BPVar>
-class make_N_order_instruction_runner
+class make_wavefront_instruction_runner
 {
     static constexpr fsize_t N = native_instruction_width_v<I, vartype<BPVar>>;
 
@@ -780,10 +780,10 @@ template <STITCH stitch, typename... Args>
 class make_block_compiler;
 
 template <typename Block, typename LabelMap, typename BPVar>
-class make_block_compiler<STITCH::N_ORDER, Block, LabelMap, BPVar>
+class make_block_compiler<STITCH::WAVEFRONT, Block, LabelMap, BPVar>
 {
     template <typename I, typename _LabelMap>
-    using eval = make_N_order_instruction_runner<I, _LabelMap, BPVar>::type;
+    using eval = make_wavefront_instruction_runner<I, _LabelMap, BPVar>::type;
 
   public:
     using type = standard_compiler<Block, LabelMap, eval>;

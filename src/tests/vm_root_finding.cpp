@@ -78,9 +78,9 @@ struct test_suite
         bse::function<find_bounds_p>    bse_find_bounds;
         bse::function<cubic_fz_p>       bse_cubic_fz;
 
-        simd::function<find_bounds_p, simd::N_ORDER, simd::bve_INTROSORT>
+        simd::function<find_bounds_p, simd::WAVEFRONT, simd::bve_INTROSORT>
             simd_find_bounds(tm.num_runs);
-        simd::function<cubic_fz_p, simd::N_ORDER, simd::bve_INTROSORT>
+        simd::function<cubic_fz_p, simd::WAVEFRONT, simd::bve_INTROSORT>
             simd_cubic_fz(tm.num_runs);
 
         simd::stream<cubic_fz_p, simd::MASKED, simd::COUNTING_SORT, true>
