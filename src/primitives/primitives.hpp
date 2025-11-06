@@ -11,7 +11,7 @@
 #include "sphere.hpp"
 #include "triangle.hpp"
 
-namespace lucid
+namespace loom
 {
 MK_NIEBLOID(intersect)
 MK_NIEBLOID(normal)
@@ -77,4 +77,4 @@ hit_pos(const Ray_<RayContainer>&            ray,
 MK_NIEBLOID(closest)
 MK_NIEBLOID(hider)
 MK_NIEBLOID(hit_pos)
-} // namespace lucid
+} // namespace loom

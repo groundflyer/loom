@@ -64,7 +64,7 @@ struct D
     FORBID_COPY(D);
 };
 
-using namespace lucid::test;
+using namespace loom::test;
 
 int
 main()
@@ -75,11 +75,11 @@ main()
         []() noexcept
         {
             TT t{1, 2.f, 3.};
-            lucid::visit_at(
+            loom::visit_at(
                 1ul,
                 [](auto& v) noexcept { v += 1; },
                 t,
-                lucid::sink);
+                loom::sink);
             return std::get<1>(t) == 3.f;
         },
         "visit modify reference"));
@@ -88,7 +88,7 @@ main()
         []() noexcept
         {
             const TT t2{4, 5.f, 6.};
-            return lucid::visit_at(
+            return loom::visit_at(
                        2ul,
                        [](const auto& v) -> double { return v * 10; },
                        t2,
@@ -103,7 +103,7 @@ main()
                 {'a', 'b', 'c', 'd'},
                 {  1,   2,   3,   4}
             };
-            auto st = lucid::map_tuple<lucid::unique_tuple>(
+            auto st = loom::map_tuple<loom::unique_tuple>(
                 ta,
                 [](auto& a) -> decltype(auto) { return a[1]; });
             st.template get<0>() = 'x';
@@ -115,7 +115,7 @@ main()
     track.check(NamedTest(
         []() noexcept
         {
-            lucid::unique_tuple<A, B> st1(lucid::uniform_init, 34, 0);
+            loom::unique_tuple<A, B> st1(loom::uniform_init, 34, 0);
             const A&                  a1 = st1.template get<0>();
             const B&                  b1 = st1.template get<1>();
             return a1.a == b1.a && a1.b == b1.b;
@@ -126,7 +126,7 @@ main()
         []() noexcept
         {
             unsigned                     i = 0;
-            lucid::unique_tuple<C, C, C> t(lucid::uniform_init, i);
+            loom::unique_tuple<C, C, C> t(loom::uniform_init, i);
             return i == 3;
         },
         "unique_tuple uniform_init with reference"));
@@ -134,7 +134,7 @@ main()
     track.check(NamedTest(
         []() noexcept
         {
-            lucid::unique_tuple<A, B> st2(std::piecewise_construct,
+            loom::unique_tuple<A, B> st2(std::piecewise_construct,
                                           std::pair(1, 2),
                                           std::pair(3, 4));
             const A&                  a2 = st2.template get<A>();
@@ -146,7 +146,7 @@ main()
     track.check(NamedTest(
         []() noexcept
         {
-            lucid::unique_tuple<A, B> st3(lucid::uniform_init,
+            loom::unique_tuple<A, B> st3(loom::uniform_init,
                                           std::piecewise_construct,
                                           std::pair(34, 0));
             const A&                  a3 = st3.template get<A>();
@@ -160,15 +160,15 @@ main()
         {
             int                              i1 = 3;
             char                             c1 = 'c';
-            lucid::unique_tuple<int&, char&> st4(i1, c1);
+            loom::unique_tuple<int&, char&> st4(i1, c1);
             st4.template get<0>() += 5;
             st4.template get<1>() = 'f';
             return i1 == 8 && c1 == 'f';
         },
         "unique_tuple of refs"));
 
-    lucid::unique_tuple<A, B> st5(A(1, 2ul), B(3l, 4));
-    lucid::unique_tuple<A, B> st6(std::move(st5));
+    loom::unique_tuple<A, B> st5(A(1, 2ul), B(3l, 4));
+    loom::unique_tuple<A, B> st6(std::move(st5));
 
     track.check(NamedTest(
         [&]() noexcept
@@ -207,8 +207,8 @@ main()
     track.check(NamedTest(
         []() noexcept
         {
-            lucid::unique_tuple<D, D> t(false, false);
-            lucid::for_each(
+            loom::unique_tuple<D, D> t(false, false);
+            loom::for_each(
                 t,
                 [](D& e, bool value) noexcept { e.value = value; },
                 true);
@@ -223,7 +223,7 @@ main()
             TT t1{0, 0, 0};
             TT t2{1, 1.f, 1.};
 
-            lucid::zip_with_for_each([](auto& a, auto b) noexcept { a = b; },
+            loom::zip_with_for_each([](auto& a, auto b) noexcept { a = b; },
                                      t1,
                                      t2);
 
@@ -239,7 +239,7 @@ main()
             TT t1{0, 0, 0};
             TT t2{1, 1.f, 1.};
 
-            auto t = lucid::zip_tuples(t1, t2);
+            auto t = loom::zip_tuples(t1, t2);
 
             return std::get<0>(t) ==
                        std::tuple{std::get<0>(t1), std::get<0>(t2)} &&

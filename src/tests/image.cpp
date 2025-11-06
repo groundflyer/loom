@@ -4,7 +4,7 @@
 #include <image/io.hpp>
 #include <utils/logging.hpp>
 
-using namespace lucid;
+using namespace loom;
 
 template <typename Img>
 int

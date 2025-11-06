@@ -10,7 +10,7 @@
 #include <utils/test.hpp>
 #include <utils/tmp.hpp>
 
-namespace lucid::vm
+namespace loom::vm
 {
 template <typelist::List Types, typename Suite>
 void
@@ -102,4 +102,4 @@ struct stitch_name<simd::MASKED>
 {
     static constexpr char chars[] = "masked minikernel";
 };
-} // namespace lucid::vm
+} // namespace loom::vm

@@ -16,7 +16,7 @@
 #include <type_traits>
 #include <utility>
 
-namespace lucid
+namespace loom
 {
 template <std::floating_point T>
 inline constexpr T Pi_ = T{3.141592653589793};
@@ -263,7 +263,7 @@ almost_equal(const T a, const T b, const ULP ulp)
            amb < std::numeric_limits<T>::min();
 }
 
-/// @brief ULP equal comparator. Uses lucid::almost_equal internally.
+/// @brief ULP equal comparator. Uses loom::almost_equal internally.
 struct ulp_cmp
 {
     unsigned ulp;
@@ -292,4 +292,4 @@ magnitude(Int n, Int base = 10) noexcept
 
     return ret;
 }
-} // namespace lucid
+} // namespace loom

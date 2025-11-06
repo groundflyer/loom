@@ -14,7 +14,7 @@
 
 namespace fs = std::filesystem;
 
-namespace lucid
+namespace loom
 {
 template <typename T, std::size_t NC, typename Alloc>
 void
@@ -31,4 +31,4 @@ write_ppm(const ScanlineImage<T, NC, Alloc>& img, const fs::path& filename)
     }
 }
 
-} // namespace lucid
+} // namespace loom

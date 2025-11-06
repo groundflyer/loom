@@ -6,7 +6,7 @@
 
 #include <cstdint>
 
-namespace lucid
+namespace loom
 {
 template <typename T>
 struct TypeInfo;
@@ -54,4 +54,4 @@ MK_TYPEINFO_STRING(unsigned short)
 #undef MK_NAMED_TYPEINFO
 #undef MK_TYPEINFO
 #undef MK_TYPEINFO_STRING
-} // namespace lucid
+} // namespace loom

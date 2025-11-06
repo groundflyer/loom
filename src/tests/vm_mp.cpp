@@ -12,7 +12,7 @@
 #include <algorithm>
 #include <vector>
 
-using namespace lucid;
+using namespace loom;
 using namespace vm;
 using namespace test;
 

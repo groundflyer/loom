@@ -10,7 +10,7 @@
 #include <utils/logging.hpp>
 #include <utils/timer.hpp>
 
-using namespace lucid;
+using namespace loom;
 using namespace std::literals;
 
 using Image    = ScanlineImage<float, 4>;
@@ -103,7 +103,7 @@ struct CameraCapture
 //         {
 //             const Vec2 pix_delta = new_pos - prev_pos;
 //             const Vec2 ndc_delta = pix_delta / res;
-//             const Vec2 angle_delta = lucid::transform(invert_fov, ndc_delta);
+//             const Vec2 angle_delta = loom::transform(invert_fov, ndc_delta);
 //          }
 //     }
 // };

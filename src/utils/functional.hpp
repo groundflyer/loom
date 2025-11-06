@@ -39,7 +39,7 @@
 /// @brief Same as MK_NAMED_NIEBLOID, but @p FUNC is also used as the name.
 #define MK_NIEBLOID(FUNC) MK_NAMED_NIEBLOID(FUNC, FUNC)
 
-namespace lucid
+namespace loom
 {
 namespace detail
 {
@@ -228,4 +228,4 @@ constant(const T val) noexcept
 {
     return [val](auto...) noexcept { return val; };
 }
-} // namespace lucid
+} // namespace loom

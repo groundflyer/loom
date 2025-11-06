@@ -11,7 +11,7 @@
 
 #include <type_traits>
 
-namespace lucid
+namespace loom
 {
 namespace detail
 {
@@ -220,7 +220,7 @@ class _Viewport
 
     template <typename Format>
     static void
-    load_img(const lucid::ScanlineImage<Format, 4>& img) noexcept
+    load_img(const loom::ScanlineImage<Format, 4>& img) noexcept
     {
         const constexpr auto type_flag =
             std::is_same_v<Format, unsigned char> ?
@@ -232,7 +232,7 @@ class _Viewport
 
     template <typename Format>
     static void
-    reload_img(const lucid::ScanlineImage<Format, 4>& img)
+    reload_img(const loom::ScanlineImage<Format, 4>& img)
     {
         const constexpr auto type_flag =
             std::is_same_v<Format, unsigned char> ?
@@ -309,14 +309,14 @@ class _Viewport
 
         template <typename Format>
         void
-        load_img(const lucid::ScanlineImage<Format, 4>& img) const noexcept
+        load_img(const loom::ScanlineImage<Format, 4>& img) const noexcept
         {
             _Viewport::load_img(img);
         }
 
         template <typename Format>
         void
-        reload_img(const lucid::ScanlineImage<Format, 4>& img) const
+        reload_img(const loom::ScanlineImage<Format, 4>& img) const
         {
             _Viewport::reload_img(img);
         }
@@ -361,4 +361,4 @@ make_viewport(const Vec2u& res, Actions&&... actions)
     return
         typename detail::_Viewport<std::decay_t<Actions>...>::Handler(res, std::move(actions)...);
 }
-} // namespace lucid
+} // namespace loom

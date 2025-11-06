@@ -7,7 +7,7 @@
 #include <image/image.hpp>
 #include <image_reconstruction/film.hpp>
 
-namespace lucid
+namespace loom
 {
 using Sample = std::pair<Vec2, RGB>;
 
@@ -70,8 +70,8 @@ filter_iterate(const Film<Image>& film, const Vec2& pos, const real filter_radiu
     };
 
     const real  half_ratio = film._ratio * 0.5_r;
-    const Vec2u bmin = film.pixel_index(lucid::max(pos - filter_radius, Vec2(-half_ratio, -0.5_r)));
-    const Vec2u bmax = film.pixel_index(lucid::min(pos + filter_radius, Vec2(half_ratio, 0.5_r)));
+    const Vec2u bmin = film.pixel_index(loom::max(pos - filter_radius, Vec2(-half_ratio, -0.5_r)));
+    const Vec2u bmax = film.pixel_index(loom::min(pos + filter_radius, Vec2(half_ratio, 0.5_r)));
     return iter_proxy{bmin, (bmax - bmin) + 1u};
 }
 
@@ -158,4 +158,4 @@ sample_based_singular_update(Film<Image>& film, Updater&& update, const Sample& 
     pixel_val                            = update(pixel_val, pixel_ssp, sample);
     return film;
 }
-} // namespace lucid
+} // namespace loom

@@ -19,7 +19,7 @@
 
 #include <limits>
 
-using namespace lucid;
+using namespace loom;
 using namespace vm;
 using namespace test;
 
@@ -227,7 +227,7 @@ struct StandardTestSuite
             if constexpr(complex)
                 return std::tuple_cat(
                     std::tuple{std::move(n), std::move(m)},
-                    lucid::map_tuple(state.simd_streams,
+                    loom::map_tuple(state.simd_streams,
                                      [&](const auto& sp) noexcept
                                      {
                                          return NamedTest(

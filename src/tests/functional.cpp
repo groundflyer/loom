@@ -6,7 +6,7 @@
 #include <utils/test.hpp>
 
 using namespace std;
-using namespace lucid;
+using namespace loom;
 using namespace test;
 
 int

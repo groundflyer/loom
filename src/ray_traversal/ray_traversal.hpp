@@ -7,7 +7,7 @@
 #include <base/transforms.hpp>
 #include <base/types.hpp>
 
-namespace lucid
+namespace loom
 {
 template <template <typename, std::size_t> typename Container>
 struct Ray_
@@ -72,4 +72,4 @@ apply_transform(const Mat4_<MatContainer>& t, const Ray_<RayContainer>& ray) noe
     return Ray(apply_transform_p(t, ray.origin), apply_transform_n(t, ray.dir));
 }
 } // namespace fn
-} // namespace lucid
+} // namespace loom

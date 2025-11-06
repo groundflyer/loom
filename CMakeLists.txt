@@ -4,7 +4,7 @@ cmake_minimum_required(VERSION 3.16)
 set(CMAKE_CXX_COMPILER "clang++" CACHE STRING "C++ compiler" FORCE)
 set(CMAKE_C_COMPILER "clang" CACHE STRING "C compiler" FORCE)
 
-project(Lucid CXX)
+project(Loom CXX)
 
 # Compiler with C++20 support is required
 set(CMAKE_CXX_STANDARD 20)
@@ -173,7 +173,7 @@ if(BUILD_DOC)
     set(DOC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/doc)
     set(BIB_DIR ${DOC_DIR}/bib)
 
-    set(DOXYGEN_PROJECT_BRIEF "Experimental path-tracer")
+    set(DOXYGEN_PROJECT_BRIEF "Proof-of-concept VM for SPMD execution")
     set(DOXYGEN_CLANG_ASSISTED_PARSING YES)
     set(DOXYGEN_CLANG_DATABASE_PATH ${CMAKE_CURRENT_BINARY_DIR})
     set(DOXYGEN_FILE_PATTERNS *.cpp *.hpp *.md)

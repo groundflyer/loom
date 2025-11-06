@@ -12,7 +12,7 @@
 #include <memory>
 #include <span>
 
-namespace lucid
+namespace loom
 {
 /// @brief Generic unsafe union.
 template <typename... Ts>
@@ -335,13 +335,13 @@ class UnionVector
 
     virtual ~UnionVector() { deallocate(); }
 };
-} // namespace lucid
+} // namespace loom
 
 namespace std
 {
 template <typename... Ts>
 void
-swap(lucid::ProxyUnion<Ts...> a, lucid::ProxyUnion<Ts...> b) noexcept
+swap(loom::ProxyUnion<Ts...> a, loom::ProxyUnion<Ts...> b) noexcept
 {
     return swap(a, b);
 }

@@ -9,7 +9,7 @@
 
 #include "aabb.hpp"
 
-namespace lucid
+namespace loom
 {
 /// @brief Disk.
 template <template <typename, std::size_t> typename Container>
@@ -108,4 +108,4 @@ apply_transform(const Mat4_<MatContainer>& t, const Disk_<PrimContainer>& prim) 
     return Disk(apply_transform_p(t, p), apply_transform_n(t, n), r);
 }
 } // namespace fn
-} // namespace lucid
+} // namespace loom

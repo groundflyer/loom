@@ -9,7 +9,7 @@
 
 #include <cstdio>
 
-namespace lucid
+namespace loom
 {
 /// @brief Simple logger with classic verbosity schema, timestamps and colorful
 /// output.
@@ -189,4 +189,4 @@ class Logger
         submessage<i, '\r'>(out, ts, i, args...);
     }
 };
-} // namespace lucid
+} // namespace loom

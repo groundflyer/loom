@@ -5,7 +5,7 @@
 inline constexpr std::bool_constant<false> failing{};
 inline constexpr std::bool_constant<true>  passing{};
 
-using namespace lucid::test;
+using namespace loom::test;
 
 int
 main()

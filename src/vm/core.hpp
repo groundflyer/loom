@@ -12,7 +12,7 @@
 
 #include <cstdint>
 
-namespace lucid::vm
+namespace loom::vm
 {
 /// @brief Describes a variable.
 ///
@@ -249,7 +249,7 @@ struct collected_type<type_sequence<T, Ts...>>
     using type =
         std::conditional_t<typelist::same<type_sequence<T, Ts...>>,
                            T,
-                           typelist::to<type_sequence<T, Ts...>, lucid::Union>>;
+                           typelist::to<type_sequence<T, Ts...>, loom::Union>>;
 };
 
 /// @brief Infers register types merging variables with same names into unions.
@@ -911,7 +911,7 @@ struct kernel_blank
     /// @brief Registers types.
     ///
     /// If there are few different types corresponding to the same name,
-    /// lucid::Union used to hold values of the register.
+    /// loom::Union used to hold values of the register.
     using reg_types = infer_reg_types_t<variables, reg_names>;
 
     // don't check jumps for singular program.
@@ -970,4 +970,4 @@ fit_block_index(const typename K::index_t c) noexcept
 
     return c < num_blocks ? c : halt_pos;
 }
-} // namespace lucid::vm
+} // namespace loom::vm

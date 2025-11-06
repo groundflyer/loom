@@ -23,7 +23,7 @@
 #include <span>
 #include <vector>
 
-namespace lucid::vm::bve
+namespace loom::vm::bve
 {
 // division and modulo for 32 bit unsigned integer can be faster
 using fsize_t = std::uint32_t;
@@ -135,7 +135,7 @@ class ProxyRow
     friend void
     swap(ProxyRow a, ProxyRow b) noexcept
     {
-        lucid::zip_with_for_each(
+        loom::zip_with_for_each(
             [ia = a.m_pos, ib = b.m_pos](auto& l, auto& r) noexcept
             { std::swap(l[ia], r[ib]); },
             a.m_data,
@@ -628,7 +628,7 @@ class Memory
     void
     resize(fsize_t new_size)
     {
-        lucid::for_each(m_data,
+        loom::for_each(m_data,
                         [new_size](auto& c) noexcept { c.resize(new_size); });
     }
 
@@ -1394,7 +1394,7 @@ class basic_vector_compiler
             putchar('\n');
             for(fsize_t i = 0; i < memory_facade::size(); ++i)
             {
-                lucid::for_each(columns,
+                loom::for_each(columns,
                                 [i](const auto& c)
                                 { fmt::print("{:>10}", c[i]); });
                 putchar('\n');
@@ -1451,4 +1451,4 @@ using function = basic_vector_compiler<K, sort_method>::function;
 template <Kernel K, SORT sort_method>
     requires(!K::singular)
 using stream = basic_vector_compiler<K, sort_method>::stream;
-} // namespace lucid::vm::bve
+} // namespace loom::vm::bve

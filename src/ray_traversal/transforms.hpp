@@ -6,7 +6,7 @@
 
 #include <base/types.hpp>
 
-namespace lucid
+namespace loom
 {
 template <template <typename, std::size_t> typename Container>
 struct Ray_;
@@ -21,4 +21,4 @@ template <template <typename, std::size_t> typename MatContainer,
 constexpr auto
 apply_transform(const Mat4_<MatContainer>&, const Ray_<RayContainer>&) noexcept;
 }
-} // namespace lucid
+} // namespace loom

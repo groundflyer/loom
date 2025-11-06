@@ -29,22 +29,22 @@ const constexpr char repo_hash[] = "nonrepo";
 
 #define INIT_LOG                                                        \
     constexpr std::tuple opts{                                          \
-        lucid::argparse::option<'l', "log">(lucid::identity,            \
+        loom::argparse::option<'l', "log">(loom::identity,            \
                                             "/dev/null",                \
                                             "File to log to",           \
                                             "FILE"),                    \
-        lucid::argparse::option<'n', "runs">(                           \
+        loom::argparse::option<'n', "runs">(                           \
             [](std::string_view word) noexcept                          \
             { return std::atoi(word.data()); },                         \
             10000000,                                                   \
             "Number of runs",                                           \
             "N")};                                                      \
-    lucid::argparse::ArgsRange args(argc, argv);                        \
-    const auto                 pr = lucid::argparse::parse(opts, args); \
+    loom::argparse::ArgsRange args(argc, argv);                        \
+    const auto                 pr = loom::argparse::parse(opts, args); \
     LogFile                    log(pr.get_opt<'l'>());                  \
     const size_t               n = pr.get_opt<'n'>();
 
-namespace lucid
+namespace loom
 {
 struct LogFile
 {
@@ -207,7 +207,7 @@ microbench(LogFile&          log,
     Helper                               helper(g, n);
     typename Helper::template Results<R> results(n);
 
-    lucid::ElapsedTimer<> timer;
+    loom::ElapsedTimer<> timer;
 
     helper.run(r, results);
 
@@ -219,4 +219,4 @@ microbench(LogFile&          log,
 
     log.append(repo_hash, fmt::localtime(std::time(nullptr)), name, ns, n);
 }
-} // namespace lucid
+} // namespace loom

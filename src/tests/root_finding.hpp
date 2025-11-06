@@ -173,13 +173,13 @@ median(const T l, const T r) noexcept
 }
 
 template <std::floating_point T>
-std::tuple<T, lucid::uint_of_size_t<sizeof(T)>>
+std::tuple<T, loom::uint_of_size_t<sizeof(T)>>
 val_cubic_fz(T a, T b, T c, T d) noexcept
 {
     auto [l, r]                        = val_find_bounds(a, b, c, d);
     auto                             s = median(l, r);
     auto                             y = abs(val_eval(a, b, c, d, s));
-    lucid::uint_of_size_t<sizeof(T)> i = 0;
+    loom::uint_of_size_t<sizeof(T)> i = 0;
     while(y >= constants<T>::err_threshold)
     {
         const bool rc = val_root_condition(a, b, c, d, l, s);

@@ -30,7 +30,7 @@
 #define _FORCE_INLINE
 #endif
 
-namespace lucid::vm::simd
+namespace loom::vm::simd
 {
 using fsize_t = bve::fsize_t;
 
@@ -1732,7 +1732,7 @@ class compiler
             putchar('\n');
             for(fsize_t i = 0; i < memory_facade::size(); ++i)
             {
-                lucid::for_each(columns,
+                loom::for_each(columns,
                                 [i](const auto& c)
                                 { fmt::print("{},", c[i]); });
                 putchar('\n');
@@ -1945,4 +1945,4 @@ class embedded_compiler
 
 template <Kernel K>
 using embedded_function = embedded_compiler<K>::type;
-} // namespace lucid::vm::simd
+} // namespace loom::vm::simd

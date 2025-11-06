@@ -12,18 +12,18 @@
 #include <cstdlib>
 #include <random>
 
-namespace lucid
+namespace loom
 {
 template <typename T, size_t N>
 constexpr auto
-get_typeinfo_string(lucid::Vector<T, N, std::array>)
+get_typeinfo_string(loom::Vector<T, N, std::array>)
 {
     return fmt::format("Vector<{}, {}>", get_typeinfo_string(T{}), N);
 }
 
 template <typename T, size_t M, size_t N>
 constexpr auto
-get_typeinfo_string(lucid::Matrix<T, M, N, std::array>)
+get_typeinfo_string(loom::Matrix<T, M, N, std::array>)
 {
     return fmt::format("Matrix<{}, {}, {}>", get_typeinfo_string(T{}), M, N);
 }
@@ -41,10 +41,10 @@ get_typeinfo_string(std::array<T, N>) noexcept
 {
     return fmt::format("std::array<{}, {}>", get_typeinfo_string(T{}), N);
 }
-} // namespace lucid
+} // namespace loom
 
 using namespace std;
-using namespace lucid;
+using namespace loom;
 
 namespace vec_test
 {
@@ -66,7 +66,7 @@ assert_tuples(A&& a, B&& b, std::index_sequence<I...>) noexcept
     return (... || not_equal<I>(std::forward<A>(a), std::forward<B>(b)));
 }
 
-/// @brief Test lucid::Vector.
+/// @brief Test loom::Vector.
 /// @tparam T Value type.
 /// @tparam N Dimensionality.
 template <typename T, size_t N, typename RandomEngine>
@@ -109,7 +109,7 @@ vector_test(RandomEngine& g, const size_t num_tests) noexcept
     const auto arass = [](const Vec& testing, const array<T, N>& feed) noexcept
     {
         return assert_tuples(testing, feed, make_index_sequence<N>{}) &&
-               !all(lucid::isfinite(testing));
+               !all(loom::isfinite(testing));
     };
 
     /// @test Standard vector constructor.
@@ -149,7 +149,7 @@ vector_test(RandomEngine& g, const size_t num_tests) noexcept
                 const auto& [v0, vv] = feed;
                 bool ret             = testing[0] != v0;
                 for(size_t i = 0; i < N1; ++i) ret |= vv[i] != testing[i + 1];
-                return ret || !all(lucid::isfinite(testing));
+                return ret || !all(loom::isfinite(testing));
             });
     }
 
@@ -163,7 +163,7 @@ vector_test(RandomEngine& g, const size_t num_tests) noexcept
         if constexpr(is_floating_point_v<T>)
         {
             return any(!almost_equal_vec(a, b, 200)) ||
-                   !all(lucid::isfinite(a)) || !all(lucid::isfinite(b));
+                   !all(loom::isfinite(a)) || !all(loom::isfinite(b));
         }
         else
             return any(a != b);
@@ -174,7 +174,7 @@ vector_test(RandomEngine& g, const size_t num_tests) noexcept
     ret +=
         test_property_n(fmt::format("{} +- {}", vec_typestring, t_typestring),
                         vsgen,
-                        lucid::plus,
+                        loom::plus,
                         [&](const auto& testing, const auto feed) noexcept
                         {
                             const auto& [vec, val] = feed;
@@ -216,7 +216,7 @@ vector_test(RandomEngine& g, const size_t num_tests) noexcept
     ret +=
         test_property_n(fmt::format("{} */ {}", vec_typestring, t_typestring),
                         vdgen,
-                        lucid::multiplies,
+                        loom::multiplies,
                         [&](const auto& testing, const auto& feed) noexcept
                         {
                             const auto& [vec, val] = feed;
@@ -248,7 +248,7 @@ vector_test(RandomEngine& g, const size_t num_tests) noexcept
     /// \mathbf{v}_1@f$
     ret += test_property_n(fmt::format("{0} +- {0}", vec_typestring),
                            vvgen,
-                           lucid::plus,
+                           loom::plus,
                            [&](const auto& testing, const auto& feed) noexcept
                            {
                                const auto& [vec1, vec2] = feed;
@@ -279,16 +279,16 @@ vector_test(RandomEngine& g, const size_t num_tests) noexcept
     ret += test_property_n(
         fmt::format("min({0}, {0}), max({0}, {0})", vec_typestring),
         vvgen,
-        lucid::minmax,
+        loom::minmax,
         // [](const auto& feed) noexcept {
         //     const auto& [vec1, vec2] = feed;
-        //     return pair{lucid::min(vec1, vec2), lucid::max(vec1, vec2)};
+        //     return pair{loom::min(vec1, vec2), loom::max(vec1, vec2)};
         // },
         [&](const auto& testing, const auto&) noexcept
         {
             const auto& [vmin, vmax] = testing;
-            return any(vmin > vmax) || !all(lucid::isfinite(vmin)) ||
-                   !all(lucid::isfinite(vmax));
+            return any(vmin > vmax) || !all(loom::isfinite(vmin)) ||
+                   !all(loom::isfinite(vmax));
         });
 
     // vector and vector-divizor generator
@@ -300,7 +300,7 @@ vector_test(RandomEngine& g, const size_t num_tests) noexcept
     /// \mathbf{v}_1}{\mathbf{v}_1}@f$
     ret += test_property_n(fmt::format("{0} */ {0}", vec_typestring),
                            vvdgen,
-                           lucid::multiplies,
+                           loom::multiplies,
                            [&](const auto& testing, const auto& feed) noexcept
                            {
                                const auto& [vec1, vec2] = feed;
@@ -335,7 +335,7 @@ vector_test(RandomEngine& g, const size_t num_tests) noexcept
             [](const Vec& feed) noexcept { return dot(feed, feed); },
             [](const T testing, const Vec& feed) noexcept
             {
-                return !almost_equal(lucid::sqrt(testing), length(feed), 5) ||
+                return !almost_equal(loom::sqrt(testing), length(feed), 5) ||
                        !std::isfinite(testing);
             });
 
@@ -348,7 +348,7 @@ vector_test(RandomEngine& g, const size_t num_tests) noexcept
             [](const Vec& testing, Vec) noexcept
             {
                 return !almost_equal(length(testing), T{1}, 5) ||
-                       !all(lucid::isfinite(testing));
+                       !all(loom::isfinite(testing));
             });
 
         if constexpr(N > 2)
@@ -373,7 +373,7 @@ vector_test(RandomEngine& g, const size_t num_tests) noexcept
                         is_same_v<T, double> ? 100ul : 55u);
                     return !(almost_equal(at, T{0}, ulp) ||
                              almost_equal(bt, T{0}, ulp)) ||
-                           !all(lucid::isfinite(testing));
+                           !all(loom::isfinite(testing));
                 });
     }
 
@@ -405,7 +405,7 @@ test_n(RandomEngine& g, const size_t num_tests, index_sequence<Ns...>) noexcept
     return (0u + ... + test_t<Ns + 2>(g, num_tests, ArithmeticTypes{}));
 }
 
-/// @brief Test lucid::Vector with boolean value type.
+/// @brief Test loom::Vector with boolean value type.
 /// @tparam Vector dimensionality.
 template <size_t N, typename RandomEngine>
 unsigned
@@ -469,7 +469,7 @@ using ArithmeticTypes = type_sequence<float, double>;
 // 5% error threshold, because + and - operations are quite inaccurate
 static const constexpr double threshold = 0.05;
 
-/// @brief Test lucid::Matrix.
+/// @brief Test loom::Matrix.
 /// @tparam M Number of rows.
 /// @tparam N Number of columns.
 template <typename T, size_t M, size_t N, typename RandomEngine>
@@ -490,7 +490,7 @@ matrix_test(RandomEngine& g, const size_t num_tests) noexcept
     {
         bool ret = false;
         for(size_t i = 0; i < MN; ++i) ret |= testing.at(i) != feed[i];
-        return ret || !all(lucid::isfinite(flat_ref(testing)));
+        return ret || !all(loom::isfinite(flat_ref(testing)));
     };
     auto array_n_gen = [&]() noexcept { return generate<N>(dist, g); };
     auto vgen        = [&]() noexcept { return Vec(array_n_gen()); };
@@ -508,8 +508,8 @@ matrix_test(RandomEngine& g, const size_t num_tests) noexcept
         {
             const constexpr unsigned ULP = 5;
             return any(!almost_equal_vec(flat_ref(a), flat_ref(b), ULP)) ||
-                   !all(lucid::isfinite(flat_ref(a))) ||
-                   !all(lucid::isfinite(flat_ref(b)));
+                   !all(loom::isfinite(flat_ref(a))) ||
+                   !all(loom::isfinite(flat_ref(b)));
         }
         else
             return any(flat_ref(a) != flat_ref(b));
@@ -533,7 +533,7 @@ matrix_test(RandomEngine& g, const size_t num_tests) noexcept
         [](const auto& testing, const auto& feed) noexcept
         {
             return any(flat_ref(testing) != feed) ||
-                   !all(lucid::isfinite(flat_ref(testing)));
+                   !all(loom::isfinite(flat_ref(testing)));
         });
 
     /// @test Standard matrix constructor.
@@ -577,7 +577,7 @@ matrix_test(RandomEngine& g, const size_t num_tests) noexcept
         {
             bool ret = false;
             for(size_t i = 0; i < M; ++i) ret |= any(testing[i] != feed[i]);
-            return ret || !all(lucid::isfinite(flat_ref(testing)));
+            return ret || !all(loom::isfinite(flat_ref(testing)));
         });
 
     array<string, M> strs;
@@ -610,7 +610,7 @@ matrix_test(RandomEngine& g, const size_t num_tests) noexcept
             for(size_t i = 0; i < M; ++i)
                 for(size_t j = 0; j < N; ++j)
                     ret |= testing[i][j] != feed[i][j];
-            return ret || !all(lucid::isfinite(flat_ref(testing)));
+            return ret || !all(loom::isfinite(flat_ref(testing)));
         });
 
     if constexpr(M > 2 && N > 2)
@@ -652,7 +652,7 @@ matrix_test(RandomEngine& g, const size_t num_tests) noexcept
                 for(size_t i = 0; i < M1; ++i)
                     for(size_t j = 0; j < N1; ++j)
                         ret |= feed.at(i, j) != testing.at(i, j);
-                return ret || !all(lucid::isfinite(flat_ref(testing)));
+                return ret || !all(loom::isfinite(flat_ref(testing)));
             });
 
         /// @test Construct Matrix from a scalar, a vector and a smaller matrix.
@@ -704,7 +704,7 @@ matrix_test(RandomEngine& g, const size_t num_tests) noexcept
                     const Mat zero = Mat::identity() - feed * testing;
                     const constexpr size_t ulp = static_pow<sizeof(T)>(100ul);
                     return any(!almost_equal_vec(flat_ref(zero), T{0}, ulp)) ||
-                           !all(lucid::isfinite(flat_ref(testing)));
+                           !all(loom::isfinite(flat_ref(testing)));
                 });
     }
 
@@ -713,7 +713,7 @@ matrix_test(RandomEngine& g, const size_t num_tests) noexcept
     ret +=
         test_property_n(fmt::format("{} +- {}", mat_typestring, t_typestring),
                         mat_gen1,
-                        lucid::plus,
+                        loom::plus,
                         [&](const Mat& testing, const auto& feed) noexcept
                         {
                             const auto& [mat, scalar] = feed;
@@ -742,7 +742,7 @@ matrix_test(RandomEngine& g, const size_t num_tests) noexcept
     /// @f$\mathbf{A} + \mathbf{B} = \mathbf{A} + \mathbf{B} - \mathbf{B}@f$
     ret += test_property_n(fmt::format("{0} +- {0}", mat_typestring),
                            mat_gen2,
-                           lucid::plus,
+                           loom::plus,
                            [&](const Mat& testing, const auto& feed) noexcept
                            {
                                const auto& [mat1, mat2] = feed;
@@ -800,7 +800,7 @@ matrix_test(RandomEngine& g, const size_t num_tests) noexcept
             const auto& vec = get<1>(feed);
             const auto& idx = get<2>(feed);
             return any(testing[idx] != vec) ||
-                   !all(lucid::isfinite(flat_ref(testing)));
+                   !all(loom::isfinite(flat_ref(testing)));
         });
 
     /// @test Matrix row assignment-addition-subtraction

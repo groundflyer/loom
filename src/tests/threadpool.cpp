@@ -6,8 +6,8 @@
 #include <initializer_list>
 #include <utility>
 
-using namespace lucid;
-using namespace lucid::test;
+using namespace loom;
+using namespace loom::test;
 
 struct Tester2
 {

@@ -1,5 +1,5 @@
 // -*- C++ -*-
-// lucid.cpp
+// loom.cpp
 
 #include <gui/viewport.hpp>
 #include <image_reconstruction/film.hpp>
@@ -13,7 +13,7 @@
 #include <utils/timer.hpp>
 #include <utils/tuple.hpp>
 
-using namespace lucid;
+using namespace loom;
 using namespace std::literals;
 using namespace argparse;
 

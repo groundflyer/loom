@@ -12,7 +12,7 @@
 
 #include <random>
 
-using namespace lucid;
+using namespace loom;
 using namespace ranges;
 
 template <typename Image, typename Updater>
@@ -62,8 +62,8 @@ main()
             const auto& [fsx, fsy]  = fss;
             const Vec2u idxt        = pixel_index(res, fss);
             // this check fails in some cases with -O3 -ffast-math
-            const bool error_prone = lucid::abs(fsx) > ratio(res) * 0.5_r;
-            return any(idxg != idxt) || error_prone || (lucid::abs(fsy) > 0.5_r);
+            const bool error_prone = loom::abs(fsx) > ratio(res) * 0.5_r;
+            return any(idxg != idxt) || error_prone || (loom::abs(fsy) > 0.5_r);
         });
 
     const auto generator = [&]() noexcept {
@@ -80,7 +80,7 @@ main()
     const auto testing = [](const Vec2u& res, const unsigned filter_size, auto samples) noexcept {
         Film<ScanlineImage<float, 4>> film_test(res);
         Film<ScanlineImage<float, 4>> film_valid(res);
-        const real filter_rad = film_test._pixel_radius * std::min(filter_size, lucid::min(res));
+        const real filter_rad = film_test._pixel_radius * std::min(filter_size, loom::min(res));
         const PixelUpdate updater{TriangleFilter(filter_rad)};
         ranges::for_each(samples, [&](const Sample& sample) noexcept {
             film_test  = sample_based_region_update(film_test, updater, sample);

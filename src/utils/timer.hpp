@@ -31,7 +31,7 @@
 #include <fmt/chrono.h>
 #include <type_traits>
 
-namespace lucid
+namespace loom
 {
 template <typename Clock = std::chrono::steady_clock>
 class ElapsedTimer
@@ -126,4 +126,4 @@ time_it(F&& f, Args&&... args)
     else
         return std::pair{std::invoke(f, args...), timer.elapsed()};
 }
-} // namespace lucid
+} // namespace loom

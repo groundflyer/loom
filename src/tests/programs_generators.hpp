@@ -13,7 +13,7 @@ template <std::integral T, T min, T max>
 struct GMIntRange
 {
     auto
-    operator()(lucid::test::RandomState& rs) const noexcept
+    operator()(loom::test::RandomState& rs) const noexcept
     {
         return rs.make_gen<T>(min, max);
     }
@@ -23,7 +23,7 @@ template <std::floating_point T>
 struct GMCanon
 {
     auto
-    operator()(lucid::test::RandomState& rs) const noexcept
+    operator()(loom::test::RandomState& rs) const noexcept
     {
         return rs.make_gen<T>();
     }
@@ -36,7 +36,7 @@ struct GMFloat
     static constexpr T h = 1e6;
 
     auto
-    operator()(lucid::test::RandomState& rs) const noexcept
+    operator()(loom::test::RandomState& rs) const noexcept
     {
         return rs.make_gen<T>(l, h);
     }
@@ -84,9 +84,9 @@ template <std::floating_point T>
 struct GM_J4
 {
     auto
-    operator()(lucid::test::RandomState& rs) const noexcept
+    operator()(loom::test::RandomState& rs) const noexcept
     {
-        return [g_u3    = gm_u3<lucid::uint_of_size_t<sizeof(T)>>(rs),
+        return [g_u3    = gm_u3<loom::uint_of_size_t<sizeof(T)>>(rs),
                 g_canon = gm_canon<T>(rs)]() mutable noexcept
         { return std::pair{g_u3(), g_canon()}; };
     }
@@ -95,10 +95,10 @@ struct GM_J4
 template <std::integral T>
 struct GM_Bit
 {
-    using U = lucid::uint_of_size_t<sizeof(T)>;
+    using U = loom::uint_of_size_t<sizeof(T)>;
 
     auto
-    operator()(lucid::test::RandomState& rs) const noexcept
+    operator()(loom::test::RandomState& rs) const noexcept
     {
         return [g_u3 = gm_u3<U>(rs), g_0u = gm_0u<U>(rs)]() mutable noexcept
         { return std::tuple{g_u3(), g_0u(), g_0u()}; };
@@ -109,7 +109,7 @@ template <std::unsigned_integral T>
 struct GM_Shift
 {
     auto
-    operator()(lucid::test::RandomState& rs) const noexcept
+    operator()(loom::test::RandomState& rs) const noexcept
     {
         return [g = gm_2_10<T>(rs)]() mutable noexcept
         { return std::tuple{g(), g()}; };
@@ -120,7 +120,7 @@ template <std::floating_point T>
 struct GM_F2
 {
     auto
-    operator()(lucid::test::RandomState& rs) const noexcept
+    operator()(loom::test::RandomState& rs) const noexcept
     {
         return [g_f = gm_float<T>(rs)]() mutable noexcept
         { return std::pair{g_f(), g_f()}; };

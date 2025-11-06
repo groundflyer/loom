@@ -8,15 +8,15 @@
 #define MAJOR_TYPE T
 #endif
 
-#define INDEX_TYPE       lucid::uint_of_size_t<sizeof(MAJOR_TYPE)>
+#define INDEX_TYPE       loom::uint_of_size_t<sizeof(MAJOR_TYPE)>
 
 // convert to char_sequence
-#define CS(S)            lucid::sl2cs<#S>
+#define CS(S)            loom::sl2cs<#S>
 
-#define CS_JOIN(A, B)    lucid::intlist::join<A, B>
+#define CS_JOIN(A, B)    loom::intlist::join<A, B>
 
 // NAME - char_sequence
-#define NVAR(TYPE, NAME) lucid::vm::Variable<TYPE, NAME>
+#define NVAR(TYPE, NAME) loom::vm::Variable<TYPE, NAME>
 // NAME - literal without quotes
 #define VAR(TYPE, NAME)  NVAR(TYPE, CS(NAME))
 #define TVAR(NAME)       VAR(MAJOR_TYPE, NAME)
@@ -25,9 +25,9 @@
 #define NIVAR(NAME)      NVAR(INDEX_TYPE, NAME)
 
 #define KERNEL(NAME, ...)                            \
-    using NAME = lucid::vm::kernel_blank < CS(NAME), \
-          lucid::type_sequence<__VA_ARGS__>, lucid::type_sequence <
-#define KERNEL_END(...)         >, lucid::type_sequence < __VA_ARGS__ >>
+    using NAME = loom::vm::kernel_blank < CS(NAME), \
+          loom::type_sequence<__VA_ARGS__>, loom::type_sequence <
+#define KERNEL_END(...)         >, loom::type_sequence < __VA_ARGS__ >>
 #define TKERNEL1(NAME, v)       KERNEL(NAME, TVAR(v))
 #define TKERNEL2(NAME, a, b)    KERNEL(NAME, TVAR(a), TVAR(b))
 #define TKERNEL3(NAME, a, b, c) KERNEL(NAME, TVAR(a), TVAR(b), TVAR(c))
@@ -56,13 +56,13 @@
 
 #define __MACRO_DECLARE(MACRO_NAME, ...) \
     using __MACRO_PREFIX##MACRO_NAME =   \
-        lucid::vm::macro_decl<CS(MACRO_NAME) __VA_OPT__(, ) __VA_ARGS__>
+        loom::vm::macro_decl<CS(MACRO_NAME) __VA_OPT__(, ) __VA_ARGS__>
 // #define __MACRO_DECLARE(NAME, ...) \
 //     __MACRO_DECLARE_PREFIX(__MACRO_PREFIX, NAME, __VA_ARGS__)
 #define __MACRO_DEF_BEGIN(NAME) \
     struct NAME                 \
     {                           \
-        using type = lucid::type_sequence <
+        using type = loom::type_sequence <
 
 #define MACRO(NAME)        \
     __MACRO_DECLARE(NAME); \
@@ -178,7 +178,7 @@
     }
 
 #define __INSERT_MACRO_INFO(NAME, ...) \
-    lucid::vm::macro_inv<CS(NAME) __VA_OPT__(, ) __VA_ARGS__>
+    loom::vm::macro_inv<CS(NAME) __VA_OPT__(, ) __VA_ARGS__>
 #define INSERT_MACRO(NAME, ...)             \
     __INSERT_MACRO_INFO(NAME, __VA_ARGS__), \
         typename NAME __VA_OPT__(<__VA_ARGS__>)::type
@@ -186,71 +186,71 @@
     __INSERT_MACRO_INFO(NAME, __VA_ARGS__), \
         typename NAME<MAJOR_TYPE __VA_OPT__(, ) __VA_ARGS__>::type
 
-#define MOV(a, b)               lucid::vm::Compute<std::identity, a, b>
+#define MOV(a, b)               loom::vm::Compute<std::identity, a, b>
 #define TMOV(a, b)              MOV(TVAR(a), TVAR(b))
 #define IMOV(a, b)              MOV(IVAR(a), IVAR(b))
 #define TMOV_CS(a, b)           MOV(NTVAR(a), NTVAR(b))
 #define IMOV_CS(a, b)           MOV(NIVAR(a), NIVAR(b))
 
-#define LABEL_CS(NAME)          lucid::vm::Label<NAME>
+#define LABEL_CS(NAME)          loom::vm::Label<NAME>
 #define LABEL(NAME)             LABEL_CS(CS(NAME))
 #define PREFIX_LABEL_CS(_P, _L) LABEL_CS(CS_JOIN(_P, _L))
 
 #define JMP(TARGET)                 \
-    lucid::vm::Jump < LABEL(TARGET) \
+    loom::vm::Jump < LABEL(TARGET) \
     >
 
 #define PJMPN(VN, ...) \
-    lucid::vm::ParmJump<VAR(INDEX_TYPE, VN), lucid::type_sequence<__VA_ARGS__>>
+    loom::vm::ParmJump<VAR(INDEX_TYPE, VN), loom::type_sequence<__VA_ARGS__>>
 #define PJMP2(VN, L1, L2)                                                   \
-    lucid::vm::ParmJump < VAR(INDEX_TYPE, VN), lucid::type_pair < LABEL(L1) \
+    loom::vm::ParmJump < VAR(INDEX_TYPE, VN), loom::type_pair < LABEL(L1) \
     , LABEL(L2)                                                             \
     >>
 #define PJMP3(VN, L1, L2, L3)                  \
-    lucid::vm::ParmJump < VAR(INDEX_TYPE, VN), \
-        lucid::type_sequence < LABEL(L1)       \
+    loom::vm::ParmJump < VAR(INDEX_TYPE, VN), \
+        loom::type_sequence < LABEL(L1)       \
     , LABEL(L2)                                \
     , LABEL(L3)                                \
     >>
 #define PJMP4(VN, L1, L2, L3, L4)              \
-    lucid::vm::ParmJump < VAR(INDEX_TYPE, VN), \
-        lucid::type_sequence < LABEL(L1)       \
+    loom::vm::ParmJump < VAR(INDEX_TYPE, VN), \
+        loom::type_sequence < LABEL(L1)       \
     , LABEL(L2)                                \
     , LABEL(L3)                                \
     , LABEL(L4)                                \
     >>
 #define PJMP2_CS(VN, L1, L2)                                                 \
-    lucid::vm::ParmJump < NVAR(INDEX_TYPE, VN), lucid::type_pair < LABEL(L1) \
+    loom::vm::ParmJump < NVAR(INDEX_TYPE, VN), loom::type_pair < LABEL(L1) \
     , LABEL(L2)                                                              \
     >>
 #define PJMP3_CS(VN, L1, L2, L3)                \
-    lucid::vm::ParmJump < NVAR(INDEX_TYPE, VN), \
-        lucid::type_sequence < LABEL(L1)        \
+    loom::vm::ParmJump < NVAR(INDEX_TYPE, VN), \
+        loom::type_sequence < LABEL(L1)        \
     , LABEL(L2)                                 \
     , LABEL(L3)                                 \
     >>
 #define PJMP4_CS(VN, L1, L2, L3, L4)            \
-    lucid::vm::ParmJump < NVAR(INDEX_TYPE, VN), \
-        lucid::type_sequence < LABEL(L1)        \
+    loom::vm::ParmJump < NVAR(INDEX_TYPE, VN), \
+        loom::type_sequence < LABEL(L1)        \
     , LABEL(L2)                                 \
     , LABEL(L3)                                 \
     , LABEL(L4)                                 \
     >>
 
 #define BINOP_CS(OP, TYPE, DST, A, B) \
-    lucid::vm::Compute<OP<TYPE>, NVAR(TYPE, DST), NVAR(TYPE, A), NVAR(TYPE, B)>
+    loom::vm::Compute<OP<TYPE>, NVAR(TYPE, DST), NVAR(TYPE, A), NVAR(TYPE, B)>
 #define BINOP(OP, TYPE, DST, A, B) BINOP_CS(OP, TYPE, CS(DST), CS(A), CS(B))
 
 #define UNOP_CS(OP, TYPE, DST, V) \
-    lucid::vm::Compute<OP<TYPE>, NVAR(TYPE, DST), NVAR(TYPE, V)>
+    loom::vm::Compute<OP<TYPE>, NVAR(TYPE, DST), NVAR(TYPE, V)>
 #define UNOP(OP, TYPE, DST, V) UNOP_CS(OP, TYPE, CS(DST), CS(V))
 
 #define CMP_CS(OP, TYPE, DST, A, B) \
-    lucid::vm::Compute<OP<TYPE>, NIVAR(DST), NVAR(TYPE, A), NVAR(TYPE, B)>
+    loom::vm::Compute<OP<TYPE>, NIVAR(DST), NVAR(TYPE, A), NVAR(TYPE, B)>
 #define CMP(OP, TYPE, DST, A, B) CMP_CS(OP, TYPE, CS(DST), CS(A), CS(B))
 
 #define CMOV_CS(TYPE, DST, C, A, B)          \
-    lucid::vm::Compute<lucid::vm::ops::cmov, \
+    loom::vm::Compute<loom::vm::ops::cmov, \
                        NVAR(TYPE, DST),      \
                        NIVAR(C),             \
                        NVAR(TYPE, A),        \
@@ -258,7 +258,7 @@
 #define CMOV(TYPE, DST, C, A, B) CMOV_CS(TYPE, CS(DST), CS(C), CS(A), CS(B))
 
 #define FMA_CS(TYPE, DST, X, Y, Z)          \
-    lucid::vm::Compute<lucid::vm::ops::fma, \
+    loom::vm::Compute<loom::vm::ops::fma, \
                        NVAR(TYPE, DST),     \
                        NVAR(TYPE, X),       \
                        NVAR(TYPE, Y),       \
@@ -374,22 +374,22 @@
 #define TCMOV_CS(...)      CMOV_CS(MAJOR_TYPE, __VA_ARGS__)
 #define ICMOV_CS(...)      CMOV_CS(INDEX_TYPE, __VA_ARGS__)
 
-#define LSHFT(...)         BINOP(lucid::vm::ops::lshift, INDEX_TYPE, __VA_ARGS__)
-#define RSHFT(...)         BINOP(lucid::vm::ops::rshift, INDEX_TYPE, __VA_ARGS__)
+#define LSHFT(...)         BINOP(loom::vm::ops::lshift, INDEX_TYPE, __VA_ARGS__)
+#define RSHFT(...)         BINOP(loom::vm::ops::rshift, INDEX_TYPE, __VA_ARGS__)
 
-#define LSHFT_CS(...)      BINOP_CS(lucid::vm::ops::lshift, INDEX_TYPE, __VA_ARGS__)
-#define RSHFT_CS(...)      BINOP_CS(lucid::vm::ops::rshift, INDEX_TYPE, __VA_ARGS__)
+#define LSHFT_CS(...)      BINOP_CS(loom::vm::ops::lshift, INDEX_TYPE, __VA_ARGS__)
+#define RSHFT_CS(...)      BINOP_CS(loom::vm::ops::rshift, INDEX_TYPE, __VA_ARGS__)
 
-#define ABS(...)           UNOP(lucid::vm::ops::abs, __VA_ARGS__)
-#define ROUND(...)         UNOP(lucid::vm::ops::round, __VA_ARGS__)
-#define CEIL(...)          UNOP(lucid::vm::ops::ceil, __VA_ARGS__)
-#define FLOOR(...)         UNOP(lucid::vm::ops::floor, __VA_ARGS__)
-#define TRUNC(...)         UNOP(lucid::vm::ops::trunc, __VA_ARGS__)
-#define COPYSIGN(...)      UNOP(lucid::vm::ops::copysign, __VA_ARGS__)
-#define SIN(...)           UNOP(lucid::vm::ops::sin, __VA_ARGS__)
-#define COS(...)           UNOP(lucid::vm::ops::cos, __VA_ARGS__)
-#define MIN(...)           BINOP(lucid::vm::ops::min, __VA_ARGS__)
-#define MAX(...)           BINOP(lucid::vm::ops::max, __VA_ARGS__)
+#define ABS(...)           UNOP(loom::vm::ops::abs, __VA_ARGS__)
+#define ROUND(...)         UNOP(loom::vm::ops::round, __VA_ARGS__)
+#define CEIL(...)          UNOP(loom::vm::ops::ceil, __VA_ARGS__)
+#define FLOOR(...)         UNOP(loom::vm::ops::floor, __VA_ARGS__)
+#define TRUNC(...)         UNOP(loom::vm::ops::trunc, __VA_ARGS__)
+#define COPYSIGN(...)      UNOP(loom::vm::ops::copysign, __VA_ARGS__)
+#define SIN(...)           UNOP(loom::vm::ops::sin, __VA_ARGS__)
+#define COS(...)           UNOP(loom::vm::ops::cos, __VA_ARGS__)
+#define MIN(...)           BINOP(loom::vm::ops::min, __VA_ARGS__)
+#define MAX(...)           BINOP(loom::vm::ops::max, __VA_ARGS__)
 
 #define TABS(...)          ABS(MAJOR_TYPE, __VA_ARGS__)
 #define TROUND(...)        ROUND(MAJOR_TYPE, __VA_ARGS__)
@@ -402,16 +402,16 @@
 #define TMIN(...)          MIN(MAJOR_TYPE, __VA_ARGS__)
 #define TMAX(...)          MAX(MAJOR_TYPE, __VA_ARGS__)
 
-#define ABS_CS(...)        UNOP_CS(lucid::vm::ops::abs, __VA_ARGS__)
-#define ROUND_CS(...)      UNOP_CS(lucid::vm::ops::round, __VA_ARGS__)
-#define CEIL_CS(...)       UNOP_CS(lucid::vm::ops::ceil, __VA_ARGS__)
-#define FLOOR_CS(...)      UNOP_CS(lucid::vm::ops::floor, __VA_ARGS__)
-#define TRUNC_CS(...)      UNOP_CS(lucid::vm::ops::trunc, __VA_ARGS__)
-#define COPYSIGN_CS(...)   UNOP_CS(lucid::vm::ops::copysign, __VA_ARGS__)
-#define SIN_CS(...)        UNOP_CS(lucid::vm::ops::sin, __VA_ARGS__)
-#define COS_CS(...)        UNOP_CS(lucid::vm::ops::cos, __VA_ARGS__)
-#define MIN_CS(...)        BINOP_CS(lucid::vm::ops::min, __VA_ARGS__)
-#define MAX_CS(...)        BINOP_CS(lucid::vm::ops::max, __VA_ARGS__)
+#define ABS_CS(...)        UNOP_CS(loom::vm::ops::abs, __VA_ARGS__)
+#define ROUND_CS(...)      UNOP_CS(loom::vm::ops::round, __VA_ARGS__)
+#define CEIL_CS(...)       UNOP_CS(loom::vm::ops::ceil, __VA_ARGS__)
+#define FLOOR_CS(...)      UNOP_CS(loom::vm::ops::floor, __VA_ARGS__)
+#define TRUNC_CS(...)      UNOP_CS(loom::vm::ops::trunc, __VA_ARGS__)
+#define COPYSIGN_CS(...)   UNOP_CS(loom::vm::ops::copysign, __VA_ARGS__)
+#define SIN_CS(...)        UNOP_CS(loom::vm::ops::sin, __VA_ARGS__)
+#define COS_CS(...)        UNOP_CS(loom::vm::ops::cos, __VA_ARGS__)
+#define MIN_CS(...)        BINOP_CS(loom::vm::ops::min, __VA_ARGS__)
+#define MAX_CS(...)        BINOP_CS(loom::vm::ops::max, __VA_ARGS__)
 
 #define TABS_CS(...)       ABS_CS(MAJOR_TYPE, __VA_ARGS__)
 #define TROUND_CS(...)     ROUND_CS(MAJOR_TYPE, __VA_ARGS__)

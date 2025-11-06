@@ -27,7 +27,7 @@
 
 #include <cstdio>
 
-namespace lucid::argparse
+namespace loom::argparse
 {
 /// @defgroup ArgParse ArgParse
 /// @brief Zero-cost, Unix/GNU style command line arguments parser.
@@ -1587,7 +1587,7 @@ show_help(std::string_view                  program_name,
     }
 
     // print options short descriptions, e.g. [-o var] or [--option var]
-    lucid::for_each(
+    loom::for_each(
         options,
         [&]<typename O>(const O& option) noexcept
         {
@@ -1611,7 +1611,7 @@ show_help(std::string_view                  program_name,
         });
 
     // print positionals short description
-    lucid::for_each(
+    loom::for_each(
         positionals,
         [&](const auto& p) noexcept
         { column = print_vars<true>(p, try_newline1, column, file); });
@@ -1704,7 +1704,7 @@ show_help(std::string_view                  program_name,
     column += 10;
     doc_print("show this message and exit");
 
-    lucid::for_each(options,
+    loom::for_each(options,
                     [&]<typename O>(const O& option) noexcept
                     {
                         opt_align();
@@ -1740,7 +1740,7 @@ show_help(std::string_view                  program_name,
     {
         std::fputs("\nRequired arguments:\n", file);
 
-        lucid::for_each(positionals,
+        loom::for_each(positionals,
                         [&](const auto& o) noexcept
                         {
                             opt_align();
@@ -1912,4 +1912,4 @@ parse(const std::tuple<Options...>& options, ArgsRange args) noexcept
     return parse(options, std::tuple{}, args);
 }
 /// @}
-} // namespace lucid::argparse
+} // namespace loom::argparse

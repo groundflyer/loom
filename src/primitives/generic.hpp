@@ -12,7 +12,7 @@
 
 #include <utils/tmp.hpp>
 
-namespace lucid
+namespace loom
 {
 template <template <typename, size_t> typename Container>
 using AllPrimTypes = type_sequence<AABB_<Container>,
@@ -86,4 +86,4 @@ apply_transform(const Mat4_<MatContainer>&    t,
         prim);
 }
 } // namespace fn
-} // namespace lucid
+} // namespace loom

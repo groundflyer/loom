@@ -1,9 +1,9 @@
 // -*- C++ -*-
 /// @file linal.hpp
 /// @brief Linar algebra classes and operators.
-/// @note Functions defined in lucid::fn namespace are not for general use.
+/// @note Functions defined in loom::fn namespace are not for general use.
 /// They provide implementations for functional objects with same names
-/// in lucid namespace.
+/// in loom namespace.
 
 #pragma once
 
@@ -20,8 +20,8 @@
 #include <type_traits>
 #include <utility>
 
-/// @brief Generate code for arithmetic binary operators of lucid::Vector and
-/// lucid::Matrix.
+/// @brief Generate code for arithmetic binary operators of loom::Vector and
+/// loom::Matrix.
 #define DEF_BINARY_OP(FUNC, OP)                                           \
     namespace fn                                                          \
     {                                                                     \
@@ -96,7 +96,7 @@
         return FUNC(lhs, rhs);                                            \
     }
 
-/// @brief Generate code for unary operators of lucid::Vector and lucid::Matrix.
+/// @brief Generate code for unary operators of loom::Vector and loom::Matrix.
 #define DEF_UNARY_OP(FUNC, OP)                                           \
     namespace fn                                                         \
     {                                                                    \
@@ -146,7 +146,7 @@
         return FUNC(lhs);                                                \
     }
 
-/// @brief Generate code for lucid::Vector'ised analogue of @p FUNC.
+/// @brief Generate code for loom::Vector'ised analogue of @p FUNC.
 #define VEC_NAMED_FN_OBJ(NAME, FUNC)                   \
     namespace fn                                       \
     {                                                  \
@@ -209,13 +209,13 @@
     }                                                  \
     inline constexpr fn::FUNC##_fn FUNC{};
 
-namespace lucid
+namespace loom
 {
 /// @defgroup LINAL Linear Algebra
 /// @brief Linear algebra classes and operators.
-/// @note Functions defined in lucid::fn namespace are not for general use.
+/// @note Functions defined in loom::fn namespace are not for general use.
 /// They provide implementations for functional objects with same names
-/// in lucid namespace.
+/// in loom namespace.
 /// @{
 
 /// @brief N-dimensional euclidian vector.
@@ -1945,7 +1945,7 @@ DEF_BINARY_OP(greater_equal, operator>=)
 DEF_BINARY_OP(less_equal, operator<=)
 
 /// @}
-} // namespace lucid
+} // namespace loom
 
 #undef DEF_BINARY_OP
 #undef DEF_UNARY_OP
@@ -1956,7 +1956,7 @@ DEF_BINARY_OP(less_equal, operator<=)
 namespace std
 {
 template <typename T, size_t N, template <typename, size_t> typename Container>
-class tuple_size<lucid::Vector<T, N, Container>>
+class tuple_size<loom::Vector<T, N, Container>>
 {
   public:
     static constexpr const size_t value = N;
@@ -1967,7 +1967,7 @@ template <size_t I,
           size_t N,
           template <typename, size_t>
           typename Container>
-class tuple_element<I, lucid::Vector<T, N, Container>>
+class tuple_element<I, loom::Vector<T, N, Container>>
 {
   public:
     using type = T;
@@ -1979,7 +1979,7 @@ template <size_t I,
           template <typename, size_t>
           typename Container>
 constexpr decltype(auto)
-get(const lucid::Vector<T, N, Container>& vec) noexcept
+get(const loom::Vector<T, N, Container>& vec) noexcept
 {
     return vec.template get<I>();
 }
@@ -1989,7 +1989,7 @@ template <typename T,
           size_t N,
           template <typename, size_t>
           typename Container>
-class tuple_size<lucid::Matrix<T, M, N, Container>>
+class tuple_size<loom::Matrix<T, M, N, Container>>
 {
   public:
     static const constexpr size_t value = M;
@@ -2001,10 +2001,10 @@ template <size_t I,
           size_t N,
           template <typename, size_t>
           typename Container>
-class tuple_element<I, lucid::Matrix<T, M, N, Container>>
+class tuple_element<I, loom::Matrix<T, M, N, Container>>
 {
   public:
-    using type = lucid::Vector<T, N, std::span>;
+    using type = loom::Vector<T, N, std::span>;
 };
 
 template <size_t I,
@@ -2013,10 +2013,10 @@ template <size_t I,
           size_t N,
           template <typename, size_t>
           typename Container>
-class tuple_element<I, const lucid::Matrix<T, M, N, Container>>
+class tuple_element<I, const loom::Matrix<T, M, N, Container>>
 {
   public:
-    using type = lucid::Vector<const T, N, std::span>;
+    using type = loom::Vector<const T, N, std::span>;
 };
 
 template <size_t I,
@@ -2026,7 +2026,7 @@ template <size_t I,
           template <typename, size_t>
           typename Container>
 constexpr decltype(auto)
-get(const lucid::Matrix<T, M, N, Container>& mat) noexcept
+get(const loom::Matrix<T, M, N, Container>& mat) noexcept
 {
     return mat.template get<I>();
 }

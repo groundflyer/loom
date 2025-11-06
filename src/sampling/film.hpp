@@ -8,7 +8,7 @@
 
 #include <random>
 
-namespace lucid
+namespace loom
 {
 // sample a random position inside square
 template <typename Generator>
@@ -20,4 +20,4 @@ sample_pixel(Generator& g, const real _pixel_width, const Vec2& pos) noexcept
                             g)) *
                _pixel_width;
 }
-} // namespace lucid
+} // namespace loom

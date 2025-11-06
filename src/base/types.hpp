@@ -8,7 +8,7 @@
 
 #include <cstdint>
 
-namespace lucid
+namespace loom
 {
 #ifdef _DOUBLE_PRECISION
 typedef double real;
@@ -79,4 +79,4 @@ using RGBA8 = RGBA8_<std::array>;
 inline constexpr real Pi      = Pi_<real>;
 inline constexpr Mat3 Mat3_id = Mat3::identity();
 inline constexpr Mat4 Mat4_id = Mat4::identity();
-} // namespace lucid
+} // namespace loom

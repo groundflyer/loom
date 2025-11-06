@@ -26,7 +26,7 @@
 #include <utility>
 #include <vector>
 
-namespace lucid::test
+namespace loom::test
 {
 namespace detail
 {
@@ -786,7 +786,7 @@ struct ParmTestMaker
     }
 
     /// @brief Special case for ParmTestMaker::fuzzy_with_ref with
-    /// lucid::ulp_cmp as the comparator.
+    /// loom::ulp_cmp as the comparator.
     /// @copydetails fuzzy_with_ref
     ///
     /// @param ulp unit in the last place.
@@ -977,4 +977,4 @@ template <std::floating_point T>
 struct poly_cmp<T> : ulp_cmp
 {
 };
-} // namespace lucid::test
+} // namespace loom::test

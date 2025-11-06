@@ -11,7 +11,7 @@
 
 #include <iostream>
 
-namespace lucid
+namespace loom
 {
 /// @brief Defines simple sphere.
 template <template <typename, size_t> typename Container>
@@ -105,4 +105,4 @@ apply_transform(const Mat4_<MatContainer>& t, const Sphere_<PrimContainer>& prim
     return Sphere(apply_transform_p(t, c), r);
 }
 } // namespace fn
-} // namespace lucid
+} // namespace loom

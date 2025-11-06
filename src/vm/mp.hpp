@@ -22,7 +22,7 @@
 #include <mutex>
 #include <ranges>
 
-namespace lucid::vm::mp
+namespace loom::vm::mp
 {
 namespace detail
 {
@@ -165,7 +165,7 @@ struct Worker
         std::bitset<typelist::length<types>> done_flags;
 
         while(!done_flags.all())
-            lucid::for_each(
+            loom::for_each(
                 *bench,
                 [&done_flags, signal = signal]<typename C>(C& ctx) noexcept
                 {
@@ -239,17 +239,17 @@ class ShopBase : public Signal
     void
     visit(F&& f)
     {
-        lucid::for_each(m_benches, std::forward<F>(f));
+        loom::for_each(m_benches, std::forward<F>(f));
     }
 
     template <typename F>
     void
     visit(F&& f) const
     {
-        lucid::for_each(m_benches, std::forward<F>(f));
+        loom::for_each(m_benches, std::forward<F>(f));
     }
 
-    /// @brief Constructs lucid::thread_pool of static size with Worker.
+    /// @brief Constructs loom::thread_pool of static size with Worker.
     [[nodiscard]] thread_pool<N>
     get_thread_pool() noexcept
     {
@@ -294,7 +294,7 @@ class ShopBase<Ks, Ctx, dynamic_size> : public Signal
         std::ranges::for_each(m_benches, std::forward<F>(f));
     }
 
-    /// @brief Constructs lucid::thread_pool of dynamic sizes with Worker.
+    /// @brief Constructs loom::thread_pool of dynamic sizes with Worker.
     [[nodiscard]] thread_pool<dynamic_size>
     get_thread_pool() noexcept
     {
@@ -330,7 +330,7 @@ class Shop : public ShopBase<Ks, Ctx, N>
         base::visit(
             [&ret](auto& bench) noexcept
             {
-                lucid::zip_with_for_each(
+                loom::zip_with_for_each(
                     [](auto& ctx, auto& iters) noexcept
                     {
                         auto& [b, e] = iters;
@@ -349,7 +349,7 @@ class Shop : public ShopBase<Ks, Ctx, N>
         base::visit(
             [&ic, &oc](auto& bench) noexcept
             {
-                lucid::zip_with_for_each(
+                loom::zip_with_for_each(
                     [](auto& ctx, auto& in, auto& out) noexcept
                     {
                         auto& [ib, ie] = in;
@@ -368,7 +368,7 @@ class Shop : public ShopBase<Ks, Ctx, N>
         base::visit(
             [&oc](auto& bench) noexcept
             {
-                lucid::zip_with_for_each(
+                loom::zip_with_for_each(
                     [](auto& ctx, auto out) noexcept
                     { std::ranges::copy(ctx.stream.get_output_zipped(), out); },
                     bench,
@@ -376,4 +376,4 @@ class Shop : public ShopBase<Ks, Ctx, N>
             });
     }
 };
-} // namespace lucid::vm::mp
+} // namespace loom::vm::mp

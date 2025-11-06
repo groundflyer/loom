@@ -7,7 +7,7 @@
 #include <tests/root_finding.hpp>
 
 using namespace std;
-using namespace lucid;
+using namespace loom;
 using namespace vm;
 using namespace dbg;
 using namespace argparse;

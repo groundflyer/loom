@@ -9,7 +9,7 @@
 
 #include "triangle.hpp"
 
-namespace lucid
+namespace loom
 {
 /// @brief We define quadrilateral as an array of vertices.
 ///
@@ -183,4 +183,4 @@ apply_transform(const Mat4_<MatContainer>&  t,
                       prim);
 }
 } // namespace fn
-} // namespace lucid
+} // namespace loom

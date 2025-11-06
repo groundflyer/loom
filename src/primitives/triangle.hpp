@@ -9,7 +9,7 @@
 
 #include "aabb.hpp"
 
-namespace lucid
+namespace loom
 {
 /// @brief Defining triangle as array of vertices.
 template <template <typename, std::size_t> typename Container>
@@ -106,8 +106,8 @@ template <typename Prim>
 constexpr AABB
 bound(const Prim& prim) noexcept
 {
-    const Vec3 vmin = fold_tuple(prim, lucid::min);
-    const Vec3 vmax = fold_tuple(prim, lucid::max);
+    const Vec3 vmin = fold_tuple(prim, loom::min);
+    const Vec3 vmax = fold_tuple(prim, loom::max);
     return AABB{vmin, vmax};
 }
 } // namespace detail
@@ -155,4 +155,4 @@ apply_transform(const Mat4_<MatContainer>&          t,
                       prim);
 }
 } // namespace fn
-} // namespace lucid
+} // namespace loom

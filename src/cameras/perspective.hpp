@@ -5,7 +5,7 @@
 
 #include <ray_traversal/ray_traversal.hpp>
 
-namespace lucid
+namespace loom
 {
 constexpr real
 convert_fov(const real fov) noexcept
@@ -42,4 +42,4 @@ struct perspective
         }
     };
 };
-} // namespace lucid
+} // namespace loom

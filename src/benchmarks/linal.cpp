@@ -9,7 +9,7 @@
 #include <random>
 
 using namespace std;
-using namespace lucid;
+using namespace loom;
 
 template <typename T, std::size_t N, typename G>
 static void

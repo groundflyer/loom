@@ -14,7 +14,7 @@
 
 #include "math.hpp"
 
-namespace lucid
+namespace loom
 {
 /// @defgroup TMP Metaprogramming
 /// @brief Template metaprogramming.
@@ -26,7 +26,7 @@ namespace lucid
 ///
 /// The templates are hidden in the @p detail namespace,
 /// while type aliases and variable templates are visible
-/// in lucid namespace.
+/// in loom namespace.
 /// @{
 
 /// @brief Sequence of types.
@@ -999,7 +999,7 @@ for_each_arg(type_sequence<Ts...> /* list */, F&& f, Args&&... args) noexcept(
 /// template parameter and @p args as function parameters. If theare more than
 /// one entries in @p list, collect results into an instance of @p Tuple.
 ///
-/// It's similar to std::transform or lucid::map_tuple, except the input is a
+/// It's similar to std::transform or loom::map_tuple, except the input is a
 /// list of types, so it can be seen as transformation of virtual entities
 /// (types) to actual values.
 ///
@@ -1030,7 +1030,7 @@ maybe_collect(type_sequence<Ts...> /*list*/, F&& f, Args&&... args) noexcept(
 /// @brief Same as typelist::maybe_collect, except each argument of @p args
 /// passed separately to corresponding invocation of @p f.
 ///
-/// This function is kind of lucid::realise(zip(@p list, @p args)).
+/// This function is kind of loom::realise(zip(@p list, @p args)).
 ///
 /// Each invocation looks roughly like this:
 /// @code
@@ -1765,4 +1765,4 @@ using int_of_bits_t = int_of_bits<N>::int_t;
 /// void if there is no such.
 template <std::size_t S>
 using int_of_size_t = int_of_bits_t<S * 8>;
-} // namespace lucid
+} // namespace loom

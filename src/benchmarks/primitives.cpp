@@ -10,7 +10,7 @@
 #include <random>
 
 using namespace std;
-using namespace lucid;
+using namespace loom;
 using namespace fmt::literals;
 
 static Vec3
@@ -55,7 +55,7 @@ bench_prim(LogFile&                         log,
         [&]() noexcept {
             return pair{Vec2(randr(g), randr(g)), pg()};
         },
-        lucid::sample);
+        loom::sample);
 
     microbench(log, n, "{} centroid"_format(name), pg, centroid);
 

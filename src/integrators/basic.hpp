@@ -11,7 +11,7 @@
 
 #include <random>
 
-namespace lucid
+namespace loom
 {
 template <typename Scene, typename MaterialGetter>
 struct Constant
@@ -27,7 +27,7 @@ struct Constant
         const auto [pid, isect]    = hider(ray, *scene);
         const auto& [bsdf, emit_f] = (*material_getter)(pid);
         const Vec3 pos             = hit_pos(ray, isect);
-        const Vec3 n               = lucid::visit(
+        const Vec3 n               = loom::visit(
             pid, [&](const auto& prim) noexcept { return normal(pos, prim); }, *scene);
         const auto eval     = bsdf(n).first;
         const RGB  color    = eval(n, n);
@@ -65,7 +65,7 @@ struct PathTracer_
             const auto& [bsdf, emit_f] = (*material_getter)(pid);
             const Vec3 pos             = hit_pos(ray, isect);
 
-            const Vec3 n = lucid::visit(
+            const Vec3 n = loom::visit(
                 pid, [&](const auto& prim) noexcept { return normal(pos, prim); }, *scene);
 
             const auto [eval, sample] = bsdf(n);
@@ -96,4 +96,4 @@ struct PathTracer_
         return {depth + 1ul, Sample{sample_pos, radiance * has_rad}};
     }
 };
-} // namespace lucid
+} // namespace loom

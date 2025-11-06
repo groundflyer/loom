@@ -12,7 +12,7 @@
 #include <primitives/primitives.hpp>
 #include <sampling/common.hpp>
 
-namespace lucid
+namespace loom
 {
 class CornellBox
 {
@@ -204,4 +204,4 @@ class CornellBox
         return MatGetter{};
     }
 };
-} // namespace lucid
+} // namespace loom

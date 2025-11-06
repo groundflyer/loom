@@ -8,7 +8,7 @@
 #include <random>
 
 using namespace std;
-using namespace lucid;
+using namespace loom;
 
 constexpr real
 radius(const Sphere& prim) noexcept
@@ -19,7 +19,7 @@ radius(const Sphere& prim) noexcept
 constexpr real
 radius(const AABB& prim) noexcept
 {
-    return lucid::distance(centroid(prim), prim.vmax);
+    return loom::distance(centroid(prim), prim.vmax);
 }
 
 int
@@ -52,7 +52,7 @@ main(int argc, char* argv[])
         const Intersection hit  = intersect(tohit, prim);
         const Intersection miss = intersect(tomiss, prim);
         return !hit || miss ||
-               !almost_equal(hit.t, lucid::distance(target, origin), 10);
+               !almost_equal(hit.t, loom::distance(target, origin), 10);
     };
 
     const auto bound_property =
@@ -73,11 +73,11 @@ main(int argc, char* argv[])
     { return test_prim(name, gen, sampler, sample_intersect_property); };
 
     const auto sample_prim = [&](const auto& prim) noexcept
-    { return pair(lucid::sample(sgen(), prim), posgen()); };
+    { return pair(loom::sample(sgen(), prim), posgen()); };
 
     const auto sample_selfoccluded_prim = [&](const auto& prim) noexcept
     {
-        const Vec3 sampled_point = lucid::sample(sgen(), prim);
+        const Vec3 sampled_point = loom::sample(sgen(), prim);
         const Vec3 offset        = sampled_point - centroid(prim);
         const auto sign          = transform([](const real val) noexcept
                                     { return std::copysign(1_r, val); },
@@ -90,7 +90,7 @@ main(int argc, char* argv[])
     const auto bound_gen = [&](const auto& prim) noexcept
     {
         const AABB bbox   = bound(prim);
-        const Vec3 sp     = lucid::sample(sgen(), prim);
+        const Vec3 sp     = loom::sample(sgen(), prim);
         const auto tb     = Vector(generate<3>(bern_dist, g));
         const auto offset = transform([](const auto& a, const auto& b) noexcept
                                       { return a ? b : -b; },
@@ -104,7 +104,7 @@ main(int argc, char* argv[])
     { return test_prim(name, gen, bound_gen, bound_property); };
 
     const auto aabb_gen = [&]() noexcept
-    { return tuple_maker<AABB>(lucid::minmax(posgen(), posgen())); };
+    { return tuple_maker<AABB>(loom::minmax(posgen(), posgen())); };
     const auto sphere_gen = [&]() noexcept
     { return Sphere(posgen(), rad_dist(g)); };
     const auto disk_gen = [&]() noexcept
@@ -118,7 +118,7 @@ main(int argc, char* argv[])
         const Vec3 v10{rad_dist(g), 0, 0};
         const Vec3 v11 = v00 + v01 + v10;
         const auto t =
-            dot(lucid::rotate(big_dist(g), normgen()), translate(posgen()));
+            dot(loom::rotate(big_dist(g), normgen()), translate(posgen()));
         return apply_transform(t, Quad{v00, v01, v11, v10});
     };
 

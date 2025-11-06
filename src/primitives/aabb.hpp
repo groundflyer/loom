@@ -10,7 +10,7 @@
 #include <ray_traversal/ray_traversal.hpp>
 #include <utils/math.hpp>
 
-namespace lucid
+namespace loom
 {
 /// @brief Axis-aligned bounding box.
 template <template <typename, std::size_t> typename Container>
@@ -88,7 +88,7 @@ intersect(const Ray_<RayContainer>& ray, const AABB_<AABBContainer>& prim) noexc
     return Intersection{intersected && !std::signbit(tmin2), tmin2, Vec2{}};
 }
 
-/// @brief Compute normal of AABB at @pos.
+/// @brief Compute normal of AABB at @p pos.
 template <template <typename, std::size_t> typename AABBContainer,
           template <typename, std::size_t>
           typename PosContainer>
@@ -100,8 +100,8 @@ normal(const Vec3_<PosContainer>& pos, const AABB_<AABBContainer>& prim) noexcep
     real       md[2]{};
     for(unsigned i = 0; i < 2; ++i)
     {
-        const Vec3 ad = lucid::abs(pos - prim[bool(i)]);
-        md[i]         = lucid::min(ad);
+        const Vec3 ad = loom::abs(pos - prim[bool(i)]);
+        md[i]         = loom::min(ad);
         vd[i]         = Vec3(ad == md[i]);
     }
     const auto pp = md[0] > md[1];
@@ -132,8 +132,8 @@ sample(const Vec2_<SContainer>& s, const AABB_<PContainer>& prim) noexcept
     const unsigned shift =
         static_cast<unsigned>(300_r * fmod(s1 + s2 + s3, 1_r));
     const auto [a, b] = detail::diag(prim, shift, s3 > 0.5_r);
-    return lucid::transform([](const auto&... args) noexcept
-                            { return lucid::lerp(args...); },
+    return loom::transform([](const auto&... args) noexcept
+                            { return loom::lerp(args...); },
                             a,
                             b,
                             roll(Vec3(resample(s1), resample(s2), 0_r), shift));
@@ -167,4 +167,4 @@ apply_transform(const Mat4_<MatContainer>& t, const AABB_<PrimContainer>& prim) 
     return AABB(apply_transform_p(t, vmin), apply_transform_p(t, vmax));
 }
 } // namespace fn
-} // namespace lucid
+} // namespace loom

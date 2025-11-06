@@ -10,7 +10,7 @@
 
 #include <utility>
 
-namespace lucid
+namespace loom
 {
 namespace fn
 {
@@ -164,4 +164,4 @@ MK_NIEBLOID(rotate)
 MK_NIEBLOID(look_at)
 MK_NIEBLOID(basis)
 MK_NIEBLOID(basis_matrix)
-} // namespace lucid
+} // namespace loom

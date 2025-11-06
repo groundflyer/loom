@@ -8,7 +8,7 @@
 
 #include <memory>
 
-namespace lucid
+namespace loom
 {
 #ifdef CACHE_LINE_SIZE
 constexpr inline std::size_t cache_line_size = CACHE_LINE_SIZE;
@@ -74,4 +74,4 @@ struct cache_line_capacity
 template <typename T>
 inline constexpr std::size_t cache_line_capacity_v =
     cache_line_capacity<T>::value;
-} // namespace lucid
+} // namespace loom

@@ -19,7 +19,7 @@
 #define _REINIT
 #endif
 
-namespace lucid
+namespace loom
 {
 namespace fn
 {
@@ -36,4 +36,4 @@ struct forbidden_sink_fn
 
 /// @brief Always asserts if called.
 inline constexpr fn::forbidden_sink_fn forbidden_sink;
-} // namespace lucid
+} // namespace loom

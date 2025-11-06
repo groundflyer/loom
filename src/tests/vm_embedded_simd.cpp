@@ -14,7 +14,7 @@
 
 #include <fmt/core.h>
 
-using namespace lucid;
+using namespace loom;
 using namespace vm;
 using namespace test;
 
@@ -39,13 +39,13 @@ struct mock_program
     static constexpr index_t halt_pos   = static_cast<index_t>(-1);
 };
 
-namespace lucid
+namespace loom
 {
 template <typename Index, Index _>
 struct is_kernel<mock_program<Index, _>> : std::true_type
 {
 };
-} // namespace lucid
+} // namespace loom
 
 template <Kernel K>
 void
@@ -126,7 +126,7 @@ struct helper<std::tuple<Ts...>, N>
     static void
     set(V& v, const std::size_t i, const std::tuple<Ts...>& vals) noexcept
     {
-        lucid::zip_with_for_each([i](auto& v, const auto& s) noexcept
+        loom::zip_with_for_each([i](auto& v, const auto& s) noexcept
                                  { v[i] = s; },
                                  v,
                                  vals);

@@ -209,30 +209,30 @@ template <std::unsigned_integral T>
 constexpr T
 val_fac(T i) noexcept
 {
-    return lucid::fac(i);
+    return loom::fac(i);
 }
 
 // simple union validation
 template <std::floating_point T>
-constexpr lucid::uint_of_size_t<sizeof(T)>
+constexpr loom::uint_of_size_t<sizeof(T)>
 val_sut(T i) noexcept
 {
-    return static_cast<lucid::uint_of_size_t<sizeof(T)>>(i);
+    return static_cast<loom::uint_of_size_t<sizeof(T)>>(i);
 }
 
 // complex union validation
 template <std::floating_point T>
-constexpr lucid::uint_of_size_t<sizeof(T)>
+constexpr loom::uint_of_size_t<sizeof(T)>
 val_cut(T i) noexcept
 {
-    using R = lucid::uint_of_size_t<sizeof(T)>;
+    using R = loom::uint_of_size_t<sizeof(T)>;
     return i < static_cast<T>(0.5) ? static_cast<R>(200) : static_cast<R>(100);
 }
 
 // jump4 validation
 template <std::floating_point T>
 constexpr T
-val_jmp4(lucid::uint_of_size_t<sizeof(T)> i, T a) noexcept
+val_jmp4(loom::uint_of_size_t<sizeof(T)> i, T a) noexcept
 {
     switch(i)
     {
@@ -261,7 +261,7 @@ val_bit(T i, T a, T b)
 
 template <std::floating_point T>
 constexpr T
-val_cmov(lucid::uint_of_size_t<sizeof(T)> i, T a) noexcept
+val_cmov(loom::uint_of_size_t<sizeof(T)> i, T a) noexcept
 {
     return !i && (a > static_cast<T>(0.5)) ? -a : a;
 }

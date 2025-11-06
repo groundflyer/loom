@@ -7,7 +7,7 @@
 
 #include <random>
 
-using namespace lucid;
+using namespace loom;
 using namespace std;
 
 int
@@ -40,7 +40,7 @@ main(int argc, char* argv[])
             const auto& [origin, delta] = feed;
             const auto origin2          = testing - delta;
             return any(!almost_equal_vec(origin2, origin, ULP)) ||
-                   !all(lucid::isfinite(origin2));
+                   !all(loom::isfinite(origin2));
         });
 
     ret += test_property_n(
@@ -53,7 +53,7 @@ main(int argc, char* argv[])
             const auto& [origin, delta] = feed;
             const auto& origin2         = testing / delta;
             return any(!almost_equal_vec(origin2, origin, ULP)) ||
-                   !all(lucid::isfinite(origin2));
+                   !all(loom::isfinite(origin2));
         });
 
     ret += test_property_n(
@@ -63,7 +63,7 @@ main(int argc, char* argv[])
             return pair{Pi * generate_canonical<real, 10>(g),
                         make_normal(argen())};
         },
-        lucid::rotate,
+        loom::rotate,
         [&](const Mat4& testing, const auto&) noexcept
         {
             const Vec3 o{argen()};
@@ -73,7 +73,7 @@ main(int argc, char* argv[])
             return !(almost_equal(1_r, det(Mat3(testing)), ULP) &&
                      almost_equal(l, lt, ULP)) ||
                    all(almost_equal_vec(o, ot, ULP)) ||
-                   !all(lucid::isfinite(ot));
+                   !all(loom::isfinite(ot));
         });
 
     ret += test_property(
@@ -92,7 +92,7 @@ main(int argc, char* argv[])
             const auto& [eye, target] = feed;
             const Vec3 expected       = normalize(target - eye);
             return any(!almost_equal_vec(expected, testing, ULP)) ||
-                   !all(lucid::isfinite(testing));
+                   !all(loom::isfinite(testing));
         });
 
     ret += test_property_n(

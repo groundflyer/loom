@@ -7,7 +7,7 @@
 #include <random>
 
 using namespace std;
-using namespace lucid;
+using namespace loom;
 
 int
 main(int argc, char* argv[])
@@ -61,7 +61,7 @@ main(int argc, char* argv[])
         [&]() noexcept {
             return pair{dist(g), ngen()};
         },
-        lucid::rotate);
+        loom::rotate);
 
     microbench(
         log,

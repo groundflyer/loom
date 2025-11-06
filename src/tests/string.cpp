@@ -9,7 +9,7 @@
 #include <iostream>
 #include <limits>
 
-using namespace lucid;
+using namespace loom;
 
 #define FAIL_s2f(VAL) static_assert(!s2f<float>(VAL).has_value())
 #define TEST_s2f(T, VAL) \
@@ -57,8 +57,8 @@ FAIL_read_number("+");
 
 static_assert(std::is_same_v<char_sequence<'t', 'e', 's', 't'>, sl2cs<"test">>);
 
-using namespace lucid;
-using namespace lucid::test;
+using namespace loom;
+using namespace loom::test;
 using namespace fmt::literals;
 
 enum BASE

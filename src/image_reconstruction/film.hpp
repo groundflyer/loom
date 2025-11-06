@@ -7,7 +7,7 @@
 #include <base/types.hpp>
 #include <utils/range.hpp>
 
-namespace lucid
+namespace loom
 {
 constexpr real
 ratio(const Vec2u& res) noexcept
@@ -92,7 +92,7 @@ struct Film
     {
         CHECK_INDEX(get_x(_pidx), get_x(img.res()));
         CHECK_INDEX(get_y(_pidx), get_y(img.res()));
-        return lucid::sample_space(res, _ratio, _pidx);
+        return loom::sample_space(res, _ratio, _pidx);
     }
 
     Vec2u
@@ -104,7 +104,7 @@ struct Film
                "Invalid X sample position");
         ASSERT(inclusive_range(-0.5_r, 0.5_r)(get_y(pos)), "Invalid Y sample position");
 
-        return lucid::pixel_index(res, _ratio, pos);
+        return loom::pixel_index(res, _ratio, pos);
     }
 };
-} // namespace lucid
+} // namespace loom

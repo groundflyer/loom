@@ -10,7 +10,7 @@
 #include <iterator>
 #include <memory>
 
-namespace lucid
+namespace loom
 {
 /// @brief Dynamic size container for non copy/move-constructible objects.
 ///
@@ -279,4 +279,4 @@ class ImmovableVector
         return v.data();
     }
 };
-} // namespace lucid
+} // namespace loom

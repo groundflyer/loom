@@ -88,7 +88,7 @@ cuda_check(cudaError_t) noexcept
         }                                            \
     };
 
-namespace lucid::vm::cuda
+namespace loom::vm::cuda
 {
 /// @brief Index type that goes to GPU.
 using gsize_t = std::uint32_t;
@@ -1434,7 +1434,7 @@ class cuda_evaluator
                 putchar('\n');
                 for(gsize_t i = 0; i < n; ++i)
                 {
-                    lucid::for_each(columns, [&](const auto& c)
+                    loom::for_each(columns, [&](const auto& c)
                                     { printf("%*u\t", 10, c[i]); });
                     putchar('\n');
                 }
@@ -1498,7 +1498,7 @@ class cuda_evaluator
             putchar('\n');
             for(gsize_t i = 0; i < stream_facade::size(); ++i)
             {
-                lucid::for_each(columns, [&](const auto& c)
+                loom::for_each(columns, [&](const auto& c)
                                 { printf("%*u\t", 10, c[i]); });
                 putchar('\n');
             }
@@ -1567,4 +1567,4 @@ using function = cuda_evaluator<K>::function;
 template <Kernel K>
     requires(!K::singular)
 using stream = cuda_evaluator<K>::stream;
-} // namespace lucid::vm::cuda
+} // namespace loom::vm::cuda

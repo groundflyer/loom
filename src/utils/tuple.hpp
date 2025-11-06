@@ -12,7 +12,7 @@
 #include <tuple>
 #include <variant>
 
-namespace lucid
+namespace loom
 {
 template <typename... Ts>
 class unique_tuple;
@@ -21,34 +21,34 @@ class unique_tuple;
 namespace std
 {
 template <typename... Ts>
-class tuple_size<lucid::unique_tuple<Ts...>> :
+class tuple_size<loom::unique_tuple<Ts...>> :
     public integral_constant<size_t, sizeof...(Ts)>
 {
 };
 
 template <size_t I, typename... Ts>
-class tuple_element<I, lucid::unique_tuple<Ts...>>
+class tuple_element<I, loom::unique_tuple<Ts...>>
 {
   public:
-    using type = lucid::typelist::at<I, lucid::type_sequence<Ts...>>;
+    using type = loom::typelist::at<I, loom::type_sequence<Ts...>>;
 };
 
 template <size_t I, typename... Ts>
 constexpr decltype(auto)
-get(const lucid::unique_tuple<Ts...>& t) noexcept
+get(const loom::unique_tuple<Ts...>& t) noexcept
 {
     return t.template get<I>();
 }
 
 template <size_t I, typename... Ts>
 constexpr decltype(auto)
-get(lucid::unique_tuple<Ts...>& t) noexcept
+get(loom::unique_tuple<Ts...>& t) noexcept
 {
     return t.template get<I>();
 }
 } // namespace std
 
-namespace lucid
+namespace loom
 {
 /// @brief Empty class tag type to indicate unique_tuple
 /// to build all the containing objects using the same provided arguments.
@@ -515,7 +515,7 @@ inline constexpr bool is_mappable_v = detail::is_mappable<F, T, Args...>::value;
 template <typename F, typename T>
 concept invopplicable = is_applicable_v<F, T> || std::is_invocable_v<F, T>;
 
-/// @brief Same as lucid::invopplicable, but with return type.
+/// @brief Same as loom::invopplicable, but with return type.
 template <typename F, typename R, typename T>
 concept invopplicable_r =
     is_applicable_r_v<F, R, T> || std::is_invocable_r_v<F, R, T>;
@@ -547,12 +547,12 @@ class unique_tuple
     /// By default, each containing object is constructed from
     /// the corresponding argument.
     ///
-    /// Pass lucid::uniform_init as the first argument to indicate
+    /// Pass loom::uniform_init as the first argument to indicate
     /// that all the containing elements should be constructed
     /// from the same remaining arguments.
     ///
     /// Pass std::piecewise_construct as the first argument
-    /// or after lucid::uniform_init to indicate that
+    /// or after loom::uniform_init to indicate that
     /// the provided arguments are
     /// tuples and should be unpacked for constructing corresponding objects,
     /// i. e. uses std::make_from_tuple to construct the objects.
@@ -640,7 +640,7 @@ template <template <typename...> typename ResultTuple = std::tuple,
 constexpr decltype(auto)
 map_tuple(InputTuple&& tuple, UnaryOp&& op)
 {
-    return lucid::apply(
+    return loom::apply(
         [op = std::move(op)]<typename... Ts>(
             Ts&&... args) -> ResultTuple<std::invoke_result_t<UnaryOp, Ts>...>
         { return {std::invoke(op, std::forward<Ts>(args))...}; },
@@ -666,7 +666,7 @@ template <typename BinaryOp, typename Tuple, typename T>
 constexpr decltype(auto)
 fold_tuple(const Tuple& tuple, BinaryOp&& op, const T& init)
 {
-    return lucid::apply([&](const auto&... args)
+    return loom::apply([&](const auto&... args)
                         { return fold(op, init, args...); },
                         tuple);
 }
@@ -676,7 +676,7 @@ template <typename BinaryOp, typename Tuple>
 constexpr decltype(auto)
 fold_tuple(const Tuple& tuple, BinaryOp&& op)
 {
-    return lucid::apply([&](const auto&... args) { return fold(op, args...); },
+    return loom::apply([&](const auto&... args) { return fold(op, args...); },
                         tuple);
 }
 
@@ -825,7 +825,7 @@ constexpr decltype(auto)
 invopply(F&& f, ValOrTuple&& mt)
 {
     if constexpr(is_applicable_v<F, std::remove_cvref_t<ValOrTuple>>)
-        return lucid::apply(std::forward<F>(f), std::forward<ValOrTuple>(mt));
+        return loom::apply(std::forward<F>(f), std::forward<ValOrTuple>(mt));
     else
         return std::invoke(std::forward<F>(f), std::forward<ValOrTuple>(mt));
 }
@@ -844,4 +844,4 @@ invomap(F&& f, ValOrTuple&& mt)
     else
         return std::invoke(std::forward<F>(f), std::forward<ValOrTuple>(mt));
 }
-} // namespace lucid
+} // namespace loom

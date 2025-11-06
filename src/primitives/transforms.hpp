@@ -9,7 +9,7 @@
 
 #include <variant>
 
-namespace lucid
+namespace loom
 {
 template <template <typename, std::size_t> typename Container>
 struct AABB_;
@@ -78,4 +78,4 @@ constexpr std::variant<Prims...>
 apply_transform(const Mat4_<MatContainer>&    t,
                 const std::variant<Prims...>& prim) noexcept;
 } // namespace fn
-} // namespace lucid
+} // namespace loom

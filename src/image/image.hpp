@@ -8,7 +8,7 @@
 
 #include <memory>
 
-namespace lucid
+namespace loom
 {
 struct scanline_iterator
 {
@@ -325,4 +325,4 @@ class ScanlineImage
         return p_data;
     }
 };
-} // namespace lucid
+} // namespace loom

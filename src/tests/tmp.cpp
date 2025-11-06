@@ -8,7 +8,7 @@
 
 using namespace std;
 
-namespace lucid::intlist
+namespace loom::intlist
 {
 using testlist1 = integer_sequence<int, 1, 2, 3, 4>;
 using testlist2 = integer_sequence<int, 1, 2, 3, 4, 0, 0, 0>;
@@ -63,7 +63,7 @@ static_assert(is_same_v<nlperm<2, L>, pm_seq2>);
 static_assert(is_same_v<nlperm<3, L>, pm_seq3>);
 static_assert(is_same_v<nlperm<4, L>, pm_seq4>);
 static_assert(is_same_v<nlperm<5, L>, pm_seq5>);
-} // namespace lucid::intlist
+} // namespace loom::intlist
 
 template <typename T>
 struct test_f
@@ -71,7 +71,7 @@ struct test_f
     static constexpr size_t value = sizeof(T);
 };
 
-namespace lucid::typelist
+namespace loom::typelist
 {
 using testlist1    = type_sequence<bool, int, float, char>;
 using testlist2    = type_sequence<double, unsigned, short>;
@@ -154,7 +154,7 @@ static_assert(
             type_sequence<int8_t, int16_t, int32_t, int64_t, float, double>>,
         integer_sequence<size_t, 1, 2, 4, 8, 4, 8>>);
 static_assert(is_same_v<replace_with_dict<dict, testlist4>, testlist4_v>);
-} // namespace lucid::typelist
+} // namespace loom::typelist
 
 int
 main()

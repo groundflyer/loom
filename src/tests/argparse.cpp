@@ -16,9 +16,9 @@
 
 #include <fmt/ranges.h>
 
-using namespace lucid;
-using namespace lucid::argparse;
-using namespace lucid::test;
+using namespace loom;
+using namespace loom::argparse;
+using namespace loom::test;
 using namespace std::literals::string_literals;
 using namespace std::literals::string_view_literals;
 
@@ -1042,15 +1042,15 @@ int main(/*int argc, char* argv[]*/)
 
     /// @test @p --keyword=value wrong key test.
     /// Generate @p --keyword=value string where @p keyword is invalid.
-    /// Check if lucid::argparse::KeyException is stored in
-    /// lucid::argparse::ErrorState
+    /// Check if loom::argparse::KeyException is stored in
+    /// loom::argparse::ErrorState
     auto to1_kw_wrong_keyword = tm.invariant(o1_wrong_keyword_gen,
                                              o1_wrong_keyword_test,
                                              check_keyword_ex);
 
     /// @test @p --keyword=value few arguments exception test.
     /// Generate @p --keyword=value string for option that requires 2 operands.
-    /// Check if lucid::argparse::FewArgumentsException is stored.
+    /// Check if loom::argparse::FewArgumentsException is stored.
     auto to2_kw_few_args_ex =
         tm.invariant(o2_kw_few_gen, o2_kw_few_test, check_few_args);
 
@@ -1151,13 +1151,13 @@ int main(/*int argc, char* argv[]*/)
     /// @test Positionals parser few arguments exception.
     auto t_pp_few = tm.invariant(pp_few_gen, pp_few_test, check_few_args);
 
-    /// @test lucid::argparse::parse for few arguments exception.
+    /// @test loom::argparse::parse for few arguments exception.
     auto t_full_few = tm.invariant(pp_few_gen, full_few_test, copy_id);
 
-    /// @test lucid::argparse::parse parsing results.
+    /// @test loom::argparse::parse parsing results.
     auto t_full_pr = tm.with_hint(full_pr_gen, full_pr_test, TupleCmp<true>{});
 
-    /// @test Check that lucid::argparse::parse doesn't generate errors with
+    /// @test Check that loom::argparse::parse doesn't generate errors with
     /// valid data.
     auto t_full_er =
         tm.invariant(full_er_gen, full_er_test, std::logical_not<>{});

@@ -17,7 +17,7 @@
 #include <string_view>
 #include <type_traits>
 
-namespace lucid
+namespace loom
 {
 /// @defgroup CTString Compile-time string
 /// @brief Converting string literals into char_sequence at compile time.
@@ -425,4 +425,4 @@ constexpr inline fn::s2f_fn<T> s2f{};
 
 template <typename T, bool throws = false>
 constexpr inline fn::read_number_fn<T, throws> read_number{};
-} // namespace lucid
+} // namespace loom

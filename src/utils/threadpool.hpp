@@ -16,7 +16,7 @@
 
 #include <pthread.h>
 
-namespace lucid
+namespace loom
 {
 namespace detail
 {
@@ -43,7 +43,7 @@ class thread_pool
     void
     join_all() noexcept
     {
-        lucid::for_each(m_threads, [](std::thread& t) noexcept { t.join(); });
+        loom::for_each(m_threads, [](std::thread& t) noexcept { t.join(); });
     }
 
   public:
@@ -52,7 +52,7 @@ class thread_pool
 
     template <typename... Args, std::regular_invocable<Args...> Worker>
     thread_pool(Worker worker, Args... args) noexcept :
-        m_threads(lucid::uniform_init, worker, args...)
+        m_threads(loom::uniform_init, worker, args...)
     {
     }
 
@@ -78,7 +78,7 @@ class thread_pool
     affine(const std::size_t step = 1) noexcept
     {
         std::size_t idx = 0;
-        lucid::for_each(
+        loom::for_each(
             m_threads,
             [step](std::thread& t, std::size_t& idx) noexcept
             {
@@ -157,4 +157,4 @@ class thread_pool<dynamic_size>
 
     ~thread_pool() { join_all(); }
 };
-} // namespace lucid
+} // namespace loom
