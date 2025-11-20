@@ -228,7 +228,7 @@ MK_MASK_IO_INTRINSICS_WRANGLER(float,
                                _mm256_maskstore_ps)
 
 #if defined(__AVX2__) || defined(__AVX512F__)
-MK_MASK_IO_INTRINSICS_WRANGLER(std::int64_t,
+MK_MASK_IO_INTRINSICS_WRANGLER(long long,
                                2,
                                _mm_maskload_epi64,
                                _mm_maskstore_epi64)
@@ -236,7 +236,7 @@ MK_MASK_IO_INTRINSICS_WRANGLER(std::int32_t,
                                4,
                                _mm_maskload_epi32,
                                _mm_maskstore_epi32)
-MK_MASK_IO_INTRINSICS_WRANGLER(std::int64_t,
+MK_MASK_IO_INTRINSICS_WRANGLER(long long,
                                4,
                                _mm256_maskload_epi64,
                                _mm256_maskstore_epi64)
@@ -252,7 +252,7 @@ struct mask_io_intrinsics_wrangler<std::uint64_t, 2> :
 };
 
 template <>
-struct mask_io_intrinsics_wrangler<std::uin32_t, 4> :
+struct mask_io_intrinsics_wrangler<std::uint32_t, 4> :
     mask_io_intrinsics_wrangler<std::int32_t, 4>
 {
 };
