@@ -1,7 +1,7 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 showhelp() {
-    echo "Usage: $0 [-h] [-t] [-b] [-d] [-e] [-a] [-c] [-cuda] [-D] [-g]"
+    echo "Usage: $0 [-h] [-t] [-b] [-d] [-e] [-a] [-c] [-cuda] [-D] [-g] [-l]"
     echo -e "\t-t\tbuild and run tests"
     echo -e "\t-b\tbuild and run benchmarks"
     echo -e "\t-d\tbuild documentation"
@@ -12,6 +12,7 @@ showhelp() {
     echo -e "\t-D\tbuild RelWithDebInfo"
     echo -e "\t-g\tbuild debugger"
     echo -e "\t-h\tshow this help message and exit"
+    echo -e "\t-l\tset libc++ build flags"
 }
 
 SRC_DIR=`realpath $(dirname "${BASH_SOURCE[0]}")`
@@ -58,6 +59,10 @@ use_cuda() {
     CMAKE_ARGS+=(-DUSE_CUDA=ON)
     CMAKE_ARGS+=(-DCMAKE_CUDA_ARCHITECTURES=21)
     BUILD_DIR+="_cuda"
+}
+
+set_libcxx() {
+    CMAKE_ARGS+=(-DCMAKE_CXX_FLAGS="-stdlib=libc++ -lc++abi" -DCMAKE_EXE_LINKER_FLAGS="-stdlib=libc++ -lc++abi")
 }
 
 run_tests() {
@@ -123,6 +128,9 @@ for key in $@; do
             ;;
         -g)
             enable_debugger
+            ;;
+        -l)
+            set_libcxx
             ;;
         -h)
             showhelp

@@ -52,9 +52,6 @@ endif()
 # Check for required compiler features
 include(CxxFeatures)
 
-# Clang-related checks
-include(Clang)
-
 # Fetch content
 include(ExternalContent)
 
@@ -155,6 +152,9 @@ endif()
 # fast_float
 if(USE_SYSTEM_FAST_FLOAT)
   find_package(FastFloat REQUIRED)
+  if(FastFloat_FOUND)
+    message(STATUS "Found fast_float: " ${FastFloat_VERSION})
+  endif()
 else()
   message(STATUS "Fetching fast_float...")
   FetchContent_MakeAvailable(fast_float)
@@ -162,6 +162,8 @@ endif()
 
 # External includes
 include_directories(ext/include)
+# Disable static_math warnings
+add_compile_options(-Wno-deprecated-literal-operator -Wno-nan-infinity-disabled)
 
 # docs
 if(BUILD_DOC)
@@ -257,6 +259,7 @@ if(BUILD_TESTS)
     else()
       target_link_libraries(${name} PRIVATE fmt::fmt)
     endif()
+    target_link_libraries(${name} PUBLIC FastFloat::fast_float)
     target_include_directories(${name} PUBLIC src)
     add_dependencies(tests ${name})
   endforeach()
@@ -295,6 +298,7 @@ if(BUILD_TESTS)
 endif()
 
 if(BUILD_DEBUGGERS)
+  message(STATUS "Building debuggers")
   add_custom_target(dbgs)
   set(DBGS_SRC_DIR src/dbg)
   set(dbg_srcs root_finding.cpp fibonacci.cpp factorial.cpp)
