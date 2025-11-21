@@ -111,20 +111,20 @@ template <>
 struct constants<float>
 {
     static constexpr float err_threshold = 0.1f;
+    using errt = CS(0.1);
+
     static constexpr float lbound        = -100;
     static constexpr float rbound        = 100;
-
-    using errt = CS(0.1);
 };
 
 template <>
 struct constants<double>
 {
     static constexpr double err_threshold = 0.1;
+    using errt = CS(0.1);
+
     static constexpr double lbound        = -1e5;
     static constexpr double rbound        = 1e5;
-
-    using errt = CS(0.1);
 };
 
 namespace fn
