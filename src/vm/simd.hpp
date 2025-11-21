@@ -163,12 +163,31 @@ store(T* dst, packed_vector<T, N> src) noexcept
     *(packed_vector<T, N>*)dst = src;
 }
 
+namespace detail
+{
+template <fsize_t, typename T>
+constexpr T _FORCE_INLINE
+id(T v) noexcept
+{
+    return v;
+}
+
+template <fsize_t N, typename T, std::size_t... Is>
+constexpr packed_vector<T, N> _FORCE_INLINE
+broadcast_impl(T v, std::index_sequence<Is...>) noexcept
+{
+    packed_vector<T, N> ret = {id<Is>(v)...};
+    return ret;
+}
+} // namespace detail
+
 /// @brief Broadcast a value to all elements of the resulting packed vector.
 template <fsize_t N, typename T>
-constexpr packed_vector<T, N>
+constexpr packed_vector<T, N> _FORCE_INLINE
 broadcast(const T v) noexcept
 {
-    return std::apply(maker<packed_vector<T, N>, true>, repeat_to_tuple<N>(v));
+    // clang broadcast syntax doesn't work
+    return detail::broadcast_impl<N>(v, std::make_index_sequence<N>{});
 }
 
 /// @brief Make mask type.
