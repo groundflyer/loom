@@ -91,6 +91,8 @@ struct helper
 {
     using array_type  = std::array<T, N>;
     using vector_type = simd::packed_vector<T, N>;
+    using vcmp        = simd::cmp_intrinsics_wrangler<T, N>;
+    using lrh         = simd::logical_reduce_helper<uint_of_bits_t<N>, N>;
 
     template <typename V>
     static void
@@ -111,7 +113,7 @@ struct helper
         bool
         operator()(const vector_type lhs, const vector_type rhs) const noexcept
         {
-            return __builtin_reduce_and(lhs == rhs);
+            return lrh::land(vcmp::eq(lhs, rhs));
         }
     };
 };
@@ -120,16 +122,18 @@ template <typename... Ts, std::size_t N>
 struct helper<std::tuple<Ts...>, N>
 {
     using array_type  = std::tuple<typename helper<Ts, N>::array_type...>;
-    using vector_type = std::tuple<typename helper<Ts, N>::vector_type...>;
+    using vectors_t   = type_sequence<typename helper<Ts, N>::vector_type...>;
+    using vector_type = typelist::to<vectors_t, std::tuple>;
+    using helpers     = type_sequence<helper<Ts, N>...>;
 
     template <typename V>
     static void
     set(V& v, const std::size_t i, const std::tuple<Ts...>& vals) noexcept
     {
         loom::zip_with_for_each([i](auto& v, const auto& s) noexcept
-                                 { v[i] = s; },
-                                 v,
-                                 vals);
+                                { v[i] = s; },
+                                v,
+                                vals);
     }
 
     template <typename V>
@@ -145,13 +149,17 @@ struct helper<std::tuple<Ts...>, N>
         operator()(const vector_type& lhs,
                    const vector_type& rhs) const noexcept
         {
-            return fold_tuple(map_tuple(zip_tuples(lhs, rhs),
-                                        [](const auto& lr) noexcept
-                                        {
-                                            const auto [l, r] = lr;
-                                            return __builtin_reduce_and(l == r);
-                                        }),
-                              std::logical_and<>{});
+            return fold_tuple(
+                map_tuple(zip_tuples(lhs, rhs),
+                          [](const auto& lr) noexcept
+                          {
+                              auto [l, r]  = lr;
+                              using helper = typelist::at<
+                                  typelist::index<decltype(l), vectors_t>,
+                                  helpers>;
+                              return helper::lrh::land(helper::vcmp::eq(l, r));
+                          }),
+                std::logical_and<>{});
         }
     };
 };
@@ -332,6 +340,7 @@ main(int argc, char* argv[])
         constexpr StandardTestSuite<fib, GM_FIB, ::fn::val_fib_fn> test;
         test.template operator()<std::uint64_t>(track, tm, rs);
     }
+
     test_suites_types(
         all_floats{},
         type_sequence<
@@ -342,11 +351,13 @@ main(int argc, char* argv[])
         track,
         tm,
         rs);
+
     test_suite_types(all_uints{},
                      StandardTestSuite<bit_test, GM_Bit, ::fn::val_bit_fn>{},
                      track,
                      tm,
                      rs);
+
     test_suites_types(
         type_sequence<std::uint16_t, std::uint32_t, std::uint64_t>{},
         type_sequence<

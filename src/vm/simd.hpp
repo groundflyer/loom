@@ -171,12 +171,23 @@ broadcast(const T v) noexcept
     return std::apply(maker<packed_vector<T, N>, true>, repeat_to_tuple<N>(v));
 }
 
-/// @brief Loads packed vector with a mask.
+/// @brief Make mask type.
+template <typename T, fsize_t N>
+struct make_mask_type
+{
+    using type = packed_vector<int_of_size_t<sizeof(T)>, N>;
+};
+
+/// @brief Mask type helper typedef.
+template <typename T, fsize_t N>
+using mask_t = make_mask_type<T, N>::type;
+
+/// @brief Intrinsics wrangler for mask load and store operations.
 template <typename T, fsize_t N>
 struct mask_io_intrinsics_wrangler
 {
     using vector_type = packed_vector<T, N>;
-    using mask_type   = packed_vector<int_of_size_t<sizeof(T)>, N>;
+    using mask_type   = mask_t<T, N>;
 
     /// @brief Fallback implementation for mask load.
     static vector_type _FORCE_INLINE
@@ -193,90 +204,225 @@ struct mask_io_intrinsics_wrangler
     }
 };
 
-#define MK_MASK_IO_INTRINSICS_WRANGLER(TYPE, EXT, LOAD_INTR, STORE_INTR)     \
-    template <>                                                              \
-    struct mask_io_intrinsics_wrangler<TYPE, EXT>                            \
-    {                                                                        \
-        using vector_type = packed_vector<TYPE, EXT>;                        \
-        using mask_type   = packed_vector<int_of_size_t<sizeof(TYPE)>, EXT>; \
-        static vector_type _FORCE_INLINE                                     \
-        load(TYPE const* p, const mask_type mask) noexcept                   \
-        {                                                                    \
-            return LOAD_INTR(p, mask);                                       \
-        }                                                                    \
-        static void _FORCE_INLINE                                            \
-        store(TYPE*             dest,                                        \
-              const mask_type   mask,                                        \
-              const vector_type value) noexcept                              \
-        {                                                                    \
-            STORE_INTR(dest, mask, value);                                   \
-        }                                                                    \
+/// @brief Intrinsics wrangler for comparison operations.
+// Further we override it only for AVX-512 because of mask registers.
+template <typename T, fsize_t N>
+struct cmp_intrinsics_wrangler
+{
+    using vector_type = packed_vector<T, N>;
+    using mask_type   = mask_t<T, N>;
+
+    /// @brief Compare for equality.
+    static mask_type _FORCE_INLINE
+    eq(const vector_type lhs, const vector_type rhs) noexcept
+    {
+        return lhs == rhs;
+    }
+};
+
+/// @brief Intrinsics wrangler for blend operations.
+// Further we override it only for AVX-512 because of mask registers.
+template <typename T, fsize_t N>
+struct blend_intrinsics_wrangler
+{
+    using vector_type = packed_vector<T, N>;
+    using mask_type   = mask_t<T, N>;
+
+    /// @brief Blend packed vectors.
+    static vector_type _FORCE_INLINE
+    blend(const mask_type k, const vector_type a, const vector_type b) noexcept
+    {
+        return k ? b : a;
+    }
+};
+
+#define MK_MASK_IO_INTRINSICS(TYPE, EXT, LOAD_INTR, STORE_INTR) \
+    template <>                                                 \
+    struct mask_io_intrinsics_wrangler<TYPE, EXT>               \
+    {                                                           \
+        using vector_type = packed_vector<TYPE, EXT>;           \
+        using mask_type   = mask_t<TYPE, EXT>;                  \
+        static vector_type _FORCE_INLINE                        \
+        load(TYPE const* p, const mask_type mask) noexcept      \
+        {                                                       \
+            return LOAD_INTR(p, mask);                          \
+        }                                                       \
+        static void _FORCE_INLINE                               \
+        store(TYPE*             dest,                           \
+              const mask_type   mask,                           \
+              const vector_type value) noexcept                 \
+        {                                                       \
+            STORE_INTR(dest, mask, value);                      \
+        }                                                       \
     };
+
+#define MK_AVX512_MASK_TYPE(TYPE, EXT, MASK_TYPE) \
+    template <>                                   \
+    struct make_mask_type<TYPE, EXT>              \
+    {                                             \
+        using type = MASK_TYPE;                   \
+    };
+
+#define MK_AVX512_MASK8(TYPE)  MK_AVX512_MASK_TYPE(TYPE, 8, __mmask8)
+#define MK_AVX512_MASK16(TYPE) MK_AVX512_MASK_TYPE(TYPE, 16, __mmask16)
+#define MK_AVX512_MASK32(TYPE) MK_AVX512_MASK_TYPE(TYPE, 32, __mmask32)
+#define MK_AVX512_MASK64(TYPE) MK_AVX512_MASK_TYPE(TYPE, 64, __mmask64)
+
+#define MK_AVX512_MASK_IO_INTRINSICS(TYPE, EXT, LOAD_INTR, STORE_INTR) \
+    template <>                                                        \
+    struct mask_io_intrinsics_wrangler<TYPE, EXT>                      \
+    {                                                                  \
+        using vector_type = packed_vector<TYPE, EXT>;                  \
+        using mask_type   = mask_t<TYPE, EXT>;                         \
+        static constexpr vector_type src{};                            \
+        static vector_type _FORCE_INLINE                               \
+        load(TYPE const* p, const mask_type mask) noexcept             \
+        {                                                              \
+            return LOAD_INTR(src, mask, p);                            \
+        }                                                              \
+        static void _FORCE_INLINE                                      \
+        store(TYPE*             dest,                                  \
+              const mask_type   mask,                                  \
+              const vector_type value) noexcept                        \
+        {                                                              \
+            STORE_INTR(dest, mask, value);                             \
+        }                                                              \
+    };
+
+#define MK_AVX512_CMP_INTRINSICS(TYPE, EXT, INTR)                 \
+    template <>                                                   \
+    struct cmp_intrinsics_wrangler<TYPE, EXT>                     \
+    {                                                             \
+        using vector_type = packed_vector<TYPE, EXT>;             \
+        using mask_type   = mask_t<TYPE, EXT>;                    \
+        static mask_type _FORCE_INLINE                            \
+        eq(const vector_type lhs, const vector_type rhs) noexcept \
+        {                                                         \
+            return INTR(lhs, rhs);                                \
+        }                                                         \
+    };
+
+#define MK_AVX512_BLEND_INTRINSICS(TYPE, EXT, INTR)   \
+    template <>                                       \
+    struct blend_intrinsics_wrangler<TYPE, EXT>       \
+    {                                                 \
+        using vector_type = packed_vector<TYPE, EXT>; \
+        using mask_type   = mask_t<TYPE, EXT>;        \
+        static vector_type _FORCE_INLINE              \
+        blend(const mask_type   k,                    \
+              const vector_type a,                    \
+              const vector_type b) noexcept           \
+        {                                             \
+            return INTR(k, a, b);                     \
+        }                                             \
+    };
+
+#define MK_UNSIGNED_OVERLOAD(TYPE, EXT, CLASS)                       \
+    template <>                                                      \
+    struct CLASS<std::make_unsigned_t<TYPE>, EXT> : CLASS<TYPE, EXT> \
+    {                                                                \
+    };
+
+#define MK_UNSIGNED_OVERLOAD_IO_INTRINSICS(TYPE, EXT) \
+    MK_UNSIGNED_OVERLOAD(TYPE, EXT, mask_io_intrinsics_wrangler)
 
 // assume that a CPU with newer extensions has old extensions too
 #if defined(__AVX__) || defined(__AVX2__) || defined(__AVX512F__)
 // starting from AVX
-MK_MASK_IO_INTRINSICS_WRANGLER(double, 2, _mm_maskload_pd, _mm_maskstore_pd)
-MK_MASK_IO_INTRINSICS_WRANGLER(float, 4, _mm_maskload_ps, _mm_maskstore_ps)
-MK_MASK_IO_INTRINSICS_WRANGLER(double,
-                               4,
-                               _mm256_maskload_pd,
-                               _mm256_maskstore_pd)
-MK_MASK_IO_INTRINSICS_WRANGLER(float,
-                               8,
-                               _mm256_maskload_ps,
-                               _mm256_maskstore_ps)
+
+MK_MASK_IO_INTRINSICS(double, 4, _mm256_maskload_pd, _mm256_maskstore_pd)
+MK_MASK_IO_INTRINSICS(float, 8, _mm256_maskload_ps, _mm256_maskstore_ps)
 
 #if defined(__AVX2__) || defined(__AVX512F__)
-MK_MASK_IO_INTRINSICS_WRANGLER(long long,
-                               2,
-                               _mm_maskload_epi64,
-                               _mm_maskstore_epi64)
-MK_MASK_IO_INTRINSICS_WRANGLER(std::int32_t,
-                               4,
-                               _mm_maskload_epi32,
-                               _mm_maskstore_epi32)
-MK_MASK_IO_INTRINSICS_WRANGLER(long long,
-                               4,
-                               _mm256_maskload_epi64,
-                               _mm256_maskstore_epi64)
-MK_MASK_IO_INTRINSICS_WRANGLER(std::int32_t,
-                               8,
-                               _mm256_maskload_epi32,
-                               _mm256_maskstore_epi32)
+MK_MASK_IO_INTRINSICS(long long,
+                      4,
+                      _mm256_maskload_epi64,
+                      _mm256_maskstore_epi64)
+MK_MASK_IO_INTRINSICS(std::int32_t,
+                      8,
+                      _mm256_maskload_epi32,
+                      _mm256_maskstore_epi32)
 
-template <>
-struct mask_io_intrinsics_wrangler<std::uint64_t, 2> :
-    mask_io_intrinsics_wrangler<std::int64_t, 2>
-{
-};
+MK_UNSIGNED_OVERLOAD_IO_INTRINSICS(std::int64_t, 4)
+MK_UNSIGNED_OVERLOAD_IO_INTRINSICS(std::int32_t, 8)
 
-template <>
-struct mask_io_intrinsics_wrangler<std::uint32_t, 4> :
-    mask_io_intrinsics_wrangler<std::int32_t, 4>
-{
-};
+#if defined(__AVX512F__)
 
-template <>
-struct mask_io_intrinsics_wrangler<std::uint64_t, 4> :
-    mask_io_intrinsics_wrangler<std::int64_t, 4>
-{
-};
+MK_AVX512_MASK8(double)
+MK_AVX512_MASK8(std::int64_t)
+MK_AVX512_MASK8(std::uint64_t)
+MK_AVX512_MASK16(float)
+MK_AVX512_MASK16(std::int32_t)
+MK_AVX512_MASK16(std::uint32_t)
 
-template <>
-struct mask_io_intrinsics_wrangler<std::uint32_t, 8> :
-    mask_io_intrinsics_wrangler<std::int32_t, 8>
-{
-};
+MK_AVX512_MASK_IO_INTRINSICS(float,
+                             16,
+                             _mm512_mask_load_ps,
+                             _mm512_mask_store_ps)
+MK_AVX512_MASK_IO_INTRINSICS(double,
+                             8,
+                             _mm512_mask_load_pd,
+                             _mm512_mask_store_pd)
+MK_AVX512_MASK_IO_INTRINSICS(std::int32_t,
+                             16,
+                             _mm512_mask_load_epi32,
+                             _mm512_mask_store_epi32)
+MK_AVX512_MASK_IO_INTRINSICS(std::int64_t,
+                             8,
+                             _mm512_mask_load_epi64,
+                             _mm512_mask_store_epi64)
 
-// FIXME: implement for avx-512
+MK_UNSIGNED_OVERLOAD_IO_INTRINSICS(std::int32_t, 16)
+MK_UNSIGNED_OVERLOAD_IO_INTRINSICS(std::int64_t, 8)
+
+// clang-format 20 fucks up here
+// clang-format off
+MK_AVX512_CMP_INTRINSICS(float, 16, _mm512_cmpeq_ps_mask)
+MK_AVX512_CMP_INTRINSICS(double, 8, _mm512_cmpeq_pd_mask)
+MK_AVX512_CMP_INTRINSICS(std::int32_t, 16, _mm512_cmpeq_epi32_mask)
+MK_AVX512_CMP_INTRINSICS(std::uint32_t, 16, _mm512_cmpeq_epu32_mask)
+MK_AVX512_CMP_INTRINSICS(std::int64_t, 8, _mm512_cmpeq_epi64_mask)
+MK_AVX512_CMP_INTRINSICS(std::uint64_t, 8, _mm512_cmpeq_epu64_mask)
+
+MK_AVX512_BLEND_INTRINSICS(float, 16, _mm512_mask_blend_ps)
+MK_AVX512_BLEND_INTRINSICS(double, 8, _mm512_mask_blend_pd)
+MK_AVX512_BLEND_INTRINSICS(std::int32_t, 16, _mm512_mask_blend_epi32)
+MK_AVX512_BLEND_INTRINSICS(std::int64_t, 8, _mm512_mask_blend_epi64)
+MK_UNSIGNED_OVERLOAD(std::int32_t, 16, blend_intrinsics_wrangler)
+MK_UNSIGNED_OVERLOAD(std::int64_t, 8, blend_intrinsics_wrangler)
+
+#if defined(__AVX512BW__)
+MK_AVX512_MASK32(std::int16_t)
+MK_AVX512_MASK32(std::uint16_t)
+MK_AVX512_MASK64(std::int8_t)
+MK_AVX512_MASK64(std::uint8_t)
+
+MK_AVX512_CMP_INTRINSICS(std::int8_t, 64, _mm512_cmpeq_epi8_mask)
+MK_AVX512_CMP_INTRINSICS(std::uint8_t, 64, _mm512_cmpeq_epu8_mask)
+MK_AVX512_CMP_INTRINSICS(std::int16_t, 32, _mm512_cmpeq_epi16_mask)
+MK_AVX512_CMP_INTRINSICS(std::uint16_t, 32, _mm512_cmpeq_epu16_mask)
+
+#endif
+#endif
 #endif
 #endif
 
-#undef MK_MASK_IO_INTRINSICS_WRANGLER
+#undef MK_MASK_IO_INTRINSICS
+#undef MK_AVX512_MASK_IO_INTRINSICS
+#undef MK_AVX512_CMP_INTRINSICS
+#undef MK_AVX512_MASK_TYPE
+#undef MK_AVX512_MASK8
+#undef MK_AVX512_MASK16
+#undef MK_AVX512_MASK32
+#undef MK_AVX512_MASK64
+#undef MK_UNSIGNED_OVERLOAD
+#undef MK_UNSIGNED_OVERLOAD_IO_INTRINSICS
+
 
 template <fsize_t N, typename Op, typename Ret, typename... Args>
 struct remap_comp;
+
+// clang-format on
 
 template <fsize_t N, typename Dst, typename Src>
 struct remap_comp<N, std::identity, Dst, Src>
@@ -979,17 +1125,42 @@ template <STITCH stitch, typename Block, typename LabelMap, typename BPVar>
 using block_compiler =
     make_block_compiler<stitch, Block, LabelMap, BPVar>::type;
 
-/// @brief Count the number of logical 1 in packed vector @p vec.
+/// @brief Helper to count the number of logical 1 in packed vector @p vec.
 template <std::integral T, fsize_t N>
-_FORCE_INLINE T
-popcnt(const packed_vector<T, N> vec) noexcept
+struct popcnt_helper
 {
-    // only AVX512VL + AVX512VPOPCNTDQ has dedicated popcnt
-    // this is workaround for older vector extensions
-    // FIXME: add AVX512 implementation
-    return __builtin_reduce_add(
-        __builtin_elementwise_min(vec, broadcast<N>(static_cast<T>(1))));
-}
+    T _FORCE_INLINE
+    operator()(const packed_vector<T, N> vec) const noexcept
+    {
+        return __builtin_reduce_add(
+            __builtin_elementwise_min(vec, broadcast<N>(static_cast<T>(1))));
+    }
+
+    // AVX-512
+    uint_of_bits_t<N> _FORCE_INLINE
+    operator()(const uint_of_bits_t<N> k) const noexcept
+    {
+        return std::popcount(k);
+    }
+};
+
+/// @brief Helper to perform reduce_and on mask type.
+template <std::integral T, fsize_t N>
+struct logical_reduce_helper
+{
+    static bool _FORCE_INLINE
+    land(const packed_vector<T, N> vec) noexcept
+    {
+        return __builtin_reduce_and(vec);
+    }
+
+    // AVX-512
+    static bool _FORCE_INLINE
+    land(const uint_of_bits_t<N> k) noexcept
+    {
+        return k == static_cast<uint_of_bits_t<N>>(-1);
+    }
+};
 
 /// @brief Fast and lightweight set for block indices.
 ///
@@ -1009,16 +1180,19 @@ class block_set : public std::ranges::view_interface<block_set<K, N, ret_sum>>
 {
     using index_t        = K::index_t;
     using index_vector_t = packed_vector<index_t, N>;
+    using mask_type      = mask_t<index_t, N>;
+    using cmp            = cmp_intrinsics_wrangler<index_t, N>;
 
-    static constexpr index_t num_blocks = K::num_blocks;
-    static constexpr index_t halt_pos   = K::halt_pos;
+    static constexpr index_t                   num_blocks = K::num_blocks;
+    static constexpr index_t                   halt_pos   = K::halt_pos;
+    static constexpr popcnt_helper<index_t, N> popcnt{};
 
     const index_vector_t m_bps;
     const index_t        m_init_pos{};
 
     class _iterator : public std::input_iterator_tag
     {
-        using ret_t = std::conditional_t<ret_sum, index_t, index_vector_t>;
+        using ret_t = std::conditional_t<ret_sum, index_t, mask_type>;
 
         index_t              m_sum{};
         const index_vector_t m_bps;
@@ -1036,15 +1210,15 @@ class block_set : public std::ranges::view_interface<block_set<K, N, ret_sum>>
         {
             if constexpr(ret_sum)
             {
-                const index_vector_t mask = m_bps == broadcast<N>(pos);
-                m_ret                     = popcnt<index_t, N>(mask);
+                const mask_type mask = cmp::eq(m_bps, broadcast<N>(pos));
+                m_ret                = popcnt(mask);
                 m_sum += m_ret;
                 return m_ret;
             }
             else
             {
-                m_ret             = m_bps == broadcast<N>(pos);
-                const index_t ret = popcnt<index_t, N>(m_ret);
+                m_ret             = cmp::eq(m_bps, broadcast<N>(pos));
+                const index_t ret = popcnt(m_ret);
                 m_sum += ret;
                 return ret;
             }
@@ -1272,6 +1446,40 @@ class ConcurrentStreamFacade :
         return ret;
     }
 
+#if 0
+    using vars = K::variables;
+    void
+    dump() const noexcept
+    {
+        auto columns = typelist::maybe_collect<std::tuple>(
+            vars{},
+            [&]<typename Var>() constexpr noexcept
+            { return std::views::all(facade::mem().template get<Var>()); });
+
+        typelist::for_each(vars{},
+                           []<typename Var>()
+                           {
+                               using name       = varname<Var>;
+                               constexpr auto l = intlist::length<name>;
+                               constexpr auto a = intlist::array<name>;
+                               constexpr std::string_view s(a, l);
+                               fmt::print("{:>16},", s);
+                           });
+        putchar('\n');
+        for(fsize_t i = 0; i < facade::size(); ++i)
+        {
+            // if(std::get<0>(columns)[i] != halt_pos)
+            if(std::get<1>(columns)[i] == 0)
+            {
+                loom::for_each(columns,
+                               [i](const auto& c)
+                               { fmt::print("{:>16},", c[i]); });
+                putchar('\n');
+            }
+        }
+    }
+#endif
+
   public:
     using facade::facade;
 
@@ -1308,6 +1516,14 @@ class ConcurrentStreamFacade :
         std::invoke(std::forward<F>(f),
                     m_pos == npos ? facade::mem().view() :
                                     facade::mem().view(0, m_pos));
+
+        // fmt::print("num not halted: {}\n",
+        //            std::ranges::count_if(facade::mem().bp(),
+        //                                  [](index_t i)
+        //                                  { return i != halt_pos; }));
+#if 0
+        dump();
+#endif
     }
 };
 
@@ -1803,7 +2019,7 @@ class make_embedded_masked_runner
     using Kernel      = helper::simd_kernel;
     using TempStorage = helper::simd_storage;
 
-    using mask_type = packed_vector<index_t, N>;
+    using mask_type = mask_t<index_t, N>;
 
     static constexpr Kernel kernel{};
 
@@ -1837,8 +2053,11 @@ class make_embedded_masked_runner
                              TempStorage&    tmp_storage,
                              const mask_type mask) noexcept
             {
-                auto& orig = main_storage.template get<Var>();
-                orig       = mask ? tmp_storage.template get<Var>() : orig;
+                auto& orig     = main_storage.template get<Var>();
+                using wrangler = blend_intrinsics_wrangler<vartype<Var>, N>;
+                orig           = wrangler::blend(mask,
+                                       orig,
+                                       tmp_storage.template get<Var>());
             },
             main_storage,
             tmp_storage,
@@ -1920,13 +2139,16 @@ class embedded_compiler
 
         using compiled_blocks = typelist::map<compile_block, blocks>;
 
+        using cmp = cmp_intrinsics_wrangler<index_t, N>;
+        using lrh = logical_reduce_helper<index_t, N>;
+
       public:
         template <typename... Args>
         auto
         operator()(const Args... args) noexcept
         {
             facade::set_inputs(args...);
-            while(!__builtin_reduce_and(facade::bp() == halt_pos))
+            while(!lrh::land(cmp::eq(facade::bp(), halt_pos)))
                 for(const auto [bp, mask]: block_set<K, N>{facade::bp()})
                     typelist::visit_at(
                         bp,
