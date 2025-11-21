@@ -336,15 +336,6 @@ struct blend_intrinsics_wrangler
         }                                             \
     };
 
-#define MK_UNSIGNED_OVERLOAD(TYPE, EXT, CLASS)                       \
-    template <>                                                      \
-    struct CLASS<std::make_unsigned_t<TYPE>, EXT> : CLASS<TYPE, EXT> \
-    {                                                                \
-    };
-
-#define MK_UNSIGNED_OVERLOAD_IO_INTRINSICS(TYPE, EXT) \
-    MK_UNSIGNED_OVERLOAD(TYPE, EXT, mask_io_intrinsics_wrangler)
-
 // assume that a CPU with newer extensions has old extensions too
 #if defined(__AVX__) || defined(__AVX2__) || defined(__AVX512F__)
 // starting from AVX
@@ -361,10 +352,6 @@ MK_MASK_IO_INTRINSICS(std::int32_t,
                       8,
                       _mm256_maskload_epi32,
                       _mm256_maskstore_epi32)
-
-MK_UNSIGNED_OVERLOAD_IO_INTRINSICS(std::int64_t, 4)
-MK_UNSIGNED_OVERLOAD_IO_INTRINSICS(std::int32_t, 8)
-
 #if defined(__AVX512F__)
 
 MK_AVX512_MASK8(double)
@@ -390,9 +377,14 @@ MK_AVX512_MASK_IO_INTRINSICS(std::int64_t,
                              8,
                              _mm512_mask_load_epi64,
                              _mm512_mask_store_epi64)
-
-MK_UNSIGNED_OVERLOAD_IO_INTRINSICS(std::int32_t, 16)
-MK_UNSIGNED_OVERLOAD_IO_INTRINSICS(std::int64_t, 8)
+MK_AVX512_MASK_IO_INTRINSICS(std::uint32_t,
+                             16,
+                             _mm512_mask_load_epi32,
+                             _mm512_mask_store_epi32)
+MK_AVX512_MASK_IO_INTRINSICS(std::uint64_t,
+                             8,
+                             _mm512_mask_load_epi64,
+                             _mm512_mask_store_epi64)
 
 // clang-format 20 fucks up here
 // clang-format off
@@ -407,8 +399,8 @@ MK_AVX512_BLEND_INTRINSICS(float, 16, _mm512_mask_blend_ps)
 MK_AVX512_BLEND_INTRINSICS(double, 8, _mm512_mask_blend_pd)
 MK_AVX512_BLEND_INTRINSICS(std::int32_t, 16, _mm512_mask_blend_epi32)
 MK_AVX512_BLEND_INTRINSICS(std::int64_t, 8, _mm512_mask_blend_epi64)
-MK_UNSIGNED_OVERLOAD(std::int32_t, 16, blend_intrinsics_wrangler)
-MK_UNSIGNED_OVERLOAD(std::int64_t, 8, blend_intrinsics_wrangler)
+MK_AVX512_BLEND_INTRINSICS(std::uint32_t, 16, _mm512_mask_blend_epi32)
+MK_AVX512_BLEND_INTRINSICS(std::uint64_t, 8, _mm512_mask_blend_epi64)
 
 #if defined(__AVX512BW__)
 MK_AVX512_MASK32(std::int16_t)
@@ -434,8 +426,6 @@ MK_AVX512_CMP_INTRINSICS(std::uint16_t, 32, _mm512_cmpeq_epu16_mask)
 #undef MK_AVX512_MASK16
 #undef MK_AVX512_MASK32
 #undef MK_AVX512_MASK64
-#undef MK_UNSIGNED_OVERLOAD
-#undef MK_UNSIGNED_OVERLOAD_IO_INTRINSICS
 
 
 template <fsize_t N, typename Op, typename Ret, typename... Args>
@@ -1076,7 +1066,7 @@ class make_block_compiler<STITCH::MASKED, Block, LabelMap, BPVar>
     using Kernel  = helper::simd_kernel;
     using Storage = helper::simd_storage;
 
-    using mask_type = packed_vector<index_t, N>;
+    using mask_type = mask_t<index_t, N>;
 
     static constexpr Kernel kernel{};
 
@@ -1092,9 +1082,14 @@ class make_block_compiler<STITCH::MASKED, Block, LabelMap, BPVar>
                              Storage&        storage,
                              const mask_type mask) noexcept
             {
+#ifdef ACTUALLY_DO_MASKED_LOAD
                 using wrangler = mask_io_intrinsics_wrangler<vartype<Var>, N>;
                 storage.template get<Var>() =
                     wrangler::load(view.template get<Var>().data(), mask);
+#else
+                storage.template get<Var>() =
+                    load<N>(view.template get<Var>().data());
+#endif
             },
             view,
             storage,
