@@ -1082,18 +1082,31 @@ class make_block_compiler<STITCH::MASKED, Block, LabelMap, BPVar>
                              Storage&        storage,
                              const mask_type mask) noexcept
             {
-#ifdef ACTUALLY_DO_MASKED_LOAD
                 using wrangler = mask_io_intrinsics_wrangler<vartype<Var>, N>;
                 storage.template get<Var>() =
                     wrangler::load(view.template get<Var>().data(), mask);
-#else
-                storage.template get<Var>() =
-                    load<N>(view.template get<Var>().data());
-#endif
             },
             view,
             storage,
             mask);
+        return storage;
+    }
+
+    template <typename _MemoryView>
+        requires(pv_extent<_MemoryView> == N)
+    static Storage _FORCE_INLINE
+    alloc(_MemoryView view) noexcept
+    {
+        Storage storage;
+        typelist::for_each(
+            typename helper::load_vars{},
+            []<typename Var>(_MemoryView view, Storage& storage) noexcept
+            {
+                storage.template get<Var>() =
+                    load<N>(view.template get<Var>().data());
+            },
+            view,
+            storage);
         return storage;
     }
 
@@ -1128,7 +1141,11 @@ class make_block_compiler<STITCH::MASKED, Block, LabelMap, BPVar>
         void _FORCE_INLINE
         operator()(_MemoryView view) const noexcept
         {
+#ifdef ACTUALLY_DO_MASKED_LOAD
             Storage storage = alloc(view, mask);
+#else
+            Storage storage = alloc(view);
+#endif
             kernel(storage);
             spill(view, storage, mask);
         }
