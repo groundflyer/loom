@@ -89,10 +89,11 @@ test_set(Track& track, ParmTestMaker tm, RandomState& rs) noexcept
 template <typename T, std::size_t N>
 struct helper
 {
+    using index_t     = uint_of_size_t<sizeof(T)>;
     using array_type  = std::array<T, N>;
     using vector_type = simd::packed_vector<T, N>;
     using vcmp        = simd::cmp_intrinsics_wrangler<T, N>;
-    using lrh         = simd::logical_reduce_helper<uint_of_bits_t<N>, N>;
+    using lrh         = simd::logical_reduce_helper<index_t, N>;
 
     template <typename V>
     static void
