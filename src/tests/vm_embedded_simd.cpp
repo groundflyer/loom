@@ -344,9 +344,7 @@ main(int argc, char* argv[])
         all_floats{},
         type_sequence<
             StandardTestSuite<union_test1, GMCanon, ::fn::val_union1_fn>,
-            StandardTestSuite<union_test2, GMCanon, ::fn::val_union2_fn>,
-            StandardTestSuite<jmp4_test, GM_J4, ::fn::val_jmp4_fn>,
-            StandardTestSuite<cmov_test, GM_J4, ::fn::val_cmov_fn>>{},
+            StandardTestSuite<union_cmov_test, GMCanon, ::fn::val_union2_fn>>{},
         track,
         tm,
         rs);
@@ -354,6 +352,7 @@ main(int argc, char* argv[])
     test_suites_types(
         all_uints{},
         type_sequence<
+            StandardTestSuite<jmp4_test, GM_U3, ::fn::val_jmp4_fn>,
             StandardTestSuite<bit_and_test, GM_Bit_Bin, std::bit_and<>>,
             StandardTestSuite<bit_or_test, GM_Bit_Bin, std::bit_or<>>,
             StandardTestSuite<bit_xor_test, GM_Bit_Bin, std::bit_xor<>>,

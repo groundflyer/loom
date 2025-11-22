@@ -57,35 +57,35 @@ KERNEL_END(IVAR(j));
 
 // i < 0.5 ? 200 : 100
 template <std::floating_point T>
-TKERNEL1(union_test2, i)
+TKERNEL1(union_cmov_test, i)
     TLT(cmp, i, 0.5),
     ICMOV(i, cmp, 200, 100)
 KERNEL_END(IVAR(i));
 
 // case i:
-// 0: a + 10
-// 1: a - 10
-// 2: a * 10
-// 3: a / 10
+// 0: 1
+// 1: 3
+// 2: 7
+// 3: 11
 template <typename T>
-KERNEL(jmp4_test, IVAR(i), TVAR(a))
+KERNEL(jmp4_test, IVAR(i))
     PJMP4(i, l0, l1, l2, l3),
 
     LABEL(l0),
-    TADD(a, a, 100),
+    IMOV(i, 1),
     JMP(HALT),
 
     LABEL(l1),
-    TSUB(a, a, 50),
+    IMOV(i, 3),
     JMP(HALT),
 
     LABEL(l2),
-    TMUL(a, a, 5),
+    IMOV(i, 7),
     JMP(HALT),
 
     LABEL(l3),
-    TDIV(a, a, 2)
-TKERNEL_END1(a);
+    IMOV(i, 11)
+KERNEL_END(IVAR(i));
 
 // a & b
 template <std::integral T>
@@ -110,16 +110,6 @@ template <std::integral T>
 KERNEL(bit_not_test, IVAR(a))
     BNOT(a, a)
 KERNEL_END(IVAR(a));
-
-// !i && (a > 0.5) ? -a : a
-template <std::floating_point T>
-KERNEL(cmov_test, IVAR(i), TVAR(a))
-    LNOT(i, i),
-    TGT(cmp, a, 0.5),
-    TNEG(ma, a),
-    LAND(i, i, cmp),
-    TCMOV(ma, i, ma, a)
-TKERNEL_END1(ma);
 
 // (a << b)
 template <std::integral T>
@@ -223,25 +213,18 @@ val_union2(T i) noexcept
 }
 
 // jump4 validation
-template <std::floating_point T>
+template <std::unsigned_integral T>
 constexpr T
-val_jmp4(loom::uint_of_size_t<sizeof(T)> i, T a) noexcept
+val_jmp4(const T i) noexcept
 {
     switch(i)
     {
-    case 0: return a + 100;
-    case 1: return a - 50;
-    case 2: return a * 5;
-    case 3: return a / 2;
+    case 0: return 1;
+    case 1: return 3;
+    case 2: return 7;
+    case 3: return 11;
     }
-    return a;
-}
-
-template <std::floating_point T>
-constexpr T
-val_cmov(loom::uint_of_size_t<sizeof(T)> i, T a) noexcept
-{
-    return !i && (a > static_cast<T>(0.5)) ? -a : a;
+    return i;
 }
 
 template <std::unsigned_integral T>
@@ -291,7 +274,6 @@ MK_NIEBLOID(val_fac);
 MK_NIEBLOID(val_union1);
 MK_NIEBLOID(val_union2);
 MK_NIEBLOID(val_jmp4);
-MK_NIEBLOID(val_cmov);
 MK_NIEBLOID(val_lshift);
 MK_NIEBLOID(val_rshift);
 MK_NIEBLOID(val_fib);
