@@ -228,15 +228,15 @@ struct StandardTestSuite
                 return std::tuple_cat(
                     std::tuple{std::move(n), std::move(m)},
                     loom::map_tuple(state.simd_streams,
-                                     [&](const auto& sp) noexcept
-                                     {
-                                         return NamedTest(
-                                             reset_bve(sp.wrapper),
-                                             fmt::format("{}: {} [{}]",
-                                                         nameview,
-                                                         sp.get_name(),
-                                                         ti));
-                                     }));
+                                    [&](const auto& sp) noexcept
+                                    {
+                                        return NamedTest(
+                                            reset_bve(sp.wrapper),
+                                            fmt::format("{}: {} [{}]",
+                                                        nameview,
+                                                        sp.get_name(),
+                                                        ti));
+                                    }));
             else
                 return std::pair{n, m};
         };
@@ -318,16 +318,21 @@ main(int argc, char* argv[])
         track,
         tm,
         rs);
+
     test_suites_types(
         all_uints{},
         type_sequence<
             StandardTestSuite<bit_and_test, GM_Bit_Bin, std::bit_and<>>,
             StandardTestSuite<bit_or_test, GM_Bit_Bin, std::bit_or<>>,
             StandardTestSuite<bit_xor_test, GM_Bit_Bin, std::bit_xor<>>,
-            StandardTestSuite<bit_not_test, GM_0U, std::bit_not<>>>{},
+            StandardTestSuite<
+                bit_not_test,
+                GM_0U,
+                /* std::bit_not<> libc++ bug */ ::fn::val_bit_not_fn>>{},
         track,
         tm,
         rs);
+
     test_suites_types(
         type_sequence<std::uint16_t, std::uint32_t, std::uint64_t>{},
         type_sequence<

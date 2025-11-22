@@ -281,6 +281,16 @@ val_fib(T n) noexcept
 
     return c;
 }
+
+// libc++ bug: version 20 std::bit_ operations don't correspond to operators
+// std::bit_not returns wrong values with u8 and u16: cast to int might be the
+// problem
+template <std::unsigned_integral T>
+constexpr T
+val_bit_not(T v) noexcept
+{
+    return ~v;
+}
 } // namespace fn
 
 MK_NIEBLOID(val_inc);
@@ -292,3 +302,4 @@ MK_NIEBLOID(val_cmov);
 MK_NIEBLOID(val_lshift);
 MK_NIEBLOID(val_rshift);
 MK_NIEBLOID(val_fib);
+MK_NIEBLOID(val_bit_not);
