@@ -329,23 +329,22 @@ main(int argc, char* argv[])
                      tm,
                      rs);
 
-    test_suite_types(
-        fac_ints{},
-        StandardTestSuite<factorial_int, GM_FAC, ::fn::val_fac_fn>{},
-        track,
-        tm,
-        rs);
+    test_suite_types(fac_ints{},
+                     StandardTestSuite<fac_test, GM_FAC, ::fn::val_fac_fn>{},
+                     track,
+                     tm,
+                     rs);
 
     {
-        constexpr StandardTestSuite<fib, GM_FIB, ::fn::val_fib_fn> test;
+        constexpr StandardTestSuite<fib_test, GM_FIB, ::fn::val_fib_fn> test;
         test.template operator()<std::uint64_t>(track, tm, rs);
     }
 
     test_suites_types(
         all_floats{},
         type_sequence<
-            StandardTestSuite<simple_union_test, GMCanon, ::fn::val_sut_fn>,
-            StandardTestSuite<complex_union_test, GMCanon, ::fn::val_cut_fn>,
+            StandardTestSuite<union_test1, GMCanon, ::fn::val_union1_fn>,
+            StandardTestSuite<union_test2, GMCanon, ::fn::val_union2_fn>,
             StandardTestSuite<jmp4_test, GM_J4, ::fn::val_jmp4_fn>,
             StandardTestSuite<cmov_test, GM_J4, ::fn::val_cmov_fn>>{},
         track,

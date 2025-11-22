@@ -36,7 +36,7 @@ TKERNEL_END1(val);
 // cmp = c == 0
 // jump: cmp: 0 -> loop, 1 -> end
 template <std::unsigned_integral T>
-TKERNEL1(factorial_int, a)
+TKERNEL1(fac_test, a)
     TLE(cmp, a, 1),
     TCMOV(a, cmp, 1, a),
     PJMP2(cmp, cinit, HALT),
@@ -50,23 +50,16 @@ TKERNEL1(factorial_int, a)
 TKERNEL_END1(a);
 
 template <std::floating_point T>
-TKERNEL1(simple_union_test, i)
+TKERNEL1(union_test1, i)
     TMOV(j, i),
     MOV(IVAR(j), TVAR(j))
 KERNEL_END(IVAR(j));
 
 // i < 0.5 ? 200 : 100
 template <std::floating_point T>
-TKERNEL1(complex_union_test, i)
+TKERNEL1(union_test2, i)
     TLT(cmp, i, 0.5),
-    PJMP2(cmp, l0, l1),
-
-    LABEL(l0),
-    MOV(IVAR(i), IVAR(100)),
-    JMP(HALT),
-
-    LABEL(l1),
-    MOV(IVAR(i), IVAR(200))
+    ICMOV(i, cmp, 200, 100)
 KERNEL_END(IVAR(i));
 
 // case i:
@@ -174,7 +167,7 @@ KERNEL_END(IVAR(r));
 
 // fibonacci number
 template <std::unsigned_integral T>
-TKERNEL1(fib, n)
+TKERNEL1(fib_test, n)
     TLE(cmp, n, 1),
     TCMOV(c, cmp, n, 1),
     PJMP2(cmp, work, HALT),
@@ -215,7 +208,7 @@ val_fac(T i) noexcept
 // simple union validation
 template <std::floating_point T>
 constexpr loom::uint_of_size_t<sizeof(T)>
-val_sut(T i) noexcept
+val_union1(T i) noexcept
 {
     return static_cast<loom::uint_of_size_t<sizeof(T)>>(i);
 }
@@ -223,7 +216,7 @@ val_sut(T i) noexcept
 // complex union validation
 template <std::floating_point T>
 constexpr loom::uint_of_size_t<sizeof(T)>
-val_cut(T i) noexcept
+val_union2(T i) noexcept
 {
     using R = loom::uint_of_size_t<sizeof(T)>;
     return i < static_cast<T>(0.5) ? static_cast<R>(200) : static_cast<R>(100);
@@ -295,8 +288,8 @@ val_bit_not(T v) noexcept
 
 MK_NIEBLOID(val_inc);
 MK_NIEBLOID(val_fac);
-MK_NIEBLOID(val_sut);
-MK_NIEBLOID(val_cut);
+MK_NIEBLOID(val_union1);
+MK_NIEBLOID(val_union2);
 MK_NIEBLOID(val_jmp4);
 MK_NIEBLOID(val_cmov);
 MK_NIEBLOID(val_lshift);
