@@ -83,7 +83,7 @@ test_set(Track& track, ParmTestMaker tm, RandomState& rs) noexcept
                                       for(const auto [v, _]: r) sr.insert(v);
                                       return sa == sr;
                                   }),
-                          fmt::format("block set [{}]", ti)));
+                          fmt::format("block set: {}[{}]", ti, N)));
 }
 
 template <typename T, std::size_t N>
