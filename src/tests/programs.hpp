@@ -94,27 +94,27 @@ KERNEL(jmp4_test, IVAR(i), TVAR(a))
     TDIV(a, a, 2)
 TKERNEL_END1(a);
 
-// 0: a & b;
-// 1: a | b;
-// 2: a ^ 5;
-// 3: ~a;
+// a & b
 template <std::integral T>
-KERNEL(bit_test, IVAR(i), IVAR(a), IVAR(b))
-    PJMP4(i, l0, l1, l2, l3),
+KERNEL(bit_and_test, IVAR(a), IVAR(b))
+    BAND(a, a, b)
+KERNEL_END(IVAR(a));
 
-    LABEL(l0),
-    BAND(a, a, b),
-    JMP(HALT),
+// a | b
+template <std::integral T>
+KERNEL(bit_or_test, IVAR(a), IVAR(b))
+    BOR(a, a, b)
+KERNEL_END(IVAR(a));
 
-    LABEL(l1),
-    BOR(a, a, b),
-    JMP(HALT),
+// a ^ b
+template <std::integral T>
+KERNEL(bit_xor_test, IVAR(a), IVAR(b))
+    XOR(a, a, b)
+KERNEL_END(IVAR(a));
 
-    LABEL(l2),
-    XOR(a, a, b),
-    JMP(HALT),
-
-    LABEL(l3),
+// ~a
+template <std::integral T>
+KERNEL(bit_not_test, IVAR(a))
     BNOT(a, a)
 KERNEL_END(IVAR(a));
 
@@ -244,21 +244,6 @@ val_jmp4(loom::uint_of_size_t<sizeof(T)> i, T a) noexcept
     return a;
 }
 
-// bitwise ops validation
-template <std::unsigned_integral T>
-constexpr T
-val_bit(T i, T a, T b)
-{
-    switch(i)
-    {
-    case 0: return a & b;
-    case 1: return a | b;
-    case 2: return a ^ b;
-    case 3: return ~a;
-    }
-    return a;
-}
-
 template <std::floating_point T>
 constexpr T
 val_cmov(loom::uint_of_size_t<sizeof(T)> i, T a) noexcept
@@ -304,7 +289,6 @@ MK_NIEBLOID(val_sut);
 MK_NIEBLOID(val_cut);
 MK_NIEBLOID(val_jmp4);
 MK_NIEBLOID(val_cmov);
-MK_NIEBLOID(val_bit);
 MK_NIEBLOID(val_lshift);
 MK_NIEBLOID(val_rshift);
 MK_NIEBLOID(val_fib);

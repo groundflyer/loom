@@ -93,15 +93,15 @@ struct GM_J4
 };
 
 template <std::integral T>
-struct GM_Bit
+struct GM_Bit_Bin
 {
     using U = loom::uint_of_size_t<sizeof(T)>;
 
     auto
     operator()(loom::test::RandomState& rs) const noexcept
     {
-        return [g_u3 = gm_u3<U>(rs), g_0u = gm_0u<U>(rs)]() mutable noexcept
-        { return std::tuple{g_u3(), g_0u(), g_0u()}; };
+        return [g_0u = gm_0u<U>(rs)]() mutable noexcept
+        { return std::tuple{g_0u(), g_0u()}; };
     }
 };
 

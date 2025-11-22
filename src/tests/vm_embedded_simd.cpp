@@ -352,11 +352,16 @@ main(int argc, char* argv[])
         tm,
         rs);
 
-    test_suite_types(all_uints{},
-                     StandardTestSuite<bit_test, GM_Bit, ::fn::val_bit_fn>{},
-                     track,
-                     tm,
-                     rs);
+    test_suites_types(
+        all_uints{},
+        type_sequence<
+            StandardTestSuite<bit_and_test, GM_Bit_Bin, std::bit_and<>>,
+            StandardTestSuite<bit_or_test, GM_Bit_Bin, std::bit_or<>>,
+            StandardTestSuite<bit_xor_test, GM_Bit_Bin, std::bit_xor<>>,
+            StandardTestSuite<bit_not_test, GM_0U, std::bit_not<>>>{},
+        track,
+        tm,
+        rs);
 
     test_suites_types(
         type_sequence<std::uint16_t, std::uint32_t, std::uint64_t>{},
