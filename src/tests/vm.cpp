@@ -305,7 +305,7 @@ main(int argc, char* argv[])
     test_suites_types(
         all_floats{},
         type_sequence<
-            StandardTestSuite<union_test1, GMCanon, ::fn::val_union1_fn>,
+            StandardTestSuite<union_test, GMCanon, ::fn::val_union1_fn>,
             StandardTestSuite<union_cmov_test, GMCanon, ::fn::val_union2_fn>>{},
         track,
         tm,

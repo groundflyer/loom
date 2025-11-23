@@ -50,7 +50,7 @@ TKERNEL1(fac_test, a)
 TKERNEL_END1(a);
 
 template <std::floating_point T>
-TKERNEL1(union_test1, i)
+TKERNEL1(union_test, i)
     TMOV(j, i),
     MOV(IVAR(j), TVAR(j))
 KERNEL_END(IVAR(j));
