@@ -22,13 +22,7 @@
 
 #include <immintrin.h>
 
-#if defined(__clang__)
-#define _SHUFFLE      __builtin_shufflevector
 #define _FORCE_INLINE __attribute__((always_inline, nodebug))
-#elif defined(__GNUG__)
-#define _SHUFFLE __builtin_shuffle
-#define _FORCE_INLINE
-#endif
 
 namespace loom::vm::simd
 {
@@ -352,14 +346,18 @@ MK_MASK_IO_INTRINSICS(std::int32_t,
                       8,
                       _mm256_maskload_epi32,
                       _mm256_maskstore_epi32)
-#if defined(__AVX512F__)
 
+#if defined(__AVX512F__)
 MK_AVX512_MASK8(double)
 MK_AVX512_MASK8(std::int64_t)
 MK_AVX512_MASK8(std::uint64_t)
 MK_AVX512_MASK16(float)
 MK_AVX512_MASK16(std::int32_t)
 MK_AVX512_MASK16(std::uint32_t)
+MK_AVX512_MASK32(std::int16_t)
+MK_AVX512_MASK32(std::uint16_t)
+MK_AVX512_MASK64(std::int8_t)
+MK_AVX512_MASK64(std::uint8_t)
 
 MK_AVX512_MASK_IO_INTRINSICS(float,
                              16,
@@ -403,16 +401,15 @@ MK_AVX512_BLEND_INTRINSICS(std::uint32_t, 16, _mm512_mask_blend_epi32)
 MK_AVX512_BLEND_INTRINSICS(std::uint64_t, 8, _mm512_mask_blend_epi64)
 
 #if defined(__AVX512BW__)
-MK_AVX512_MASK32(std::int16_t)
-MK_AVX512_MASK32(std::uint16_t)
-MK_AVX512_MASK64(std::int8_t)
-MK_AVX512_MASK64(std::uint8_t)
-
 MK_AVX512_CMP_INTRINSICS(std::int8_t, 64, _mm512_cmpeq_epi8_mask)
 MK_AVX512_CMP_INTRINSICS(std::uint8_t, 64, _mm512_cmpeq_epu8_mask)
 MK_AVX512_CMP_INTRINSICS(std::int16_t, 32, _mm512_cmpeq_epi16_mask)
 MK_AVX512_CMP_INTRINSICS(std::uint16_t, 32, _mm512_cmpeq_epu16_mask)
 
+MK_AVX512_BLEND_INTRINSICS(std::int8_t, 64, _mm512_mask_blend_epi8)
+MK_AVX512_BLEND_INTRINSICS(std::uint8_t, 64, _mm512_mask_blend_epi8)
+MK_AVX512_BLEND_INTRINSICS(std::int16_t, 32, _mm512_mask_blend_epi16)
+MK_AVX512_BLEND_INTRINSICS(std::uint16_t, 32, _mm512_mask_blend_epi16)
 #endif
 #endif
 #endif
@@ -747,7 +744,7 @@ struct shuffler<std::integer_sequence<index_t, a, b>, N>
     static constexpr IdxVec vb = broadcast<N>(b);
 
     IdxVec _FORCE_INLINE
-    operator()(IdxVec var) const noexcept
+    operator()(const IdxVec var) const noexcept
     {
         return var ? vb : va;
     }
@@ -761,9 +758,9 @@ struct shuffler<std::integer_sequence<index_t, is...>, N>
     static constexpr IdxVec table = {is...};
 
     IdxVec _FORCE_INLINE
-    operator()(IdxVec var) const noexcept
+    operator()(const IdxVec var) const noexcept
     {
-        return _SHUFFLE(table, var);
+        return __builtin_shufflevector(table, var);
     }
 };
 
