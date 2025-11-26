@@ -30,23 +30,6 @@ a2v(const std::array<T, N>& a) noexcept
     return ret;
 }
 
-template <std::unsigned_integral Index, Index _num_blocks>
-struct mock_program
-{
-    using index_t = Index;
-
-    static constexpr index_t num_blocks = _num_blocks;
-    static constexpr index_t halt_pos   = static_cast<index_t>(-1);
-};
-
-namespace loom
-{
-template <typename Index, Index _>
-struct is_kernel<mock_program<Index, _>> : std::true_type
-{
-};
-} // namespace loom
-
 template <Kernel K>
 void
 test_set(Track& track, ParmTestMaker tm, RandomState& rs) noexcept
@@ -322,7 +305,7 @@ main(int argc, char* argv[])
     ParmTestMaker tm{parse_numruns(argc, argv)};
     RandomState   rs;
 
-    test_set<mock_program<unsigned, 9>>(track, tm, rs);
+    test_set<mock_kernel<9>>(track, tm, rs);
 
     test_suite_types(typelist::join<all_ints, all_uints>{},
                      StandardTestSuite<increment, GM_Incr, ::fn::val_inc_fn>{},
