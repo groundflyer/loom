@@ -1362,38 +1362,7 @@ counting_sort(_Memory& in, _Memory& out) noexcept
     return ret;
 }
 
-template <Kernel K, typename _Memory>
-class CountingSorter
-{
-    _Memory  m_buf0;
-    _Memory  m_buf1;
-    _Memory* p_main = &m_buf0;
-    _Memory* p_aux  = &m_buf1;
-
-  public:
-    CountingSorter() noexcept = default;
-    CountingSorter(fsize_t n) : m_buf0(n), m_buf1(n) {}
-
-    _Memory&
-    mem() noexcept
-    {
-        return *p_main;
-    }
-
-    const _Memory&
-    mem() const noexcept
-    {
-        return *p_main;
-    }
-
-    auto
-    sort() noexcept
-    {
-        const auto ret = counting_sort<K>(*p_main, *p_aux);
-        std::swap(p_main, p_aux);
-        return ret;
-    }
-};
+MK_COUNTING_SORTER(simd)
 
 template <typename _Sorter>
 struct is_counting_sorter : std::false_type

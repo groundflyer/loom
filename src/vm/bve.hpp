@@ -867,21 +867,16 @@ fit_in_bins(T bp) noexcept
     return bp != halt_pos ? bp : num_bins - 1;
 }
 
-template <fsize_t num_bins,
-          auto    halt_pos,
-          typename RegTypes,
-          typename RegNames,
-          typename _BP,
-          template <typename, typename> typename _Vector,
-          template <typename> typename Allocator>
-    requires(std::is_same_v<decltype(halt_pos), vartype<_BP>>)
+template <Kernel K, typename _Memory>
 fsize_t
-counting_sort(Memory<RegTypes, RegNames, _BP, _Vector, Allocator>& in,
-              Memory<RegTypes, RegNames, _BP, _Vector, Allocator>& out) noexcept
+counting_sort(_Memory& in, _Memory& out) noexcept
 {
     ASSERT(in.size() == out.size(), "Sizes must match");
 
-    using index_t = vartype<_BP>;
+    using index_t = K::index_t;
+
+    constexpr fsize_t num_bins = K::num_blocks + 1;
+    constexpr index_t halt_pos = K::halt_pos;
 
     index_t bins[num_bins] = {};
 
@@ -926,52 +921,90 @@ class SimpleSorter
     void
     sort() noexcept
     {
-        if constexpr(!singular)
-        {
-            introsort(m_mem.begin(), m_mem.end());
-            ASSERT(std::ranges::is_sorted(m_mem.bp()),
-                   "Block pointers aren't sorted");
-        }
+        if constexpr(!singular) introsort(m_mem.begin(), m_mem.end());
     }
 };
 
-template <Kernel K, typename _Memory>
-class CountingSorter
-{
-    static constexpr auto    halt_pos = K::halt_pos;
-    static constexpr fsize_t num_bins = K::num_blocks + 1;
+#define MK_COUNTING_SORTER(NM)                                                \
+    template <Kernel K, typename _Memory>                                     \
+    class CountingSorter                                                      \
+    {                                                                         \
+        static constexpr auto    halt_pos = K::halt_pos;                      \
+        static constexpr fsize_t num_bins = K::num_blocks + 1;                \
+        _Memory                  m_buf0;                                      \
+        _Memory                  m_buf1;                                      \
+        _Memory*                 p_main = &m_buf0;                            \
+        _Memory*                 p_aux  = &m_buf1;                            \
+                                                                              \
+      public:                                                                 \
+        CountingSorter() noexcept = default;                                  \
+        CountingSorter(const CountingSorter& other) noexcept :                \
+            m_buf0(other.m_buf0), m_buf1(other.m_buf1),                       \
+            p_main(other.p_main == &other.m_buf0 ? &m_buf0 : &m_buf1),        \
+            p_aux(other.p_aux == &other.m_buf1 ? &m_buf1 : &m_buf0)           \
+        {                                                                     \
+        }                                                                     \
+        CountingSorter(CountingSorter&& other) noexcept :                     \
+            m_buf0(std::move(other.m_buf0)), m_buf1(std::move(other.m_buf1)), \
+            p_main(other.p_main == &other.m_buf0 ? &m_buf0 : &m_buf1),        \
+            p_aux(other.p_aux == &other.m_buf1 ? &m_buf1 : &m_buf0)           \
+        {                                                                     \
+        }                                                                     \
+        CountingSorter&                                                       \
+        operator=(const CountingSorter& rhs) noexcept                         \
+        {                                                                     \
+            m_buf0 = rhs.m_buf0;                                              \
+            m_buf1 = rhs.m_buf1;                                              \
+            if(rhs.p_main == &rhs.m_buf0)                                     \
+            {                                                                 \
+                p_main = &m_buf0;                                             \
+                p_aux  = &m_buf1;                                             \
+            }                                                                 \
+            else                                                              \
+            {                                                                 \
+                p_main = &m_buf1;                                             \
+                p_aux  = &m_buf0;                                             \
+            }                                                                 \
+            return *this;                                                     \
+        }                                                                     \
+        CountingSorter&                                                       \
+        operator=(CountingSorter&& rhs) noexcept                              \
+        {                                                                     \
+            m_buf0 = std::move(rhs.m_buf0);                                   \
+            m_buf1 = std::move(rhs.m_buf1);                                   \
+            if(rhs.p_main == &rhs.m_buf0)                                     \
+            {                                                                 \
+                p_main = &m_buf0;                                             \
+                p_aux  = &m_buf1;                                             \
+            }                                                                 \
+            else                                                              \
+            {                                                                 \
+                p_main = &m_buf1;                                             \
+                p_aux  = &m_buf0;                                             \
+            }                                                                 \
+            return *this;                                                     \
+        }                                                                     \
+        CountingSorter(fsize_t n) : m_buf0(n), m_buf1(n) {}                   \
+        _Memory&                                                              \
+        mem() noexcept                                                        \
+        {                                                                     \
+            return *p_main;                                                   \
+        }                                                                     \
+        const _Memory&                                                        \
+        mem() const noexcept                                                  \
+        {                                                                     \
+            return *p_main;                                                   \
+        }                                                                     \
+        fsize_t                                                               \
+        sort() noexcept                                                       \
+        {                                                                     \
+            const fsize_t ret = NM::counting_sort<K>(*p_main, *p_aux);        \
+            std::swap(p_main, p_aux);                                         \
+            return ret;                                                       \
+        }                                                                     \
+    };
 
-    _Memory  m_buf0;
-    _Memory  m_buf1;
-    _Memory* p_main = &m_buf0;
-    _Memory* p_aux  = &m_buf1;
-
-  public:
-    CountingSorter() noexcept = default;
-    CountingSorter(fsize_t n) : m_buf0(n), m_buf1(n) {}
-
-    _Memory&
-    mem() noexcept
-    {
-        return *p_main;
-    }
-
-    const _Memory&
-    mem() const noexcept
-    {
-        return *p_main;
-    }
-
-    fsize_t
-    sort() noexcept
-    {
-        const fsize_t ret = counting_sort<num_bins, halt_pos>(*p_main, *p_aux);
-        ASSERT(std::ranges::is_sorted(p_aux->bp()),
-               "Block pointers aren't sorted");
-        std::swap(p_main, p_aux);
-        return ret;
-    }
-};
+MK_COUNTING_SORTER(bve)
 
 template <Kernel K,
           template <typename, typename> typename _Vector = std::vector,
