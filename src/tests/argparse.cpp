@@ -92,14 +92,26 @@ class ArgvMock
         return m_pointers.data();
     }
 
+    char**
+    argv() const noexcept
+    {
+        return const_cast<char**>(m_pointers.data());
+    }
+
     int
-    argc() noexcept
+    argc() const noexcept
     {
         return m_pointers.size();
     }
 
     ArgsRange
     operator()()
+    {
+        return {argc(), argv()};
+    }
+
+    ArgsRange
+    operator()() const
     {
         return {argc(), argv()};
     }
@@ -689,15 +701,15 @@ int main(/*int argc, char* argv[]*/)
 
     auto o1_kw_pr_gen   = [&]() { return gen_keyword_value(o1, wgen); };
     auto o1_kw_halt_gen = [&]() { return gen_keyword_value(o1, wgen).first; };
-    auto o1_pr_test     = [&](ArgvMock& mock, auto p)
+    auto o1_pr_test     = [&](const ArgvMock& mock, auto p)
     {
         return std::string(
             test_parser_pr(std::tuple{o1}, std::tuple{}, p, mock())
                 .template get_opt<"option">());
     };
-    auto o1_kw_pr_test = [&](ArgvMock&& mock)
+    auto o1_kw_pr_test = [&](const ArgvMock& mock)
     { return o1_pr_test(mock, keyword_value_parser); };
-    auto o1_kw_iter_test = [&](ArgvMock&& mock)
+    auto o1_kw_iter_test = [&](const ArgvMock& mock)
     {
         return test_parser_iter(std::tuple{o1},
                                 std::tuple{},
@@ -705,18 +717,18 @@ int main(/*int argc, char* argv[]*/)
                                 mock());
     };
     auto o1_k_pr_gen  = [&]() { return gen_key_vals(o1, wgen, cgen, lgen); };
-    auto o1_k_pr_test = [&](ArgvMock&& mock)
+    auto o1_k_pr_test = [&](const ArgvMock& mock)
     { return o1_pr_test(mock, key_parser); };
     auto o1_k_halt_gen = [&]()
     { return gen_key_vals(o1, wgen, cgen, lgen).first; };
-    auto o1_k_halt_test = [&](ArgvMock&& mock)
+    auto o1_k_halt_test = [&](const ArgvMock& mock)
     {
         return test_parser_ret(std::tuple{o1},
                                std::tuple{},
                                key_parser,
                                mock());
     };
-    auto o1_k_iter_test = [&](ArgvMock&& mock)
+    auto o1_k_iter_test = [&](const ArgvMock& mock)
     {
         return test_parser_iter(std::tuple{o1},
                                 std::tuple{},
@@ -728,16 +740,16 @@ int main(/*int argc, char* argv[]*/)
         std::string val = wgen();
         return std::pair{ArgvMock({make_keychar(o1) + val}), val};
     };
-    auto o1_kcs_pr_test = [&](ArgvMock&& mock)
+    auto o1_kcs_pr_test = [&](const ArgvMock& mock)
     { return o1_pr_test(mock, keycharseq_parser); };
-    auto o1_kw_ignore_test = [&](ArgvMock&& mock)
+    auto o1_kw_ignore_test = [&](const ArgvMock& mock)
     {
         return test_parser_ret(std::tuple{o1},
                                std::tuple{},
                                keyword_value_parser,
                                mock());
     };
-    auto o1_kw_halt_test = [&](ArgvMock&& mock)
+    auto o1_kw_halt_test = [&](const ArgvMock& mock)
     {
         return test_parser_ret(std::tuple{o1},
                                std::tuple{},
@@ -748,7 +760,7 @@ int main(/*int argc, char* argv[]*/)
     auto o1_wrong_keyword_gen = [&]()
     // there is negligible chance that wgen() produces "option"
     { return ArgvMock({"--"s + wgen() + '=' + wgen()}); };
-    auto o1_wrong_keyword_test = [&](ArgvMock&& mock)
+    auto o1_wrong_keyword_test = [&](const ArgvMock& mock)
     {
         return test_parser_error(std::tuple{o1},
                                  std::tuple{},
@@ -758,7 +770,7 @@ int main(/*int argc, char* argv[]*/)
 
     auto o2_kw_few_gen = [&]()
     { return ArgvMock({make_keyword(o2) + '=' + wgen()}); };
-    auto o2_kw_few_test = [&](ArgvMock&& mock)
+    auto o2_kw_few_test = [&](const ArgvMock& mock)
     {
         return test_parser_error(std::tuple{o2},
                                  std::tuple{},
@@ -766,7 +778,7 @@ int main(/*int argc, char* argv[]*/)
                                  mock());
     };
     auto o2_k_few_gen = [&]() { return ArgvMock({gen_key(o2, cgen), wgen()}); };
-    auto o2_k_few_test = [&](ArgvMock&& mock)
+    auto o2_k_few_test = [&](const ArgvMock& mock)
     {
         return test_parser_error(std::tuple{o2},
                                  std::tuple{},
@@ -775,7 +787,7 @@ int main(/*int argc, char* argv[]*/)
     };
 
     auto of1_kw_pr_gen  = [&]() { return gen_keyword_value_bool(of1, cgen); };
-    auto of1_kw_pr_test = [&](ArgvMock&& mock) noexcept
+    auto of1_kw_pr_test = [&](const ArgvMock& mock) noexcept
     {
         return test_parser_pr(std::tuple{of1},
                               std::tuple{},
@@ -784,20 +796,20 @@ int main(/*int argc, char* argv[]*/)
             .template get_opt<"flag">();
     };
     auto of1_k_pr_gen  = [&]() { return ArgvMock({gen_key(of1, cgen)}); };
-    auto of1_k_pr_test = [&](ArgvMock&& mock) noexcept
+    auto of1_k_pr_test = [&](const ArgvMock& mock) noexcept
     {
         return test_parser_pr(std::tuple{of1}, std::tuple{}, key_parser, mock())
             .template get_opt<"flag">();
     };
     auto of2_k_pr_gen  = [&]() { return ArgvMock({gen_key(of2, cgen)}); };
-    auto of2_k_pr_test = [&](ArgvMock&& mock) noexcept
+    auto of2_k_pr_test = [&](const ArgvMock& mock) noexcept
     {
         return test_parser_pr(std::tuple{of2}, std::tuple{}, key_parser, mock())
             .template get_opt<'F'>();
     };
 
     auto o2_k_pr_gen  = [&]() { return gen_key_vals(o2, wgen, cgen, lgen); };
-    auto o2_k_pr_test = [&](ArgvMock&& mock)
+    auto o2_k_pr_test = [&](const ArgvMock& mock)
     {
         auto rng =
             test_parser_pr(std::tuple{o2}, std::tuple{}, key_parser, mock())
@@ -805,14 +817,14 @@ int main(/*int argc, char* argv[]*/)
         return strvec(std::ranges::begin(rng), std::ranges::end(rng));
     };
     auto o2_k_halt_gen  = [&]() { return o2_k_pr_gen().first; };
-    auto o2_k_halt_test = [&](ArgvMock&& mock)
+    auto o2_k_halt_test = [&](const ArgvMock& mock)
     {
         return test_parser_ret(std::tuple{o2},
                                std::tuple{},
                                key_parser,
                                mock());
     };
-    auto o2_k_iter_test = [&](ArgvMock&& mock)
+    auto o2_k_iter_test = [&](const ArgvMock& mock)
     {
         return test_parser_iter(std::tuple{o2},
                                 std::tuple{},
@@ -822,7 +834,7 @@ int main(/*int argc, char* argv[]*/)
 
     auto om_k_pr_gen = [&]()
     { return gen_key_vals(om, wgen_no_dash, cgen, lgen); };
-    auto om_k_pr_test = [&](ArgvMock&& mock)
+    auto om_k_pr_test = [&](const ArgvMock& mock)
     {
         auto rng =
             test_parser_pr(std::tuple{om}, std::tuple{}, key_parser, mock())
@@ -830,14 +842,14 @@ int main(/*int argc, char* argv[]*/)
         return strvec(std::ranges::begin(rng), std::ranges::end(rng));
     };
     auto om_k_halt_gen  = [&]() { return om_k_pr_gen().first; };
-    auto om_k_halt_test = [&](ArgvMock&& mock)
+    auto om_k_halt_test = [&](const ArgvMock& mock)
     {
         return test_parser_ret(std::tuple{om},
                                std::tuple{},
                                key_parser,
                                mock());
     };
-    auto om_k_iter_test = [&](ArgvMock&& mock)
+    auto om_k_iter_test = [&](const ArgvMock& mock)
     {
         auto er =
             test_parser_error(std::tuple{om}, std::tuple{}, key_parser, mock());
@@ -848,7 +860,7 @@ int main(/*int argc, char* argv[]*/)
                                 key_parser,
                                 mock());
     };
-    auto k_ignore_test = [&](ArgvMock&& mock)
+    auto k_ignore_test = [&](const ArgvMock& mock)
     {
         return test_parser_ret(std::tuple{o1, o1kc, o1kw, o2, of1, of2, om},
                                std::tuple{},
@@ -876,7 +888,7 @@ int main(/*int argc, char* argv[]*/)
             std::pair{              true, false}
         };
     };
-    auto of_kcs_pr_test = [&](ArgvMock&& mock)
+    auto of_kcs_pr_test = [&](const ArgvMock& mock)
     {
         auto pr = test_parser_pr(std::tuple{of1, of2},
                                  std::tuple{},
@@ -887,14 +899,14 @@ int main(/*int argc, char* argv[]*/)
         return std::pair{f1, f2};
     };
     auto of_kcs_halt_gen  = [&]() { return of_kcs_pr_gen().first; };
-    auto of_kcs_halt_test = [&](ArgvMock&& mock)
+    auto of_kcs_halt_test = [&](const ArgvMock& mock)
     {
         return test_parser_ret(std::tuple{of1, of2},
                                std::tuple{},
                                keycharseq_parser,
                                mock());
     };
-    auto of_kcs_iter_test = [&](ArgvMock&& mock)
+    auto of_kcs_iter_test = [&](const ArgvMock& mock)
     {
         return test_parser_iter(std::tuple{of1, of2},
                                 std::tuple{},
@@ -910,7 +922,7 @@ int main(/*int argc, char* argv[]*/)
         return std::pair{ArgvMock({kcs_multi_flags(lgen(), lgen()) + 'o', v}),
                          v};
     };
-    auto o1_last_kcs_pr_test = [&](ArgvMock&& mock)
+    auto o1_last_kcs_pr_test = [&](const ArgvMock& mock)
     {
         auto pr = test_parser_pr(std::tuple{o1, of1, of2},
                                  std::tuple{},
@@ -924,7 +936,7 @@ int main(/*int argc, char* argv[]*/)
         std::string r = (cgen() ? "-f" : "-F") + wgen(false);
         return ArgvMock({r});
     };
-    auto kcs_keychar_ex_test = [&](ArgvMock&& mock)
+    auto kcs_keychar_ex_test = [&](const ArgvMock& mock)
     {
         return test_parser_error(std::tuple{of1, of2},
                                  std::tuple{},
@@ -932,7 +944,7 @@ int main(/*int argc, char* argv[]*/)
                                  mock());
     };
 
-    auto kcs_ignore_test = [&](ArgvMock&& mock)
+    auto kcs_ignore_test = [&](const ArgvMock& mock)
     {
         return test_parser_ret(std::tuple{o1, o1kc, o1kw, o2, of1, of2, om},
                                std::tuple{},
@@ -951,7 +963,7 @@ int main(/*int argc, char* argv[]*/)
                        strvec(s.begin() + 3, s.end())}
         };
     };
-    auto pp_pr_test = [&](ArgvMock&& mock)
+    auto pp_pr_test = [&](const ArgvMock& mock)
     {
         auto pr    = parse_positionals_pr(positionals, mock());
         auto pos2r = pr.get_pos<1>();
@@ -961,7 +973,7 @@ int main(/*int argc, char* argv[]*/)
                           strvec(poslr.begin(), poslr.end())};
     };
     auto pp_iter_gen  = [&]() { return pp_pr_gen().first; };
-    auto pp_iter_test = [&](ArgvMock&& mock)
+    auto pp_iter_test = [&](const ArgvMock& mock)
     { return parse_positionals_iter(positionals, mock()); };
     auto pp_un_gen = [&]()
     {
@@ -969,13 +981,13 @@ int main(/*int argc, char* argv[]*/)
         while(s.size() < 5) s = sgen();
         return ArgvMock(std::move(s));
     };
-    auto pp_un_test = [&](ArgvMock&& mock)
+    auto pp_un_test = [&](const ArgvMock& mock)
     { return parse_positionals_er(std::tuple{pos1, pos2}, mock()); };
     auto pp_few_gen  = [&]() { return ArgvMock({wgen()}); };
-    auto pp_few_test = [&](ArgvMock&& mock)
+    auto pp_few_test = [&](const ArgvMock& mock)
     { return parse_positionals_er(std::tuple{pos2}, mock()); };
 
-    auto full_few_test = [&](ArgvMock&& mock)
+    auto full_few_test = [&](const ArgvMock& mock)
     {
         ErrorCatcher ec;
         parse(options, positionals, mock(), ec);
@@ -983,7 +995,7 @@ int main(/*int argc, char* argv[]*/)
     };
 
     auto full_pr_gen = [&]() { return gen_full(cgen, wgen_no_dash, lgen, rs); };
-    auto full_pr_test = [&](ArgvMock&& mock)
+    auto full_pr_test = [&](const ArgvMock& mock)
     {
         ErrorCatcher ec;
         auto         pr     = parse(options, positionals, mock(), ec);
@@ -1012,7 +1024,7 @@ int main(/*int argc, char* argv[]*/)
     };
 
     auto full_er_gen  = [&]() { return full_pr_gen().first; };
-    auto full_er_test = [&](ArgvMock&& mock)
+    auto full_er_test = [&](const ArgvMock& mock)
     {
         bool err = false;
         parse(options, positionals, mock(), [&err](auto) { err = true; });
