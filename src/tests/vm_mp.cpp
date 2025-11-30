@@ -16,8 +16,8 @@ using namespace loom;
 using namespace vm;
 using namespace test;
 
-using fac_p = factorial_int<std::uint64_t>;
-using fib_p = fib<std::uint64_t>;
+using fac_p = fac_test<std::uint64_t>;
+using fib_p = fib_test<std::uint64_t>;
 using fz_p  = bisection<double, constants<double>::errt>;
 
 using programs = type_sequence<fac_p, fib_p, fz_p>;
