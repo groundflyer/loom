@@ -860,13 +860,7 @@ introsort(I first, I last, Cmp cmp = Cmp{}) noexcept
         cmp);
 }
 
-template <auto halt_pos, auto num_bins, std::integral T>
-constexpr T
-fit_in_bins(T bp) noexcept
-{
-    return bp != halt_pos ? bp : num_bins - 1;
-}
-
+/// @brief Counting sort implementation.
 template <Kernel K, typename _Memory>
 fsize_t
 counting_sort(_Memory& in, _Memory& out) noexcept
@@ -876,12 +870,12 @@ counting_sort(_Memory& in, _Memory& out) noexcept
     using index_t = K::index_t;
 
     constexpr fsize_t num_bins = K::num_blocks + 1;
-    constexpr index_t halt_pos = K::halt_pos;
+    constexpr index_t halt_pos = static_cast<index_t>(K::num_blocks);
 
     index_t bins[num_bins] = {};
 
     // histogram
-    for(index_t bp: in.bp()) ++bins[fit_in_bins<halt_pos, num_bins>(bp)];
+    for(index_t bp: in.bp()) ++bins[std::min(bp, halt_pos)];
 
     const fsize_t ret = bins[num_bins - 1];
 
@@ -890,7 +884,7 @@ counting_sort(_Memory& in, _Memory& out) noexcept
 
     // fill out
     for(int i = in.size() - 1; i >= 0; --i)
-        out[--bins[fit_in_bins<halt_pos, num_bins>(in.bp()[i])]] = in[i];
+        out[--bins[std::min(in.bp()[i], halt_pos)]] = in[i];
 
     return ret;
 }

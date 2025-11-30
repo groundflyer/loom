@@ -1335,7 +1335,7 @@ counting_sort(_Memory& in, _Memory& out) noexcept
 
     using vector_index_t = packed_vector<index_t, N>;
 
-    constexpr index_t halt_pos = K::halt_pos;
+    constexpr index_t halt_pos = static_cast<index_t>(K::num_blocks);
 
     index_t bins[num_bins] = {};
 
@@ -1345,7 +1345,7 @@ counting_sort(_Memory& in, _Memory& out) noexcept
         const vector_index_t bps =
             load<N>(in.template view<N>(pos).bp().data());
         for(const auto [bp, sum]: block_set<K, N, true>(bps))
-            bins[bve::fit_in_bins<halt_pos, num_bins>(bp)] += sum;
+            bins[std::min(bp, halt_pos)] += sum;
     }
 
     const fsize_t ret = bins[num_bins - 1];
@@ -1357,7 +1357,7 @@ counting_sort(_Memory& in, _Memory& out) noexcept
     // fill out
     // FIXME: for avx512 implement using scatter
     for(int i = in.size() - 1; i >= 0; --i)
-        out[--bins[bve::fit_in_bins<halt_pos, num_bins>(in.bp()[i])]] = in[i];
+        out[--bins[std::min(in.bp()[i], halt_pos)]] = in[i];
 
     return ret;
 }
