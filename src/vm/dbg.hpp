@@ -906,6 +906,7 @@ inspect(InputOpt inopt, int argc, char* argv[]) noexcept
     const auto pr = argparse::parse(
         std::tuple{
             inopt,
+            argparse::flag<'I', "info">("print program info and exit"),
             argparse::flag<'p', "print">("print program and exit"),
             argparse::flag<'T', "type-annotations">("show type annotations"),
             argparse::flag<'b', "blocks">("separate blocks"),
@@ -944,6 +945,12 @@ inspect(InputOpt inopt, int argc, char* argv[]) noexcept
     {
         print_errc(ex.ec, ex.sv, stderr);
         return 1;
+    }
+
+    if(pr.template get_opt<'I'>())
+    {
+        fmt::print("Number of basic blocks: {}\n", K::num_blocks);
+        return 0;
     }
 
     if(pr.template get_opt<'p'>())
