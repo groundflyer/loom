@@ -449,10 +449,9 @@ gen_test_val(const unsigned n, G&& g, T&& t, V&& v) noexcept
            std::ranges::views::transform(
                [&]<typename Feed>(Feed&& feed) noexcept
                {
-                   return std::invoke(
-                       std::forward<V>(v),
-                       invopply(std::forward<T>(t), std::forward<Feed>(feed)),
-                       std::forward<Feed>(feed));
+                   return std::invoke(std::forward<V>(v),
+                                      invopply(std::forward<T>(t), feed),
+                                      feed);
                });
 }
 
