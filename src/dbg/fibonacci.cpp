@@ -14,7 +14,7 @@ using namespace argparse;
 int
 main(int argc, char* argv[])
 {
-    return inspect<fib<uint64_t>>(
+    return inspect<fib_test<uint64_t>>(
         option<"input">("input values", "n", 80, read_number<uint64_t, true>),
         argc,
         argv);

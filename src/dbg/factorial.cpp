@@ -14,7 +14,7 @@ using namespace argparse;
 int
 main(int argc, char* argv[])
 {
-    return inspect<factorial_int<uint64_t>>(
+    return inspect<fac_test<uint64_t>>(
         option<"input">("input values", "a", 5, read_number<uint64_t, true>),
         argc,
         argv);
