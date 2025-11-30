@@ -40,7 +40,7 @@ template <std::unsigned_integral Index>
 auto
 make_bp_gen(RandomState& rs, const double p = 0.9) noexcept
 {
-    auto bp_gen   = rs.make_gen<Index>(static_cast<Index>(0), num_blocks);
+    auto bp_gen   = rs.make_gen<Index>(static_cast<Index>(0), num_blocks - 1);
     auto halt_gen = [bp_gen, gb = rs.make_gen<bool>(p)]() mutable noexcept
     { return gb() ? bp_gen() : halt<Index>; };
     return std::pair{bp_gen, halt_gen};
@@ -71,10 +71,12 @@ struct CountingSortTestSuite
     chash(memory& m) noexcept
     {
         return ranges::accumulate(
-            std::views::transform(
-                m,
-                [](auto r) noexcept
-                { return hash_v(r.template get<val_var>()) + r.bp(); }),
+            std::views::transform(m,
+                                  [](auto r) noexcept
+                                  {
+                                      return hash_v(r.template get<val_var>()) +
+                                             static_cast<std::size_t>(r.bp());
+                                  }),
             0ul);
     }
 
