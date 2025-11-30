@@ -17,7 +17,6 @@ using namespace test;
 template <std::unsigned_integral T>
 constexpr T halt = static_cast<T>(-1);
 
-constexpr unsigned    num_blocks   = 20;
 constexpr std::size_t min_vec_size = 100;
 constexpr std::size_t max_vec_size = 1000;
 
@@ -36,7 +35,7 @@ struct sorter_name<simd::CountingSorter<Ts...>>
     static constexpr char chars[] = "simd counting sort";
 };
 
-template <std::unsigned_integral Index>
+template <std::unsigned_integral Index, Index num_blocks>
 auto
 make_bp_gen(RandomState& rs, const double p = 0.9) noexcept
 {
@@ -46,7 +45,9 @@ make_bp_gen(RandomState& rs, const double p = 0.9) noexcept
     return std::pair{bp_gen, halt_gen};
 }
 
-template <template <typename, typename> typename _Sorter, typename V = float>
+template <template <typename, typename> typename _Sorter,
+          unsigned num_blocks,
+          typename V = float>
 struct CountingSortTestSuite
 {
     using val_var   = Variable<V, CS(v)>;
@@ -56,8 +57,7 @@ struct CountingSortTestSuite
     using bp        = K::bp;
     using index_t   = K::index_t;
 
-    static constexpr index_t      halt_pos   = K::halt_pos;
-    static constexpr std::size_t  num_blocks = K::num_blocks;
+    static constexpr index_t      halt_pos = K::halt_pos;
     static constexpr std::hash<V> hash_v{};
 
     using memory = bve::Memory<reg_types,
@@ -83,7 +83,7 @@ struct CountingSortTestSuite
     void
     operator()(Track& track, ParmTestMaker tm, RandomState& rs) noexcept
     {
-        auto [_, bpgen] = make_bp_gen<index_t>(rs);
+        auto [_, bpgen] = make_bp_gen<index_t, num_blocks>(rs);
         auto sgen =
             [ugen = rs.make_gen<unsigned>(100u, 10000u)]() mutable noexcept
         { return align_top(ugen(), 32u); };
@@ -125,7 +125,7 @@ main(int argc, char* argv[])
 
     using vec_type = std::vector<unsigned>;
 
-    auto [bp_gen, halt_gen] = make_bp_gen<unsigned>(rs);
+    auto [bp_gen, halt_gen] = make_bp_gen<unsigned, 20>(rs);
     auto vec_gen            = [&halt_gen,
                     gn = rs.make_gen<unsigned>(min_vec_size,
                                                max_vec_size)]() mutable noexcept
@@ -183,8 +183,8 @@ main(int argc, char* argv[])
                       std::ranges::is_sorted),
                   "introsort"));
 
-    CountingSortTestSuite<bve::CountingSorter>{}(track, tm, rs);
-    CountingSortTestSuite<simd::CountingSorter>{}(track, tm, rs);
+    CountingSortTestSuite<bve::CountingSorter, 4>{}(track, tm, rs);
+    CountingSortTestSuite<simd::CountingSorter, 4>{}(track, tm, rs);
 
     return track.ret_code();
 }
