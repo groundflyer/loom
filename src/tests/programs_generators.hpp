@@ -126,3 +126,14 @@ struct GM_F2
         { return std::pair{g_f(), g_f()}; };
     }
 };
+
+template <std::floating_point T>
+struct GM_F3
+{
+    auto
+    operator()(loom::test::RandomState& rs) const noexcept
+    {
+        return [g_f = gm_float<T>(rs)]() mutable noexcept
+        { return std::tuple{g_f(), g_f(), g_f()}; };
+    }
+};

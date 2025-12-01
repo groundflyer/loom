@@ -224,6 +224,7 @@ if(BUILD_TESTS)
     argparse.cpp
     functional.cpp
     vm.cpp
+    vm_simd.cpp
     vm_root_finding.cpp
     vm_mp.cpp
     vm_embedded_simd.cpp
@@ -240,10 +241,10 @@ if(BUILD_TESTS)
     sort.cpp
   )
 
-  # FIXME: my system fmtlib linked against stdlibc++, but we use libc++
+  # FIXME: if system fmtlib linked against stdlibc++, while we use libc++
   # this is temporary workaround
   # header-only fmt
-  set(fmt_ho test_string test_linal test_vm test_vm_root_finding test_vm_mp test_vm_embedded_simd)
+  set(fmt_ho test_string test_linal test_vm test_vm_simd test_vm_root_finding test_vm_mp test_vm_embedded_simd)
 
   set(TESTS_SRC_DIR src/tests)
 
@@ -283,6 +284,7 @@ if(BUILD_TESTS)
   # target_link_libraries(test_threadpool PUBLIC Threads::Threads)
 
   # target_compile_options(test_vm_embedded_simd PUBLIC -save-temps)
+  # target_compile_options(test_vm PUBLIC -save-temps)
   # target_compile_options(test_vm PUBLIC -fverbose-asm)
   target_compile_options(test_vm PUBLIC $<$<CONFIG:RelWithDebInfo>:-fsanitize=address>)
   target_compile_options(test_vm PUBLIC $<$<CONFIG:RelWithDebInfo>:-fsanitize=alignment>)
@@ -296,6 +298,8 @@ if(BUILD_TESTS)
   target_link_options(test_vm_root_finding PUBLIC $<$<CONFIG:RelWithDebInfo>:-fsanitize=address>)
   target_compile_options(test_vm_mp PUBLIC $<$<CONFIG:RelWithDebInfo>:-fsanitize=thread>)
   target_link_options(test_vm_mp PUBLIC $<$<CONFIG:RelWithDebInfo>:-fsanitize=thread>)
+  target_compile_options(test_sort PUBLIC $<$<CONFIG:RelWithDebInfo>:-fsanitize=address>)
+  target_link_options(test_sort PUBLIC $<$<CONFIG:RelWithDebInfo>:-fsanitize=address>)
 endif()
 
 if(BUILD_DEBUGGERS)

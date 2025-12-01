@@ -174,6 +174,19 @@ TKERNEL1(fib_test, n)
     PJMP2(cmp, HALT, loop)
 TKERNEL_END1(c);
 
+/// abs(fma(a, b, -c) / (a * b + (-c)) - 1) < 1e-6
+template <std::floating_point T>
+TKERNEL3(arithmetic_test, a, b, c)
+    TNEG(c, c),
+    TFMA(t, a, b, c),
+    TMUL(a, a, b),
+    TADD(a, a, c),
+    TDIV(a, t, a),
+    TSUB(a, a, 1),
+    TABS(a, a),
+    TLT(a, a, 1e-6)
+KERNEL_END(IVAR(a));
+
 // clang-format on
 
 // validation programs
@@ -278,3 +291,4 @@ MK_NIEBLOID(val_lshift);
 MK_NIEBLOID(val_rshift);
 MK_NIEBLOID(val_fib);
 MK_NIEBLOID(val_bit_not);
+MK_NIEBLOID(val_arithmetic);
