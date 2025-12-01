@@ -831,6 +831,22 @@ struct ParmTestMaker
                                             std::forward<RI>(ri),
                                             range_cmp_estimator<ElemCmp>{});
     }
+
+    /// @brief Fuzzy version of rng_invariant.
+    /// @copydetails rng_invariant
+    template <std::invocable G, typename T, typename V = std::identity>
+    auto
+    fuzzy_rng_invariant(G&& g, T&& t, V&& v = V{}) const noexcept
+    {
+        return [&]() noexcept
+        {
+            return estimate_error(gen_test_val_rng_inv(num_runs,
+                                                       std::forward<G>(g),
+                                                       std::forward<T>(t),
+                                                       std::forward<V>(v)),
+                                  num_runs);
+        };
+    }
 };
 
 template <typename T>
