@@ -1513,11 +1513,6 @@ class ConcurrentStreamFacade :
         std::invoke(std::forward<F>(f),
                     m_pos == npos ? facade::mem().view() :
                                     facade::mem().view(0, m_pos));
-
-        // fmt::print("num not halted: {}\n",
-        //            std::ranges::count_if(facade::mem().bp(),
-        //                                  [](index_t i)
-        //                                  { return i != halt_pos; }));
 #if 0
         dump();
 #endif
