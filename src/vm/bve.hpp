@@ -120,13 +120,13 @@ class ProxyRow
     }
 
     template <typename Var>
-    std::add_lvalue_reference_t<vartype<Var>>
+    decltype(auto)
     get() noexcept
     {
         return Helper::template get<Var>(m_data)[m_pos];
     }
 
-    std::add_lvalue_reference_t<vartype<_BP>>
+    decltype(auto)
     bp() noexcept
     {
         return get<_BP>();
@@ -498,9 +498,10 @@ class Memory
     using proxy_view = ProxyView<Data, helper, _BP, N>;
 
   public:
-    using value_type = bve::ProxyRow<Data, helper, _BP>;
-    using view_type  = proxy_view<dynamic_extent>;
-    using iterator   = bve::MemoryIterator<Data, helper, _BP>;
+    using value_type     = bve::ProxyRow<Data, helper, _BP>;
+    using view_type      = proxy_view<dynamic_extent>;
+    using iterator       = bve::MemoryIterator<Data, helper, _BP>;
+    using const_iterator = bve::MemoryIterator<const Data, helper, _BP>;
 
     Memory() noexcept = default;
     explicit Memory(fsize_t n) { resize(n); }
@@ -579,13 +580,13 @@ class Memory
         return {&m_data, size(), size()};
     }
 
-    iterator
+    const_iterator
     begin() const noexcept
     {
         return {&m_data, 0ul, size()};
     }
 
-    iterator
+    const_iterator
     end() const noexcept
     {
         return {&m_data, size(), size()};
@@ -860,6 +861,14 @@ introsort(I first, I last, Cmp cmp = Cmp{}) noexcept
         cmp);
 }
 
+/// @brief Fit block pointer into bins.
+template <std::unsigned_integral I>
+constexpr I
+fit_in_bins(const I bp, const I halt_pos) noexcept
+{
+    return std::min(bp, halt_pos);
+}
+
 /// @brief Counting sort implementation.
 template <Kernel K, typename _Memory>
 fsize_t
@@ -875,7 +884,7 @@ counting_sort(_Memory& in, _Memory& out) noexcept
     index_t bins[num_bins] = {};
 
     // histogram
-    for(index_t bp: in.bp()) ++bins[std::min(bp, halt_pos)];
+    for(index_t bp: in.bp()) ++bins[fit_in_bins(bp, halt_pos)];
 
     const fsize_t ret = bins[num_bins - 1];
 
@@ -884,7 +893,7 @@ counting_sort(_Memory& in, _Memory& out) noexcept
 
     // fill out
     for(int i = in.size() - 1; i >= 0; --i)
-        out[--bins[std::min(in.bp()[i], halt_pos)]] = in[i];
+        out[--bins[fit_in_bins(in.bp()[i], halt_pos)]] = in[i];
 
     return ret;
 }
