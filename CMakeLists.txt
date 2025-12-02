@@ -244,7 +244,15 @@ if(BUILD_TESTS)
   # FIXME: if system fmtlib linked against stdlibc++, while we use libc++
   # this is temporary workaround
   # header-only fmt
-  set(fmt_ho test_string test_linal test_vm test_vm_simd test_vm_root_finding test_vm_mp test_vm_embedded_simd)
+  set(fmt_ho
+    test_string
+    test_linal
+    test_vm
+    test_vm_simd
+    test_vm_root_finding
+    test_vm_mp
+    test_vm_embedded_simd
+    test_sort)
 
   set(TESTS_SRC_DIR src/tests)
 

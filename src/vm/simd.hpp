@@ -249,6 +249,31 @@ struct blend_intrinsics_wrangler
     }
 };
 
+/// @brief Intrinsics wrangler for gather/scatter operations. Only for use with
+/// AVX-512.
+template <typename T, fsize_t N, std::integral I = fsize_t>
+struct gather_scatter_intrinsics_wrangler
+{
+    using vector_type = packed_vector<T, N>;
+    using index_type  = packed_vector<I, N>;
+
+    /// @brief Fallback implementation for gather operation.
+    static vector_type _FORCE_INLINE
+    gather(index_type vindex, T const* base_addr) noexcept
+    {
+        vector_type ret;
+        for(unsigned i = 0; i < N; ++i) ret[i] = *(base_addr + vindex[i]);
+        return ret;
+    }
+
+    /// @brief Fallback implementation for scatter operation.
+    static void _FORCE_INLINE
+    scatter(T* base_addr, index_type vindex, vector_type a) noexcept
+    {
+        for(unsigned i = 0; i < N; ++i) *(base_addr + vindex[i]) = a[i];
+    }
+};
+
 #define MK_MASK_IO_INTRINSICS(TYPE, EXT, LOAD_INTR, STORE_INTR) \
     template <>                                                 \
     struct mask_io_intrinsics_wrangler<TYPE, EXT>               \
@@ -330,6 +355,27 @@ struct blend_intrinsics_wrangler
         }                                             \
     };
 
+#define MK_AVX512_GATHER_SCATTER_INTRINSICS(TYPE,                           \
+                                            EXT,                            \
+                                            GATHER_INTR,                    \
+                                            SCATTER_INTR)                   \
+    template <>                                                             \
+    struct gather_scatter_intrinsics_wrangler<TYPE, EXT, fsize_t>           \
+    {                                                                       \
+        using vector_type = packed_vector<TYPE, EXT>;                       \
+        using index_type  = packed_vector<fsize_t, EXT>;                    \
+        static vector_type _FORCE_INLINE                                    \
+        gather(index_type vindex, TYPE const* base_addr) noexcept           \
+        {                                                                   \
+            return GATHER_INTR(vindex, base_addr, sizeof(TYPE));            \
+        }                                                                   \
+        static void _FORCE_INLINE                                           \
+        scatter(TYPE* base_addr, index_type vindex, vector_type a) noexcept \
+        {                                                                   \
+            SCATTER_INTR(base_addr, vindex, a, sizeof(TYPE));               \
+        }                                                                   \
+    };
+
 // assume that a CPU with newer extensions has old extensions too
 #if defined(__AVX__) || defined(__AVX2__) || defined(__AVX512F__)
 // starting from AVX
@@ -399,6 +445,13 @@ MK_AVX512_BLEND_INTRINSICS(std::int32_t, 16, _mm512_mask_blend_epi32)
 MK_AVX512_BLEND_INTRINSICS(std::int64_t, 8, _mm512_mask_blend_epi64)
 MK_AVX512_BLEND_INTRINSICS(std::uint32_t, 16, _mm512_mask_blend_epi32)
 MK_AVX512_BLEND_INTRINSICS(std::uint64_t, 8, _mm512_mask_blend_epi64)
+
+MK_AVX512_GATHER_SCATTER_INTRINSICS(float, 16, _mm512_i32gather_ps, _mm512_i32scatter_ps)
+MK_AVX512_GATHER_SCATTER_INTRINSICS(double, 8, _mm512_i32gather_pd, _mm512_i32scatter_pd)
+MK_AVX512_GATHER_SCATTER_INTRINSICS(std::int32_t, 16, _mm512_i32gather_epi32, _mm512_i32scatter_epi32)
+MK_AVX512_GATHER_SCATTER_INTRINSICS(std::uint32_t, 16, _mm512_i32gather_epi32, _mm512_i32scatter_epi32)
+MK_AVX512_GATHER_SCATTER_INTRINSICS(std::int64_t, 8, _mm512_i32gather_epi64, _mm512_i32scatter_epi64)
+MK_AVX512_GATHER_SCATTER_INTRINSICS(std::uint64_t, 8, _mm512_i32gather_epi64, _mm512_i32scatter_epi64)
 
 #if defined(__AVX512BW__)
 MK_AVX512_CMP_INTRINSICS(std::int8_t, 64, _mm512_cmpeq_epi8_mask)
@@ -1331,9 +1384,9 @@ counting_sort(_Memory& in, _Memory& out) noexcept
     constexpr fsize_t num_bins = K::num_blocks + 1;
     constexpr fsize_t N        = native_vector_extent_v<index_t>;
 
-    ASSERT(in.size() % N == 0, "Size be aligned to vector width");
+    ASSERT(in.size() % N == 0, "Size should be aligned to vector width");
 
-    using vector_index_t = packed_vector<index_t, N>;
+    using bp_index_vector = packed_vector<index_t, N>;
 
     constexpr index_t halt_pos = static_cast<index_t>(K::num_blocks);
 
@@ -1342,10 +1395,10 @@ counting_sort(_Memory& in, _Memory& out) noexcept
     // histogram
     for(index_t pos = 0; pos < in.size(); pos += N)
     {
-        const vector_index_t bps =
+        const bp_index_vector bps =
             load<N>(in.template view<N>(pos).bp().data());
         for(const auto [bp, sum]: block_set<K, N, true>(bps))
-            bins[std::min(bp, halt_pos)] += sum;
+            bins[bve::fit_in_bins(bp, halt_pos)] += sum;
     }
 
     const fsize_t ret = bins[num_bins - 1];
@@ -1355,9 +1408,39 @@ counting_sort(_Memory& in, _Memory& out) noexcept
     for(index_t i = 1; i < num_bins; ++i) bins[i] += bins[i - 1];
 
     // fill out
-    // FIXME: for avx512 implement using scatter
+#if defined(__AVX512F__)
+    using index_vector = packed_vector<fsize_t, N>;
+    for(int i = in.size() - 1; i >= 0; i -= static_cast<int>(N))
+    {
+        index_vector vindex_out;
+        index_vector vindex_in;
+        for(int j = 0; j < static_cast<int>(N); ++j)
+        {
+            const int ij   = i - j;
+            const int j2   = N - j - 1;
+            vindex_out[j2] = --bins[bve::fit_in_bins(in.bp()[ij], halt_pos)];
+            vindex_in[j2]  = ij;
+        }
+
+        typelist::for_each(
+            typename K::variables1{},
+            [&]<typename Var>() noexcept
+            {
+                using wrangler =
+                    gather_scatter_intrinsics_wrangler<vartype<Var>,
+                                                       N,
+                                                       fsize_t>;
+
+                wrangler::scatter(
+                    out.template get<Var>().data(),
+                    vindex_out,
+                    wrangler::gather(vindex_in, in.template get<Var>().data()));
+            });
+    }
+#else
     for(int i = in.size() - 1; i >= 0; --i)
-        out[--bins[std::min(in.bp()[i], halt_pos)]] = in[i];
+        out[--bins[bve::fit_in_bins(in.bp()[i], halt_pos)]] = in[i];
+#endif
 
     return ret;
 }

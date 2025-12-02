@@ -814,6 +814,23 @@ struct same_size_union<Union<Ts...>> :
 {
 };
 
+template <typename T>
+struct select_first : std::type_identity<T>
+{
+};
+
+template <typename T, typename... Ts>
+struct select_first<Union<T, Ts...>>
+{
+    using type = T;
+};
+
+template <typename T>
+using select_first_t = select_first<T>::type;
+
+template <typename T>
+using make_var = Variable<fst_t<T>, snd_t<T>>;
+
 /// @brief Macro definition structure.
 ///
 /// Exists for pretty printing only.
@@ -854,9 +871,8 @@ struct kernel_blank
     using statements  = Statements;
     using output_vars = OutputVars;
     using index_t = uint_of_size_t<sizeof(vartype<typelist::head<InputVars>>)>;
-    using flat_instructions = typelist::filter<
-        is_statement,
-        typelist::flatten<statements>>;
+    using flat_instructions =
+        typelist::filter<is_statement, typelist::flatten<statements>>;
     using instructions = optimize_labels_t<flat_instructions>;
 
     static_assert(!std::is_void_v<index_t>);
@@ -921,6 +937,11 @@ struct kernel_blank
                            ensure_last_jumps_t<blocks_statements, labels>>;
 
     static constexpr std::string_view nameview = cs2sv<Name>;
+
+    /// @brief Variables to access unique registers once.
+    using variables1 = typelist::map<
+        make_var,
+        typelist::zip<typelist::map<select_first_t, reg_types>, reg_names>>;
 };
 
 template <typename K>

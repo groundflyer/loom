@@ -107,11 +107,12 @@ template <std::size_t _num_blocks,
           typename vars = type_sequence<Variable<float, CS(v)>>>
 struct mock_kernel
 {
-    using index_t   = uint_of_size_t<sizeof(vartype<typelist::head<vars>>)>;
-    using bp        = Variable<index_t, _bp_name>;
-    using variables = typelist::cons<bp, vars>;
-    using reg_names = typelist::map<varname, variables>;
-    using reg_types = typelist::map<vartype, variables>;
+    using index_t    = uint_of_size_t<sizeof(vartype<typelist::head<vars>>)>;
+    using bp         = Variable<index_t, _bp_name>;
+    using variables  = typelist::cons<bp, vars>;
+    using variables1 = variables;
+    using reg_names  = typelist::map<varname, variables>;
+    using reg_types  = typelist::map<vartype, variables>;
 
     static constexpr std::size_t num_blocks = _num_blocks;
     static constexpr index_t     halt_pos   = static_cast<index_t>(-1);

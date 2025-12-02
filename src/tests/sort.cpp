@@ -3,6 +3,7 @@
 #include "vm_test_suite_utils.hpp"
 
 #include <utils/test.hpp>
+#include <utils/typeinfo.hpp>
 
 #include <vm/bve.hpp>
 #include <vm/simd.hpp>
@@ -45,50 +46,48 @@ make_bp_gen(RandomState& rs, const double p = 0.9) noexcept
     return std::pair{bp_gen, halt_gen};
 }
 
-template <template <typename, typename> typename _Sorter,
-          unsigned num_blocks,
-          typename V = float>
+template <template <typename, typename> typename _Sorter, unsigned num_blocks>
 struct CountingSortTestSuite
 {
-    using val_var   = Variable<V, CS(v)>;
-    using K         = mock_kernel<num_blocks, type_sequence<val_var>>;
-    using reg_names = K::reg_names;
-    using reg_types = K::reg_types;
-    using bp        = K::bp;
-    using index_t   = K::index_t;
-
-    static constexpr index_t      halt_pos = K::halt_pos;
-    static constexpr std::hash<V> hash_v{};
-
-    using memory = bve::Memory<reg_types,
-                               reg_names,
-                               bp,
-                               std::vector,
-                               CacheLineAlignedAllocator>;
-    using sorter = _Sorter<K, memory>;
-
-    static std::size_t
-    chash(memory& m) noexcept
-    {
-        return ranges::accumulate(
-            std::views::transform(m,
-                                  [](auto r) noexcept
-                                  {
-                                      return hash_v(r.template get<val_var>()) +
-                                             static_cast<std::size_t>(r.bp());
-                                  }),
-            0ul);
-    }
-
-    void
+    template <typename T>
+    bool
     operator()(Track& track, ParmTestMaker tm, RandomState& rs) noexcept
     {
+        using val_var   = Variable<T, CS(v)>;
+        using K         = mock_kernel<num_blocks, type_sequence<val_var>>;
+        using reg_names = K::reg_names;
+        using reg_types = K::reg_types;
+        using bp        = K::bp;
+        using index_t   = K::index_t;
+
+        static constexpr std::hash<T> hash_v{};
+        static constexpr auto         ti = TypeInfo<T>::chars;
+
+        using memory = bve::Memory<reg_types,
+                                   reg_names,
+                                   bp,
+                                   std::vector,
+                                   CacheLineAlignedAllocator>;
+        using sorter = _Sorter<K, memory>;
+
         auto [_, bpgen] = make_bp_gen<index_t, num_blocks>(rs);
         auto sgen =
             [ugen = rs.make_gen<unsigned>(100u, 10000u)]() mutable noexcept
         { return align_top(ugen(), 32u); };
         auto valgen =
-            rs.make_gen<V>(static_cast<V>(-100000), static_cast<V>(100000));
+            rs.make_gen<T>(static_cast<T>(-100000), static_cast<T>(100000));
+        auto chash = [](const memory& m) noexcept
+        {
+            return ranges::accumulate(
+                std::views::transform(
+                    m,
+                    [](auto r) noexcept
+                    {
+                        return hash_v(r.template get<val_var>()) +
+                               static_cast<std::size_t>(r.bp());
+                    }),
+                0ul);
+        };
 
         auto g = [&]() noexcept
         {
@@ -106,19 +105,22 @@ struct CountingSortTestSuite
             s.sort();
             return s;
         };
-        auto v = [](sorter tr, sorter gr) noexcept
+        auto v = [chash](sorter tr, sorter gr) noexcept
         {
             return std::ranges::is_sorted(tr.mem().bp()) &&
                    chash(tr.mem()) == chash(gr.mem());
         };
 
-        track.check(NamedTest(tm.test(g, t, v), sorter_name<sorter>::chars));
+        return track.check(
+            NamedTest(tm.test(g, t, v),
+                      fmt::format("{}: {}", sorter_name<sorter>::chars, ti)));
     }
 };
 
 int
 main(int argc, char* argv[])
 {
+    simd::print_info();
     Track         track;
     RandomState   rs;
     ParmTestMaker tm{parse_numruns(argc, argv)};
@@ -183,8 +185,13 @@ main(int argc, char* argv[])
                       std::ranges::is_sorted),
                   "introsort"));
 
-    CountingSortTestSuite<bve::CountingSorter, 4>{}(track, tm, rs);
-    CountingSortTestSuite<simd::CountingSorter, 4>{}(track, tm, rs);
+    test_suites_types(
+        all_floats{},
+        type_sequence<CountingSortTestSuite<bve::CountingSorter, 10>,
+                      CountingSortTestSuite<simd::CountingSorter, 10>>{},
+        track,
+        tm,
+        rs);
 
     return track.ret_code();
 }
