@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 showhelp() {
-    echo "Usage: $0 [-h] [-t] [-b] [-d] [-e] [-a] [-c] [-cuda] [-D] [-g] [-l]"
+    echo "Usage: $0 [-h] [-t] [-b] [-d] [-e] [-a] [-c] [-cuda] [-D] [-g] [-l] [-f]"
     echo -e "\t-t\tbuild and run tests"
     echo -e "\t-b\tbuild and run benchmarks"
     echo -e "\t-d\tbuild documentation"
@@ -13,6 +13,7 @@ showhelp() {
     echo -e "\t-g\tbuild debugger"
     echo -e "\t-h\tshow this help message and exit"
     echo -e "\t-l\tset libc++ build flags"
+    echo -e "\t-f\tfetch dependecies instead of using system's ones"
 }
 
 SRC_DIR=`realpath $(dirname "${BASH_SOURCE[0]}")`
@@ -63,6 +64,10 @@ use_cuda() {
 
 set_libcxx() {
     CMAKE_ARGS+=(-DCMAKE_CXX_FLAGS="-stdlib=libc++ -lc++abi" -DCMAKE_EXE_LINKER_FLAGS="-stdlib=libc++ -lc++abi")
+}
+
+fetch_deps() {
+    CMAKE_ARGS+=(-DUSE_SYSTEM_RANGEV3=OFF -DUSE_SYSTEM_FMT=OFF -DUSE_SYSTEM_GLFW=OFF -DUSE_SYSTEM_FAST_FLOAT=OFF)
 }
 
 run_tests() {
@@ -131,6 +136,9 @@ for key in $@; do
             ;;
         -l)
             set_libcxx
+            ;;
+        -f)
+            fetch_deps
             ;;
         -h)
             showhelp

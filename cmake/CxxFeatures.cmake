@@ -1,7 +1,7 @@
 include(CheckCXXSourceCompiles)
 include(CheckCXXCompilerFlag)
 
-set(CMAKE_REQUIRED_FLAGS -std=c++17)
+set(CMAKE_REQUIRED_FLAGS -std=c++20)
 
 # Check for Typename in template
 check_cxx_source_compiles("template <template <typename> typename T> struct foo {}; int main(){return 0;}" Typename_In_Template)

@@ -10,8 +10,8 @@ FetchContent_Declare(
 
 FetchContent_Declare(
   libfmt
-  URL       https://github.com/fmtlib/fmt/archive/refs/tags/9.1.0.tar.gz
-  URL_HASH  MD5=21fac48cae8f3b4a5783ae06b443973a
+  URL       https://github.com/fmtlib/fmt/archive/refs/tags/12.1.0.tar.gz
+  URL_HASH  MD5=92eb6f492e4838e5f024ce5207beafc7
 )
 
 FetchContent_Declare(

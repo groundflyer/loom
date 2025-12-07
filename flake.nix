@@ -1,17 +1,19 @@
 {
   description = "Loom development environment";
 
-  inputs.nixpkgs.url = "https://flakehub.com/f/NixOS/nixpkgs/0";
+  inputs.nixpkgs.url = "github:/NixOS/nixpkgs/nixos-25.11";
 
   outputs = { self, nixpkgs }: let
     system = "x86_64-linux";
     pkgs = import nixpkgs { inherit system; };
+    clangStdenv = pkgs.overrideCC pkgs.stdenv pkgs.llvmPackages_20.libcxxClang;
+    fmtLibcxx = pkgs.fmt.override { stdenv = clangStdenv; };
   in {
     devShells.${system}.default = pkgs.mkShell {
       packages = with pkgs; [
         llvmPackages_20.libcxxClang
         cmake
-        fmt_9
+        fmtLibcxx
         glfw
         fast-float
         range-v3

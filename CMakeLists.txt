@@ -124,6 +124,14 @@ if(USE_SYSTEM_FMT)
   if(fmt_FOUND)
     message(STATUS "Found fmt: " ${fmt_VERSION})
   endif()
+  include(CheckCXXSourceCompiles)
+
+  set(CMAKE_REQUIRED_FLAGS -std=c++20)
+  set(CMAKE_REQUIRED_LIBRARIES fmt::fmt)
+  check_cxx_source_compiles("
+#include <iostream>
+#include <fmt/core.h>
+int main(){std::cout << fmt::format(\"{}\",0);}" FmtLibcxx)
 else()
   message(STATUS "Fetching fmt...")
   FetchContent_MakeAvailable(libfmt)
@@ -241,9 +249,7 @@ if(BUILD_TESTS)
     sort.cpp
   )
 
-  # FIXME: if system fmtlib linked against stdlibc++, while we use libc++
-  # this is temporary workaround
-  # header-only fmt
+  # header-only fmt in case if system fmt is not linked to libc++
   set(fmt_ho
     test_string
     test_linal
@@ -264,7 +270,7 @@ if(BUILD_TESTS)
 
     add_executable(${name} ${TESTS_SRC_DIR}/${src})
     add_test(NAME ${name} COMMAND ${name})
-    if (name IN_LIST fmt_ho)
+    if (USE_SYSTEM_FMT AND (NOT FmtLibcxx) AND (name IN_LIST fmt_ho))
       target_link_libraries(${name} PRIVATE fmt::fmt-header-only)
     else()
       target_link_libraries(${name} PRIVATE fmt::fmt)
