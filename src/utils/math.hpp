@@ -19,7 +19,7 @@
 namespace loom
 {
 template <std::floating_point T>
-inline constexpr T Pi_ = T{3.141592653589793};
+inline constexpr T Pi = T{3.141592653589793};
 
 /// @brief Integral division that rounds the result to the nearest bigger
 /// number.
@@ -130,7 +130,7 @@ template <std::floating_point T>
 constexpr T
 degrees(const T _radians)
 {
-    return _radians * T{180} / Pi_<T>;
+    return _radians * T{180} / Pi<T>;
 }
 
 /// @brief Convert degrees to radians.
@@ -138,7 +138,7 @@ template <std::floating_point T>
 constexpr T
 radians(const T _degrees)
 {
-    return _degrees * Pi_<T> / T{180};
+    return _degrees * Pi<T> / T{180};
 }
 
 /// @brief Solve quadratic equation @f$ax^{2} + bx + c@f$ for non-complex cases.

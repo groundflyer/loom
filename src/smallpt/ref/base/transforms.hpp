@@ -4,153 +4,275 @@
 
 #pragma once
 
-#include "types.hpp"
-#include <primitives/transforms.hpp>
-#include <ray_traversal/transforms.hpp>
+#include "linal.hpp"
+
+// #include <smallpt/ref/primitives/transforms.hpp>
+// #include <smallpt/ref/ray_traversal/transforms.hpp>
 
 #include <utility>
 
 namespace loom
 {
+template <std::floating_point T,
+          template <typename, std::size_t> typename Container>
+using Vec2 = Vector<T, 2, Container>;
+
+template <std::floating_point T,
+          template <typename, std::size_t> typename Container>
+using Vec3 = Vector<T, 3, Container>;
+
+template <std::floating_point T,
+          template <typename, std::size_t> typename Container>
+using Vec4 = Vector<T, 4, Container>;
+
+template <std::floating_point T,
+          template <typename, std::size_t> typename Container>
+using Mat3 = Matrix<T, 3, 3, Container>;
+
+template <std::floating_point T,
+          template <typename, std::size_t> typename Container>
+using Mat4 = Matrix<T, 4, 4, Container>;
+
+template <std::floating_point T>
+using Vec2a = Vec2<T, std::array>;
+
+template <std::floating_point T>
+using Vec3a = Vec3<T, std::array>;
+
+template <std::floating_point T>
+using Vec4a = Vec4<T, std::array>;
+
+template <std::floating_point T>
+using Mat3a = Mat3<T, std::array>;
+
+template <std::floating_point T>
+using Mat4a = Mat4<T, std::array>;
+
+template <std::floating_point T>
+inline constexpr Mat3a<T> m3id = Mat3a<T>::identity();
+
+template <std::floating_point T>
+inline constexpr Mat4a<T> m4id = Mat4a<T>::identity();
+
+template <typename T,
+          std::size_t N,
+          template <typename, std::size_t> typename Container>
+constexpr const T&
+get_x(const Vector<T, N, Container>& v) noexcept
+{
+    return v.template get<0>();
+}
+
+template <typename T,
+          std::size_t N,
+          template <typename, std::size_t> typename Container>
+constexpr T&
+get_x(Vector<T, N, Container>& v) noexcept
+{
+    return v.template get<0>();
+}
+
+template <typename T,
+          std::size_t N,
+          template <typename, std::size_t> typename Container>
+constexpr const T&
+get_y(const Vector<T, N, Container>& v) noexcept
+{
+    return v.template get<1>();
+}
+
+template <typename T,
+          std::size_t N,
+          template <typename, std::size_t> typename Container>
+constexpr T&
+get_y(Vector<T, N, Container>& v) noexcept
+{
+    return v.template get<1>();
+}
+
+template <typename T,
+          std::size_t N,
+          template <typename, std::size_t> typename Container>
+constexpr const T&
+get_z(const Vector<T, N, Container>& v) noexcept
+{
+    return v.template get<2>();
+}
+
+template <typename T,
+          std::size_t N,
+          template <typename, std::size_t> typename Container>
+constexpr T&
+get_z(Vector<T, N, Container>& v) noexcept
+{
+    return v.template get<2>();
+}
+
+template <typename T,
+          std::size_t N,
+          template <typename, std::size_t> typename Container>
+constexpr const T&
+get_w(const Vector<T, N, Container>& v) noexcept
+{
+    return v.template get<3>();
+}
+
+template <typename T,
+          std::size_t N,
+          template <typename, std::size_t> typename Container>
+constexpr T&
+get_w(Vector<T, N, Container>& v) noexcept
+{
+    return v.template get<3>();
+}
+
 namespace fn
 {
 /// @brief Build a normalized vector.
-template <typename... Args>
-constexpr Vec3
-make_normal(const Args&... args) noexcept
+template <std::floating_point T, std::floating_point... Args>
+constexpr Vec3a<T>
+make_normal(const T a, const Args... args) noexcept
 {
-    return normalize(Vec3(args...));
+    return normalize(Vec3a<T>(a, args...));
 }
 
 /// @brief Convert a vector from homogenous coordinates.
 /// @param a homogenous column vector.
-template <template <typename, size_t> typename Container>
-constexpr Vec3
-dehomogenize(const Vec4_<Container>& a) noexcept
+template <std::floating_point T,
+          template <typename, std::size_t> typename Container>
+constexpr Vec3a<T>
+dehomogenize(const Vec4<T, Container>& a) noexcept
 {
-    Vec3       ret{a};
-    const real w = get_w(a);
-    if(!(almost_equal(w, 0_r, 5) || almost_equal(w, 1_r, 5))) ret /= w;
+    Vec3a<T> ret{a};
+    const T  w = get_w(a);
+    if(!(almost_equal(w, static_cast<T>(0), 5) ||
+         almost_equal(w, static_cast<T>(1), 5)))
+        ret /= w;
     return ret;
 }
 
 /// @brief Apply transform to a vector.
 /// @param t transform to apply.
 /// @param v vector to transform.
-template <template <typename, size_t> typename MatContainer,
-          template <typename, size_t>
-          typename VecContainer>
-constexpr Vec3
-apply_transform(const Mat4_<MatContainer>& t,
-                const Vec3_<VecContainer>& v) noexcept
+template <std::floating_point T,
+          template <typename, std::size_t> typename MatContainer,
+          template <typename, std::size_t> typename VecContainer>
+constexpr Vec3a<T>
+apply_transform(const Mat4<T, MatContainer>& t,
+                const Vec3<T, VecContainer>& v) noexcept
 {
-    return dehomogenize(t * Vec4(v));
+    return dehomogenize(t * Vec4a<T>(v));
 }
 
 /// @brief Apply transform to a point.
 /// @param t transform to apply.
 /// @param p point to transform.
-template <template <typename, size_t> typename MatContainer,
-          template <typename, size_t>
-          typename Vec3Container>
-constexpr Vec3
-apply_transform_p(const Mat4_<MatContainer>&  t,
-                  const Vec3_<Vec3Container>& p) noexcept
+template <std::floating_point T,
+          template <typename, std::size_t> typename MatContainer,
+          template <typename, std::size_t> typename Vec3Container>
+constexpr Vec3a<T>
+apply_transform_p(const Mat4<T, MatContainer>&  t,
+                  const Vec3<T, Vec3Container>& p) noexcept
 {
-    return dehomogenize(t * Vec4(p, 1));
+    return dehomogenize(t * Vec4a<T>(p, 1));
 }
 
 /// @brief Apply transform to a normal.
 /// @param t transform to apply.
 /// @param n noraml to transform.
-template <template <typename, size_t> typename MatContainer,
-          template <typename, size_t>
-          typename NormalContainer>
-constexpr Vec3
-apply_transform_n(const Mat4_<MatContainer>&    t,
-                  const Vec3_<NormalContainer>& n) noexcept
+template <std::floating_point T,
+          template <typename, std::size_t> typename MatContainer,
+          template <typename, std::size_t> typename NormalContainer>
+constexpr Vec3a<T>
+apply_transform_n(const Mat4<T, MatContainer>&    t,
+                  const Vec3<T, NormalContainer>& n) noexcept
 {
-    return normalize(dehomogenize(transpose(inverse(t)) * (Vec4(n))));
+    return normalize(dehomogenize(transpose(inverse(t)) * (Vec4a<T>(n))));
 }
 
 /// @brief Create translation transform.
 /// @param delta translation delta.
-template <template <typename, size_t> typename Container>
-constexpr Mat4
-translate(const Vec3_<Container>& delta) noexcept
+template <std::floating_point T,
+          template <typename, std::size_t> typename Container>
+constexpr Mat4a<T>
+translate(const Vec3<T, Container>& delta) noexcept
 {
     const auto& [x, y, z] = delta;
-    return Mat4(1, 0, 0, x, 0, 1, 0, y, 0, 0, 1, z, 0, 0, 0, 1);
+    return Mat4a<T>(1, 0, 0, x, 0, 1, 0, y, 0, 0, 1, z, 0, 0, 0, 1);
 }
 
 /// @brief Create scale transform.
 /// @param delta scale delta.
-template <template <typename, size_t> typename Container>
-constexpr Mat4
-scale(const Vec3_<Container>& delta) noexcept
+template <std::floating_point T,
+          template <typename, std::size_t> typename Container>
+constexpr Mat4a<T>
+scale(const Vec3<T, Container>& delta) noexcept
 {
     const auto& [x, y, z] = delta;
-    return Mat4(x, 0, 0, 0, 0, y, 0, 0, 0, 0, z, 0, 0, 0, 0, 1);
+    return Mat4a<T>(x, 0, 0, 0, 0, y, 0, 0, 0, 0, z, 0, 0, 0, 0, 1);
 }
 
 /// @brief Create clockwise rotation transform.
 /// @param angle angle defined in radians.
 /// @param axis axis to rotate object around.
-template <template <typename, size_t> typename Container>
-constexpr Mat4
-rotate(const real angle, const Vec3_<Container>& axis) noexcept
+template <std::floating_point T,
+          template <typename, std::size_t> typename Container>
+constexpr Mat4a<T>
+rotate(const T angle, const Vec3<T, Container>& axis) noexcept
 {
     const auto& [x, y, z] = axis;
-    const Mat3 K{0, -z, y, z, 0, -x, -y, x, 0};
-    return Mat4(Mat3_id + K * sin(angle) + K * K * (1_r - cos(angle)));
+    const Mat3a<T> K{0, -z, y, z, 0, -x, -y, x, 0};
+    return Mat4a<T>(m3id<T> + K * sin(angle) +
+                    K * K * (static_cast<T>(1) - cos(angle)));
 }
 
 /// @brief Create Look-At transform.
 /// @param eye eye position.
 /// @param target target position.
 /// @param up vector (usually {0, 1, 0}).
-template <template <typename, size_t> typename EyeContainer,
-          template <typename, size_t>
-          typename CenContainer,
-          template <typename, size_t>
-          typename UpContainer>
-constexpr Mat4
-look_at(const Vec3_<EyeContainer>& eye,
-        const Vec3_<CenContainer>& target,
-        const Vec3_<UpContainer>&  up) noexcept
+template <std::floating_point T,
+          template <typename, std::size_t> typename EyeContainer,
+          template <typename, std::size_t> typename CenContainer,
+          template <typename, std::size_t> typename UpContainer>
+constexpr Mat4a<T>
+look_at(const Vec3<T, EyeContainer>& eye,
+        const Vec3<T, CenContainer>& target,
+        const Vec3<T, UpContainer>&  up) noexcept
 {
-    const Vec3 f = normalize(eye - target);
-    const Vec3 r = normalize(cross(up, f));
-    const Vec3 u = normalize(cross(f, r));
-    return inverse(Mat4(r, 0_r, u, 0_r, f, 0_r, 0_r, 0_r, 0_r, 1_r) *
-                   translate(-eye));
+    const Vec3a<T> f = normalize(eye - target);
+    const Vec3a<T> r = normalize(cross(up, f));
+    const Vec3a<T> u = normalize(cross(f, r));
+    return inverse(Mat4a<T>(r, 0, u, 0, f, 0, 0, 0, 0, 1) * translate(-eye));
 }
 
 /// @brief Build orthonormal basis for given normal (z axis).
 /// @cite Duff2017Basis
 /// @return a pair of normals representing x and y axes.
-template <template <typename, size_t> typename Container>
-constexpr std::pair<Vec3, Vec3>
-basis(const Vec3_<Container>& n) noexcept
+template <std::floating_point T,
+          template <typename, std::size_t> typename Container>
+constexpr std::pair<Vec3a<T>, Vec3a<T>>
+basis(const Vec3<T, Container>& n) noexcept
 {
     const auto& [nx, ny, nz] = n;
-    const real sign          = std::copysign(1_r, nz);
-    const real a             = -1_r / (sign + nz);
-    const real b             = nx * ny * a;
-    return std::pair(
-        make_normal(1_r + sign * nx * nx * a, sign * b, -sign * nx),
-        make_normal(b, sign + ny * ny * a, -ny));
+    const T sign             = std::copysign(static_cast<T>(1), nz);
+    const T a                = static_cast<T>(-1) / (sign + nz);
+    const T b                = nx * ny * a;
+    return std::pair(make_normal(static_cast<T>(1) + sign * nx * nx * a,
+                                 sign * b,
+                                 -sign * nx),
+                     make_normal(b, sign + ny * ny * a, -ny));
 }
 
 /// @brief Build orthonormal basis for given normal (z axis).
 /// @cite Duff2017Basis
 /// @return 3x3 rotation matrix.
-template <template <typename, size_t> typename Container>
-constexpr Mat3
-basis_matrix(const Vec3_<Container>& z) noexcept
+template <std::floating_point T,
+          template <typename, std::size_t> typename Container>
+constexpr Mat3a<T>
+basis_matrix(const Vec3<T, Container>& z) noexcept
 {
     const auto [x, y] = basis(z);
-    return transpose(Mat3(x, y, z));
+    return transpose(Mat3a<T>(x, y, z));
 }
 } // namespace fn
 

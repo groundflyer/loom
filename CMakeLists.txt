@@ -20,7 +20,6 @@ endif()
 message(STATUS "Build Type: ${CMAKE_BUILD_TYPE}")
 
 # Options
-option(USE_DOUBLE_PRECISION "Use double precision floating-point format" OFF)
 option(BUILD_TESTS "Build tests" OFF)
 option(BUILD_BENCHMARKS "Build benchmarks" OFF)
 option(BUILD_DEBUGGERS "Build debuggers" OFF)
@@ -37,14 +36,6 @@ set(TARGET_CPU "native" CACHE STRING "Target CPU")
 set(CUDA_BLOCK_SIZE 256 CACHE STRING "Number of threads in a block")
 option(THREAD_POOL_AFFINITY "Enable affinity for threads" ON)
 set(THREAD_POOL_SIZE PHYSICAL CACHE STRING "Number of threads in CPU thread pool. Set the value to PHYSICAL to use number of physical cores of the host machine, LOGICAL to use number of logical cores of the host machine, DYNAMIC for dynamic size or a positive integer number to set custom size.")
-
-# Set floating point precision
-set(_precision "single")
-if(USE_DOUBLE_PRECISION)
-  set(_precision "double")
-  add_definitions(-D_DOUBLE_PRECISION)
-endif()
-message(STATUS "Floating-point format: ${_precision} precision")
 
 if(SIMD_NARROW_AVX_INT)
   add_definitions(-DNARROW_AVX_INT)
@@ -219,8 +210,6 @@ if(BUILD_DOC)
   endif()
 endif()
 
-add_subdirectory(src)
-
 # Tests
 if(BUILD_TESTS)
   message(STATUS "Building tests")
@@ -243,7 +232,7 @@ if(BUILD_TESTS)
     primitives.cpp
     tuple.cpp
     union.cpp
-    # viewport.cpp
+    viewport.cpp
     test.cpp
     threadpool.cpp
     sort.cpp
@@ -332,5 +321,41 @@ if(BUILD_DEBUGGERS)
     target_compile_definitions(${name} PUBLIC FMT_HEADER_ONLY)
 
     add_dependencies(dbgs ${name})
+  endforeach()
+endif()
+
+if(BUILD_BENCHMARKS)
+  message(STATUS "Building benchmarks")
+  find_package(Git)
+  if(Git_FOUND)
+    execute_process(COMMAND ${GIT_EXECUTABLE} rev-parse --short HEAD
+      WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+      OUTPUT_VARIABLE _REPO_HASH)
+    string(REPLACE "\n" "" REPO_HASH ${_REPO_HASH})
+    execute_process(COMMAND ${GIT_EXECUTABLE} diff-index --quiet HEAD
+      WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+      RESULT_VARIABLE REPO_HAS_CHANGES)
+    if(REPO_HAS_CHANGES)
+      string(APPEND REPO_HASH "*")
+    endif()
+  endif()
+
+  set(bm_srcs)
+
+  add_custom_target(benchmarks)
+
+  foreach(src ${bm_srcs})
+    string(REPLACE ".cpp" "" name ${src})
+    string(PREPEND name "bm_")
+
+    add_executable(${name} ${src})
+
+    target_link_libraries(${name} PRIVATE ${FMTLIB})
+
+    if(${name} MATCHES "bm_mp_.+")
+      target_link_libraries(${name} PRIVATE Threads::Threads)
+    endif()
+    target_compile_definitions(${name} PRIVATE -DREPO_HASH="${REPO_HASH}")
+    add_dependencies(benchmarks ${name})
   endforeach()
 endif()
