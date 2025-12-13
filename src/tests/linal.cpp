@@ -3,7 +3,7 @@
 
 #include "property_test.hpp"
 
-#include <smallpt/ref/base/linal.hpp>
+#include <smallpt/ref/linal.hpp>
 #include <utils/tuple.hpp>
 #include <utils/typeinfo.hpp>
 
