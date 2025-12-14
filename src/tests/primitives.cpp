@@ -1,7 +1,8 @@
 // -*- C++ -*-
 // primitives.cpp
 #include "property_test.hpp"
-#include <primitives/primitives.hpp>
+
+#include <smallpt/ref/niebloids.hpp>
 
 #include <utils/tuple.hpp>
 
@@ -10,14 +11,16 @@
 using namespace std;
 using namespace loom;
 
+template <std::floating_point real>
 constexpr real
-radius(const Sphere& prim) noexcept
+radius(const Sphere<real>& prim) noexcept
 {
     return prim.radius;
 }
 
+template <std::floating_point real>
 constexpr real
-radius(const AABB& prim) noexcept
+radius(const AABB<real>& prim) noexcept
 {
     return loom::distance(centroid(prim), prim.vmax);
 }
@@ -32,25 +35,32 @@ main(int argc, char* argv[])
 
     int ret = 0;
 
-    static const constexpr real    val_range = 1000000_r;
+    using R  = float;
+    using V2 = Vec2a<R>;
+    using V3 = Vec3a<R>;
+    using M4 = Mat4a<R>;
+    using Ir = Intersection<R>;
+    using Rr = Ray<R>;
+
+    constexpr R                    val_range = 1000000;
     std::uniform_real_distribution big_dist(-val_range, val_range);
-    std::uniform_real_distribution rad_dist(0.1_r, val_range);
+    std::uniform_real_distribution rad_dist(0.1f, val_range);
     std::bernoulli_distribution    bern_dist(0.5);
-    auto randr = static_cast<real (*)(std::default_random_engine&)>(
-        std::generate_canonical<real, 8>);
-    auto sgen    = [&]() noexcept { return Vec2{generate<2>(randr, g)}; };
-    auto posgen  = [&]() noexcept { return Vec3(generate<3>(big_dist, g)); };
+    auto randr = static_cast<R (*)(std::default_random_engine&)>(
+        std::generate_canonical<R, 8>);
+    auto sgen    = [&]() noexcept { return V2{generate<2>(randr, g)}; };
+    auto posgen  = [&]() noexcept { return V3(generate<3>(big_dist, g)); };
     auto normgen = [&]() noexcept
-    { return make_normal(generate<3>(big_dist, g)); };
+    { return std::apply(make_normal, generate<3>(big_dist, g)); };
 
     const auto sample_intersect_property =
         [](const auto& sampled, const auto& prim) noexcept
     {
         const auto& [target, origin] = sampled;
-        const Ray          tohit{origin, target - origin};
-        const Ray          tomiss{origin, origin - target};
-        const Intersection hit  = intersect(tohit, prim);
-        const Intersection miss = intersect(tomiss, prim);
+        const Rr tohit{origin, target - origin};
+        const Rr tomiss{origin, origin - target};
+        const Ir hit  = intersect(tohit, prim);
+        const Ir miss = intersect(tomiss, prim);
         return !hit || miss ||
                !almost_equal(hit.t, loom::distance(target, origin), 10);
     };
@@ -58,9 +68,9 @@ main(int argc, char* argv[])
     const auto bound_property =
         [](const auto& testing, const auto& prim) noexcept
     {
-        const auto& [bound, ray]     = testing;
-        const Intersection hit_prim  = intersect(ray, prim);
-        const Intersection hit_bound = intersect(ray, bound);
+        const auto& [bound, ray] = testing;
+        const Ir hit_prim        = intersect(ray, prim);
+        const Ir hit_bound       = intersect(ray, bound);
         return !hit_bound || hit_prim.t < hit_bound.t;
     };
 
@@ -77,26 +87,26 @@ main(int argc, char* argv[])
 
     const auto sample_selfoccluded_prim = [&](const auto& prim) noexcept
     {
-        const Vec3 sampled_point = loom::sample(sgen(), prim);
-        const Vec3 offset        = sampled_point - centroid(prim);
-        const auto sign          = transform([](const real val) noexcept
-                                    { return std::copysign(1_r, val); },
+        const V3   sampled_point = loom::sample(sgen(), prim);
+        const V3   offset        = sampled_point - centroid(prim);
+        const auto sign          = transform([](const R val) noexcept
+                                    { return std::copysign(1.f, val); },
                                     offset);
-        const Vec3 origin =
+        const V3   origin =
             sampled_point + Vec3(generate<3>(rad_dist, g)) * sign + offset;
         return pair(sampled_point, Vec3(origin));
     };
 
     const auto bound_gen = [&](const auto& prim) noexcept
     {
-        const AABB bbox   = bound(prim);
-        const Vec3 sp     = loom::sample(sgen(), prim);
-        const auto tb     = Vector(generate<3>(bern_dist, g));
-        const auto offset = transform([](const auto& a, const auto& b) noexcept
+        const AABB<R> bbox = bound(prim);
+        const V3      sp   = loom::sample(sgen(), prim);
+        const auto    tb   = Vector(generate<3>(bern_dist, g));
+        const auto offset  = transform([](const auto& a, const auto& b) noexcept
                                       { return a ? b : -b; },
                                       tb,
                                       Vec3(generate<3>(rad_dist, g)));
-        const Vec3 origin(bbox[tb] + offset);
+        const V3   origin(bbox[tb] + offset);
         return pair{bbox, Ray(origin, sp - origin)};
     };
 
@@ -104,7 +114,7 @@ main(int argc, char* argv[])
     { return test_prim(name, gen, bound_gen, bound_property); };
 
     const auto aabb_gen = [&]() noexcept
-    { return tuple_maker<AABB>(loom::minmax(posgen(), posgen())); };
+    { return tuple_maker<AABB<R>>(loom::minmax(posgen(), posgen())); };
     const auto sphere_gen = [&]() noexcept
     { return Sphere(posgen(), rad_dist(g)); };
     const auto disk_gen = [&]() noexcept
@@ -113,42 +123,42 @@ main(int argc, char* argv[])
     { return Triangle{posgen(), posgen(), posgen()}; };
     const auto quad_gen = [&]() noexcept
     {
-        const Vec3 v00{0, 0, 0};
-        const Vec3 v01{0, rad_dist(g), 0};
-        const Vec3 v10{rad_dist(g), 0, 0};
-        const Vec3 v11 = v00 + v01 + v10;
+        const V3   v00{0, 0, 0};
+        const V3   v01{0, rad_dist(g), 0};
+        const V3   v10{rad_dist(g), 0, 0};
+        const V3   v11 = v00 + v01 + v10;
         const auto t =
             dot(loom::rotate(big_dist(g), normgen()), translate(posgen()));
         return apply_transform(t, Quad{v00, v01, v11, v10});
     };
 
-    const auto aabb_gen_l = [&](const real max_rad, const Vec3&) noexcept
+    const auto aabb_gen_l = [&](const R max_rad, const V3&) noexcept
     {
-        return AABB(-Vec3(generate<3>(randr, g)) * max_rad * 0.5_r,
-                    Vec3(generate<3>(randr, g)) * max_rad * 0.5_r);
+        return AABB(-Vec3(generate<3>(randr, g)) * max_rad * 0.5f,
+                    Vec3(generate<3>(randr, g)) * max_rad * 0.5f);
     };
-    const auto sphere_gen_l = [&](const real max_rad, const Vec3&) noexcept
-    { return Sphere(Vec3(0), randr(g) * max_rad); };
-    const auto disk_gen_l = [&](const real, const Vec3& n) noexcept
-    { return Disk(Vec3(0), n, rad_dist(g)); };
-    const auto triangle_gen_l = [&](const real, const Vec3& n) noexcept
+    const auto sphere_gen_l = [&](const R max_rad, const V3&) noexcept
+    { return Sphere(V3(0), randr(g) * max_rad); };
+    const auto disk_gen_l = [&](const R, const V3& n) noexcept
+    { return Disk(V3(0), n, rad_dist(g)); };
+    const auto triangle_gen_l = [&](const R, const V3& n) noexcept
     {
-        const Vec3 v0{-rad_dist(g), -rad_dist(g), 0};
-        const Vec3 v1{0, rad_dist(g), 0};
-        const Vec3 v2{rad_dist(g), -rad_dist(g), 0};
-        Mat4       t(basis_matrix(n));
+        const V3 v0{-rad_dist(g), -rad_dist(g), 0};
+        const V3 v1{0, rad_dist(g), 0};
+        const V3 v2{rad_dist(g), -rad_dist(g), 0};
+        M4       t(basis_matrix(n));
         t[3][3] = 1;
         return apply_transform(t, Triangle{v0, v1, v2});
     };
-    const auto quad_gen_l = [&](const real, const Vec3& n) noexcept
+    const auto quad_gen_l = [&](const R, const V3& n) noexcept
     {
-        const real x = rad_dist(g);
-        const real y = rad_dist(g);
-        const Vec3 v00{-x, -y, 0};
-        const Vec3 v01{0, y * 2, 0};
-        const Vec3 v10{x * 2, 0, 0};
+        const R    x = rad_dist(g);
+        const R    y = rad_dist(g);
+        const V3   v00{-x, -y, 0};
+        const V3   v01{0, y * 2, 0};
+        const V3   v10{x * 2, 0, 0};
         const auto v11 = v00 + v01 + v10;
-        Mat4       t(basis_matrix(n));
+        M4         t(basis_matrix(n));
         t[3][3] = 1;
         return apply_transform(t, Quad{v00, v01, v11, v10});
     };
@@ -156,31 +166,6 @@ main(int argc, char* argv[])
     const auto gp_gen = tuple{sphere_gen, triangle_gen, quad_gen, disk_gen};
     const auto gp_gen_l =
         tuple{sphere_gen_l, triangle_gen_l, quad_gen_l, disk_gen_l, aabb_gen_l};
-
-    std::uniform_int_distribution<std::size_t> gp_choose(
-        0ul,
-        std::tuple_size_v<decltype(gp_gen)> - 1);
-    std::uniform_int_distribution<std::size_t> gp_choose_l(
-        0ul,
-        std::tuple_size_v<decltype(gp_gen_l)> - 1);
-
-    const auto def_gp        = []() noexcept { return GenericPrimitive{}; };
-    const auto rand_prim_gen = [&]() noexcept
-    {
-        return visit_at(
-            gp_choose(g),
-            [](auto& g) noexcept -> GenericPrimitive { return g(); },
-            gp_gen,
-            def_gp);
-    };
-    const auto rand_prim_gen_l = [&](const real m, const Vec3& n) noexcept
-    {
-        return visit_at(
-            gp_choose_l(g),
-            [m, n](auto& g) noexcept -> GenericPrimitive { return g(m, n); },
-            gp_gen_l,
-            def_gp);
-    };
 
     ret += intersect_test_prim("Disk: sample/trace", disk_gen, sample_prim);
     ret += intersect_test_prim("Sphere: sample/trace",
@@ -198,38 +183,6 @@ main(int argc, char* argv[])
     ret += bound_test_prim("Disk: bound", disk_gen);
     ret += bound_test_prim("Triangle: bound", triangle_gen);
     ret += bound_test_prim("Quad: bound", quad_gen);
-    ret += bound_test_prim("GenericPrimitive: bound", rand_prim_gen);
-
-    ret += test_property(
-        num_tests,
-        0.05,
-        "GenericPrimitive: hider",
-        [&]() noexcept
-        {
-            const Vec3             o = posgen();
-            const Vec3             d = make_normal(o - posgen());
-            const Ray              ray{o, d};
-            const constexpr size_t num_prims = 10;
-            const auto             radiuses  = generate<num_prims>(rad_dist, g);
-            array<Vec3, num_prims> positions;
-            positions[0] = o + d * radiuses[0];
-            for(size_t i = 1; i < num_prims; ++i)
-                positions[i] =
-                    positions[i - 1] + d * (radiuses[i - 1] + radiuses[i]);
-
-            array<decltype(rand_prim_gen_l(radiuses[0], -d)), num_prims> prims;
-            for(size_t i = 0; i < num_prims; ++i)
-                prims[i] = apply_transform(translate(positions[i]),
-                                           rand_prim_gen_l(radiuses[i], -d));
-
-            return pair{ray, prims};
-        },
-        hider,
-        [](const auto& testing, const auto) noexcept
-        {
-            const auto& [pidx, isect] = testing;
-            return !isect || pidx != 0ul;
-        });
 
     if(ret)
         fmt::print("{} tests failed\n", ret);

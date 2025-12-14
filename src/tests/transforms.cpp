@@ -1,8 +1,8 @@
 // -*- C++ -*-
 // transforms.cpp --
 #include "property_test.hpp"
-#include <smallpt/ref/linal.hpp>
-#include <smallpt/ref/transforms.hpp>
+
+#include <smallpt/ref/niebloids.hpp>
 #include <utils/tuple.hpp>
 
 #include <random>

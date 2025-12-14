@@ -1,9 +1,6 @@
 // -*- C++ -*-
-// quad.hpp
-//
-
-/// @file
-/// Difinition of quadrilateral primitive.
+/// @file quad.hpp
+/// @brief Difinition of quadrilateral primitive and auxiliary functions.
 
 #pragma once
 
@@ -15,73 +12,72 @@ namespace loom
 ///
 /// Vertices set in this order:
 /// v00, v01, v11, v10.
-template <template <typename, size_t> typename Container>
-using Quad_ = std::array<Vec3_<Container>, 4>;
-
-using Quad = Quad_<std::array>;
+template <std::floating_point T>
+using Quad = std::array<Vec3a<T>, 4>;
 
 namespace fn
 {
 /// @brief Compute ray-quadrilateral intersection.
 ///
 /// Implements @cite LD2004AERIT
-template <template <typename, size_t> typename QuadContainer,
-          template <typename, size_t>
-          typename RayContainer>
-constexpr Intersection
-intersect(const Ray_<RayContainer>&   ray,
-          const Quad_<QuadContainer>& prim) noexcept
+template <std::floating_point R>
+constexpr Intersection<R>
+intersect(const Ray<R>& ray, const Quad<R>& prim) noexcept
 {
+    using V3 = Vec3a<R>;
+
     const auto& [o, d]               = ray;
     const auto& [v00, v01, v11, v10] = prim;
-    const Vec3 e01                   = v10 - v00;
-    const Vec3 e03                   = v01 - v00;
-    const Vec3 p                     = cross(d, e03);
-    const real D                     = dot(e01, p);
 
-    if(abs(D) < std::numeric_limits<real>::min()) return Intersection();
+    const V3 e01 = v10 - v00;
+    const V3 e03 = v01 - v00;
+    const V3 p   = cross(d, e03);
+    const R  D   = dot(e01, p);
 
-    const Vec3 T     = o - v00;
-    const real alpha = dot(T, p) / D;
+    if(abs(D) < std::numeric_limits<R>::min()) return {};
 
-    const constexpr auto range01 = range(0_r, 1_r);
+    const V3 T     = o - v00;
+    const R  alpha = dot(T, p) / D;
 
-    if(!range01(alpha)) return Intersection();
+    constexpr range<R> range01{0, 1};
 
-    const Vec3 Q    = cross(T, e01);
-    const real beta = dot(d, Q) / D;
-    if(!range01(beta)) return Intersection();
+    if(!range01(alpha)) return {};
+
+    const V3 Q    = cross(T, e01);
+    const R  beta = dot(d, Q) / D;
+
+    if(!range01(beta)) return {};
 
     if((alpha + beta) > 1)
     {
-        const Vec3 e23 = v01 - v11;
-        const Vec3 e21 = v10 - v11;
-        const Vec3 p_  = cross(d, e21);
-        const real D_  = dot(e23, p_);
+        const V3 e23 = v01 - v11;
+        const V3 e21 = v10 - v11;
+        const V3 p_  = cross(d, e21);
+        const R  D_  = dot(e23, p_);
 
-        if(abs(D_) < std::numeric_limits<real>::min()) return Intersection();
+        if(abs(D_) < std::numeric_limits<R>::min()) return {};
 
-        const Vec3 T_     = o - v11;
-        const real alpha_ = dot(T_, p_) / D_;
+        const V3 T_     = o - v11;
+        const R  alpha_ = dot(T_, p_) / D_;
 
-        if(alpha_ < 0) return Intersection();
+        if(alpha_ < 0) return {};
 
-        const Vec3 Q_    = cross(T_, e23);
-        const real beta_ = dot(d, Q_) / D_;
-        if(beta_ < 0) return Intersection();
+        const V3 Q_    = cross(T_, e23);
+        const R  beta_ = dot(d, Q_) / D_;
+        if(beta_ < 0) return {};
     }
 
-    const real t = dot(e03, Q) / D;
+    const R t = dot(e03, Q) / D;
 
-    if(t < 0) return Intersection();
+    if(t < 0) return {};
 
-    const Vec3 e02              = v11 - v00;
-    const Vec3 N                = cross(e01, e03);
-    const Vec3 aN               = abs(N);
+    const V3 e02                = v11 - v00;
+    const V3 N                  = cross(e01, e03);
+    const V3 aN                 = abs(N);
     const auto& [Nx, Ny, Nz]    = N;
     const auto& [aNx, aNy, aNz] = aN;
 
-    real a11{}, b11{};
+    R a11{}, b11{};
     if((aNx >= aNy) && (aNx >= aNz))
     {
         a11 = (e02[1] * e03[2] - e02[2] * e03[1]) / Nx;
@@ -98,43 +94,42 @@ intersect(const Ray_<RayContainer>&   ray,
         b11 = (e01[0] * e02[1] - e01[1] * e02[0]) / Nz;
     }
 
-    real u{}, v{};
-    if(abs(a11 - 1) < std::numeric_limits<real>::min())
+    R u{}, v{};
+    if(abs(a11 - 1) < std::numeric_limits<R>::min())
     {
         u = alpha;
-        if(abs(b11 - 1) < std::numeric_limits<real>::min())
+        if(abs(b11 - 1) < std::numeric_limits<R>::min())
             v = beta;
         else
             v = beta / (u * (b11 - 1) + 1);
     }
-    else if(abs(b11 - 1) < std::numeric_limits<real>::min())
+    else if(abs(b11 - 1) < std::numeric_limits<R>::min())
     {
         v = beta;
         u = alpha / (v * (a11 - 1) + 1);
     }
     else
     {
-        const real A     = -(b11 - 1);
-        const real B     = alpha * (b11 - 1) - beta * (a11 - 1) - 1;
-        const real C     = alpha;
-        const real Delta = B * B - 4 * A * C;
-        const real QQ    = -0.5_r * (B + std::copysign(sqrt(Delta), B));
-        u                = QQ / A;
+        const R A     = -(b11 - 1);
+        const R B     = alpha * (b11 - 1) - beta * (a11 - 1) - 1;
+        const R C     = alpha;
+        const R Delta = B * B - 4 * A * C;
+        const R QQ = static_cast<R>(-0.5) * (B + std::copysign(sqrt(Delta), B));
+        u          = QQ / A;
 
         if(!range01(u)) u = C / QQ;
 
         v = beta / (u * (b11 - 1) + 1);
     }
 
-    return Intersection{true, t, Vec2(u, v)};
+    return {true, t, Vec2a<R>(u, v)};
 }
 
 /// @brief Compute normal of a quadrilateral.
-template <template <typename, size_t> typename QuadContainer,
-          template <typename, size_t>
-          typename PosContainer>
-constexpr Vec3
-normal(const Vec3_<PosContainer>&, const Quad_<QuadContainer>& prim) noexcept
+template <std::floating_point T,
+          template <typename, std::size_t> typename PosContainer>
+constexpr Vec3a<T>
+normal(const Vec3<T, PosContainer>&, const Quad<T>& prim) noexcept
 {
     const auto e01 = std::get<3>(prim) - std::get<0>(prim);
     const auto e03 = std::get<1>(prim) - std::get<0>(prim);
@@ -142,41 +137,40 @@ normal(const Vec3_<PosContainer>&, const Quad_<QuadContainer>& prim) noexcept
 }
 
 /// @brief Sample a point on a quadrilateral surface.
-template <template <typename, size_t> typename SContainer,
-          template <typename, size_t>
-          typename PContainer>
-constexpr Vec3
-sample(const Vec2_<SContainer>& s, const Quad_<PContainer>& prim) noexcept
+template <std::floating_point T,
+          template <typename, size_t> typename SContainer>
+constexpr Vec3a<T>
+sample(const Vec2<T, SContainer>& s, const Quad<T>& prim) noexcept
 {
     const auto& [a, c1, b, c2] = prim;
     const auto& [t1, t2]       = s;
-    const auto& c              = t1 > 0.5_r ? c1 : c2;
-    return Vec3(detail::triangle_sample(Vec2(resample(t1), t2), a, b, c));
+    const auto& c              = t1 > static_cast<T>(0.5) ? c1 : c2;
+    return Vec3a<T>(
+        detail::triangle_sample(Vec2a<T>(resample(t1), t2), a, b, c));
 }
 
 /// @brief Compute centroid of a quadrilateral.
-template <template <typename, size_t> typename Container>
-constexpr Vec3
-centroid(const Quad_<Container>& prim) noexcept
+template <std::floating_point T>
+constexpr Vec3a<T>
+centroid(const Quad<T>& prim) noexcept
 {
-    return centroid(detail::bound(prim));
+    const auto& [a, b, c, d] = prim;
+    return a + b + c + d / static_cast<T>(4);
 }
 
 /// @brief Compute bounding box of quadrilateral.
-template <template <typename, size_t> typename Container>
-constexpr AABB
-bound(const Quad_<Container>& prim) noexcept
+template <std::floating_point T>
+constexpr AABB<T>
+bound(const Quad<T>& prim) noexcept
 {
     return detail::bound(prim);
 }
 
 /// @brief Transform a quadrilateral using a transformation matrix.
-template <template <typename, size_t> typename MatContainer,
-          template <typename, size_t>
-          typename QuadContainer>
-constexpr Quad
-apply_transform(const Mat4_<MatContainer>&  t,
-                const Quad_<QuadContainer>& prim) noexcept
+template <std::floating_point T,
+          template <typename, size_t> typename MatContainer>
+constexpr Quad<T>
+apply_transform(const Mat4<T, MatContainer>& t, const Quad<T>& prim) noexcept
 {
     return std::apply([&](const auto&... points) noexcept
                       { return Quad{apply_transform_p(t, points)...}; },

@@ -1,9 +1,6 @@
 // -*- C++ -*-
-// triangle.h --
-//
-
-/// @file
-/// Triangle primitive definitions.
+/// @file triangle.h
+/// @brief Triangle primitive definition and auxiliary functions.
 
 #pragma once
 
@@ -12,10 +9,8 @@
 namespace loom
 {
 /// @brief Defining triangle as array of vertices.
-template <template <typename, std::size_t> typename Container>
-using Triangle_ = std::array<Vec3_<Container>, 3>;
-
-using Triangle = Triangle_<std::array>;
+template <std::floating_point T>
+using Triangle = std::array<Vec3a<T>, 3>;
 
 namespace fn
 {
@@ -23,62 +18,63 @@ namespace fn
 ///
 /// Implements classic algorithm described in
 /// @cite 10.1080/10867651.1997.10487468
-template <template <typename, std::size_t> typename TriangleContainer,
-          template <typename, std::size_t>
-          typename RayContainer>
-constexpr Intersection
-intersect(const Ray_<RayContainer>&           ray,
-          const Triangle_<TriangleContainer>& prim) noexcept
+template <std::floating_point T>
+constexpr Intersection<T>
+intersect(const Ray<T>& ray, const Triangle<T>& prim) noexcept
 {
+    using V3 = Vec3a<T>;
+
     const auto& [o, d]         = ray;
     const auto& [v0, v1, v2]   = prim;
-    const Vec3 edge1           = v1 - v0;
-    const Vec3 edge2           = v2 - v0;
-    const Vec3 pvec            = cross(d, edge2);
-    const real D               = dot(edge1, pvec);
-    const real invD            = 1_r / D;
-    const Vec3 tvec            = o - v0;
-    const real u               = dot(tvec, pvec) * invD;
-    const Vec3 qvec            = cross(tvec, edge1);
-    const real v               = dot(d, qvec) * invD;
-    const real t               = dot(edge2, qvec) * invD;
-    const bool not_intersected = almost_equal(D, 0_r, 10) || std::signbit(v) ||
-                                 std::signbit(t) || u + v > 1_r;
+    const V3   edge1           = v1 - v0;
+    const V3   edge2           = v2 - v0;
+    const V3   pvec            = cross(d, edge2);
+    const T    D               = dot(edge1, pvec);
+    const T    invD            = static_cast<T>(1) / D;
+    const V3   tvec            = o - v0;
+    const T    u               = dot(tvec, pvec) * invD;
+    const V3   qvec            = cross(tvec, edge1);
+    const T    v               = dot(d, qvec) * invD;
+    const T    t               = dot(edge2, qvec) * invD;
+    const bool not_intersected = almost_equal(D, static_cast<T>(0), 10) ||
+                                 std::signbit(v) || std::signbit(t) ||
+                                 u + v > 1;
 
-    const bool intersected = range(0_r, 1_r)(u) && !not_intersected;
+    const bool intersected =
+        range(static_cast<T>(0), static_cast<T>(1))(u) && !not_intersected;
 
-    return Intersection{
+    return {
         intersected,
         t,
-        Vec2{u, v}
+        Vec2a<T>{u, v}
     };
 }
 
 /// @brief Compute triangle normal.
-template <template <typename, std::size_t> typename TriangleContainer,
-          template <typename, std::size_t>
-          typename PosContainer>
-constexpr Vec3
-normal(const Vec3_<PosContainer>&,
-       const Triangle_<TriangleContainer>& prim) noexcept
+template <std::floating_point T,
+          template <typename, std::size_t> typename PosContainer>
+constexpr Vec3a<T>
+normal(const Vec3<T, PosContainer>&, const Triangle<T>& prim) noexcept
 {
     const auto& [v0, v1, v2] = prim;
-    const Vec3 edge1         = v1 - v0;
-    const Vec3 edge2         = v2 - v0;
+    const Vec3a<T> edge1     = v1 - v0;
+    const Vec3a<T> edge2     = v2 - v0;
     return normalize(cross(edge1, edge2));
 }
 
 namespace detail
 {
+template <std::floating_point T>
 constexpr void
-shift(real& x, real& y) noexcept
+shift(T& x, T& y) noexcept
 {
-    x *= 0.5_r;
+    x *= static_cast<T>(0.5);
     y -= x;
 }
 
-constexpr Vec2&
-s2t(Vec2& s) noexcept
+template <std::floating_point T>
+constexpr Vec2a<T>&
+s2t(Vec2a<T>& s) noexcept
 {
     auto& [x, y] = s;
 
@@ -90,24 +86,25 @@ s2t(Vec2& s) noexcept
     return s;
 }
 
-template <template <typename, std::size_t> typename Container2>
-constexpr Vec3
-triangle_sample(Vec2                     s,
-                const Vec3_<Container2>& v1,
-                const Vec3_<Container2>& v2,
-                const Vec3_<Container2>& v3) noexcept
+template <std::floating_point T,
+          template <typename, std::size_t> typename Container2>
+constexpr Vec3a<T>
+triangle_sample(Vec2a<T>                   s,
+                const Vec3<T, Container2>& v1,
+                const Vec3<T, Container2>& v2,
+                const Vec3<T, Container2>& v3) noexcept
 {
     auto& [t1, t2] = s2t(s);
-    return v1 * t1 + v2 * t2 + v3 * (1_r - t1 - t2);
+    return v1 * t1 + v2 * t2 + v3 * (static_cast<T>(1) - t1 - t2);
 }
 
 /// @brief Compute bounding box of primitive defined as array.
 template <typename Prim>
-constexpr AABB
+constexpr auto
 bound(const Prim& prim) noexcept
 {
-    const Vec3 vmin = fold_tuple(prim, loom::min);
-    const Vec3 vmax = fold_tuple(prim, loom::max);
+    const auto vmin = fold_tuple(prim, loom::min);
+    const auto vmax = fold_tuple(prim, loom::max);
     return AABB{vmin, vmax};
 }
 } // namespace detail
@@ -115,40 +112,39 @@ bound(const Prim& prim) noexcept
 /// @brief Sample a point on triangle surface.
 ///
 /// Optimized implementation from @cite heitz:hal-02073696
-template <template <typename, std::size_t> typename SContainer,
-          template <typename, std::size_t>
-          typename PContainer>
-constexpr Vec3
-sample(const Vec2_<SContainer>& s, const Triangle_<PContainer>& prim) noexcept
+template <std::floating_point T,
+          template <typename, std::size_t> typename SContainer>
+constexpr Vec3a<T>
+sample(const Vec2<T, SContainer>& s, const Triangle<T>& prim) noexcept
 {
-    return Vec3(std::apply([&](const auto&... verts) noexcept
-                           { return detail::triangle_sample(s, verts...); },
-                           prim));
+    return Vec3a<T>(std::apply([&](const auto&... verts) noexcept
+                               { return detail::triangle_sample(s, verts...); },
+                               prim));
 }
 
 /// @brief Compute triangle centroid.
-template <template <typename, std::size_t> typename Container>
-constexpr Vec3
-centroid(const Triangle_<Container>& prim) noexcept
+template <std::floating_point T>
+constexpr Vec3a<T>
+centroid(const Triangle<T>& prim) noexcept
 {
-    return centroid(detail::bound(prim));
+    const auto& [a, b, c] = prim;
+    return (a + b + c) / static_cast<T>(3);
 }
 
 /// @brief Compute triangle bounding box.
-template <template <typename, std::size_t> typename Container>
-constexpr AABB
-bound(const Triangle_<Container>& prim) noexcept
+template <std::floating_point T>
+constexpr AABB<T>
+bound(const Triangle<T>& prim) noexcept
 {
     return detail::bound(prim);
 }
 
 /// @brief Transform triangle with a transformation matrix.
-template <template <typename, std::size_t> typename MatContainer,
-          template <typename, std::size_t>
-          typename TriangleContainer>
-constexpr Triangle
-apply_transform(const Mat4_<MatContainer>&          t,
-                const Triangle_<TriangleContainer>& prim) noexcept
+template <std::floating_point T,
+          template <typename, std::size_t> typename MatContainer>
+constexpr Triangle<T>
+apply_transform(const Mat4<T, MatContainer>& t,
+                const Triangle<T>&           prim) noexcept
 {
     return std::apply([&](const auto&... points) noexcept
                       { return Triangle{apply_transform_p(t, points)...}; },
