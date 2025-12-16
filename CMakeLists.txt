@@ -232,7 +232,6 @@ if(BUILD_TESTS)
     primitives.cpp
     tuple.cpp
     union.cpp
-    viewport.cpp
     test.cpp
     threadpool.cpp
     sort.cpp
