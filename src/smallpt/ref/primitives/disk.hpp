@@ -12,8 +12,8 @@ namespace loom
 template <std::floating_point T>
 struct Disk
 {
-    Vec3a<T> position;
-    Vec3a<T> normal;
+    Vec3<T> position;
+    Vec3<T> normal;
     T        radius;
 
     constexpr Disk() noexcept = default;
@@ -42,13 +42,13 @@ intersect(const Ray<T>& ray, const Disk<T>& prim) noexcept
     const auto& [o, d]    = ray;
     const auto& [p, n, r] = prim;
     const T t             = dot(p - o, n) / dot(d, n);
-    return {!std::signbit(t) && distance(o + d * t, p) < r, t, Vec2a<T>{}};
+    return {!std::signbit(t) && distance(o + d * t, p) < r, t, Vec2<T>{}};
 }
 
 /// @brief Return disk normal.
 template <std::floating_point T,
           template <typename, std::size_t> typename PosContainer>
-constexpr Vec3a<T>
+constexpr Vec3<T>
 normal(const Vec3<T, PosContainer>&, const Disk<T>& prim) noexcept
 {
     return prim.normal;
@@ -57,20 +57,20 @@ normal(const Vec3<T, PosContainer>&, const Disk<T>& prim) noexcept
 /// @brief Sample a point on disk surface.
 template <std::floating_point T,
           template <typename, std::size_t> typename SContainer>
-constexpr Vec3a<T>
+constexpr Vec3<T>
 sample(const Vec2<T, SContainer>& s, const Disk<T>& prim) noexcept
 {
     const auto& [p, zaxis, r] = prim;
     const auto& [t1, t2]      = s;
     const T        sr         = r * sqrt(t1);
     const T        theta      = static_cast<T>(2) * Pi<T> * t2;
-    const Vec3a<T> point{sr * sin(theta), sr * cos(theta), 0};
+    const Vec3<T> point{sr * sin(theta), sr * cos(theta), 0};
     return dot(basis_matrix(zaxis), point) + p;
 }
 
 /// @brief Return disk position.
 template <std::floating_point T>
-constexpr Vec3a<T>
+constexpr Vec3<T>
 centroid(const Disk<T>& prim) noexcept
 {
     return prim.position;
@@ -83,8 +83,8 @@ bound(const Disk<T>& prim) noexcept
 {
     const auto& [p, n, r] = prim;
     const T h             = abs(
-        sqrt(static_cast<T>(1) - static_pow<2>(dot(n, Vec3a<T>(0, 1, 0)))) * r);
-    const Vec3a<T> offset(r, h, r);
+        sqrt(static_cast<T>(1) - static_pow<2>(dot(n, Vec3<T>(0, 1, 0)))) * r);
+    const Vec3<T> offset(r, h, r);
     return {p - offset, p + offset};
 }
 

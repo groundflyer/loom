@@ -10,7 +10,7 @@ namespace loom
 {
 template <std::floating_point T>
 constexpr T
-ratio(const Vec2a<T>& res) noexcept
+ratio(const Vec2<T>& res) noexcept
 {
     const auto& [w, h] = res;
     return w / h;
@@ -18,8 +18,8 @@ ratio(const Vec2a<T>& res) noexcept
 
 // pixel index to film sample space
 template <std::floating_point T>
-constexpr Vec2a<T>
-sample_space(const Vec2a<T>& _res, const T _ratio, const Vec2u& _idx) noexcept
+constexpr Vec2<T>
+sample_space(const Vec2<T>& _res, const T _ratio, const Vec2u& _idx) noexcept
 {
     const auto& [c, r] = _idx;
     const auto [w, h]  = _res - static_cast<T>(1);
@@ -29,17 +29,17 @@ sample_space(const Vec2a<T>& _res, const T _ratio, const Vec2u& _idx) noexcept
 }
 
 template <std::floating_point T>
-constexpr Vec2a<T>
-sample_space(const Vec2a<T>& _res, const Vec2u& _idx) noexcept
+constexpr Vec2<T>
+sample_space(const Vec2<T>& _res, const Vec2u& _idx) noexcept
 {
     return sample_space(_res, ratio(_res), _idx);
 }
 
 template <std::floating_point T>
 constexpr Vec2u
-pixel_index(const Vec2a<T>& _res,
+pixel_index(const Vec2<T>& _res,
             const T         _ratio,
-            const Vec2a<T>& sample_pos) noexcept
+            const Vec2<T>& sample_pos) noexcept
 {
     const auto& [sx, sy] = sample_pos;
     const auto [w, h]    = _res - static_cast<T>(1);
@@ -52,14 +52,14 @@ pixel_index(const Vec2a<T>& _res,
 
 template <std::floating_point T>
 constexpr Vec2u
-pixel_index(const Vec2a<T>& _res, const Vec2a<T>& sample_pos) noexcept
+pixel_index(const Vec2<T>& _res, const Vec2<T>& sample_pos) noexcept
 {
     return pixel_index(_res, ratio(_res), sample_pos);
 }
 
 template <std::floating_point T>
 constexpr T
-pixel_width(const Vec2a<T>& _res) noexcept
+pixel_width(const Vec2<T>& _res) noexcept
 {
     const T w = _res.template get<0>();
     return static_cast<T>(1) / w;
@@ -69,7 +69,7 @@ template <typename Image, std::floating_point T>
 struct Film
 {
     Image    img;
-    Vec2a<T> res;
+    Vec2<T> res;
     T        _ratio;
     T        _pixel_width;
     // radius of pixel bounding circle
@@ -83,7 +83,7 @@ struct Film
     {
     }
 
-    Vec2a<T>
+    Vec2<T>
     sample_space(const Vec2u& _pidx) const noexcept
     {
         CHECK_INDEX(get_x(_pidx), get_x(img.res()));
@@ -92,7 +92,7 @@ struct Film
     }
 
     Vec2u
-    pixel_index(const Vec2a<T>& pos) const noexcept
+    pixel_index(const Vec2<T>& pos) const noexcept
     {
         // we require posx to be in range [-ratio/2, ratio/2]
         // and posy in range [-0.5, 0.5]

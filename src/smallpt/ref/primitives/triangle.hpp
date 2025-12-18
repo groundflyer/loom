@@ -9,8 +9,9 @@
 namespace loom
 {
 /// @brief Defining triangle as array of vertices.
-template <std::floating_point T>
-using Triangle = std::array<Vec3a<T>, 3>;
+template <std::floating_point T,
+          template <typename, std::size_t> typename Container = std::array>
+using Triangle = std::array<Vec3<T, Container>, 3>;
 
 namespace fn
 {
@@ -22,7 +23,7 @@ template <std::floating_point T>
 constexpr Intersection<T>
 intersect(const Ray<T>& ray, const Triangle<T>& prim) noexcept
 {
-    using V3 = Vec3a<T>;
+    using V3 = Vec3<T>;
 
     const auto& [o, d]         = ray;
     const auto& [v0, v1, v2]   = prim;
@@ -46,19 +47,19 @@ intersect(const Ray<T>& ray, const Triangle<T>& prim) noexcept
     return {
         intersected,
         t,
-        Vec2a<T>{u, v}
+        Vec2<T>{u, v}
     };
 }
 
 /// @brief Compute triangle normal.
 template <std::floating_point T,
           template <typename, std::size_t> typename PosContainer>
-constexpr Vec3a<T>
+constexpr Vec3<T>
 normal(const Vec3<T, PosContainer>&, const Triangle<T>& prim) noexcept
 {
     const auto& [v0, v1, v2] = prim;
-    const Vec3a<T> edge1     = v1 - v0;
-    const Vec3a<T> edge2     = v2 - v0;
+    const Vec3<T> edge1     = v1 - v0;
+    const Vec3<T> edge2     = v2 - v0;
     return normalize(cross(edge1, edge2));
 }
 
@@ -73,8 +74,8 @@ shift(T& x, T& y) noexcept
 }
 
 template <std::floating_point T>
-constexpr Vec2a<T>&
-s2t(Vec2a<T>& s) noexcept
+constexpr Vec2<T>&
+s2t(Vec2<T>& s) noexcept
 {
     auto& [x, y] = s;
 
@@ -88,8 +89,8 @@ s2t(Vec2a<T>& s) noexcept
 
 template <std::floating_point T,
           template <typename, std::size_t> typename Container2>
-constexpr Vec3a<T>
-triangle_sample(Vec2a<T>                   s,
+constexpr Vec3<T>
+triangle_sample(Vec2<T>                   s,
                 const Vec3<T, Container2>& v1,
                 const Vec3<T, Container2>& v2,
                 const Vec3<T, Container2>& v3) noexcept
@@ -114,17 +115,17 @@ bound(const Prim& prim) noexcept
 /// Optimized implementation from @cite heitz:hal-02073696
 template <std::floating_point T,
           template <typename, std::size_t> typename SContainer>
-constexpr Vec3a<T>
+constexpr Vec3<T>
 sample(const Vec2<T, SContainer>& s, const Triangle<T>& prim) noexcept
 {
-    return Vec3a<T>(std::apply([&](const auto&... verts) noexcept
+    return Vec3<T>(std::apply([&](const auto&... verts) noexcept
                                { return detail::triangle_sample(s, verts...); },
                                prim));
 }
 
 /// @brief Compute triangle centroid.
 template <std::floating_point T>
-constexpr Vec3a<T>
+constexpr Vec3<T>
 centroid(const Triangle<T>& prim) noexcept
 {
     const auto& [a, b, c] = prim;

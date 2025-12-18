@@ -12,8 +12,8 @@ namespace loom
 template <std::floating_point T>
 struct Ray
 {
-    Vec3a<T> origin;
-    Vec3a<T> dir;
+    Vec3<T> origin;
+    Vec3<T> dir;
 
     template <template <typename, std::size_t> typename Container1,
               template <typename, std::size_t> typename Container2>
@@ -34,7 +34,7 @@ struct Intersection
 {
     bool     intersect;
     T        t;
-    Vec2a<T> st;
+    Vec2<T> st;
 
     constexpr Intersection() noexcept :
         intersect(false), t(std::numeric_limits<T>::max()), st(0)

@@ -12,7 +12,7 @@ namespace loom
 template <std::floating_point T>
 struct Sphere
 {
-    Vec3a<T> center;
+    Vec3<T> center;
     T        radius;
 
     constexpr Sphere() noexcept = default;
@@ -38,17 +38,17 @@ intersect(const Ray<T>& ray, const Sphere<T>& prim) noexcept
 {
     const auto& [o, d]  = ray;
     const T        a    = dot(d, d);
-    const Vec3a<T> pc   = o - prim.center;
+    const Vec3<T> pc   = o - prim.center;
     const T        b    = dot(d, pc * static_cast<T>(2));
     const T        c    = dot(pc, pc) - static_pow<2>(prim.radius);
     const auto [hit, t] = quadratic(a, b, c);
-    return {hit, t, Vec2a<T>{}};
+    return {hit, t, Vec2<T>{}};
 }
 
 /// @brief Compute surface normal at @p pos.
 template <std::floating_point T,
           template <typename, std::size_t> typename PosContainer>
-constexpr Vec3a<T>
+constexpr Vec3<T>
 normal(const Vec3<T, PosContainer>& pos, const Sphere<T>& prim) noexcept
 {
     return normalize(pos - prim.center);
@@ -57,7 +57,7 @@ normal(const Vec3<T, PosContainer>& pos, const Sphere<T>& prim) noexcept
 /// @brief Sample a point on sphere surface.
 template <std::floating_point T,
           template <typename, std::size_t> typename SContainer>
-constexpr Vec3a<T>
+constexpr Vec3<T>
 sample(const Vec2<T, SContainer>& s, const Sphere<T>& prim) noexcept
 {
     const auto& [c, r]   = prim;
@@ -65,12 +65,12 @@ sample(const Vec2<T, SContainer>& s, const Sphere<T>& prim) noexcept
     const T u            = 2 * t1 - 1;
     const T theta        = 2 * Pi<T> * t2;
     const T _u           = sqrt(1 - u * u);
-    return Vec3a<T>(_u * cos(theta), _u * sin(theta), u) * r + c;
+    return Vec3<T>(_u * cos(theta), _u * sin(theta), u) * r + c;
 }
 
 /// @brief Return sphere position.
 template <std::floating_point T>
-constexpr Vec3a<T>
+constexpr Vec3<T>
 centroid(const Sphere<T>& prim) noexcept
 {
     return prim.center;

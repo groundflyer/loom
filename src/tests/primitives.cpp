@@ -36,9 +36,9 @@ main(int argc, char* argv[])
     int ret = 0;
 
     using R  = float;
-    using V2 = Vec2a<R>;
-    using V3 = Vec3a<R>;
-    using M4 = Mat4a<R>;
+    using V2 = Vec2<R>;
+    using V3 = Vec3<R>;
+    using M4 = Mat4<R>;
     using Ir = Intersection<R>;
     using Rr = Ray<R>;
 

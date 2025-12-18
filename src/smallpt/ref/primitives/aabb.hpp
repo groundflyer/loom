@@ -14,8 +14,8 @@ namespace loom
 template <std::floating_point T>
 struct AABB
 {
-    Vec3a<T> vmin;
-    Vec3a<T> vmax;
+    Vec3<T> vmin;
+    Vec3<T> vmax;
 
     constexpr AABB() noexcept = default;
 
@@ -47,10 +47,10 @@ struct AABB
     ///
     /// This used in intersect function.
     template <template <typename, std::size_t> typename Container1>
-    constexpr Vec3a<T>
+    constexpr Vec3<T>
     operator[](const Vector<bool, 3, Container1>& idxs) const noexcept
     {
-        Vec3a<T> ret{};
+        Vec3<T> ret{};
         for(std::size_t i = 0; i < 3; ++i) ret[i] = (*this)[bool{idxs[i]}][i];
         return ret;
     }
@@ -70,10 +70,10 @@ constexpr Intersection<T>
 intersect(const Ray<T>& ray, const AABB<T>& prim) noexcept
 {
     const auto& [o, d]             = ray;
-    const Vec3a<T> inv_d           = Vec3a<T>{1} / d;
+    const Vec3<T> inv_d           = Vec3<T>{1} / d;
     const auto     sign            = inv_d < static_cast<T>(0);
-    const Vec3a<T> vmin            = inv_d * (prim[sign] - o);
-    const Vec3a<T> vmax            = inv_d * (prim[!sign] - o);
+    const Vec3<T> vmin            = inv_d * (prim[sign] - o);
+    const Vec3<T> vmax            = inv_d * (prim[!sign] - o);
     const auto& [xmin, ymin, zmin] = vmin;
     const auto& [xmax, ymax, zmax] = vmax;
     const T    tmin1               = std::max(ymin, xmin);
@@ -81,16 +81,16 @@ intersect(const Ray<T>& ray, const AABB<T>& prim) noexcept
     const T    tmin2               = std::max(zmin, tmin1);
     const bool intersected =
         xmin <= ymax && ymin <= xmax && tmin1 <= zmax && zmin <= tmax1;
-    return {intersected && !std::signbit(tmin2), tmin2, Vec2a<T>{}};
+    return {intersected && !std::signbit(tmin2), tmin2, Vec2<T>{}};
 }
 
 /// @brief Compute normal of AABB at @p pos.
 template <std::floating_point T>
-constexpr Vec3a<T>
-normal(const Vec3a<T>& pos, const AABB<T>& prim) noexcept
+constexpr Vec3<T>
+normal(const Vec3<T>& pos, const AABB<T>& prim) noexcept
 {
     const T  nsign[2]{-1, 1};
-    Vec3a<T> vd[2]{};
+    Vec3<T> vd[2]{};
     T        md[2]{};
     for(unsigned i = 0; i < 2; ++i)
     {
@@ -105,21 +105,21 @@ normal(const Vec3a<T>& pos, const AABB<T>& prim) noexcept
 namespace detail
 {
 template <std::floating_point T>
-constexpr std::pair<Vec3a<T>, Vec3a<T>>
+constexpr std::pair<Vec3<T>, Vec3<T>>
 diag(const AABB<T>& prim, const unsigned shift, const bool side) noexcept
 {
     const auto& [vmin, vmax]   = prim;
-    const Vec3a<T>& startpoint = side ? vmin : vmax;
-    const Vec3a<T>  diag       = side ? vmax - vmin : vmin - vmax;
+    const Vec3<T>& startpoint = side ? vmin : vmax;
+    const Vec3<T>  diag       = side ? vmax - vmin : vmin - vmax;
     return std::pair{startpoint,
-                     startpoint + diag * roll(Vec3a<T>(1, 1, 0), shift)};
+                     startpoint + diag * roll(Vec3<T>(1, 1, 0), shift)};
 }
 } // namespace detail
 
 /// @brief Uniformly sample position on AABB surface.
 template <std::floating_point T,
           template <typename, std::size_t> typename SContainer>
-constexpr Vec3a<T>
+constexpr Vec3<T>
 sample(const Vec2<T, SContainer>& s, const AABB<T>& prim) noexcept
 {
     const auto& [s1, s2] = s;
@@ -131,12 +131,12 @@ sample(const Vec2<T, SContainer>& s, const AABB<T>& prim) noexcept
         [](const auto&... args) noexcept { return loom::lerp(args...); },
         a,
         b,
-        roll(Vec3a<T>(resample(s1), resample(s2), static_cast<T>(0)), shift));
+        roll(Vec3<T>(resample(s1), resample(s2), static_cast<T>(0)), shift));
 }
 
 /// @brief Compute AABB centroid.
 template <std::floating_point T>
-constexpr Vec3a<T>
+constexpr Vec3<T>
 centroid(const AABB<T>& prim) noexcept
 {
     const auto& [vmin, vmax] = prim;

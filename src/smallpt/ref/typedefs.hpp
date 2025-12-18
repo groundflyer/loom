@@ -8,43 +8,39 @@
 
 namespace loom
 {
-template <typename T, template <typename, std::size_t> typename Container>
+template <typename T,
+          template <typename, std::size_t> typename Container = std::array>
 using Vec2 = Vector<T, 2, Container>;
 
-template <typename T, template <typename, std::size_t> typename Container>
+template <typename T,
+          template <typename, std::size_t> typename Container = std::array>
 using Vec3 = Vector<T, 3, Container>;
 
-template <typename T, template <typename, std::size_t> typename Container>
+template <typename T,
+          template <typename, std::size_t> typename Container = std::array>
 using Vec4 = Vector<T, 4, Container>;
 
-template <typename T, template <typename, std::size_t> typename Container>
+template <typename T,
+          template <typename, std::size_t> typename Container = std::array>
 using Mat3 = Matrix<T, 3, 3, Container>;
 
-template <typename T, template <typename, std::size_t> typename Container>
+template <typename T,
+          template <typename, std::size_t> typename Container = std::array>
 using Mat4 = Matrix<T, 4, 4, Container>;
 
 template <typename T>
-using Vec2a = Vec2<T, std::array>;
+inline constexpr Mat3<T> m3id = Mat3<T>::identity();
 
 template <typename T>
-using Vec3a = Vec3<T, std::array>;
-
-template <typename T>
-using Vec4a = Vec4<T, std::array>;
-
-template <typename T>
-using Mat3a = Mat3<T, std::array>;
-
-template <typename T>
-using Mat4a = Mat4<T, std::array>;
-
-template <typename T>
-inline constexpr Mat3a<T> m3id = Mat3a<T>::identity();
-
-template <typename T>
-inline constexpr Mat4a<T> m4id = Mat4a<T>::identity();
+inline constexpr Mat4<T> m4id = Mat4<T>::identity();
 
 using Vec2u = Vec2<unsigned, std::array>;
+
+template <template <typename, std::size_t> typename Container = std::array>
+using RGB = Vec3<float, Container>;
+
+template <template <typename, std::size_t> typename Container = std::array>
+using RGBA = Vec4<float, Container>;
 
 template <typename T,
           std::size_t N,

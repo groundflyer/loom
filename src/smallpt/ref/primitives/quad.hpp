@@ -12,8 +12,8 @@ namespace loom
 ///
 /// Vertices set in this order:
 /// v00, v01, v11, v10.
-template <std::floating_point T>
-using Quad = std::array<Vec3a<T>, 4>;
+template <std::floating_point T, template <typename, std::size_t> typename Container = std::array>
+using Quad = std::array<Vec3<T, Container>, 4>;
 
 namespace fn
 {
@@ -24,7 +24,7 @@ template <std::floating_point R>
 constexpr Intersection<R>
 intersect(const Ray<R>& ray, const Quad<R>& prim) noexcept
 {
-    using V3 = Vec3a<R>;
+    using V3 = Vec3<R>;
 
     const auto& [o, d]               = ray;
     const auto& [v00, v01, v11, v10] = prim;
@@ -122,13 +122,13 @@ intersect(const Ray<R>& ray, const Quad<R>& prim) noexcept
         v = beta / (u * (b11 - 1) + 1);
     }
 
-    return {true, t, Vec2a<R>(u, v)};
+    return {true, t, Vec2<R>(u, v)};
 }
 
 /// @brief Compute normal of a quadrilateral.
 template <std::floating_point T,
           template <typename, std::size_t> typename PosContainer>
-constexpr Vec3a<T>
+constexpr Vec3<T>
 normal(const Vec3<T, PosContainer>&, const Quad<T>& prim) noexcept
 {
     const auto e01 = std::get<3>(prim) - std::get<0>(prim);
@@ -139,19 +139,19 @@ normal(const Vec3<T, PosContainer>&, const Quad<T>& prim) noexcept
 /// @brief Sample a point on a quadrilateral surface.
 template <std::floating_point T,
           template <typename, size_t> typename SContainer>
-constexpr Vec3a<T>
+constexpr Vec3<T>
 sample(const Vec2<T, SContainer>& s, const Quad<T>& prim) noexcept
 {
     const auto& [a, c1, b, c2] = prim;
     const auto& [t1, t2]       = s;
     const auto& c              = t1 > static_cast<T>(0.5) ? c1 : c2;
-    return Vec3a<T>(
-        detail::triangle_sample(Vec2a<T>(resample(t1), t2), a, b, c));
+    return Vec3<T>(
+        detail::triangle_sample(Vec2<T>(resample(t1), t2), a, b, c));
 }
 
 /// @brief Compute centroid of a quadrilateral.
 template <std::floating_point T>
-constexpr Vec3a<T>
+constexpr Vec3<T>
 centroid(const Quad<T>& prim) noexcept
 {
     const auto& [a, b, c, d] = prim;
