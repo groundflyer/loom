@@ -79,7 +79,6 @@ run_tests() {
 }
 
 set_cmake_args_from_envs() {
-    CMAKE_ARGS+=(-DUSE_DOUBLE_PRECISION=${USE_DOUBLE_PRECISION:-OFF})
     CMAKE_ARGS+=(-DSIMD_NARROW_AVX_INT=${SIMD_NARROW_AVX_INT:-OFF})
 }
 
