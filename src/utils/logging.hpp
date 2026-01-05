@@ -56,8 +56,19 @@ class Logger
     /// The message is printed only if the verbosity level is less or equal than
     /// Level::DEBUG.
     template <typename... Args>
-    constexpr void
+    void
     debug(fmt::format_string<Args...> fs, Args&&... args) const noexcept
+    {
+        if(lvl <= Level::DEBUG)
+            message<'D'>(stdout,
+                         fmt::fg(fmt::terminal_color::white),
+                         fs,
+                         args...);
+    }
+
+    template <typename... Args>
+    void
+    debug(fmt::runtime_format_string<> fs, Args&&... args) const noexcept
     {
         if(lvl <= Level::DEBUG)
             message<'D'>(stdout,
@@ -86,6 +97,17 @@ class Logger
                          args...);
     }
 
+    template <typename... Args>
+    void
+    info(fmt::runtime_format_string<> fs, Args&&... args) const noexcept
+    {
+        if(lvl <= Level::INFO)
+            message<'I'>(stdout,
+                         fmt::fg(fmt::terminal_color::green),
+                         fs,
+                         args...);
+    }
+
     /// @brief Print a warning to stderr.
     ///
     /// @param fs format string.
@@ -98,6 +120,17 @@ class Logger
     template <typename... Args>
     constexpr void
     warning(fmt::format_string<Args...> fs, Args&&... args) const noexcept
+    {
+        if(lvl <= Level::WARNING)
+            message<'W'>(stderr,
+                         fmt::fg(fmt::terminal_color::yellow),
+                         fs,
+                         args...);
+    }
+
+    template <typename... Args>
+    void
+    warning(fmt::runtime_format_string<> fs, Args&&... args) const noexcept
     {
         if(lvl <= Level::WARNING)
             message<'W'>(stderr,
@@ -126,6 +159,17 @@ class Logger
                          args...);
     }
 
+    template <typename... Args>
+    void
+    error(fmt::runtime_format_string<> fs, Args&&... args) const noexcept
+    {
+        if(lvl <= Level::ERROR)
+            message<'E'>(stderr,
+                         fmt::fg(fmt::terminal_color::red),
+                         fs,
+                         args...);
+    }
+
     /// @brief Report a critical error to stderr.
     ///
     /// @param fs format string.
@@ -138,6 +182,18 @@ class Logger
     template <typename... Args>
     constexpr void
     critical(fmt::format_string<Args...> fs, Args&&... args) const noexcept
+    {
+        if(lvl <= Level::CRITICAL)
+            message<'C'>(stderr,
+                         fmt::emphasis::bold |
+                             fmt::fg(fmt::terminal_color::red),
+                         fs,
+                         args...);
+    }
+
+    template <typename... Args>
+    void
+    critical(fmt::runtime_format_string<> fs, Args&&... args) const noexcept
     {
         if(lvl <= Level::CRITICAL)
             message<'C'>(stderr,
