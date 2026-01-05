@@ -159,5 +159,33 @@ basis_matrix(const Vec3<T, Container>& z) noexcept
     const auto [x, y] = basis(z);
     return transpose(Mat3<T>(x, y, z));
 }
+
+/// @brief Reflect vector against surface normal.
+/// @param v vector to reflect.
+/// @param n surface normal.
+template <std::floating_point T,
+          template <typename, std::size_t> typename C1,
+          template <typename, std::size_t> typename C2>
+constexpr Vec3<T>
+reflect(const Vec3<T, C1>& v, const Vec3<T, C2>& n) noexcept
+{
+    return v - dot(v, n) * n * static_cast<T>(2);
+}
+
+/// @brief Compute refraction vector.
+/// @param d input vector.
+/// @param n surface normal.
+/// @param eta relative index of refraction.
+template <std::floating_point T,
+          template <typename, std::size_t> typename C1,
+          template <typename, std::size_t> typename C2>
+Vec3<T>
+refract(const Vec3<T, C1>& d, const Vec3<T, C2>& n, const T eta) noexcept
+{
+    const T cd   = dot(-n, d);
+    const T eta2 = eta * eta;
+    const T k    = static_cast<T>(1) - eta2 * (static_cast<T>(1) - cd * cd);
+    return d * eta + (eta * cd - std::sqrt(k)) * n;
+}
 } // namespace fn
 } // namespace loom
