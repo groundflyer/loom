@@ -10,6 +10,7 @@
 #include "image.hpp"
 #include "niebloids.hpp"
 #include "perspective_camera.hpp"
+#include "primitives/disk.hpp"
 #include "primitives/quad.hpp"
 #include "primitives/sphere.hpp"
 #include "sampling.hpp"
@@ -71,8 +72,9 @@ class cornell_box
 
     static constexpr Vec3r sphere_pos{0.5, -0.6, 0.2};
     static constexpr real  sphere_radius = 0.4;
-    static constexpr real  lx            = 0.25;
-    static constexpr real  ly            = 0.99;
+    static constexpr real  lx            = 0;
+    static constexpr real  ly            = 0.9999;
+    static constexpr real  lr            = 0.25;
 
     using QuadRef = Quad<const real, std::span>;
     using QuadR   = Quad<real>;
@@ -139,26 +141,8 @@ class cornell_box
             }
         };
 
-        // Material indicies for primitives
-        static constexpr std::array<std::size_t, 13> mat_idxs{
-            // room of 5 primitives
-            1, // white floor
-            2, // red wall
-            3, // green wall
-            1, // white ceiling
-            1, // white wall
-               // objects
-            4, // green sphere
-            5, // light
-               // blue box of 6 primitives
-            6,
-            6,
-            6,
-            6,
-            6,
-            6};
-
         static constexpr Rgb black{0};
+        static constexpr Rgb grey{0.8};
         static constexpr Rgb white{1};
         static constexpr Rgb red{1, 0.1, 0.1};
         static constexpr Rgb green{0.1, 1, 0.1};
@@ -170,8 +154,28 @@ class cornell_box
             {  {red},   {black}}, // 2
             {{green},   {black}}, // 3
             {{green},   {black}}, // 4
-            {{black}, {Rgb(10)}}, // 5
-            { {blue},   {black}}  // 6
+            {{black}, {Rgb(10)}}, // 5 light
+            { {blue},   {black}}, // 6
+            {{grey}, {black}}     // 7
+        };
+
+        // Material indicies for primitives
+        static constexpr std::array<std::size_t, 13> mat_idxs{
+            // room of 5 primitives
+            7, // grey floor
+            2, // red wall
+            3, // green wall
+            7, // grey ceiling
+            7, // grey wall
+               // objects
+            6, // blue box of six primitives
+            6,
+            6,
+            6,
+            6,
+            6,
+            4, // green sphere
+            5  // light
         };
 
       public:
@@ -182,23 +186,26 @@ class cornell_box
         }
     };
 
-    static constexpr auto geometry = std::tuple_cat(
-        std::apply(
-            [](const auto&... pns) noexcept
-            {
-                return std::tuple{make_wall_geo(room_points, pns)...}
-                 ;
-    },
-            room_geo_descr), // room
+    static constexpr auto shadow_set = std::tuple_cat(
         std::apply([](const auto&... pns) noexcept
                    { return std::tuple{make_wall_geo(box_points, pns)...}; },
-                   box_geo_descr),                    // box
-        std::tuple{Sphere(sphere_pos, sphere_radius), // sphere
-                                                      // light
-                   Quad{Vec3r{-lx, ly, -lx},
-                        Vec3r{lx, ly, -lx},
-                        Vec3r{lx, ly, lx},
-                        Vec3r{-lx, ly, lx}}});
+                   box_geo_descr),                      // box
+        std::tuple{Sphere(sphere_pos, sphere_radius)}); // sphere
+
+    static constexpr Disk<real> light{
+        Vec3r{0, 0.9999, 0},
+        Vec3r{0,     -1, 0},
+        0.25
+    };
+
+    static constexpr auto geometry = std::tuple_cat(
+        // room
+        std::apply([](const auto&... pns) noexcept
+                   { return std::tuple{make_wall_geo(room_points, pns)...}; },
+                   room_geo_descr),
+        // objects
+        shadow_set,
+        std::tuple{light});
 
     static constexpr Perspective<real>
     camera(const real fov = radians(static_cast<real>(60))) noexcept
