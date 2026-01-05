@@ -26,23 +26,24 @@ hider_impl(const std::pair<unsigned, Intersection<T>>& prev,
                      current;
 
     if constexpr(sizeof...(Rest) > 0)
-        return hider_impl<idx + 1>(ray, closest, rest...);
+        return hider_impl<idx + 1>(closest, ray, rest...);
     else
         return closest;
 }
 } // namespace detail
 
-namespace fn
+template <std::floating_point T>
+struct Hider
 {
-template <std::floating_point T, typename... Prims>
-std::pair<unsigned, Intersection<T>>
-hider(const Ray<T>& ray, const Prims&... prims) noexcept
-{
-    return ::loom::detail::hider_impl<0>(std::pair{-1u, Intersection<T>{}},
-                                         ray,
-                                         prims...);
-}
-} // namespace fn
+    Ray<T> ray;
 
-MK_NIEBLOID(hider)
+    template <typename... Prims>
+    std::pair<unsigned, Intersection<T>>
+    operator()(const Prims&... prims) const noexcept
+    {
+        return ::loom::detail::hider_impl<0>(std::pair{-1u, Intersection<T>{}},
+                                             ray,
+                                             prims...);
+    }
+};
 } // namespace loom

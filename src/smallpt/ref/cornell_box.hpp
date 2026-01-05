@@ -7,27 +7,39 @@
 
 #pragma once
 
-#include <base/types.hpp>
-#include <cameras/perspective.hpp>
-#include <primitives/primitives.hpp>
-#include <sampling/common.hpp>
+#include "image.hpp"
+#include "niebloids.hpp"
+#include "perspective_camera.hpp"
+#include "primitives/quad.hpp"
+#include "primitives/sphere.hpp"
+#include "sampling.hpp"
+#include "typedefs.hpp"
+
+#include <utils/common.hpp>
+#include <utils/math.hpp>
 
 namespace loom
 {
-class CornellBox
+template <std::floating_point real>
+class cornell_box
 {
+    using Vec2r = Vec2<real>;
+    using Vec3r = Vec3<real>;
+    using Mat4r = Mat4<real>;
+    using Rgb   = RGB<std::array>;
+
     // Box points coordinates
-    static constexpr const std::array<Vec3, 8> room_points{Vec3(-1, -1, 1),  // 0
-                                                           Vec3(-1, -1, -1), // 1
-                                                           Vec3(1, -1, -1),  // 2
-                                                           Vec3(1, -1, 1),   // 3
-                                                           Vec3(-1, 1, 1),   // 4
-                                                           Vec3(-1, 1, -1),  // 5
-                                                           Vec3(1, 1, -1),   // 6
-                                                           Vec3(1, 1, 1)};   // 7
+    static constexpr std::array<Vec3r, 8> room_points{Vec3r(-1, -1, 1),  // 0
+                                                      Vec3r(-1, -1, -1), // 1
+                                                      Vec3r(1, -1, -1),  // 2
+                                                      Vec3r(1, -1, 1),   // 3
+                                                      Vec3r(-1, 1, 1),   // 4
+                                                      Vec3r(-1, 1, -1),  // 5
+                                                      Vec3r(1, 1, -1),   // 6
+                                                      Vec3r(1, 1, 1)};   // 7
 
     // Quad point indicies for room geometry
-    static constexpr const std::tuple room_geo_descr{
+    static constexpr std::tuple room_geo_descr{
         std::index_sequence<0, 3, 2, 1>{}, // floor
         std::index_sequence<0, 1, 5, 4>{}, // left wall
         std::index_sequence<2, 3, 7, 6>{}, // right wall
@@ -36,7 +48,7 @@ class CornellBox
     };
 
     // Quad point indicies for box geometry
-    static constexpr const std::tuple box_geo_descr{
+    static constexpr std::tuple box_geo_descr{
         std::index_sequence<1, 2, 3, 0>{},
         std::index_sequence<4, 5, 1, 0>{},
         std::index_sequence<6, 7, 3, 2>{},
@@ -45,37 +57,36 @@ class CornellBox
         std::index_sequence<0, 4, 7, 3>{},
     };
 
-    static constexpr const Vec3 box_scale{0.25_r, 0.5_r, 0.25_r};
-    static constexpr const Vec3 box_pos{-0.5, get_y(box_scale) - 1_r, -0.25};
-    static constexpr const Mat4 box_tr =
-        rotate(radians(20_r), Vec3{0_r, 1_r, 0_r}) * translate(box_pos) * scale(box_scale);
+    static constexpr Vec3r box_scale{0.25, 0.5, 0.25};
+    static constexpr Vec3r box_pos{-0.5, get_y(box_scale) - 1, -0.25};
+    static constexpr Mat4r box_tr =
+        rotate(radians(static_cast<real>(20)), Vec3r{0, 1, 0}) *
+        translate(box_pos) * scale(box_scale);
 
     // Box point positions.
-    static constexpr std::array<Vec3, 8> box_points = std::apply(
-        [](const auto&... pns) noexcept {
-            return std::array<Vec3, 8>{apply_transform_p(box_tr, pns)...};
-        },
+    static constexpr std::array<Vec3r, 8> box_points = std::apply(
+        [](const auto&... pns) noexcept
+        { return std::array<Vec3r, 8>{apply_transform_p(box_tr, pns)...}; },
         room_points);
 
-    static constexpr const Vec3 sphere_pos{0.5_r, -0.6_r, 0.2_r};
-    static constexpr const real sphere_radius = 0.4_r;
+    static constexpr Vec3r sphere_pos{0.5, -0.6, 0.2};
+    static constexpr real  sphere_radius = 0.4;
+    static constexpr real  lx            = 0.25;
+    static constexpr real  ly            = 0.99;
 
-    using QuadRef = Quad_<StaticSpan>;
+    using QuadRef = Quad<const real, std::span>;
+    using QuadR   = Quad<real>;
 
     template <std::size_t N, std::size_t... Pns>
-    static constexpr QuadRef
-    make_wall_geo(const std::array<Vec3, N>& points, std::index_sequence<Pns...>) noexcept
+    static constexpr QuadR
+    make_wall_geo(const std::array<Vec3r, N>& points,
+                  std::index_sequence<Pns...>) noexcept
     {
-        return QuadRef{ref(std::get<Pns>(points))...};
+        return QuadR{std::get<Pns>(points)...};
     }
 
   public:
-    CornellBox()                  = delete;
-    CornellBox(const CornellBox&) = delete;
-    CornellBox(CornellBox&&)      = delete;
-    CornellBox&
-    operator=(const CornellBox&) = delete;
-    ~CornellBox()                = delete;
+    FORBID_ALL(cornell_box);
 
     class MatGetter
     {
@@ -83,41 +94,45 @@ class CornellBox
         {
             struct Eval
             {
-                const Vec3& n;
-                const RGB&  color;
+                const Vec3r& n;
+                const Rgb&   color;
 
-                RGB
-                operator()(const Vec3& wi, const Vec3& /* wo */) const noexcept
+                Rgb
+                operator()(const Vec3r& wi,
+                           const Vec3r& /* wo */) const noexcept
                 {
-                    return color * std::max(dot(n, wi), 0_r);
+                    return color * std::max(dot(n, wi), static_cast<real>(0));
                 }
             };
 
             struct Sample
             {
-                const Vec3& n;
+                const Vec3r& n;
 
-                Vec3
-                operator()(const Vec3& /* wo */, const Vec2& u) const noexcept
+                Vec3r
+                operator()(const Vec3r& /* wo */, const Vec2r& u) const noexcept
                 {
                     return normalize(sample_hemisphere(n, u));
                 }
             };
 
-            const RGB color{0};
+            const Rgb color{0};
 
             constexpr std::pair<Eval, Sample>
-            operator()(const Vec3& n) const noexcept
+            operator()(const Vec3r& n) const noexcept
             {
-                return {{n, color}, {n}};
+                return {
+                    {n, color},
+                    {n}
+                };
             }
         };
 
         struct Emission
         {
-            RGB color{0};
+            Rgb color{0};
 
-            constexpr RGB
+            constexpr Rgb
             operator()() const noexcept
             {
                 return color;
@@ -125,36 +140,39 @@ class CornellBox
         };
 
         // Material indicies for primitives
-        static constexpr const std::array<std::size_t, 13> mat_idxs{   // room of 5 primitives
-                                                                    1, // white floor
-                                                                    2, // red wall
-                                                                    3, // green wall
-                                                                    1, // white ceiling
-                                                                    1, // white wall
-                                                                       // objects
-                                                                    4, // green sphere
-                                                                    5, // light
-                                                                       // blue box of 6 primitives
-                                                                    6,
-                                                                    6,
-                                                                    6,
-                                                                    6,
-                                                                    6,
-                                                                    6};
+        static constexpr std::array<std::size_t, 13> mat_idxs{
+            // room of 5 primitives
+            1, // white floor
+            2, // red wall
+            3, // green wall
+            1, // white ceiling
+            1, // white wall
+               // objects
+            4, // green sphere
+            5, // light
+               // blue box of 6 primitives
+            6,
+            6,
+            6,
+            6,
+            6,
+            6};
 
-        static constexpr const RGB black{0_r};
-        static constexpr const RGB white{1_r};
-        static constexpr const RGB red{1, 0.1_r, 0.1_r};
-        static constexpr const RGB green{0.1_r, 1, 0.1_r};
-        static constexpr const RGB blue{0.1_r, 0.1_r, 1_r};
+        static constexpr Rgb black{0};
+        static constexpr Rgb white{1};
+        static constexpr Rgb red{1, 0.1, 0.1};
+        static constexpr Rgb green{0.1, 1, 0.1};
+        static constexpr Rgb blue{0.1, 0.1, 1};
         using Material = std::pair<BSDF, Emission>;
-        static constexpr const Material materials[]{{{black}, {black}},     // 0
-                                                    {{white}, {black}},     // 1
-                                                    {{red}, {black}},       // 2
-                                                    {{green}, {black}},     // 3
-                                                    {{green}, {black}},     // 4
-                                                    {{black}, {RGB(10_r)}}, // 5
-                                                    {{blue}, {black}}};     // 6
+        static constexpr Material materials[]{
+            {{black},   {black}}, // 0
+            {{white},   {black}}, // 1
+            {  {red},   {black}}, // 2
+            {{green},   {black}}, // 3
+            {{green},   {black}}, // 4
+            {{black}, {Rgb(10)}}, // 5
+            { {blue},   {black}}  // 6
+        };
 
       public:
         constexpr const Material&
@@ -164,44 +182,29 @@ class CornellBox
         }
     };
 
-    static constexpr auto
-    geometry() noexcept
+    static constexpr auto geometry = std::tuple_cat(
+        std::apply(
+            [](const auto&... pns) noexcept
+            {
+                return std::tuple{make_wall_geo(room_points, pns)...}
+                 ;
+    },
+            room_geo_descr), // room
+        std::apply([](const auto&... pns) noexcept
+                   { return std::tuple{make_wall_geo(box_points, pns)...}; },
+                   box_geo_descr),                    // box
+        std::tuple{Sphere(sphere_pos, sphere_radius), // sphere
+                                                      // light
+                   Quad{Vec3r{-lx, ly, -lx},
+                        Vec3r{lx, ly, -lx},
+                        Vec3r{lx, ly, lx},
+                        Vec3r{-lx, ly, lx}}});
+
+    static constexpr Perspective<real>
+    camera(const real fov = radians(static_cast<real>(60))) noexcept
     {
-        const constexpr real lx = 0.25_r;
-        const constexpr real ly = 0.99_r;
-
-        constexpr auto room = std::apply(
-            [](const auto&... pns) noexcept {
-                return std::tuple{make_wall_geo(room_points, pns)...};
-            },
-            room_geo_descr);
-
-        constexpr auto box = std::apply(
-            [](const auto&... pns) noexcept {
-                return std::tuple{make_wall_geo(box_points, pns)...};
-            },
-            box_geo_descr);
-
-        return std::tuple_cat(
-            room,
-            std::tuple{
-                Sphere(sphere_pos, sphere_radius),
-                // light
-                Quad{Vec3{-lx, ly, -lx}, Vec3{lx, ly, -lx}, Vec3{lx, ly, lx}, Vec3{-lx, ly, lx}}},
-            box);
-    }
-
-    static constexpr perspective::shoot
-    camera(const real fov = radians(60_r)) noexcept
-    {
-        return perspective::shoot(convert_fov(fov),
-                                  look_at(Vec3(0, 0, 4), Vec3(0, 0, 0), Vec3(0, 1, 0)));
-    }
-
-    static constexpr MatGetter
-    mat_getter() noexcept
-    {
-        return MatGetter{};
+        return {convert_fov(fov),
+                look_at(Vec3r(0, 0, 4), Vec3r(0, 0, 0), Vec3r(0, 1, 0))};
     }
 };
 } // namespace loom

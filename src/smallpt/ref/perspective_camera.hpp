@@ -3,43 +3,45 @@
 
 #pragma once
 
-#include <ray_traversal/ray_traversal.hpp>
+#include "ray.hpp"
 
 namespace loom
 {
+template <std::floating_point real>
 constexpr real
 convert_fov(const real fov) noexcept
 {
-    return tan(fov * 0.5_r);
+    return std::tan(fov * real(0.5));
 }
 
+template <std::floating_point real>
 constexpr real
 invert_fov(const real f) noexcept
 {
-    return atan(f) * 2_r;
+    return std::atan(f) * 2;
 }
 
-struct perspective
+template <std::floating_point real>
+struct Perspective
 {
-    struct shoot
+    Vec2<real> tan_fov_half{1};
+    Mat4<real> transform{m4id<real>};
+
+    template <template <typename, std::size_t> typename Container>
+    constexpr Perspective(const real                   cfovy,
+                          const Mat4<real, Container>& _transform) noexcept :
+        tan_fov_half(cfovy), transform(_transform)
     {
-        Vec2 tan_fov_half{1_r};
-        Mat4 transform{Mat4::identity()};
+    }
 
-        constexpr shoot() noexcept {}
-
-        template <template <typename, size_t> typename Container>
-        constexpr shoot(const real cfovy, const Mat4_<Container>& _transform) noexcept :
-            tan_fov_half(cfovy), transform(_transform)
-        {
-        }
-
-        template <template <typename, size_t> typename Container>
-        constexpr Ray
-        operator()(const Vec2_<Container>& ndc) const noexcept
-        {
-            return apply_transform(transform, Ray(Vec3(0_r), make_normal(ndc * tan_fov_half, 1_r)));
-        }
-    };
+    template <template <typename, std::size_t> typename Container>
+    constexpr Ray<real>
+    operator()(const Vec2<real, Container>& ndc) const noexcept
+    {
+        return apply_transform(
+            transform,
+            Ray<real>(Vec3<real>(0),
+                      normalize(Vec3<real>(ndc * tan_fov_half, 1))));
+    }
 };
 } // namespace loom

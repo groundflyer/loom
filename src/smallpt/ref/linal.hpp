@@ -1176,12 +1176,20 @@ det_impl(const Matrix<T, M, M, Container>& m,
 /// @brief Get vector view.
 template <typename T,
           std::size_t N,
-          template <typename, std::size_t>
-          typename Container>
+          template <typename, std::size_t> typename Container>
 constexpr Vector<const T, N, std::span>
 ref(const Vector<T, N, Container>& v) noexcept
 {
     return Vector(std::span<const T, N>(v.cbegin(), N));
+}
+
+template <typename T,
+          std::size_t N,
+          template <typename, std::size_t> typename Container>
+constexpr Vector<T, N, std::span>
+ref(Vector<T, N, Container>& v) noexcept
+{
+    return Vector(std::span<T, N>(v.cbegin(), N));
 }
 
 /// @brief Get matrix view.
@@ -1350,7 +1358,11 @@ dot(const Vector<T, N, Container1>& a,
     if constexpr(std::is_floating_point_v<T>)
     {
         T ret{};
-        for(std::size_t i = 0; i < N; ++i) ret = std::fma(a[i], b[i], ret);
+        for(std::size_t i = 0; i < N; ++i)
+            if(std::is_constant_evaluated())
+                ret = a[i] * b[i] + ret;
+            else
+                ret = std::fma(a[i], b[i], ret);
         return ret;
     }
     else
@@ -1375,7 +1387,10 @@ dot(const Matrix<T, M, N, MContainer>& lhs,
 
     for(std::size_t i = 0; i < M; ++i)
         for(std::size_t j = 0; j < N; ++j)
-            ret[i] = std::fma(lhs.at(i, j), rhs[j], ret[i]);
+            if(std::is_constant_evaluated())
+                ret[i] = lhs.at(i, j) * rhs[j] + ret[i];
+            else
+                ret[i] = std::fma(lhs.at(i, j), rhs[j], ret[i]);
 
     return ret;
 }
@@ -1397,8 +1412,11 @@ dot(const Matrix<T, M1, N1, Container1>& lhs,
     for(std::size_t i = 0; i < M1; ++i)
         for(std::size_t j = 0; j < N2; ++j)
             for(std::size_t r = 0; r < N1; ++r)
-                ret.at(i, j) =
-                    std::fma(lhs.at(i, r), rhs.at(r, j), ret.at(i, j));
+                if(std::is_constant_evaluated())
+                    ret.at(i, j) = lhs.at(i, r) * rhs.at(r, j) + ret.at(i, j);
+                else
+                    ret.at(i, j) =
+                        std::fma(lhs.at(i, r), rhs.at(r, j), ret.at(i, j));
 
     return ret;
 }
@@ -1436,7 +1454,11 @@ length2(const Vector<T, N, Container>& a) noexcept
     if constexpr(std::is_floating_point_v<T>)
     {
         T ret{};
-        for(std::size_t i = 0; i < N; ++i) ret = std::fma(a[i], a[i], ret);
+        for(std::size_t i = 0; i < N; ++i)
+            if(std::is_constant_evaluated())
+                ret = a[i] * a[i] + ret;
+            else
+                ret = std::fma(a[i], a[i], ret);
         return ret;
     }
     else

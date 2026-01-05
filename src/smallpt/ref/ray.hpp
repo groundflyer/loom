@@ -64,8 +64,7 @@ Intersection(const bool, const T, const Vec2<T, Container>&) -> Intersection<T>;
 namespace fn
 {
 template <std::floating_point T,
-          template <typename, std::size_t> typename MatContainer,
-          template <typename, std::size_t> typename RayContainer>
+          template <typename, std::size_t> typename MatContainer>
 constexpr auto
 apply_transform(const Mat4<T, MatContainer>& t, const Ray<T>& ray) noexcept
 {

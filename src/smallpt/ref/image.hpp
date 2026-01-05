@@ -34,6 +34,12 @@ class ScanlineIterator : public std::contiguous_iterator_tag
     {
     }
 
+    unsigned
+    pos() const noexcept
+    {
+        return m_pos;
+    }
+
     value_type
     operator*() const noexcept
     {
@@ -45,6 +51,12 @@ class ScanlineIterator : public std::contiguous_iterator_tag
     operator==(std::default_sentinel_t) const noexcept
     {
         return m_pos == m_size;
+    }
+
+    bool
+    operator==(const ScanlineIterator& rhs) const noexcept
+    {
+        return m_pos == rhs.m_pos;
     }
 
     std::strong_ordering
@@ -124,7 +136,7 @@ class ScanlineIterator : public std::contiguous_iterator_tag
     value_type
     operator[](difference_type n) const noexcept
     {
-        CHECK_INDEX(n, count());
+        CHECK_INDEX(n, static_cast<int>(count()));
         unsigned pos = m_pos + n;
         return value_type{pos % m_width, pos / m_width};
     }
@@ -168,25 +180,25 @@ class ScanlineImage
             std::conditional_t<Const, const ScanlineImage*, ScanlineImage*>;
         ImagePtr img = nullptr;
 
-        Vec2u
-        pos() const noexcept
-        {
-            return *statoc_cast<const ScanlineIterator&>(this);
-        }
-
       public:
         using value_type = Vector<T, NC, std::span>;
 
+        Vec2u
+        pos() const noexcept
+        {
+            return *static_cast<const ScanlineIterator&>(*this);
+        }
+
         _iterator() = delete;
         _iterator(ImageRef _img, const unsigned pos = 0) noexcept :
-            img(&_img), ScanlineIterator(_img.res(), pos)
+            ScanlineIterator(_img.res(), pos), img(&_img)
         {
         }
 
         decltype(auto)
         operator*() const noexcept
         {
-            CHECK_INDEX(iter.pos, img->size());
+            CHECK_INDEX(ScanlineIterator::pos(), img->size());
             return (*img)[pos()];
         }
     };

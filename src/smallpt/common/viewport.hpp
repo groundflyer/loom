@@ -4,41 +4,66 @@
 
 #pragma once
 
-#include <base/types.hpp>
-#include <image/image.hpp>
+#include <utils/common.hpp>
 
 #include <GLFW/glfw3.h>
 
+#include <stdexcept>
 #include <type_traits>
+#include <utility>
 
 namespace loom
 {
-namespace detail
+struct GLException
 {
-static inline int _gl_initialized = false;
+    GLenum c;
+
+    const char*
+    what() const noexcept
+    {
+        switch(c)
+        {
+        case(GL_NO_ERROR): return "no error";
+        case(GL_INVALID_ENUM): return "invalid enum";
+        case(GL_INVALID_VALUE): return "invalid value";
+        case(GL_INVALID_OPERATION): return "invalid operation";
+        case(GL_INVALID_FRAMEBUFFER_OPERATION):
+            return "invalid framebuffer operation";
+        case(GL_OUT_OF_MEMORY): return "out of memory";
+        case(GL_STACK_UNDERFLOW): return "stack underflow";
+        case(GL_STACK_OVERFLOW): return "stack overflow";
+        }
+        return "";
+    }
+};
 
 template <typename ResizeReaction, typename KeyReaction, typename MouseReaction>
-class _Viewport
+class ImageViewport
 {
-    static const constexpr char* vertex_shader_src = "#version 330 core\n"
-                                                     "layout (location = 0) in vec3 inP;"
-                                                     "layout (location = 1) in vec2 inUV;"
-                                                     "out vec2 UV;"
-                                                     "void main(){"
-                                                     "gl_Position = vec4(inP, 1.0);"
-                                                     "UV = inUV;}";
+    static inline int gl_initialized = false;
 
-    static const constexpr char* fragment_shader_src = "#version 330 core\n"
-                                                       "out vec4 Cf;"
-                                                       "in vec2 UV;"
-                                                       "uniform sampler2D img;"
-                                                       "void main(){Cf = texture(img, UV);}";
+    static const constexpr char* vertex_shader_src =
+        "#version 330 core\n"
+        "layout (location = 0) in vec3 inP;"
+        "layout (location = 1) in vec2 inUV;"
+        "out vec2 UV;"
+        "void main(){"
+        "gl_Position = vec4(inP, 1.0);"
+        "UV = inUV;}";
 
-    static const constexpr float vertex_data[] = {
+    static const constexpr char* fragment_shader_src =
+        "#version 330 core\n"
+        "out vec4 Cf;"
+        "in vec2 UV;"
+        "uniform sampler2D img;"
+        "void main(){Cf = texture(img, UV);}";
+
+    static constexpr float vertex_data[] = {
         // positions    // texture coordinates
-        -1.f, 1.f, 0, 0, 0, 1.f, 1.f, 0, 1.f, 0, 1.f, -1.f, 0, 1.f, 1.f, -1.f, -1.f, 0, 0, 1.f};
+        -1.f, 1.f,  0, 0,   0,   1.f,  1.f,  0, 1.f, 0,
+        1.f,  -1.f, 0, 1.f, 1.f, -1.f, -1.f, 0, 0,   1.f};
 
-    static const constexpr unsigned indices[] = {
+    static constexpr unsigned indices[] = {
         0,
         1,
         2, // first triangle
@@ -53,7 +78,8 @@ class _Viewport
     static inline unsigned    VAO            = -1u;
     static inline unsigned    EBO            = -1u;
     static inline unsigned    texture        = -1u;
-    static inline Vec2i       res{640, 480};
+    static inline int         resx           = 640;
+    static inline int         resy           = 480;
 
     static inline ResizeReaction resize_reaction;
     static inline KeyReaction    key_reaction;
@@ -62,58 +88,48 @@ class _Viewport
     static void
     resize_callback(GLFWwindow*, int width, int height) noexcept
     {
-        res = Vec2i(width, height);
+        resx = width;
+        resy = height;
         glViewport(0, 0, width, height);
-        if constexpr(std::is_void_v<std::invoke_result_t<ResizeReaction, Vec2i>>)
-            resize_reaction(res);
-        else
-            load_img(resize_reaction(res));
+        resize_reaction(width, height);
     }
 
     static void
-    key_callback(GLFWwindow*, int key, int /*scancode*/, int action, int mods) noexcept
+    key_callback(GLFWwindow*,
+                 int key,
+                 int /*scancode*/,
+                 int action,
+                 int mods) noexcept
     {
-        if constexpr(std::is_void_v<std::invoke_result_t<KeyReaction, int, int, int>>)
-            key_reaction(key, action, mods);
-        else
-            reload_img(key_reaction(key, action, mods));
+        key_reaction(key, action, mods);
     }
 
     static void
-    mouse_button_callback(GLFWwindow*, int button, int action, int mods) noexcept
+    mouse_button_callback(GLFWwindow*,
+                          int button,
+                          int action,
+                          int mods) noexcept
     {
-        if constexpr(std::is_void_v<std::invoke_result_t<MouseReaction, int, bool, int>>)
-            mouse_reaction(button, action == GLFW_PRESS, mods);
-        else
-            reload_img(mouse_reaction(button, action == GLFW_PRESS, mods));
+        mouse_reaction(button, action == GLFW_PRESS, mods);
     }
 
     static void
     cursor_position_callback(GLFWwindow*, double xpos, double ypos) noexcept
     {
-        if constexpr(std::is_void_v<std::invoke_result_t<MouseReaction, Vec2>>)
-            mouse_reaction(Vec2{xpos, ypos});
-        else
-            reload_img(mouse_reaction(Vec2{xpos, ypos}));
+        mouse_reaction(xpos, ypos);
     }
 
-    _Viewport()                 = delete;
-    _Viewport(const _Viewport&) = delete;
-    _Viewport(_Viewport&&)      = delete;
-    _Viewport&
-    operator=(const _Viewport&) = delete;
-    ~_Viewport()                = delete;
-
     static void
-    init(const Vec2u&     _res,
-         ResizeReaction&& _resize_reaction,
-         KeyReaction&&    _key_reaction,
-         MouseReaction&&  _mouse_reaction)
+    init(int            _resx,
+         int            _resy,
+         ResizeReaction _resize_reaction,
+         KeyReaction    _key_reaction,
+         MouseReaction  _mouse_reaction)
     {
+        resx = _resx;
+        resy = _resy;
 
-        const auto [iwidth, iheight] = _res;
-        window                       = glfwCreateWindow(
-            static_cast<int>(iwidth), static_cast<int>(iheight), "Lucid", nullptr, nullptr);
+        window = glfwCreateWindow(resx, resy, "Loom", nullptr, nullptr);
 
         if(!window)
         {
@@ -131,9 +147,8 @@ class _Viewport
         glfwSetMouseButtonCallback(window, mouse_button_callback);
         glfwSetCursorPosCallback(window, cursor_position_callback);
 
-        auto& [width, height] = res;
-        glfwGetFramebufferSize(window, &width, &height);
-        glViewport(0, 0, width, height);
+        glfwGetFramebufferSize(window, &resx, &resy);
+        glViewport(0, 0, resx, resy);
 
         int    shader_status;
         GLuint vertex_shader = glCreateShader(GL_VERTEX_SHADER);
@@ -179,17 +194,27 @@ class _Viewport
         glGenVertexArrays(1, &VAO);
         glGenBuffers(1, &VBO);
         glGenBuffers(1, &EBO);
-        // glGenBuffers(1, &PBO);
 
         glBindVertexArray(VAO);
 
         glBindBuffer(GL_ARRAY_BUFFER, VBO);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(vertex_data), vertex_data, GL_STATIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER,
+                     sizeof(vertex_data),
+                     vertex_data,
+                     GL_STATIC_DRAW);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER,
+                     sizeof(indices),
+                     indices,
+                     GL_STATIC_DRAW);
 
         // position
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), static_cast<void*>(0));
+        glVertexAttribPointer(0,
+                              3,
+                              GL_FLOAT,
+                              GL_FALSE,
+                              5 * sizeof(float),
+                              static_cast<void*>(0));
         glEnableVertexAttribArray(0);
 
         // uv
@@ -212,36 +237,55 @@ class _Viewport
         glUseProgram(shader_program);
     }
 
-    static const Vec2i&
+    static std::pair<int, int>
     get_res() noexcept
     {
-        return res;
+        return {resx, resy};
     }
 
-    template <typename Format>
+    template <typename T>
     static void
-    load_img(const loom::ScanlineImage<Format, 4>& img) noexcept
+    load_img(const T* img_data, int width, int height)
     {
         const constexpr auto type_flag =
-            std::is_same_v<Format, unsigned char> ?
+            std::is_same_v<T, unsigned char> ?
                 GL_UNSIGNED_BYTE :
-                (std::is_same_v<Format, float> ? GL_FLOAT : GL_UNSIGNED_INT);
-        const auto [width, height] = img.res();
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, type_flag, img.data());
-    }
+                (std::is_same_v<T, float> ? GL_FLOAT : GL_UNSIGNED_INT);
 
-    template <typename Format>
-    static void
-    reload_img(const loom::ScanlineImage<Format, 4>& img)
-    {
-        const constexpr auto type_flag =
-            std::is_same_v<Format, unsigned char> ?
-                GL_UNSIGNED_BYTE :
-                (std::is_same_v<Format, float> ? GL_FLOAT : GL_UNSIGNED_INT);
-        const auto [width, height] = img.res();
-        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, GL_RGBA, type_flag, img.data());
+        glTexImage2D(GL_TEXTURE_2D,
+                     0,
+                     GL_RGBA,
+                     width,
+                     height,
+                     0,
+                     GL_RGBA,
+                     type_flag,
+                     img_data);
+
         auto glerror = glGetError();
-        if(glerror) { throw glerror; }
+        if(glerror) { throw GLException{glerror}; }
+    }
+
+    template <typename T>
+    static void
+    reload_img(const T* img_data, int width, int height)
+    {
+        const constexpr auto type_flag =
+            std::is_same_v<T, unsigned char> ?
+                GL_UNSIGNED_BYTE :
+                (std::is_same_v<T, float> ? GL_FLOAT : GL_UNSIGNED_INT);
+
+        glTexSubImage2D(GL_TEXTURE_2D,
+                        0,
+                        0,
+                        0,
+                        width,
+                        height,
+                        GL_RGBA,
+                        type_flag,
+                        img_data);
+        auto glerror = glGetError();
+        if(glerror) { throw GLException{glerror}; }
     }
 
     static bool
@@ -268,7 +312,7 @@ class _Viewport
     check_errors()
     {
         const GLenum glerror = glGetError();
-        if(glerror) { throw glerror; }
+        if(glerror) { throw GLException{glerror}; }
     }
 
     static void
@@ -285,6 +329,8 @@ class _Viewport
     }
 
   public:
+    FORBID_ALL(ImageViewport);
+
     struct Handler
     {
         Handler() noexcept      = delete;
@@ -295,70 +341,93 @@ class _Viewport
         Handler&
         operator=(Handler&&) = delete;
 
-        Handler(const Vec2u& res, ResizeReaction&& ra, KeyReaction&& ka, MouseReaction&& ma)
+        Handler(int            resx,
+                int            resy,
+                ResizeReaction ra,
+                KeyReaction    ka,
+                MouseReaction  ma)
         {
-            _Viewport::init(res, std::move(ra), std::move(ka), std::move(ma));
+            ImageViewport::init(resx, resy, ra, ka, ma);
         }
-        ~Handler() noexcept { _Viewport::cleanup(); }
+        ~Handler() { ImageViewport::cleanup(); }
 
-        const Vec2i&
+        std::pair<int, int>
         get_res() const noexcept
         {
-            return _Viewport::get_res();
+            return ImageViewport::get_res();
         }
 
-        template <typename Format>
+        template <typename T>
         void
-        load_img(const loom::ScanlineImage<Format, 4>& img) const noexcept
+        load_img(const T* img_data, int resx, int resy) const
         {
-            _Viewport::load_img(img);
+            ImageViewport::load_img(img_data, resx, resy);
         }
 
-        template <typename Format>
+        template <typename T>
         void
-        reload_img(const loom::ScanlineImage<Format, 4>& img) const
+        reload_img(const T* img_data, int resx, int resy) const
         {
-            _Viewport::reload_img(img);
+            ImageViewport::reload_img(img_data, resx, resy);
         }
 
         bool
         active() const noexcept
         {
-            return _Viewport::active();
+            return ImageViewport::active();
         }
 
         void
         draw() const noexcept
         {
-            _Viewport::draw();
+            ImageViewport::draw();
         }
 
         void
         check_errors() const
         {
-            _Viewport::check_errors();
+            ImageViewport::check_errors();
         }
     };
-};
-} // namespace detail
 
-template <typename... Actions>
-auto
-make_viewport(const Vec2u& res, Actions&&... actions)
+    template <typename RR, typename KR, typename MR>
+    friend ImageViewport<RR, KR, MR>::Handler
+    make_viewport(int _resx,
+                  int _resy,
+                  RR  rr,
+                  KR  kr,
+                  MR  mr,
+                  const char*,
+                  const char*);
+};
+
+template <typename ResizeReaction, typename KeyReaction, typename MouseReaction>
+ImageViewport<ResizeReaction, KeyReaction, MouseReaction>::Handler
+make_viewport(int            _resx,
+              int            _resy,
+              ResizeReaction rr,
+              KeyReaction    kr,
+              MouseReaction  mr,
+              const char*    x11_class_name    = "Loom",
+              const char*    x11_instance_name = "Viewport")
 {
-    if(!detail::_gl_initialized)
+    if(!ImageViewport<ResizeReaction, KeyReaction, MouseReaction>::
+           gl_initialized)
     {
-        detail::_gl_initialized = glfwInit();
-        if(!detail::_gl_initialized) throw detail::_gl_initialized;
+        ImageViewport<ResizeReaction, KeyReaction, MouseReaction>::
+            gl_initialized = glfwInit();
+        if(!ImageViewport<ResizeReaction, KeyReaction, MouseReaction>::
+               gl_initialized)
+            throw std::runtime_error("Failed to initialize GLFW");
 
         glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
         glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
         glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-        glfwWindowHintString(GLFW_X11_CLASS_NAME, "Lucid");
-        glfwWindowHintString(GLFW_X11_INSTANCE_NAME, "Lucid");
+        glfwWindowHintString(GLFW_X11_CLASS_NAME, x11_class_name);
+        glfwWindowHintString(GLFW_X11_INSTANCE_NAME, x11_instance_name);
     }
 
-    return
-        typename detail::_Viewport<std::decay_t<Actions>...>::Handler(res, std::move(actions)...);
+    return typename ImageViewport<ResizeReaction, KeyReaction, MouseReaction>::
+        Handler(_resx, _resy, rr, kr, mr);
 }
 } // namespace loom
