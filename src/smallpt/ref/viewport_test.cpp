@@ -9,6 +9,7 @@
 #include <utils/functional.hpp>
 #include <utils/logging.hpp>
 #include <utils/timer.hpp>
+#include <utils/tuple.hpp>
 
 #include <fmt/ranges.h>
 
@@ -17,14 +18,38 @@
 using namespace loom;
 using namespace std::literals;
 
-using Image     = ScanlineImage<float, 4>;
-using Scene     = cornell_box<float>;
-using MatGetter = Scene::MatGetter;
-using Camera    = Perspective<float>;
-using Vec2f     = Vec2<float>;
-using Sample    = std::pair<Vec2<float>, RGB<std::array>>;
+using Image   = ScanlineImage<float, 4>;
+using Scene   = cornell_box<float>;
+using Gallery = Scene::Gallery;
+using Camera  = Perspective<float>;
+using Vec2f   = Vec2<float>;
+using Vec3f   = Vec3<float>;
+using Sample  = std::pair<Vec2<float>, RGB<std::array>>;
 
-constexpr inline MatGetter mat_getter{};
+struct MatVisitor
+{
+    Vec3f n;
+    Vec3f wi;
+
+    RGBA<>
+    operator()(const Gallery::Emission& e) const noexcept
+    {
+        return RGBA{e.color};
+    }
+
+    RGBA<>
+    operator()(const Gallery::Lambert& l) const noexcept
+    {
+        return RGBA{l.color} * dot(n, wi);
+    }
+
+    RGBA<>
+    operator()(const Gallery::Glass& g) const noexcept
+    {
+        const auto p = g(n);
+        return RGBA{p.first(wi, Vec3f{})};
+    }
+};
 
 void
 render(Image& img, const Camera& cam) noexcept
@@ -37,9 +62,18 @@ render(Image& img, const Camera& cam) noexcept
         const Ray<float>   ray = cam(ndc);
         const Hider<float> hider{ray};
         const auto [prim_id, isect] = std::apply(hider, Scene::geometry);
-        const auto [bsdf, emit_f]   = mat_getter(prim_id);
+        const Vec3f p               = ray.origin + ray.dir * isect.t;
 
-        *it = RGBA{bsdf.color + emit_f.color};
+        const Vec3f n = visit_at(
+            prim_id,
+            [&p](const auto& prim) noexcept { return normal(p, prim); },
+            Scene::geometry,
+            constant(Vec3f{0, 1, 0}));
+
+        *it = visit_at(Gallery::mat_idxs[prim_id],
+                       MatVisitor{n, -ray.dir},
+                       Gallery::materials,
+                       constant(RGBA{1, 0, 1}));
     }
 }
 

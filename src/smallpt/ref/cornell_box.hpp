@@ -21,6 +21,44 @@
 
 namespace loom
 {
+
+/// @brief Reflect vector against surface normal.
+/// @param v vector to reflect.
+/// @param n surface normal.
+template <std::floating_point T,
+          template <typename, std::size_t> typename C1,
+          template <typename, std::size_t> typename C2>
+constexpr Vec3<T>
+reflect(const Vec3<T, C1>& v, const Vec3<T, C2>& n) noexcept
+{
+    return v - dot(v, n) * n * static_cast<T>(2);
+}
+
+/// @brief Compute refraction vector.
+/// @param d input vector.
+/// @param n surface normal.
+/// @param eta relative index of refraction.
+template <std::floating_point T,
+          template <typename, std::size_t> typename C1,
+          template <typename, std::size_t> typename C2>
+Vec3<T>
+refract(const Vec3<T, C1>& d, const Vec3<T, C2>& n, const T eta) noexcept
+{
+    const T cd   = dot(-n, d);
+    const T eta2 = eta * eta;
+    const T k    = static_cast<T>(1) - eta2 * (static_cast<T>(1) - cd * cd);
+    return d * eta + (eta * cd - std::sqrt(k)) * n;
+}
+
+template <std::floating_point T>
+T
+schlick(const T cd, const T eta) noexcept
+{
+    T r0 = (1 - eta) / (1 + eta);
+    r0 *= r0;
+    return r0 + (1 - r0) * static_pow<5>(1 - cd);
+}
+
 template <std::floating_point real>
 class cornell_box
 {
@@ -90,14 +128,14 @@ class cornell_box
   public:
     FORBID_ALL(cornell_box);
 
-    class MatGetter
+    struct Gallery
     {
-        struct BSDF
+        struct Lambert
         {
             struct Eval
             {
-                const Vec3r& n;
-                const Rgb&   color;
+                Vec3r n;
+                Rgb   color;
 
                 Rgb
                 operator()(const Vec3r& wi,
@@ -109,10 +147,10 @@ class cornell_box
 
             struct Sample
             {
-                const Vec3r& n;
+                Vec3r n;
 
                 Vec3r
-                operator()(const Vec3r& /* wo */, const Vec2r& u) const noexcept
+                operator()(const Vec3r& /* wi */, const Vec2r& u) const noexcept
                 {
                     return normalize(sample_hemisphere(n, u));
                 }
@@ -141,49 +179,68 @@ class cornell_box
             }
         };
 
-        static constexpr Rgb black{0};
-        static constexpr Rgb grey{0.8};
-        static constexpr Rgb white{1};
-        static constexpr Rgb red{1, 0.1, 0.1};
-        static constexpr Rgb green{0.1, 1, 0.1};
-        static constexpr Rgb blue{0.1, 0.1, 1};
-        using Material = std::pair<BSDF, Emission>;
-        static constexpr Material materials[]{
-            {{black},   {black}}, // 0
-            {{white},   {black}}, // 1
-            {  {red},   {black}}, // 2
-            {{green},   {black}}, // 3
-            {{green},   {black}}, // 4
-            {{black}, {Rgb(10)}}, // 5 light
-            { {blue},   {black}}, // 6
-            {{grey}, {black}}     // 7
+        struct Glass
+        {
+            static constexpr real ior = 1.55;
+
+            struct Eval
+            {
+                Vec3r n;
+
+                Rgb
+                operator()(const Vec3r& wi,
+                           const Vec3r& /* wo */) const noexcept
+                {
+                    const real cd = dot(n, wi);
+                    return Rgb{schlick(cd, cd > 0 ? 1 / ior : ior)};
+                }
+            };
+
+            struct Sample
+            {
+                Vec3r n;
+
+                Vec3r
+                operator()(const Vec3r& wi, const Vec2r& /* u */) const noexcept
+                {
+                    return reflect(wi, n);
+                }
+            };
+
+            constexpr std::pair<Eval, Sample>
+            operator()(const Vec3r& n) const noexcept
+            {
+                return {{n}, {n}};
+            }
+        };
+
+        static constexpr std::tuple materials{
+            Lambert{Rgb{0.8}},           // 0
+            Lambert{Rgb{0.8, 0.1, 0.1}}, // 1
+            Lambert{Rgb{0.1, 0.8, 0.1}}, // 2
+            Lambert{Rgb{0.1, 0.1, 0.8}}, // 3
+            Glass{},                     // 4
+            Emission{Rgb{10}}            // 5
         };
 
         // Material indicies for primitives
-        static constexpr std::array<std::size_t, 13> mat_idxs{
+        static constexpr unsigned mat_idxs[13]{
             // room of 5 primitives
-            7, // grey floor
-            2, // red wall
-            3, // green wall
-            7, // grey ceiling
-            7, // grey wall
+            0, // grey floor
+            1, // red wall
+            2, // green wall
+            0, // grey ceiling
+            0, // grey wall
                // objects
-            6, // blue box of six primitives
-            6,
-            6,
-            6,
-            6,
-            6,
-            4, // green sphere
+            3, // blue box of six primitives
+            3,
+            3,
+            3,
+            3,
+            3,
+            4, // glass sphere
             5  // light
         };
-
-      public:
-        constexpr const Material&
-        operator()(const std::size_t pid) const noexcept
-        {
-            return materials[mat_idxs[pid]];
-        }
     };
 
     static constexpr auto shadow_set = std::tuple_cat(
