@@ -132,51 +132,12 @@ class cornell_box
     {
         struct Lambert
         {
-            struct Eval
-            {
-                Vec3r n;
-                Rgb   color;
-
-                Rgb
-                operator()(const Vec3r& wi,
-                           const Vec3r& /* wo */) const noexcept
-                {
-                    return color * std::max(dot(n, wi), static_cast<real>(0));
-                }
-            };
-
-            struct Sample
-            {
-                Vec3r n;
-
-                Vec3r
-                operator()(const Vec3r& /* wi */, const Vec2r& u) const noexcept
-                {
-                    return normalize(sample_hemisphere(n, u));
-                }
-            };
-
             const Rgb color{0};
-
-            constexpr std::pair<Eval, Sample>
-            operator()(const Vec3r& n) const noexcept
-            {
-                return {
-                    {n, color},
-                    {n}
-                };
-            }
         };
 
         struct Emission
         {
             Rgb color{0};
-
-            constexpr Rgb
-            operator()() const noexcept
-            {
-                return color;
-            }
         };
 
         struct Glass
@@ -220,7 +181,7 @@ class cornell_box
             Lambert{Rgb{0.1, 0.8, 0.1}}, // 2
             Lambert{Rgb{0.1, 0.1, 0.8}}, // 3
             Glass{},                     // 4
-            Emission{Rgb{10}}            // 5
+            Emission{Rgb{1}}             // 5
         };
 
         // Material indicies for primitives
@@ -252,8 +213,10 @@ class cornell_box
     static constexpr Disk<real> light{
         Vec3r{0, 0.9999, 0},
         Vec3r{0,     -1, 0},
-        0.25
+        0.35
     };
+
+    static constexpr real light_intensity = 1.25;
 
     static constexpr auto geometry = std::tuple_cat(
         // room

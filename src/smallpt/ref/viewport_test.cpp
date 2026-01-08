@@ -14,6 +14,7 @@
 #include <fmt/ranges.h>
 
 #include <algorithm>
+#include <random>
 
 using namespace loom;
 using namespace std::literals;
@@ -28,8 +29,29 @@ using Sample  = std::pair<Vec2<float>, RGB<std::array>>;
 
 struct MatVisitor
 {
-    Vec3f n;
-    Vec3f wi;
+    Vec3f                       p;
+    Vec3f                       n;
+    Vec3f                       wi;
+    std::default_random_engine& g;
+
+    std::pair<float, float>
+    sample_light() const noexcept
+    {
+        const Vec3f lp  = sample(sample_u<float>(g), Scene::light);
+        const Vec3f ld  = normalize(lp - p);
+        const float dnl = dot(ld, n);
+        if(dnl > 0)
+        {
+            const auto [_, isect] = std::apply(
+                Hider<float>{
+                    Ray<float>{p + n * 0.001f, ld}
+            },
+                Scene::shadow_set);
+            return {static_cast<float>(!isect.intersect), dnl};
+        }
+        else
+            return {0, dnl};
+    }
 
     RGBA<>
     operator()(const Gallery::Emission& e) const noexcept
@@ -38,9 +60,10 @@ struct MatVisitor
     }
 
     RGBA<>
-    operator()(const Gallery::Lambert& l) const noexcept
+    operator()(const Gallery::Lambert& mat) const noexcept
     {
-        return RGBA{l.color} * dot(n, wi);
+        const auto [s, dnl] = sample_light();
+        return RGBA{mat.color * dnl * s * Scene::light_intensity};
     }
 
     RGBA<>
@@ -52,7 +75,7 @@ struct MatVisitor
 };
 
 void
-render(Image& img, const Camera& cam) noexcept
+render(Image& img, const Camera& cam, std::default_random_engine& g) noexcept
 {
     const Vec2f          res{img.res()};
     ToSampleSpace<float> sample_space(img.res());
@@ -62,16 +85,18 @@ render(Image& img, const Camera& cam) noexcept
         const Ray<float>   ray = cam(ndc);
         const Hider<float> hider{ray};
         const auto [prim_id, isect] = std::apply(hider, Scene::geometry);
-        const Vec3f p               = ray.origin + ray.dir * isect.t;
 
+        const Vec3f p = ray.origin + ray.dir * isect.t;
         const Vec3f n = visit_at(
             prim_id,
             [&p](const auto& prim) noexcept { return normal(p, prim); },
             Scene::geometry,
             constant(Vec3f{0, 1, 0}));
+        const float dni = dot(n, -ray.dir);
+        const Vec3f nfN = dni <= 0 ? -n : n;
 
         *it = visit_at(Gallery::mat_idxs[prim_id],
-                       MatVisitor{n, -ray.dir},
+                       MatVisitor{p, nfN, -ray.dir, g},
                        Gallery::materials,
                        constant(RGBA{1, 0, 1}));
     }
@@ -177,7 +202,9 @@ main()
 
     Image img(Vec2u{resx, resy});
     logger.debug("image ready");
-    const Camera cam = Scene::camera();
+    const Camera               cam = Scene::camera();
+    std::random_device         r;
+    std::default_random_engine g(r());
     // CameraCapture cc{cam};
     // FilmCapture   fc{&film};
     // DummyAction   da{&film.img};
@@ -187,7 +214,7 @@ main()
         auto viewport = make_viewport(resx, resy, sink, sink, sink);
 
         logger.debug("viewport is ready. Rendering...");
-        render(img, cam);
+        render(img, cam, g);
         logger.debug("render is ready. Loading...");
         viewport.load_img(img.data(), resx, resy);
         logger.debug("loaded image");

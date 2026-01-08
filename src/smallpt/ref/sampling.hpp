@@ -6,6 +6,10 @@
 
 #include "typedefs.hpp"
 
+#include <utils/tuple.hpp>
+
+#include <random>
+
 namespace loom
 {
 template <typename Generator, std::floating_point T>
@@ -57,4 +61,13 @@ class ToSampleSpace
         return Vec2<T>{sx, sy};
     }
 };
+
+/// @brief Generate vector of two random numbers [0, 1).
+template <std::floating_point T, typename G>
+Vec2<T>
+sample_u(G& g) noexcept
+{
+    return Vec2<T>{generate<2>(
+        [&g]() noexcept { return std::generate_canonical<float, 10>(g); })};
+}
 } // namespace loom
