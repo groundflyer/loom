@@ -21,7 +21,6 @@
 
 namespace loom
 {
-
 /// @brief Reflect vector against surface normal.
 /// @param v vector to reflect.
 /// @param n surface normal.
@@ -29,9 +28,9 @@ template <std::floating_point T,
           template <typename, std::size_t> typename C1,
           template <typename, std::size_t> typename C2>
 constexpr Vec3<T>
-reflect(const Vec3<T, C1>& v, const Vec3<T, C2>& n) noexcept
+reflect(const Vec3<T, C1>& v, const Vec3<T, C2>& n, const T dotvn) noexcept
 {
-    return v - dot(v, n) * n * static_cast<T>(2);
+    return v - n * dotvn * static_cast<T>(2);
 }
 
 /// @brief Compute refraction vector.
@@ -42,12 +41,14 @@ template <std::floating_point T,
           template <typename, std::size_t> typename C1,
           template <typename, std::size_t> typename C2>
 Vec3<T>
-refract(const Vec3<T, C1>& d, const Vec3<T, C2>& n, const T eta) noexcept
+refract(const Vec3<T, C1>& d,
+        const Vec3<T, C2>& n,
+        const T            eta,
+        const T            dotvn) noexcept
 {
-    const T cd   = dot(-n, d);
     const T eta2 = eta * eta;
-    const T k    = static_cast<T>(1) - eta2 * (static_cast<T>(1) - cd * cd);
-    return d * eta + (eta * cd - std::sqrt(k)) * n;
+    const T k = static_cast<T>(1) - eta2 * (static_cast<T>(1) - dotvn * dotvn);
+    return d * eta + (eta * dotvn - std::sqrt(k)) * n;
 }
 
 template <std::floating_point T>
@@ -142,36 +143,20 @@ class cornell_box
 
         struct Glass
         {
-            static constexpr real ior = 1.55;
+            static constexpr real ior = 1.52;
 
-            struct Eval
+            real
+            reflectance(const real dotvn) const noexcept
             {
-                Vec3r n;
+                return schlick(dotvn, dotvn > 0 ? 1 / ior : ior);
+            }
 
-                Rgb
-                operator()(const Vec3r& wi,
-                           const Vec3r& /* wo */) const noexcept
-                {
-                    const real cd = dot(n, wi);
-                    return Rgb{schlick(cd, cd > 0 ? 1 / ior : ior)};
-                }
-            };
-
-            struct Sample
+            Vec3r
+            sample(const Vec3r& n,
+                   const Vec3r& wi,
+                   const real   dotvn) const noexcept
             {
-                Vec3r n;
-
-                Vec3r
-                operator()(const Vec3r& wi, const Vec2r& /* u */) const noexcept
-                {
-                    return reflect(wi, n);
-                }
-            };
-
-            constexpr std::pair<Eval, Sample>
-            operator()(const Vec3r& n) const noexcept
-            {
-                return {{n}, {n}};
+                return reflect(-wi, n, -dotvn);
             }
         };
 
@@ -216,7 +201,7 @@ class cornell_box
         0.35
     };
 
-    static constexpr real light_intensity = 1.25;
+    static constexpr real light_intensity = 1.5;
 
     static constexpr auto geometry = std::tuple_cat(
         // room

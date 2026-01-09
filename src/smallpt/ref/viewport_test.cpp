@@ -27,7 +27,14 @@ using Vec2f   = Vec2<float>;
 using Vec3f   = Vec3<float>;
 using Sample  = std::pair<Vec2<float>, RGB<std::array>>;
 
-struct MatVisitor
+Ray<float>
+bias_ray(const Vec3f& p, const Vec3f& d) noexcept
+{
+    constexpr float bias = 0.001;
+    return {p + d * bias, d};
+}
+
+struct Shading
 {
     Vec3f                       p;
     Vec3f                       n;
@@ -42,15 +49,32 @@ struct MatVisitor
         const float dnl = dot(ld, n);
         if(dnl > 0)
         {
-            const auto [_, isect] = std::apply(
-                Hider<float>{
-                    Ray<float>{p + n * 0.001f, ld}
-            },
-                Scene::shadow_set);
+            const auto [_, isect] =
+                std::apply(Hider{bias_ray(p, ld)}, Scene::shadow_set);
             return {static_cast<float>(!isect.intersect), dnl};
         }
         else
             return {0, dnl};
+    }
+
+    static RGBA<>
+    radiance(const Ray<float>& ray, std::default_random_engine& g) noexcept
+    {
+        const auto [prim_id, isect] = std::apply(Hider{ray}, Scene::geometry);
+
+        if(!isect) return {};
+
+        const Vec3f p = ray.origin + ray.dir * isect.t;
+        const Vec3f n = visit_at(
+            prim_id,
+            [&p](const auto& prim) noexcept { return normal(p, prim); },
+            Scene::geometry,
+            constant(Vec3f{0, 1, 0}));
+
+        return visit_at(Gallery::mat_idxs[prim_id],
+                        Shading{p, n, -ray.dir, g},
+                        Gallery::materials,
+                        constant(RGBA{1, 0, 1}));
     }
 
     RGBA<>
@@ -67,10 +91,11 @@ struct MatVisitor
     }
 
     RGBA<>
-    operator()(const Gallery::Glass& g) const noexcept
+    operator()(const Gallery::Glass& mat) const noexcept
     {
-        const auto p = g(n);
-        return RGBA{p.first(wi, Vec3f{})};
+        const float dvn = dot(n, wi);
+        const Vec3f d   = mat.sample(n, wi, dvn);
+        return radiance(bias_ray(p, d), g) * mat.reflectance(dvn);
     }
 };
 
@@ -80,26 +105,7 @@ render(Image& img, const Camera& cam, std::default_random_engine& g) noexcept
     const Vec2f          res{img.res()};
     ToSampleSpace<float> sample_space(img.res());
     for(auto it = img.begin(); it != img.end(); ++it)
-    {
-        const Vec2f        ndc = sample_space(it.pos());
-        const Ray<float>   ray = cam(ndc);
-        const Hider<float> hider{ray};
-        const auto [prim_id, isect] = std::apply(hider, Scene::geometry);
-
-        const Vec3f p = ray.origin + ray.dir * isect.t;
-        const Vec3f n = visit_at(
-            prim_id,
-            [&p](const auto& prim) noexcept { return normal(p, prim); },
-            Scene::geometry,
-            constant(Vec3f{0, 1, 0}));
-        const float dni = dot(n, -ray.dir);
-        const Vec3f nfN = dni <= 0 ? -n : n;
-
-        *it = visit_at(Gallery::mat_idxs[prim_id],
-                       MatVisitor{p, nfN, -ray.dir, g},
-                       Gallery::materials,
-                       constant(RGBA{1, 0, 1}));
-    }
+        *it = Shading::radiance(cam(sample_space(it.pos())), g);
 }
 
 #if 0
