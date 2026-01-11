@@ -36,9 +36,12 @@ bias_ray(const Vec3f& p, const Vec3f& d) noexcept
 
 struct Shading
 {
+    static constexpr unsigned max_depth = 4;
+
+    unsigned                    depth;
     Vec3f                       p;
     Vec3f                       n;
-    Vec3f                       wi;
+    Vec3f                       i;
     std::default_random_engine& g;
 
     std::pair<float, float>
@@ -58,8 +61,12 @@ struct Shading
     }
 
     static RGBA<>
-    radiance(const Ray<float>& ray, std::default_random_engine& g) noexcept
+    radiance(const Ray<float>&           ray,
+             std::default_random_engine& g,
+             unsigned                    depth = 0) noexcept
     {
+        if(depth > max_depth) return {};
+
         const auto [prim_id, isect] = std::apply(Hider{ray}, Scene::geometry);
 
         if(!isect) return {};
@@ -72,7 +79,7 @@ struct Shading
             constant(Vec3f{0, 1, 0}));
 
         return visit_at(Gallery::mat_idxs[prim_id],
-                        Shading{p, n, -ray.dir, g},
+                        Shading{depth, p, n, ray.dir, g},
                         Gallery::materials,
                         constant(RGBA{1, 0, 1}));
     }
@@ -93,9 +100,44 @@ struct Shading
     RGBA<>
     operator()(const Gallery::Glass& mat) const noexcept
     {
-        const float dvn = dot(n, wi);
-        const Vec3f d   = mat.sample(n, wi, dvn);
-        return radiance(bias_ray(p, d), g) * mat.reflectance(dvn);
+        const Vec3f wi        = -i;
+        const float cos_theta = dot(n, wi);
+        const bool  enter     = cos_theta > 0;
+        const float eta       = mat.compute_eta(enter);
+        const float sin_theta = eta * std::sqrt(1 - cos_theta * cos_theta);
+        const float f         = mat.reflectance(cos_theta);
+
+        if(sin_theta >= 1) // total internal reflection
+            return radiance(bias_ray(p, mat.reflect(-n, i, cos_theta)),
+                            g,
+                            depth + 1);
+
+        auto reflection = [&]() noexcept
+        {
+            return radiance(bias_ray(p, mat.reflect(n, i, cos_theta)),
+                            g,
+                            depth + 1) *
+                   f;
+        };
+        auto refraction = [&]() noexcept
+        {
+            return radiance(bias_ray(p,
+                                     mat.refract(n,
+                                                 i,
+                                                 cos_theta,
+                                                 mat.compute_eta(enter),
+                                                 1 - sin_theta)),
+                            g,
+                            depth + 1) *
+                   (1 - f);
+        };
+
+        // if(f < 0.001f) // refraction only
+        //     return refraction();
+        // else if(f > 0.999f) // reflection only
+        //     return reflection();
+        // else
+        return reflection() + refraction();
     }
 };
 

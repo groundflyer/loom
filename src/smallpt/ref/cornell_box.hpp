@@ -21,36 +21,6 @@
 
 namespace loom
 {
-/// @brief Reflect vector against surface normal.
-/// @param v vector to reflect.
-/// @param n surface normal.
-template <std::floating_point T,
-          template <typename, std::size_t> typename C1,
-          template <typename, std::size_t> typename C2>
-constexpr Vec3<T>
-reflect(const Vec3<T, C1>& v, const Vec3<T, C2>& n, const T dotvn) noexcept
-{
-    return v - n * dotvn * static_cast<T>(2);
-}
-
-/// @brief Compute refraction vector.
-/// @param d input vector.
-/// @param n surface normal.
-/// @param eta relative index of refraction.
-template <std::floating_point T,
-          template <typename, std::size_t> typename C1,
-          template <typename, std::size_t> typename C2>
-Vec3<T>
-refract(const Vec3<T, C1>& d,
-        const Vec3<T, C2>& n,
-        const T            eta,
-        const T            dotvn) noexcept
-{
-    const T eta2 = eta * eta;
-    const T k = static_cast<T>(1) - eta2 * (static_cast<T>(1) - dotvn * dotvn);
-    return d * eta + (eta * dotvn - std::sqrt(k)) * n;
-}
-
 template <std::floating_point T>
 T
 schlick(const T cd, const T eta) noexcept
@@ -143,20 +113,36 @@ class cornell_box
 
         struct Glass
         {
-            static constexpr real ior = 1.52;
+            static constexpr real ior = 1.55;
 
             real
-            reflectance(const real dotvn) const noexcept
+            compute_eta(const bool enter) const noexcept
             {
-                return schlick(dotvn, dotvn > 0 ? 1 / ior : ior);
+                return enter ? 1 / ior : ior;
+            }
+
+            real
+            reflectance(const real cos_theta) const noexcept
+            {
+                return schlick(std::abs(cos_theta), compute_eta(cos_theta));
             }
 
             Vec3r
-            sample(const Vec3r& n,
-                   const Vec3r& wi,
-                   const real   dotvn) const noexcept
+            reflect(const Vec3r& n,
+                    const Vec3r& i,
+                    real         cos_theta) const noexcept
             {
-                return reflect(-wi, n, -dotvn);
+                return i + n * cos_theta * static_cast<real>(2);
+            }
+
+            Vec3r
+            refract(const Vec3r& n,
+                    const Vec3r& i,
+                    const real   cos_theta,
+                    const real   eta,
+                    const real   k) const noexcept
+            {
+                return i * eta - n * (eta * cos_theta - std::sqrt(k));
             }
         };
 
@@ -170,7 +156,7 @@ class cornell_box
         };
 
         // Material indicies for primitives
-        static constexpr unsigned mat_idxs[13]{
+        static constexpr unsigned mat_idxs[]{
             // room of 5 primitives
             0, // grey floor
             1, // red wall
@@ -184,7 +170,7 @@ class cornell_box
             3,
             3,
             3,
-            4, // glass sphere
+            4, // sphere
             5  // light
         };
     };
@@ -192,8 +178,8 @@ class cornell_box
     static constexpr auto shadow_set = std::tuple_cat(
         std::apply([](const auto&... pns) noexcept
                    { return std::tuple{make_wall_geo(box_points, pns)...}; },
-                   box_geo_descr),                      // box
-        std::tuple{Sphere(sphere_pos, sphere_radius)}); // sphere
+                   box_geo_descr), // box
+        std::tuple{Sphere(sphere_pos, sphere_radius)});
 
     static constexpr Disk<real> light{
         Vec3r{0, 0.9999, 0},
