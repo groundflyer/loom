@@ -6,6 +6,7 @@
 #include "sampling.hpp"
 
 #include <smallpt/common/viewport.hpp>
+#include <utils/argparse.hpp>
 #include <utils/functional.hpp>
 #include <utils/logging.hpp>
 #include <utils/timer.hpp>
@@ -61,7 +62,7 @@ struct Shading
             return {0, dnl};
     }
 
-    static RGBA<>
+    static RGB<>
     radiance(const Ray<real>&            ray,
              std::default_random_engine& g,
              unsigned                    depth = 0) noexcept
@@ -82,24 +83,25 @@ struct Shading
         return visit_at(Gallery::mat_idxs[prim_id],
                         Shading{depth, p, n, ray.dir, g},
                         Gallery::materials,
-                        constant(RGBA{1, 0, 1}));
+                        constant(RGB{1, 0, 1}));
     }
 
-    RGBA<>
+    RGB<>
     operator()(const Gallery::Emission& e) const noexcept
     {
-        return RGBA{e.color};
+        return e.color;
     }
 
-    RGBA<>
+    RGB<>
     operator()(const Gallery::Lambert& mat) const noexcept
     {
-        const auto [s, dnl] = sample_light();
-        return RGBA{mat.color *
-                    static_cast<float>(dnl * s * Scene::light_intensity)};
+        return mat.color *
+               radiance(bias_ray(p, sample_hemisphere(n, sample_u<real>(g))),
+                        g,
+                        depth + 1);
     }
 
-    RGBA<>
+    RGB<>
     operator()(const Gallery::Glass& mat) const noexcept
     {
         const Vec3r wi        = -i;
@@ -138,12 +140,31 @@ struct Shading
 };
 
 void
-render(Image& img, const Camera& cam, std::default_random_engine& g) noexcept
+render(Image&                      img,
+       const Camera&               cam,
+       std::default_random_engine& g,
+       const unsigned              ns) noexcept
 {
+    const real pw = static_cast<real>(1) / img.res()[0]; // pixel width
+    const real sw = pw / ns;                             // sample width
+
     const Vec2r         res{img.res()};
     ToSampleSpace<real> sample_space(img.res());
     for(auto it = img.begin(); it != img.end(); ++it)
-        *it = Shading::radiance(cam(sample_space(it.pos())), g);
+    {
+        const Vec2r pp = sample_space(it.pos()); // pixel position
+        RGB         r{};
+        for(unsigned sy = 0; sy < ns; ++sy)
+            for(unsigned sx = 0; sx < ns; ++sx)
+            {
+                const Vec2r sp = jitter_sample_pos(
+                    g,
+                    sw,
+                    (pp - pw * static_cast<real>(0.5)) + Vec2r{sx, sy} * sw);
+                r += Shading::radiance(cam(sp), g);
+            }
+        *it = RGBA{r / static_cast<float>(ns * ns), 1};
+    }
 }
 
 #if 0
@@ -236,8 +257,15 @@ struct DummyAction
 #endif
 
 int
-main()
+main(int argc, char* argv[])
 {
+    auto parse_results =
+        argparse::parse(std::tuple{argparse::option<'s', "samples">(
+                            "Number of horizontal pixel samples",
+                            "N",
+                            4u,
+                            read_number<unsigned, true>)},
+                        {argc, argv});
     Logger logger(Logger::DEBUG);
     logger.debug("Let's go");
 
@@ -257,8 +285,9 @@ main()
         logger.debug("making viewport");
         auto viewport = make_viewport(resx, resy, sink, sink, sink);
 
-        logger.debug("viewport is ready. Rendering...");
-        render(img, cam, g);
+        const unsigned ps = parse_results.template get_opt<'s'>();
+        logger.info(fmt::runtime("Rendering with {0}x{0} pixel samples"), ps);
+        render(img, cam, g, ps);
         logger.debug("render is ready. Loading...");
         viewport.load_img(img.data(), resx, resy);
         logger.debug("loaded image");
@@ -277,6 +306,11 @@ main()
     catch(const GLException& ex)
     {
         logger.critical(fmt::runtime("OpenGL error: {}"), ex.what());
+        return 1;
+    }
+    catch(const ReadException& ex)
+    {
+        logger.critical(fmt::runtime("Failed to parse number {}"), ex.sv);
         return 1;
     }
 

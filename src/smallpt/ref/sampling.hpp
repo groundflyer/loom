@@ -12,12 +12,20 @@
 
 namespace loom
 {
+/// @brief Generate vector of two random numbers [0, 1).
+template <std::floating_point T, typename G>
+Vec2<T>
+sample_u(G& g) noexcept
+{
+    return Vec2<T>{generate<2>([&g]() noexcept
+                               { return std::generate_canonical<T, 10>(g); })};
+}
+
 template <typename Generator, std::floating_point T>
 Vec2<T>
-sample_pixel(Generator& g, const T _pixel_width, const Vec2<T>& pos) noexcept
+jitter_sample_pos(Generator& g, const T width, const Vec2<T>& pos) noexcept
 {
-    return (pos - _pixel_width * static_cast<T>(0.5)) +
-           Vec2<T>(generate<2>(g)) * _pixel_width;
+    return (pos - width * static_cast<T>(0.5)) + sample_u<T>(g) * width;
 }
 
 template <std::floating_point T>
@@ -61,13 +69,4 @@ class ToSampleSpace
         return Vec2<T>{sx, sy};
     }
 };
-
-/// @brief Generate vector of two random numbers [0, 1).
-template <std::floating_point T, typename G>
-Vec2<T>
-sample_u(G& g) noexcept
-{
-    return Vec2<T>{generate<2>(
-        [&g]() noexcept { return std::generate_canonical<float, 10>(g); })};
-}
 } // namespace loom

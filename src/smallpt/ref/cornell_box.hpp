@@ -135,7 +135,7 @@ class cornell_box
             Lambert{Rgb{0.1, 0.8, 0.1}}, // 2
             Lambert{Rgb{0.1, 0.1, 0.8}}, // 3
             Glass{},                     // 4
-            Emission{Rgb{1}}             // 5
+            Emission{Rgb{10}}            // 5
         };
 
         // Material indicies for primitives
