@@ -19,18 +19,19 @@
 using namespace loom;
 using namespace std::literals;
 
+using real    = double;
 using Image   = ScanlineImage<float, 4>;
-using Scene   = cornell_box<float>;
+using Scene   = cornell_box<real>;
 using Gallery = Scene::Gallery;
-using Camera  = Perspective<float>;
-using Vec2f   = Vec2<float>;
-using Vec3f   = Vec3<float>;
-using Sample  = std::pair<Vec2<float>, RGB<std::array>>;
+using Camera  = Perspective<real>;
+using Vec2r   = Vec2<real>;
+using Vec3r   = Vec3<real>;
+using Sample  = std::pair<Vec2r, RGB<std::array>>;
 
-Ray<float>
-bias_ray(const Vec3f& p, const Vec3f& d) noexcept
+Ray<real>
+bias_ray(const Vec3r& p, const Vec3r& d) noexcept
 {
-    constexpr float bias = 0.001;
+    constexpr real bias = 0.001;
     return {p + d * bias, d};
 }
 
@@ -39,29 +40,29 @@ struct Shading
     static constexpr unsigned max_depth = 4;
 
     unsigned                    depth;
-    Vec3f                       p;
-    Vec3f                       n;
-    Vec3f                       i;
+    Vec3r                       p;
+    Vec3r                       n;
+    Vec3r                       i;
     std::default_random_engine& g;
 
-    std::pair<float, float>
+    std::pair<real, real>
     sample_light() const noexcept
     {
-        const Vec3f lp  = sample(sample_u<float>(g), Scene::light);
-        const Vec3f ld  = normalize(lp - p);
-        const float dnl = dot(ld, n);
+        const Vec3r lp  = sample(sample_u<real>(g), Scene::light);
+        const Vec3r ld  = normalize(lp - p);
+        const real  dnl = dot(ld, n);
         if(dnl > 0)
         {
             const auto [_, isect] =
                 std::apply(Hider{bias_ray(p, ld)}, Scene::shadow_set);
-            return {static_cast<float>(!isect.intersect), dnl};
+            return {static_cast<real>(!isect.intersect), dnl};
         }
         else
             return {0, dnl};
     }
 
     static RGBA<>
-    radiance(const Ray<float>&           ray,
+    radiance(const Ray<real>&            ray,
              std::default_random_engine& g,
              unsigned                    depth = 0) noexcept
     {
@@ -71,12 +72,12 @@ struct Shading
 
         if(!isect) return {};
 
-        const Vec3f p = ray.origin + ray.dir * isect.t;
-        const Vec3f n = visit_at(
+        const Vec3r p = ray.origin + ray.dir * isect.t;
+        const Vec3r n = visit_at(
             prim_id,
             [&p](const auto& prim) noexcept { return normal(p, prim); },
             Scene::geometry,
-            constant(Vec3f{0, 1, 0}));
+            constant(Vec3r{0, 1, 0}));
 
         return visit_at(Gallery::mat_idxs[prim_id],
                         Shading{depth, p, n, ray.dir, g},
@@ -94,20 +95,21 @@ struct Shading
     operator()(const Gallery::Lambert& mat) const noexcept
     {
         const auto [s, dnl] = sample_light();
-        return RGBA{mat.color * dnl * s * Scene::light_intensity};
+        return RGBA{mat.color *
+                    static_cast<float>(dnl * s * Scene::light_intensity)};
     }
 
     RGBA<>
     operator()(const Gallery::Glass& mat) const noexcept
     {
-        const Vec3f wi        = -i;
-        const float cos_theta = dot(n, wi);
+        const Vec3r wi        = -i;
+        const real  cos_theta = dot(n, wi);
         const bool  into      = cos_theta > 0;
-        const Vec3f nfn       = into ? n : -n;
-        const float eta       = mat.compute_eta(into);
-        const float f         = mat.reflectance(cos_theta);
-        const float ddn       = dot(i, nfn);
-        const float cos2t     = 1 - eta * eta * (1 - ddn * ddn);
+        const Vec3r nfn       = into ? n : -n;
+        const real  eta       = mat.compute_eta(into);
+        const real  f         = mat.reflectance(cos_theta);
+        const real  ddn       = dot(i, nfn);
+        const real  cos2t     = 1 - eta * eta * (1 - ddn * ddn);
 
         auto reflection = [&]() noexcept
         {
@@ -130,15 +132,16 @@ struct Shading
                 depth + 1);
         };
 
-        return reflection() * f + refraction() * (1 - f);
+        return reflection() * static_cast<float>(f) +
+               refraction() * static_cast<float>(1 - f);
     }
 };
 
 void
 render(Image& img, const Camera& cam, std::default_random_engine& g) noexcept
 {
-    const Vec2f          res{img.res()};
-    ToSampleSpace<float> sample_space(img.res());
+    const Vec2r         res{img.res()};
+    ToSampleSpace<real> sample_space(img.res());
     for(auto it = img.begin(); it != img.end(); ++it)
         *it = Shading::radiance(cam(sample_space(it.pos())), g);
 }
