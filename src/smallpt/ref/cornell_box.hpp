@@ -79,13 +79,6 @@ class cornell_box
         { return std::array<Vec3r, 8>{apply_transform_p(box_tr, pns)...}; },
         room_points);
 
-    static constexpr Vec3r sphere_pos{0.5, -0.6, 0.2};
-    static constexpr real  sphere_radius = 0.4;
-    static constexpr real  lx            = 0;
-    static constexpr real  ly            = 0.9999;
-    static constexpr real  lr            = 0.25;
-
-    using QuadRef = Quad<const real, std::span>;
     using QuadR   = Quad<real>;
 
     template <std::size_t N, std::size_t... Pns>
@@ -113,7 +106,7 @@ class cornell_box
 
         struct Glass
         {
-            static constexpr real ior = 1.55;
+            static constexpr real ior = 1.5;
 
             real
             compute_eta(const bool enter) const noexcept
@@ -133,16 +126,6 @@ class cornell_box
                     real         cos_theta) const noexcept
             {
                 return i + n * cos_theta * static_cast<real>(2);
-            }
-
-            Vec3r
-            refract(const Vec3r& n,
-                    const Vec3r& i,
-                    const real   cos_theta,
-                    const real   eta,
-                    const real   k) const noexcept
-            {
-                return i * eta - n * (eta * cos_theta - std::sqrt(k));
             }
         };
 
@@ -171,15 +154,19 @@ class cornell_box
             3,
             3,
             4, // sphere
-            5  // light
+            5 // light
         };
     };
 
     static constexpr auto shadow_set = std::tuple_cat(
-        std::apply([](const auto&... pns) noexcept
-                   { return std::tuple{make_wall_geo(box_points, pns)...}; },
-                   box_geo_descr), // box
-        std::tuple{Sphere(sphere_pos, sphere_radius)});
+        std::apply(
+            [](const auto&... pns) noexcept
+            {
+                return std::tuple{make_wall_geo(box_points, pns)...}
+                 ;
+    },
+            box_geo_descr), // box
+        std::tuple{Sphere<real>{Vec3r{0.5, -0.7, 0.4}, 0.3}});
 
     static constexpr Disk<real> light{
         Vec3r{0, 0.9999, 0},
@@ -187,7 +174,7 @@ class cornell_box
         0.35
     };
 
-    static constexpr real light_intensity = 1.5;
+    static constexpr real light_intensity = 1;
 
     static constexpr auto geometry = std::tuple_cat(
         // room
@@ -198,7 +185,7 @@ class cornell_box
         shadow_set,
         std::tuple{light});
 
-    static constexpr Perspective<real>
+    static Perspective<real>
     camera(const real fov = radians(static_cast<real>(60))) noexcept
     {
         return {convert_fov(fov),

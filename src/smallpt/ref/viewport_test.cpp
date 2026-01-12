@@ -102,42 +102,35 @@ struct Shading
     {
         const Vec3f wi        = -i;
         const float cos_theta = dot(n, wi);
-        const bool  enter     = cos_theta > 0;
-        const float eta       = mat.compute_eta(enter);
-        const float sin_theta = eta * std::sqrt(1 - cos_theta * cos_theta);
+        const bool  into      = cos_theta > 0;
+        const Vec3f nfn       = into ? n : -n;
+        const float eta       = mat.compute_eta(into);
         const float f         = mat.reflectance(cos_theta);
-
-        if(sin_theta >= 1) // total internal reflection
-            return radiance(bias_ray(p, mat.reflect(-n, i, cos_theta)),
-                            g,
-                            depth + 1);
+        const float ddn       = dot(i, nfn);
+        const float cos2t     = 1 - eta * eta * (1 - ddn * ddn);
 
         auto reflection = [&]() noexcept
         {
-            return radiance(bias_ray(p, mat.reflect(n, i, cos_theta)),
+            return radiance(bias_ray(p, mat.reflect(nfn, i, cos_theta)),
                             g,
-                            depth + 1) *
-                   f;
-        };
-        auto refraction = [&]() noexcept
-        {
-            return radiance(bias_ray(p,
-                                     mat.refract(n,
-                                                 i,
-                                                 cos_theta,
-                                                 mat.compute_eta(enter),
-                                                 1 - sin_theta)),
-                            g,
-                            depth + 1) *
-                   (1 - f);
+                            depth + 1);
         };
 
-        // if(f < 0.001f) // refraction only
-        //     return refraction();
-        // else if(f > 0.999f) // reflection only
-        //     return reflection();
-        // else
-        return reflection() + refraction();
+        if(cos2t < 0) // total internal reflection
+            return reflection();
+
+        auto refraction = [&]() noexcept
+        {
+            return radiance(
+                bias_ray(
+                    p,
+                    normalize(i * eta - n * ((into ? 1 : -1) *
+                                             (ddn * eta + std::sqrt(cos2t))))),
+                g,
+                depth + 1);
+        };
+
+        return reflection() * f + refraction() * (1 - f);
     }
 };
 
