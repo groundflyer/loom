@@ -15,7 +15,10 @@
 #include <fmt/ranges.h>
 
 #include <algorithm>
+#include <chrono>
 #include <random>
+
+#include <omp.h>
 
 using namespace loom;
 using namespace std::literals;
@@ -36,20 +39,19 @@ bias_ray(const Vec3r& p, const Vec3r& d) noexcept
     return {p + d * bias, d};
 }
 
+template <typename RNG>
 struct Shading
 {
     static constexpr unsigned max_depth = 4;
 
-    unsigned                    depth;
-    Vec3r                       p;
-    Vec3r                       n;
-    Vec3r                       i;
-    std::default_random_engine& g;
+    unsigned depth;
+    Vec3r    p;
+    Vec3r    n;
+    Vec3r    i;
+    RNG&     g;
 
     static RGB<>
-    radiance(const Ray<real>&            ray,
-             std::default_random_engine& g,
-             unsigned                    depth = 0) noexcept
+    radiance(const Ray<real>& ray, RNG& g, unsigned depth = 0) noexcept
     {
         if(depth > max_depth) return {};
 
@@ -123,30 +125,42 @@ struct Shading
 };
 
 void
-render(Image&                      img,
-       const Camera&               cam,
-       std::default_random_engine& g,
-       const unsigned              ns) noexcept
+render(Image& img, const Camera& cam, const unsigned ns) noexcept
 {
     const real pw = static_cast<real>(1) / img.res()[0]; // pixel width
     const real sw = pw / ns;                             // sample width
 
     const Vec2r         res{img.res()};
     ToSampleSpace<real> sample_space(img.res());
-    for(auto it = img.begin(); it != img.end(); ++it)
+#pragma omp parallel
     {
-        const Vec2r pp = sample_space(it.pos()); // pixel position
-        RGB         r{};
-        for(unsigned sy = 0; sy < ns; ++sy)
-            for(unsigned sx = 0; sx < ns; ++sx)
-            {
-                const Vec2r sp = jitter_sample_pos(
-                    g,
-                    sw,
-                    (pp - pw * static_cast<real>(0.5)) + Vec2r{sx, sy} * sw);
-                r += Shading::radiance(cam(sp), g);
-            }
-        *it = RGBA{r / static_cast<float>(ns * ns), 1};
+        const int tid = omp_get_thread_num();
+
+        std::seed_seq seed(
+            {static_cast<int>(0xdeadbeef),
+             tid,
+             static_cast<int>(std::chrono::high_resolution_clock::now()
+                                  .time_since_epoch()
+                                  .count())});
+        std::mt19937 g{seed};
+
+#pragma omp for schedule(dynamic)
+        for(auto it = img.begin(); it != img.end(); ++it)
+        {
+            const Vec2r pp = sample_space(it.pos()); // pixel position
+            RGB         r{};
+            for(unsigned sy = 0; sy < ns; ++sy)
+                for(unsigned sx = 0; sx < ns; ++sx)
+                {
+                    const Vec2r sp =
+                        jitter_sample_pos(g,
+                                          sw,
+                                          (pp - pw * static_cast<real>(0.5)) +
+                                              Vec2r{sx, sy} * sw);
+                    r += Shading<std::mt19937>::radiance(cam(sp), g);
+                }
+            *it = RGBA{r / static_cast<float>(ns * ns), 1};
+        }
     }
 }
 
@@ -257,9 +271,7 @@ main(int argc, char* argv[])
 
     Image img(Vec2u{resx, resy});
     logger.debug("image ready");
-    const Camera               cam = Scene::camera();
-    std::random_device         r;
-    std::default_random_engine g(r());
+    const Camera cam = Scene::camera();
     // CameraCapture cc{cam};
     // FilmCapture   fc{&film};
     // DummyAction   da{&film.img};
@@ -270,7 +282,7 @@ main(int argc, char* argv[])
 
         const unsigned ps = parse_results.template get_opt<'s'>();
         logger.info(fmt::runtime("Rendering with {0}x{0} pixel samples"), ps);
-        render(img, cam, g, ps);
+        render(img, cam, ps);
         logger.debug("render is ready. Loading...");
         viewport.load_img(img.data(), resx, resy);
         logger.debug("loaded image");
