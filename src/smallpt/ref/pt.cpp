@@ -128,7 +128,6 @@ void
 render(Image& img, const Camera& cam, const unsigned ns) noexcept
 {
     const real pw = static_cast<real>(1) / img.res()[0]; // pixel width
-    const real sw = pw / ns;                             // sample width
 
     const Vec2r         res{img.res()};
     ToSampleSpace<real> sample_space(img.res());
@@ -149,17 +148,12 @@ render(Image& img, const Camera& cam, const unsigned ns) noexcept
         {
             const Vec2r pp = sample_space(it.pos()); // pixel position
             RGB         r{};
-            for(unsigned sy = 0; sy < ns; ++sy)
-                for(unsigned sx = 0; sx < ns; ++sx)
-                {
-                    const Vec2r sp =
-                        jitter_sample_pos(g,
-                                          sw,
-                                          (pp - pw * static_cast<real>(0.5)) +
-                                              Vec2r{sx, sy} * sw);
-                    r += Shading<std::mt19937>::radiance(cam(sp), g);
-                }
-            *it = RGBA{r / static_cast<float>(ns * ns), 1};
+            for(unsigned s = 0; s < ns; ++s)
+                r += Shading<std::mt19937>::radiance(
+                    cam(jitter_sample_pos(g, pw, pp)),
+                    g);
+
+            *it = RGBA{r / static_cast<float>(ns), 1};
         }
     }
 }
@@ -281,7 +275,7 @@ main(int argc, char* argv[])
         auto viewport = make_viewport(resx, resy, sink, sink, sink);
 
         const unsigned ps = parse_results.template get_opt<'s'>();
-        logger.info(fmt::runtime("Rendering with {0}x{0} pixel samples"), ps);
+        logger.info(fmt::runtime("Rendering with {} pixel samples"), ps);
         render(img, cam, ps);
         logger.debug("render is ready. Loading...");
         viewport.load_img(img.data(), resx, resy);
