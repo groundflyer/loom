@@ -46,22 +46,6 @@ struct Shading
     Vec3r                       i;
     std::default_random_engine& g;
 
-    std::pair<real, real>
-    sample_light() const noexcept
-    {
-        const Vec3r lp  = sample(sample_u<real>(g), Scene::light);
-        const Vec3r ld  = normalize(lp - p);
-        const real  dnl = dot(ld, n);
-        if(dnl > 0)
-        {
-            const auto [_, isect] =
-                std::apply(Hider{bias_ray(p, ld)}, Scene::shadow_set);
-            return {static_cast<real>(!isect.intersect), dnl};
-        }
-        else
-            return {0, dnl};
-    }
-
     static RGB<>
     radiance(const Ray<real>&            ray,
              std::default_random_engine& g,
@@ -95,10 +79,9 @@ struct Shading
     RGB<>
     operator()(const Gallery::Lambert& mat) const noexcept
     {
-        return mat.color *
-               radiance(bias_ray(p, sample_hemisphere(n, sample_u<real>(g))),
-                        g,
-                        depth + 1);
+        const Vec3r d = sample_hemisphere(n, sample_u<real>(g));
+        const float r = dot(n, d);
+        return mat.color * radiance(bias_ray(p, d), g, depth + 1) * r;
     }
 
     RGB<>

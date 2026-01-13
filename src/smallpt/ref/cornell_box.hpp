@@ -130,12 +130,12 @@ class cornell_box
         };
 
         static constexpr std::tuple materials{
-            Lambert{Rgb{0.8}},           // 0
-            Lambert{Rgb{0.8, 0.1, 0.1}}, // 1
-            Lambert{Rgb{0.1, 0.8, 0.1}}, // 2
-            Lambert{Rgb{0.1, 0.1, 0.8}}, // 3
-            Glass{},                     // 4
-            Emission{Rgb{10}}            // 5
+            Lambert{Rgb{1}},           // 0
+            Lambert{Rgb{1, 0.2, 0.2}}, // 1
+            Lambert{Rgb{0.2, 1, 0.2}}, // 2
+            Lambert{Rgb{0.2, 0.2, 1}}, // 3
+            Glass{},                   // 4
+            Emission{Rgb{35}}          // 5
         };
 
         // Material indicies for primitives
