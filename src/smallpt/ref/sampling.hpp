@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include "rng.hpp"
 #include "typedefs.hpp"
 
 #include <utils/tuple.hpp>
@@ -13,19 +14,20 @@
 namespace loom
 {
 /// @brief Generate vector of two random numbers [0, 1).
-template <std::floating_point T, typename G>
-Vec2<T>
-sample_u(G& g) noexcept
+Vec2<float>
+sample_u(const std::array<std::uint32_t, 2>& c,
+         const std::array<std::uint32_t, 2>& k) noexcept
 {
-    return Vec2<T>{generate<2>([&g]() noexcept
-                               { return std::generate_canonical<T, 10>(g); })};
+    return transform(gen_canonical, Vec2<std::uint32_t>{threefry2x32r32(c, k)});
 }
 
-template <typename Generator, std::floating_point T>
+template <std::floating_point T>
 Vec2<T>
-jitter_sample_pos(Generator& g, const T width, const Vec2<T>& pos) noexcept
+jitter_sample_pos(const T            width,
+                  const Vec2<T>&     pos,
+                  const Vec2<float>& u) noexcept
 {
-    return (pos - width * static_cast<T>(0.5)) + sample_u<T>(g) * width;
+    return (pos - width * static_cast<T>(0.5)) + u * width;
 }
 
 template <std::floating_point T>

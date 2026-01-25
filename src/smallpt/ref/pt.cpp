@@ -3,6 +3,7 @@
 #include "cornell_box.hpp"
 #include "hider.hpp"
 #include "image.hpp"
+#include "rng.hpp"
 #include "sampling.hpp"
 
 #include <smallpt/common/viewport.hpp>
@@ -23,35 +24,38 @@
 using namespace loom;
 using namespace std::literals;
 
-using real    = double;
 using Image   = ScanlineImage<float, 4>;
-using Scene   = cornell_box<real>;
+using Scene   = cornell_box<float>;
 using Gallery = Scene::Gallery;
-using Camera  = Perspective<real>;
-using Vec2r   = Vec2<real>;
-using Vec3r   = Vec3<real>;
-using Sample  = std::pair<Vec2r, RGB<std::array>>;
+using Camera  = Perspective<float>;
+using Vec2f   = Vec2<float>;
+using Vec3f   = Vec3<float>;
+using Sample  = std::pair<Vec2f, RGB<std::array>>;
+using Counter = std::array<std::uint32_t, 2>;
 
-Ray<real>
-bias_ray(const Vec3r& p, const Vec3r& d) noexcept
+static constexpr std::array<std::uint32_t, 2> key{0xdead, 0xbeef};
+
+Ray<float>
+bias_ray(const Vec3f& p, const Vec3f& d) noexcept
 {
-    constexpr real bias = 0.001;
+    constexpr float bias = 0.001;
     return {p + d * bias, d};
 }
 
-template <typename RNG>
 struct Shading
 {
     static constexpr unsigned max_depth = 4;
 
+    Counter  c;
     unsigned depth;
-    Vec3r    p;
-    Vec3r    n;
-    Vec3r    i;
-    RNG&     g;
+    Vec3f    p;
+    Vec3f    n;
+    Vec3f    i;
 
     static RGB<>
-    radiance(const Ray<real>& ray, RNG& g, unsigned depth = 0) noexcept
+    radiance(const Ray<float>& ray,
+             const Counter&    c,
+             unsigned          depth = 0) noexcept
     {
         if(depth > max_depth) return {};
 
@@ -59,15 +63,15 @@ struct Shading
 
         if(!isect) return {};
 
-        const Vec3r p = ray.origin + ray.dir * isect.t;
-        const Vec3r n = visit_at(
+        const Vec3f p = ray.origin + ray.dir * isect.t;
+        const Vec3f n = visit_at(
             prim_id,
             [&p](const auto& prim) noexcept { return normal(p, prim); },
             Scene::geometry,
-            constant(Vec3r{0, 1, 0}));
+            constant(Vec3f{0, 1, 0}));
 
         return visit_at(Gallery::mat_idxs[prim_id],
-                        Shading{depth, p, n, ray.dir, g},
+                        Shading{bump_ctr(c), depth, p, n, ray.dir},
                         Gallery::materials,
                         constant(RGB{1, 0, 1}));
     }
@@ -81,27 +85,31 @@ struct Shading
     RGB<>
     operator()(const Gallery::Lambert& mat) const noexcept
     {
-        const Vec3r d = sample_hemisphere(n, sample_u<real>(g));
-        const float r = dot(n, d);
-        return mat.color * radiance(bias_ray(p, d), g, depth + 1) * r;
+        const Vec3f wi        = -i;
+        const float cos_theta = dot(n, wi);
+        const bool  into      = cos_theta > 0;
+        const Vec3f nfn       = into ? n : -n;
+        const Vec3f d = normalize(sample_hemisphere(nfn, sample_u(c, key)));
+        const float r = dot(nfn, d);
+        return mat.color * radiance(bias_ray(p, d), c, depth + 1) * r;
     }
 
     RGB<>
     operator()(const Gallery::Glass& mat) const noexcept
     {
-        const Vec3r wi        = -i;
-        const real  cos_theta = dot(n, wi);
+        const Vec3f wi        = -i;
+        const float cos_theta = dot(n, wi);
         const bool  into      = cos_theta > 0;
-        const Vec3r nfn       = into ? n : -n;
-        const real  eta       = mat.compute_eta(into);
-        const real  f         = mat.reflectance(cos_theta);
-        const real  ddn       = dot(i, nfn);
-        const real  cos2t     = 1 - eta * eta * (1 - ddn * ddn);
+        const Vec3f nfn       = into ? n : -n;
+        const float eta       = mat.compute_eta(into);
+        const float f         = mat.reflectance(cos_theta);
+        const float ddn       = dot(i, nfn);
+        const float cos2t     = 1 - eta * eta * (1 - ddn * ddn);
 
         auto reflection = [&]() noexcept
         {
             return radiance(bias_ray(p, mat.reflect(nfn, i, cos_theta)),
-                            g,
+                            c,
                             depth + 1);
         };
 
@@ -115,7 +123,7 @@ struct Shading
                     p,
                     normalize(i * eta - n * ((into ? 1 : -1) *
                                              (ddn * eta + std::sqrt(cos2t))))),
-                g,
+                c,
                 depth + 1);
         };
 
@@ -127,34 +135,22 @@ struct Shading
 void
 render(Image& img, const Camera& cam, const unsigned ns) noexcept
 {
-    const real pw = static_cast<real>(1) / img.res()[0]; // pixel width
+    const float pw = static_cast<float>(1) / img.res()[0]; // pixel width
 
-    const Vec2r         res{img.res()};
-    ToSampleSpace<real> sample_space(img.res());
-#pragma omp parallel
+    const Vec2f          res{img.res()};
+    ToSampleSpace<float> sample_space(img.res());
+#pragma omp parallel for schedule(dynamic)
+    for(auto it = img.begin(); it != img.end(); ++it)
     {
-        const int tid = omp_get_thread_num();
+        const Vec2f         pp = sample_space(it.pos()); // pixel position
+        const std::uint32_t c0 = it.pos()[1] * img.res()[0] + it.pos()[0];
+        RGB                 r{};
+        for(unsigned s = 0; s < ns; ++s)
+            r += Shading::radiance(
+                cam(jitter_sample_pos(pw, pp, sample_u(Counter{c0, ns}, key))),
+                Counter{c0, ns * 2});
 
-        std::seed_seq seed(
-            {static_cast<int>(0xdeadbeef),
-             tid,
-             static_cast<int>(std::chrono::high_resolution_clock::now()
-                                  .time_since_epoch()
-                                  .count())});
-        std::mt19937 g{seed};
-
-#pragma omp for schedule(dynamic)
-        for(auto it = img.begin(); it != img.end(); ++it)
-        {
-            const Vec2r pp = sample_space(it.pos()); // pixel position
-            RGB         r{};
-            for(unsigned s = 0; s < ns; ++s)
-                r += Shading<std::mt19937>::radiance(
-                    cam(jitter_sample_pos(g, pw, pp)),
-                    g);
-
-            *it = RGBA{r / static_cast<float>(ns), 1};
-        }
+        *it = RGBA{r / static_cast<float>(ns), 1};
     }
 }
 
