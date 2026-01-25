@@ -7,6 +7,7 @@
 #include <array>
 #include <cstdint>
 
+#include <utils/debug.hpp>
 #include <utils/functional.hpp>
 
 namespace loom
@@ -70,9 +71,9 @@ ar_32_2
 bump_ctr(const ar_32_2& c, std::uint32_t i = 1) noexcept
 {
     ar_32_2 ret = c;
-    ret[1] += i;
-    if(ret[1] < c[1]) ret[0] += i;
+    ret[0] += i;
     if(ret[0] < c[0]) ret[1] += i;
+    if(ret[1] < c[1]) ret[0] += i;
     return ret;
 }
 } // namespace fn

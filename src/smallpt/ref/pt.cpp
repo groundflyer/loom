@@ -33,7 +33,7 @@ using Vec3f   = Vec3<float>;
 using Sample  = std::pair<Vec2f, RGB<std::array>>;
 using Counter = std::array<std::uint32_t, 2>;
 
-static constexpr std::array<std::uint32_t, 2> key{0xdead, 0xbeef};
+static constexpr std::array<std::uint32_t, 2> key{7598293, 1244013411};
 
 Ray<float>
 bias_ray(const Vec3f& p, const Vec3f& d) noexcept
@@ -71,7 +71,7 @@ struct Shading
             constant(Vec3f{0, 1, 0}));
 
         return visit_at(Gallery::mat_idxs[prim_id],
-                        Shading{bump_ctr(c), depth, p, n, ray.dir},
+                        Shading{c, depth, p, n, ray.dir},
                         Gallery::materials,
                         constant(RGB{1, 0, 1}));
     }
@@ -85,13 +85,10 @@ struct Shading
     RGB<>
     operator()(const Gallery::Lambert& mat) const noexcept
     {
-        const Vec3f wi        = -i;
-        const float cos_theta = dot(n, wi);
-        const bool  into      = cos_theta > 0;
-        const Vec3f nfn       = into ? n : -n;
-        const Vec3f d = normalize(sample_hemisphere(nfn, sample_u(c, key)));
-        const float r = dot(nfn, d);
-        return mat.color * radiance(bias_ray(p, d), c, depth + 1) * r;
+        const Vec3f d = sample_hemisphere(n, sample_u(c, key));
+        const float r = dot(n, d);
+        return mat.color *
+               radiance(bias_ray(p, d), bump_ctr(c, 641833), depth + 1) * r;
     }
 
     RGB<>
@@ -109,7 +106,7 @@ struct Shading
         auto reflection = [&]() noexcept
         {
             return radiance(bias_ray(p, mat.reflect(nfn, i, cos_theta)),
-                            c,
+                            bump_ctr(c, 312398),
                             depth + 1);
         };
 
@@ -123,7 +120,7 @@ struct Shading
                     p,
                     normalize(i * eta - n * ((into ? 1 : -1) *
                                              (ddn * eta + std::sqrt(cos2t))))),
-                c,
+                bump_ctr(c, 987523),
                 depth + 1);
         };
 
@@ -147,8 +144,10 @@ render(Image& img, const Camera& cam, const unsigned ns) noexcept
         RGB                 r{};
         for(unsigned s = 0; s < ns; ++s)
             r += Shading::radiance(
-                cam(jitter_sample_pos(pw, pp, sample_u(Counter{c0, ns}, key))),
-                Counter{c0, ns * 2});
+                cam(jitter_sample_pos(pw,
+                                      pp,
+                                      sample_u(Counter{c0, s * ns}, key))),
+                Counter{c0, s * ns * 2});
 
         *it = RGBA{r / static_cast<float>(ns), 1};
     }
