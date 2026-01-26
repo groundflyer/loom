@@ -144,10 +144,8 @@ render(Image& img, const Camera& cam, const unsigned ns) noexcept
         RGB                 r{};
         for(unsigned s = 0; s < ns; ++s)
             r += Shading::radiance(
-                cam(jitter_sample_pos(pw,
-                                      pp,
-                                      sample_u(Counter{c0, s * ns}, key))),
-                Counter{c0, s * ns * 2});
+                cam(jitter_sample_pos(pw, pp, sample_u(Counter{c0, s}, key))),
+                Counter{c0, s + ns});
 
         *it = RGBA{r / static_cast<float>(ns), 1};
     }
