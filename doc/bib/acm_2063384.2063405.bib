@@ -1,0 +1,16 @@
+@inproceedings{10.1145/2063384.2063405,
+author = {Salmon, John K. and Moraes, Mark A. and Dror, Ron O. and Shaw, David E.},
+title = {Parallel random numbers: as easy as 1, 2, 3},
+year = {2011},
+isbn = {9781450307710},
+publisher = {Association for Computing Machinery},
+address = {New York, NY, USA},
+url = {https://doi.org/10.1145/2063384.2063405},
+doi = {10.1145/2063384.2063405},
+abstract = {Most pseudorandom number generators (PRNGs) scale poorly to massively parallel high-performance computation because they are designed as sequentially dependent state transformations. We demonstrate that independent, keyed transformations of counters produce a large alternative class of PRNGs with excellent statistical properties (long period, no discernable structure or correlation). These counter-based PRNGs are ideally suited to modern multi-core CPUs, GPUs, clusters, and special-purpose hardware because they vectorize and parallelize well, and require little or no memory for state. We introduce several counter-based PRNGs: some based on cryptographic standards (AES, Threefish) and some completely new (Philox). All our PRNGs pass rigorous statistical tests (including TestU01's BigCrush) and produce at least 264 unique parallel streams of random numbers, each with period 2128 or more. In addition to essentially unlimited parallel scalability, our PRNGs offer excellent single-chip performance: Philox is faster than the CURAND library on a single NVIDIA GPU.},
+booktitle = {Proceedings of 2011 International Conference for High Performance Computing, Networking, Storage and Analysis},
+articleno = {16},
+numpages = {12},
+location = {Seattle, Washington},
+series = {SC '11}
+}

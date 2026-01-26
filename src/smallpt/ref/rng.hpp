@@ -1,6 +1,8 @@
 // -*- C++ -*-
-// rng.hpp
-//
+/// @file rng.hpp
+/// @brief Reference implemenation of PRNG.
+///
+/// Contains implementation of Threefry-2x32 @cite 10.1145/2063384.2063405
 
 #pragma once
 

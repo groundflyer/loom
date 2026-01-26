@@ -201,7 +201,8 @@ if(BUILD_DOC)
     set(DOXYGEN_CITE_BIB_FILES
       ${BIB_DIR}/Duff2017Basis.bib
       ${BIB_DIR}/other.bib
-      ${BIB_DIR}/LD04ERQIT_citation.bib)
+      ${BIB_DIR}/LD04ERQIT_citation.bib
+      ${BIB_DIR}/acm_2063384.2063405.bib)
     doxygen_add_docs(doc ${_SRC_DIR} ${DOC_DIR} ALL
       COMMENT "Generating documentation with Doxygen"
       WORKING_DIRECTORY ${_SRC_DIR})
