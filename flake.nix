@@ -18,8 +18,10 @@
         glfw
         fast-float
         range-v3
-        graphviz                # docs
-        doxygen                 # docs
+        # docs generation
+        graphviz
+        doxygen
+        texliveBasic
       ];
 
       shellHook = ''
