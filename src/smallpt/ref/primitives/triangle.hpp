@@ -1,5 +1,5 @@
 // -*- C++ -*-
-/// @file triangle.h
+/// @file triangle.hpp
 /// @brief Triangle primitive definition and auxiliary functions.
 
 #pragma once
@@ -58,8 +58,8 @@ constexpr Vec3<T>
 normal(const Vec3<T, PosContainer>&, const Triangle<T>& prim) noexcept
 {
     const auto& [v0, v1, v2] = prim;
-    const Vec3<T> edge1     = v1 - v0;
-    const Vec3<T> edge2     = v2 - v0;
+    const Vec3<T> edge1      = v1 - v0;
+    const Vec3<T> edge2      = v2 - v0;
     return normalize(cross(edge1, edge2));
 }
 
@@ -90,7 +90,7 @@ s2t(Vec2<T>& s) noexcept
 template <std::floating_point T,
           template <typename, std::size_t> typename Container2>
 constexpr Vec3<T>
-triangle_sample(Vec2<T>                   s,
+triangle_sample(Vec2<T>                    s,
                 const Vec3<T, Container2>& v1,
                 const Vec3<T, Container2>& v2,
                 const Vec3<T, Container2>& v3) noexcept
@@ -112,15 +112,15 @@ bound(const Prim& prim) noexcept
 
 /// @brief Sample a point on triangle surface.
 ///
-/// Optimized implementation from @cite heitz:hal-02073696
+/// Implements optimized sampling algorithm from @cite heitz:hal-02073696
 template <std::floating_point T,
           template <typename, std::size_t> typename SContainer>
 constexpr Vec3<T>
 sample(const Vec2<T, SContainer>& s, const Triangle<T>& prim) noexcept
 {
     return Vec3<T>(std::apply([&](const auto&... verts) noexcept
-                               { return detail::triangle_sample(s, verts...); },
-                               prim));
+                              { return detail::triangle_sample(s, verts...); },
+                              prim));
 }
 
 /// @brief Compute triangle centroid.

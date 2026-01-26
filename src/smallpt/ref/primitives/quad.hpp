@@ -19,7 +19,7 @@ namespace fn
 {
 /// @brief Compute ray-quadrilateral intersection.
 ///
-/// Implements @cite LD2004AERIT
+/// Implements algorithm described in @cite LD2004AERIT
 template <std::floating_point R>
 constexpr Intersection<R>
 intersect(const Ray<R>& ray, const Quad<R>& prim) noexcept

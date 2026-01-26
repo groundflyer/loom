@@ -1,6 +1,6 @@
 // -*- C++ -*-
-// transforms.hpp --
-/// @file Coordinate transformations.
+/// @file transforms.hpp
+/// @brief Coordinate transformations.
 
 #pragma once
 
@@ -29,7 +29,7 @@ constexpr Vec3<T>
 dehomogenize(const Vec4<T, Container>& a) noexcept
 {
     Vec3<T> ret{a};
-    const T  w = get_w(a);
+    const T w = get_w(a);
     if(!(almost_equal(w, static_cast<T>(0), 5) ||
          almost_equal(w, static_cast<T>(1), 5)))
         ret /= w;

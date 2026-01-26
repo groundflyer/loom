@@ -228,4 +228,10 @@ constant(const T val) noexcept
 {
     return [val](auto...) noexcept { return val; };
 }
+
+/// @namespace loom::fn
+/// @brief Convenience namespace hiding struct and functions definitions for
+/// niebloids. This namespace hides definitions of functions that are used as
+/// implementations for niebloids generated via MK_NIEBLOID macro in the loom
+/// namespace.
 } // namespace loom

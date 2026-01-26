@@ -64,7 +64,7 @@ namespace fn
 {
 /// @brief Axis-aligned bounding box intersection function.
 ///
-/// Implements @cite 10.1145/1198555.1198748
+/// Implements algorithm described in @cite 10.1145/1198555.1198748
 template <std::floating_point T>
 constexpr Intersection<T>
 intersect(const Ray<T>& ray, const AABB<T>& prim) noexcept
