@@ -4,8 +4,8 @@
 #include "property_test.hpp"
 
 #include <smallpt/ref/linal.hpp>
-#include <utils/tuple.hpp>
-#include <utils/typeinfo.hpp>
+#include <common/tuple.hpp>
+#include <common/typeinfo.hpp>
 
 #include <fmt/ranges.h>
 

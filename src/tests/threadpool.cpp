@@ -1,7 +1,7 @@
 // -*- C++ -*-
 // threadpool.cpp
-#include <utils/test.hpp>
-#include <utils/threadpool.hpp>
+#include <common/test.hpp>
+#include <common/threadpool.hpp>
 
 #include <initializer_list>
 #include <utility>

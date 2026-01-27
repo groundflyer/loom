@@ -3,8 +3,8 @@
 #include "root_finding.hpp"
 #include "stream_wrapper.hpp"
 
-#include <utils/test.hpp>
-#include <utils/typeinfo.hpp>
+#include <common/test.hpp>
+#include <common/typeinfo.hpp>
 #include <vm/bse.hpp>
 #include <vm/simd.hpp>
 

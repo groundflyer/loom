@@ -2,7 +2,7 @@
 // test some template metaprogramming functions
 // if it compiles, it works
 
-#include <utils/tmp.hpp>
+#include <common/tmp.hpp>
 
 #include <cstdint>
 

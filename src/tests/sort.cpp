@@ -2,8 +2,8 @@
 // sort.cpp
 #include "vm_test_suite_utils.hpp"
 
-#include <utils/test.hpp>
-#include <utils/typeinfo.hpp>
+#include <common/test.hpp>
+#include <common/typeinfo.hpp>
 
 #include <vm/bve.hpp>
 #include <vm/simd.hpp>

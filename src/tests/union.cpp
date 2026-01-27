@@ -1,7 +1,7 @@
 // -*- C++ -*-
 // union.cpp
-#include <utils/test.hpp>
-#include <utils/union.hpp>
+#include <common/test.hpp>
+#include <common/union.hpp>
 
 using namespace loom;
 using namespace std;

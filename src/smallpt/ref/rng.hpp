@@ -9,8 +9,8 @@
 #include <array>
 #include <cstdint>
 
-#include <utils/debug.hpp>
-#include <utils/functional.hpp>
+#include <common/debug.hpp>
+#include <common/functional.hpp>
 
 namespace loom
 {

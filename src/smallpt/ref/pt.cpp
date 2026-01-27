@@ -7,11 +7,11 @@
 #include "sampling.hpp"
 
 #include <smallpt/common/viewport.hpp>
-#include <utils/argparse.hpp>
-#include <utils/functional.hpp>
-#include <utils/logging.hpp>
-#include <utils/timer.hpp>
-#include <utils/tuple.hpp>
+#include <common/argparse.hpp>
+#include <common/functional.hpp>
+#include <common/logging.hpp>
+#include <common/timer.hpp>
+#include <common/tuple.hpp>
 
 #include <fmt/ranges.h>
 

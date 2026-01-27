@@ -1,6 +1,7 @@
 // -*- C++ -*-
-/// @file common.hpp
-/// Common utils.
+/// @file forbid.hpp
+/// @brief Convenience macros to delete class constructors and assignment
+/// operators.
 
 #pragma once
 

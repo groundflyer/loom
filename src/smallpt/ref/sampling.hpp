@@ -7,7 +7,7 @@
 #include "rng.hpp"
 #include "typedefs.hpp"
 
-#include <utils/tuple.hpp>
+#include <common/tuple.hpp>
 
 #include <random>
 

@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include <utils/common.hpp>
+#include <common/forbid.hpp>
 
 #include <GLFW/glfw3.h>
 

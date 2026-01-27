@@ -1,6 +1,6 @@
 // -*- C++ -*-
 // vm_mp.cpp
-#include <utils/test.hpp>
+#include <common/test.hpp>
 #include <vm/mp.hpp>
 #include <vm/simd.hpp>
 

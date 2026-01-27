@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include <utils/functional.hpp>
+#include <common/functional.hpp>
 #include <vm/core.hpp>
 #include <vm/macros.hpp>
 #include <vm/operators.hpp>

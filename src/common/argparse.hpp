@@ -4,12 +4,12 @@
 
 #pragma once
 
-#include <utils/common.hpp>
-#include <utils/debug.hpp>
-#include <utils/functional.hpp>
-#include <utils/string.hpp>
-#include <utils/tmp.hpp>
-#include <utils/tuple.hpp>
+#include "debug.hpp"
+#include "forbid.hpp"
+#include "functional.hpp"
+#include "string.hpp"
+#include "tmp.hpp"
+#include "tuple.hpp"
 
 #include <algorithm>
 #include <array>
@@ -1705,35 +1705,35 @@ show_help(std::string_view                  program_name,
     doc_print("show this message and exit");
 
     loom::for_each(options,
-                    [&]<typename O>(const O& option) noexcept
-                    {
-                        opt_align();
+                   [&]<typename O>(const O& option) noexcept
+                   {
+                       opt_align();
 
-                        if constexpr(has_keychar_v<O> && !has_keyword_v<O>)
-                            fmt::print(file, "-{}", O::key);
-                        else if constexpr(!has_keychar_v<O> && has_keyword_v<O>)
-                            fmt::print(file, "    --{}", O::keyword);
-                        else if constexpr(has_keychar_v<O> && has_keyword_v<O>)
-                            fmt::print(file, "-{}, --{}", O::key, O::keyword);
+                       if constexpr(has_keychar_v<O> && !has_keyword_v<O>)
+                           fmt::print(file, "-{}", O::key);
+                       else if constexpr(!has_keychar_v<O> && has_keyword_v<O>)
+                           fmt::print(file, "    --{}", O::keyword);
+                       else if constexpr(has_keychar_v<O> && has_keyword_v<O>)
+                           fmt::print(file, "-{}, --{}", O::key, O::keyword);
 
-                        if constexpr(O::num_vals == npos)
-                            fmt::print(file, " <{}...>", option.var);
-                        else if constexpr(O::num_vals > 1)
-                        {
-                            for(std::size_t i = 0; i < O::num_vals; ++i)
-                                fmt::print(file, " <{}>", option.var[i]);
-                        }
-                        else if constexpr(O::num_vals == 1)
-                        {
-                            if constexpr(has_keyword_v<O>)
-                                fmt::print(file, "=<{}>", option.var);
-                            else
-                                fmt::print(file, " <{}>", option.var);
-                        }
+                       if constexpr(O::num_vals == npos)
+                           fmt::print(file, " <{}...>", option.var);
+                       else if constexpr(O::num_vals > 1)
+                       {
+                           for(std::size_t i = 0; i < O::num_vals; ++i)
+                               fmt::print(file, " <{}>", option.var[i]);
+                       }
+                       else if constexpr(O::num_vals == 1)
+                       {
+                           if constexpr(has_keyword_v<O>)
+                               fmt::print(file, "=<{}>", option.var);
+                           else
+                               fmt::print(file, " <{}>", option.var);
+                       }
 
-                        column += shift(option);
-                        doc_print(option.doc);
-                    });
+                       column += shift(option);
+                       doc_print(option.doc);
+                   });
 
     // positionals details
     if constexpr(sizeof...(Positionals) > 0)
@@ -1741,13 +1741,12 @@ show_help(std::string_view                  program_name,
         std::fputs("\nRequired arguments:\n", file);
 
         loom::for_each(positionals,
-                        [&](const auto& o) noexcept
-                        {
-                            opt_align();
-                            column =
-                                print_vars<false>(o, []() {}, column, file);
-                            doc_print(o.doc);
-                        });
+                       [&](const auto& o) noexcept
+                       {
+                           opt_align();
+                           column = print_vars<false>(o, []() {}, column, file);
+                           doc_print(o.doc);
+                       });
     }
 }
 

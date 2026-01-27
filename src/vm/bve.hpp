@@ -6,10 +6,10 @@
 
 #include "core.hpp"
 
-#include <utils/common.hpp>
-#include <utils/debug.hpp>
-#include <utils/functional.hpp>
-#include <utils/tuple.hpp>
+#include <common/forbid.hpp>
+#include <common/debug.hpp>
+#include <common/functional.hpp>
+#include <common/tuple.hpp>
 
 #include <range/v3/range/operations.hpp>
 #include <range/v3/view/chunk_by.hpp>

@@ -3,7 +3,7 @@
 #include "property_test.hpp"
 
 #include <smallpt/ref/niebloids.hpp>
-#include <utils/tuple.hpp>
+#include <common/tuple.hpp>
 
 #include <random>
 

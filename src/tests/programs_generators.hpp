@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include <utils/test.hpp>
+#include <common/test.hpp>
 
 #include <concepts>
 #include <utility>

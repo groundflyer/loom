@@ -16,8 +16,8 @@
 #include "sampling.hpp"
 #include "typedefs.hpp"
 
-#include <utils/common.hpp>
-#include <utils/math.hpp>
+#include <common/forbid.hpp>
+#include <common/math.hpp>
 
 namespace loom
 {

@@ -1,5 +1,5 @@
 // -*- C++ -*-
-// test_utils.hpp
+// test_forbid.hpp
 //
 
 #pragma once
@@ -7,8 +7,8 @@
 #include <vm/bve.hpp>
 #include <vm/simd.hpp>
 
-#include <utils/test.hpp>
-#include <utils/tmp.hpp>
+#include <common/test.hpp>
+#include <common/tmp.hpp>
 
 namespace loom::vm
 {

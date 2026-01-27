@@ -2,8 +2,8 @@
 /// @file functional.cpp
 /// @brief functional.hpp tests.
 
-#include <utils/functional.hpp>
-#include <utils/test.hpp>
+#include <common/functional.hpp>
+#include <common/test.hpp>
 
 using namespace std;
 using namespace loom;

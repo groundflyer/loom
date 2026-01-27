@@ -6,7 +6,7 @@
 
 #include "../ray.hpp"
 
-#include <utils/math.hpp>
+#include <common/math.hpp>
 
 namespace loom
 {

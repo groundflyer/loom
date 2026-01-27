@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include <utils/debug.hpp>
+#include <common/debug.hpp>
 #include <vm/core.hpp>
 
 #include <range/v3/view/subrange.hpp>

@@ -1,8 +1,8 @@
 // -*- C++ -*-
 // char.cpp
-#include <utils/string.hpp>
-#include <utils/test.hpp>
-#include <utils/typeinfo.hpp>
+#include <common/string.hpp>
+#include <common/test.hpp>
+#include <common/typeinfo.hpp>
 
 #include <fmt/format.h>
 

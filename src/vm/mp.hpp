@@ -6,12 +6,12 @@
 
 #include "core.hpp"
 
-#include <utils/common.hpp>
-#include <utils/debug.hpp>
-#include <utils/immovable_vector.hpp>
-#include <utils/memory.hpp>
-#include <utils/threadpool.hpp>
-#include <utils/tuple.hpp>
+#include <common/forbid.hpp>
+#include <common/debug.hpp>
+#include <common/immovable_vector.hpp>
+#include <common/memory.hpp>
+#include <common/threadpool.hpp>
+#include <common/tuple.hpp>
 
 #include <range/v3/view/subrange.hpp>
 

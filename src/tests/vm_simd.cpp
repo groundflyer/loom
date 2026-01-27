@@ -5,8 +5,8 @@
 #include "programs_generators.hpp"
 #include "vm_test_suite_utils.hpp"
 
-#include <utils/test.hpp>
-#include <utils/typeinfo.hpp>
+#include <common/test.hpp>
+#include <common/typeinfo.hpp>
 #include <vm/simd.hpp>
 
 using namespace loom;

@@ -10,10 +10,10 @@
 #include "macros.hpp"
 #include "operators.hpp"
 
-#include <utils/debug.hpp>
-#include <utils/memory.hpp>
-#include <utils/tmp.hpp>
-#include <utils/tuple.hpp>
+#include <common/debug.hpp>
+#include <common/memory.hpp>
+#include <common/tmp.hpp>
+#include <common/tuple.hpp>
 
 #include <fmt/core.h>
 

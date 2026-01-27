@@ -1,6 +1,6 @@
 // -*- C++ -*-
 // test.cpp
-#include <utils/test.hpp>
+#include <common/test.hpp>
 
 inline constexpr std::bool_constant<false> failing{};
 inline constexpr std::bool_constant<true>  passing{};

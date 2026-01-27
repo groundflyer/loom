@@ -1,8 +1,8 @@
 // -*- C++ -*-
 // tuple.cpp
-#include <utils/common.hpp>
-#include <utils/test.hpp>
-#include <utils/tuple.hpp>
+#include <common/forbid.hpp>
+#include <common/test.hpp>
+#include <common/tuple.hpp>
 
 #include <array>
 

@@ -4,11 +4,11 @@
 
 #pragma once
 
-#include <utils/functional.hpp>
-#include <utils/string.hpp>
-#include <utils/tmp.hpp>
-#include <utils/tuple.hpp>
-#include <utils/union.hpp>
+#include <common/functional.hpp>
+#include <common/string.hpp>
+#include <common/tmp.hpp>
+#include <common/tuple.hpp>
+#include <common/union.hpp>
 
 #include <cstdint>
 

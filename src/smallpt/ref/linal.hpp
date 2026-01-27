@@ -7,10 +7,10 @@
 
 #pragma once
 
-#include <utils/debug.hpp>
-#include <utils/functional.hpp>
-#include <utils/math.hpp>
-#include <utils/tmp.hpp>
+#include <common/debug.hpp>
+#include <common/functional.hpp>
+#include <common/math.hpp>
+#include <common/tmp.hpp>
 
 #include <array>
 #include <functional>
