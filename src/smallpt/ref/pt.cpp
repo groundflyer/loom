@@ -279,20 +279,22 @@ main(int argc, char* argv[])
                 while(progress.load(std::memory_order_relaxed) < num_pix)
                 {
                     logger.info(Logger::flush,
-                                "Rendering {}%",
+                                "Rendering... {}%",
                                 static_cast<unsigned>(
                                     static_cast<double>(progress.load(
                                         std::memory_order_relaxed)) /
                                     static_cast<double>(num_pix) * 100));
                     std::this_thread::sleep_for(500ms);
                 }
-                logger.info(Logger::flush, "Rendering 100%\n");
+                logger.info(Logger::flush, "Rendering... 100%\n");
             }};
 
+        ElapsedTimer<> timer;
         render(img, cam, ps, progress);
-
+        const auto e = timer.elapsed();
         watcher.join();
 
+        logger.info("Elapsed time {:.3%M:%S}", e);
         logger.debug("making viewport");
         auto viewport = make_viewport(resx, resy, sink, sink, sink);
         logger.debug("render is ready. Loading...");
