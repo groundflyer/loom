@@ -303,13 +303,13 @@ class Vector
     /// Examples:
     ///
     /// From scalars:
-    /// @f$\mathrm{V}(a,b,c\dots) = \mathrm{V}(a, b, c\dots)@f$
+    /// @f$\mathrm{V}(a,b,c\dots) \to \mathrm{V}(a, b, c\dots)@f$
     ///
     /// From an array:
-    /// @f$\mathrm{V}([a,b,c\dots]) = \mathrm{V}(a, b, c\dots)@f$
+    /// @f$\mathrm{V}([a,b,c\dots]) \to \mathrm{V}(a, b, c\dots)@f$
     ///
     /// From a scalar and a smaller vector.
-    /// @f$\mathrm{V}_N(a, \mathrm{V}_{N-1}(b, c\dots)) = \mathrm{V}_{N}(a,
+    /// @f$\mathrm{V}_N(a, \mathrm{V}_{N-1}(b, c\dots)) \to \mathrm{V}_{N}(a,
     /// b, c\dots)@f$
     template <typename... Ts>
     explicit constexpr Vector(const Ts&... rhs) noexcept
@@ -628,15 +628,15 @@ class Matrix
     /// Constructs Matrix from scalars, vectors, arrays or other matrices.
     ///
     /// From scalars:
-    /// @f$\mathrm{M}(a,b,c\dots) = \mathrm{M}(a, b, c\dots)@f$
+    /// @f$\mathrm{M}(a,b,c\dots) \to \mathrm{M}(a, b, c\dots)@f$
     ///
     /// From an array:
-    /// @f$\mathrm{M}([a,b,c\dots]) = \mathrm{M}(a, b, c\dots)@f$
+    /// @f$\mathrm{M}([a,b,c\dots]) \to \mathrm{M}(a, b, c\dots)@f$
     ///
     /// From vectors:
     /// @f$\mathrm{M}_{m,n}(\mathrm{V}_n(a_{1,1},a_{1,2},\dotsc,a_{1,n}),
     /// \mathrm{V}_n(a_{2,1},a_{2,2},\dotsc,a_{2,n}),\dotsc,
-    /// \mathrm{V}_n(a_{m,1},a_{m,2},\dotsc,a_{m,n})) =
+    /// \mathrm{V}_n(a_{m,1},a_{m,2},\dotsc,a_{m,n})) \to
     /// \begin{pmatrix}
     /// a_{1,1} & a_{1,2} & \cdots & a_{1,n} \\
     /// a_{2,1} & a_{2,2} & \cdots & a_{2,n} \\
@@ -647,7 +647,7 @@ class Matrix
     /// From arrays:
     /// @f$\mathrm{M}_{m,n}([a_{1,1},a_{1,2},\dotsc,a_{1,n}],
     /// [a_{2,1},a_{2,2},\dotsc,a_{2,n}],\dotsc,
-    /// [a_{m,1},a_{m,2},\dotsc,a_{m,n}]) =
+    /// [a_{m,1},a_{m,2},\dotsc,a_{m,n}]) \to
     /// \begin{pmatrix}
     /// a_{1,1} & a_{1,2} & \cdots & a_{1,n} \\
     /// a_{2,1} & a_{2,2} & \cdots & a_{2,n} \\
@@ -662,7 +662,7 @@ class Matrix
     /// a_{1,1} & \cdots & a_{1,n-1} \\
     /// \vdots & \ddots & \vdots \\
     /// a_{m-1,1} & \cdots & a_{m-1,n-1}
-    /// \end{pmatrix} \right) =
+    /// \end{pmatrix} \right) \to
     /// \begin{pmatrix}
     /// a_{1,1} & a_{1,2} & \cdots & a_{1,n-1} & \cdots & 0 \\
     /// \vdots  & \vdots  & \vdots & \vdots & \ddots & \vdots \\
