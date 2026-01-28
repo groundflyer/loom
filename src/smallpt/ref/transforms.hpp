@@ -4,7 +4,6 @@
 
 #pragma once
 
-#include "linal.hpp"
 #include "typedefs.hpp"
 
 #include <utility>

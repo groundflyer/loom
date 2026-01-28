@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "linal.hpp"
+#include <common/linal.hpp>
 
 namespace loom
 {
