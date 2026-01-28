@@ -6,20 +6,20 @@
 #include "rng.hpp"
 #include "sampling.hpp"
 
-#include <smallpt/common/viewport.hpp>
 #include <common/argparse.hpp>
 #include <common/functional.hpp>
 #include <common/logging.hpp>
 #include <common/timer.hpp>
 #include <common/tuple.hpp>
+#include <smallpt/common/viewport.hpp>
 
 #include <fmt/ranges.h>
 
 #include <algorithm>
+#include <atomic>
 #include <chrono>
 #include <random>
-
-#include <omp.h>
+#include <thread>
 
 using namespace loom;
 using namespace std::literals;
@@ -130,7 +130,10 @@ struct Shading
 };
 
 void
-render(Image& img, const Camera& cam, const unsigned ns) noexcept
+render(Image&                 img,
+       const Camera&          cam,
+       const unsigned         ns,
+       std::atomic<unsigned>& progress) noexcept
 {
     const float pw = static_cast<float>(1) / img.res()[0]; // pixel width
 
@@ -148,6 +151,8 @@ render(Image& img, const Camera& cam, const unsigned ns) noexcept
                 Counter{c0, s + ns});
 
         *it = RGBA{r / static_cast<float>(ns), 1};
+
+        progress.fetch_add(1, std::memory_order_relaxed);
     }
 }
 
@@ -264,12 +269,32 @@ main(int argc, char* argv[])
     // DummyAction   da{&film.img};
     try
     {
+        const unsigned ps = parse_results.template get_opt<'s'>();
+
+        const unsigned        num_pix = product(img.res());
+        std::atomic<unsigned> progress{};
+        std::thread           watcher{
+            [&logger, &progress, num_pix]() noexcept
+            {
+                while(progress.load(std::memory_order_relaxed) < num_pix)
+                {
+                    logger.info(Logger::flush,
+                                "Rendering {}%",
+                                static_cast<unsigned>(
+                                    static_cast<double>(progress.load(
+                                        std::memory_order_relaxed)) /
+                                    static_cast<double>(num_pix) * 100));
+                    std::this_thread::sleep_for(500ms);
+                }
+                logger.info(Logger::flush, "Rendering 100%\n");
+            }};
+
+        render(img, cam, ps, progress);
+
+        watcher.join();
+
         logger.debug("making viewport");
         auto viewport = make_viewport(resx, resy, sink, sink, sink);
-
-        const unsigned ps = parse_results.template get_opt<'s'>();
-        logger.info(fmt::runtime("Rendering with {} pixel samples"), ps);
-        render(img, cam, ps);
         logger.debug("render is ready. Loading...");
         viewport.load_img(img.data(), resx, resy);
         logger.debug("loaded image");
@@ -282,17 +307,17 @@ main(int argc, char* argv[])
     }
     catch(const std::runtime_error& ex)
     {
-        logger.critical(fmt::runtime("{}"), ex.what());
+        logger.critical("{}", ex.what());
         return 1;
     }
     catch(const GLException& ex)
     {
-        logger.critical(fmt::runtime("OpenGL error: {}"), ex.what());
+        logger.critical("OpenGL error: {}", ex.what());
         return 1;
     }
     catch(const ReadException& ex)
     {
-        logger.critical(fmt::runtime("Failed to parse number {}"), ex.sv);
+        logger.critical("Failed to parse number {}", ex.sv);
         return 1;
     }
 
