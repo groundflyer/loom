@@ -42,6 +42,13 @@ bias_ray(const Vec3f& p, const Vec3f& d) noexcept
     return {p + d * bias, d};
 }
 
+float
+luminance(const RGB<>& rgb) noexcept
+{
+    const auto [r, g, b] = rgb;
+    return 0.2126f * r + 0.7152f * g + 0.0722 * b;
+}
+
 struct Shading
 {
     static constexpr unsigned max_depth = 4;
@@ -132,9 +139,11 @@ struct Shading
 void
 render(Image&                 img,
        const Camera&          cam,
-       const unsigned         ns,
+       const float            threshold,
        std::atomic<unsigned>& progress) noexcept
 {
+    constexpr unsigned min_samples = 64;
+
     const float pw = static_cast<float>(1) / img.res()[0]; // pixel width
 
     const Vec2f          res{img.res()};
@@ -142,13 +151,29 @@ render(Image&                 img,
 #pragma omp parallel for schedule(dynamic)
     for(auto it = img.begin(); it != img.end(); ++it)
     {
-        const Vec2f         pp = sample_space(it.pos()); // pixel position
-        const std::uint32_t c0 = it.pos()[1] * img.res()[0] + it.pos()[0];
-        RGB                 r{};
-        for(unsigned s = 0; s < ns; ++s)
-            r += Shading::radiance(
-                cam(jitter_sample_pos(pw, pp, sample_u(Counter{c0, s}, key))),
-                Counter{c0, s + ns});
+        const Vec2f         pp   = sample_space(it.pos()); // pixel position
+        const std::uint32_t c0   = it.pos()[1] * img.res()[0] + it.pos()[0];
+        unsigned            ns   = 0;
+        float               mean = .0f;
+        float               m2   = .0f;
+
+        RGB r{};
+
+        while(ns < min_samples ||
+              std::sqrt(m2 / static_cast<float>(ns - 1)) / ns >= threshold)
+        {
+            const RGB v = Shading::radiance(
+                cam(jitter_sample_pos(pw, pp, sample_u(Counter{c0, ns}, key))),
+                Counter{c0, ns + min_samples + 1001});
+            const float x = std::min(luminance(v), 1.f);
+            ++ns;
+            const float delta = x - mean;
+            mean += delta / ns;
+            const float delta2 = x - mean;
+            m2 += delta * delta2;
+
+            r += v;
+        }
 
         *it = RGBA{r / static_cast<float>(ns), 1};
 
@@ -249,11 +274,11 @@ int
 main(int argc, char* argv[])
 {
     auto parse_results =
-        argparse::parse(std::tuple{argparse::option<'s', "samples">(
-                            "Number of horizontal pixel samples",
-                            "N",
-                            4u,
-                            read_number<unsigned, true>)},
+        argparse::parse(std::tuple{argparse::option<'t', "threshold">(
+                            "Adaptive sampling threshold",
+                            "T",
+                            0.0001f,
+                            read_number<float, true>)},
                         {argc, argv});
     Logger logger(Logger::DEBUG);
     logger.debug("Let's go");
@@ -269,7 +294,7 @@ main(int argc, char* argv[])
     // DummyAction   da{&film.img};
     try
     {
-        const unsigned ps = parse_results.template get_opt<'s'>();
+        const float t = parse_results.template get_opt<'t'>();
 
         const unsigned        num_pix = product(img.res());
         std::atomic<unsigned> progress{};
@@ -290,7 +315,7 @@ main(int argc, char* argv[])
             }};
 
         ElapsedTimer<> timer;
-        render(img, cam, ps, progress);
+        render(img, cam, t, progress);
         const auto e = timer.elapsed();
         watcher.join();
 
