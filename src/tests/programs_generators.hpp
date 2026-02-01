@@ -93,6 +93,31 @@ struct GM_J4
 };
 
 template <std::integral T>
+struct GM_Bool
+{
+    using U = loom::uint_of_size_t<sizeof(T)>;
+
+    auto
+    operator()(loom::test::RandomState& rs) const noexcept
+    {
+        return rs.make_gen<bool>(0.5);
+    }
+};
+
+template <std::integral T>
+struct GM_Bool_Bin
+{
+    using U = loom::uint_of_size_t<sizeof(T)>;
+
+    auto
+    operator()(loom::test::RandomState& rs) const noexcept
+    {
+        return [g = rs.make_gen<bool>(0.5)]() mutable noexcept
+        { return std::tuple{g(), g()}; };
+    }
+};
+
+template <std::integral T>
 struct GM_Bit_Bin
 {
     using U = loom::uint_of_size_t<sizeof(T)>;

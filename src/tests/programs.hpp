@@ -87,6 +87,33 @@ KERNEL(jmp4_test, IVAR(i))
     IMOV(i, 11)
 KERNEL_END(IVAR(i));
 
+// StandardTestSuite uses comparison with reference implementation.
+// Scalar boolean operations are clamped to 0 and 1, but
+// vector integer operations produce values with either all bits set or none.
+// Thus boolean logic tests clamps values explicitly.
+// FIXME: The better approach would be using boolean logic theorems and properties.
+
+// a && b
+template <std::integral T>
+KERNEL(bool_and_test, IVAR(a), IVAR(b))
+    ILAND(a, a, b),
+    IMIN(a, a, 1)               // clamp SIMD values
+KERNEL_END(IVAR(a));
+
+// a || b
+template <std::integral T>
+KERNEL(bool_or_test, IVAR(a), IVAR(b))
+    ILOR(a, a, b),
+    IMIN(a, a, 1)               // clamp SIMD values
+KERNEL_END(IVAR(a));
+
+// !a
+template <std::integral T>
+KERNEL(bool_not_test, IVAR(a))
+    ILNOT(a, a),
+    IMIN(a, a, 1)               // clamp SIMD values
+KERNEL_END(IVAR(a));
+
 // a & b
 template <std::integral T>
 KERNEL(bit_and_test, IVAR(a), IVAR(b))

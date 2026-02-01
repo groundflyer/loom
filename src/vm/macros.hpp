@@ -422,6 +422,9 @@
 #define TMIN(...)          MIN(MAJOR_TYPE, __VA_ARGS__)
 #define TMAX(...)          MAX(MAJOR_TYPE, __VA_ARGS__)
 
+#define IMIN(...)          MIN(INDEX_TYPE, __VA_ARGS__)
+#define IMAX(...)          MAX(INDEX_TYPE, __VA_ARGS__)
+
 #define ABS_CS(...)        UNOP_CS(loom::vm::ops::abs, __VA_ARGS__)
 #define ROUND_CS(...)      UNOP_CS(loom::vm::ops::round, __VA_ARGS__)
 #define CEIL_CS(...)       UNOP_CS(loom::vm::ops::ceil, __VA_ARGS__)
@@ -443,3 +446,6 @@
 #define TCOS_CS(...)       COS_CS(MAJOR_TYPE, __VA_ARGS__)
 #define TMIN_CS(...)       MIN_CS(MAJOR_TYPE, __VA_ARGS__)
 #define TMAX_CS(...)       MAX_CS(MAJOR_TYPE, __VA_ARGS__)
+
+#define IMIN_CS(...)       MIN_CS(INDEX_TYPE, __VA_ARGS__)
+#define IMAX_CS(...)       MAX_CS(INDEX_TYPE, __VA_ARGS__)

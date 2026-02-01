@@ -340,7 +340,10 @@ main(int argc, char* argv[])
             StandardTestSuite<bit_and_test, GM_Bit_Bin, std::bit_and<>>,
             StandardTestSuite<bit_or_test, GM_Bit_Bin, std::bit_or<>>,
             StandardTestSuite<bit_xor_test, GM_Bit_Bin, std::bit_xor<>>,
-            StandardTestSuite<bit_not_test, GM_0U, std::bit_not<>>>{},
+            StandardTestSuite<bit_not_test, GM_0U, std::bit_not<>>,
+            StandardTestSuite<bool_and_test, GM_Bool_Bin, std::logical_and<>>,
+            StandardTestSuite<bool_or_test, GM_Bool_Bin, std::logical_or<>>,
+            StandardTestSuite<bool_not_test, GM_Bool, std::logical_not<>>>{},
         track,
         tm,
         rs);
