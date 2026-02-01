@@ -90,37 +90,37 @@ KERNEL_END(IVAR(i));
 // a & b
 template <std::integral T>
 KERNEL(bit_and_test, IVAR(a), IVAR(b))
-    BAND(a, a, b)
+    IBAND(a, a, b)
 KERNEL_END(IVAR(a));
 
 // a | b
 template <std::integral T>
 KERNEL(bit_or_test, IVAR(a), IVAR(b))
-    BOR(a, a, b)
+    IBOR(a, a, b)
 KERNEL_END(IVAR(a));
 
 // a ^ b
 template <std::integral T>
 KERNEL(bit_xor_test, IVAR(a), IVAR(b))
-    XOR(a, a, b)
+    IXOR(a, a, b)
 KERNEL_END(IVAR(a));
 
 // ~a
 template <std::integral T>
 KERNEL(bit_not_test, IVAR(a))
-    BNOT(a, a)
+    IBNOT(a, a)
 KERNEL_END(IVAR(a));
 
 // (a << b)
 template <std::integral T>
 TKERNEL2(lshift_test, a, b)
-    LSHFT(a, a, b)
+    ILSHFT(a, a, b)
 TKERNEL_END1(a);
 
 // (a >> b)
 template <std::integral T>
 TKERNEL2(rshift_test, a, b)
-    RSHFT(a, a, b)
+    IRSHFT(a, a, b)
 TKERNEL_END1(a);
 
 // abs(x) > 0

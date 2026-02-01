@@ -24,7 +24,7 @@
 #define NTVAR(NAME)      NVAR(MAJOR_TYPE, NAME)
 #define NIVAR(NAME)      NVAR(INDEX_TYPE, NAME)
 
-#define KERNEL(NAME, ...)                            \
+#define KERNEL(NAME, ...)                           \
     using NAME = loom::vm::kernel_blank < CS(NAME), \
           loom::type_sequence<__VA_ARGS__>, loom::type_sequence <
 #define KERNEL_END(...)         >, loom::type_sequence < __VA_ARGS__ >>
@@ -196,45 +196,41 @@
 #define LABEL(NAME)             LABEL_CS(CS(NAME))
 #define PREFIX_LABEL_CS(_P, _L) LABEL_CS(CS_JOIN(_P, _L))
 
-#define JMP(TARGET)                 \
+#define JMP(TARGET)                \
     loom::vm::Jump < LABEL(TARGET) \
     >
 
 #define PJMPN(VN, ...) \
     loom::vm::ParmJump<VAR(INDEX_TYPE, VN), loom::type_sequence<__VA_ARGS__>>
-#define PJMP2(VN, L1, L2)                                                   \
+#define PJMP2(VN, L1, L2)                                                 \
     loom::vm::ParmJump < VAR(INDEX_TYPE, VN), loom::type_pair < LABEL(L1) \
-    , LABEL(L2)                                                             \
+    , LABEL(L2)                                                           \
     >>
-#define PJMP3(VN, L1, L2, L3)                  \
-    loom::vm::ParmJump < VAR(INDEX_TYPE, VN), \
-        loom::type_sequence < LABEL(L1)       \
-    , LABEL(L2)                                \
-    , LABEL(L3)                                \
+#define PJMP3(VN, L1, L2, L3)                                                 \
+    loom::vm::ParmJump < VAR(INDEX_TYPE, VN), loom::type_sequence < LABEL(L1) \
+    , LABEL(L2)                                                               \
+    , LABEL(L3)                                                               \
     >>
-#define PJMP4(VN, L1, L2, L3, L4)              \
-    loom::vm::ParmJump < VAR(INDEX_TYPE, VN), \
-        loom::type_sequence < LABEL(L1)       \
-    , LABEL(L2)                                \
-    , LABEL(L3)                                \
-    , LABEL(L4)                                \
+#define PJMP4(VN, L1, L2, L3, L4)                                             \
+    loom::vm::ParmJump < VAR(INDEX_TYPE, VN), loom::type_sequence < LABEL(L1) \
+    , LABEL(L2)                                                               \
+    , LABEL(L3)                                                               \
+    , LABEL(L4)                                                               \
     >>
-#define PJMP2_CS(VN, L1, L2)                                                 \
+#define PJMP2_CS(VN, L1, L2)                                               \
     loom::vm::ParmJump < NVAR(INDEX_TYPE, VN), loom::type_pair < LABEL(L1) \
-    , LABEL(L2)                                                              \
+    , LABEL(L2)                                                            \
     >>
-#define PJMP3_CS(VN, L1, L2, L3)                \
-    loom::vm::ParmJump < NVAR(INDEX_TYPE, VN), \
-        loom::type_sequence < LABEL(L1)        \
-    , LABEL(L2)                                 \
-    , LABEL(L3)                                 \
+#define PJMP3_CS(VN, L1, L2, L3)                                               \
+    loom::vm::ParmJump < NVAR(INDEX_TYPE, VN), loom::type_sequence < LABEL(L1) \
+    , LABEL(L2)                                                                \
+    , LABEL(L3)                                                                \
     >>
-#define PJMP4_CS(VN, L1, L2, L3, L4)            \
-    loom::vm::ParmJump < NVAR(INDEX_TYPE, VN), \
-        loom::type_sequence < LABEL(L1)        \
-    , LABEL(L2)                                 \
-    , LABEL(L3)                                 \
-    , LABEL(L4)                                 \
+#define PJMP4_CS(VN, L1, L2, L3, L4)                                           \
+    loom::vm::ParmJump < NVAR(INDEX_TYPE, VN), loom::type_sequence < LABEL(L1) \
+    , LABEL(L2)                                                                \
+    , LABEL(L3)                                                                \
+    , LABEL(L4)                                                                \
     >>
 
 #define BINOP_CS(OP, TYPE, DST, A, B) \
@@ -249,20 +245,20 @@
     loom::vm::Compute<OP<TYPE>, NIVAR(DST), NVAR(TYPE, A), NVAR(TYPE, B)>
 #define CMP(OP, TYPE, DST, A, B) CMP_CS(OP, TYPE, CS(DST), CS(A), CS(B))
 
-#define CMOV_CS(TYPE, DST, C, A, B)          \
+#define CMOV_CS(TYPE, DST, C, A, B)        \
     loom::vm::Compute<loom::vm::ops::cmov, \
-                       NVAR(TYPE, DST),      \
-                       NIVAR(C),             \
-                       NVAR(TYPE, A),        \
-                       NVAR(TYPE, B)>
+                      NVAR(TYPE, DST),     \
+                      NIVAR(C),            \
+                      NVAR(TYPE, A),       \
+                      NVAR(TYPE, B)>
 #define CMOV(TYPE, DST, C, A, B) CMOV_CS(TYPE, CS(DST), CS(C), CS(A), CS(B))
 
-#define FMA_CS(TYPE, DST, X, Y, Z)          \
+#define FMA_CS(TYPE, DST, X, Y, Z)        \
     loom::vm::Compute<loom::vm::ops::fma, \
-                       NVAR(TYPE, DST),     \
-                       NVAR(TYPE, X),       \
-                       NVAR(TYPE, Y),       \
-                       NVAR(TYPE, Z)>
+                      NVAR(TYPE, DST),    \
+                      NVAR(TYPE, X),      \
+                      NVAR(TYPE, Y),      \
+                      NVAR(TYPE, Z)>
 #define TFMA_CS(...)       FMA_CS(MAJOR_TYPE, __VA_ARGS__)
 #define TFMA(DST, X, Y, Z) TFMA_CS(CS(DST), CS(X), CS(Y), CS(Z))
 
@@ -350,23 +346,41 @@
 #define IGE_CS(...)        GE_CS(INDEX_TYPE, __VA_ARGS__)
 #define ILE_CS(...)        LE_CS(INDEX_TYPE, __VA_ARGS__)
 
-#define LAND(...)          BINOP(std::logical_and, INDEX_TYPE, __VA_ARGS__)
-#define LOR(...)           BINOP(std::logical_or, INDEX_TYPE, __VA_ARGS__)
-#define LNOT(...)          UNOP(std::logical_not, INDEX_TYPE, __VA_ARGS__)
+#define LAND(...)          BINOP(std::logical_and, __VA_ARGS__)
+#define LOR(...)           BINOP(std::logical_or, __VA_ARGS__)
+#define LNOT(...)          UNOP(std::logical_not, __VA_ARGS__)
 
-#define LAND_CS(...)       BINOP_CS(std::logical_and, INDEX_TYPE, __VA_ARGS__)
-#define LOR_CS(...)        BINOP_CS(std::logical_or, INDEX_TYPE, __VA_ARGS__)
-#define LNOT_CS(...)       UNOP_CS(std::logical_not, INDEX_TYPE, __VA_ARGS__)
+#define LAND_CS(...)       BINOP_CS(std::logical_and, __VA_ARGS__)
+#define LOR_CS(...)        BINOP_CS(std::logical_or, __VA_ARGS__)
+#define LNOT_CS(...)       UNOP_CS(std::logical_not, __VA_ARGS__)
 
-#define BAND(...)          BINOP(std::bit_and, INDEX_TYPE, __VA_ARGS__)
-#define BOR(...)           BINOP(std::bit_or, INDEX_TYPE, __VA_ARGS__)
-#define XOR(...)           BINOP(std::bit_xor, INDEX_TYPE, __VA_ARGS__)
-#define BNOT(...)          UNOP(std::bit_not, INDEX_TYPE, __VA_ARGS__)
+#define ILAND(...)         LAND(INDEX_TYPE, __VA_ARGS__)
+#define ILOR(...)          LOR(INDEX_TYPE, __VA_ARGS__)
+#define ILNOT(...)         LNOT(INDEX_TYPE, __VA_ARGS__)
 
-#define BAND_CS(...)       BINOP_CS(std::bit_and, INDEX_TYPE, __VA_ARGS__)
-#define BOR_CS(...)        BINOP_CS(std::bit_or, INDEX_TYPE, __VA_ARGS__)
-#define XOR_CS(...)        BINOP_CS(std::bit_xor, INDEX_TYPE, __VA_ARGS__)
-#define BNOT_CS(...)       UNOP_CS(std::bit_not, INDEX_TYPE, __VA_ARGS__)
+#define ILAND_CS(...)      LAND_CS(INDEX_TYPE, __VA_ARGS__)
+#define ILOR_CS(...)       LOR_CS(INDEX_TYPE, __VA_ARGS__)
+#define ILNOT_CS(...)      LNOT_CS(INDEX_TYPE, __VA_ARGS__)
+
+#define BAND(...)          BINOP(std::bit_and, __VA_ARGS__)
+#define BOR(...)           BINOP(std::bit_or, __VA_ARGS__)
+#define XOR(...)           BINOP(std::bit_xor, __VA_ARGS__)
+#define BNOT(...)          UNOP(std::bit_not, __VA_ARGS__)
+
+#define BAND_CS(...)       BINOP_CS(std::bit_and, __VA_ARGS__)
+#define BOR_CS(...)        BINOP_CS(std::bit_or, __VA_ARGS__)
+#define XOR_CS(...)        BINOP_CS(std::bit_xor, __VA_ARGS__)
+#define BNOT_CS(...)       UNOP_CS(std::bit_not, __VA_ARGS__)
+
+#define IBAND(...)         BAND(INDEX_TYPE, __VA_ARGS__)
+#define IBOR(...)          BOR(INDEX_TYPE, __VA_ARGS__)
+#define IXOR(...)          XOR(INDEX_TYPE, __VA_ARGS__)
+#define IBNOT(...)         BNOT(INDEX_TYPE, __VA_ARGS__)
+
+#define IBAND_CS(...)      BAND_CS(INDEX_TYPE, __VA_ARGS__)
+#define IBOR_CS(...)       BOR_CS(INDEX_TYPE, __VA_ARGS__)
+#define IXOR_CS(...)       XOR_CS(INDEX_TYPE, __VA_ARGS__)
+#define IBNOT_CS(...)      BNOT_CS(INDEX_TYPE, __VA_ARGS__)
 
 #define TCMOV(...)         CMOV(MAJOR_TYPE, __VA_ARGS__)
 #define ICMOV(...)         CMOV(INDEX_TYPE, __VA_ARGS__)
@@ -374,11 +388,17 @@
 #define TCMOV_CS(...)      CMOV_CS(MAJOR_TYPE, __VA_ARGS__)
 #define ICMOV_CS(...)      CMOV_CS(INDEX_TYPE, __VA_ARGS__)
 
-#define LSHFT(...)         BINOP(loom::vm::ops::lshift, INDEX_TYPE, __VA_ARGS__)
-#define RSHFT(...)         BINOP(loom::vm::ops::rshift, INDEX_TYPE, __VA_ARGS__)
+#define LSHFT(...)         BINOP(loom::vm::ops::lshift, __VA_ARGS__)
+#define RSHFT(...)         BINOP(loom::vm::ops::rshift, __VA_ARGS__)
 
 #define LSHFT_CS(...)      BINOP_CS(loom::vm::ops::lshift, INDEX_TYPE, __VA_ARGS__)
 #define RSHFT_CS(...)      BINOP_CS(loom::vm::ops::rshift, INDEX_TYPE, __VA_ARGS__)
+
+#define ILSHFT(...)        LSHFT(INDEX_TYPE, __VA_ARGS__)
+#define IRSHFT(...)        RSHFT(INDEX_TYPE, __VA_ARGS__)
+
+#define ILSHFT_CS(...)     LSHFT_CS(INDEX_TYPE, __VA_ARGS__)
+#define IRSHFT_CS(...)     RSHFT_CS(INDEX_TYPE, __VA_ARGS__)
 
 #define ABS(...)           UNOP(loom::vm::ops::abs, __VA_ARGS__)
 #define ROUND(...)         UNOP(loom::vm::ops::round, __VA_ARGS__)
