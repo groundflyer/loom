@@ -6,11 +6,11 @@
 
 #pragma once
 
-#include <array>
-#include <cstdint>
-
 #include <common/debug.hpp>
 #include <common/functional.hpp>
+
+#include <array>
+#include <cstdint>
 
 namespace loom
 {
