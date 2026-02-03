@@ -391,8 +391,8 @@
 #define LSHFT(...)         BINOP(loom::vm::ops::lshift, __VA_ARGS__)
 #define RSHFT(...)         BINOP(loom::vm::ops::rshift, __VA_ARGS__)
 
-#define LSHFT_CS(...)      BINOP_CS(loom::vm::ops::lshift, INDEX_TYPE, __VA_ARGS__)
-#define RSHFT_CS(...)      BINOP_CS(loom::vm::ops::rshift, INDEX_TYPE, __VA_ARGS__)
+#define LSHFT_CS(...)      BINOP_CS(loom::vm::ops::lshift, __VA_ARGS__)
+#define RSHFT_CS(...)      BINOP_CS(loom::vm::ops::rshift, __VA_ARGS__)
 
 #define ILSHFT(...)        LSHFT(INDEX_TYPE, __VA_ARGS__)
 #define IRSHFT(...)        RSHFT(INDEX_TYPE, __VA_ARGS__)
