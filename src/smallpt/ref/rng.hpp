@@ -26,38 +26,46 @@ rotl32(std::uint32_t x, std::uint32_t N) noexcept
     c[0] += c[1];         \
     c[1] = rotl32(c[1], R) ^ c[0]
 
-#define THREEFRY_KEY_INJECTION(C, I1, I2) \
-    c[0] += ks[I1];                       \
-    c[1] += ks[I2] + C
+#define THREEFRY_KEY_INJECTION(C, KS1, KS2) \
+    c[0] += KS1;                            \
+    c[1] += KS2 + C
 
-#define THREEFRY_8ROUNDS(C1, C2, I1, I2, I3, I4) \
-    THREEFRY_ROUND(13);                          \
-    THREEFRY_ROUND(15);                          \
-    THREEFRY_ROUND(26);                          \
-    THREEFRY_ROUND(6);                           \
-    THREEFRY_KEY_INJECTION(C1, I1, I2);          \
-    THREEFRY_ROUND(17);                          \
-    THREEFRY_ROUND(29);                          \
-    THREEFRY_ROUND(16);                          \
-    THREEFRY_ROUND(24);                          \
-    THREEFRY_KEY_INJECTION(C2, I3, I4)
+#define THREEFRY_8ROUNDS(C1, C2, KS1, KS2, KS3, KS4) \
+    THREEFRY_ROUND(13);                              \
+    THREEFRY_ROUND(15);                              \
+    THREEFRY_ROUND(26);                              \
+    THREEFRY_ROUND(6);                               \
+    THREEFRY_KEY_INJECTION(C1, KS1, KS2);            \
+    THREEFRY_ROUND(17);                              \
+    THREEFRY_ROUND(29);                              \
+    THREEFRY_ROUND(16);                              \
+    THREEFRY_ROUND(24);                              \
+    THREEFRY_KEY_INJECTION(C2, KS3, KS4)
 
 using ar_32_2 = std::array<std::uint32_t, 2>;
 
-ar_32_2
-threefry2x32r32(ar_32_2 c, const ar_32_2& k) noexcept
+/// @brief Reference Threefry-2x32 implementation with 32 rounds.
+/// @tparam k0 first key number.
+/// @tparam k1 second key number.
+template <std::uint32_t k0, std::uint32_t k1>
+struct threefry2x32r32
 {
-    std::uint32_t ks[3] = {k[0], k[1], 0x1bd11bda ^ k[0] ^ k[1]};
-    c[0] += ks[0];
-    c[1] += ks[1];
+    static constexpr std::uint32_t k2 = 0x1bd11bda ^ k0 ^ k1;
 
-    THREEFRY_8ROUNDS(1, 2, 1, 2, 2, 0);
-    THREEFRY_8ROUNDS(3, 4, 0, 1, 1, 2);
-    THREEFRY_8ROUNDS(5, 6, 2, 0, 0, 1);
-    THREEFRY_8ROUNDS(7, 8, 1, 2, 2, 0);
+    ar_32_2
+    operator()(ar_32_2 c) const noexcept
+    {
+        c[0] += k0;
+        c[1] += k1;
 
-    return c;
-}
+        THREEFRY_8ROUNDS(1, 2, k1, k2, k2, k0);
+        THREEFRY_8ROUNDS(3, 4, k0, k1, k1, k2);
+        THREEFRY_8ROUNDS(5, 6, k2, k0, k0, k1);
+        THREEFRY_8ROUNDS(7, 8, k1, k2, k2, k0);
+
+        return c;
+    }
+};
 #undef THREEFRY_ROUND
 #undef THREEFRY_8ROUNDS
 #undef THREEFRY_KEY_INJECTION
@@ -80,8 +88,10 @@ bump_ctr(const ar_32_2& c, std::uint32_t i = 1) noexcept
 }
 } // namespace fn
 
+template <std::uint32_t k0, std::uint32_t k1>
+inline constexpr fn::threefry2x32r32<k0, k1> threefry2x32r32{};
+
 MK_NIEBLOID(rotl32)
-MK_NIEBLOID(threefry2x32r32)
 MK_NIEBLOID(gen_canonical)
 MK_NIEBLOID(bump_ctr)
 } // namespace loom

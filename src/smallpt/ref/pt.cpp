@@ -92,7 +92,7 @@ struct Shading
     RGB<>
     operator()(const Gallery::Lambert& mat) const noexcept
     {
-        const Vec3f d = sample_hemisphere(n, sample_u(c, key));
+        const Vec3f d = sample_hemisphere(n, sample_u<key[0], key[1]>(c));
         const float r = dot(n, d);
         return mat.color *
                radiance(bias_ray(p, d), bump_ctr(c, 641833), depth + 1) * r;
@@ -163,7 +163,10 @@ render(Image&                 img,
               std::sqrt(m2 / static_cast<float>(ns - 1)) / ns >= threshold)
         {
             const RGB v = Shading::radiance(
-                cam(jitter_sample_pos(pw, pp, sample_u(Counter{c0, ns}, key))),
+                cam(jitter_sample_pos(
+                    pw,
+                    pp,
+                    sample_u<key[0], key[1]>(Counter{c0, ns}))),
                 Counter{c0, ns + min_samples + 1001});
             const float x = std::min(luminance(v), 1.f);
             ++ns;
