@@ -20,6 +20,10 @@ KERNEL_END(VAR(std::uint32_t, dst));
 KERNEL(threefry2x32_test, VAR(std::uint32_t, c0), VAR(std::uint32_t, c1))
     INSERT_MACRO(vm::threefry2x32r32, CS(c0), CS(c1), CS(0xdead), CS(0xbeef), CS(0x1bd17b98), CS(tmp1), CS(tmp2))
 KERNEL_END(VAR(std::uint32_t, c0), VAR(std::uint32_t, c1));
+
+KERNEL(gen_canon_test, VAR(std::uint32_t, x))
+    INSERT_MACRO(vm::gen_canonical, CS(x))
+KERNEL_END(VAR(float, x));
 // clang-format on
 
 int
@@ -33,6 +37,7 @@ main(int argc, char* argv[])
 
     vm::bse::function<rotl32_test>       bse_rotl32;
     vm::bse::function<threefry2x32_test> bse_threefry2x32;
+    vm::bse::function<gen_canon_test>    bse_gen_canon;
 
     track.dep_check(
         NamedTest(
@@ -51,6 +56,8 @@ main(int argc, char* argv[])
                 [](const auto& a, const auto& b) noexcept
                 { return std::get<0>(a) == b[0] && std::get<1>(a) == b[1]; }),
             "Threefry-2x32"));
+    track.check(NamedTest(tm.with_ref(gu32, bse_gen_canon, gen_canonical),
+                          "gen_canonical"));
 
     return track.ret_code();
 }
