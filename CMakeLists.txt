@@ -236,6 +236,7 @@ if(BUILD_TESTS)
     test.cpp
     threadpool.cpp
     sort.cpp
+    vm_smallpt.cpp
   )
 
   # header-only fmt in case if system fmt is not linked to libc++
