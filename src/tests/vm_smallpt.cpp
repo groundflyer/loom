@@ -8,10 +8,18 @@
 using namespace loom;
 using namespace test;
 
+constexpr std::uint32_t k0 = 0xdead;
+constexpr std::uint32_t k1 = 0xbeef;
+// constexpr std::uint32_t k2 = 0x1bd11bda ^ k0 ^ k1; // 0x1bd17b98
+
 // clang-format off
 KERNEL(rotl32_test, VAR(std::uint32_t, x), VAR(std::uint32_t, n))
     INSERT_MACRO(vm::rotl32, CS(x), CS(n), CS(dst), CS(tmp))
 KERNEL_END(VAR(std::uint32_t, dst));
+
+KERNEL(threefry2x32_test, VAR(std::uint32_t, c0), VAR(std::uint32_t, c1))
+    INSERT_MACRO(vm::threefry2x32r32, CS(c0), CS(c1), CS(0xdead), CS(0xbeef), CS(0x1bd17b98), CS(tmp1), CS(tmp2))
+KERNEL_END(VAR(std::uint32_t, c0), VAR(std::uint32_t, c1));
 // clang-format on
 
 int
@@ -21,15 +29,28 @@ main(int argc, char* argv[])
     ParmTestMaker tm{parse_numruns<100000>(argc, argv)};
     RandomState   rs;
 
-    vm::bse::function<rotl32_test> bse_rotl32;
+    auto gu32 = rs.make_gen<std::uint32_t>(0, -1u);
 
-    track.check(NamedTest(
-        tm.with_ref([gx = rs.make_gen<std::uint32_t>(0, -1u),
-                     gn = rs.make_gen<std::uint32_t>(0, 31)]() mutable noexcept
-                    { return std::tuple{gx(), gn()}; },
-                    bse_rotl32,
-                    rotl32),
-        "rotl32"));
+    vm::bse::function<rotl32_test>       bse_rotl32;
+    vm::bse::function<threefry2x32_test> bse_threefry2x32;
+
+    track.dep_check(
+        NamedTest(
+            tm.with_ref(
+                [&, gn = rs.make_gen<std::uint32_t>(0, 31)]() mutable noexcept
+                { return std::tuple{gu32(), gn()}; },
+                bse_rotl32,
+                rotl32),
+            "rotl32"),
+        NamedTest(
+            tm.with_ref(
+                [&]() noexcept
+                { return std::array<std::uint32_t, 2>{gu32(), gu32()}; },
+                bse_threefry2x32,
+                threefry2x32r32<k0, k1>,
+                [](const auto& a, const auto& b) noexcept
+                { return std::get<0>(a) == b[0] && std::get<1>(a) == b[1]; }),
+            "Threefry-2x32"));
 
     return track.ret_code();
 }

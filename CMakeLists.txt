@@ -304,6 +304,7 @@ if(BUILD_TESTS)
   target_link_options(test_vm_mp PUBLIC $<$<CONFIG:RelWithDebInfo>:-fsanitize=thread>)
   target_compile_options(test_sort PUBLIC $<$<CONFIG:RelWithDebInfo>:-fsanitize=address>)
   target_link_options(test_sort PUBLIC $<$<CONFIG:RelWithDebInfo>:-fsanitize=address>)
+  target_compile_options(test_vm_smallpt PUBLIC -fbracket-depth=1024)
 endif()
 
 if(BUILD_DEBUGGERS)
