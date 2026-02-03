@@ -324,17 +324,22 @@
     loom::vm::Compute<OP<TYPE>, NVAR(TYPE, DST), NVAR(TYPE, V)>
 #define UNOP(OP, TYPE, DST, V) UNOP_CS(OP, TYPE, CS(DST), CS(V))
 
-#define CMP_CS(OP, TYPE, DST, A, B) \
-    loom::vm::Compute<OP<TYPE>, NIVAR(DST), NVAR(TYPE, A), NVAR(TYPE, B)>
-#define CMP(OP, TYPE, DST, A, B) CMP_CS(OP, TYPE, CS(DST), CS(A), CS(B))
+#define CMP_CS(OP, DST_TYPE, OP_TYPE, DST, A, B) \
+    loom::vm::Compute<OP<OP_TYPE>,               \
+                      NVAR(DST_TYPE, DST),       \
+                      NVAR(OP_TYPE, A),          \
+                      NVAR(OP_TYPE, B)>
+#define CMP(OP, DST_TYPE, OP_TYPE, DST, A, B) \
+    CMP_CS(OP, DST_TYPE, OP_TYPE, CS(DST), CS(A), CS(B))
 
-#define CMOV_CS(TYPE, DST, C, A, B)        \
+#define CMOV_CS(TYPE, CTYPE, DST, C, A, B) \
     loom::vm::Compute<loom::vm::ops::cmov, \
                       NVAR(TYPE, DST),     \
-                      NIVAR(C),            \
+                      NVAR(CTYPE, C),      \
                       NVAR(TYPE, A),       \
                       NVAR(TYPE, B)>
-#define CMOV(TYPE, DST, C, A, B) CMOV_CS(TYPE, CS(DST), CS(C), CS(A), CS(B))
+#define CMOV(TYPE, CTYPE, DST, C, A, B) \
+    CMOV_CS(TYPE, CTYPE, CS(DST), CS(C), CS(A), CS(B))
 
 #define FMA_CS(TYPE, DST, X, Y, Z)        \
     loom::vm::Compute<loom::vm::ops::fma, \
@@ -401,33 +406,33 @@
 #define GE_CS(...)         CMP_CS(std::greater_equal, __VA_ARGS__)
 #define LE_CS(...)         CMP_CS(std::less_equal, __VA_ARGS__)
 
-#define TEQ(...)           EQ(MAJOR_TYPE, __VA_ARGS__)
-#define TNEQ(...)          NEQ(MAJOR_TYPE, __VA_ARGS__)
-#define TGT(...)           GT(MAJOR_TYPE, __VA_ARGS__)
-#define TLT(...)           LT(MAJOR_TYPE, __VA_ARGS__)
-#define TGE(...)           GE(MAJOR_TYPE, __VA_ARGS__)
-#define TLE(...)           LE(MAJOR_TYPE, __VA_ARGS__)
+#define TEQ(...)           EQ(INDEX_TYPE, MAJOR_TYPE, __VA_ARGS__)
+#define TNEQ(...)          NEQ(INDEX_TYPE, MAJOR_TYPE, __VA_ARGS__)
+#define TGT(...)           GT(INDEX_TYPE, MAJOR_TYPE, __VA_ARGS__)
+#define TLT(...)           LT(INDEX_TYPE, MAJOR_TYPE, __VA_ARGS__)
+#define TGE(...)           GE(INDEX_TYPE, MAJOR_TYPE, __VA_ARGS__)
+#define TLE(...)           LE(INDEX_TYPE, MAJOR_TYPE, __VA_ARGS__)
 
-#define IEQ(...)           EQ(INDEX_TYPE, __VA_ARGS__)
-#define INEQ(...)          NEQ(INDEX_TYPE, __VA_ARGS__)
-#define IGT(...)           GT(INDEX_TYPE, __VA_ARGS__)
-#define ILT(...)           LT(INDEX_TYPE, __VA_ARGS__)
-#define IGE(...)           GE(INDEX_TYPE, __VA_ARGS__)
-#define ILE(...)           LE(INDEX_TYPE, __VA_ARGS__)
+#define IEQ(...)           EQ(INDEX_TYPE, INDEX_TYPE, __VA_ARGS__)
+#define INEQ(...)          NEQ(INDEX_TYPE, INDEX_TYPE, __VA_ARGS__)
+#define IGT(...)           GT(INDEX_TYPE, INDEX_TYPE, __VA_ARGS__)
+#define ILT(...)           LT(INDEX_TYPE, INDEX_TYPE, __VA_ARGS__)
+#define IGE(...)           GE(INDEX_TYPE, INDEX_TYPE, __VA_ARGS__)
+#define ILE(...)           LE(INDEX_TYPE, INDEX_TYPE, __VA_ARGS__)
 
-#define TEQ_CS(...)        EQ_CS(MAJOR_TYPE, __VA_ARGS__)
-#define TNEQ_CS(...)       NEQ_CS(MAJOR_TYPE, __VA_ARGS__)
-#define TGT_CS(...)        GT_CS(MAJOR_TYPE, __VA_ARGS__)
-#define TLT_CS(...)        LT_CS(MAJOR_TYPE, __VA_ARGS__)
-#define TGE_CS(...)        GE_CS(MAJOR_TYPE, __VA_ARGS__)
-#define TLE_CS(...)        LE_CS(MAJOR_TYPE, __VA_ARGS__)
+#define TEQ_CS(...)        EQ_CS(INDEX_TYPE, MAJOR_TYPE, __VA_ARGS__)
+#define TNEQ_CS(...)       NEQ_CS(INDEX_TYPE, MAJOR_TYPE, __VA_ARGS__)
+#define TGT_CS(...)        GT_CS(INDEX_TYPE, MAJOR_TYPE, __VA_ARGS__)
+#define TLT_CS(...)        LT_CS(INDEX_TYPE, MAJOR_TYPE, __VA_ARGS__)
+#define TGE_CS(...)        GE_CS(INDEX_TYPE, MAJOR_TYPE, __VA_ARGS__)
+#define TLE_CS(...)        LE_CS(INDEX_TYPE, MAJOR_TYPE, __VA_ARGS__)
 
-#define IEQ_CS(...)        EQ_CS(INDEX_TYPE, __VA_ARGS__)
-#define INEQ_CS(...)       NEQ_CS(INDEX_TYPE, __VA_ARGS__)
-#define IGT_CS(...)        GT_CS(INDEX_TYPE, __VA_ARGS__)
-#define ILT_CS(...)        LT_CS(INDEX_TYPE, __VA_ARGS__)
-#define IGE_CS(...)        GE_CS(INDEX_TYPE, __VA_ARGS__)
-#define ILE_CS(...)        LE_CS(INDEX_TYPE, __VA_ARGS__)
+#define IEQ_CS(...)        EQ_CS(INDEX_TYPE, INDEX_TYPE, __VA_ARGS__)
+#define INEQ_CS(...)       NEQ_CS(INDEX_TYPE, INDEX_TYPE, __VA_ARGS__)
+#define IGT_CS(...)        GT_CS(INDEX_TYPE, INDEX_TYPE, __VA_ARGS__)
+#define ILT_CS(...)        LT_CS(INDEX_TYPE, INDEX_TYPE, __VA_ARGS__)
+#define IGE_CS(...)        GE_CS(INDEX_TYPE, INDEX_TYPE, __VA_ARGS__)
+#define ILE_CS(...)        LE_CS(INDEX_TYPE, INDEX_TYPE, __VA_ARGS__)
 
 #define LAND(...)          BINOP(std::logical_and, __VA_ARGS__)
 #define LOR(...)           BINOP(std::logical_or, __VA_ARGS__)
@@ -465,11 +470,11 @@
 #define IXOR_CS(...)       XOR_CS(INDEX_TYPE, __VA_ARGS__)
 #define IBNOT_CS(...)      BNOT_CS(INDEX_TYPE, __VA_ARGS__)
 
-#define TCMOV(...)         CMOV(MAJOR_TYPE, __VA_ARGS__)
-#define ICMOV(...)         CMOV(INDEX_TYPE, __VA_ARGS__)
+#define TCMOV(...)         CMOV(MAJOR_TYPE, INDEX_TYPE, __VA_ARGS__)
+#define ICMOV(...)         CMOV(INDEX_TYPE, INDEX_TYPE, __VA_ARGS__)
 
-#define TCMOV_CS(...)      CMOV_CS(MAJOR_TYPE, __VA_ARGS__)
-#define ICMOV_CS(...)      CMOV_CS(INDEX_TYPE, __VA_ARGS__)
+#define TCMOV_CS(...)      CMOV_CS(MAJOR_TYPE, INDEX_TYPE, __VA_ARGS__)
+#define ICMOV_CS(...)      CMOV_CS(INDEX_TYPE, INDEX_TYPE, __VA_ARGS__)
 
 #define LSHFT(...)         BINOP(loom::vm::ops::lshift, __VA_ARGS__)
 #define RSHFT(...)         BINOP(loom::vm::ops::rshift, __VA_ARGS__)
