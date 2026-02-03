@@ -49,12 +49,12 @@ TMACRO4(find_bounds, rc, t1, t2, t3)
     TMOV_CS(CS(l), CS(-10)),
     TMOV_CS(CS(r), CS(10)),
     INSERT_TMACRO(root_condition, rc, CS(l), CS(r), t1, t2, t3),
-    PJMP2_CS(rc, fb_loop, fb_end),
+    IPJMP2_CS(rc, fb_loop, fb_end),
     LABEL(fb_loop),
     TMUL_CS(CS(l), CS(l), CS(10)),
     TMUL_CS(CS(r), CS(r), CS(10)),
     INSERT_TMACRO(root_condition, rc, CS(l), CS(r), t1, t2, t3),
-    PJMP2_CS(rc, fb_loop, fb_end),
+    IPJMP2_CS(rc, fb_loop, fb_end),
     LABEL(fb_end)               // will be replaced with HaltLabel
 MACRO_END;
 
@@ -89,7 +89,7 @@ TKERNEL4(bisection, a, b, c, d)
     IMOV(i, 0),
     TABS(y, y),
     TGE_CS(CS(y), CS(y), errt),
-    PJMP2(y, HALT, fz_loop),
+    IPJMP2(y, HALT, fz_loop),
     LABEL(fz_loop),
     INSERT_TMACRO(root_condition, CS(y), CS(l), CS(s), CS(t1), CS(t2), CS(t3)),
     TCMOV(r, y, s, r),
@@ -99,7 +99,7 @@ TKERNEL4(bisection, a, b, c, d)
     TABS(y, y),
     TGE_CS(CS(y), CS(y), errt),
     IADD(i, i, 1),
-    PJMP2(y, HALT, fz_loop)
+    IPJMP2(y, HALT, fz_loop)
 KERNEL_END(TVAR(s), IVAR(i));
 // clang-format on
 
@@ -111,10 +111,10 @@ template <>
 struct constants<float>
 {
     static constexpr float err_threshold = 0.1f;
-    using errt = CS(0.1);
+    using errt                           = CS(0.1);
 
-    static constexpr float lbound        = -100;
-    static constexpr float rbound        = 100;
+    static constexpr float lbound = -100;
+    static constexpr float rbound = 100;
 };
 
 template <>

@@ -39,14 +39,14 @@ template <std::unsigned_integral T>
 TKERNEL1(fac_test, a)
     TLE(cmp, a, 1),
     TCMOV(a, cmp, 1, a),
-    PJMP2(cmp, cinit, HALT),
+    IPJMP2(cmp, cinit, HALT),
     LABEL(cinit),
     TSUB(c, a, 1),
     LABEL(loop),
     TMUL(a, a, c),
     TSUB(c, c, 1),
     TEQ(cmp, c, 0),
-    PJMP2(cmp, loop, HALT)
+    IPJMP2(cmp, loop, HALT)
 TKERNEL_END1(a);
 
 template <std::floating_point T>
@@ -69,7 +69,7 @@ KERNEL_END(IVAR(i));
 // 3: 11
 template <typename T>
 KERNEL(jmp4_test, IVAR(i))
-    PJMP4(i, l0, l1, l2, l3),
+    IPJMP4(i, l0, l1, l2, l3),
 
     LABEL(l0),
     IMOV(i, 1),
@@ -187,7 +187,7 @@ template <std::unsigned_integral T>
 TKERNEL1(fib_test, n)
     TLE(cmp, n, 1),
     TCMOV(c, cmp, n, 1),
-    PJMP2(cmp, work, HALT),
+    IPJMP2(cmp, work, HALT),
     LABEL(work),
     TMOV(p, 0),
     TMOV(c, 1),
@@ -198,7 +198,7 @@ TKERNEL1(fib_test, n)
     TMOV(c, t),
     TADD(i, i, 1),
     TLE(cmp, i, n),
-    PJMP2(cmp, HALT, loop)
+    IPJMP2(cmp, HALT, loop)
 TKERNEL_END1(c);
 
 /// abs(fma(a, b, -c) / (a * b + (-c)) - 1) < 1e-6

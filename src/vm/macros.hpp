@@ -283,38 +283,41 @@
     loom::vm::Jump < LABEL(TARGET) \
     >
 
-#define PJMPN(VN, ...) \
-    loom::vm::ParmJump<VAR(INDEX_TYPE, VN), loom::type_sequence<__VA_ARGS__>>
-#define PJMP2(VN, L1, L2)                                                 \
-    loom::vm::ParmJump < VAR(INDEX_TYPE, VN), loom::type_pair < LABEL(L1) \
-    , LABEL(L2)                                                           \
+#define PJMPN(JVAR, ...) \
+    loom::vm::ParmJump<JVAR, loom::type_sequence<__VA_ARGS__>>
+
+#define PJMP2(JVAR, L1, L2)                                    \
+    loom::vm::ParmJump < JVAR, loom::type_sequence < LABEL(L1) \
+    , LABEL(L2)                                                \
     >>
-#define PJMP3(VN, L1, L2, L3)                                                 \
-    loom::vm::ParmJump < VAR(INDEX_TYPE, VN), loom::type_sequence < LABEL(L1) \
-    , LABEL(L2)                                                               \
-    , LABEL(L3)                                                               \
+#define PJMP3(JVAR, L1, L2, L3)                                \
+    loom::vm::ParmJump < JVAR, loom::type_sequence < LABEL(L1) \
+    , LABEL(L2)                                                \
+    , LABEL(L3)                                                \
     >>
-#define PJMP4(VN, L1, L2, L3, L4)                                             \
-    loom::vm::ParmJump < VAR(INDEX_TYPE, VN), loom::type_sequence < LABEL(L1) \
-    , LABEL(L2)                                                               \
-    , LABEL(L3)                                                               \
-    , LABEL(L4)                                                               \
+#define PJMP4(JVAR, L1, L2, L3, L4)                            \
+    loom::vm::ParmJump < JVAR, loom::type_sequence < LABEL(L1) \
+    , LABEL(L2)                                                \
+    , LABEL(L3)                                                \
+    , LABEL(L4)                                                \
     >>
-#define PJMP2_CS(VN, L1, L2)                                               \
-    loom::vm::ParmJump < NVAR(INDEX_TYPE, VN), loom::type_pair < LABEL(L1) \
-    , LABEL(L2)                                                            \
-    >>
-#define PJMP3_CS(VN, L1, L2, L3)                                               \
-    loom::vm::ParmJump < NVAR(INDEX_TYPE, VN), loom::type_sequence < LABEL(L1) \
-    , LABEL(L2)                                                                \
-    , LABEL(L3)                                                                \
-    >>
-#define PJMP4_CS(VN, L1, L2, L3, L4)                                           \
-    loom::vm::ParmJump < NVAR(INDEX_TYPE, VN), loom::type_sequence < LABEL(L1) \
-    , LABEL(L2)                                                                \
-    , LABEL(L3)                                                                \
-    , LABEL(L4)                                                                \
-    >>
+
+#define PJMP2_CS(JTYPE, JNAME, L1, L2) \
+    PJMP2(NVAR(JTYPE, JNAME), LABEL(L1), LABEL(L2))
+#define PJMP3_CS(JTYPE, JNAME, L1, L2, L3) \
+    PJMP2(NVAR(JTYPE, JNAME), LABEL(L1), LABEL(L2), LABEL(L3))
+#define PJMP4_CS(JTYPE, JNAME, L1, L2, L3, L4) \
+    PJMP2(NVAR(JTYPE, JNAME), LABEL(L1), LABEL(L2), LABEL(L3), LABEL(L4))
+
+#define IPJMPN(JNAME, ...)    PJMPN(IVAR(JNAME), __VA_ARGS__)
+#define IPJMP2(JNAME, ...)    PJMP2(IVAR(JNAME), __VA_ARGS__)
+#define IPJMP3(JNAME, ...)    PJMP3(IVAR(JNAME), __VA_ARGS__)
+#define IPJMP4(JNAME, ...)    PJMP4(IVAR(JNAME), __VA_ARGS__)
+
+#define IPJMPN_CS(JNAME, ...) PJMP(NIVAR(JNAME), __VA_ARGS__)
+#define IPJMP2_CS(JNAME, ...) PJMP2(NIVAR(JNAME), __VA_ARGS__)
+#define IPJMP3_CS(JNAME, ...) PJMP3(NIVAR(JNAME), __VA_ARGS__)
+#define IPJMP4_CS(JNAME, ...) PJMP4(NIVAR(JNAME), __VA_ARGS__)
 
 #define BINOP_CS(OP, TYPE, DST, A, B) \
     loom::vm::Compute<OP<TYPE>, NVAR(TYPE, DST), NVAR(TYPE, A), NVAR(TYPE, B)>
