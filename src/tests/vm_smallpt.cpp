@@ -24,6 +24,10 @@ KERNEL_END(VAR(std::uint32_t, c0), VAR(std::uint32_t, c1));
 KERNEL(gen_canon_test, VAR(std::uint32_t, x))
     INSERT_MACRO(vm::gen_canonical, CS(x))
 KERNEL_END(VAR(float, x));
+
+KERNEL(bump_test, VAR(std::uint32_t, c0), VAR(std::uint32_t, c1), VAR(std::uint32_t, i))
+    INSERT_MACRO(vm::bump_ctr, CS(c0), CS(c1), CS(i), CS(tmp1), CS(tmp2))
+KERNEL_END(VAR(std::uint32_t, c0), VAR(std::uint32_t, c1));
 // clang-format on
 
 int
@@ -33,11 +37,14 @@ main(int argc, char* argv[])
     ParmTestMaker tm{parse_numruns<100000>(argc, argv)};
     RandomState   rs;
 
-    auto gu32 = rs.make_gen<std::uint32_t>(0, -1u);
+    auto       gu32          = rs.make_gen<std::uint32_t>(0, -1u);
+    const auto cmp_tuple_arr = [](const auto& a, const auto& b) noexcept
+    { return std::get<0>(a) == b[0] && std::get<1>(a) == b[1]; };
 
     vm::bse::function<rotl32_test>       bse_rotl32;
     vm::bse::function<threefry2x32_test> bse_threefry2x32;
     vm::bse::function<gen_canon_test>    bse_gen_canon;
+    vm::bse::function<bump_test>         bse_bump;
 
     track.dep_check(
         NamedTest(
@@ -47,17 +54,25 @@ main(int argc, char* argv[])
                 bse_rotl32,
                 rotl32),
             "rotl32"),
-        NamedTest(
-            tm.with_ref(
-                [&]() noexcept
-                { return std::array<std::uint32_t, 2>{gu32(), gu32()}; },
-                bse_threefry2x32,
-                threefry2x32r32<k0, k1>,
-                [](const auto& a, const auto& b) noexcept
-                { return std::get<0>(a) == b[0] && std::get<1>(a) == b[1]; }),
-            "Threefry-2x32"));
+        NamedTest(tm.with_ref([&]() noexcept -> std::array<std::uint32_t, 2>
+                              { return {gu32(), gu32()}; },
+                              bse_threefry2x32,
+                              threefry2x32r32<k0, k1>,
+                              cmp_tuple_arr),
+                  "Threefry-2x32"));
     track.check(NamedTest(tm.with_ref(gu32, bse_gen_canon, gen_canonical),
                           "gen_canonical"));
+    track.check(NamedTest(
+        tm.with_ref(
+            [&]() noexcept -> std::array<std::uint32_t, 3>
+            { return {gu32(), gu32(), gu32()}; },
+            bse_bump,
+            [](const std::uint32_t c0,
+               const std::uint32_t c1,
+               const std::uint32_t i) noexcept
+            { return bump_ctr(std::array<std::uint32_t, 2>{c0, c1}, i); },
+            cmp_tuple_arr),
+        "bump counter"));
 
     return track.ret_code();
 }
