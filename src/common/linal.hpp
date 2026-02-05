@@ -1,9 +1,6 @@
 // -*- C++ -*-
 /// @file linal.hpp
-/// @brief Linar algebra classes and operators.
-/// @note Functions defined in loom::fn namespace are not for general use.
-/// They provide implementations for functional objects with same names
-/// in loom namespace.
+/// @brief Legacy linear algebra functions.
 
 #pragma once
 
@@ -29,8 +26,7 @@
     {                                                                     \
         template <typename T1,                                            \
                   std::size_t N,                                          \
-                  template <typename, std::size_t>                        \
-                  typename Container,                                     \
+                  template <typename, std::size_t> typename Container,    \
                   typename T2>                                            \
         constexpr auto                                                    \
         operator()(const Vector<T1, N, Container>& lhs,                   \
@@ -41,10 +37,8 @@
         template <typename T,                                             \
                   std::size_t M,                                          \
                   std::size_t N,                                          \
-                  template <typename, std::size_t>                        \
-                  typename Container1,                                    \
-                  template <typename, std::size_t>                        \
-                  typename Container2>                                    \
+                  template <typename, std::size_t> typename Container1,   \
+                  template <typename, std::size_t> typename Container2>   \
         constexpr Matrix<T, M, N, std::array>                             \
         operator()(const Matrix<T, M, N, Container1>& lhs,                \
                    const Matrix<T, M, N, Container2>& rhs) const noexcept \
@@ -58,8 +52,7 @@
         template <typename T,                                             \
                   std::size_t M,                                          \
                   std::size_t N,                                          \
-                  template <typename, std::size_t>                        \
-                  typename Container>                                     \
+                  template <typename, std::size_t> typename Container>    \
         constexpr Matrix<T, M, N, std::array>                             \
         operator()(const Matrix<T, M, N, Container>& lhs,                 \
                    const T&                          rhs) const noexcept                           \
@@ -76,8 +69,7 @@
     static constexpr fn::FUNC##_fn FUNC{};                                \
     template <typename T1,                                                \
               std::size_t N,                                              \
-              template <typename, std::size_t>                            \
-              typename Container,                                         \
+              template <typename, std::size_t> typename Container,        \
               typename T2>                                                \
     constexpr auto OP(const Vector<T1, N, Container>& lhs,                \
                       const T2&                       rhs) noexcept                             \
@@ -87,8 +79,7 @@
     template <typename T1,                                                \
               std::size_t M,                                              \
               std::size_t N,                                              \
-              template <typename, std::size_t>                            \
-              typename Container,                                         \
+              template <typename, std::size_t> typename Container,        \
               typename T2>                                                \
     constexpr auto OP(const Matrix<T1, M, N, Container>& lhs,             \
                       const T2&                          rhs) noexcept                             \
@@ -104,8 +95,7 @@
     {                                                                    \
         template <typename T,                                            \
                   std::size_t N,                                         \
-                  template <typename, std::size_t>                       \
-                  typename Container>                                    \
+                  template <typename, std::size_t> typename Container>   \
         constexpr Vector<T, N, std::array>                               \
         operator()(const Vector<T, N, Container>& lhs) const noexcept    \
         {                                                                \
@@ -114,8 +104,7 @@
         template <typename T,                                            \
                   std::size_t M,                                         \
                   std::size_t N,                                         \
-                  template <typename, std::size_t>                       \
-                  typename Container>                                    \
+                  template <typename, std::size_t> typename Container>   \
         constexpr Matrix<T, M, N, std::array>                            \
         operator()(const Matrix<T, M, N, Container>& lhs) const noexcept \
         {                                                                \
@@ -128,8 +117,7 @@
     inline constexpr fn::FUNC##_fn FUNC{};                               \
     template <typename T,                                                \
               std::size_t N,                                             \
-              template <typename, std::size_t>                           \
-              typename Container>                                        \
+              template <typename, std::size_t> typename Container>       \
     constexpr Vector<T, N, std::array> OP(                               \
         const Vector<T, N, Container>& lhs) noexcept                     \
     {                                                                    \
@@ -138,8 +126,7 @@
     template <typename T,                                                \
               std::size_t M,                                             \
               std::size_t N,                                             \
-              template <typename, std::size_t>                           \
-              typename Container>                                        \
+              template <typename, std::size_t> typename Container>       \
     constexpr Matrix<T, M, N, std::array> OP(                            \
         const Matrix<T, M, N, Container>& lhs) noexcept                  \
     {                                                                    \
@@ -147,31 +134,30 @@
     }
 
 /// @brief Generate code for loom::Vector'ised analogue of @p FUNC.
-#define VEC_NAMED_FN_OBJ(NAME, FUNC)                   \
-    namespace fn                                       \
-    {                                                  \
-    struct NAME##_fn                                   \
-    {                                                  \
-        template <typename T,                          \
-                  std::size_t N,                       \
-                  template <typename, std::size_t>     \
-                  typename Container,                  \
-                  typename... Args>                    \
-        constexpr decltype(auto)                       \
-        operator()(const Vector<T, N, Container>& v,   \
-                   const Args&... args) const noexcept \
-        {                                              \
-            return transform(*this, v, args...);       \
-        }                                              \
-        template <typename... Args>                    \
-        constexpr decltype(auto)                       \
-        operator()(const Args&... args) const noexcept \
-        {                                              \
-            return FUNC(args...);                      \
-        }                                              \
-        COMPOSE_OP                                     \
-    };                                                 \
-    }                                                  \
+#define VEC_NAMED_FN_OBJ(NAME, FUNC)                                   \
+    namespace fn                                                       \
+    {                                                                  \
+    struct NAME##_fn                                                   \
+    {                                                                  \
+        template <typename T,                                          \
+                  std::size_t N,                                       \
+                  template <typename, std::size_t> typename Container, \
+                  typename... Args>                                    \
+        constexpr decltype(auto)                                       \
+        operator()(const Vector<T, N, Container>& v,                   \
+                   const Args&... args) const noexcept                 \
+        {                                                              \
+            return transform(*this, v, args...);                       \
+        }                                                              \
+        template <typename... Args>                                    \
+        constexpr decltype(auto)                                       \
+        operator()(const Args&... args) const noexcept                 \
+        {                                                              \
+            return FUNC(args...);                                      \
+        }                                                              \
+        COMPOSE_OP                                                     \
+    };                                                                 \
+    }                                                                  \
     inline constexpr fn::NAME##_fn NAME{};
 
 /// @brief Same as VEC_NAMED_FN_OBJ, but @p FUNC as the @p NAME.
@@ -179,34 +165,33 @@
 
 /// @brief Same as VEC_FN_OBJ, but when
 /// static_math analogue of @p FUNC is also available.
-#define VEC_NAMED_FN_OBJ_SMATH(FUNC)                   \
-    namespace fn                                       \
-    {                                                  \
-    struct FUNC##_fn                                   \
-    {                                                  \
-        template <typename T,                          \
-                  std::size_t N,                       \
-                  template <typename, std::size_t>     \
-                  typename Container,                  \
-                  typename... Args>                    \
-        constexpr decltype(auto)                       \
-        operator()(const Vector<T, N, Container>& v,   \
-                   const Args&... args) const noexcept \
-        {                                              \
-            return transform(*this, v, args...);       \
-        }                                              \
-        template <typename... Args>                    \
-        constexpr decltype(auto)                       \
-        operator()(const Args&... args) const noexcept \
-        {                                              \
-            if(std::is_constant_evaluated())           \
-                return smath::FUNC(args...);           \
-            else                                       \
-                return std::FUNC(args...);             \
-        }                                              \
-        COMPOSE_OP                                     \
-    };                                                 \
-    }                                                  \
+#define VEC_NAMED_FN_OBJ_SMATH(FUNC)                                   \
+    namespace fn                                                       \
+    {                                                                  \
+    struct FUNC##_fn                                                   \
+    {                                                                  \
+        template <typename T,                                          \
+                  std::size_t N,                                       \
+                  template <typename, std::size_t> typename Container, \
+                  typename... Args>                                    \
+        constexpr decltype(auto)                                       \
+        operator()(const Vector<T, N, Container>& v,                   \
+                   const Args&... args) const noexcept                 \
+        {                                                              \
+            return transform(*this, v, args...);                       \
+        }                                                              \
+        template <typename... Args>                                    \
+        constexpr decltype(auto)                                       \
+        operator()(const Args&... args) const noexcept                 \
+        {                                                              \
+            if(std::is_constant_evaluated())                           \
+                return smath::FUNC(args...);                           \
+            else                                                       \
+                return std::FUNC(args...);                             \
+        }                                                              \
+        COMPOSE_OP                                                     \
+    };                                                                 \
+    }                                                                  \
     inline constexpr fn::FUNC##_fn FUNC{};
 
 namespace loom
@@ -224,8 +209,7 @@ namespace loom
 /// @tparam Container std::array-like container that holds the data.
 template <typename T,
           std::size_t N,
-          template <typename, std::size_t>
-          typename Container>
+          template <typename, std::size_t> typename Container>
     requires(std::is_arithmetic_v<T>)
 class Vector
 {
@@ -256,8 +240,7 @@ class Vector
     template <std::size_t idx,
               typename T1,
               std::size_t N1,
-              template <typename, std::size_t>
-              typename Container1,
+              template <typename, std::size_t> typename Container1,
               typename... Ts>
     constexpr void
     unpack(const Vector<T1, N1, Container1>& first, const Ts&... other)
@@ -497,8 +480,7 @@ class Vector
 /// @brief Template deduction guide for Vector.
 template <typename T,
           std::size_t N,
-          template <typename, std::size_t>
-          typename Container>
+          template <typename, std::size_t> typename Container>
 Vector(Container<T, N>&&) -> Vector<T, N, Container>;
 
 /// @brief Row-major matrix of size @f$M\times N@f$.
@@ -509,8 +491,7 @@ Vector(Container<T, N>&&) -> Vector<T, N, Container>;
 template <typename T,
           std::size_t M,
           std::size_t N,
-          template <typename, std::size_t>
-          typename Container>
+          template <typename, std::size_t> typename Container>
     requires(M > 1 && N > 1 && std::is_arithmetic_v<T>)
 class Matrix
 {
@@ -556,8 +537,7 @@ class Matrix
     // unpack vector arguments
     template <std::size_t idx,
               std::size_t MxN1,
-              template <typename, std::size_t>
-              typename Container2,
+              template <typename, std::size_t> typename Container2,
               typename... Ts>
     constexpr void
     unpack(const Vector<T, MxN1, Container2>& head, Ts&&... tail) noexcept
@@ -583,8 +563,7 @@ class Matrix
     template <std::size_t idx,
               std::size_t M1,
               std::size_t N1,
-              template <typename, std::size_t>
-              typename Container1,
+              template <typename, std::size_t> typename Container1,
               typename... Ts>
     constexpr void
     unpack(const Matrix<T, M1, N1, Container1>& head, Ts&&... tail) noexcept
@@ -890,8 +869,7 @@ struct vector_val_type<Vector<T, N, Container>> : std::type_identity<T>
 
 template <typename T,
           std::size_t N,
-          template <typename, std::size_t>
-          typename Container>
+          template <typename, std::size_t> typename Container>
 constexpr const T&
 elem(const Vector<T, N, Container>& v, const std::size_t i) noexcept
 {
@@ -1014,10 +992,8 @@ template <int         _Sgn,
           std::size_t K,
           typename T,
           std::size_t N,
-          template <typename, std::size_t>
-          typename Container1,
-          template <typename, std::size_t>
-          typename Container2>
+          template <typename, std::size_t> typename Container1,
+          template <typename, std::size_t> typename Container2>
 constexpr T
 cross_impl_factor_ab(const Vector<T, N, Container1>& a,
                      const Vector<T, N, Container2>& b) noexcept
@@ -1030,10 +1006,8 @@ template <std::size_t I,
           std::size_t K,
           typename T,
           std::size_t N,
-          template <typename, std::size_t>
-          typename Container1,
-          template <typename, std::size_t>
-          typename Container2>
+          template <typename, std::size_t> typename Container1,
+          template <typename, std::size_t> typename Container2>
 constexpr T
 cross_impl_factor(const Vector<T, N, Container1>& a,
                   const Vector<T, N, Container2>& b) noexcept
@@ -1049,10 +1023,8 @@ template <std::size_t I,
           std::size_t... Ks,
           typename T,
           std::size_t N,
-          template <typename, std::size_t>
-          typename Container1,
-          template <typename, std::size_t>
-          typename Container2>
+          template <typename, std::size_t> typename Container1,
+          template <typename, std::size_t> typename Container2>
 constexpr T
 cross_impl_ks(const Vector<T, N, Container1>& a,
               const Vector<T, N, Container2>& b,
@@ -1065,10 +1037,8 @@ template <std::size_t I,
           std::size_t... Js,
           typename T,
           std::size_t N,
-          template <typename, std::size_t>
-          typename Container1,
-          template <typename, std::size_t>
-          typename Container2>
+          template <typename, std::size_t> typename Container1,
+          template <typename, std::size_t> typename Container2>
 constexpr T
 cross_impl_js(const Vector<T, N, Container1>& a,
               const Vector<T, N, Container2>& b,
@@ -1080,10 +1050,8 @@ cross_impl_js(const Vector<T, N, Container1>& a,
 template <std::size_t... Is,
           typename T,
           std::size_t N,
-          template <typename, std::size_t>
-          typename Container1,
-          template <typename, std::size_t>
-          typename Container2>
+          template <typename, std::size_t> typename Container1,
+          template <typename, std::size_t> typename Container2>
 constexpr Vector<T, N, std::array>
 cross_impl(const Vector<T, N, Container1>& a,
            const Vector<T, N, Container2>& b,
@@ -1100,8 +1068,7 @@ template <std::size_t I,
           typename T,
           std::size_t M,
           std::size_t N,
-          template <typename, std::size_t>
-          typename Container>
+          template <typename, std::size_t> typename Container>
 constexpr T
 minor_matrix_op(const Matrix<T, M, N, Container>& m) noexcept
 {
@@ -1117,8 +1084,7 @@ template <std::size_t I,
           typename T,
           std::size_t M,
           std::size_t N,
-          template <typename, std::size_t>
-          typename Container>
+          template <typename, std::size_t> typename Container>
 constexpr auto
 minor_matrix_jdxs(const Matrix<T, M, N, Container>& m,
                   std::index_sequence<Jdxs...>) noexcept
@@ -1132,8 +1098,7 @@ template <std::size_t I,
           typename T,
           std::size_t M,
           std::size_t N,
-          template <typename, std::size_t>
-          typename Container>
+          template <typename, std::size_t> typename Container>
 constexpr auto
 minor_matrix_impl(const Matrix<T, M, N, Container>& m,
                   std::index_sequence<Idxs...>) noexcept
@@ -1146,8 +1111,7 @@ template <typename Idxs,
           std::size_t... Is,
           typename T,
           std::size_t M,
-          template <typename, std::size_t>
-          typename Container>
+          template <typename, std::size_t> typename Container>
 constexpr T
 det_elem(const Matrix<T, M, M, Container>& m,
          std::index_sequence<Is...>) noexcept
@@ -1159,8 +1123,7 @@ det_elem(const Matrix<T, M, M, Container>& m,
 template <std::size_t... Ns,
           typename T,
           std::size_t M,
-          template <typename, std::size_t>
-          typename Container>
+          template <typename, std::size_t> typename Container>
 constexpr T
 det_impl(const Matrix<T, M, M, Container>& m,
          std::index_sequence<Ns...>) noexcept
@@ -1196,8 +1159,7 @@ ref(Vector<T, N, Container>& v) noexcept
 template <typename T,
           std::size_t M,
           std::size_t N,
-          template <typename, std::size_t>
-          typename Container>
+          template <typename, std::size_t> typename Container>
 constexpr Matrix<const T, M, N, std::span>
 ref(const Matrix<T, M, N, Container>& m) noexcept
 {
@@ -1208,8 +1170,7 @@ ref(const Matrix<T, M, N, Container>& m) noexcept
 template <typename T,
           std::size_t M,
           std::size_t N,
-          template <typename, std::size_t>
-          typename Container>
+          template <typename, std::size_t> typename Container>
 constexpr Vector<const T, M * N, std::span>
 flat_ref(const Matrix<T, M, N, Container>& m) noexcept
 {
@@ -1238,8 +1199,7 @@ transform(const F& f, const Vectors&... vs) noexcept
 /// The operation is left-associative.
 template <typename T,
           std::size_t N,
-          template <typename, std::size_t>
-          typename Container,
+          template <typename, std::size_t> typename Container,
           typename BinaryOperation,
           typename Init>
 constexpr auto
@@ -1261,10 +1221,8 @@ reduce(BinaryOperation                binary_op,
 template <typename T1,
           typename T2,
           std::size_t N,
-          template <typename, std::size_t>
-          typename Container1,
-          template <typename, std::size_t>
-          typename Container2,
+          template <typename, std::size_t> typename Container1,
+          template <typename, std::size_t> typename Container2,
           typename BinaryOperation1,
           typename BinaryOperation2,
           typename Init>
@@ -1288,8 +1246,7 @@ transform_reduce(BinaryOperation1                 binary_op1,
 /// @code{.cpp} reduce(binary_op, transform(unary_op, a), init); @endcode
 template <typename T,
           std::size_t N,
-          template <typename, std::size_t>
-          typename Container,
+          template <typename, std::size_t> typename Container,
           typename UnaryOperation,
           typename BinaryOperation,
           typename Init>
@@ -1330,8 +1287,7 @@ struct multiplies_fn
 {
     template <typename T1,
               std::size_t N,
-              template <typename, std::size_t>
-              typename Container,
+              template <typename, std::size_t> typename Container,
               typename T2>
     constexpr auto
     operator()(const Vector<T1, N, Container>& lhs,
@@ -1433,10 +1389,8 @@ dot(const Matrix<T, M1, N1, Container1>& lhs,
 /// @endcode
 template <typename T,
           std::size_t N,
-          template <typename, std::size_t>
-          typename Container1,
-          template <typename, std::size_t>
-          typename Container2>
+          template <typename, std::size_t> typename Container1,
+          template <typename, std::size_t> typename Container2>
 constexpr auto
 cross(const Vector<T, N, Container1>& a,
       const Vector<T, N, Container2>& b) noexcept
@@ -1468,8 +1422,7 @@ length2(const Vector<T, N, Container>& a) noexcept
 /// @brief Compute length of a vector.
 template <typename T,
           std::size_t N,
-          template <typename, std::size_t>
-          typename Container>
+          template <typename, std::size_t> typename Container>
 constexpr T
 length(const Vector<T, N, Container>& a) noexcept
 {
@@ -1479,8 +1432,7 @@ length(const Vector<T, N, Container>& a) noexcept
 /// @brief Normalize vector.
 template <typename T,
           std::size_t N,
-          template <typename, std::size_t>
-          typename Container>
+          template <typename, std::size_t> typename Container>
 constexpr Vector<T, N, std::array>
 normalize(const Vector<T, N, Container>& a) noexcept
 {
@@ -1495,10 +1447,8 @@ normalize(const Vector<T, N, Container>& a) noexcept
 /// @brief Compute distance between two vectors.
 template <typename T,
           std::size_t N,
-          template <typename, std::size_t>
-          typename Container1,
-          template <typename, std::size_t>
-          typename Container2>
+          template <typename, std::size_t> typename Container1,
+          template <typename, std::size_t> typename Container2>
 constexpr T
 distance(const Vector<T, N, Container1>& a,
          const Vector<T, N, Container2>& b) noexcept
@@ -1509,8 +1459,7 @@ distance(const Vector<T, N, Container1>& a,
 /// @brief Sum of vector elements.
 template <typename T,
           std::size_t N,
-          template <typename, std::size_t>
-          typename Container>
+          template <typename, std::size_t> typename Container>
 constexpr T
 sum(const Vector<T, N, Container>& a) noexcept
 {
@@ -1520,8 +1469,7 @@ sum(const Vector<T, N, Container>& a) noexcept
 /// @brief Product of vector elements.
 template <typename T,
           std::size_t N,
-          template <typename, std::size_t>
-          typename Container>
+          template <typename, std::size_t> typename Container>
 constexpr T
 product(const Vector<T, N, Container>& a) noexcept
 {
@@ -1531,8 +1479,7 @@ product(const Vector<T, N, Container>& a) noexcept
 /// @brief Test whether all vector elements evaluate to true.
 template <typename T,
           std::size_t N,
-          template <typename, std::size_t>
-          typename Container>
+          template <typename, std::size_t> typename Container>
 constexpr bool
 all(const Vector<T, N, Container>& a) noexcept
 {
@@ -1542,8 +1489,7 @@ all(const Vector<T, N, Container>& a) noexcept
 /// @brief Test if at least one vector element evaluates to true.
 template <typename T,
           std::size_t N,
-          template <typename, std::size_t>
-          typename Container>
+          template <typename, std::size_t> typename Container>
 constexpr bool
 any(const Vector<T, N, Container>& a) noexcept
 {
@@ -1553,8 +1499,7 @@ any(const Vector<T, N, Container>& a) noexcept
 /// @brief Average of vector elements.
 template <typename T,
           std::size_t N,
-          template <typename, std::size_t>
-          typename Container>
+          template <typename, std::size_t> typename Container>
 constexpr T
 avg(const Vector<T, N, Container>& a) noexcept
 {
@@ -1591,8 +1536,7 @@ struct min_fn
 
     template <typename T,
               std::size_t N,
-              template <typename, std::size_t>
-              typename Container>
+              template <typename, std::size_t> typename Container>
     constexpr T
     operator()(const Vector<T, N, Container>& a) const noexcept
     {
@@ -1616,8 +1560,7 @@ struct max_fn
 
     template <typename T,
               std::size_t N,
-              template <typename, std::size_t>
-              typename Container>
+              template <typename, std::size_t> typename Container>
     constexpr T
     operator()(const Vector<T, N, Container>& a) const noexcept
     {
@@ -1641,8 +1584,7 @@ struct downsample_fn
 
     template <std::floating_point R,
               std::size_t         N,
-              template <typename, std::size_t>
-              typename Container>
+              template <typename, std::size_t> typename Container>
     constexpr Vector<Int, N, std::array>
     operator()(const Vector<R, N, Container>& vec) const noexcept
     {
@@ -1656,8 +1598,7 @@ struct downsample_fn
 template <typename T,
           std::size_t M,
           std::size_t N,
-          template <typename, std::size_t>
-          typename Container>
+          template <typename, std::size_t> typename Container>
 constexpr auto
 transpose(const Matrix<T, M, N, Container>& a) noexcept
 {
@@ -1672,8 +1613,7 @@ transpose(const Matrix<T, M, N, Container>& a) noexcept
 /// @brief Compute matrix determinant.
 template <typename T,
           std::size_t M,
-          template <typename, std::size_t>
-          typename Container>
+          template <typename, std::size_t> typename Container>
 constexpr T
 det(const Matrix<T, M, M, Container>& m) noexcept
 {
@@ -1688,8 +1628,7 @@ template <std::size_t I,
           typename T,
           std::size_t M,
           std::size_t N,
-          template <typename, std::size_t>
-          typename Container>
+          template <typename, std::size_t> typename Container>
 constexpr Matrix<T, M - 1, N - 1, std::array>
 minor_matrix(const Matrix<T, M, N, Container>& m) noexcept
     requires(I < M || J < N)
@@ -1704,8 +1643,7 @@ template <std::size_t I,
           std::size_t J,
           typename T,
           std::size_t M,
-          template <typename, std::size_t>
-          typename Container>
+          template <typename, std::size_t> typename Container>
 constexpr T
 cofactor_op(const Matrix<T, M, M, Container>& m) noexcept
 {
@@ -1716,8 +1654,7 @@ template <std::size_t I,
           std::size_t... Js,
           typename T,
           std::size_t M,
-          template <typename, std::size_t>
-          typename Container>
+          template <typename, std::size_t> typename Container>
 constexpr auto
 cofactor_js(const Matrix<T, M, M, Container>& m,
             std::index_sequence<Js...>) noexcept
@@ -1728,8 +1665,7 @@ cofactor_js(const Matrix<T, M, M, Container>& m,
 template <std::size_t... Is,
           typename T,
           std::size_t M,
-          template <typename, std::size_t>
-          typename Container>
+          template <typename, std::size_t> typename Container>
 constexpr auto
 cofactor_impl(const Matrix<T, M, M, Container>& m,
               std::index_sequence<Is...>) noexcept
@@ -1741,8 +1677,7 @@ cofactor_impl(const Matrix<T, M, M, Container>& m,
 /// @brief Compute cofactor matrix.
 template <typename T,
           std::size_t M,
-          template <typename, std::size_t>
-          typename Container>
+          template <typename, std::size_t> typename Container>
 constexpr Matrix<T, M, M, std::array>
 cofactor(const Matrix<T, M, M, Container>& m) noexcept
 {
@@ -1753,8 +1688,7 @@ cofactor(const Matrix<T, M, M, Container>& m) noexcept
 /// @brief Compute inverse matrix @f$A^{-1}@f$.
 template <typename T,
           std::size_t M,
-          template <typename, std::size_t>
-          typename Container>
+          template <typename, std::size_t> typename Container>
 constexpr Matrix<T, M, M, std::array>
 inverse(const Matrix<T, M, M, Container>& a) noexcept
 {
@@ -1821,8 +1755,7 @@ operator*(const Vector<T, N, Container>&  lhs,
 
 template <typename T,
           std::size_t N,
-          template <typename, std::size_t>
-          typename Container>
+          template <typename, std::size_t> typename Container>
 constexpr auto
 operator*(const Vector<T, N, Container>& lhs, const T& rhs) noexcept
 {
@@ -1832,10 +1765,8 @@ operator*(const Vector<T, N, Container>& lhs, const T& rhs) noexcept
 template <typename T,
           std::size_t M,
           std::size_t N,
-          template <typename, std::size_t>
-          typename MContainer,
-          template <typename, std::size_t>
-          typename VContainer>
+          template <typename, std::size_t> typename MContainer,
+          template <typename, std::size_t> typename VContainer>
 constexpr Vector<T, N, std::array>
 operator*(const Matrix<T, M, N, MContainer>& m,
           const Vector<T, N, VContainer>&    v) noexcept
@@ -1848,10 +1779,8 @@ template <typename T,
           std::size_t N1,
           std::size_t M2,
           std::size_t N2,
-          template <typename, std::size_t>
-          typename Container1,
-          template <typename, std::size_t>
-          typename Container2>
+          template <typename, std::size_t> typename Container1,
+          template <typename, std::size_t> typename Container2>
 constexpr typename std::enable_if_t<N1 == M2, Matrix<T, M1, N2, std::array>>
 operator*(const Matrix<T, M1, N1, Container1>& a,
           const Matrix<T, M2, N2, Container2>& b) noexcept
@@ -1862,8 +1791,7 @@ operator*(const Matrix<T, M1, N1, Container1>& a,
 template <typename T,
           std::size_t M,
           std::size_t N,
-          template <typename, std::size_t>
-          typename Container>
+          template <typename, std::size_t> typename Container>
 constexpr Matrix<T, M, N, std::array>
 operator*(const Matrix<T, M, N, Container>& m, const T& s) noexcept
 {
@@ -1907,8 +1835,7 @@ class tuple_size<loom::Vector<T, N, Container>>
 template <size_t I,
           typename T,
           size_t N,
-          template <typename, size_t>
-          typename Container>
+          template <typename, size_t> typename Container>
 class tuple_element<I, loom::Vector<T, N, Container>>
 {
   public:
@@ -1918,8 +1845,7 @@ class tuple_element<I, loom::Vector<T, N, Container>>
 template <size_t I,
           typename T,
           size_t N,
-          template <typename, size_t>
-          typename Container>
+          template <typename, size_t> typename Container>
 constexpr decltype(auto)
 get(const loom::Vector<T, N, Container>& vec) noexcept
 {
@@ -1929,8 +1855,7 @@ get(const loom::Vector<T, N, Container>& vec) noexcept
 template <typename T,
           size_t M,
           size_t N,
-          template <typename, size_t>
-          typename Container>
+          template <typename, size_t> typename Container>
 class tuple_size<loom::Matrix<T, M, N, Container>>
 {
   public:
@@ -1941,8 +1866,7 @@ template <size_t I,
           typename T,
           size_t M,
           size_t N,
-          template <typename, size_t>
-          typename Container>
+          template <typename, size_t> typename Container>
 class tuple_element<I, loom::Matrix<T, M, N, Container>>
 {
   public:
@@ -1953,8 +1877,7 @@ template <size_t I,
           typename T,
           size_t M,
           size_t N,
-          template <typename, size_t>
-          typename Container>
+          template <typename, size_t> typename Container>
 class tuple_element<I, const loom::Matrix<T, M, N, Container>>
 {
   public:
@@ -1965,8 +1888,7 @@ template <size_t I,
           typename T,
           size_t M,
           size_t N,
-          template <typename, size_t>
-          typename Container>
+          template <typename, size_t> typename Container>
 constexpr decltype(auto)
 get(const loom::Matrix<T, M, N, Container>& mat) noexcept
 {
