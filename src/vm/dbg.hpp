@@ -270,8 +270,10 @@ struct pretty_macro
         typelist::to<typelist::cons<T, parameters>, MacroDef>::type;
 };
 
+#define PRETTIFY_MACRO_PREFIX(PREFIX, T, MACRO_NAME) \
+    pretty_macro<T, PREFIX##MACRO_NAME, MACRO_NAME>
 #define PRETTIFY_MACRO(T, MACRO_NAME) \
-    pretty_macro<T, __MACRO_PREFIX##MACRO_NAME, MACRO_NAME>
+    PRETTIFY_MACRO_PREFIX(MACRO_DECL_PREFIX, T, MACRO_NAME)
 
 /// @brief Pretty print list of instructions.
 /// @param ts add type signatures.

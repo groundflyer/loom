@@ -52,13 +52,13 @@
     KERNEL_END             \
     (IVAR(a), IVAR(b))
 
-#define __MACRO_PREFIX __macro_decl_
+#define MACRO_DECL_PREFIX __macro_decl_
 
-#define __MACRO_DECLARE(MACRO_NAME, ...) \
-    using __MACRO_PREFIX##MACRO_NAME =   \
+#define __MACRO_DECLARE_PREFIX(PREFIX, MACRO_NAME, ...) \
+    using PREFIX##MACRO_NAME =                          \
         loom::vm::macro_decl<CS(MACRO_NAME) __VA_OPT__(, ) __VA_ARGS__>
-// #define __MACRO_DECLARE(NAME, ...) \
-//     __MACRO_DECLARE_PREFIX(__MACRO_PREFIX, NAME, __VA_ARGS__)
+#define __MACRO_DECLARE(NAME, ...) \
+    __MACRO_DECLARE_PREFIX(MACRO_DECL_PREFIX, NAME, __VA_ARGS__)
 #define __MACRO_DEF_BEGIN(NAME) \
     struct NAME                 \
     {                           \
