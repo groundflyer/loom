@@ -1405,18 +1405,7 @@ template <typename T,
 constexpr T
 length2(const Vector<T, N, Container>& a) noexcept
 {
-    if constexpr(std::is_floating_point_v<T>)
-    {
-        T ret{};
-        for(std::size_t i = 0; i < N; ++i)
-            if(std::is_constant_evaluated())
-                ret = a[i] * a[i] + ret;
-            else
-                ret = std::fma(a[i], a[i], ret);
-        return ret;
-    }
-    else
-        return transform_reduce(static_pow<2, T>, std::plus<T>(), a, T{0});
+    return dot(a, a);
 }
 
 /// @brief Compute length of a vector.
