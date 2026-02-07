@@ -103,6 +103,18 @@ struct fma
         }                                    \
     };
 
+/// @brief Macro template for unary floating-point operators available in STL.
+#define MK_STD_BINOP_FLOAT(NAME)                        \
+    template <std::floating_point T>                    \
+    struct NAME                                         \
+    {                                                   \
+        T                                               \
+        operator()(const T a, const T b) const noexcept \
+        {                                               \
+            return std::NAME(a, b);                     \
+        }                                               \
+    };
+
 MK_STD_BINOP(max)
 MK_STD_BINOP(min)
 
@@ -110,10 +122,12 @@ MK_STD_UNOP_FLOAT(round)
 MK_STD_UNOP_FLOAT(ceil)
 MK_STD_UNOP_FLOAT(floor)
 MK_STD_UNOP_FLOAT(trunc)
-MK_STD_UNOP_FLOAT(copysign)
 MK_STD_UNOP_FLOAT(sin)
 MK_STD_UNOP_FLOAT(cos)
 
+MK_STD_BINOP_FLOAT(copysign)
+
 #undef MK_STD_BINOP
 #undef MK_STD_UNOP_FLOAT
+#undef MK_STD_BINOP_FLOAT
 } // namespace loom::vm::ops

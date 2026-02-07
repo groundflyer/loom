@@ -624,10 +624,10 @@ MK_REMAP_UN_FUNC(ops::round, __builtin_elementwise_round)
 MK_REMAP_UN_FUNC(ops::ceil, __builtin_elementwise_ceil)
 MK_REMAP_UN_FUNC(ops::floor, __builtin_elementwise_floor)
 MK_REMAP_UN_FUNC(ops::trunc, __builtin_elementwise_trunc)
-MK_REMAP_UN_FUNC(ops::copysign, __builtin_elementwise_copysign)
 MK_REMAP_UN_FUNC(ops::sin, __builtin_elementwise_sin)
 MK_REMAP_UN_FUNC(ops::cos, __builtin_elementwise_cos)
 
+MK_REMAP_BIN_FUNC(ops::copysign, __builtin_elementwise_copysign)
 MK_REMAP_BIN_FUNC(ops::min, __builtin_elementwise_min)
 MK_REMAP_BIN_FUNC(ops::max, __builtin_elementwise_max)
 
