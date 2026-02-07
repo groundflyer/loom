@@ -1206,6 +1206,25 @@ template <STITCH stitch, typename Block, typename LabelMap, typename BPVar>
 using block_compiler =
     make_block_compiler<stitch, Block, LabelMap, BPVar>::type;
 
+/// @brief Helper to count the number of logical 1 in packed vector @p vec.
+template <std::integral T, fsize_t N>
+struct popcnt_helper
+{
+    T _FORCE_INLINE
+    operator()(const packed_vector<T, N> vec) const noexcept
+    {
+        return __builtin_reduce_add(
+            __builtin_elementwise_min(vec, broadcast<N>(static_cast<T>(1))));
+    }
+
+    // AVX-512
+    uint_of_bits_t<N> _FORCE_INLINE
+    operator()(const uint_of_bits_t<N> k) const noexcept
+    {
+        return std::popcount(k);
+    }
+};
+
 /// @brief Helper to perform reduce_and on mask type.
 template <std::integral T, fsize_t N>
 struct logical_reduce_helper
@@ -1245,8 +1264,9 @@ class block_set : public std::ranges::view_interface<block_set<K, N, ret_sum>>
     using mask_type      = mask_t<index_t, N>;
     using cmp            = cmp_intrinsics_wrangler<index_t, N>;
 
-    static constexpr index_t num_blocks = K::num_blocks;
-    static constexpr index_t halt_pos   = K::halt_pos;
+    static constexpr index_t                   num_blocks = K::num_blocks;
+    static constexpr index_t                   halt_pos   = K::halt_pos;
+    static constexpr popcnt_helper<index_t, N> popcnt{};
 
     const index_vector_t m_bps;
     const index_t        m_init_pos{};
@@ -1272,14 +1292,14 @@ class block_set : public std::ranges::view_interface<block_set<K, N, ret_sum>>
             if constexpr(ret_sum)
             {
                 const mask_type mask = cmp::eq(m_bps, broadcast<N>(pos));
-                m_ret                = __builtin_popcountg(mask);
+                m_ret                = popcnt(mask);
                 m_sum += m_ret;
                 return m_ret;
             }
             else
             {
                 m_ret             = cmp::eq(m_bps, broadcast<N>(pos));
-                const index_t ret = __builtin_popcountg(m_ret);
+                const index_t ret = popcnt(m_ret);
                 m_sum += ret;
                 return ret;
             }
