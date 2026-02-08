@@ -13,3 +13,4 @@ compile_commands.json
 bm_results
 /build/
 *.lock
+/doc/bib/auto/other.el
