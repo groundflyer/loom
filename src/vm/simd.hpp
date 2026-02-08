@@ -173,6 +173,16 @@ broadcast_impl(T v, std::index_sequence<Is...>) noexcept
     packed_vector<T, N> ret = {id<Is>(v)...};
     return ret;
 }
+
+template <typename T, typename... Ts>
+static constexpr T _FORCE_INLINE
+nest_fma(T x2, T k1, T k2, Ts... ks) noexcept
+{
+    if constexpr(sizeof...(Ts) > 0)
+        return __builtin_elementwise_fma(nest_fma(x2, k2, ks...), x2, k1);
+    else
+        return __builtin_elementwise_fma(x2, k2, k1);
+}
 } // namespace detail
 
 /// @brief Broadcast a value to all elements of the resulting packed vector.
@@ -529,6 +539,156 @@ struct remap_comp<N, ops::fma, T, T, T, T>
     };
 };
 
+// ensure no broadcast at runtime
+#define DECLK(NAME, VAL) constexpr vector_type NAME = broadcast<N>(VAL)
+
+/// @brief Fast approximate sine.
+///
+/// @warning Valid only for range @f$[-\pi, \pi]@f$
+///
+/// Coefficients taken from @cite Schlor2019
+template <fsize_t N, std::floating_point T>
+    requires(std::is_same_v<T, float> ||
+             std::is_same_v<T, double>) // only 32-bit and 64-bit floating point
+                                        // support for now
+struct remap_comp<N, ops::sin<T>, T, T>
+{
+    using vector_type = packed_vector<T, N>;
+
+    struct type
+    {
+        constexpr vector_type _FORCE_INLINE
+        operator()(const vector_type x) const noexcept
+        {
+            const vector_type x2 = x * x;
+            if constexpr(std::is_same_v<T, float>) // using degree 15 for float
+            {
+                DECLK(k1, 0.99999999999999985783856947280351013f);
+                DECLK(k2, -0.166666666666659653164780128859839316f);
+                DECLK(k3, 0.00833333333327592139676057538106745659f);
+                DECLK(k4, -0.000198412698232225093689107237380802637f);
+                DECLK(k5, 2.75573164212929639596445204076151988e-6f);
+                DECLK(k6, -2.5051870883490902518590017165648945e-8f);
+                DECLK(k7, 1.6047844633018114428263064708844387e-10f);
+                DECLK(k8, -7.37066278281678179293546235379257048e-13f);
+                return x * detail::nest_fma(x2, k1, k2, k3, k4, k5, k6, k7, k8);
+            }
+            else // degree 33 for double
+            {
+                DECLK(k1, 1.);
+                DECLK(k2, -0.166666666666666666666666666666666667);
+                DECLK(k3, 0.00833333333333333333333333333333333333);
+                DECLK(k4, -0.000198412698412698412698412698412698391);
+                DECLK(k5, 2.75573192239858906525573192239844806e-6);
+                DECLK(k6, -2.50521083854417187750521083848472947e-8);
+                DECLK(k7, 1.60590438368216145993923769996397832e-10);
+                DECLK(k8, -7.64716373181981647590109722915908442e-13);
+                DECLK(k9, 2.81145725434552076319376582531091405e-15);
+                DECLK(k10, -8.22063524662432971120933376991172232e-18);
+                DECLK(k11, 1.95729410633912564384267263771198416e-20);
+                DECLK(k12, -3.86817017063038299631930987571173923e-23);
+                DECLK(k13, 6.4469502842428826022931795893278841e-26);
+                DECLK(k14, -9.18368981471916803573077288615983239e-29);
+                DECLK(k15, 1.13099507260187617461053670403005966e-31);
+                DECLK(k16, -1.21592124202981493418420109807105932e-34);
+                DECLK(k17, 1.1309232145353729608313042496143056e-37);
+                return x * detail::nest_fma(x2,
+                                            k1,
+                                            k2,
+                                            k3,
+                                            k4,
+                                            k5,
+                                            k6,
+                                            k7,
+                                            k8,
+                                            k9,
+                                            k10,
+                                            k11,
+                                            k12,
+                                            k13,
+                                            k14,
+                                            k15,
+                                            k16,
+                                            k17);
+            }
+        }
+    };
+};
+
+/// @brief Fast approximate cosine.
+///
+/// @warning Valid only for range @f$[-\pi, \pi]@f$
+///
+/// Coefficients taken from @cite Schlor2019
+template <fsize_t N, std::floating_point T>
+    requires(std::is_same_v<T, float> ||
+             std::is_same_v<T, double>) // only 32-bit and 64-bit floating point
+                                        // support for now
+struct remap_comp<N, ops::cos<T>, T, T>
+{
+    using vector_type = packed_vector<T, N>;
+
+    struct type
+    {
+        constexpr vector_type _FORCE_INLINE
+        operator()(const vector_type x) const noexcept
+        {
+            const vector_type x2 = x * x;
+            if constexpr(std::is_same_v<T, float>) // using degree 16 for float
+            {
+                DECLK(k1, 0.99999999999999999608981951072301546f);
+                DECLK(k2, -0.49999999999999974308667070690271678f);
+                DECLK(k3, 0.041666666666663887964497659102665977f);
+                DECLK(k4, -0.00138888888887731722447063574018337351f);
+                DECLK(k5, 0.0000248015872774439536215582612189964674f);
+                DECLK(k6, -2.75573163935355075808996593111486352e-7f);
+                DECLK(k7, 2.08765619601383980877940138085106396e-9f);
+                DECLK(k8, -1.14629048996344469555493302470243688e-11f);
+                DECLK(k9, 4.60900737685258733987906059894416831e-14f);
+                return detail::nest_fma(x2, k1, k2, k3, k4, k5, k6, k7, k8, k9);
+            }
+            else // degree 32 for double
+            {
+                DECLK(k1, 1.);
+                DECLK(k2, -0.5);
+                DECLK(k3, 0.0416666666666666666666666666666666667);
+                DECLK(k4, -0.00138888888888888888888888888888888864);
+                DECLK(k5, 0.0000248015873015873015873015873015852479);
+                DECLK(k6, -2.75573192239858906525573192229758788e-7);
+                DECLK(k7, 2.08767569878680989792100899936785891e-9);
+                DECLK(k8, -1.14707455977297247138516241570198547e-11);
+                DECLK(k9, 4.77947733238738529742623766654306629e-14);
+                DECLK(k10, -1.5619206968586226447944923010120297e-16);
+                DECLK(k11, 4.11031762331216359173758562466598535e-19);
+                DECLK(k12, -8.89679139244973290214501480503565676e-22);
+                DECLK(k13, 1.61173757105463581590277799117611453e-24);
+                DECLK(k14, -2.47959624821373207705239218354539419e-27);
+                DECLK(k15, 3.27988537078655827882448844587725832e-30);
+                DECLK(k16, -3.76931659747655711635436902424567497e-33);
+                DECLK(k17, 3.72999385718624695747058735680768987e-36);
+                return detail::nest_fma(x2,
+                                        k1,
+                                        k2,
+                                        k3,
+                                        k4,
+                                        k5,
+                                        k6,
+                                        k7,
+                                        k8,
+                                        k9,
+                                        k10,
+                                        k11,
+                                        k12,
+                                        k13,
+                                        k14,
+                                        k15,
+                                        k16,
+                                        k17);
+            }
+        }
+    };
+};
+
 #define MK_REMAP_BINOP(FUNC, OP, R)                                \
     template <fsize_t N, typename T>                               \
     struct remap_comp<N, FUNC<T>, R, T, T>                         \
@@ -624,8 +784,6 @@ MK_REMAP_UN_FUNC(ops::round, __builtin_elementwise_round)
 MK_REMAP_UN_FUNC(ops::ceil, __builtin_elementwise_ceil)
 MK_REMAP_UN_FUNC(ops::floor, __builtin_elementwise_floor)
 MK_REMAP_UN_FUNC(ops::trunc, __builtin_elementwise_trunc)
-MK_REMAP_UN_FUNC(ops::sin, __builtin_elementwise_sin)
-MK_REMAP_UN_FUNC(ops::cos, __builtin_elementwise_cos)
 
 MK_REMAP_BIN_FUNC(ops::copysign, __builtin_elementwise_copysign)
 MK_REMAP_BIN_FUNC(ops::min, __builtin_elementwise_min)
@@ -639,6 +797,7 @@ MK_REMAP_BIN_FUNC(ops::max, __builtin_elementwise_max)
 #undef MK_REMAP_BINOP_I
 #undef MK_REMAP_UN_FUNC
 #undef MK_REMAP_BIN_FUNC
+#undef DECL
 
 template <fsize_t N, typename Op, typename Ret, typename... Args>
 using remap_comp_t = remap_comp<N, Op, Ret, Args...>::type;

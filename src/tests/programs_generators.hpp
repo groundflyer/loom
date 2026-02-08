@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include <common/math.hpp>
 #include <common/test.hpp>
 
 #include <concepts>
@@ -39,6 +40,19 @@ struct GMFloat
     operator()(loom::test::RandomState& rs) const noexcept
     {
         return rs.make_gen<T>(l, h);
+    }
+};
+
+template <std::floating_point T>
+struct GMTrig
+{
+    static constexpr T l = -loom::Pi<T>;
+    static constexpr T r = loom::Pi<T>;
+
+    auto
+    operator()(loom::test::RandomState& rs) const noexcept
+    {
+        return rs.make_gen<T>(l, r);
     }
 };
 

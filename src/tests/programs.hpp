@@ -214,6 +214,19 @@ TKERNEL3(arithmetic_test, a, b, c)
     TLT(a, a, 1e-6)
 KERNEL_END(IVAR(a));
 
+// ((sin(x))^2 + (cos(x))^2) - 1 <= 1e-6
+template <std::floating_point T>
+TKERNEL1(sin_cos_test, x)
+    TSIN(s, x),
+    TCOS(x, x),
+    TMUL(s, s, s),
+    TMUL(x, x, x),
+    TADD(x, x, s),
+    TSUB(x, x, 1),
+    TABS(x, x),
+    TLT(x, x, 1e-6)
+KERNEL_END(IVAR(x));
+
 // clang-format on
 
 // validation programs
