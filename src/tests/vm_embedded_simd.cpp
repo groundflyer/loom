@@ -297,6 +297,42 @@ struct RootFindingSuite
     }
 };
 
+template <template <typename> typename P, template <typename> typename GM>
+struct InvariantTestSuite
+{
+    template <typename T>
+    bool
+    operator()(Track& track, ParmTestMaker tm, RandomState& rs) const noexcept
+    {
+        constexpr std::size_t N = simd::native_vector_extent_v<T>;
+
+        using k_t    = P<T>;
+        using types  = program_types<k_t, N>;
+        using in_vec = types::input_simd;
+
+        constexpr std::string_view nameview = k_t::nameview;
+        constexpr auto             ti       = TypeInfo<T>::chars;
+        constexpr GM<T>            gm{};
+
+        auto gs = gm(rs);
+
+        auto gen = [&gs]() noexcept
+        {
+            in_vec ret;
+            for(std::size_t i = 0; i < N; ++i) types::set_input(ret, i, gs());
+            return ret;
+        };
+
+        simd::embedded_function<k_t> test;
+        return track.check(
+            NamedTest{tm.invariant(gen,
+                                   test,
+                                   [](const auto v) noexcept -> bool
+                                   { return __builtin_reduce_and(v); }),
+                      fmt::format("{}: {}[{}]", nameview, ti, N)});
+    }
+};
+
 int
 main(int argc, char* argv[])
 {
@@ -358,6 +394,18 @@ main(int argc, char* argv[])
         rs);
 
     test_suite_types(all_floats{}, RootFindingSuite{}, track, tm, rs);
+
+    test_suites_types(all_floats{},
+                      type_sequence<InvariantTestSuite<abs_test, GMFloat>,
+                                    InvariantTestSuite<trunc_test, GMFloat>,
+                                    InvariantTestSuite<ceilfloor, GMFloat>,
+                                    InvariantTestSuite<minmax_test, GM_F2>,
+                                    InvariantTestSuite<arithmetic_test, GM_F3>,
+                                    InvariantTestSuite<sin_cos_test, GMTrig>,
+                                    InvariantTestSuite<sqrt_test, GMFloat>>{},
+                      track,
+                      tm,
+                      rs);
 
     return track.ret_code();
 }
