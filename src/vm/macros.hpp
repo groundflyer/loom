@@ -545,6 +545,7 @@
 #define COPYSIGN(...)      UNOP(loom::vm::ops::copysign, __VA_ARGS__)
 #define SIN(...)           UNOP(loom::vm::ops::sin, __VA_ARGS__)
 #define COS(...)           UNOP(loom::vm::ops::cos, __VA_ARGS__)
+#define SQRT(...)          UNOP(loom::vm::ops::sqrt, __VA_ARGS__)
 #define MIN(...)           BINOP(loom::vm::ops::min, __VA_ARGS__)
 #define MAX(...)           BINOP(loom::vm::ops::max, __VA_ARGS__)
 
@@ -556,6 +557,7 @@
 #define TCOPYSIGN(...)     COPYSIGN(MAJOR_TYPE, __VA_ARGS__)
 #define TSIN(...)          SIN(MAJOR_TYPE, __VA_ARGS__)
 #define TCOS(...)          COS(MAJOR_TYPE, __VA_ARGS__)
+#define TSQRT(...)         SQRT(MAJOR_TYPE, __VA_ARGS__)
 #define TMIN(...)          MIN(MAJOR_TYPE, __VA_ARGS__)
 #define TMAX(...)          MAX(MAJOR_TYPE, __VA_ARGS__)
 
@@ -570,6 +572,7 @@
 #define COPYSIGN_CS(...)   UNOP_CS(loom::vm::ops::copysign, __VA_ARGS__)
 #define SIN_CS(...)        UNOP_CS(loom::vm::ops::sin, __VA_ARGS__)
 #define COS_CS(...)        UNOP_CS(loom::vm::ops::cos, __VA_ARGS__)
+#define SQRT_CS(...)       UNOP_CS(loom::vm::ops::sqrt, __VA_ARGS__)
 #define MIN_CS(...)        BINOP_CS(loom::vm::ops::min, __VA_ARGS__)
 #define MAX_CS(...)        BINOP_CS(loom::vm::ops::max, __VA_ARGS__)
 
@@ -581,6 +584,7 @@
 #define TCOPYSIGN_CS(...)  COPYSIGN_CS(MAJOR_TYPE, __VA_ARGS__)
 #define TSIN_CS(...)       SIN_CS(MAJOR_TYPE, __VA_ARGS__)
 #define TCOS_CS(...)       COS_CS(MAJOR_TYPE, __VA_ARGS__)
+#define TSQRT_CS(...)      SQRT_CS(MAJOR_TYPE, __VA_ARGS__)
 #define TMIN_CS(...)       MIN_CS(MAJOR_TYPE, __VA_ARGS__)
 #define TMAX_CS(...)       MAX_CS(MAJOR_TYPE, __VA_ARGS__)
 

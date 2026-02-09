@@ -57,7 +57,8 @@ main(int argc, char* argv[])
                                     SimpleSIMDSuite<ceilfloor, GMFloat>,
                                     SimpleSIMDSuite<minmax_test, GM_F2>,
                                     SimpleSIMDSuite<arithmetic_test, GM_F3>,
-                                    SimpleSIMDSuite<sin_cos_test, GMTrig>>{},
+                                    SimpleSIMDSuite<sin_cos_test, GMTrig>,
+                                    SimpleSIMDSuite<sqrt_test, GMFloat>>{},
                       track,
                       tm,
                       rs);

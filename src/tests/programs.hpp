@@ -214,7 +214,7 @@ TKERNEL3(arithmetic_test, a, b, c)
     TLT(a, a, 1e-6)
 KERNEL_END(IVAR(a));
 
-// ((sin(x))^2 + (cos(x))^2) - 1 <= 1e-6
+// abs(((sin(x))^2 + (cos(x))^2) - 1) <= 1e-6
 template <std::floating_point T>
 TKERNEL1(sin_cos_test, x)
     TSIN(s, x),
@@ -225,6 +225,16 @@ TKERNEL1(sin_cos_test, x)
     TSUB(x, x, 1),
     TABS(x, x),
     TLT(x, x, 1e-6)
+KERNEL_END(IVAR(x));
+
+// abs(sqrt(x^2) - x) <= 1e-6
+template <std::floating_point T>
+TKERNEL1(sqrt_test, x)
+    TMUL(y, x, x),
+    TSQRT(y, y),
+    TSUB(x, y, x),
+    TABS(x, x),
+    TLT(x, x, 1e-06)
 KERNEL_END(IVAR(x));
 
 // clang-format on
