@@ -33,6 +33,19 @@ struct GMCanon
 template <std::floating_point T>
 struct GMFloat
 {
+    static constexpr T l = -1e6;
+    static constexpr T h = 1e6;
+
+    auto
+    operator()(loom::test::RandomState& rs) const noexcept
+    {
+        return rs.make_gen<T>(l, h);
+    }
+};
+
+template <std::floating_point T>
+struct GMFloatPositive
+{
     static constexpr T l = 1e-6;
     static constexpr T h = 1e6;
 

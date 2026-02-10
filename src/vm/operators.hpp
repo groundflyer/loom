@@ -79,6 +79,17 @@ struct fma
     }
 };
 
+/// @brief Reciprocal square root @f$f(x) = \frac{1}{\sqrt{x}}@f$.
+template <std::floating_point T>
+struct rsqrt
+{
+    T
+    operator()(const T x) const noexcept
+    {
+        return static_cast<T>(1) / std::sqrt(x);
+    }
+};
+
 /// @brief Macro template for binary operators available in STL.
 #define MK_STD_BINOP(NAME)                              \
     template <typename T>                               \

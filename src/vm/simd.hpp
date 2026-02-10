@@ -284,6 +284,21 @@ struct gather_scatter_intrinsics_wrangler
     }
 };
 
+/// @brief Intrinsics wrangler for reciprocal square root @f$f(x) =
+/// \frac{1}{\sqrt{x}}@f$.
+template <std::floating_point T, fsize_t N>
+struct rsqrt_intrinsics_wrangler
+{
+    using vector_type = packed_vector<T, N>;
+
+    /// @brief Fallback implementation.
+    static vector_type _FORCE_INLINE
+    op(vector_type x) noexcept
+    {
+        return broadcast<N>(static_cast<T>(1)) / x;
+    }
+};
+
 #define MK_MASK_IO_INTRINSICS(TYPE, EXT, LOAD_INTR, STORE_INTR) \
     template <>                                                 \
     struct mask_io_intrinsics_wrangler<TYPE, EXT>               \
@@ -386,12 +401,29 @@ struct gather_scatter_intrinsics_wrangler
         }                                                                   \
     };
 
+#define MK_RSQRT_INTRINSICS(TYPE, EXT, INTR)          \
+    template <>                                       \
+    struct rsqrt_intrinsics_wrangler<TYPE, EXT>       \
+    {                                                 \
+        using vector_type = packed_vector<TYPE, EXT>; \
+        static vector_type _FORCE_INLINE              \
+        op(vector_type x) noexcept                    \
+        {                                             \
+            return INTR(x);                           \
+        }                                             \
+    };
+
+// SSE
+MK_RSQRT_INTRINSICS(float, 4, _mm_rsqrt_ps)
+
 // assume that a CPU with newer extensions has old extensions too
 #if defined(__AVX__) || defined(__AVX2__) || defined(__AVX512F__)
 // starting from AVX
 
 MK_MASK_IO_INTRINSICS(double, 4, _mm256_maskload_pd, _mm256_maskstore_pd)
 MK_MASK_IO_INTRINSICS(float, 8, _mm256_maskload_ps, _mm256_maskstore_ps)
+
+MK_RSQRT_INTRINSICS(float, 8, _mm256_rsqrt_ps)
 
 #if defined(__AVX2__) || defined(__AVX512F__)
 MK_MASK_IO_INTRINSICS(long long,
@@ -462,6 +494,9 @@ MK_AVX512_GATHER_SCATTER_INTRINSICS(std::int32_t, 16, _mm512_i32gather_epi32, _m
 MK_AVX512_GATHER_SCATTER_INTRINSICS(std::uint32_t, 16, _mm512_i32gather_epi32, _mm512_i32scatter_epi32)
 MK_AVX512_GATHER_SCATTER_INTRINSICS(std::int64_t, 8, _mm512_i32gather_epi64, _mm512_i32scatter_epi64)
 MK_AVX512_GATHER_SCATTER_INTRINSICS(std::uint64_t, 8, _mm512_i32gather_epi64, _mm512_i32scatter_epi64)
+
+MK_RSQRT_INTRINSICS(float, 16, _mm512_rsqrt14_ps)
+MK_RSQRT_INTRINSICS(double, 8, _mm512_rsqrt14_pd)
 
 #if defined(__AVX512BW__)
 MK_AVX512_CMP_INTRINSICS(std::int8_t, 64, _mm512_cmpeq_epi8_mask)
@@ -685,6 +720,22 @@ struct remap_comp<N, ops::cos<T>, T, T>
                                         k16,
                                         k17);
             }
+        }
+    };
+};
+
+/// @brief Remap rsqrt operation.
+template <fsize_t N, typename T>
+struct remap_comp<N, ops::rsqrt<T>, T, T>
+{
+    using rsqrt_wrangler = rsqrt_intrinsics_wrangler<T, N>;
+
+    struct type
+    {
+        packed_vector<T, N> _FORCE_INLINE
+        operator()(const packed_vector<T, N> x) const noexcept
+        {
+            return rsqrt_wrangler::op(x);
         }
     };
 };

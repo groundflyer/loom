@@ -51,17 +51,19 @@ main(int argc, char* argv[])
     ParmTestMaker tm{align_top(parse_numruns(argc, argv), 32u)};
     RandomState   rs;
 
-    test_suites_types(all_floats{},
-                      type_sequence<SimpleSIMDSuite<abs_test, GMFloat>,
-                                    SimpleSIMDSuite<trunc_test, GMFloat>,
-                                    SimpleSIMDSuite<ceilfloor, GMFloat>,
-                                    SimpleSIMDSuite<minmax_test, GM_F2>,
-                                    SimpleSIMDSuite<arithmetic_test, GM_F3>,
-                                    SimpleSIMDSuite<sin_cos_test, GMTrig>,
-                                    SimpleSIMDSuite<sqrt_test, GMFloat>>{},
-                      track,
-                      tm,
-                      rs);
+    test_suites_types(
+        all_floats{},
+        type_sequence<SimpleSIMDSuite<abs_test, GMFloat>,
+                      SimpleSIMDSuite<trunc_test, GMFloat>,
+                      SimpleSIMDSuite<ceilfloor, GMFloat>,
+                      SimpleSIMDSuite<minmax_test, GM_F2>,
+                      SimpleSIMDSuite<arithmetic_test, GM_F3>,
+                      SimpleSIMDSuite<sin_cos_test, GMTrig>,
+                      SimpleSIMDSuite<sqrt_test, GMFloatPositive>,
+                      SimpleSIMDSuite<rsqrt_test, GMFloatPositive>>{},
+        track,
+        tm,
+        rs);
 
     return 0;
 }

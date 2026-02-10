@@ -234,7 +234,18 @@ TKERNEL1(sqrt_test, x)
     TSQRT(y, y),
     TSUB(x, y, x),
     TABS(x, x),
-    TLT(x, x, 1e-06)
+    TLT(x, x, 1e-6)
+KERNEL_END(IVAR(x));
+
+// (rsqrt(x) - 1/sqrt(x)) <= 1e-5
+template <std::floating_point T>
+TKERNEL1(rsqrt_test, x)
+    TRSQRT(y, x),
+    TSQRT(x, x),
+    TDIV(x, 1, x),
+    TSUB(x, x, y),
+    TABS(x, x),
+    TLT(x, x, 1e-5)
 KERNEL_END(IVAR(x));
 
 // clang-format on

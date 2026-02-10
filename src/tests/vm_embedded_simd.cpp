@@ -395,17 +395,19 @@ main(int argc, char* argv[])
 
     test_suite_types(all_floats{}, RootFindingSuite{}, track, tm, rs);
 
-    test_suites_types(all_floats{},
-                      type_sequence<InvariantTestSuite<abs_test, GMFloat>,
-                                    InvariantTestSuite<trunc_test, GMFloat>,
-                                    InvariantTestSuite<ceilfloor, GMFloat>,
-                                    InvariantTestSuite<minmax_test, GM_F2>,
-                                    InvariantTestSuite<arithmetic_test, GM_F3>,
-                                    InvariantTestSuite<sin_cos_test, GMTrig>,
-                                    InvariantTestSuite<sqrt_test, GMFloat>>{},
-                      track,
-                      tm,
-                      rs);
+    test_suites_types(
+        all_floats{},
+        type_sequence<InvariantTestSuite<abs_test, GMFloat>,
+                      InvariantTestSuite<trunc_test, GMFloat>,
+                      InvariantTestSuite<ceilfloor, GMFloat>,
+                      InvariantTestSuite<minmax_test, GM_F2>,
+                      InvariantTestSuite<arithmetic_test, GM_F3>,
+                      InvariantTestSuite<sin_cos_test, GMTrig>,
+                      InvariantTestSuite<sqrt_test, GMFloatPositive>,
+                      InvariantTestSuite<rsqrt_test, GMFloatPositive>>{},
+        track,
+        tm,
+        rs);
 
     return track.ret_code();
 }
