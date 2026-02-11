@@ -1,5 +1,5 @@
 // -*- C++ -*-
-/// @file Linear algebra tests
+/// @file linal.cpp Linear algebra tests
 
 #include "property_test.hpp"
 

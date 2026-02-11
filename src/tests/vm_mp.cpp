@@ -4,8 +4,8 @@
 #include <vm/mp.hpp>
 #include <vm/simd.hpp>
 
+#include "generators.hpp"
 #include "programs.hpp"
-#include "programs_generators.hpp"
 #include "root_finding.hpp"
 #include "vm_test_suite_utils.hpp"
 

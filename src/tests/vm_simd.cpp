@@ -1,8 +1,8 @@
 // -*- C++ -*-
 // vm_simd.cpp
 
+#include "generators.hpp"
 #include "programs.hpp"
-#include "programs_generators.hpp"
 #include "vm_test_suite_utils.hpp"
 
 #include <common/test.hpp>

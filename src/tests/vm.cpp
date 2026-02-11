@@ -1,8 +1,8 @@
 // -*- C++ -*-
 // vm.cpp
 
+#include "generators.hpp"
 #include "programs.hpp"
-#include "programs_generators.hpp"
 #include "stream_wrapper.hpp"
 #include "vm_test_suite_utils.hpp"
 
