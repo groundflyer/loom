@@ -27,8 +27,14 @@ struct append_idx
 template <CharSequence P, std::uint8_t I>
 using append_idx_t = append_idx<P, I>::type;
 
+template <typename P, std::uint8_t I, std::uint8_t J>
+using append_ij_t = append_idx<append_idx<P, I>, J>;
+
 template <typename T, CharSequence P, std::uint8_t I>
 using var_idx = Variable<T, append_idx_t<P, I>>;
+
+template <typename T, CharSequence P, std::uint8_t I, std::uint8_t J>
+using var_ij = Variable<T, append_ij_t<P, I, J>>;
 
 template <typename Op,
           typename T,
@@ -90,6 +96,51 @@ class make_cross
   public:
     using type = type_sequence<s<0, 1, 2>, s<1, 2, 0>, s<2, 0, 1>>;
 };
+
+template <typename MAJOR_TYPE,
+          CharSequence Dst,
+          CharSequence Mat,
+          CharSequence Vec>
+class make_mat_vec
+{
+    template <typename R, std::uint8_t I>
+    using tvar_idx = var_idx<MAJOR_TYPE, R, I>;
+
+    template <typename R, std::uint8_t I, std::uint8_t J>
+    using tvar_ij = var_ij<MAJOR_TYPE, R, I, J>;
+
+    template <std::uint8_t I, std::uint8_t J>
+    using f = Compute<ops::fma,
+                      tvar_idx<Dst, I>,
+                      tvar_ij<Mat, I, J>,
+                      tvar_idx<Vec, J>,
+                      tvar_idx<Dst, I>>;
+
+    template <std::uint8_t I>
+    using init_dst = Compute<std::identity, tvar_idx<Dst, I>, TVAR(0)>;
+
+    using idxs = std::make_index_sequence<3>;
+
+    template <std::uint8_t I>
+    using make_ij = type_pair<std::integral_constant<std::uint8_t, I>, idxs>;
+
+    template <std::uint8_t I>
+    class fi
+    {
+        template <std::uint8_t J>
+        using fij = f<I, J>;
+
+      public:
+        using type = intlist::map_t<fij, idxs>;
+    };
+
+    template <std::uint8_t I>
+    using fi_t = fi<I>::type;
+
+  public:
+    using type = typelist::concat<typelist::join<intlist::map_t<init_dst, idxs>,
+                                                 intlist::map_t<fi_t, idxs>>>;
+};
 } // namespace detail
 
 #define MAKE_STD_BINOP_VEC3_MACRO(NAME, OP)                                  \
@@ -127,6 +178,15 @@ template <typename T,
           CharSequence Tmp>
 struct vec3_cross :
     std::type_identity<typename detail::make_cross<T, DST, A, B, Tmp>::type>
+{
+};
+
+using __macro_decl_mat_vec3_dot =
+    macro_decl<CS(mat_vec3_dot), CS(dst[3]), CS(mat[3][3]), CS(vec[3])>;
+
+template <typename T, CharSequence DST, CharSequence MAT, CharSequence VEC>
+struct mat_vec3_dot :
+    std::type_identity<typename detail::make_mat_vec<T, DST, MAT, VEC>>
 {
 };
 } // namespace loom::vm
