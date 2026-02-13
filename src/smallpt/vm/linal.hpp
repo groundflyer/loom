@@ -28,7 +28,7 @@ template <CharSequence P, std::uint8_t I>
 using append_idx_t = append_idx<P, I>::type;
 
 template <typename P, std::uint8_t I, std::uint8_t J>
-using append_ij_t = append_idx<append_idx<P, I>, J>;
+using append_ij_t = append_idx_t<append_idx_t<P, I>, J>;
 
 template <typename T, CharSequence P, std::uint8_t I>
 using var_idx = Variable<T, append_idx_t<P, I>>;
@@ -138,8 +138,8 @@ class make_mat_vec
     using fi_t = fi<I>::type;
 
   public:
-    using type = typelist::concat<typelist::join<intlist::map_t<init_dst, idxs>,
-                                                 intlist::map_t<fi_t, idxs>>>;
+    using type = typelist::join<intlist::map_t<init_dst, idxs>,
+                                typelist::concat<intlist::map_t<fi_t, idxs>>>;
 };
 } // namespace detail
 
@@ -186,7 +186,7 @@ using __macro_decl_mat_vec3_dot =
 
 template <typename T, CharSequence DST, CharSequence MAT, CharSequence VEC>
 struct mat_vec3_dot :
-    std::type_identity<typename detail::make_mat_vec<T, DST, MAT, VEC>>
+    std::type_identity<typename detail::make_mat_vec<T, DST, MAT, VEC>::type>
 {
 };
 } // namespace loom::vm

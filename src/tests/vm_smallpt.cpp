@@ -1,5 +1,6 @@
 // -*- C++ -*-
 // vm_smallpt.cpp
+#include <common/linal.hpp>
 #include <common/test.hpp>
 #include <smallpt/ref/rng.hpp>
 #include <smallpt/vm/linal.hpp>
@@ -43,6 +44,15 @@ TKERNEL6(cross_dot_test, x0, x1, x2, y0, y1, y2)
     ILAND(t1, t1, t2)
 KERNEL_END(IVAR(t1));
 
+template <std::floating_point T>
+KERNEL(mat_vec_dot_test,
+       TVAR(m00), TVAR(m01), TVAR(m02),
+       TVAR(m10), TVAR(m11), TVAR(m12),
+       TVAR(m20), TVAR(m21), TVAR(m22),
+       TVAR(x0), TVAR(x1), TVAR(x2))
+    INSERT_TMACRO(vm::mat_vec3_dot, CS(y), CS(m), CS(x))
+KERNEL_END(TVAR(y0), TVAR(y1), TVAR(y2));
+
 // clang-format on
 
 int
@@ -57,11 +67,12 @@ main(int argc, char* argv[])
     const auto cmp_tuple_arr = [](const auto& a, const auto& b) noexcept
     { return std::get<0>(a) == b[0] && std::get<1>(a) == b[1]; };
 
-    vm::bse::function<rotl32_test>           bse_rotl32;
-    vm::bse::function<threefry2x32_test>     bse_threefry2x32;
-    vm::bse::function<gen_canon_test>        bse_gen_canon;
-    vm::bse::function<bump_test>             bse_bump;
-    vm::bse::function<cross_dot_test<float>> bse_cross_dot;
+    vm::bse::function<rotl32_test>             bse_rotl32;
+    vm::bse::function<threefry2x32_test>       bse_threefry2x32;
+    vm::bse::function<gen_canon_test>          bse_gen_canon;
+    vm::bse::function<bump_test>               bse_bump;
+    vm::bse::function<cross_dot_test<float>>   bse_cross_dot;
+    vm::bse::function<mat_vec_dot_test<float>> bse_mat_vec_dot;
 
     track.dep_check(
         NamedTest(
@@ -97,6 +108,30 @@ main(int argc, char* argv[])
                      bse_cross_dot,
                      std::identity{}),
         "cross dot test"));
+
+    track.check(NamedFuzzyTest(
+        tm.fuzzy_with_ref(
+            [&]() noexcept
+            {
+                std::array<float, 12> ret;
+                for(std::size_t i = 0; i < 12; ++i) ret[i] = gf();
+                return ret;
+            },
+            bse_mat_vec_dot,
+            [](const auto& arr) noexcept
+            {
+                Matrix<float, 3, 3, std::array> m{arr};
+                Vector<float, 3, std::array>    v{arr[9], arr[10], arr[11]};
+                return dot(m, v);
+            },
+            [](const auto& t, const auto& r) noexcept
+            {
+                return almost_equal(std::get<0>(t), r[0], 10) &&
+                       almost_equal(std::get<1>(t), r[1], 10) &&
+                       almost_equal(std::get<2>(t), r[2], 10);
+            }),
+        "matrix-vector product",
+        0.01));
 
     return track.ret_code();
 }
