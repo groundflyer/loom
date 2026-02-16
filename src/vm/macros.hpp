@@ -301,6 +301,185 @@
               typename P9,                                      \
               typename P10>                                     \
     __MACRO_DEF_BEGIN(NAME)
+#define TMACRO11(NAME, P1, P2, P3, P4, P5, P6, P7, P8, P9, P10, P11) \
+    __MACRO_DECLARE(NAME,                                            \
+                    CS(P1),                                          \
+                    CS(P2),                                          \
+                    CS(P3),                                          \
+                    CS(P4),                                          \
+                    CS(P5),                                          \
+                    CS(P6),                                          \
+                    CS(P7),                                          \
+                    CS(P8),                                          \
+                    CS(P9),                                          \
+                    CS(P10),                                         \
+                    CS(P11));                                        \
+    template <typename MAJOR_TYPE,                                   \
+              typename P1,                                           \
+              typename P2,                                           \
+              typename P3,                                           \
+              typename P4,                                           \
+              typename P5,                                           \
+              typename P6,                                           \
+              typename P7,                                           \
+              typename P8,                                           \
+              typename P9,                                           \
+              typename P10,                                          \
+              typename P11>                                          \
+    __MACRO_DEF_BEGIN(NAME)
+#define TMACRO12(NAME, P1, P2, P3, P4, P5, P6, P7, P8, P9, P10, P11, P12) \
+    __MACRO_DECLARE(NAME,                                                 \
+                    CS(P1),                                               \
+                    CS(P2),                                               \
+                    CS(P3),                                               \
+                    CS(P4),                                               \
+                    CS(P5),                                               \
+                    CS(P6),                                               \
+                    CS(P7),                                               \
+                    CS(P8),                                               \
+                    CS(P9),                                               \
+                    CS(P10),                                              \
+                    CS(P11),                                              \
+                    CS(P12));                                             \
+    template <typename MAJOR_TYPE,                                        \
+              typename P1,                                                \
+              typename P2,                                                \
+              typename P3,                                                \
+              typename P4,                                                \
+              typename P5,                                                \
+              typename P6,                                                \
+              typename P7,                                                \
+              typename P8,                                                \
+              typename P9,                                                \
+              typename P10,                                               \
+              typename P11,                                               \
+              typename P12>                                               \
+    __MACRO_DEF_BEGIN(NAME)
+#define TMACRO13(NAME, P1, P2, P3, P4, P5, P6, P7, P8, P9, P10, P11, P12, P13) \
+    __MACRO_DECLARE(NAME,                                                      \
+                    CS(P1),                                                    \
+                    CS(P2),                                                    \
+                    CS(P3),                                                    \
+                    CS(P4),                                                    \
+                    CS(P5),                                                    \
+                    CS(P6),                                                    \
+                    CS(P7),                                                    \
+                    CS(P8),                                                    \
+                    CS(P9),                                                    \
+                    CS(P10),                                                   \
+                    CS(P11),                                                   \
+                    CS(P12),                                                   \
+                    CS(P13));                                                  \
+    template <typename MAJOR_TYPE,                                             \
+              typename P1,                                                     \
+              typename P2,                                                     \
+              typename P3,                                                     \
+              typename P4,                                                     \
+              typename P5,                                                     \
+              typename P6,                                                     \
+              typename P7,                                                     \
+              typename P8,                                                     \
+              typename P9,                                                     \
+              typename P10,                                                    \
+              typename P11,                                                    \
+              typename P12,                                                    \
+              typename P13>                                                    \
+    __MACRO_DEF_BEGIN(NAME)
+#define TMACRO14(NAME,             \
+                 P1,               \
+                 P2,               \
+                 P3,               \
+                 P4,               \
+                 P5,               \
+                 P6,               \
+                 P7,               \
+                 P8,               \
+                 P9,               \
+                 P10,              \
+                 P11,              \
+                 P12,              \
+                 P13,              \
+                 P14)              \
+    __MACRO_DECLARE(NAME,          \
+                    CS(P1),        \
+                    CS(P2),        \
+                    CS(P3),        \
+                    CS(P4),        \
+                    CS(P5),        \
+                    CS(P6),        \
+                    CS(P7),        \
+                    CS(P8),        \
+                    CS(P9),        \
+                    CS(P10),       \
+                    CS(P11),       \
+                    CS(P12),       \
+                    CS(P13),       \
+                    CS(P14));      \
+    template <typename MAJOR_TYPE, \
+              typename P1,         \
+              typename P2,         \
+              typename P3,         \
+              typename P4,         \
+              typename P5,         \
+              typename P6,         \
+              typename P7,         \
+              typename P8,         \
+              typename P9,         \
+              typename P10,        \
+              typename P11,        \
+              typename P12,        \
+              typename P13,        \
+              typename P14>        \
+    __MACRO_DEF_BEGIN(NAME)
+#define TMACRO15(NAME,             \
+                 P1,               \
+                 P2,               \
+                 P3,               \
+                 P4,               \
+                 P5,               \
+                 P6,               \
+                 P7,               \
+                 P8,               \
+                 P9,               \
+                 P10,              \
+                 P11,              \
+                 P12,              \
+                 P13,              \
+                 P14,              \
+                 P15)              \
+    __MACRO_DECLARE(NAME,          \
+                    CS(P1),        \
+                    CS(P2),        \
+                    CS(P3),        \
+                    CS(P4),        \
+                    CS(P5),        \
+                    CS(P6),        \
+                    CS(P7),        \
+                    CS(P8),        \
+                    CS(P9),        \
+                    CS(P10),       \
+                    CS(P11),       \
+                    CS(P12),       \
+                    CS(P13),       \
+                    CS(P14),       \
+                    CS(P15));      \
+    template <typename MAJOR_TYPE, \
+              typename P1,         \
+              typename P2,         \
+              typename P3,         \
+              typename P4,         \
+              typename P5,         \
+              typename P6,         \
+              typename P7,         \
+              typename P8,         \
+              typename P9,         \
+              typename P10,        \
+              typename P11,        \
+              typename P12,        \
+              typename P13,        \
+              typename P14,        \
+              typename P15>        \
+    __MACRO_DEF_BEGIN(NAME)
 
 #define MACRO_END \
     > ;           \
