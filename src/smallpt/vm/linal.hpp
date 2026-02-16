@@ -240,4 +240,21 @@ struct mat_vec3_dot :
     std::type_identity<typename detail::make_mat_vec<T, DST, MAT, VEC>::type>
 {
 };
+
+// clang-format off
+TMACRO2(vec3_length2, dst, v)
+    INSERT_TMACRO(vec3_dot, dst, v, v)
+MACRO_END;
+
+TMACRO2(vec3_length, dst, v)
+    INSERT_TMACRO(vec3_length2, dst, v),
+    TSQRT_CS(dst, dst)
+MACRO_END;
+
+TMACRO2(vec3_norm, v, l)
+    INSERT_TMACRO(vec3_length, l, v),
+    INSERT_TMACRO(vec3_scalar_div, v, v, l)
+MACRO_END;
+
+// clang-format on
 } // namespace loom::vm
