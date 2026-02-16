@@ -36,17 +36,34 @@ using var_idx = Variable<T, append_idx_t<P, I>>;
 template <typename T, CharSequence P, std::uint8_t I, std::uint8_t J>
 using var_ij = Variable<T, append_ij_t<P, I, J>>;
 
+// binary map with two vectors
 template <typename Op,
           typename T,
           CharSequence Dst,
           CharSequence A,
           CharSequence B,
           std::size_t  N>
-class make_vec_bin_map
+class make_vec_vec_bin_map
 {
     template <std::uint8_t I>
     using f =
         Compute<Op, var_idx<T, Dst, I>, var_idx<T, A, I>, var_idx<T, B, I>>;
+
+  public:
+    using type = intlist::map_t<f, std::make_index_sequence<N>>;
+};
+
+// binary map with a vector A and a scalar B
+template <typename Op,
+          typename T,
+          CharSequence Dst,
+          CharSequence A,
+          CharSequence B,
+          std::size_t  N>
+class make_vec_scalar_bin_map
+{
+    template <std::uint8_t I>
+    using f = Compute<Op, var_idx<T, Dst, I>, var_idx<T, A, I>, Variable<T, B>>;
 
   public:
     using type = intlist::map_t<f, std::make_index_sequence<N>>;
@@ -145,28 +162,53 @@ class make_mat_vec
 
 #define ARR_PARM_DECL(NAME, N) CS_JOIN(CS_JOIN(CS(NAME), CS(])), CS_JOIN(CS(N), CS(])))
 
-#define MAKE_STD_BINOP_VEC_MACRO(N, NAME, OP)                                \
-    using __macro_decl_vec##N##_##NAME = macro_decl<CS(vec##N##_##NAME),     \
-                                                    ARR_PARM_DECL(dst, N),   \
-                                                    ARR_PARM_DECL(a, N),     \
-                                                    ARR_PARM_DECL(b, N)>;    \
-    template <typename T, typename DST, typename A, typename B>              \
-    struct vec##N##_##NAME :                                                 \
-        std::type_identity<                                                  \
-            typename detail::make_vec_bin_map<std::OP<T>, T, DST, A, B, N>:: \
-                type>                                                        \
-    {                                                                        \
+#define MAKE_STD_BINOP_VEC_VEC_MACRO(N, NAME, OP)                        \
+    using __macro_decl_vec_vec##N##_##NAME =                             \
+        macro_decl<CS(vec_vec##N##_##NAME),                              \
+                   ARR_PARM_DECL(dst, N),                                \
+                   ARR_PARM_DECL(a, N),                                  \
+                   ARR_PARM_DECL(b, N)>;                                 \
+    template <typename T, typename DST, typename A, typename B>          \
+    struct vec_vec##N##_##NAME :                                         \
+        std::type_identity<                                              \
+            typename detail::                                            \
+                make_vec_vec_bin_map<std::OP<T>, T, DST, A, B, N>::type> \
+    {                                                                    \
     };
 
-MAKE_STD_BINOP_VEC_MACRO(2, add, plus)
-MAKE_STD_BINOP_VEC_MACRO(2, sub, minus)
-MAKE_STD_BINOP_VEC_MACRO(2, mul, multiplies)
-MAKE_STD_BINOP_VEC_MACRO(2, div, divides)
+#define MAKE_STD_BINOP_VEC_SCALAR_MACRO(N, NAME, OP)                        \
+    using __macro_decl_vec##N##_scalar_##NAME =                             \
+        macro_decl<CS(vec##N##_scalar_##NAME),                              \
+                   ARR_PARM_DECL(dst, N),                                   \
+                   ARR_PARM_DECL(a, N),                                     \
+                   CS(b)>;                                                  \
+    template <typename T, typename DST, typename A, typename B>             \
+    struct vec##N##_scalar_##NAME :                                         \
+        std::type_identity<                                                 \
+            typename detail::                                               \
+                make_vec_scalar_bin_map<std::OP<T>, T, DST, A, B, N>::type> \
+    {                                                                       \
+    };
 
-MAKE_STD_BINOP_VEC_MACRO(3, add, plus)
-MAKE_STD_BINOP_VEC_MACRO(3, sub, minus)
-MAKE_STD_BINOP_VEC_MACRO(3, mul, multiplies)
-MAKE_STD_BINOP_VEC_MACRO(3, div, divides)
+MAKE_STD_BINOP_VEC_VEC_MACRO(2, add, plus)
+MAKE_STD_BINOP_VEC_VEC_MACRO(2, sub, minus)
+MAKE_STD_BINOP_VEC_VEC_MACRO(2, mul, multiplies)
+MAKE_STD_BINOP_VEC_VEC_MACRO(2, div, divides)
+
+MAKE_STD_BINOP_VEC_VEC_MACRO(3, add, plus)
+MAKE_STD_BINOP_VEC_VEC_MACRO(3, sub, minus)
+MAKE_STD_BINOP_VEC_VEC_MACRO(3, mul, multiplies)
+MAKE_STD_BINOP_VEC_VEC_MACRO(3, div, divides)
+
+MAKE_STD_BINOP_VEC_SCALAR_MACRO(2, add, plus)
+MAKE_STD_BINOP_VEC_SCALAR_MACRO(2, sub, minus)
+MAKE_STD_BINOP_VEC_SCALAR_MACRO(2, mul, multiplies)
+MAKE_STD_BINOP_VEC_SCALAR_MACRO(2, div, divides)
+
+MAKE_STD_BINOP_VEC_SCALAR_MACRO(3, add, plus)
+MAKE_STD_BINOP_VEC_SCALAR_MACRO(3, sub, minus)
+MAKE_STD_BINOP_VEC_SCALAR_MACRO(3, mul, multiplies)
+MAKE_STD_BINOP_VEC_SCALAR_MACRO(3, div, divides)
 
 using __macro_decl_vec3_dot =
     macro_decl<CS(vec3_dot), CS(dst), CS(a[3]), CS(b[3])>;
