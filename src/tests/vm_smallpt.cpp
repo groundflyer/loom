@@ -23,9 +23,10 @@ KERNEL(threefry2x32_test, VAR(std::uint32_t, c0), VAR(std::uint32_t, c1))
     INSERT_MACRO(vm::threefry2x32r32, CS(c0), CS(c1), CS(0xdead), CS(0xbeef), CS(0x1bd17b98), CS(tmp1), CS(tmp2))
 KERNEL_END(VAR(std::uint32_t, c0), VAR(std::uint32_t, c1));
 
+template <std::floating_point T>
 KERNEL(gen_canon_test, VAR(std::uint32_t, x))
-    INSERT_MACRO(vm::gen_canonical, CS(x))
-KERNEL_END(VAR(float, x));
+    INSERT_TMACRO(vm::gen_canonical, CS(x))
+TKERNEL_END1(x);
 
 KERNEL(bump_test, VAR(std::uint32_t, c0), VAR(std::uint32_t, c1), VAR(std::uint32_t, i))
     INSERT_MACRO(vm::bump_ctr, CS(c0), CS(c1), CS(i), CS(tmp1), CS(tmp2))
@@ -69,7 +70,7 @@ main(int argc, char* argv[])
 
     vm::bse::function<rotl32_test>             bse_rotl32;
     vm::bse::function<threefry2x32_test>       bse_threefry2x32;
-    vm::bse::function<gen_canon_test>          bse_gen_canon;
+    vm::bse::function<gen_canon_test<float>>   bse_gen_canon;
     vm::bse::function<bump_test>               bse_bump;
     vm::bse::function<cross_dot_test<float>>   bse_cross_dot;
     vm::bse::function<mat_vec_dot_test<float>> bse_mat_vec_dot;

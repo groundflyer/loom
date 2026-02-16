@@ -54,10 +54,10 @@ MACRO7(threefry2x32r32, c0, c1, k0, k1, k2, tmp1, tmp2) // k2 should be constant
     INSERT_MACRO(threefry_8rounds, c0, c1, CS(7), CS(8), k1, k2, k2, k0, tmp1, tmp2)
 MACRO_END;
 
-MACRO1(gen_canonical, x)
+TMACRO1(gen_canonical, x)
     RSHFT_CS(std::uint32_t, x, x, CS(9)),
     BOR_CS(std::uint32_t, x, x, CS(0x3f800000)),
-    SUB_CS(float, x, x, CS(1))
+    TSUB_CS(x, x, CS(1))
 MACRO_END;
 
 MACRO5(bump_ctr, c0, c1, i, tmp1, tmp2)
