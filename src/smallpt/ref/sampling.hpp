@@ -14,12 +14,10 @@
 namespace loom
 {
 /// @brief Generate vector of two random numbers [0, 1).
-template <std::uint32_t k0, std::uint32_t k1>
 Vec2<float>
-sample_u(const std::array<std::uint32_t, 2>& c) noexcept
+sample_u(const std::array<std::uint32_t, 2>& u) noexcept
 {
-    return transform(gen_canonical,
-                     Vec2<std::uint32_t>{threefry2x32r32<k0, k1>(c)});
+    return transform(gen_canonical, Vec2<std::uint32_t>(u));
 }
 
 template <std::floating_point T>
