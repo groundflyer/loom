@@ -143,21 +143,30 @@ class make_mat_vec
 };
 } // namespace detail
 
-#define MAKE_STD_BINOP_VEC3_MACRO(NAME, OP)                                  \
-    using __macro_decl_vec3_##NAME =                                         \
-        macro_decl<CS(vec3_##NAME), CS(dst[3]), CS(a[3]), CS(b[3])>;         \
+#define ARR_PARM_DECL(NAME, N) CS_JOIN(CS_JOIN(CS(NAME), CS(])), CS_JOIN(CS(N), CS(])))
+
+#define MAKE_STD_BINOP_VEC_MACRO(N, NAME, OP)                                \
+    using __macro_decl_vec##N##_##NAME = macro_decl<CS(vec##N##_##NAME),     \
+                                                    ARR_PARM_DECL(dst, N),   \
+                                                    ARR_PARM_DECL(a, N),     \
+                                                    ARR_PARM_DECL(b, N)>;    \
     template <typename T, typename DST, typename A, typename B>              \
-    struct vec3_##NAME :                                                     \
+    struct vec##N##_##NAME :                                                 \
         std::type_identity<                                                  \
-            typename detail::make_vec_bin_map<std::OP<T>, T, DST, A, B, 3>:: \
+            typename detail::make_vec_bin_map<std::OP<T>, T, DST, A, B, N>:: \
                 type>                                                        \
     {                                                                        \
     };
 
-MAKE_STD_BINOP_VEC3_MACRO(add, plus)
-MAKE_STD_BINOP_VEC3_MACRO(sub, minus)
-MAKE_STD_BINOP_VEC3_MACRO(mul, multiplies)
-MAKE_STD_BINOP_VEC3_MACRO(div, divides)
+MAKE_STD_BINOP_VEC_MACRO(2, add, plus)
+MAKE_STD_BINOP_VEC_MACRO(2, sub, minus)
+MAKE_STD_BINOP_VEC_MACRO(2, mul, multiplies)
+MAKE_STD_BINOP_VEC_MACRO(2, div, divides)
+
+MAKE_STD_BINOP_VEC_MACRO(3, add, plus)
+MAKE_STD_BINOP_VEC_MACRO(3, sub, minus)
+MAKE_STD_BINOP_VEC_MACRO(3, mul, multiplies)
+MAKE_STD_BINOP_VEC_MACRO(3, div, divides)
 
 using __macro_decl_vec3_dot =
     macro_decl<CS(vec3_dot), CS(dst), CS(a[3]), CS(b[3])>;
