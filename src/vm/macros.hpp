@@ -43,6 +43,9 @@
 #define TKERNEL_END2(a, b) \
     KERNEL_END             \
     (TVAR(a), TVAR(b))
+#define TKERNEL_END3(a, b, c) \
+    KERNEL_END                \
+    (TVAR(a), TVAR(b), TVAR(c))
 #define IKERNEL1(NAME, v)    KERNEL(NAME, IVAR(v))
 #define IKERNEL2(NAME, a, b) KERNEL(NAME, IVAR(a), IVAR(b))
 #define IKERNEL_END1(v) \
