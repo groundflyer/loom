@@ -3,9 +3,13 @@
 #include <common/linal.hpp>
 #include <common/test.hpp>
 #include <smallpt/ref/rng.hpp>
+#include <smallpt/ref/sampling.hpp>
 #include <smallpt/vm/linal.hpp>
 #include <smallpt/vm/rng.hpp>
+#include <smallpt/vm/sampling.hpp>
 #include <vm/bse.hpp>
+
+#include <fmt/ranges.h>
 
 using namespace loom;
 using namespace test;
@@ -54,7 +58,16 @@ KERNEL(mat_vec_dot_test,
     INSERT_TMACRO(vm::mat_vec3_dot, CS(y), CS(m), CS(x))
 KERNEL_END(TVAR(y0), TVAR(y1), TVAR(y2));
 
+template <std::floating_point T>
+TKERNEL5(sample_hemi_test, n0, n1, n2, u0, u1)
+    INSERT_TMACRO(vm::sample_hemisphere, CS(d0), CS(d1), CS(d2), CS(n0), CS(n1), CS(n2), CS(u0), CS(u1), CS(x), CS(t0), CS(t1))
+TKERNEL_END3(d0, d1, d2);
 // clang-format on
+
+using Vec3f = Vector<float, 3, std::array>;
+using Vec2f = Vector<float, 2, std::array>;
+
+static constexpr int ulp = 30;
 
 int
 main(int argc, char* argv[])
@@ -65,8 +78,15 @@ main(int argc, char* argv[])
 
     auto       gu32          = rs.make_gen<std::uint32_t>(0, -1u);
     auto       gf            = rs.make_gen<float>(-1e6, 1e6);
+    auto       g_canon       = rs.make_gen<float>();
     const auto cmp_tuple_arr = [](const auto& a, const auto& b) noexcept
     { return std::get<0>(a) == b[0] && std::get<1>(a) == b[1]; };
+    const auto vec3_ulp_cmp = [](const auto& t, const auto& r) noexcept
+    {
+        return almost_equal(std::get<0>(t), r[0], ulp) &&
+               almost_equal(std::get<1>(t), r[1], ulp) &&
+               almost_equal(std::get<2>(t), r[2], ulp);
+    };
 
     vm::bse::function<rotl32_test>             bse_rotl32;
     vm::bse::function<threefry2x32_test>       bse_threefry2x32;
@@ -74,6 +94,7 @@ main(int argc, char* argv[])
     vm::bse::function<bump_test>               bse_bump;
     vm::bse::function<cross_dot_test<float>>   bse_cross_dot;
     vm::bse::function<mat_vec_dot_test<float>> bse_mat_vec_dot;
+    vm::bse::function<sample_hemi_test<float>> bse_sample_hemi;
 
     track.dep_check(
         NamedTest(
@@ -125,13 +146,23 @@ main(int argc, char* argv[])
                 Vector<float, 3, std::array>    v{arr[9], arr[10], arr[11]};
                 return dot(m, v);
             },
-            [](const auto& t, const auto& r) noexcept
-            {
-                return almost_equal(std::get<0>(t), r[0], 10) &&
-                       almost_equal(std::get<1>(t), r[1], 10) &&
-                       almost_equal(std::get<2>(t), r[2], 10);
-            }),
+            vec3_ulp_cmp),
         "matrix-vector product",
+        0.01));
+
+    track.check(NamedFuzzyTest(
+        tm.fuzzy_with_ref(
+            [&]() noexcept
+            {
+                return std::pair{normalize(Vec3f{generate<3>(gf)}),
+                                 Vec2f{generate<2>(g_canon)}};
+            },
+            [&bse_sample_hemi](const Vec3f& n, const Vec2f& u) noexcept
+            { return bse_sample_hemi(n[0], n[1], n[2], u[0], u[1]); },
+            [](const Vec3f& n, const Vec2f& u) noexcept
+            { return sample_hemisphere(n, u); },
+            vec3_ulp_cmp),
+        "sample hemisphere",
         0.01));
 
     return track.ret_code();

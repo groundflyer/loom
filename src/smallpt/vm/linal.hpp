@@ -30,6 +30,9 @@ using append_idx_t = append_idx<P, I>::type;
 template <typename P, std::uint8_t I, std::uint8_t J>
 using append_ij_t = append_idx_t<append_idx_t<P, I>, J>;
 
+template <typename V>
+using remove_idx_t = intlist::reverse<intlist::tail<intlist::reverse<V>>>;
+
 template <typename T, CharSequence P, std::uint8_t I>
 using var_idx = Variable<T, append_idx_t<P, I>>;
 
@@ -257,4 +260,6 @@ TMACRO2(vec3_norm, v, l)
 MACRO_END;
 
 // clang-format on
+
+#define CS_UNIDX(X) detail::remove_idx_t<X>
 } // namespace loom::vm
