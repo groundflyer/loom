@@ -149,6 +149,7 @@ render(Image&                 img,
 
     const Vec2f          res{img.res()};
     ToSampleSpace<float> sample_space(img.res());
+
 #pragma omp parallel for schedule(dynamic)
     for(auto it = img.begin(); it != img.end(); ++it)
     {
