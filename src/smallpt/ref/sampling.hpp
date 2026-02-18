@@ -70,7 +70,7 @@ class ToSampleSpace
     operator()(const Vec2u& pos) const noexcept
     {
         const auto& [x, y] = pos;
-        const auto [w, h]  = m_res - static_cast<T>(1);
+        const auto [w, h]  = m_res;
         const T sx = m_ratio * (static_cast<T>(x) / w - static_cast<T>(0.5));
         const T sy = static_cast<T>(y) / h - static_cast<T>(0.5);
         return Vec2<T>{sx, sy};

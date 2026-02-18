@@ -62,10 +62,20 @@ template <std::floating_point T>
 TKERNEL5(sample_hemi_test, n0, n1, n2, u0, u1)
     INSERT_TMACRO(vm::sample_hemisphere, CS(d0), CS(d1), CS(d2), CS(n0), CS(n1), CS(n2), CS(u0), CS(u1), CS(x), CS(t0), CS(t1))
 TKERNEL_END3(d0, d1, d2);
+
+template <std::floating_point T>
+KERNEL(sample_space_test, IVAR(x), IVAR(y), IVAR(w), IVAR(h))
+    MOV(TVAR(w), IVAR(w)),
+    MOV(TVAR(h), IVAR(h)),
+    TDIV(r, w, h),
+    INSERT_TMACRO(vm::to_sample_space, CS(sx), CS(sy), CS(x), CS(y), CS(w), CS(h), CS(r))
+TKERNEL_END2(sx, sy);
+
 // clang-format on
 
 using Vec3f = Vector<float, 3, std::array>;
 using Vec2f = Vector<float, 2, std::array>;
+using Vec2u = Vector<unsigned, 2, std::array>;
 
 static constexpr int ulp = 30;
 
@@ -77,10 +87,16 @@ main(int argc, char* argv[])
     RandomState   rs;
 
     auto       gu32          = rs.make_gen<std::uint32_t>(0, -1u);
+    auto       gur           = rs.make_gen<unsigned>(30, 1000);
     auto       gf            = rs.make_gen<float>(-1e6, 1e6);
     auto       g_canon       = rs.make_gen<float>();
     const auto cmp_tuple_arr = [](const auto& a, const auto& b) noexcept
     { return std::get<0>(a) == b[0] && std::get<1>(a) == b[1]; };
+    const auto vec2_ulp_cmp = [](const auto& t, const auto& r) noexcept
+    {
+        return almost_equal(std::get<0>(t), r[0], ulp) &&
+               almost_equal(std::get<1>(t), r[1], ulp);
+    };
     const auto vec3_ulp_cmp = [](const auto& t, const auto& r) noexcept
     {
         return almost_equal(std::get<0>(t), r[0], ulp) &&
@@ -88,13 +104,14 @@ main(int argc, char* argv[])
                almost_equal(std::get<2>(t), r[2], ulp);
     };
 
-    vm::bse::function<rotl32_test>             bse_rotl32;
-    vm::bse::function<threefry2x32_test>       bse_threefry2x32;
-    vm::bse::function<gen_canon_test<float>>   bse_gen_canon;
-    vm::bse::function<bump_test>               bse_bump;
-    vm::bse::function<cross_dot_test<float>>   bse_cross_dot;
-    vm::bse::function<mat_vec_dot_test<float>> bse_mat_vec_dot;
-    vm::bse::function<sample_hemi_test<float>> bse_sample_hemi;
+    vm::bse::function<rotl32_test>              bse_rotl32;
+    vm::bse::function<threefry2x32_test>        bse_threefry2x32;
+    vm::bse::function<gen_canon_test<float>>    bse_gen_canon;
+    vm::bse::function<bump_test>                bse_bump;
+    vm::bse::function<cross_dot_test<float>>    bse_cross_dot;
+    vm::bse::function<mat_vec_dot_test<float>>  bse_mat_vec_dot;
+    vm::bse::function<sample_hemi_test<float>>  bse_sample_hemi;
+    vm::bse::function<sample_space_test<float>> bse_sample_space;
 
     track.dep_check(
         NamedTest(
@@ -164,6 +181,30 @@ main(int argc, char* argv[])
             vec3_ulp_cmp),
         "sample hemisphere",
         0.01));
+
+    track.check(NamedFuzzyTest(tm.fuzzy_with_ref(
+                                   [&]() noexcept
+                                   {
+                                       const unsigned w = gur();
+                                       const unsigned h = gur();
+                                       const unsigned x = g_canon() * w;
+                                       const unsigned y = g_canon() * h;
+                                       return std::tuple{x, y, w, h};
+                                   },
+                                   bse_sample_space,
+                                   [](const unsigned x,
+                                      const unsigned y,
+                                      const unsigned w,
+                                      const unsigned h) noexcept
+                                   {
+                                       ToSampleSpace<float> f{
+                                           Vec2u{w, h}
+                                       };
+                                       return f(Vec2u{x, y});
+                                   },
+                                   vec2_ulp_cmp),
+                               "sample film space",
+                               0.01));
 
     return track.ret_code();
 }
