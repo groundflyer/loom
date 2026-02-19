@@ -8,21 +8,21 @@
 #define MAJOR_TYPE T
 #endif
 
-#define INDEX_TYPE       loom::uint_of_size_t<sizeof(MAJOR_TYPE)>
+#define INDEX_TYPE         loom::uint_of_size_t<sizeof(MAJOR_TYPE)>
 
 // convert to char_sequence
-#define CS(S)            loom::sl2cs<#S>
+#define CS(S)              loom::sl2cs<#S>
 
-#define CS_JOIN(A, B)    loom::intlist::join<A, B>
+#define CS_JOIN(A, B)      loom::intlist::join<A, B>
 
 // NAME - char_sequence
-#define NVAR(TYPE, NAME) loom::vm::Variable<TYPE, NAME>
+#define VAR_CS(TYPE, NAME) loom::vm::Variable<TYPE, NAME>
 // NAME - literal without quotes
-#define VAR(TYPE, NAME)  NVAR(TYPE, CS(NAME))
-#define TVAR(NAME)       VAR(MAJOR_TYPE, NAME)
-#define IVAR(NAME)       VAR(INDEX_TYPE, NAME)
-#define NTVAR(NAME)      NVAR(MAJOR_TYPE, NAME)
-#define NIVAR(NAME)      NVAR(INDEX_TYPE, NAME)
+#define VAR(TYPE, NAME)    VAR_CS(TYPE, CS(NAME))
+#define TVAR(NAME)         VAR(MAJOR_TYPE, NAME)
+#define IVAR(NAME)         VAR(INDEX_TYPE, NAME)
+#define TVAR_CS(NAME)      VAR_CS(MAJOR_TYPE, NAME)
+#define IVAR_CS(NAME)      VAR_CS(INDEX_TYPE, NAME)
 
 #define KERNEL(NAME, ...)                           \
     using NAME = loom::vm::kernel_blank < CS(NAME), \
@@ -500,8 +500,8 @@
 #define MOV(a, b)               loom::vm::Compute<std::identity, a, b>
 #define TMOV(a, b)              MOV(TVAR(a), TVAR(b))
 #define IMOV(a, b)              MOV(IVAR(a), IVAR(b))
-#define TMOV_CS(a, b)           MOV(NTVAR(a), NTVAR(b))
-#define IMOV_CS(a, b)           MOV(NIVAR(a), NIVAR(b))
+#define TMOV_CS(a, b)           MOV(TVAR_CS(a), TVAR_CS(b))
+#define IMOV_CS(a, b)           MOV(IVAR_CS(a), IVAR_CS(b))
 
 #define LABEL_CS(NAME)          loom::vm::Label<NAME>
 #define LABEL(NAME)             LABEL_CS(CS(NAME))
@@ -531,53 +531,54 @@
     >>
 
 #define PJMP2_CS(JTYPE, JNAME, L1, L2) \
-    PJMP2(NVAR(JTYPE, JNAME), LABEL(L1), LABEL(L2))
+    PJMP2(VAR_CS(JTYPE, JNAME), LABEL(L1), LABEL(L2))
 #define PJMP3_CS(JTYPE, JNAME, L1, L2, L3) \
-    PJMP2(NVAR(JTYPE, JNAME), LABEL(L1), LABEL(L2), LABEL(L3))
+    PJMP2(VAR_CS(JTYPE, JNAME), LABEL(L1), LABEL(L2), LABEL(L3))
 #define PJMP4_CS(JTYPE, JNAME, L1, L2, L3, L4) \
-    PJMP2(NVAR(JTYPE, JNAME), LABEL(L1), LABEL(L2), LABEL(L3), LABEL(L4))
+    PJMP2(VAR_CS(JTYPE, JNAME), LABEL(L1), LABEL(L2), LABEL(L3), LABEL(L4))
 
 #define IPJMPN(JNAME, ...)    PJMPN(IVAR(JNAME), __VA_ARGS__)
 #define IPJMP2(JNAME, ...)    PJMP2(IVAR(JNAME), __VA_ARGS__)
 #define IPJMP3(JNAME, ...)    PJMP3(IVAR(JNAME), __VA_ARGS__)
 #define IPJMP4(JNAME, ...)    PJMP4(IVAR(JNAME), __VA_ARGS__)
 
-#define IPJMPN_CS(JNAME, ...) PJMP(NIVAR(JNAME), __VA_ARGS__)
-#define IPJMP2_CS(JNAME, ...) PJMP2(NIVAR(JNAME), __VA_ARGS__)
-#define IPJMP3_CS(JNAME, ...) PJMP3(NIVAR(JNAME), __VA_ARGS__)
-#define IPJMP4_CS(JNAME, ...) PJMP4(NIVAR(JNAME), __VA_ARGS__)
+#define IPJMPN_CS(JNAME, ...) PJMP(IVAR_CS(JNAME), __VA_ARGS__)
+#define IPJMP2_CS(JNAME, ...) PJMP2(IVAR_CS(JNAME), __VA_ARGS__)
+#define IPJMP3_CS(JNAME, ...) PJMP3(IVAR_CS(JNAME), __VA_ARGS__)
+#define IPJMP4_CS(JNAME, ...) PJMP4(IVAR_CS(JNAME), __VA_ARGS__)
 
 #define BINOP_CS(OP, TYPE, DST, A, B) \
-    loom::vm::Compute<OP<TYPE>, NVAR(TYPE, DST), NVAR(TYPE, A), NVAR(TYPE, B)>
+    loom::vm::                        \
+        Compute<OP<TYPE>, VAR_CS(TYPE, DST), VAR_CS(TYPE, A), VAR_CS(TYPE, B)>
 #define BINOP(OP, TYPE, DST, A, B) BINOP_CS(OP, TYPE, CS(DST), CS(A), CS(B))
 
 #define UNOP_CS(OP, TYPE, DST, V) \
-    loom::vm::Compute<OP<TYPE>, NVAR(TYPE, DST), NVAR(TYPE, V)>
+    loom::vm::Compute<OP<TYPE>, VAR_CS(TYPE, DST), VAR_CS(TYPE, V)>
 #define UNOP(OP, TYPE, DST, V) UNOP_CS(OP, TYPE, CS(DST), CS(V))
 
 #define CMP_CS(OP, DST_TYPE, OP_TYPE, DST, A, B) \
     loom::vm::Compute<OP<OP_TYPE>,               \
-                      NVAR(DST_TYPE, DST),       \
-                      NVAR(OP_TYPE, A),          \
-                      NVAR(OP_TYPE, B)>
+                      VAR_CS(DST_TYPE, DST),     \
+                      VAR_CS(OP_TYPE, A),        \
+                      VAR_CS(OP_TYPE, B)>
 #define CMP(OP, DST_TYPE, OP_TYPE, DST, A, B) \
     CMP_CS(OP, DST_TYPE, OP_TYPE, CS(DST), CS(A), CS(B))
 
 #define CMOV_CS(TYPE, CTYPE, DST, C, A, B) \
     loom::vm::Compute<loom::vm::ops::cmov, \
-                      NVAR(TYPE, DST),     \
-                      NVAR(CTYPE, C),      \
-                      NVAR(TYPE, A),       \
-                      NVAR(TYPE, B)>
+                      VAR_CS(TYPE, DST),   \
+                      VAR_CS(CTYPE, C),    \
+                      VAR_CS(TYPE, A),     \
+                      VAR_CS(TYPE, B)>
 #define CMOV(TYPE, CTYPE, DST, C, A, B) \
     CMOV_CS(TYPE, CTYPE, CS(DST), CS(C), CS(A), CS(B))
 
 #define FMA_CS(TYPE, DST, X, Y, Z)        \
     loom::vm::Compute<loom::vm::ops::fma, \
-                      NVAR(TYPE, DST),    \
-                      NVAR(TYPE, X),      \
-                      NVAR(TYPE, Y),      \
-                      NVAR(TYPE, Z)>
+                      VAR_CS(TYPE, DST),  \
+                      VAR_CS(TYPE, X),    \
+                      VAR_CS(TYPE, Y),    \
+                      VAR_CS(TYPE, Z)>
 #define TFMA_CS(...)       FMA_CS(MAJOR_TYPE, __VA_ARGS__)
 #define TFMA(DST, X, Y, Z) TFMA_CS(CS(DST), CS(X), CS(Y), CS(Z))
 

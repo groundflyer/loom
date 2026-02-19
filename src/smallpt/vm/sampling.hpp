@@ -68,8 +68,8 @@ MACRO_END;
 /// @tparam h image height, float
 /// @tparam r ratio float, gang invariant, we don't compute it in kernel
 TMACRO7(to_sample_space, sx, sy, x, y, w, h, r)
-    MOV(NTVAR(sx), NIVAR(x)),
-    MOV(NTVAR(sy), NIVAR(y)),
+    MOV(TVAR_CS(sx), IVAR_CS(x)),
+    MOV(TVAR_CS(sy), IVAR_CS(y)),
     TDIV_CS(sx, sx, w),
     TSUB_CS(sx, sx, CS(0.5)),
     TMUL_CS(sx, sx, r),

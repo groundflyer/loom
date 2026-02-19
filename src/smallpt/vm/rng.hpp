@@ -63,7 +63,7 @@ MACRO_END;
 MACRO5(bump_ctr, c0, c1, i, tmp1, tmp2)
     ADD_CS(std::uint32_t, tmp1, c0, i),
     LT_CS(std::uint32_t, std::uint32_t, tmp2, tmp1, c0),
-    PJMP2(NVAR(std::uint32_t, tmp2), bump_ctr_end, incr1),
+    PJMP2(VAR_CS(std::uint32_t, tmp2), bump_ctr_end, incr1),
     LABEL(incr1),
     ADD_CS(std::uint32_t, c1, c1, tmp1),
     LABEL(bump_ctr_end),
