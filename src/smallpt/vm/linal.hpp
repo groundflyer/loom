@@ -259,7 +259,13 @@ TMACRO2(vec3_norm, v, l)
     INSERT_TMACRO(vec3_scalar_div, v, v, l)
 MACRO_END;
 
-// clang-format on
+// a invalidated
+TMACRO3(vec3_dist, dst, a, b)
+    INSERT_TMACRO(vec_vec3_sub, a, a, b),
+    INSERT_TMACRO(vec3_length, dst, a)
+MACRO_END;
+
+    // clang-format on
 
 #define CS_UNIDX(X) detail::remove_idx_t<X>
-} // namespace loom::vm
+    } // namespace loom::vm

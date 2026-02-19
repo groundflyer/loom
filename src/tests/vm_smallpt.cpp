@@ -2,9 +2,11 @@
 // vm_smallpt.cpp
 #include <common/linal.hpp>
 #include <common/test.hpp>
+#include <smallpt/ref/niebloids.hpp>
 #include <smallpt/ref/rng.hpp>
 #include <smallpt/ref/sampling.hpp>
 #include <smallpt/vm/linal.hpp>
+#include <smallpt/vm/primitives.hpp>
 #include <smallpt/vm/rng.hpp>
 #include <smallpt/vm/sampling.hpp>
 #include <vm/bse.hpp>
@@ -50,11 +52,11 @@ TKERNEL6(cross_dot_test, x0, x1, x2, y0, y1, y2)
 KERNEL_END(IVAR(t1));
 
 template <std::floating_point T>
-KERNEL(mat_vec_dot_test,
-       TVAR(m00), TVAR(m01), TVAR(m02),
-       TVAR(m10), TVAR(m11), TVAR(m12),
-       TVAR(m20), TVAR(m21), TVAR(m22),
-       TVAR(x0), TVAR(x1), TVAR(x2))
+TKERNEL12(mat_vec_dot_test,
+          m00, m01, m02,
+          m10, m11, m12,
+          m20, m21, m22,
+          x0, x1, x2)
     INSERT_TMACRO(vm::mat_vec3_dot, CS(y), CS(m), CS(x))
 KERNEL_END(TVAR(y0), TVAR(y1), TVAR(y2));
 
@@ -71,6 +73,11 @@ KERNEL(sample_space_test, IVAR(x), IVAR(y), IVAR(w), IVAR(h))
     INSERT_TMACRO(vm::to_sample_space, CS(sx), CS(sy), CS(x), CS(y), CS(w), CS(h), CS(r))
 TKERNEL_END2(sx, sy);
 
+template <std::floating_point T>
+TKERNEL13(disk_isect_test, o0, o1, o2, d0, d1, d2, p0, p1, p2, n0, n1, n2, r)
+    INSERT_TMACRO(vm::isect_disk, CS(hit), CS(t), CS(o), CS(d), CS(p), CS(n), CS(r), CS(vtmp), CS(tmp))
+KERNEL_END(IVAR(hit), TVAR(t));
+
 // clang-format on
 
 using Vec3f = Vector<float, 3, std::array>;
@@ -86,10 +93,14 @@ main(int argc, char* argv[])
     ParmTestMaker tm{parse_numruns<100000>(argc, argv)};
     RandomState   rs;
 
-    auto       gu32          = rs.make_gen<std::uint32_t>(0, -1u);
-    auto       gur           = rs.make_gen<unsigned>(30, 1000);
-    auto       gf            = rs.make_gen<float>(-1e6, 1e6);
-    auto       g_canon       = rs.make_gen<float>();
+    auto gu32    = rs.make_gen<std::uint32_t>(0, -1u);
+    auto gur     = rs.make_gen<unsigned>(30, 1000);
+    auto gf      = rs.make_gen<float>(-1e6, 1e6);
+    auto g_canon = rs.make_gen<float>();
+    auto gb      = rs.make_gen<bool>(0.5);
+    auto gv2s    = [&]() noexcept { return Vec2f(generate<2>(g_canon)); };
+    auto gv3     = [&]() noexcept { return Vec3f(generate<3>(gf)); };
+
     const auto cmp_tuple_arr = [](const auto& a, const auto& b) noexcept
     { return std::get<0>(a) == b[0] && std::get<1>(a) == b[1]; };
     const auto vec2_ulp_cmp = [](const auto& t, const auto& r) noexcept
@@ -112,6 +123,7 @@ main(int argc, char* argv[])
     vm::bse::function<mat_vec_dot_test<float>>  bse_mat_vec_dot;
     vm::bse::function<sample_hemi_test<float>>  bse_sample_hemi;
     vm::bse::function<sample_space_test<float>> bse_sample_space;
+    vm::bse::function<disk_isect_test<float>>   bse_disk_isect;
 
     track.dep_check(
         NamedTest(
@@ -205,6 +217,52 @@ main(int argc, char* argv[])
                                    vec2_ulp_cmp),
                                "sample film space",
                                0.01));
+
+    track.check(NamedFuzzyTest(
+        tm.fuzzy_with_ref(
+            [&]() noexcept
+            {
+                const Disk prim{gv3(), normalize(gv3()), gf()};
+                const Vec3 p = gv3();
+                const Ray  ray{p,
+                              gb() ? normalize(sample(gv2s(), prim) - p) :
+                                      normalize(gv3())};
+                return std::pair{ray, prim};
+            },
+            [&](const auto& ray,
+                const auto& prim) noexcept -> Intersection<float>
+            {
+                const auto& [o, d]    = ray;
+                const auto& [p, n, r] = prim;
+                auto ret              = bse_disk_isect(o[0],
+                                          o[1],
+                                          o[2],
+                                          d[0],
+                                          d[1],
+                                          d[2],
+                                          p[0],
+                                          p[1],
+                                          p[2],
+                                          n[0],
+                                          n[1],
+                                          n[2],
+                                          r);
+                return {static_cast<bool>(std::get<0>(ret)),
+                        std::get<1>(ret),
+                        Vec2f{}};
+            },
+            intersect,
+            [](const auto& a, const auto& b) noexcept
+            {
+                const bool ai = a.intersect;
+                const bool bi = b.intersect;
+                if(ai && bi)
+                    return almost_equal(a.t, b.t, ulp);
+                else
+                    return ai == bi;
+            }),
+        "ray-disk intersection",
+        0.01));
 
     return track.ret_code();
 }
