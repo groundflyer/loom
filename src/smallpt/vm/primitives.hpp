@@ -35,4 +35,33 @@ TMACRO9(isect_disk, hit, t, o, d, p, n, r, vtmp, tmp)
     TLT_CS(hit, tmp, r),
     LABEL(isect_disk_end)
 MACRO_END;
+
+/// @brief Solve quadratic equation @f$ax^{2} + bx + c@f$ for non-complex cases.
+/// Port of loom::quadratic.
+/// @tparam s bool solved?
+/// @tparam x root
+// all params invalidated
+template <std::floating_point T>
+TMACRO6(solve_quadratic, s, x, a, b, c, tmp)
+    TMUL_CS(tmp, b, b),
+    TMUL_CS(c, c, a),
+    TMUL_CS(c, c, CS(4)),
+    TSUB_CS(c, tmp, c),         // c <- D
+    TMUL_CS(tmp, a, CS(0.5)),   // tmp <- factor
+    TSQRT_CS(s, c),             // s <- sqrt(D)
+    TNEG_CS(b, b),              // b <- (-b)
+    TADD_CS(a, b, s),           // a <- (-b)+sqrt(D)
+    TMUL_CS(a, a, tmp),         // a <- x1
+    TSUB_CS(x, b, s),           // x <- (-b)-sqrt(D)
+    TMUL_CS(x, x, tmp),         // x <- x2
+    TLT_CS(tmp, a, CS(0)),      // tmp <- x1<0
+    IPJMP2_CS(tmp, sq_mid, sq_tail),
+    LABEL(sq_mid),
+    TLT_CS(tmp, x, CS(0)),      // tmp <- x2<0
+    TMIN_CS(b, a, x),           // b <- min(x1, x2)
+    TCMOV_CS(x, tmp, a, b),     // x <- (x2<0) ? x1 : x2
+    LABEL(sq_tail),
+    TMUL_CS(s, c, x),           // s <- D*x
+    TGE_CS(s, s, CS(0))         // s <- (D*x) >= 0
+MACRO_END;
 } // namespace loom::vm

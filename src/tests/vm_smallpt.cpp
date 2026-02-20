@@ -78,6 +78,11 @@ TKERNEL13(disk_isect_test, o0, o1, o2, d0, d1, d2, p0, p1, p2, n0, n1, n2, r)
     INSERT_TMACRO(vm::isect_disk, CS(hit), CS(t), CS(o), CS(d), CS(p), CS(n), CS(r), CS(vtmp), CS(tmp))
 KERNEL_END(IVAR(hit), TVAR(t));
 
+template <std::floating_point T>
+TKERNEL3(quadratic_test, a, b, c)
+    INSERT_TMACRO(vm::solve_quadratic, CS(s), CS(x), CS(a), CS(b), CS(c), CS(t))
+KERNEL_END(IVAR(s), TVAR(x));
+
 // clang-format on
 
 using Vec3f = Vector<float, 3, std::array>;
@@ -124,6 +129,7 @@ main(int argc, char* argv[])
     vm::bse::function<sample_hemi_test<float>>  bse_sample_hemi;
     vm::bse::function<sample_space_test<float>> bse_sample_space;
     vm::bse::function<disk_isect_test<float>>   bse_disk_isect;
+    vm::bse::function<quadratic_test<float>>    bse_quadratic;
 
     track.dep_check(
         NamedTest(
@@ -262,6 +268,15 @@ main(int argc, char* argv[])
                     return ai == bi;
             }),
         "ray-disk intersection",
+        0.01));
+
+    track.check(NamedFuzzyTest(
+        tm.fuzzy_with_ref([&]() noexcept
+                          { return std::tuple{gf(), gf(), gf()}; },
+                          bse_quadratic,
+                          [](const auto... ks) noexcept
+                          { return std::tuple{quadratic(ks...)}; }),
+        "quadratic",
         0.01));
 
     return track.ret_code();
