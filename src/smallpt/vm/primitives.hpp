@@ -64,4 +64,17 @@ TMACRO6(solve_quadratic, s, x, a, b, c, tmp)
     TMUL_CS(s, c, x),           // s <- D*x
     TGE_CS(s, s, CS(0))         // s <- (D*x) >= 0
 MACRO_END;
+
+/// @brief Ray-sphere intersection.
+template <std::floating_point T>
+TMACRO9(isect_sphere, hit, t, o, d, p, r, tmp1, tmp2, tmp3)
+    INSERT_TMACRO(vec_vec3_sub, o, o, p),        // o <- pc
+    TMUL_CS(r, r, r),                            // r <- r*r
+    INSERT_TMACRO(vec3_length2, t, o),           // t <- length2(pc)
+    TSUB_CS(tmp1, t, r),                         // tmp1 <- c
+    INSERT_TMACRO(vec3_scalar_mul, o, o, CS(2)), // o <- pc*2
+    INSERT_TMACRO(vec3_dot, tmp2, d, o),         // tmp1 <- b
+    INSERT_TMACRO(vec3_length2, r, d),           // r <- a
+    INSERT_TMACRO(solve_quadratic, hit, t, tmp1, r, tmp2, tmp3)
+MACRO_END;
 } // namespace loom::vm
