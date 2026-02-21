@@ -40,7 +40,7 @@ intersect(const Ray<T>& ray, const Sphere<T>& prim) noexcept
     const T       a     = length2(d);
     const Vec3<T> pc    = o - prim.center;
     const T       b     = dot(d, pc * static_cast<T>(2));
-    const T       c     = dot(pc, pc) - static_pow<2>(prim.radius);
+    const T       c     = length2(pc) - prim.radius * prim.radius;
     const auto [hit, t] = quadratic(a, b, c);
     return {hit, t, Vec2<T>{}};
 }
