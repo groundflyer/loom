@@ -96,6 +96,30 @@ using Vec2u = Vector<unsigned, 2, std::array>;
 
 static constexpr int ulp = 30;
 
+template <typename T>
+auto
+to_tuple(const Disk<T>& prim) noexcept
+{
+    const auto& [p, n, r] = prim;
+    return array2tuple(array_cat(p.data(), n.data(), std::array<T, 1>{r}));
+}
+
+template <typename T>
+auto
+to_tuple(const Sphere<T>& prim) noexcept
+{
+    return std::tuple_cat(array2tuple(prim.center.data()),
+                          std::tuple{prim.radius});
+}
+
+template <typename T>
+auto
+to_tuple(const Ray<T>& ray) noexcept
+{
+    const auto& [o, d] = ray;
+    return array2tuple(array_cat(o.data(), d.data()));
+}
+
 int
 main(int argc, char* argv[])
 {
@@ -240,39 +264,34 @@ main(int argc, char* argv[])
                                "sample film space",
                                0.01));
 
+    auto mk_isect_g = [&](auto&& pg) noexcept
+    {
+        return [&, pg = std::move(pg)]() noexcept
+        {
+            const auto prim = pg();
+            const Vec3 p    = gv3();
+            const Ray  ray{p,
+                          gb() ? normalize(sample(gv2s(), prim) - p) :
+                                  normalize(gv3())};
+            return std::pair{ray, prim};
+        };
+    };
+    auto mk_isect_t = [&](auto& bse) noexcept
+    {
+        return [&](const auto& ray,
+                   const auto& prim) noexcept -> Intersection<float>
+        {
+            const auto [hit, t] =
+                std::apply(bse, std::tuple_cat(to_tuple(ray), to_tuple(prim)));
+            return {static_cast<bool>(hit), t, Vec2f{}};
+        };
+    };
+
     track.check(NamedFuzzyTest(
         tm.fuzzy_with_ref(
-            [&]() noexcept
-            {
-                const Disk prim{gv3(), normalize(gv3()), gf()};
-                const Vec3 p = gv3();
-                const Ray  ray{p,
-                              gb() ? normalize(sample(gv2s(), prim) - p) :
-                                      normalize(gv3())};
-                return std::pair{ray, prim};
-            },
-            [&](const auto& ray,
-                const auto& prim) noexcept -> Intersection<float>
-            {
-                const auto& [o, d]    = ray;
-                const auto& [p, n, r] = prim;
-                auto ret              = bse_disk_isect(o[0],
-                                          o[1],
-                                          o[2],
-                                          d[0],
-                                          d[1],
-                                          d[2],
-                                          p[0],
-                                          p[1],
-                                          p[2],
-                                          n[0],
-                                          n[1],
-                                          n[2],
-                                          r);
-                return {static_cast<bool>(std::get<0>(ret)),
-                        std::get<1>(ret),
-                        Vec2f{}};
-            },
+            mk_isect_g([&]() noexcept
+                       { return Disk{gv3(), normalize(gv3()), gf()}; }),
+            mk_isect_t(bse_disk_isect),
             intersect,
             cmp_isects),
         "ray-disk intersection",
@@ -287,38 +306,14 @@ main(int argc, char* argv[])
                               { return std::tuple{quadratic(ks...)}; }),
             "quadratic",
             0.01),
-        NamedFuzzyTest(tm.fuzzy_with_ref(
-                           [&]() noexcept
-                           {
-                               const Sphere prim{gv3(), gf()};
-                               const Vec3   p = gv3();
-                               const Ray    ray{
-                                   p,
-                                   gb() ? normalize(sample(gv2s(), prim) - p) :
-                                             normalize(gv3())};
-                               return std::pair{ray, prim};
-                           },
-                           [&](const auto& ray,
-                               const auto& prim) noexcept -> Intersection<float>
-                           {
-                               const auto& [o, d]  = ray;
-                               const auto& [p, r]  = prim;
-                               const auto [hit, t] = bse_sphere_isect(o[0],
-                                                                      o[1],
-                                                                      o[2],
-                                                                      d[0],
-                                                                      d[1],
-                                                                      d[2],
-                                                                      p[0],
-                                                                      p[1],
-                                                                      p[2],
-                                                                      r);
-                               return {static_cast<bool>(hit), t, Vec2f{}};
-                           },
-                           intersect,
-                           cmp_isects),
-                       "ray-sphere intersection",
-                       0.01));
+        NamedFuzzyTest(
+            tm.fuzzy_with_ref(
+                mk_isect_g([&]() noexcept { return Sphere{gv3(), gf()}; }),
+                mk_isect_t(bse_sphere_isect),
+                intersect,
+                cmp_isects),
+            "ray-sphere intersection",
+            0.01));
 
     return track.ret_code();
 }
