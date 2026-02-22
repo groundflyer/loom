@@ -844,4 +844,17 @@ invomap(F&& f, ValOrTuple&& mt)
     else
         return std::invoke(std::forward<F>(f), std::forward<ValOrTuple>(mt));
 }
+
+/// @brief Convert std::array to tuple.
+template <template <typename...> typename Tuple = std::tuple,
+          typename T,
+          std::size_t N>
+constexpr typelist::to<typelist::repeat<N, T>, Tuple>
+array2tuple(const std::array<T, N>& a) noexcept
+{
+    return std::apply([](const auto... vals) constexpr noexcept
+                          -> typelist::to<typelist::repeat<N, T>, Tuple>
+                      { return {vals...}; },
+                      a);
+}
 } // namespace loom
