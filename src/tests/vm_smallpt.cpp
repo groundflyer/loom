@@ -83,6 +83,11 @@ TKERNEL3(quadratic_test, a, b, c)
     INSERT_TMACRO(vm::solve_quadratic, CS(s), CS(x), CS(a), CS(b), CS(c), CS(t))
 KERNEL_END(IVAR(s), TVAR(x));
 
+template <std::floating_point T>
+TKERNEL10(sphere_isect_test, o0, o1, o2, d0, d1, d2, p0, p1, p2, r)
+    INSERT_TMACRO(vm::isect_sphere, CS(hit), CS(t), CS(o), CS(d), CS(p), CS(r), CS(tmp1), CS(tmp2), CS(tmp3))
+KERNEL_END(IVAR(hit), TVAR(t));
+
 // clang-format on
 
 using Vec3f = Vector<float, 3, std::array>;
@@ -120,6 +125,16 @@ main(int argc, char* argv[])
                almost_equal(std::get<2>(t), r[2], ulp);
     };
 
+    const auto cmp_isects = [](const auto& a, const auto& b) noexcept
+    {
+        const bool ai = a.intersect;
+        const bool bi = b.intersect;
+        if(ai && bi)
+            return almost_equal(a.t, b.t, ulp);
+        else
+            return ai == bi;
+    };
+
     vm::bse::function<rotl32_test>              bse_rotl32;
     vm::bse::function<threefry2x32_test>        bse_threefry2x32;
     vm::bse::function<gen_canon_test<float>>    bse_gen_canon;
@@ -130,6 +145,7 @@ main(int argc, char* argv[])
     vm::bse::function<sample_space_test<float>> bse_sample_space;
     vm::bse::function<disk_isect_test<float>>   bse_disk_isect;
     vm::bse::function<quadratic_test<float>>    bse_quadratic;
+    vm::bse::function<sphere_isect_test<float>> bse_sphere_isect;
 
     track.dep_check(
         NamedTest(
@@ -258,26 +274,51 @@ main(int argc, char* argv[])
                         Vec2f{}};
             },
             intersect,
-            [](const auto& a, const auto& b) noexcept
-            {
-                const bool ai = a.intersect;
-                const bool bi = b.intersect;
-                if(ai && bi)
-                    return almost_equal(a.t, b.t, ulp);
-                else
-                    return ai == bi;
-            }),
+            cmp_isects),
         "ray-disk intersection",
         0.01));
 
-    track.check(NamedFuzzyTest(
-        tm.fuzzy_with_ref([&]() noexcept
-                          { return std::tuple{gf(), gf(), gf()}; },
-                          bse_quadratic,
-                          [](const auto... ks) noexcept
-                          { return std::tuple{quadratic(ks...)}; }),
-        "quadratic",
-        0.01));
+    track.dep_check(
+        NamedFuzzyTest(
+            tm.fuzzy_with_ref([&]() noexcept
+                              { return std::tuple{gf(), gf(), gf()}; },
+                              bse_quadratic,
+                              [](const auto... ks) noexcept
+                              { return std::tuple{quadratic(ks...)}; }),
+            "quadratic",
+            0.01),
+        NamedFuzzyTest(tm.fuzzy_with_ref(
+                           [&]() noexcept
+                           {
+                               const Sphere prim{gv3(), gf()};
+                               const Vec3   p = gv3();
+                               const Ray    ray{
+                                   p,
+                                   gb() ? normalize(sample(gv2s(), prim) - p) :
+                                             normalize(gv3())};
+                               return std::pair{ray, prim};
+                           },
+                           [&](const auto& ray,
+                               const auto& prim) noexcept -> Intersection<float>
+                           {
+                               const auto& [o, d]  = ray;
+                               const auto& [p, r]  = prim;
+                               const auto [hit, t] = bse_sphere_isect(o[0],
+                                                                      o[1],
+                                                                      o[2],
+                                                                      d[0],
+                                                                      d[1],
+                                                                      d[2],
+                                                                      p[0],
+                                                                      p[1],
+                                                                      p[2],
+                                                                      r);
+                               return {static_cast<bool>(hit), t, Vec2f{}};
+                           },
+                           intersect,
+                           cmp_isects),
+                       "ray-sphere intersection",
+                       0.01));
 
     return track.ret_code();
 }
