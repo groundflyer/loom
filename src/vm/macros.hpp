@@ -134,6 +134,68 @@
            TVAR(p11),   \
            TVAR(p12),   \
            TVAR(p13))
+#define TKERNEL14(NAME, \
+                  p1,   \
+                  p2,   \
+                  p3,   \
+                  p4,   \
+                  p5,   \
+                  p6,   \
+                  p7,   \
+                  p8,   \
+                  p9,   \
+                  p10,  \
+                  p11,  \
+                  p12,  \
+                  p13,  \
+                  p14)  \
+    KERNEL(NAME,        \
+           TVAR(p1),    \
+           TVAR(p2),    \
+           TVAR(p3),    \
+           TVAR(p4),    \
+           TVAR(p5),    \
+           TVAR(p6),    \
+           TVAR(p7),    \
+           TVAR(p8),    \
+           TVAR(p9),    \
+           TVAR(p10),   \
+           TVAR(p11),   \
+           TVAR(p12),   \
+           TVAR(p13),   \
+           TVAR(p14))
+#define TKERNEL15(NAME, \
+                  p1,   \
+                  p2,   \
+                  p3,   \
+                  p4,   \
+                  p5,   \
+                  p6,   \
+                  p7,   \
+                  p8,   \
+                  p9,   \
+                  p10,  \
+                  p11,  \
+                  p12,  \
+                  p13,  \
+                  p14,  \
+                  p15)  \
+    KERNEL(NAME,        \
+           TVAR(p1),    \
+           TVAR(p2),    \
+           TVAR(p3),    \
+           TVAR(p4),    \
+           TVAR(p5),    \
+           TVAR(p6),    \
+           TVAR(p7),    \
+           TVAR(p8),    \
+           TVAR(p9),    \
+           TVAR(p10),   \
+           TVAR(p11),   \
+           TVAR(p12),   \
+           TVAR(p13),   \
+           TVAR(p14),   \
+           TVAR(p15))
 
 #define TKERNEL_END1(v) \
     KERNEL_END          \
