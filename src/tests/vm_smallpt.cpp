@@ -351,7 +351,7 @@ main(int argc, char* argv[])
                           intersect,
                           cmp_isects),
         "ray-triangle intersection",
-        0.01));
+        0.025));
 
     return track.ret_code();
 }

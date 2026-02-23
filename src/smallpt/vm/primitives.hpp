@@ -78,16 +78,18 @@ TMACRO9(isect_sphere, hit, t, o, d, p, r, tmp1, tmp2, tmp3)
     INSERT_TMACRO(solve_quadratic, hit, t, r, tmp1, tmp2, tmp3)
 MACRO_END;
 
+using EPSILON = CS(0.0001);
+
 /// @brief Ray-triangle intersection.
 /// @cite 10.1080/10867651.1997.10487468
 template <std::floating_point T>
 TMACRO10(isect_triangle, hit, t, o, d, vert0, vert1, vert2, tmp1, tmp2, vtmp)
     INSERT_TMACRO(vec_vec3_sub, vert1, vert1, vert0),            // vert1 <- edge1
     INSERT_TMACRO(vec_vec3_sub, vert2, vert2, vert0),            // vert2 <- edge2
-    INSERT_TMACRO(vec3_cross, vtmp, d, vtmp, hit),               // vtmp <- pvec
-    INSERT_TMACRO(vec3_dot, t, vert1, vert2),                    // t <- det
-    TABS_CS(t, t),                                               // t <- abs(det)
-    TGE_CS(hit, t, CS(0.001)),                                   // hit <- abs(det)>=0.001
+    INSERT_TMACRO(vec3_cross, vtmp, d, vert2, hit),              // vtmp <- pvec
+    INSERT_TMACRO(vec3_dot, t, vert1, vtmp),                     // t <- det
+    TABS_CS(tmp1, t),                                            // tmp1 <- abs(det)
+    TGE_CS(hit, tmp1, EPSILON),                                  // hit <- abs(det)>=EPSILON
     IPJMP2_CS(hit, isect_triangle_end, isect_triangle_mid1),     // if hit then mid1 else end
     LABEL(isect_triangle_mid1),
     TDIV_CS(t, CS(1), t),                                        // t <- inv_det
