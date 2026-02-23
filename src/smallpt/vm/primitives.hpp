@@ -77,4 +77,40 @@ TMACRO9(isect_sphere, hit, t, o, d, p, r, tmp1, tmp2, tmp3)
     INSERT_TMACRO(vec3_length2, r, d),           // r <- a
     INSERT_TMACRO(solve_quadratic, hit, t, r, tmp1, tmp2, tmp3)
 MACRO_END;
+
+/// @brief Ray-triangle intersection.
+/// @cite 10.1080/10867651.1997.10487468
+template <std::floating_point T>
+TMACRO10(isect_triangle, hit, t, o, d, vert0, vert1, vert2, tmp1, tmp2, vtmp)
+    INSERT_TMACRO(vec_vec3_sub, vert1, vert1, vert0),            // vert1 <- edge1
+    INSERT_TMACRO(vec_vec3_sub, vert2, vert2, vert0),            // vert2 <- edge2
+    INSERT_TMACRO(vec3_cross, vtmp, d, vtmp, hit),               // vtmp <- pvec
+    INSERT_TMACRO(vec3_dot, t, vert1, vert2),                    // t <- det
+    TABS_CS(t, t),                                               // t <- abs(det)
+    TGE_CS(hit, t, CS(0.001)),                                   // hit <- abs(det)>=0.001
+    IPJMP2_CS(hit, isect_triangle_end, isect_triangle_mid1),     // if hit then mid1 else end
+    LABEL(isect_triangle_mid1),
+    TDIV_CS(t, CS(1), t),                                        // t <- inv_det
+    INSERT_TMACRO(vec_vec3_sub, vert0, o, vert0),                // vert0 <- tvec
+    INSERT_TMACRO(vec3_dot, tmp1, vert0, vtmp),                  // tmp1 <- dot(tvec, pvec)
+    TMUL_CS(tmp1, tmp1, t),                                      // tmp1 <- u
+    TGE_CS(hit, tmp1, CS(0)),                                    // hit <- u>=0
+    TLE_CS(tmp2, tmp1, CS(1)),                                   // tmp2 <- u<=1
+    ILAND_CS(hit, hit, tmp2),                                    // hit <- (u>=0)&&(u<=1)
+    IPJMP2_CS(hit, isect_triangle_end, isect_triangle_mid2),     // if hit then mid2 else end
+    LABEL(isect_triangle_mid2),
+    INSERT_TMACRO(vec3_cross, vtmp, vert0, vert1, tmp2),         // vtmp <- qvec
+    INSERT_TMACRO(vec3_dot, tmp2, d, vtmp),                      // tmp2 <- dot(d, qvec)
+    TMUL_CS(tmp2, tmp2, t),                                      // tmp2 <- v
+    TGE_CS(hit, tmp2, CS(0)),                                    // hit <- v>=0
+    TADD_CS(tmp1, tmp1, tmp2),                                   // tmp1 <- u+v
+    TLE_CS(tmp1, tmp1, CS(1)),                                   // tmp1 <- (u+v)<=1
+    ILAND_CS(hit, hit, tmp1),                                    // hit <- (v>=0)&&(v+u<=1)
+    IPJMP2_CS(hit, isect_triangle_end, isect_triangle_mid3),     // if hit then mid3 else end
+    LABEL(isect_triangle_mid3),
+    INSERT_TMACRO(vec3_dot, tmp1, vert2, vtmp),                  // tmp1 <- dot(edge2, qvec)
+    TMUL_CS(t, tmp1, t),                                         // t <- dot(edge2, qvec)*inv_det
+    IMOV_CS(hit, CS(1)),                                         // hit <- true
+    LABEL(isect_triangle_end)
+MACRO_END;
 } // namespace loom::vm

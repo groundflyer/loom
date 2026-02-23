@@ -74,7 +74,12 @@ KERNEL(sample_space_test, IVAR(x), IVAR(y), IVAR(w), IVAR(h))
 TKERNEL_END2(sx, sy);
 
 template <std::floating_point T>
-TKERNEL13(disk_isect_test, o0, o1, o2, d0, d1, d2, p0, p1, p2, n0, n1, n2, r)
+TKERNEL13(disk_isect_test,
+          o0, o1, o2,
+          d0, d1, d2,
+          p0, p1, p2,
+          n0, n1, n2,
+          r)
     INSERT_TMACRO(vm::isect_disk, CS(hit), CS(t), CS(o), CS(d), CS(p), CS(n), CS(r), CS(vtmp), CS(tmp))
 KERNEL_END(IVAR(hit), TVAR(t));
 
@@ -84,8 +89,22 @@ TKERNEL3(quadratic_test, a, b, c)
 KERNEL_END(IVAR(s), TVAR(x));
 
 template <std::floating_point T>
-TKERNEL10(sphere_isect_test, o0, o1, o2, d0, d1, d2, p0, p1, p2, r)
+TKERNEL10(sphere_isect_test,
+          o0, o1, o2,
+          d0, d1, d2,
+          p0, p1, p2,
+          r)
     INSERT_TMACRO(vm::isect_sphere, CS(hit), CS(t), CS(o), CS(d), CS(p), CS(r), CS(tmp1), CS(tmp2), CS(tmp3))
+KERNEL_END(IVAR(hit), TVAR(t));
+
+template <std::floating_point T>
+TKERNEL15(triangle_isect_test,
+          o0, o1, o2,
+          d0, d1, d2,
+          vert00, vert01, vert02,
+          vert10, vert11, vert12,
+          vert20, vert21, vert22)
+    INSERT_TMACRO(vm::isect_triangle, CS(hit), CS(t), CS(o), CS(d), CS(vert0), CS(vert1), CS(vert2), CS(tmp1), CS(tmp2), CS(vtmp))
 KERNEL_END(IVAR(hit), TVAR(t));
 
 // clang-format on
@@ -110,6 +129,15 @@ to_tuple(const Sphere<T>& prim) noexcept
 {
     return std::tuple_cat(array2tuple(prim.center.data()),
                           std::tuple{prim.radius});
+}
+
+template <typename T>
+auto
+to_tuple(const Triangle<T>& prim)
+{
+    return std::apply([](const auto&... vs) noexcept
+                      { return std::tuple_cat(array2tuple(vs.data())...); },
+                      prim);
 }
 
 template <typename T>
@@ -159,17 +187,18 @@ main(int argc, char* argv[])
             return ai == bi;
     };
 
-    vm::bse::function<rotl32_test>              bse_rotl32;
-    vm::bse::function<threefry2x32_test>        bse_threefry2x32;
-    vm::bse::function<gen_canon_test<float>>    bse_gen_canon;
-    vm::bse::function<bump_test>                bse_bump;
-    vm::bse::function<cross_dot_test<float>>    bse_cross_dot;
-    vm::bse::function<mat_vec_dot_test<float>>  bse_mat_vec_dot;
-    vm::bse::function<sample_hemi_test<float>>  bse_sample_hemi;
-    vm::bse::function<sample_space_test<float>> bse_sample_space;
-    vm::bse::function<disk_isect_test<float>>   bse_disk_isect;
-    vm::bse::function<quadratic_test<float>>    bse_quadratic;
-    vm::bse::function<sphere_isect_test<float>> bse_sphere_isect;
+    vm::bse::function<rotl32_test>                bse_rotl32;
+    vm::bse::function<threefry2x32_test>          bse_threefry2x32;
+    vm::bse::function<gen_canon_test<float>>      bse_gen_canon;
+    vm::bse::function<bump_test>                  bse_bump;
+    vm::bse::function<cross_dot_test<float>>      bse_cross_dot;
+    vm::bse::function<mat_vec_dot_test<float>>    bse_mat_vec_dot;
+    vm::bse::function<sample_hemi_test<float>>    bse_sample_hemi;
+    vm::bse::function<sample_space_test<float>>   bse_sample_space;
+    vm::bse::function<disk_isect_test<float>>     bse_disk_isect;
+    vm::bse::function<quadratic_test<float>>      bse_quadratic;
+    vm::bse::function<sphere_isect_test<float>>   bse_sphere_isect;
+    vm::bse::function<triangle_isect_test<float>> bse_triangle_isect;
 
     track.dep_check(
         NamedTest(
@@ -314,6 +343,15 @@ main(int argc, char* argv[])
                 cmp_isects),
             "ray-sphere intersection",
             0.01));
+
+    track.check(NamedFuzzyTest(
+        tm.fuzzy_with_ref(mk_isect_g([&]() noexcept
+                                     { return Triangle{gv3(), gv3(), gv3()}; }),
+                          mk_isect_t(bse_triangle_isect),
+                          intersect,
+                          cmp_isects),
+        "ray-triangle intersection",
+        0.01));
 
     return track.ret_code();
 }
