@@ -6,13 +6,21 @@
   outputs = { self, nixpkgs }: let
     system = "x86_64-linux";
     pkgs = import nixpkgs { inherit system; };
-    clangStdenv = pkgs.overrideCC pkgs.stdenv pkgs.llvmPackages_20.libcxxClang;
+    llvm = pkgs.llvmPackages;
+    clangStdenv = pkgs.overrideCC pkgs.stdenv llvm.libcxxClang;
     fmtLibcxx = pkgs.fmt.override { stdenv = clangStdenv; };
+    doxygenClang = pkgs.doxygen.overrideAttrs (old: {
+      buildInputs = old.buildInputs ++ [
+        llvm.libllvm
+        pkgs.libclang
+      ];
+      cmakeFlags = old.cmakeFlags ++ ["-Duse_libclang=ON"];
+    });
   in {
     devShells.${system}.default = pkgs.mkShell {
       packages = with pkgs; [
-        llvmPackages_20.libcxxClang
-        llvmPackages_20.openmp
+        llvm.libcxxClang
+        llvm.openmp
         cmake
         fmtLibcxx
         glfw
@@ -20,7 +28,7 @@
         range-v3
         # docs generation
         graphviz
-        doxygen
+        doxygenClang
         texliveBasic
       ];
 
