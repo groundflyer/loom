@@ -72,6 +72,21 @@ class make_vec_scalar_bin_map
     using type = intlist::map_t<f, std::make_index_sequence<N>>;
 };
 
+// unary map with a vector A
+template <typename Op,
+          typename T,
+          CharSequence Dst,
+          CharSequence A,
+          std::size_t  N>
+class make_vec_un_map
+{
+    template <std::uint8_t I>
+    using f = Compute<Op, var_idx<T, Dst, I>, var_idx<T, A, I>>;
+
+  public:
+    using type = intlist::map_t<f, std::make_index_sequence<N>>;
+};
+
 template <typename MAJOR_TYPE, CharSequence Dst, CharSequence A, CharSequence B>
 class make_dot
 {
@@ -193,6 +208,17 @@ class make_mat_vec
     {                                                                       \
     };
 
+#define MAKE_OPS_UNOP_VEC_MACRO(N, OP)                                        \
+    using __macro_decl_vec##N##_##OP = macro_decl<CS(vec##N##_##OP),          \
+                                                  ARR_PARM_DECL(dst, N),      \
+                                                  ARR_PARM_DECL(a, N)>;       \
+    template <typename T, typename DST, typename A>                           \
+    struct vec##N##_##OP :                                                    \
+        std::type_identity<                                                   \
+            typename detail::make_vec_un_map<ops::OP<T>, T, DST, A, N>::type> \
+    {                                                                         \
+    };
+
 MAKE_STD_BINOP_VEC_VEC_MACRO(2, add, plus)
 MAKE_STD_BINOP_VEC_VEC_MACRO(2, sub, minus)
 MAKE_STD_BINOP_VEC_VEC_MACRO(2, mul, multiplies)
@@ -212,6 +238,12 @@ MAKE_STD_BINOP_VEC_SCALAR_MACRO(3, add, plus)
 MAKE_STD_BINOP_VEC_SCALAR_MACRO(3, sub, minus)
 MAKE_STD_BINOP_VEC_SCALAR_MACRO(3, mul, multiplies)
 MAKE_STD_BINOP_VEC_SCALAR_MACRO(3, div, divides)
+
+MAKE_OPS_UNOP_VEC_MACRO(3, abs)
+
+#undef MAKE_STD_BINOP_VEC_VEC_MACRO
+#undef MAKE_STD_BINOP_VEC_SCALAR_MACRO
+#undef MAKE_OPS_UNOP_VEC_MACRO
 
 using __macro_decl_vec3_dot =
     macro_decl<CS(vec3_dot), CS(dst), CS(a[3]), CS(b[3])>;
