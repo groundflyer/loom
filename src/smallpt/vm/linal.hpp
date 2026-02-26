@@ -1,6 +1,13 @@
 // -*- C++ -*-
-// linal.hpp
-//
+/// @file linal.hpp
+/// @brief Linear algebra functions for VM.
+///
+/// This module introduces vector register identifiers.
+/// If macro expects vector[3] register identifier, it just appends index at the
+/// end of register's name.
+///
+/// For example, having three registers @p v0, @p v1, @p v2, we pass to
+/// vec3_length2 just CS(v).
 
 #pragma once
 
@@ -248,6 +255,10 @@ MAKE_OPS_UNOP_VEC_MACRO(3, abs)
 using __macro_decl_vec3_dot =
     macro_decl<CS(vec3_dot), CS(dst), CS(a[3]), CS(b[3])>;
 
+/// @brief Dot product port for 3D vectors.
+/// @param[out] DST destination
+/// @param[in] A vec[3] a
+/// @param[in] B vec[3] b
 template <typename T, CharSequence DST, CharSequence A, CharSequence B>
 struct vec3_dot :
     std::type_identity<typename detail::make_dot<T, DST, A, B>::type>
@@ -257,6 +268,11 @@ struct vec3_dot :
 using __macro_decl_vec3_cross =
     macro_decl<CS(vec3_cross), CS(dst[3]), CS(a[3]), CS(b[3]), CS(tmp)>;
 
+/// @brief Cross product port for 3D vectors.
+/// @param[out] DST vec[3] destination
+/// @param[in] A vec[3] a
+/// @param[in] B vec[3] b
+/// @param tmp storage for temporary values
 template <typename T,
           CharSequence DST,
           CharSequence A,
@@ -297,7 +313,7 @@ TMACRO3(vec3_dist, dst, a, b)
     INSERT_TMACRO(vec3_length, dst, a)
 MACRO_END;
 
-    // clang-format on
+// clang-format on
 
 #define CS_UNIDX(X) detail::remove_idx_t<X>
-    } // namespace loom::vm
+} // namespace loom::vm

@@ -1,6 +1,6 @@
 // -*- C++ -*-
-// macros.hpp
-//
+/// @file macros.hpp
+/// @brief C macros for programming VM asm.
 
 #pragma once
 

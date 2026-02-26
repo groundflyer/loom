@@ -19,6 +19,7 @@
 #define _REINIT
 #endif
 
+/// @brief Project's main namespace.
 namespace loom
 {
 namespace fn

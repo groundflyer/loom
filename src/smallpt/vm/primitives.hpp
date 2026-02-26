@@ -1,6 +1,6 @@
 // -*- C++ -*-
-// primitives.hpp
-// Intersection tests ported to the VM.
+/// @file primitives.hpp
+/// @brief Intersection tests ported to the VM.
 
 #include "linal.hpp"
 
@@ -10,16 +10,18 @@ namespace loom::vm
 {
 // clang-format off
 
-/// @Ray-disk intersection.
-/// @tparam hit bool is hit: dst
-/// @tparam t root: dst
-/// @tparam o vec[3] ray origin
-/// @tparam d vec[3] ray direction
-/// @tparam p vec[3] disk position
-/// @tparam n vec[3] disk normal
-/// @tparam r disk radius
-/// @tparam vtmp vec[3] storage for temp vectors
-/// @tparam tmp storage for temp value
+/// @struct loom::vm::isect_disk
+/// @brief Ray-disk intersection port.
+/// @param[out] hit intersection test value destination
+/// @param[out] t root (distance to intersection) destination
+/// @param[in] o vec[3] ray origin
+/// @param[in] d vec[3] ray direction
+/// @param[in] p vec[3] disk position
+/// @param[in] n vec[3] disk normal
+/// @param[in] r disk radius
+/// @param vtmp vec[3] storage for temporal vectors
+/// @param tmp storage for temporal values
+
 template <std::floating_point T>
 TMACRO9(isect_disk, hit, t, o, d, p, n, r, vtmp, tmp)
     INSERT_TMACRO(vec_vec3_sub, vtmp, p, o),
@@ -36,11 +38,18 @@ TMACRO9(isect_disk, hit, t, o, d, p, n, r, vtmp, tmp)
     LABEL(isect_disk_end)
 MACRO_END;
 
+/// @struct loom::vm::solve_quadratic
 /// @brief Solve quadratic equation @f$ax^{2} + bx + c@f$ for non-complex cases.
 /// Port of loom::quadratic.
-/// @tparam s bool solved?
-/// @tparam x root
-// all params invalidated
+/// @param[out] s bool solved?
+/// @param[out] x root
+/// @param[in] a
+/// @param[in] b
+/// @param[in] c
+/// @param tmp storage for temporal values
+///
+/// Values bound to @p a, @p b, @p c are invalidated.
+
 template <std::floating_point T>
 TMACRO6(solve_quadratic, s, x, a, b, c, tmp)
     TMUL_CS(tmp, b, b),
@@ -65,7 +74,16 @@ TMACRO6(solve_quadratic, s, x, a, b, c, tmp)
     TGE_CS(s, s, CS(0))         // s <- (D*x) >= 0
 MACRO_END;
 
-/// @brief Ray-sphere intersection.
+/// @struct loom::vm::isect_sphere
+/// @brief Ray-sphere intersection port.
+/// @param[out] hit intersection test value destination
+/// @param[out] t root (distance to intersection) destination
+/// @param[in] o vec[3] ray origin
+/// @param[in] d vec[3] ray direction
+/// @param[in] p vec[3] sphere position
+/// @param[in] r sphere radius
+/// @param tmp1-3 storage for temporary values
+
 template <std::floating_point T>
 TMACRO9(isect_sphere, hit, t, o, d, p, r, tmp1, tmp2, tmp3)
     INSERT_TMACRO(vec_vec3_sub, o, o, p),        // o <- pc
@@ -80,8 +98,17 @@ MACRO_END;
 
 using EPSILON = CS(0.0001);
 
-/// @brief Ray-triangle intersection.
+/// @struct loom::vm::isect_triangle
+/// @brief Ray-triangle intersection port.
 /// @cite 10.1080/10867651.1997.10487468
+/// @param[out] hit intersection test value destination
+/// @param[out] t root (distance to intersection) destination
+/// @param[in] o vec[3] ray origin
+/// @param[in] d vec[3] ray direction
+/// @param[in] vert0-2 triangle vertices
+/// @param tmp1-2 storage for temporary values
+/// @param vtmp vec[3] storage for temporary vectors
+
 template <std::floating_point T>
 TMACRO10(isect_triangle, hit, t, o, d, vert0, vert1, vert2, tmp1, tmp2, vtmp)
     INSERT_TMACRO(vec_vec3_sub, vert1, vert1, vert0),            // vert1 <- edge1
@@ -116,16 +143,18 @@ TMACRO10(isect_triangle, hit, t, o, d, vert0, vert1, vert2, tmp1, tmp2, vtmp)
     LABEL(isect_triangle_end)
 MACRO_END;
 
+/// @struct loom::vm::isect_quad
 /// @brief Ray-quadrilateral intersection @cite LD2004AERIT. No UV compute.
-/// @param hit bool hit destination.
-/// @param t root destomation.
-/// @param o float[3] ray origin.
-/// @param d float[3] ray direction.
-/// @param v00-v11 float[3] quad vertices.
-/// @param vtmp1-3 array[3] temporal vectors storage.
-/// @param D temporal storage.
-/// @param alpha temporal storage.
-/// @param beta temporal storage.
+/// @param[out] hit intersection test value destination.
+/// @param[out] t root (distance to intersection) destination.
+/// @param[in] o vec[3] ray origin
+/// @param[in] d vec[3] ray direction
+/// @param v00-v11 float[3] quad vertices
+/// @param vtmp1-3 array[3] storage for temporary vectors
+/// @param D storage for temporary values.
+/// @param alpha storage for temporary values
+/// @param beta storage for temporary values
+
 template <std::floating_point T>
 TMACRO14(isect_quad, hit, t, o, d, v00, v01, v11, v10,
          vtmp1, vtmp2, vtmp3, D, alpha, beta)

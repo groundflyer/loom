@@ -12,6 +12,7 @@
 
 #include <cstdint>
 
+/// @brief Namespace for virtual machine entities.
 namespace loom::vm
 {
 /// @brief Describes a variable.
@@ -837,7 +838,7 @@ using make_var = Variable<fst_t<T>, snd_t<T>>;
 ///
 /// @tparam Name macro name.
 /// @tparam Parameters Parameters names.
-template <CharSequence   Name, typename... Parameters>
+template <CharSequence Name, typename... Parameters>
 struct macro_decl
 {
     static constexpr std::string_view nameview = cs2sv<Name>;
