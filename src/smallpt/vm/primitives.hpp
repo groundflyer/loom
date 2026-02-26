@@ -1,6 +1,6 @@
 // -*- C++ -*-
 // primitives.hpp
-//
+// Intersection tests ported to the VM.
 
 #include "linal.hpp"
 
@@ -10,7 +10,7 @@ namespace loom::vm
 {
 // clang-format off
 
-/// @brief Ray-disk intersection.
+/// @Ray-disk intersection.
 /// @tparam hit bool is hit: dst
 /// @tparam t root: dst
 /// @tparam o vec[3] ray origin
@@ -114,5 +114,78 @@ TMACRO10(isect_triangle, hit, t, o, d, vert0, vert1, vert2, tmp1, tmp2, vtmp)
     TMUL_CS(t, tmp1, t),                                         // t <- dot(edge2, qvec)*inv_det
     IMOV_CS(hit, CS(1)),                                         // hit <- true
     LABEL(isect_triangle_end)
+MACRO_END;
+
+/// @brief Ray-quadrilateral intersection @cite LD2004AERIT. No UV compute.
+/// @param hit bool hit destination.
+/// @param t root destomation.
+/// @param o float[3] ray origin.
+/// @param d float[3] ray direction.
+/// @param v00-v11 float[3] quad vertices.
+/// @param vtmp1-3 array[3] temporal vectors storage.
+/// @param D temporal storage.
+/// @param alpha temporal storage.
+/// @param beta temporal storage.
+template <std::floating_point T>
+TMACRO14(isect_quad, hit, t, o, d, v00, v01, v11, v10,
+         vtmp1, vtmp2, vtmp3, D, alpha, beta)
+    INSERT_TMACRO(vec_vec3_sub, vtmp1, v10, v00),           // vtmp1 <- e01
+    INSERT_TMACRO(vec_vec3_sub, vtmp2, v01, v00),           // vtmp2 <- e03
+    INSERT_TMACRO(vec3_cross, vtmp3, d, vtmp2, hit),        // vtmp3 <- p
+    INSERT_TMACRO(vec3_dot, D, vtmp1, vtmp3),               // D <- D
+    TABS_CS(alpha, D),                                      // alpha <- abs(D)
+    TGE_CS(hit, alpha, EPSILON),                            // hit <- abs(D)>=EPSILON
+    IPJMP2_CS(hit, isect_quad_end, isect_quad_l1),          // if hit then l1 else end
+    LABEL(isect_quad_l1),
+    INSERT_TMACRO(vec_vec3_sub, vtmp1, o, v00),             // vtmp1 <- T
+    INSERT_TMACRO(vec3_dot, alpha, vtmp1, vtmp3),           // alpha <- dot(T, p)
+    TDIV_CS(alpha, alpha, D),                               // alpha <- alpha
+    TGE_CS(hit, alpha, CS(0)),                              // hit <- alpha>=0
+    TLE_CS(t, alpha, CS(1)),                                // t <- alpha<=1
+    ILAND_CS(hit, hit, t),                                  // hit <- range01(alpha)
+    IPJMP2_CS(hit, isect_quad_end, isect_quad_l2),          // if hit then l2 else end
+    LABEL(isect_quad_l2),
+    INSERT_TMACRO(vec_vec3_sub, vtmp1, v10, v00),           // vtmp1 <- e01
+    INSERT_TMACRO(vec_vec3_sub, vtmp2, o, v00),             // vtmp2 <- T
+    INSERT_TMACRO(vec3_cross, vtmp3, vtmp2, vtmp1, hit),    // vtmp3 <- Q
+    INSERT_TMACRO(vec3_dot, beta, d, vtmp3),                // beta <- dot(d, Q)
+    TDIV_CS(beta, beta, D),                                 // beta <- beta
+    TGE_CS(hit, beta, CS(0)),                               // hit <- beta>=0
+    TLE_CS(t, beta, CS(1)),                                 // t <- beta<=1
+    ILAND_CS(hit, hit, t),                                  // hit <- range01(beta)
+    IPJMP2_CS(hit, isect_quad_end, isect_quad_l3),          // if hit then l3 else end
+    LABEL(isect_quad_l3),
+    TADD_CS(t, alpha, beta),                                // t <- alpha + beta
+    TGT_CS(hit, t, CS(1)),                                  // hit <- (alpha + beta) > 1
+    IPJMP2_CS(hit, isect_quad_l7, isect_quad_l4),           // if (alpha + beta) > 1 then l7 else l3
+    LABEL(isect_quad_l4),
+    INSERT_TMACRO(vec_vec3_sub, vtmp1, v01, v11),           // vtmp1 <- e23
+    INSERT_TMACRO(vec_vec3_sub, vtmp2, v10, v11),           // vtmp2 <- e21
+    INSERT_TMACRO(vec3_cross, vtmp3, d, vtmp2, hit),        // vtmp3 <- p_
+    INSERT_TMACRO(vec3_dot, t, vtmp1, vtmp3),               // t <- D_
+    TABS_CS(hit, t),                                        // hit <- abs(D_)
+    TGE_CS(hit, hit, EPSILON),                              // hit <- abs(D_)>=EPSILON
+    IPJMP2_CS(hit, isect_quad_end, isect_quad_l5),          // if hit then l5 else end
+    LABEL(isect_quad_l5),
+    INSERT_TMACRO(vec_vec3_sub, vtmp2, o, v11),             // vtmp2 <- T_
+    INSERT_TMACRO(vec3_dot, hit, vtmp2, vtmp3),             // hit <- dot(T_, p_)
+    TDIV_CS(hit, hit, t),                                   // hit <- alpha_
+    TGE_CS(hit, hit, CS(0)),                                // hit <- alpha_>=0
+    IPJMP2_CS(hit, isect_quad_end, isect_quad_l6),          // if hit then l6 else end
+    LABEL(isect_quad_l6),
+    INSERT_TMACRO(vec3_cross, vtmp3, vtmp2, vtmp1, hit),    // vtmp3 <- Q_
+    INSERT_TMACRO(vec3_dot, hit, d, vtmp3),                 // hit <- dot(d, Q_)
+    TDIV_CS(hit, hit, t),                                   // hit <- beta_
+    TGE_CS(hit, hit, CS(0)),                                // hit <- beta_>=0
+    IPJMP2_CS(hit, isect_quad_end, isect_quad_l7),          // if hit then l7 else end
+    LABEL(isect_quad_l7),
+    INSERT_TMACRO(vec_vec3_sub, v10, v10, v00),             // v10 <- e01
+    INSERT_TMACRO(vec_vec3_sub, vtmp2, o, v00),             // vtmp2 <- T
+    INSERT_TMACRO(vec3_cross, vtmp3, vtmp2, v10, hit),      // vtmp3 <- Q
+    INSERT_TMACRO(vec_vec3_sub, v01, v01, v00),             // v01 <- e03
+    INSERT_TMACRO(vec3_dot, t, v01, vtmp3),                 // t <- dot(e03, Q)
+    TDIV_CS(t, t, D),                                       // t <- dot(e03, Q)/D
+    TGE_CS(hit, t, CS(0)),                                  // hit <- t>=0
+    LABEL(isect_quad_end)
 MACRO_END;
 } // namespace loom::vm

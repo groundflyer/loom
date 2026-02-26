@@ -107,6 +107,19 @@ TKERNEL15(triangle_isect_test,
     INSERT_TMACRO(vm::isect_triangle, CS(hit), CS(t), CS(o), CS(d), CS(vert0), CS(vert1), CS(vert2), CS(tmp1), CS(tmp2), CS(vtmp))
 KERNEL_END(IVAR(hit), TVAR(t));
 
+template <std::floating_point T>
+TKERNEL18(quad_isect_test,
+          o0, o1, o2,
+          d0, d1, d2,
+          v000, v001, v002,
+          v010, v011, v012,
+          v110, v111, v112,
+          v100, v101, v102)
+    INSERT_TMACRO(vm::isect_quad, CS(hit), CS(t), CS(o), CS(d),
+                  CS(v00), CS(v01), CS(v11), CS(v10),
+                  CS(vt1), CS(vt2), CS(vt3), CS(tmp1), CS(tmp2), CS(tmp3))
+KERNEL_END(IVAR(hit), TVAR(t));
+
 // clang-format on
 
 using Vec3f = Vector<float, 3, std::array>;
@@ -131,9 +144,9 @@ to_tuple(const Sphere<T>& prim) noexcept
                           std::tuple{prim.radius});
 }
 
-template <typename T>
+template <typename T, std::size_t N>
 auto
-to_tuple(const Triangle<T>& prim)
+to_tuple(const std::array<T, N>& prim)
 {
     return std::apply([](const auto&... vs) noexcept
                       { return std::tuple_cat(array2tuple(vs.data())...); },
@@ -199,6 +212,7 @@ main(int argc, char* argv[])
     vm::bse::function<quadratic_test<float>>      bse_quadratic;
     vm::bse::function<sphere_isect_test<float>>   bse_sphere_isect;
     vm::bse::function<triangle_isect_test<float>> bse_triangle_isect;
+    vm::bse::function<quad_isect_test<float>>     bse_quad_isect;
 
     track.dep_check(
         NamedTest(
@@ -352,6 +366,23 @@ main(int argc, char* argv[])
                           cmp_isects),
         "ray-triangle intersection",
         0.025));
+
+    track.check(NamedFuzzyTest(
+        tm.fuzzy_with_ref(mk_isect_g(
+                              [&]() noexcept
+                              {
+                                  const Vec3f v00 = gv3();
+                                  const Vec3f v01 = gv3();
+                                  const Vec3f v11 = gv3();
+                                  const Vec3f v10 =
+                                      v00 + ((v01 + v11) * 0.5f - v00) * 2.f;
+                                  return Quad{v00, v01, v11, v10};
+                              }),
+                          mk_isect_t(bse_quad_isect),
+                          intersect,
+                          cmp_isects),
+        "ray-quad intersection",
+        0.01));
 
     return track.ret_code();
 }
