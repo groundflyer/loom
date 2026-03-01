@@ -188,8 +188,7 @@ class cornell_box
     static Perspective<real>
     camera(const real fov = radians(static_cast<real>(60))) noexcept
     {
-        return {convert_fov(fov),
-                look_at(Vec3r(0, 0, 4), Vec3r(0, 0, 0), Vec3r(0, 1, 0))};
+        return {convert_fov(fov), Vec3r(0, 0, 4), Vec3r(0, 0, -1)};
     }
 };
 } // namespace loom
