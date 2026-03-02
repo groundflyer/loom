@@ -2,9 +2,9 @@
 /// @file primitives.hpp
 /// @brief Intersection tests ported to the VM.
 
-#include "linal.hpp"
-
 #pragma once
+
+#include "linal.hpp"
 
 namespace loom::vm
 {
