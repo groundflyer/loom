@@ -132,8 +132,7 @@ struct Shading
                 depth + 1);
         };
 
-        return reflection() * static_cast<float>(f) +
-               refraction() * static_cast<float>(1 - f);
+        return reflection() * f + refraction() * (1.f - f);
     }
 };
 
