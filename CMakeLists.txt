@@ -78,8 +78,11 @@ set(CMAKE_THREAD_PREFER_PTHREAD 1)
 set(THREADS_PREFER_PTHREAD_FLAG 1)
 find_package(Threads REQUIRED)
 
+set(THREAD_POOL_AFFINITY "FULL")
+
 if(THREAD_POOL_SIZE STREQUAL "PHYSICAL")
   cmake_host_system_information(RESULT NUM_THREADS QUERY NUMBER_OF_PHYSICAL_CORES)
+  set(THREAD_POOL_AFFINITY "PHYSICAL")
   message(STATUS "Static thread pool size: " ${NUM_THREADS} " physical cores")
 elseif(THREAD_POOL_SIZE STREQUAL "LOGICAL")
   cmake_host_system_information(RESULT NUM_THREADS QUERY NUMBER_OF_LOGICAL_CORES)
@@ -159,6 +162,10 @@ else()
   message(STATUS "Fetching fast_float...")
   FetchContent_MakeAvailable(fast_float)
 endif()
+
+# hwloc
+find_package(PkgConfig REQUIRED QUIET)
+pkg_check_modules(HWLOC REQUIRED IMPORTED_TARGET hwloc)
 
 # External includes
 include_directories(ext/include)
@@ -276,8 +283,7 @@ if(BUILD_TESTS)
     add_dependencies(tests ${name})
   endforeach()
 
-  target_compile_definitions(test_vm_mp PUBLIC NUM_THREADS=${NUM_THREADS})
-  target_link_libraries(test_vm_mp PUBLIC Threads::Threads)
+  target_link_libraries(test_vm_mp PUBLIC Threads::Threads PkgConfig::HWLOC)
 
   if(USE_CUDA)
     add_executable(test_vm_cuda ${TESTS_SRC_DIR}/vm.cu)

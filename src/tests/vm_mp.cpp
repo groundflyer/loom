@@ -12,6 +12,8 @@
 #include <algorithm>
 #include <vector>
 
+#include <fmt/ranges.h>
+
 using namespace loom;
 using namespace vm;
 using namespace test;
@@ -110,9 +112,12 @@ test_stream(std::string_view compiler_name,
         {
             auto tp = shop.get_thread_pool();
             if constexpr(affine_threads)
-                if(threads_number <= std::thread::hardware_concurrency())
-                    tp.affine(std::thread::hardware_concurrency() /
-                              threads_number);
+            {
+                if(threads_number <= std::thread::hardware_concurrency() / 2)
+                    tp.affine_physical();
+                else
+                    tp.affine_full();
+            }
 
             while(!mp::is_complete(ic)) shop.exchange(ic, oc);
             shop.set();
@@ -237,6 +242,9 @@ int
 main(int argc, char* argv[])
 {
     simd::print_info();
+    CPUTopology top;
+    fmt::println("CPU topology: {}", top);
+
     Track          track;
     RandomState    rs;
     const unsigned num_runs =

@@ -26,6 +26,8 @@
         glfw
         fast-float
         range-v3
+        hwloc
+        pkgconf
         # docs generation
         graphviz
         doxygenClang

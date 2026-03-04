@@ -4,33 +4,207 @@
 
 #pragma once
 
-#include "forbid.hpp"
 #include "debug.hpp"
+#include "forbid.hpp"
 #include "tmp.hpp"
 #include "tuple.hpp"
 
 #include <concepts>
 #include <ranges>
 #include <thread>
+#include <type_traits>
 #include <vector>
 
+#include <hwloc.h>
 #include <pthread.h>
 
 namespace loom
 {
-namespace detail
-{
+/// @brief Set pthread affinity to single logical core.
+/// @param i logical core index or input range of indices.
+template <typename T>
+    requires(std::is_nothrow_convertible_v<T, std::size_t> ||
+             (std::ranges::input_range<T> &&
+              std::is_nothrow_convertible_v<std::ranges::range_value_t<T>,
+                                            std::size_t>))
 static int
-set_thread_affinity(pthread_t thread, std::size_t i) noexcept
+set_thread_affinity(pthread_t thread, T&& i) noexcept
 {
     cpu_set_t set;
     CPU_ZERO(&set);
-    CPU_SET(i, &set);
+
+    if constexpr(std::is_nothrow_convertible_v<T, std::size_t>)
+        CPU_SET(i, &set);
+    else if constexpr(std::ranges::input_range<T> &&
+                      std::is_nothrow_convertible_v<
+                          std::ranges::range_value_t<T>,
+                          std::size_t>)
+        for(std::size_t v: std::forward<T>(i)) CPU_SET(v, &set);
+
     const int s = pthread_setaffinity_np(thread, sizeof(set), &set);
     ASSERT(s == 0, "pthread_setaffinity_np failed");
     return s;
 }
-} // namespace detail
+
+/// @brief Range helper for CPUs with SMP.
+///
+/// Iterates over CPU cores and extracts CPU siblings.
+class CPUTopology : public std::ranges::view_interface<CPUTopology>
+{
+    class Siblings : public std::ranges::view_interface<Siblings>
+    {
+        hwloc_topology_t p_topology;
+        hwloc_obj_t      p_core;
+
+        class _iterator : public std::input_iterator_tag
+        {
+            hwloc_topology_t p_topology;
+            hwloc_obj_t      p_core;
+
+            int         m_pu_idx{};
+            hwloc_obj_t p_pu;
+
+            void
+            next() noexcept
+            {
+                p_pu = hwloc_get_obj_inside_cpuset_by_type(p_topology,
+                                                           p_core->cpuset,
+                                                           HWLOC_OBJ_PU,
+                                                           ++m_pu_idx);
+            }
+
+          public:
+            using value_type      = unsigned;
+            using difference_type = int;
+
+            _iterator() noexcept = default;
+            _iterator(hwloc_topology_t topology, hwloc_obj_t core) noexcept :
+                p_topology(topology), p_core(core),
+                p_pu(hwloc_get_obj_inside_cpuset_by_type(p_topology,
+                                                         p_core->cpuset,
+                                                         HWLOC_OBJ_PU,
+                                                         m_pu_idx))
+            {
+            }
+
+            bool
+            operator==(std::default_sentinel_t) const noexcept
+            {
+                return p_pu == NULL;
+            }
+
+            value_type
+            operator*() const noexcept
+            {
+                return p_pu->os_index;
+            }
+
+            _iterator&
+            operator++() noexcept
+            {
+                next();
+                return *this;
+            }
+
+            _iterator
+            operator++(int) noexcept
+            {
+                _iterator ret(*this);
+                next();
+                return ret;
+            }
+        };
+
+      public:
+        Siblings(hwloc_topology_t topology, hwloc_obj_t core) noexcept :
+            p_topology(topology), p_core(core)
+        {
+        }
+
+        _iterator
+        begin() const noexcept
+        {
+            return {p_topology, p_core};
+        }
+
+        std::default_sentinel_t
+        end() const noexcept
+        {
+            return std::default_sentinel;
+        }
+    };
+
+    class _iterator : public std::input_iterator_tag
+    {
+        hwloc_topology_t p_topology;
+        int              m_depth;
+        int              m_ncores;
+        int              m_idx{};
+
+      public:
+        using difference_type = int;
+        using value_type      = Siblings;
+
+        _iterator(hwloc_topology_t topology) noexcept :
+            p_topology(topology),
+            m_depth(hwloc_get_type_depth(p_topology, HWLOC_OBJ_CORE)),
+            m_ncores(hwloc_get_nbobjs_by_depth(p_topology, m_depth))
+        {
+        }
+
+        bool
+        operator==(std::default_sentinel_t) const noexcept
+        {
+            return m_idx == m_ncores;
+        }
+
+        value_type
+        operator*() const noexcept
+        {
+            return {p_topology,
+                    hwloc_get_obj_by_depth(p_topology, m_depth, m_idx)};
+        }
+
+        _iterator&
+        operator++() noexcept
+        {
+            ++m_idx;
+            return *this;
+        }
+
+        _iterator
+        operator++(int) noexcept
+        {
+            _iterator ret(*this);
+            ++m_idx;
+            return ret;
+        }
+    };
+
+    hwloc_topology_t p_topology;
+
+  public:
+    CPUTopology() noexcept
+    {
+        hwloc_topology_init(&p_topology);
+        hwloc_topology_load(p_topology);
+    }
+
+    _iterator
+    begin() const noexcept
+    {
+        return {p_topology};
+    }
+
+    std::default_sentinel_t
+    end() const noexcept
+    {
+        return std::default_sentinel;
+    }
+
+    ~CPUTopology() { hwloc_topology_destroy(p_topology); }
+};
+
 constexpr inline std::size_t dynamic_size = static_cast<std::size_t>(-1);
 
 template <std::size_t N>
@@ -67,6 +241,7 @@ class thread_pool
         m_threads(std::move(other.m_threads))
     {
     }
+
     thread_pool&
     operator=(thread_pool&& rhs) noexcept
     {
@@ -74,20 +249,48 @@ class thread_pool
         m_threads = std::move(rhs.m_threads);
     }
 
-    thread_pool&
-    affine(const std::size_t step = 1) noexcept
+    /// @brief Affine threads to all available CPUs. Extra threads are not
+    /// affined.
+    void
+    affine_full() noexcept
     {
         std::size_t idx = 0;
-        loom::for_each(
+
+        return loom::for_each(
             m_threads,
-            [step](std::thread& t, std::size_t& idx) noexcept
+            [](std::thread& t, std::size_t& idx) noexcept
             {
-                detail::set_thread_affinity(t.native_handle(), idx);
-                idx += step;
+                if(idx < std::thread::hardware_concurrency())
+                {
+                    set_thread_affinity(t.native_handle(), idx);
+                    ++idx;
+                }
+                else
+                    return;
             },
             idx);
+    }
 
-        return *this;
+    /// @brief Affine threads to physical cores.
+    void
+    affine_physical() noexcept
+    {
+        CPUTopology top;
+        auto        iter = top.begin();
+
+        return loom::for_each(
+            m_threads,
+            [&top](std::thread& t, auto& iter) noexcept
+            {
+                if(iter != top.end())
+                {
+                    set_thread_affinity(t.native_handle(), *iter);
+                    ++iter;
+                }
+                else
+                    return;
+            },
+            iter);
     }
 
     ~thread_pool() { join_all(); }
@@ -141,18 +344,30 @@ class thread_pool<dynamic_size>
         return *this;
     }
 
-    thread_pool&
-    affine(const std::size_t step = 1) noexcept
+    void
+    affine_full() noexcept
     {
-        std::size_t idx = 0;
-        std::ranges::for_each(m_threads,
-                              [step, &idx](std::thread& t) noexcept
-                              {
-                                  detail::set_thread_affinity(t.native_handle(),
-                                                              idx);
-                                  idx += step;
-                              });
-        return *this;
+        for(std::size_t i = 0;
+            i < std::min(static_cast<std::size_t>(
+                             std::thread::hardware_concurrency()),
+                         m_threads.size());
+            ++i)
+            set_thread_affinity(m_threads[i].native_handle(), i);
+    }
+
+    void
+    affine_physical() noexcept
+    {
+        CPUTopology top;
+        auto        iter = top.begin();
+
+        for(std::size_t i = 0;
+            i < std::min(static_cast<std::size_t>(
+                             std::thread::hardware_concurrency()),
+                         m_threads.size()) &&
+            iter != top.end();
+            ++i, ++iter)
+            set_thread_affinity(m_threads[i].native_handle(), *iter);
     }
 
     ~thread_pool() { join_all(); }
