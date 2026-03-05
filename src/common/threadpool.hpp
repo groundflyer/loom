@@ -20,7 +20,7 @@
 
 namespace loom
 {
-/// @brief Set pthread affinity to single logical core.
+/// @brief Set pthread affinity to a core or a few cores.
 /// @param i logical core index or input range of indices.
 template <typename T>
     requires(std::is_nothrow_convertible_v<T, std::size_t> ||
@@ -46,9 +46,9 @@ set_thread_affinity(pthread_t thread, T&& i) noexcept
     return s;
 }
 
-/// @brief Range helper for CPUs with SMP.
+/// @brief Range view exposing cores topology of CPUs with SMP.
 ///
-/// Iterates over CPU cores and extracts CPU siblings.
+/// Iterates over CPU cores and extracts sets of logical siblings.
 class CPUTopology : public std::ranges::view_interface<CPUTopology>
 {
     class Siblings : public std::ranges::view_interface<Siblings>
@@ -207,6 +207,8 @@ class CPUTopology : public std::ranges::view_interface<CPUTopology>
 
 constexpr inline std::size_t dynamic_size = static_cast<std::size_t>(-1);
 
+/// @brief Constant sized thread pool.
+/// @tparam N number of threads.
 template <std::size_t N>
 class thread_pool
 {
@@ -249,8 +251,8 @@ class thread_pool
         m_threads = std::move(rhs.m_threads);
     }
 
-    /// @brief Affine threads to all available CPUs. Extra threads are not
-    /// affined.
+    /// @brief Affine every thread to a separate logical core.
+    /// Extra threads are not affined.
     void
     affine_full() noexcept
     {
@@ -271,7 +273,17 @@ class thread_pool
             idx);
     }
 
-    /// @brief Affine threads to physical cores.
+    /// @brief Affine every thread to logical siblings of each physical core.
+    /// Extra threads are not affined.
+    ///
+    /// For example, the topology of a SMT2 CPU with 4 physical cores and 8
+    /// logical cores is [[0, 4], [1, 5], [2, 6], [3, 7]]. First physical core
+    /// provides two logical cores indexed 0 and 4, second - 1 and 5, etc.
+    /// Correspondingly first thread is affined to logical cores 0 and 4,
+    /// second - to 1 and 5, etc.
+    ///
+    /// If the size of thread pool @p N is bigger than the number of physical
+    /// cores, extra threads are not affined.
     void
     affine_physical() noexcept
     {
@@ -296,6 +308,7 @@ class thread_pool
     ~thread_pool() { join_all(); }
 };
 
+/// @brief Thread pool with size determined at runtime.
 template <>
 class thread_pool<dynamic_size>
 {
@@ -344,6 +357,8 @@ class thread_pool<dynamic_size>
         return *this;
     }
 
+    /// @brief Affine every thread to a separate logical core.
+    /// Extra threads are not affined.
     void
     affine_full() noexcept
     {
@@ -355,6 +370,10 @@ class thread_pool<dynamic_size>
             set_thread_affinity(m_threads[i].native_handle(), i);
     }
 
+    /// @brief Affine every thread to logical siblings of each physical core.
+    /// Extra threads are not affined.
+    ///
+    /// @copydetails thread_pool<N>::affine_physical()
     void
     affine_physical() noexcept
     {
