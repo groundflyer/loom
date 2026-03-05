@@ -277,28 +277,37 @@ struct DummyAction
 int
 main(int argc, char* argv[])
 {
-    auto parse_results =
-        argparse::parse(std::tuple{argparse::option<'t', "threshold">(
-                            "Adaptive sampling threshold",
-                            "T",
-                            0.0001f,
-                            read_number<float, true>)},
-                        {argc, argv});
-    Logger logger(Logger::DEBUG);
+    auto parse_results = argparse::parse(
+        std::tuple{
+            argparse::option<'t', "threshold">("adaptive sampling threshold",
+                                               "T",
+                                               0.0001f,
+                                               read_number<float, true>),
+            argparse::option<'r', "res", 2>("image resolution",
+                                            {"width", "height"},
+                                            {1000, 1000},
+                                            read_number<int, true>)},
+        {argc, argv});
+    Logger logger(Logger::INFO);
     logger.debug("Let's go");
 
-    const int resx = 1000;
-    const int resy = 1000;
-
-    Image img(Vec2u{resx, resy});
-    logger.debug("image ready");
     const Camera cam = Scene::camera();
     // CameraCapture cc{cam};
     // FilmCapture   fc{&film};
     // DummyAction   da{&film.img};
     try
     {
-        const float t = parse_results.template get_opt<'t'>();
+        const auto [resx, resy] = parse_results.template get_opt<'r'>();
+        const float t           = parse_results.template get_opt<'t'>();
+
+        if(resx < 0 || resy < 0)
+            throw std::runtime_error("Negative resolution");
+
+        if(t < 0) throw std::runtime_error("Negative sampling threshold");
+
+        Image img(Vec2u{resx, resy});
+        logger.debug("image ready");
+        logger.info("Image res: {}x{}; sampling threshold {}", resx, resy, t);
 
         const unsigned        num_pix = product(img.res());
         std::atomic<unsigned> progress{};
