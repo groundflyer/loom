@@ -2,15 +2,15 @@
 // viewport.cpp
 #include "cornell_box.hpp"
 #include "hider.hpp"
-#include "image.hpp"
 #include "rng.hpp"
 #include "sampling.hpp"
 
-#include <common/argparse.hpp>
 #include <common/functional.hpp>
 #include <common/logging.hpp>
 #include <common/timer.hpp>
 #include <common/tuple.hpp>
+#include <smallpt/common/common.hpp>
+#include <smallpt/common/image.hpp>
 #include <smallpt/common/viewport.hpp>
 
 #include <fmt/ranges.h>
@@ -24,16 +24,14 @@
 using namespace loom;
 using namespace std::literals;
 
-using Image   = ScanlineImage<float, 4>;
 using Scene   = cornell_box<float>;
 using Gallery = Scene::Gallery;
 using Camera  = Perspective<float>;
 using Vec2f   = Vec2<float>;
 using Vec3f   = Vec3<float>;
-using Sample  = std::pair<Vec2f, RGB<std::array>>;
 using Counter = std::array<std::uint32_t, 2>;
 
-static constexpr std::array<std::uint32_t, 2> key{7598293, 1244013411};
+static constexpr std::array<std::uint32_t, 2> key{0x1dead000, 0x200beef};
 
 Ray<float>
 bias_ray(const Vec3f& p, const Vec3f& d) noexcept
@@ -277,17 +275,7 @@ struct DummyAction
 int
 main(int argc, char* argv[])
 {
-    auto parse_results = argparse::parse(
-        std::tuple{
-            argparse::option<'t', "threshold">("adaptive sampling threshold",
-                                               "T",
-                                               0.0001f,
-                                               read_number<float, true>),
-            argparse::option<'r', "res", 2>("image resolution",
-                                            {"width", "height"},
-                                            {1000, 1000},
-                                            read_number<int, true>)},
-        {argc, argv});
+    auto   parse_results = parse_args(argc, argv);
     Logger logger(Logger::INFO);
     logger.debug("Let's go");
 

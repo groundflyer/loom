@@ -5,9 +5,9 @@
 #pragma once
 
 #include "rng.hpp"
-#include "typedefs.hpp"
 
 #include <common/tuple.hpp>
+#include <smallpt/common/typedefs.hpp>
 
 #include <random>
 

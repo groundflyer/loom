@@ -1,23 +1,19 @@
 // -*- C++ -*-
-// cornell_box.hpp
-//
-
-/// @file
-/// Cornell Box scene description.
+/// @file cornell_box.hpp
+/// @brief Cornell Box scene description.
 
 #pragma once
 
-#include "image.hpp"
 #include "niebloids.hpp"
 #include "perspective_camera.hpp"
 #include "primitives/disk.hpp"
 #include "primitives/quad.hpp"
 #include "primitives/sphere.hpp"
 #include "sampling.hpp"
-#include "typedefs.hpp"
 
 #include <common/forbid.hpp>
 #include <common/math.hpp>
+#include <smallpt/common/typedefs.hpp>
 
 namespace loom
 {
@@ -79,7 +75,7 @@ class cornell_box
         { return std::array<Vec3r, 8>{apply_transform_p(box_tr, pns)...}; },
         room_points);
 
-    using QuadR   = Quad<real>;
+    using QuadR = Quad<real>;
 
     template <std::size_t N, std::size_t... Pns>
     static constexpr QuadR
@@ -154,7 +150,7 @@ class cornell_box
             3,
             3,
             4, // sphere
-            5 // light
+            5  // light
         };
     };
 

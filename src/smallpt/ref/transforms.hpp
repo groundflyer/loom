@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "typedefs.hpp"
+#include <smallpt/common/typedefs.hpp>
 
 #include <utility>
 
