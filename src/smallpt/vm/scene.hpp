@@ -27,12 +27,12 @@ struct default_cam
 
 // d is d[3], but we set only x and y, z = -1
 template <std::floating_point T>
-TMACRO4(gen_ray_dir, d0, d1, ndc0, ndc1)
+TMACRO5(gen_ray_dir, d0, d1, ndc0, ndc1, tmp)
     TMUL_CS(ndc0, ndc0, default_cam::TAN_FOV_HALF),
     TMUL_CS(ndc1, ndc1, default_cam::TAN_FOV_HALF),
     TNEG_CS(d0, ndc0),
     TNEG_CS(d1, ndc1),
-    INSERT_TMACRO(vec3_norm, CS_UNIDX(d0), ndc0)
+    INSERT_TMACRO(vec3_norm, CS_UNIDX(d0), tmp)
 MACRO_END;
 
 // pid[out] primitive id
@@ -40,6 +40,8 @@ MACRO_END;
 // d[in] v[3] ray direction
 template <std::floating_point T>
 TMACRO3(traverse, pid, o, d)
+    TMOV(t, 1e6),               // t <- 1e6
+    IMOV_CS(pid, CS(5)),        // pid <- miss
     // prim 0 - floor
     TMOV(vr00, -1),             // vr0 <- v00 = vertex 0 (-1, -1, 1)
     TMOV(vr01, -1),
@@ -53,7 +55,7 @@ TMACRO3(traverse, pid, o, d)
     TMOV(vr30, -1),             // vr3 <- v10 = vertex 1 (-1, -1, -1)
     TMOV(vr31, -1),
     TMOV(vr32, -1),
-    TMOV(pp, 0),                // next: set_vtxs_left_wall
+    IMOV(pp, 0),                // next: set_vtxs_left_wall
     JMP(isect_quad),
     LABEL(set_vtxs_left_wall),
     // prim 1 - left wall
@@ -69,7 +71,7 @@ TMACRO3(traverse, pid, o, d)
     TMOV(vr30, -1),             // vr3 <- v10 = vertex 4 (-1, 1, 1)
     TMOV(vr31, 1),
     TMOV(vr32, 1),
-    TMOV(pp, 1),                // next: set_vtxs_right_wall
+    IMOV(pp, 1),                // next: set_vtxs_right_wall
     JMP(isect_quad),
     LABEL(set_vtxs_right_wall),
     // prim 2 - right wall
@@ -85,7 +87,7 @@ TMACRO3(traverse, pid, o, d)
     TMOV(vr30, 1),              // vr3 <- v10 = vertex 6 (1, 1, -1)
     TMOV(vr31, 1),
     TMOV(vr32, -1),
-    TMOV(pp, 2),                // next: set_vtxs_ceiling
+    IMOV(pp, 2),                // next: set_vtxs_ceiling
     JMP(isect_quad),
     LABEL(set_vtxs_ceiling),
     // prim 3 - ceiling
@@ -101,7 +103,7 @@ TMACRO3(traverse, pid, o, d)
     TMOV(vr30, 1),              // vr3 <- v10 = vertex 7 (1, 1, 1)
     TMOV(vr31, 1),
     TMOV(vr32, 1),
-    TMOV(pp, 3),                // next: set_vtxs_back_wall
+    IMOV(pp, 3),                // next: set_vtxs_back_wall
     JMP(isect_quad),
     LABEL(set_vtxs_back_wall),
     // prim 4 - back wall
@@ -117,16 +119,19 @@ TMACRO3(traverse, pid, o, d)
     TMOV(vr30, -1),             // vr3 <- v10 = vertex 5 (-1, 1, -1)
     TMOV(vr31, 1),
     TMOV(vr32, -1),
-    TMOV(pp, 4),                // next: traverse_room_end
+    IMOV(pp, 4),                // next: traverse_room_end
     JMP(isect_quad),
     LABEL(isect_quad),
     INSERT_TMACRO(isect_quad, CS(hit), CS(ct), o, d,
                   CS(vr0), CS(vr1), CS(vr2), CS(vr3),
                   CS(vr4), CS(vr5), CS(vr6),
                   CS(tmp0), CS(tmp1), CS(tmp2)),
-    TMIN(ct, t, ct),
-    TCMOV(t, hit, ct, t),       // t <- hit ? min(ct, t) : t
-    ICMOV_CS(pid, CS(hit), CS(pp), pid), // pid <- hit ? pp : pid
+    TLT(tmp0, ct, t),           // tmp0 <- ct < t
+    IPJMP2(tmp0, next_prim, select_current),
+    LABEL(select_current),
+    TMOV(t, ct),
+    IMOV_CS(pid, CS(pp)),
+    LABEL(next_prim),
     IPJMP5(pp, set_vtxs_left_wall, set_vtxs_right_wall, set_vtxs_ceiling, set_vtxs_back_wall, traverse_room_end),
     LABEL(traverse_room_end)
 MACRO_END;
@@ -136,11 +141,11 @@ MACRO_END;
 // pid[in] primitive id
 template <std::floating_point T>
 TMACRO4(set_materials, clrr, clrg, clrb, pid)
-    IPJMP5(pid, set_clr_floor, set_clr_left_wall, set_clr_right_wall, set_clr_ceiling, set_clr_back_wall),
+    IPJMP6(pid, set_clr_floor, set_clr_left_wall, set_clr_right_wall, set_clr_ceiling, set_clr_back_wall, set_clr_miss),
     LABEL(set_clr_floor),       // white floor
-    TMOV_CS(clrr, CS(1)),
-    TMOV_CS(clrg, CS(1)),
-    TMOV_CS(clrb, CS(1)),
+    TMOV_CS(clrr, CS(0.8)),
+    TMOV_CS(clrg, CS(0.8)),
+    TMOV_CS(clrb, CS(0.8)),
     JMP(set_materials_end),
     LABEL(set_clr_left_wall),   // red wall
     TMOV_CS(clrr, CS(1)),
@@ -161,6 +166,11 @@ TMACRO4(set_materials, clrr, clrg, clrb, pid)
     TMOV_CS(clrr, CS(1)),
     TMOV_CS(clrg, CS(1)),
     TMOV_CS(clrb, CS(0.2)),
+    JMP(set_materials_end),
+    LABEL(set_clr_miss),
+    TMOV_CS(clrr, CS(0)),
+    TMOV_CS(clrg, CS(0)),
+    TMOV_CS(clrb, CS(1)),
     LABEL(set_materials_end)
 MACRO_END;
 }
