@@ -25,7 +25,8 @@ parse_args(int argc, char* argv[]) noexcept
             argparse::option<'r', "res", 2>("image resolution",
                                             {"width", "height"},
                                             {1000, 1000},
-                                            read_number<int, true>)},
+                                            read_number<int, true>),
+            argparse::flag<'v', "verbose">("verbose logging")},
         {argc, argv});
 }
 } // namespace loom

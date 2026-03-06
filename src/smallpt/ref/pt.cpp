@@ -276,7 +276,8 @@ int
 main(int argc, char* argv[])
 {
     auto   parse_results = parse_args(argc, argv);
-    Logger logger(Logger::INFO);
+    Logger logger(parse_results.template get_opt<'v'>() ? Logger::DEBUG :
+                                                          Logger::INFO);
     logger.debug("Let's go");
 
     const Camera cam = Scene::camera();
