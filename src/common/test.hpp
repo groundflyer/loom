@@ -992,4 +992,29 @@ template <std::floating_point T>
 struct poly_cmp<T> : ulp_cmp
 {
 };
+
+template <typename Cmp>
+class uni_tuple_cmp
+{
+    Cmp m_cmp;
+
+    template <typename T1, typename T2, std::size_t... Is>
+    bool
+    impl(const T1& t1, const T2& t2, std::index_sequence<Is...>) const noexcept
+    {
+        return (... && m_cmp(std::get<Is>(t1), std::get<Is>(t2)));
+    }
+
+  public:
+    uni_tuple_cmp(Cmp cmp) noexcept : m_cmp(cmp) {}
+
+    template <typename T1, typename T2>
+        requires(std::tuple_size_v<T1> == std::tuple_size_v<T2>)
+    bool
+    operator()(const T1& t1, const T2& t2) const noexcept
+    {
+        return impl(t1, t2, std::make_index_sequence<std::tuple_size_v<T1>>{});
+    }
+};
+
 } // namespace loom::test
