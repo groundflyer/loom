@@ -56,6 +56,11 @@ TKERNEL6(cross_dot_test, x0, x1, x2, y0, y1, y2)
 KERNEL_END(IVAR(t1));
 
 template <std::floating_point T>
+TKERNEL6(cross_test, x0, x1, x2, y0, y1, y2)
+    INSERT_TMACRO(vm::vec3_cross, CS(z), CS(x), CS(y), CS(t1))
+TKERNEL_END3(z0, z1, z2);
+
+template <std::floating_point T>
 TKERNEL12(mat_vec_dot_test,
           m00, m01, m02,
           m10, m11, m12,
@@ -215,6 +220,7 @@ main(int argc, char* argv[])
     vm::bse::function<gen_canon_test<float>>      bse_gen_canon;
     vm::bse::function<bump_test>                  bse_bump;
     vm::bse::function<cross_dot_test<float>>      bse_cross_dot;
+    vm::bse::function<cross_test<float>>          bse_cross;
     vm::bse::function<mat_vec_dot_test<float>>    bse_mat_vec_dot;
     vm::bse::function<sample_hemi_test<float>>    bse_sample_hemi;
     vm::bse::function<sample_space_test<float>>   bse_sample_space;
@@ -253,12 +259,30 @@ main(int argc, char* argv[])
             cmp_tuple_arr),
         "bump counter"));
 
-    track.check(NamedTest(
-        tm.invariant([&]() noexcept
-                     { return std::tuple{gf(), gf(), gf(), gf(), gf(), gf()}; },
-                     bse_cross_dot,
-                     std::identity{}),
-        "cross dot test"));
+    const auto g2v3 = [&]() noexcept
+    { return std::tuple{gf(), gf(), gf(), gf(), gf(), gf()}; };
+
+    track.check(NamedTest(tm.invariant(g2v3, bse_cross_dot, std::identity{}),
+                          "cross dot test"));
+
+    track.check(NamedFuzzyTest(tm.fuzzy_with_ref(
+                                   g2v3,
+                                   bse_cross,
+                                   [](float x0,
+                                      float x1,
+                                      float x2,
+                                      float y0,
+                                      float y1,
+                                      float y2) noexcept
+                                   {
+                                       const auto [z0, z1, z2] =
+                                           cross(Vec3f{x0, x1, x2},
+                                                 Vec3f{y0, y1, y2});
+                                       return std::tuple{z0, z1, z2};
+                                   },
+                                   test::uni_tuple_cmp{ulp_cmp{ulp}}),
+                               "cross test",
+                               0.01));
 
     track.check(NamedFuzzyTest(
         tm.fuzzy_with_ref(
