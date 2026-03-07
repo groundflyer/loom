@@ -1,14 +1,18 @@
 // -*- C++ -*-
 // vm_smallpt.cpp
 #include <common/linal.hpp>
+#include <common/math.hpp>
 #include <common/test.hpp>
+#include <smallpt/ref/cornell_box.hpp>
 #include <smallpt/ref/niebloids.hpp>
+#include <smallpt/ref/perspective_camera.hpp>
 #include <smallpt/ref/rng.hpp>
 #include <smallpt/ref/sampling.hpp>
 #include <smallpt/vm/linal.hpp>
 #include <smallpt/vm/primitives.hpp>
 #include <smallpt/vm/rng.hpp>
 #include <smallpt/vm/sampling.hpp>
+#include <smallpt/vm/scene.hpp>
 #include <vm/bse.hpp>
 
 #include <fmt/ranges.h>
@@ -70,8 +74,8 @@ KERNEL(sample_space_test, IVAR(x), IVAR(y), IVAR(w), IVAR(h))
     MOV(TVAR(w), IVAR(w)),
     MOV(TVAR(h), IVAR(h)),
     TDIV(r, w, h),
-    INSERT_TMACRO(vm::to_sample_space, CS(sx), CS(sy), CS(x), CS(y), CS(w), CS(h), CS(r))
-TKERNEL_END2(sx, sy);
+    INSERT_TMACRO(vm::to_sample_space, CS(x), CS(y), CS(x), CS(y), CS(w), CS(h), CS(r))
+TKERNEL_END2(x, y);
 
 template <std::floating_point T>
 TKERNEL13(disk_isect_test,
@@ -120,6 +124,12 @@ TKERNEL18(quad_isect_test,
                   CS(vt1), CS(vt2), CS(vt3), CS(tmp1), CS(tmp2), CS(tmp3))
 KERNEL_END(IVAR(hit), TVAR(t));
 
+template <std::floating_point T>
+TKERNEL2(ray_dir_test, ndc0, ndc1)
+    TMOV_CS(CS(d2), vm::default_cam::DIR2),
+    INSERT_TMACRO(vm::gen_ray_dir, CS(d0), CS(d1), CS(ndc0), CS(ndc1), CS(tmp))
+TKERNEL_END3(d0, d1, d2);
+
 // clang-format on
 
 using Vec3f = Vector<float, 3, std::array>;
@@ -146,7 +156,7 @@ to_tuple(const Sphere<T>& prim) noexcept
 
 template <typename T, std::size_t N>
 auto
-to_tuple(const std::array<T, N>& prim)
+to_tuple(const std::array<T, N>& prim) noexcept
 {
     return std::apply([](const auto&... vs) noexcept
                       { return std::tuple_cat(array2tuple(vs.data())...); },
@@ -171,6 +181,7 @@ main(int argc, char* argv[])
     auto gu32    = rs.make_gen<std::uint32_t>(0, -1u);
     auto gur     = rs.make_gen<unsigned>(30, 1000);
     auto gf      = rs.make_gen<float>(-1e6, 1e6);
+    auto gf11    = rs.make_gen<float>(-1, 1);
     auto g_canon = rs.make_gen<float>();
     auto gb      = rs.make_gen<bool>(0.5);
     auto gv2s    = [&]() noexcept { return Vec2f(generate<2>(g_canon)); };
@@ -189,7 +200,6 @@ main(int argc, char* argv[])
                almost_equal(std::get<1>(t), r[1], ulp) &&
                almost_equal(std::get<2>(t), r[2], ulp);
     };
-
     const auto cmp_isects = [](const auto& a, const auto& b) noexcept
     {
         const bool ai = a.intersect;
@@ -213,6 +223,7 @@ main(int argc, char* argv[])
     vm::bse::function<sphere_isect_test<float>>   bse_sphere_isect;
     vm::bse::function<triangle_isect_test<float>> bse_triangle_isect;
     vm::bse::function<quad_isect_test<float>>     bse_quad_isect;
+    vm::bse::function<ray_dir_test<float>>        bse_ray_dir_test;
 
     track.dep_check(
         NamedTest(
@@ -382,6 +393,20 @@ main(int argc, char* argv[])
                           intersect,
                           cmp_isects),
         "ray-quad intersection",
+        0.01));
+
+    track.check(NamedFuzzyTest(
+        tm.fuzzy_with_ref([&]() noexcept { return std::tuple{gf11(), gf11()}; },
+                          bse_ray_dir_test,
+                          [](const float ndc0, const float ndc1) noexcept
+                          {
+                              const auto cam = cornell_box<float>::camera();
+                              const auto [d0, d1, d2] =
+                                  cam(Vec2f{ndc0, ndc1}).dir;
+                              return std::tuple{d0, d1, d2};
+                          },
+                          test::uni_tuple_cmp{ulp_cmp{ulp}}),
+        "cam ray dir",
         0.01));
 
     return track.ret_code();
