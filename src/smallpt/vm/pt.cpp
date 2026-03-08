@@ -25,11 +25,11 @@ KERNEL(pt, IVAR(pix), IVAR(res))
     MOV(TVAR(h), IVAR(h)),
     TDIV(r, w, h),
     INSERT_TMACRO(to_sample_space, CS(p0), CS(p1), CS(p0), CS(p1), CS(w), CS(h), CS(r)),
-    TMOV(d2, -1),
+    TMOV_CS(CS(d2), default_cam::DIR2),
     INSERT_TMACRO(gen_ray_dir, CS(d0), CS(d1), CS(p0), CS(p1), CS(tmp0)),
-    TMOV(p0, 0),
-    TMOV(p1, 0),
-    TMOV(p2, 4),
+    TMOV_CS(CS(p0), default_cam::POS0),
+    TMOV_CS(CS(p1), default_cam::POS1),
+    TMOV_CS(CS(p2), default_cam::POS2),
     INSERT_TMACRO(traverse, CS(pid), CS(p), CS(d)),
     INSERT_TMACRO(set_materials, CS(clrr), CS(clrg), CS(clrb), CS(pid))
 KERNEL_END(TVAR(clrr), TVAR(clrg), TVAR(clrb), TVAR(t));
@@ -45,8 +45,7 @@ render(Image& img) noexcept
     for(auto it = img.begin(); it != img.end(); ++it)
     {
         const auto [x, y]       = it.pos();
-        const unsigned pp       = x << 16 | y;
-        const auto [r, g, b, t] = f(pp, res);
+        const auto [r, g, b, t] = f(x << 16 | y, res);
         *it                     = RGBA{r, g, b, 1};
     }
 }

@@ -30,8 +30,11 @@ template <std::floating_point T>
 TMACRO5(gen_ray_dir, d0, d1, ndc0, ndc1, tmp)
     TMUL_CS(ndc0, ndc0, default_cam::TAN_FOV_HALF),
     TMUL_CS(ndc1, ndc1, default_cam::TAN_FOV_HALF),
-    TNEG_CS(d0, ndc0),
+    TMOV_CS(d0, ndc0),
+    // TNEG_CS(d0, ndc0),
     TNEG_CS(d1, ndc1),
+    // TSUB_CS(d0, default_cam::DIR0, ndc0),
+    // TSUB_CS(d1, default_cam::DIR1, ndc1),
     INSERT_TMACRO(vec3_norm, CS_UNIDX(d0), tmp)
 MACRO_END;
 
@@ -127,11 +130,9 @@ TMACRO3(traverse, pid, o, d)
                   CS(vr4), CS(vr5), CS(vr6),
                   CS(tmp0), CS(tmp1), CS(tmp2)),
     TLT(tmp0, ct, t),           // tmp0 <- ct < t
-    IPJMP2(tmp0, next_prim, select_current),
-    LABEL(select_current),
-    TMOV(t, ct),
-    IMOV_CS(pid, CS(pp)),
-    LABEL(next_prim),
+    ILAND(tmp0, tmp0, hit),
+    TCMOV(t, tmp0, ct, t),
+    ICMOV_CS(pid, CS(tmp0), CS(pp), pid),
     IPJMP5(pp, set_vtxs_left_wall, set_vtxs_right_wall, set_vtxs_ceiling, set_vtxs_back_wall, traverse_room_end),
     LABEL(traverse_room_end)
 MACRO_END;
@@ -162,7 +163,7 @@ TMACRO4(set_materials, clrr, clrg, clrb, pid)
     TMOV_CS(clrg, CS(0.2)),
     TMOV_CS(clrb, CS(1)),
     JMP(set_materials_end),
-    LABEL(set_clr_back_wall),   // magenta back wall for now
+    LABEL(set_clr_back_wall),   // yellow back wall for now
     TMOV_CS(clrr, CS(1)),
     TMOV_CS(clrg, CS(1)),
     TMOV_CS(clrb, CS(0.2)),
