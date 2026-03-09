@@ -78,8 +78,10 @@ template <std::floating_point T>
 KERNEL(sample_space_test, IVAR(x), IVAR(y), IVAR(w), IVAR(h))
     MOV(TVAR(w), IVAR(w)),
     MOV(TVAR(h), IVAR(h)),
+    MOV(TVAR(x), IVAR(x)),
+    MOV(TVAR(y), IVAR(y)),
     TDIV(r, w, h),
-    INSERT_TMACRO(vm::to_sample_space, CS(x), CS(y), CS(x), CS(y), CS(w), CS(h), CS(r))
+    INSERT_TMACRO(vm::to_sample_space, CS(x), CS(y), CS(w), CS(h), CS(r))
 TKERNEL_END2(x, y);
 
 template <std::floating_point T>
@@ -130,9 +132,10 @@ TKERNEL18(quad_isect_test,
 KERNEL_END(IVAR(hit), TVAR(t));
 
 template <std::floating_point T>
-TKERNEL2(ray_dir_test, ndc0, ndc1)
+TKERNEL2(ray_dir_test, d0, d1)
+    INSERT_TMACRO(vm::gen_ray_dir, CS(d0), CS(d1)),
     TMOV_CS(CS(d2), vm::default_cam::DIR2),
-    INSERT_TMACRO(vm::gen_ray_dir, CS(d0), CS(d1), CS(ndc0), CS(ndc1), CS(tmp))
+    INSERT_TMACRO(vm::vec3_norm, CS(d), CS(tmp))
 TKERNEL_END3(d0, d1, d2);
 
 // clang-format on

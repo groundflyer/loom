@@ -16,17 +16,19 @@ using namespace vm;
 // pix 16/16 x/y
 // res 16/16 w/h
 template <std::same_as<float> T>
-KERNEL(pt, IVAR(pix), IVAR(res))
-    IRSHFT(p0, pix, 16),
-    IBAND(p1, pix, 0xffff),
+KERNEL(pt, IVAR(pix), IVAR(res), TVAR(r))
+    IRSHFT(d0, pix, 16),
+    IBAND(d1, pix, 0xffff),
     IRSHFT(w, res, 16),
     IBAND(h, res, 0xffff),
     MOV(TVAR(w), IVAR(w)),
     MOV(TVAR(h), IVAR(h)),
-    TDIV(r, w, h),
-    INSERT_TMACRO(to_sample_space, CS(p0), CS(p1), CS(p0), CS(p1), CS(w), CS(h), CS(r)),
+    MOV(TVAR(d0), IVAR(d0)),
+    MOV(TVAR(d1), IVAR(d1)),
+    INSERT_TMACRO(to_sample_space, CS(d0), CS(d1), CS(w), CS(h), CS(r)),
+    INSERT_TMACRO(gen_ray_dir, CS(d0), CS(d1)),
     TMOV_CS(CS(d2), default_cam::DIR2),
-    INSERT_TMACRO(gen_ray_dir, CS(d0), CS(d1), CS(p0), CS(p1), CS(tmp0)),
+    INSERT_TMACRO(vm::vec3_norm, CS(d), CS(tmp0)),
     TMOV_CS(CS(p0), default_cam::POS0),
     TMOV_CS(CS(p1), default_cam::POS1),
     TMOV_CS(CS(p2), default_cam::POS2),
@@ -40,12 +42,13 @@ void
 render(Image& img) noexcept
 {
     bse::function<pt<float>> f;
-    const auto [w, h]  = img.res();
-    const unsigned res = w << 16 | h;
+    const auto [w, h]    = img.res();
+    const unsigned res   = w << 16 | h;
+    const float    ratio = static_cast<float>(w) / static_cast<float>(h);
     for(auto it = img.begin(); it != img.end(); ++it)
     {
         const auto [x, y]       = it.pos();
-        const auto [r, g, b, t] = f(x << 16 | y, res);
+        const auto [r, g, b, t] = f(x << 16 | y, res, ratio);
         *it                     = RGBA{r, g, b, 1};
     }
 }

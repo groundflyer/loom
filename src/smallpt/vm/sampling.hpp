@@ -59,17 +59,12 @@ TMACRO11(sample_hemisphere, dst0, dst1, dst2, n0, n1, n2, u0, u1, x, tmp0, tmp1)
     INSERT_TMACRO(vec_vec3_add, CS_UNIDX(dst0), CS_UNIDX(dst0), CS_UNIDX(n0))
 MACRO_END;
 
-
-/// @tparam sx dest x
-/// @tparam sy dest y
-/// @tparam x pixel position x, unsigned
-/// @tparam y pixel position y, unsigned
+/// @tparam sx dest pixel position x, float
+/// @tparam sy dest pixel position y, float
 /// @tparam w image width, float
 /// @tparam h image height, float
 /// @tparam r ratio float, gang invariant, we don't compute it in kernel
-TMACRO7(to_sample_space, sx, sy, x, y, w, h, r)
-    MOV(TVAR_CS(sx), IVAR_CS(x)),
-    MOV(TVAR_CS(sy), IVAR_CS(y)),
+TMACRO5(to_sample_space, sx, sy, w, h, r)
     TDIV_CS(sx, sx, w),
     TSUB_CS(sx, sx, CS(0.5)),
     TMUL_CS(sx, sx, r),
