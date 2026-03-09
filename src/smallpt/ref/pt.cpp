@@ -142,10 +142,9 @@ render(Image&                 img,
 {
     constexpr unsigned min_samples = 64;
 
-    const float pw = static_cast<float>(1) / img.res()[0]; // pixel width
-
-    const Vec2f          res{img.res()};
     ToSampleSpace<float> sample_space(img.res());
+    const auto [res, ratio] = sample_space;
+    const float pw          = ratio / res[0]; // pixel width
 
 #pragma omp parallel for schedule(dynamic)
     for(auto it = img.begin(); it != img.end(); ++it)

@@ -56,13 +56,14 @@ ratio(const Vec2<T>& res) noexcept
 
 /// @brief Pixel position to film sample space.
 template <std::floating_point T>
-class ToSampleSpace
+struct ToSampleSpace
 {
-    Vec2<T> m_res;
-    T       m_ratio;
+    Vec2<T> res;
+    T       ratio;
 
   public:
-    ToSampleSpace(const Vec2u& res) noexcept : m_res(res), m_ratio(ratio(m_res))
+    ToSampleSpace(const Vec2u& _res) noexcept :
+        res(_res), ratio(res[0] / res[1])
     {
     }
 
@@ -70,8 +71,8 @@ class ToSampleSpace
     operator()(const Vec2u& pos) const noexcept
     {
         const auto& [x, y] = pos;
-        const auto [w, h]  = m_res;
-        const T sx = m_ratio * (static_cast<T>(x) / w - static_cast<T>(0.5));
+        const auto [w, h]  = res;
+        const T sx = ratio * (static_cast<T>(x) / w - static_cast<T>(0.5));
         const T sy = static_cast<T>(y) / h - static_cast<T>(0.5);
         return Vec2<T>{sx, sy};
     }
