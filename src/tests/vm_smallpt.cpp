@@ -39,7 +39,7 @@ KERNEL(gen_canon_test, VAR(std::uint32_t, x))
 TKERNEL_END1(x);
 
 KERNEL(bump_test, VAR(std::uint32_t, c0), VAR(std::uint32_t, c1), VAR(std::uint32_t, i))
-    INSERT_MACRO(vm::bump_ctr, CS(c0), CS(c1), CS(i), CS(tmp1), CS(tmp2))
+    INSERT_MACRO(vm::bump_ctr, CS(c0), CS(c1), CS(i), CS(tmp1), CS(tmp2), CS(tmp3))
 KERNEL_END(VAR(std::uint32_t, c0), VAR(std::uint32_t, c1));
 
 // cross product of two vectors is vector perpendicular to both of them
