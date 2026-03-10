@@ -116,9 +116,6 @@ struct Shading
                             depth + 1);
         };
 
-        if(cos2t < 0) // total internal reflection
-            return reflection();
-
         auto refraction = [&]() noexcept
         {
             return radiance(
@@ -130,7 +127,15 @@ struct Shading
                 depth + 1);
         };
 
-        return reflection() * f + refraction() * (1.f - f);
+        if(cos2t < 0) // total internal reflection
+            return reflection();
+
+        const auto [sx, _] = threefry2x32r32<key[0], key[1]>(c);
+
+        if(gen_canonical(sx) < f)
+            return reflection();
+        else
+            return refraction() / (eta * eta);
     }
 };
 
