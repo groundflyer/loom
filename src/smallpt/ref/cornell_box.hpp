@@ -68,8 +68,8 @@ class cornell_box
                                                 std::index_sequence<2, 0, 3>>;
 
     static constexpr Mat4r tetrahedron_transform =
-        translate(Vec3r{-0.5, -1, -0.5}) *
-        rotate(radians(static_cast<real>(20)), Vec3r{0, 1, 0}) *
+        translate(Vec3r{0.1, -1, -0.5}) *
+        rotate(radians(static_cast<real>(-15)), Vec3r{0, 1, 0}) *
         scale(Vec3r{0.85});
 
     using QuadR = Quad<real>;
@@ -124,11 +124,11 @@ class cornell_box
 
         static constexpr std::tuple materials{
             Lambert{Rgb{1}},           // 0
-            Lambert{Rgb{1, 0.2, 0.2}}, // 1
-            Lambert{Rgb{0.2, 1, 0.2}}, // 2
-            Lambert{Rgb{0.2, 0.2, 1}}, // 3
+            Lambert{Rgb{1, 0.4, 0.2}}, // 1
+            Lambert{Rgb{0.2, 1, 0.4}}, // 2
+            Lambert{Rgb{0.5, 0.7, 1}}, // 3
             Glass{},                   // 4
-            Emission{Rgb{25}}          // 5
+            Emission{Rgb{20}}          // 5
         };
 
         // Material indicies for primitives
