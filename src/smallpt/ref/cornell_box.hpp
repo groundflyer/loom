@@ -9,6 +9,7 @@
 #include "primitives/disk.hpp"
 #include "primitives/quad.hpp"
 #include "primitives/sphere.hpp"
+#include "primitives/triangle.hpp"
 #include "sampling.hpp"
 
 #include <common/forbid.hpp>
@@ -53,27 +54,23 @@ class cornell_box
         std::index_sequence<1, 2, 6, 5>{}  // back wall
     };
 
-    // Quad point indicies for box geometry
-    static constexpr std::tuple box_geo_descr{
-        std::index_sequence<1, 2, 3, 0>{},
-        std::index_sequence<4, 5, 1, 0>{},
-        std::index_sequence<6, 7, 3, 2>{},
-        std::index_sequence<7, 6, 5, 4>{},
-        std::index_sequence<5, 6, 2, 1>{},
-        std::index_sequence<0, 4, 7, 3>{},
-    };
+    static constexpr real tr = smath::sqrt(static_cast<real>(3)) / 6;
+    static constexpr real tR = 2 * tr;
+    // Tetrahedron vertices
+    static constexpr std::array<Vec3r, 4> tetrahedron_points{
+        Vec3r(-0.5, 0, -tr),   // 0
+        Vec3r(0, 0, tR),       // 1
+        Vec3r(0.5, 0, -tr),    // 2
+        Vec3r(0, tr + tR, 0)}; // 3
 
-    static constexpr Vec3r box_scale{0.25, 0.5, 0.25};
-    static constexpr Vec3r box_pos{-0.5, get_y(box_scale) - 1, -0.25};
-    static constexpr Mat4r box_tr =
+    using tetrahedron_geo_descr = type_sequence<std::index_sequence<0, 1, 3>,
+                                                std::index_sequence<1, 2, 3>,
+                                                std::index_sequence<2, 0, 3>>;
+
+    static constexpr Mat4r tetrahedron_transform =
+        translate(Vec3r{-0.5, -1, -0.5}) *
         rotate(radians(static_cast<real>(20)), Vec3r{0, 1, 0}) *
-        translate(box_pos) * scale(box_scale);
-
-    // Box point positions.
-    static constexpr std::array<Vec3r, 8> box_points = std::apply(
-        [](const auto&... pns) noexcept
-        { return std::array<Vec3r, 8>{apply_transform_p(box_tr, pns)...}; },
-        room_points);
+        scale(Vec3r{0.85});
 
     using QuadR = Quad<real>;
 
@@ -131,7 +128,7 @@ class cornell_box
             Lambert{Rgb{0.2, 1, 0.2}}, // 2
             Lambert{Rgb{0.2, 0.2, 1}}, // 3
             Glass{},                   // 4
-            Emission{Rgb{35}}          // 5
+            Emission{Rgb{25}}          // 5
         };
 
         // Material indicies for primitives
@@ -143,10 +140,7 @@ class cornell_box
             0, // grey ceiling
             0, // grey wall
                // objects
-            3, // blue box of six primitives
-            3,
-            3,
-            3,
+            3, // blue tetrahedron of six primitives
             3,
             3,
             4, // sphere
@@ -155,13 +149,17 @@ class cornell_box
     };
 
     static constexpr auto shadow_set = std::tuple_cat(
-        std::apply(
-            [](const auto&... pns) noexcept
-            {
-                return std::tuple{make_wall_geo(box_points, pns)...}
-                 ;
+        typelist::maybe_collect(
+            tetrahedron_geo_descr{
     },
-            box_geo_descr), // box
+            []<typename idxs>() noexcept
+            {
+                const Vec3r v0 = tetrahedron_points[intlist::head<idxs>];
+                const Vec3r v1 = tetrahedron_points[intlist::at<1, idxs>];
+                const Vec3r v2 = tetrahedron_points[intlist::at<2, idxs>];
+                return apply_transform(tetrahedron_transform,
+                                       Triangle<real>{v0, v1, v2});
+            }),
         std::tuple{Sphere<real>{Vec3r{0.5, -0.7, 0.4}, 0.3}});
 
     static constexpr Disk<real> light{
