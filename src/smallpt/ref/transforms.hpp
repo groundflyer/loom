@@ -58,7 +58,7 @@ constexpr Vec3<T>
 apply_transform_p(const Mat4<T, MatContainer>&  t,
                   const Vec3<T, Vec3Container>& p) noexcept
 {
-    return dehomogenize(t * Vec4<T>(p, 1));
+    return Vec3<T>(t * Vec4<T>(p, 1));
 }
 
 /// @brief Apply transform to a normal.
@@ -107,7 +107,10 @@ rotate(const T angle, const Vec3<T, Container>& axis) noexcept
     const auto& [x, y, z] = axis;
     const Mat3<T> K{0, -z, y, z, 0, -x, -y, x, 0};
     return Mat4<T>(m3id<T> + K * sin(angle) +
-                   K * K * (static_cast<T>(1) - cos(angle)));
+                       K * K * (static_cast<T>(1) - cos(angle)),
+                   0,
+                   0,
+                   1);
 }
 
 /// @brief Create Look-At transform.
