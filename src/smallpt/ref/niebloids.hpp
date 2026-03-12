@@ -5,6 +5,7 @@
 #pragma once
 
 #include "primitives/aabb.hpp"
+#include "primitives/cylinder.hpp"
 #include "primitives/disk.hpp"
 #include "primitives/quad.hpp"
 #include "primitives/sphere.hpp"

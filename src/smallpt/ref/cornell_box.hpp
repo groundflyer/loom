@@ -6,6 +6,7 @@
 
 #include "niebloids.hpp"
 #include "perspective_camera.hpp"
+#include "primitives/cylinder.hpp"
 #include "primitives/disk.hpp"
 #include "primitives/quad.hpp"
 #include "primitives/sphere.hpp"
@@ -93,6 +94,10 @@ class cornell_box
         rotate(radians(static_cast<real>(-15)), Vec3r{0, 1, 0}) *
         scale(Vec3r{0.95});
 
+    static constexpr Vec3r cyl_pos{-0.3, -1, -0.7};
+    static constexpr real  cyl_rad{0.1};
+    static constexpr real  cyl_h{0.8};
+
     using QuadR = Quad<real>;
 
     template <std::size_t N, std::size_t... Pns>
@@ -151,14 +156,30 @@ class cornell_box
             3,
             3,
             4, // sphere
+            0, // cylinder
+            0, // cylinder cap
             5  // light
         };
     };
 
-    static constexpr auto shadow_set = std::tuple_cat(
-        typelist::maybe_collect(
-            tetrahedron_geo_descr{
+    static constexpr Disk<real> light{
+        Vec3r{0, 0.9999, 0},
+        Vec3r{0,     -1, 0},
+        0.35
+    };
+
+    static constexpr auto geometry = std::tuple_cat(
+        // room
+        std::apply(
+            [](const auto&... pns) noexcept
+            {
+                return std::tuple{make_wall_geo(room_points, pns)...}
+                 ;
     },
+            room_geo_descr),
+        // objects
+        typelist::maybe_collect(
+            tetrahedron_geo_descr{},
             []<typename idxs>() noexcept
             {
                 const Vec3r v0 = tetrahedron_points[intlist::head<idxs>];
@@ -167,24 +188,11 @@ class cornell_box
                 return apply_transform(tetrahedron_transform,
                                        Triangle<real>{v0, v1, v2});
             }),
-        std::tuple{Sphere<real>{Vec3r{0.5, -0.7, 0.4}, 0.3}});
-
-    static constexpr Disk<real> light{
-        Vec3r{0, 0.9999, 0},
-        Vec3r{0,     -1, 0},
-        0.35
-    };
-
-    static constexpr real light_intensity = 1;
-
-    static constexpr auto geometry = std::tuple_cat(
-        // room
-        std::apply([](const auto&... pns) noexcept
-                   { return std::tuple{make_wall_geo(room_points, pns)...}; },
-                   room_geo_descr),
-        // objects
-        shadow_set,
-        std::tuple{light});
+        std::tuple{
+            Sphere<real>{Vec3r{0.5, -0.7, 0.4}, 0.3},
+            Cylinder<real>{cyl_pos, cyl_rad, cyl_h},
+            Disk<real>{cyl_pos + Vec3r{0, cyl_h, 0}, Vec3r{0, 1, 0}, cyl_rad},
+            light});
 
     static Perspective<real>
     camera(const real fov = radians(static_cast<real>(60))) noexcept
