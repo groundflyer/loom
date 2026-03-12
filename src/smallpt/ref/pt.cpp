@@ -82,9 +82,9 @@ struct Shading
     }
 
     RGB<>
-    operator()(const Gallery::Emission& e) const noexcept
+    operator()(const Gallery::Emission&) const noexcept
     {
-        return e.color;
+        return RGB{Gallery::Emission::value};
     }
 
     RGB<>
@@ -98,20 +98,20 @@ struct Shading
     }
 
     RGB<>
-    operator()(const Gallery::Glass& mat) const noexcept
+    operator()(const Gallery::Glass& /* mat */) const noexcept
     {
         const Vec3f wi        = -i;
         const float cos_theta = dot(n, wi);
         const bool  into      = cos_theta > 0;
         const Vec3f nfn       = into ? n : -n;
-        const float eta       = mat.compute_eta(into);
-        const float f         = mat.reflectance(cos_theta);
+        const float eta       = compute_eta(Gallery::Glass::ior, into);
+        const float f         = reflectance(cos_theta, eta);
         const float ddn       = dot(i, nfn);
         const float cos2t     = 1 - eta * eta * (1 - ddn * ddn);
 
         auto reflection = [&]() noexcept
         {
-            return radiance(bias_ray(p, mat.reflect(nfn, i, cos_theta)),
+            return radiance(bias_ray(p, reflect(nfn, i, cos_theta)),
                             bump_ctr(c, 312398),
                             depth + 1);
         };

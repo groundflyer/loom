@@ -19,12 +19,33 @@
 namespace loom
 {
 template <std::floating_point T>
-T
+static T
 schlick(const T cd, const T eta) noexcept
 {
     T r0 = (1 - eta) / (1 + eta);
     r0 *= r0;
     return r0 + (1 - r0) * static_pow<5>(1 - cd);
+}
+
+template <std::floating_point T>
+static T
+compute_eta(const T ior, const bool enter) noexcept
+{
+    return enter ? 1 / ior : ior;
+}
+
+template <std::floating_point T>
+static T
+reflectance(const T cos_theta, const T eta) noexcept
+{
+    return schlick(std::abs(cos_theta), eta);
+}
+
+template <std::floating_point T>
+static Vec3<T>
+reflect(const Vec3<T>& n, const Vec3<T>& i, const T cos_theta) noexcept
+{
+    return i + n * cos_theta * static_cast<T>(2);
 }
 
 template <std::floating_point real>
@@ -94,32 +115,12 @@ class cornell_box
 
         struct Emission
         {
-            Rgb color{0};
+            static constexpr real value = 20;
         };
 
         struct Glass
         {
             static constexpr real ior = 1.5;
-
-            real
-            compute_eta(const bool enter) const noexcept
-            {
-                return enter ? 1 / ior : ior;
-            }
-
-            real
-            reflectance(const real cos_theta) const noexcept
-            {
-                return schlick(std::abs(cos_theta), compute_eta(cos_theta));
-            }
-
-            Vec3r
-            reflect(const Vec3r& n,
-                    const Vec3r& i,
-                    real         cos_theta) const noexcept
-            {
-                return i + n * cos_theta * static_cast<real>(2);
-            }
         };
 
         static constexpr std::tuple materials{
@@ -128,7 +129,7 @@ class cornell_box
             Lambert{Rgb{0.2, 1, 0.4}}, // 2
             Lambert{Rgb{0.5, 0.7, 1}}, // 3
             Glass{},                   // 4
-            Emission{Rgb{20}}          // 5
+            Emission{}                 // 5
         };
 
         // Material indicies for primitives
@@ -140,7 +141,7 @@ class cornell_box
             0, // grey ceiling
             0, // grey wall
                // objects
-            3, // blue tetrahedron of six primitives
+            3, // tetrahedron of three primitives
             3,
             3,
             4, // sphere
