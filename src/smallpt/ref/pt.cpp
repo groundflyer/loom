@@ -82,6 +82,28 @@ struct Shading
     }
 
     RGB<>
+    diffuse(const RGB<>& color) const noexcept
+    {
+        const Vec3f d =
+            sample_hemisphere(n, sample_u(threefry2x32r32<key[0], key[1]>(c)));
+        const float r = dot(n, d);
+        return color *
+               radiance(bias_ray(p, d), bump_ctr(c, 641833), depth + 1) * r;
+    }
+
+    RGB<>
+    reflection() const noexcept
+    {
+        const float cos_theta = dot(n, -i);
+        const bool  into      = cos_theta > 0;
+        const Vec3f nfn       = into ? n : -n;
+
+        return radiance(bias_ray(p, reflect(nfn, i, cos_theta)),
+                        bump_ctr(c, 312398),
+                        depth + 1);
+    }
+
+    RGB<>
     operator()(const Gallery::Emission&) const noexcept
     {
         return RGB{Gallery::Emission::value};
@@ -90,31 +112,19 @@ struct Shading
     RGB<>
     operator()(const Gallery::Lambert& mat) const noexcept
     {
-        const Vec3f d =
-            sample_hemisphere(n, sample_u(threefry2x32r32<key[0], key[1]>(c)));
-        const float r = dot(n, d);
-        return mat.color *
-               radiance(bias_ray(p, d), bump_ctr(c, 641833), depth + 1) * r;
+        return diffuse(mat.color);
     }
 
     RGB<>
     operator()(const Gallery::Glass& /* mat */) const noexcept
     {
-        const Vec3f wi        = -i;
-        const float cos_theta = dot(n, wi);
+        const float cos_theta = dot(n, -i);
         const bool  into      = cos_theta > 0;
         const Vec3f nfn       = into ? n : -n;
         const float eta       = compute_eta(Gallery::Glass::ior, into);
         const float f         = reflectance(cos_theta, eta);
         const float ddn       = dot(i, nfn);
         const float cos2t     = 1 - eta * eta * (1 - ddn * ddn);
-
-        auto reflection = [&]() noexcept
-        {
-            return radiance(bias_ray(p, reflect(nfn, i, cos_theta)),
-                            bump_ctr(c, 312398),
-                            depth + 1);
-        };
 
         auto refraction = [&]() noexcept
         {
@@ -136,6 +146,23 @@ struct Shading
             return reflection();
         else
             return refraction() / (eta * eta);
+    }
+
+    RGB<>
+    operator()(const Gallery::Plastic&) const noexcept
+    {
+        const Vec3f wi        = -i;
+        const float cos_theta = dot(n, wi);
+        const bool  into      = cos_theta > 0;
+        const float eta       = compute_eta(Gallery::Plastic::ior, into);
+        const float f         = reflectance(cos_theta, eta);
+
+        const auto [sx, _] = threefry2x32r32<key[0], key[1]>(c);
+
+        if(gen_canonical(sx) < f)
+            return reflection();
+        else
+            return diffuse(Gallery::Plastic::color);
     }
 };
 

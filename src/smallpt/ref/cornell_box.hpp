@@ -89,9 +89,9 @@ class cornell_box
                                                 std::index_sequence<2, 0, 3>>;
 
     static constexpr Mat4r tetrahedron_transform =
-        translate(Vec3r{0.1, -1, -0.5}) *
+        translate(Vec3r{0.1, -1, -0.35}) *
         rotate(radians(static_cast<real>(-15)), Vec3r{0, 1, 0}) *
-        scale(Vec3r{0.85});
+        scale(Vec3r{0.95});
 
     using QuadR = Quad<real>;
 
@@ -123,11 +123,17 @@ class cornell_box
             static constexpr real ior = 1.5;
         };
 
+        struct Plastic
+        {
+            static constexpr real ior = 2.5;
+            static constexpr Rgb  color{0.5, 0.7, 1};
+        };
+
         static constexpr std::tuple materials{
             Lambert{Rgb{1}},           // 0
             Lambert{Rgb{1, 0.4, 0.2}}, // 1
             Lambert{Rgb{0.2, 1, 0.4}}, // 2
-            Lambert{Rgb{0.5, 0.7, 1}}, // 3
+            Plastic{},                 // 3
             Glass{},                   // 4
             Emission{}                 // 5
         };
