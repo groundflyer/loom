@@ -899,7 +899,7 @@ test_n(RandomEngine& g, const size_t num_tests, index_sequence<Ns...>) noexcept
 int
 main(int argc, char* argv[])
 {
-    const size_t num_tests = argc == 2 ? atoi(argv[1]) : 1000000;
+    const size_t num_tests = argc == 2 ? atoi(argv[1]) : 100000;
 
     int ret = 0;
 

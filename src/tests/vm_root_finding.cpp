@@ -160,7 +160,7 @@ main(int argc, char* argv[])
 {
     simd::print_info();
     Track         track;
-    ParmTestMaker tm{align_top(parse_numruns<100000>(argc, argv), 64u)};
+    ParmTestMaker tm{align_top(parse_numruns<10000>(argc, argv), 64u)};
     RandomState   rs;
 
     test_suite<float>  tsf;

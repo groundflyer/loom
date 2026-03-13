@@ -50,12 +50,12 @@ include(ExternalContent)
 add_compile_options(-Wall -Wpedantic -Wextra -fno-rtti -ferror-limit=1)
 # Optimize for the host machine
 add_compile_options($<$<CONFIG:Release>:-march=${TARGET_CPU}>)
-add_compile_options($<$<CONFIG:Release>:-ffast-math>)
+# add_compile_options($<$<CONFIG:Release>:-ffast-math>)
 
 # RelWithDebInfo
 set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "")
 add_compile_options($<$<CONFIG:RelWithDebInfo>:-march=${TARGET_CPU}>)
-add_compile_options($<$<CONFIG:RelWithDebInfo>:-ffast-math>)
+# add_compile_options($<$<CONFIG:RelWithDebInfo>:-ffast-math>)
 add_compile_options($<$<CONFIG:RelWithDebInfo>:-O3>)
 add_compile_options($<$<CONFIG:RelWithDebInfo>:-g>)
 
