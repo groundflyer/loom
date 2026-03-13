@@ -141,26 +141,6 @@ radians(const T _degrees)
     return _degrees * Pi<T> / T{180};
 }
 
-/// @brief Solve quadratic equation @f$ax^{2} + bx + c@f$ for non-complex cases.
-/// @return pair of bool and the smallest of two positive roots.
-template <std::floating_point T>
-constexpr std::pair<bool, T>
-quadratic(const T a, const T b, const T c) noexcept
-{
-    const T D      = b * b - T{4} * a * c;
-    const T factor = T{0.5} * a;
-    T       sqrtD{};
-    if(std::is_constant_evaluated())
-        sqrtD = smath::sqrt(D);
-    else
-        sqrtD = std::sqrt(D);
-    const T  x1 = (-b + sqrtD) * factor;
-    const T  x2 = (-b - sqrtD) * factor;
-    const T& x =
-        std::signbit(x1) ? x2 : (std::signbit(x2) ? x1 : std::min(x1, x2));
-    return std::pair{!std::signbit(D * x), x};
-}
-
 /// @brief Resample canonical random point.
 template <std::floating_point T>
 constexpr T
@@ -291,5 +271,41 @@ magnitude(Int n, Int base = 10) noexcept
     };
 
     return ret;
+}
+
+/// @brief Solve quadratic equation @f$ax^{2} + bx + c@f$ for non-complex cases.
+/// @return pair of bool and the smallest of two positive roots.
+template <bool roots_only = false, std::floating_point T>
+constexpr std::conditional_t<roots_only, std::pair<T, T>, std::pair<bool, T>>
+quadratic(const T a, const T b, const T c) noexcept
+{
+    if(almost_equal(a, T{0}, 10))
+    {
+        if(!almost_equal(b, T{0}, 10)) return {true, -c / b};
+        return {false, 0};
+    }
+    const T D = b * b - T{4} * a * c;
+
+    if(D < 0) return {false, 0};
+
+    T sqrtD{};
+    if(std::is_constant_evaluated())
+        sqrtD = smath::sqrt(D);
+    else
+        sqrtD = std::sqrt(D);
+
+    const T temp = T{-0.5} * (b < 0 ? b - sqrtD : b + sqrtD);
+
+    const T x1 = temp / a;
+    const T x2 = c / temp;
+
+    if constexpr(roots_only)
+        return {x1, x2};
+    else
+    {
+        const T& x =
+            std::signbit(x1) ? x2 : (std::signbit(x2) ? x1 : std::min(x1, x2));
+        return std::pair{!std::signbit(D * x), x};
+    }
 }
 } // namespace loom
