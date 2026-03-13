@@ -1424,16 +1424,6 @@ struct nub<std::integer_sequence<Int, X, Xs...>>
                               type>::type>::type;
 };
 
-template <std::integral auto N>
-struct powersof2s
-{
-    template <std::integral auto i>
-    using f = std::integral_constant<decltype(N), smath::pow(2, i)>;
-
-    using type = typelist::to_integer_sequence<
-        typename map_t<f, std::make_index_sequence<N>>::type>;
-};
-
 template <auto A, auto B, typename List>
 struct range_impl
 {
@@ -1638,7 +1628,10 @@ using nlperm = nlperm_impl<N, L>::type;
 
 /// @brief First N numbers of power of two series.
 template <std::integral auto N>
-using powerof2s = typename detail::powersof2s<N>::type;
+using powerof2s =
+    map_f<decltype([](const auto i) constexpr noexcept -> decltype(N)
+                   { return smath::pow(2, i); }),
+          std::make_index_sequence<N>>;
 
 /// @brief Invoke @p f with each value of @p L as template parameter.
 template <typename F, typename Int, Int... Is, typename... Args>
