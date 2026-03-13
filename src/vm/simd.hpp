@@ -295,7 +295,7 @@ struct rsqrt_intrinsics_wrangler
     static vector_type _FORCE_INLINE
     op(vector_type x) noexcept
     {
-        return broadcast<N>(static_cast<T>(1)) / x;
+        return broadcast<N>(static_cast<T>(1)) / __builtin_elementwise_sqrt(x);
     }
 };
 
