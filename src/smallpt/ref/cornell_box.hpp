@@ -67,14 +67,13 @@ class cornell_box
                                                       Vec3r(1, 1, -1),   // 6
                                                       Vec3r(1, 1, 1)};   // 7
 
-    // Quad point indicies for room geometry
-    static constexpr std::tuple room_geo_descr{
-        std::index_sequence<0, 3, 2, 1>{}, // floor
-        std::index_sequence<0, 1, 5, 4>{}, // left wall
-        std::index_sequence<2, 3, 7, 6>{}, // right wall
-        std::index_sequence<4, 5, 6, 7>{}, // ceiling
-        std::index_sequence<1, 2, 6, 5>{}  // back wall
-    };
+    // Quad point indices for room geometry
+    using room_geo_descr =
+        type_sequence<std::index_sequence<0, 3, 2, 1>,  // floor
+                      std::index_sequence<0, 1, 5, 4>,  // left wall
+                      std::index_sequence<2, 3, 7, 6>,  // right wall
+                      std::index_sequence<4, 5, 6, 7>,  // ceiling
+                      std::index_sequence<1, 2, 6, 5>>; // back wall
 
     static constexpr real tr = smath::sqrt(static_cast<real>(3)) / 6;
     static constexpr real tR = 2 * tr;
@@ -85,28 +84,19 @@ class cornell_box
         Vec3r(0.5, 0, -tr),    // 2
         Vec3r(0, tr + tR, 0)}; // 3
 
+    // Triangle point indices for tetrahedron
     using tetrahedron_geo_descr = type_sequence<std::index_sequence<0, 1, 3>,
                                                 std::index_sequence<1, 2, 3>,
                                                 std::index_sequence<2, 0, 3>>;
 
     static constexpr Mat4r tetrahedron_transform =
         translate(Vec3r{0.1, -1, -0.35}) *
-        rotate(radians(static_cast<real>(-15)), Vec3r{0, 1, 0}) *
+        rotate(radians(static_cast<real>(-10)), Vec3r{0, 1, 0}) *
         scale(Vec3r{0.95});
 
     static constexpr Vec3r cyl_pos{-0.5, -1, -0.1};
     static constexpr real  cyl_rad{0.25};
     static constexpr real  cyl_h{0.8};
-
-    using QuadR = Quad<real>;
-
-    template <std::size_t N, std::size_t... Pns>
-    static constexpr QuadR
-    make_wall_geo(const std::array<Vec3r, N>& points,
-                  std::index_sequence<Pns...>) noexcept
-    {
-        return QuadR{std::get<Pns>(points)...};
-    }
 
   public:
     FORBID_ALL(cornell_box);
@@ -170,24 +160,25 @@ class cornell_box
 
     static constexpr auto geometry = std::tuple_cat(
         // room
-        std::apply(
-            [](const auto&... pns) noexcept
-            {
-                return std::tuple{make_wall_geo(room_points, pns)...}
-                 ;
-    },
-            room_geo_descr),
-        // objects
         typelist::maybe_collect(
-            tetrahedron_geo_descr{},
-            []<typename idxs>() noexcept
+            room_geo_descr{},
+            []<typename idxs>() noexcept -> Quad<real>
             {
-                const Vec3r v0 = tetrahedron_points[intlist::head<idxs>];
-                const Vec3r v1 = tetrahedron_points[intlist::at<1, idxs>];
-                const Vec3r v2 = tetrahedron_points[intlist::at<2, idxs>];
-                return apply_transform(tetrahedron_transform,
-                                       Triangle<real>{v0, v1, v2});
+                return intlist::collect(idxs{},
+                                        [](const std::size_t i) noexcept
+                                        { return room_points[i]; });
             }),
+        // objects
+        typelist::maybe_collect(tetrahedron_geo_descr{},
+                                []<typename idxs>() noexcept -> Triangle<real>
+                                {
+                                    return apply_transform(
+                                        tetrahedron_transform,
+                                        intlist::collect(
+                                            idxs{},
+                                            [](const std::size_t i) noexcept
+                                            { return tetrahedron_points[i]; }));
+                                }),
         std::tuple{
             Sphere<real>{Vec3r{0.5, -0.7, 0.4}, 0.3},
             Cylinder<real>{cyl_pos, cyl_rad, cyl_h},
@@ -195,9 +186,9 @@ class cornell_box
             light});
 
     static Perspective<real>
-    camera(const real fov = radians(static_cast<real>(60))) noexcept
+    camera(const real fov = radians(static_cast<real>(110))) noexcept
     {
-        return {convert_fov(fov), Vec3r(0, 0, 4), Vec3r(0, 0, -1)};
+        return {convert_fov(fov), Vec3r(0, 0, 2), Vec3r(0, 0, -1)};
     }
 };
 } // namespace loom
