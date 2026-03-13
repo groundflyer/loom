@@ -94,8 +94,8 @@ class cornell_box
         rotate(radians(static_cast<real>(-15)), Vec3r{0, 1, 0}) *
         scale(Vec3r{0.95});
 
-    static constexpr Vec3r cyl_pos{-0.3, -1, -0.7};
-    static constexpr real  cyl_rad{0.1};
+    static constexpr Vec3r cyl_pos{-0.5, -1, -0.1};
+    static constexpr real  cyl_rad{0.25};
     static constexpr real  cyl_h{0.8};
 
     using QuadR = Quad<real>;
