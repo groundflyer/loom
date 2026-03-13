@@ -120,7 +120,7 @@ main(int argc, char* argv[])
     const auto disk_gen = [&]() noexcept
     { return Disk(posgen(), normgen(), rad_dist(g)); };
     const auto triangle_gen = [&]() noexcept
-    { return Triangle{posgen(), posgen(), posgen()}; };
+    { return Triangle<R>{posgen(), posgen(), posgen()}; };
     const auto quad_gen = [&]() noexcept
     {
         const V3   v00{0, 0, 0};
@@ -129,7 +129,7 @@ main(int argc, char* argv[])
         const V3   v11 = v00 + v01 + v10;
         const auto t =
             dot(loom::rotate(big_dist(g), normgen()), translate(posgen()));
-        return apply_transform(t, Quad{v00, v01, v11, v10});
+        return apply_transform(t, Quad<R>{v00, v01, v11, v10});
     };
 
     const auto aabb_gen_l = [&](const R max_rad, const V3&) noexcept
@@ -148,7 +148,7 @@ main(int argc, char* argv[])
         const V3 v2{rad_dist(g), -rad_dist(g), 0};
         M4       t(basis_matrix(n));
         t[3][3] = 1;
-        return apply_transform(t, Triangle{v0, v1, v2});
+        return apply_transform(t, Triangle<R>{v0, v1, v2});
     };
     const auto quad_gen_l = [&](const R, const V3& n) noexcept
     {
@@ -160,7 +160,7 @@ main(int argc, char* argv[])
         const auto v11 = v00 + v01 + v10;
         M4         t(basis_matrix(n));
         t[3][3] = 1;
-        return apply_transform(t, Quad{v00, v01, v11, v10});
+        return apply_transform(t, Quad<R>{v00, v01, v11, v10});
     };
 
     const auto gp_gen = tuple{sphere_gen, triangle_gen, quad_gen, disk_gen};

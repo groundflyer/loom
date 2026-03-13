@@ -397,8 +397,8 @@ main(int argc, char* argv[])
             0.01));
 
     track.check(NamedFuzzyTest(
-        tm.fuzzy_with_ref(mk_isect_g([&]() noexcept
-                                     { return Triangle{gv3(), gv3(), gv3()}; }),
+        tm.fuzzy_with_ref(mk_isect_g([&]() noexcept -> Triangle<float>
+                                     { return {gv3(), gv3(), gv3()}; }),
                           mk_isect_t(bse_triangle_isect),
                           intersect,
                           cmp_isects),
@@ -407,14 +407,14 @@ main(int argc, char* argv[])
 
     track.check(NamedFuzzyTest(
         tm.fuzzy_with_ref(mk_isect_g(
-                              [&]() noexcept
+                              [&]() noexcept -> Quad<float>
                               {
                                   const Vec3f v00 = gv3();
                                   const Vec3f v01 = gv3();
                                   const Vec3f v11 = gv3();
                                   const Vec3f v10 =
                                       v00 + ((v01 + v11) * 0.5f - v00) * 2.f;
-                                  return Quad{v00, v01, v11, v10};
+                                  return {v00, v01, v11, v10};
                               }),
                           mk_isect_t(bse_quad_isect),
                           intersect,

@@ -63,7 +63,9 @@ use_cuda() {
 }
 
 set_libcxx() {
-    CMAKE_ARGS+=(-DCMAKE_CXX_FLAGS="-stdlib=libc++ -lc++abi" -DCMAKE_EXE_LINKER_FLAGS="-stdlib=libc++ -lc++abi")
+    CMAKE_ARGS+=(-DCMAKE_CXX_FLAGS="-stdlib=libc++"
+                 -DCMAKE_EXE_LINKER_FLAGS="-stdlib=libc++ -lc++abi"
+                 -DCMAKE_CUDA_FLAGS="-stdlib=libc++")
 }
 
 fetch_deps() {
@@ -155,7 +157,7 @@ set_cmake_args_from_envs
 
 mkdir -p ${BUILD_DIR}
 pushd ${BUILD_DIR}
-cmake ${CMAKE_ARGS[*]} ${SRC_DIR}
+cmake "${CMAKE_ARGS[@]}" ${SRC_DIR}
 if [ $DO_BUILD = true ]; then
     make -j${JOBS} ${TARGETS[*]}
     run_tests

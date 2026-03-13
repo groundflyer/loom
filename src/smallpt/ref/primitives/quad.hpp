@@ -172,8 +172,8 @@ template <std::floating_point T,
 constexpr Quad<T>
 apply_transform(const Mat4<T, MatContainer>& t, const Quad<T>& prim) noexcept
 {
-    return std::apply([&](const auto&... points) noexcept
-                      { return Quad{apply_transform_p(t, points)...}; },
+    return std::apply([&](const auto&... points) noexcept -> Quad<T>
+                      { return {apply_transform_p(t, points)...}; },
                       prim);
 }
 } // namespace fn

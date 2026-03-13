@@ -243,7 +243,11 @@ main(int argc, char* argv[])
 {
     simd::print_info();
     CPUTopology top;
+#if FMT_VERSION_MAJOR < 11
+    fmt::print("CPU topology: {}\n", top);
+#else
     fmt::println("CPU topology: {}", top);
+#endif
 
     Track          track;
     RandomState    rs;

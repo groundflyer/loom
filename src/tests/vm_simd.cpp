@@ -65,5 +65,5 @@ main(int argc, char* argv[])
         tm,
         rs);
 
-    return 0;
+    return track.ret_code();
 }

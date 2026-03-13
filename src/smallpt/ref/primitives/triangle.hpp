@@ -147,8 +147,8 @@ constexpr Triangle<T>
 apply_transform(const Mat4<T, MatContainer>& t,
                 const Triangle<T>&           prim) noexcept
 {
-    return std::apply([&](const auto&... points) noexcept
-                      { return Triangle{apply_transform_p(t, points)...}; },
+    return std::apply([&](const auto&... points) noexcept -> Triangle<T>
+                      { return {apply_transform_p(t, points)...}; },
                       prim);
 }
 } // namespace fn
