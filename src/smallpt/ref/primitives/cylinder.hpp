@@ -1,6 +1,6 @@
 // -*- C++ -*-
-// cylinder.hpp
-//
+/// @file cylinder.hpp
+/// @brief Reference cylinder primitive implementation.
 
 #pragma once
 
@@ -26,24 +26,18 @@ intersect(const Ray<T>& ray, const Cylinder<T>& prim) noexcept
     const auto& [o, d]    = ray;
     const auto& [p, r, h] = prim;
 
-    const auto [xo, yo, zo] = o - p;
-    const auto [xd, yd, zd] = d;
+    const auto [ox, oy, oz] = o - p;
+    const auto [dx, dy, dz] = d;
 
-    const T a = xd * xd + zd * zd;
-    const T b = 2 * xo * xd + 2 * zo * zd;
-    const T c = xo * xo + zo * zo - r * r;
+    const T a = dx * dx + dz * dz;
+    const T b = 2 * (ox * dx + oz * dz);
+    const T c = ox * ox + oz * oz - r * r;
 
-    auto [hit, t] = quadratic(a, b, c);
+    const auto [hit, t] = quadratic(a, b, c);
 
-    if(!hit) return {hit, t, Vec2<T>{}};
+    const T y = oy + dy * t;
 
-    const Vec3<T> hitp = o + d * t;
-    // const T       y    = yo + yd * t;
-    const T y = hitp[1];
-
-    hit = y <= (p[1] + h) && y >= p[1];
-
-    return {hit, t, Vec2<T>{}};
+    return {hit && y >= 0 && y <= h, t, Vec2<T>{}};
 }
 
 /// @brief Return cylinder normal.
@@ -69,7 +63,9 @@ template <std::floating_point T>
 constexpr Vec3<T>
 centroid(const Cylinder<T>& prim) noexcept
 {
-    return prim.position; // mock
+    Vec3<T> p = prim.position;
+    p[1] += prim.height * static_cast<T>(0.5);
+    return p;
 }
 
 template <std::floating_point T>
