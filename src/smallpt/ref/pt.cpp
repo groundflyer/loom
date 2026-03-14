@@ -352,7 +352,7 @@ main(int argc, char* argv[])
         const auto e = timer.elapsed();
         watcher.join();
 
-#if FMT_VERSION_MAJOR < 11
+#if FMT_VERSION < 11
         logger.info("Elapsed time {:%M:%S}", e);
 #else
         logger.info("Elapsed time {:.3%M:%S}", e);
