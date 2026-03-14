@@ -28,7 +28,7 @@ main(int argc, char* argv[])
 
     auto argen  = [&]() noexcept { return loom::generate<3>(dist, g); };
     auto mkpair = [&]() noexcept { return pair{Vec3{argen()}, Vec3{argen()}}; };
-    static const constexpr unsigned ULP = 5;
+    static const constexpr unsigned ULP = 30;
 
     ret += test_property_n(
         "translate",

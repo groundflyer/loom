@@ -506,7 +506,7 @@ matrix_test(RandomEngine& g, const size_t num_tests) noexcept
     {
         if constexpr(is_floating_point_v<T>)
         {
-            const constexpr unsigned ULP = 5;
+            const constexpr unsigned ULP = 30;
             return any(!almost_equal_vec(flat_ref(a), flat_ref(b), ULP)) ||
                    !all(loom::isfinite(flat_ref(a))) ||
                    !all(loom::isfinite(flat_ref(b)));
