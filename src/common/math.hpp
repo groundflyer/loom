@@ -275,8 +275,8 @@ magnitude(Int n, Int base = 10) noexcept
 
 /// @brief Solve quadratic equation @f$ax^{2} + bx + c@f$ for non-complex cases.
 /// @return pair of bool and the smallest of two positive roots.
-template <bool roots_only = false, std::floating_point T>
-constexpr std::conditional_t<roots_only, std::pair<T, T>, std::pair<bool, T>>
+template <std::floating_point T>
+constexpr std::pair<bool, T>
 quadratic(const T a, const T b, const T c) noexcept
 {
     if(almost_equal(a, T{0}, 10))
@@ -299,13 +299,8 @@ quadratic(const T a, const T b, const T c) noexcept
     const T x1 = temp / a;
     const T x2 = c / temp;
 
-    if constexpr(roots_only)
-        return {x1, x2};
-    else
-    {
-        const T& x =
-            std::signbit(x1) ? x2 : (std::signbit(x2) ? x1 : std::min(x1, x2));
-        return std::pair{!std::signbit(D * x), x};
-    }
+    const T& x =
+        std::signbit(x1) ? x2 : (std::signbit(x2) ? x1 : std::min(x1, x2));
+    return std::pair{!std::signbit(D * x), x};
 }
 } // namespace loom
