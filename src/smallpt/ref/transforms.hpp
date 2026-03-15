@@ -110,6 +110,7 @@ rotate(const T angle, const Vec3<T, Container>& axis) noexcept
                        K * K * (static_cast<T>(1) - cos(angle)),
                    0,
                    0,
+                   0,
                    1);
 }
 

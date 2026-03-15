@@ -578,7 +578,7 @@ class Matrix
             for(std::size_t j = 0; j < J; ++j)
                 m_data[pos(shift_i + i, shift_j + j)] = head.at(i, j);
 
-        unpack<pos(I, J, J) + 1>(std::forward<Ts>(tail)...);
+        unpack<pos(I, J, J)>(std::forward<Ts>(tail)...);
     }
 
   public:
