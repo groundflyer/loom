@@ -19,6 +19,11 @@
 
 namespace loom
 {
+/// @brief Fresnel term approximation.
+/// @param cd cosine theta.
+/// @param eta relative index of refraction.
+///
+/// See @cite 10.1111:1467-8659.1320121
 template <std::floating_point T>
 static T
 schlick(const T cd, const T eta) noexcept
@@ -28,6 +33,9 @@ schlick(const T cd, const T eta) noexcept
     return r0 + (1 - r0) * static_pow<5>(1 - cd);
 }
 
+/// @brief Compute relative index of refraction.
+///
+/// Incident medium is vacuum (1).
 template <std::floating_point T>
 static T
 compute_eta(const T ior, const bool enter) noexcept
@@ -49,6 +57,32 @@ reflect(const Vec3<T>& n, const Vec3<T>& i, const T cos_theta) noexcept
     return i + n * cos_theta * static_cast<T>(2);
 }
 
+/// @brief Trowbridge-Reitz microfacet distribution.
+/// @param dotWmWg dot product of normal and microfacet.
+/// @param alpha surface roughness.
+///
+/// See @cite Trowbridge:75 and @cite 10.2312:EGWR/EGSR07/195-206
+template <std::floating_point T>
+static T
+gtr(const T dotWmWg, const T alpha) noexcept
+{
+    const T D = alpha / (alpha + 1 / (dotWmWg * dotWmWg) - 1);
+    return D * D;
+}
+
+/// @brief Microfacet geometry attenuation factor.
+/// @param nu cosine of angle.
+/// @param alpha surface rougness.
+///
+/// See @cite 10.2312:EGWR/EGSR07/195-206
+template <std::floating_point T>
+static T
+gaf(const T nu, const T alpha)
+{
+    return 2 / (1 + std::sqrt(1 + alpha * (1 / (nu * nu) - 1)));
+}
+
+/// @brief Cornell box description.
 template <std::floating_point real>
 class cornell_box
 {
@@ -124,13 +158,20 @@ class cornell_box
             static constexpr Rgb  color{0.5, 0.7, 1};
         };
 
+        struct Metall
+        {
+            static constexpr real alpha = 0.1;
+            static constexpr Rgb  color{1};
+        };
+
         static constexpr std::tuple materials{
             Lambert{Rgb{1}},           // 0
             Lambert{Rgb{1, 0.4, 0.2}}, // 1
             Lambert{Rgb{0.2, 1, 0.4}}, // 2
             Plastic{},                 // 3
             Glass{},                   // 4
-            Emission{}                 // 5
+            Metall{},                  // 5
+            Emission{}                 // 6
         };
 
         // Material indicies for primitives
@@ -142,13 +183,13 @@ class cornell_box
             0, // grey ceiling
             0, // grey wall
                // objects
-            3, // tetrahedron of three primitives
+            3, // plastic tetrahedron of three primitives
             3,
             3,
-            4, // sphere
-            0, // cylinder
-            0, // cylinder cap
-            5  // light
+            5, // glass sphere
+            5, // metallic cylinder
+            5, // metallic cylinder cap
+            6  // light
         };
     };
 

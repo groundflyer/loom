@@ -195,7 +195,8 @@ if(BUILD_DOC)
     set(DOXYGEN_CALL_GRAPH YES)
     set(DOXYGEN_CALLER_GRAPH YES)
 
-    set(DOXYGEN_EXTRACT_LOCAL_CLASSES NO)
+    set(DOXYGEN_EXTRACT_STATIC YES)
+    set(DOXYGEN_EXTRACT_LOCAL_CLASSES YES)
     set(DOXYGEN_HTML_DYNAMIC_MENUS YES)
     set(DOXYGEN_HTML_DYNAMIC_SECTIONS YES)
     set(DOXYGEN_EXCLUDE_SYMBOLS "detail")
@@ -213,7 +214,8 @@ if(BUILD_DOC)
       ${BIB_DIR}/Duff2017Basis.bib
       ${BIB_DIR}/other.bib
       ${BIB_DIR}/LD04ERQIT_citation.bib
-      ${BIB_DIR}/acm_2063384.2063405.bib)
+      ${BIB_DIR}/acm_2063384.2063405.bib
+      ${BIB_DIR}/josa-65-5-531.bib)
     doxygen_add_docs(doc ${_SRC_DIR} ${DOC_DIR} ALL
       COMMENT "Generating documentation with Doxygen"
       WORKING_DIRECTORY ${_SRC_DIR})
