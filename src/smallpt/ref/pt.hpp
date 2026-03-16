@@ -1,24 +1,234 @@
 // -*- C++ -*-
-/// @file cornell_box.hpp
-/// @brief Cornell Box scene description.
+/// @file pt.hpp
+/// @brief Reference smallpt functions.
 
 #pragma once
 
 #include "niebloids.hpp"
-#include "perspective_camera.hpp"
-#include "primitives/cylinder.hpp"
-#include "primitives/disk.hpp"
-#include "primitives/quad.hpp"
-#include "primitives/sphere.hpp"
-#include "primitives/triangle.hpp"
-#include "sampling.hpp"
+#include "ray.hpp"
 
+#include <common/debug.hpp>
 #include <common/forbid.hpp>
+#include <common/functional.hpp>
 #include <common/math.hpp>
+#include <common/tuple.hpp>
 #include <smallpt/common/typedefs.hpp>
+
+#include <array>
+#include <cstdint>
 
 namespace loom
 {
+template <std::floating_point real>
+constexpr real
+convert_fov(const real fov) noexcept
+{
+    return std::tan(fov * real(0.5));
+}
+
+/// @brief Perspective camera.
+template <std::floating_point real>
+struct Perspective
+{
+    real       tan_fov_half{1};
+    Vec3<real> pos;
+    Vec3<real> dir;
+
+    template <template <typename, std::size_t> typename Container>
+    constexpr Ray<real>
+    operator()(const Vec2<real, Container>& ndc) const noexcept
+    {
+        return {pos, dir - Vec3<real>(ndc * tan_fov_half)};
+    }
+};
+
+namespace detail
+{
+template <unsigned idx, std::floating_point T, typename Prim, typename... Rest>
+std::pair<unsigned, Intersection<T>>
+hider_impl(const std::pair<unsigned, Intersection<T>>& prev,
+           const Ray<T>&                               ray,
+           const Prim&                                 prim,
+           const Rest&... rest) noexcept
+{
+    const Intersection<T> prev_isect    = prev.second;
+    const Intersection<T> current_isect = intersect(ray, prim);
+    const std::pair<unsigned, Intersection<T>>  current{idx, current_isect};
+    const std::pair<unsigned, Intersection<T>>& closest =
+        prev_isect ? (prev_isect.t < current_isect.t ? prev : current) :
+                     current;
+
+    if constexpr(sizeof...(Rest) > 0)
+        return hider_impl<idx + 1>(closest, ray, rest...);
+    else
+        return closest;
+}
+} // namespace detail
+
+template <std::floating_point T>
+struct Hider
+{
+    Ray<T> ray;
+
+    template <typename... Prims>
+    std::pair<unsigned, Intersection<T>>
+    operator()(const Prims&... prims) const noexcept
+    {
+        return detail::hider_impl<0>(std::pair{-1u, Intersection<T>{}},
+                                     ray,
+                                     prims...);
+    }
+};
+
+namespace fn
+{
+std::uint32_t
+rotl32(std::uint32_t x, std::uint32_t N) noexcept
+{
+    return (x << (N & 31)) | (x >> ((32 - N) & 31));
+}
+
+#define THREEFRY_ROUND(R) \
+    c[0] += c[1];         \
+    c[1] = rotl32(c[1], R) ^ c[0]
+
+#define THREEFRY_KEY_INJECTION(C, KS1, KS2) \
+    c[0] += KS1;                            \
+    c[1] += KS2 + C
+
+#define THREEFRY_8ROUNDS(C1, C2, KS1, KS2, KS3, KS4) \
+    THREEFRY_ROUND(13);                              \
+    THREEFRY_ROUND(15);                              \
+    THREEFRY_ROUND(26);                              \
+    THREEFRY_ROUND(6);                               \
+    THREEFRY_KEY_INJECTION(C1, KS1, KS2);            \
+    THREEFRY_ROUND(17);                              \
+    THREEFRY_ROUND(29);                              \
+    THREEFRY_ROUND(16);                              \
+    THREEFRY_ROUND(24);                              \
+    THREEFRY_KEY_INJECTION(C2, KS3, KS4)
+
+using ar_32_2 = std::array<std::uint32_t, 2>;
+
+/// @brief Reference Threefry-2x32 implementation with 32 rounds.
+/// @tparam k0 first key number.
+/// @tparam k1 second key number.
+template <std::uint32_t k0, std::uint32_t k1>
+struct threefry2x32r32
+{
+    static constexpr std::uint32_t k2 = 0x1bd11bda ^ k0 ^ k1;
+
+    ar_32_2
+    operator()(ar_32_2 c) const noexcept
+    {
+        c[0] += k0;
+        c[1] += k1;
+
+        THREEFRY_8ROUNDS(1, 2, k1, k2, k2, k0);
+        THREEFRY_8ROUNDS(3, 4, k0, k1, k1, k2);
+        THREEFRY_8ROUNDS(5, 6, k2, k0, k0, k1);
+        THREEFRY_8ROUNDS(7, 8, k1, k2, k2, k0);
+
+        return c;
+    }
+};
+#undef THREEFRY_ROUND
+#undef THREEFRY_8ROUNDS
+#undef THREEFRY_KEY_INJECTION
+
+float
+gen_canonical(std::uint32_t x) noexcept
+{
+    std::uint32_t bits = (x >> 9) | 0x3f800000;
+    return reinterpret_cast<float&>(bits) - 1.f;
+}
+
+ar_32_2
+bump_ctr(const ar_32_2& c, std::uint32_t i = 1) noexcept
+{
+    ar_32_2 ret = c;
+    ret[0] += i;
+    if(ret[0] < c[0])
+    {
+        ret[1] += ret[0];
+        ret[0] = 0;
+    }
+    return ret;
+}
+} // namespace fn
+
+template <std::uint32_t k0, std::uint32_t k1>
+inline constexpr fn::threefry2x32r32<k0, k1> threefry2x32r32{};
+
+MK_NIEBLOID(rotl32)
+MK_NIEBLOID(gen_canonical)
+MK_NIEBLOID(bump_ctr)
+
+/// @brief Generate vector of two random numbers [0, 1).
+Vec2<float>
+sample_u(const std::array<std::uint32_t, 2>& u) noexcept
+{
+    return transform(gen_canonical, Vec2<std::uint32_t>(u));
+}
+
+template <std::floating_point T>
+Vec2<T>
+jitter_sample_pos(const T            width,
+                  const Vec2<T>&     pos,
+                  const Vec2<float>& u) noexcept
+{
+    return (pos - width * static_cast<T>(0.5)) + u * width;
+}
+
+template <std::floating_point T>
+Vec3<T>
+sample_hemisphere(const Vec3<T>& n, const Vec2<T>& u) noexcept
+{
+    const auto& [u1, u2] = u;
+    const T       r1     = static_cast<T>(2) * Pi<T> * (u1 - 1);
+    const T       r2s    = std::sqrt(u2);
+    const Vec3<T> x =
+        normalize(cross(std::abs(n[0]) > static_cast<T>(.1) ? Vec3<T>(0, 1, 0) :
+                                                              Vec3<T>(1, 0, 0),
+                        n));
+    const Vec3<T> y = cross(n, x);
+    return normalize(x * std::cos(r1) * r2s + y * std::sin(r1) * r2s +
+                     n * std::sqrt(1 - u2));
+}
+
+/// @brief Compute ratio.
+template <std::floating_point T>
+T
+ratio(const Vec2<T>& res) noexcept
+{
+    const auto& [w, h] = res;
+    return w / h;
+}
+
+/// @brief Pixel position to film sample space.
+template <std::floating_point T>
+struct ToSampleSpace
+{
+    Vec2<T> res;
+    T       ratio;
+
+  public:
+    ToSampleSpace(const Vec2u& _res) noexcept :
+        res(_res), ratio(res[0] / res[1])
+    {
+    }
+
+    Vec2<T>
+    operator()(const Vec2u& pos) const noexcept
+    {
+        const auto& [x, y] = pos;
+        const auto [w, h]  = res;
+        const T sx = ratio * (static_cast<T>(x) / w - static_cast<T>(0.5));
+        const T sy = static_cast<T>(y) / h - static_cast<T>(0.5);
+        return Vec2<T>{sx, sy};
+    }
+};
+
 /// @brief Fresnel term approximation.
 /// @param cd cosine theta.
 /// @param eta relative index of refraction.
@@ -202,7 +412,8 @@ class cornell_box
     static constexpr auto geometry = std::tuple_cat(
         // room
         typelist::maybe_collect(
-            room_geo_descr{},
+            room_geo_descr{
+    },
             []<typename idxs>() noexcept -> Quad<real>
             {
                 return intlist::collect(idxs{},

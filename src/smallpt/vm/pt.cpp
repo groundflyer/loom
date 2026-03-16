@@ -1,7 +1,6 @@
 // -*- C++ -*-
 // pt.cpp
-#include "sampling.hpp"
-#include "scene.hpp"
+#include "pt.hpp"
 
 #include <common/logging.hpp>
 #include <smallpt/common/common.hpp>

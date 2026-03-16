@@ -1,9 +1,6 @@
 // -*- C++ -*-
 // viewport.cpp
-#include "cornell_box.hpp"
-#include "hider.hpp"
-#include "rng.hpp"
-#include "sampling.hpp"
+#include "pt.hpp"
 
 #include <common/functional.hpp>
 #include <common/logging.hpp>
@@ -33,14 +30,14 @@ using Counter = std::array<std::uint32_t, 2>;
 
 static constexpr std::array<std::uint32_t, 2> key{0x1dead000, 0x200beef};
 
-Ray<float>
+static Ray<float>
 bias_ray(const Vec3f& p, const Vec3f& d) noexcept
 {
     constexpr float bias = 0.001;
     return {p + d * bias, d};
 }
 
-float
+static float
 luminance(const RGB<>& rgb) noexcept
 {
     const auto [r, g, b] = rgb;

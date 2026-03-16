@@ -3,16 +3,8 @@
 #include <common/linal.hpp>
 #include <common/math.hpp>
 #include <common/test.hpp>
-#include <smallpt/ref/cornell_box.hpp>
-#include <smallpt/ref/niebloids.hpp>
-#include <smallpt/ref/perspective_camera.hpp>
-#include <smallpt/ref/rng.hpp>
-#include <smallpt/ref/sampling.hpp>
-#include <smallpt/vm/linal.hpp>
-#include <smallpt/vm/primitives.hpp>
-#include <smallpt/vm/rng.hpp>
-#include <smallpt/vm/sampling.hpp>
-#include <smallpt/vm/scene.hpp>
+#include <smallpt/ref/pt.hpp>
+#include <smallpt/vm/pt.hpp>
 #include <vm/bse.hpp>
 
 #include <fmt/ranges.h>
