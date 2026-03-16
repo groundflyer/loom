@@ -135,7 +135,8 @@ class make_cross
 template <typename MAJOR_TYPE,
           CharSequence Dst,
           CharSequence Mat,
-          CharSequence Vec>
+          CharSequence Vec,
+          std::size_t  N = 3>
 class make_mat_vec
 {
     template <typename R, std::uint8_t I>
@@ -154,7 +155,7 @@ class make_mat_vec
     template <std::uint8_t I>
     using init_dst = Compute<std::identity, tvar_idx<Dst, I>, TVAR(0)>;
 
-    using idxs = std::make_index_sequence<3>;
+    using idxs = std::make_index_sequence<N>;
 
     template <std::uint8_t I>
     using make_ij = type_pair<std::integral_constant<std::uint8_t, I>, idxs>;
@@ -288,7 +289,13 @@ using __macro_decl_mat_vec3_dot =
 
 template <typename T, CharSequence DST, CharSequence MAT, CharSequence VEC>
 struct mat_vec3_dot :
-    std::type_identity<typename detail::make_mat_vec<T, DST, MAT, VEC>::type>
+    std::type_identity<typename detail::make_mat_vec<T, DST, MAT, VEC, 3>::type>
+{
+};
+
+template <typename T, CharSequence DST, CharSequence MAT, CharSequence VEC>
+struct mat_vec2_dot :
+    std::type_identity<typename detail::make_mat_vec<T, DST, MAT, VEC, 2>::type>
 {
 };
 
