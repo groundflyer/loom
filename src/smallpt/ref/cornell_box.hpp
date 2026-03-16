@@ -186,7 +186,7 @@ class cornell_box
             3, // plastic tetrahedron of three primitives
             3,
             3,
-            5, // glass sphere
+            4, // glass sphere
             5, // metallic cylinder
             5, // metallic cylinder cap
             6  // light

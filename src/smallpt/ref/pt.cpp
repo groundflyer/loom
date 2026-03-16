@@ -164,6 +164,21 @@ struct Shading
         else
             return diffuse(Gallery::Plastic::color);
     }
+
+    RGB<>
+    operator()(const Gallery::Metall&) const noexcept
+    {
+        const Vec3f wi = -i;
+        const Vec3f wo =
+            sample_hemisphere(n, sample_u(threefry2x32r32<key[0], key[1]>(c)));
+        const Vec3f wm = normalize(wi + wo);
+
+        const float alpha = Gallery::Metall::alpha;
+
+        return radiance(bias_ray(p, wo), bump_ctr(c, 1003), depth + 1) *
+               gtr(dot(wm, n), alpha) * gaf(dot(n, wo), alpha) *
+               gaf(dot(n, wi), alpha);
+    }
 };
 
 void
