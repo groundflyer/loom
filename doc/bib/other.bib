@@ -68,3 +68,17 @@ publisher = {Blackwell Science Ltd and the Eurographics Association},
 ISSN = {1467-8659},
 DOI = {10.1111/1467-8659.1320121}
 }
+@article{HeitzdEon2014,
+author = {Heitz, E. and d'Eon, E.},
+title = {Importance Sampling Microfacet-Based BSDFs using the Distribution of Visible Normals},
+journal = {Computer Graphics Forum},
+volume = {33},
+number = {4},
+pages = {103-112},
+keywords = {Categories and Subject Descriptors (according to ACM CCS), I.3.7 Computer Graphics: Three-Dimensional Graphics and Realism—, Microfacet BSDF, Importance Sampling},
+doi = {https://doi.org/10.1111/cgf.12417},
+url = {https://onlinelibrary.wiley.com/doi/abs/10.1111/cgf.12417},
+eprint = {https://onlinelibrary.wiley.com/doi/pdf/10.1111/cgf.12417},
+abstract = {Abstract We present a new approach to microfacet-based BSDF importance sampling. Previously proposed sampling schemes for popular analytic BSDFs typically begin by choosing a microfacet normal at random in a way that is independent of direction of incident light. To sample the full BSDF using these normals requires arbitrarily large sample weights leading to possible fireflies. Additionally, at grazing angles nearly half of the sampled normals face away from the incident ray and must be rejected, making the sampling scheme inefficient. Instead, we show how to use the distribution of visible normals directly to generate samples, where normals are weighted by their projection factor toward the incident direction. In this way, no backfacing normals are sampled and the sample weights contain only the shadowing factor of outgoing rays (and additionally a Fresnel term for conductors). Arbitrarily large sample weights are avoided and variance is reduced. Since the BSDF depends on the microsurface model, we describe our sampling algorithm for two models: the V-cavity and the Smith models. We demonstrate results for both isotropic and anisotropic rough conductors and dielectrics with Beckmann and GGX distributions.},
+year = {2014}
+}

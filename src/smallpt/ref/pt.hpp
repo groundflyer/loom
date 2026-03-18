@@ -185,13 +185,9 @@ Vec3<T>
 sample_hemisphere(const Vec3<T>& n, const Vec2<T>& u) noexcept
 {
     const auto& [u1, u2] = u;
-    const T       r1     = static_cast<T>(2) * Pi<T> * (u1 - 1);
-    const T       r2s    = std::sqrt(u2);
-    const Vec3<T> x =
-        normalize(cross(std::abs(n[0]) > static_cast<T>(.1) ? Vec3<T>(0, 1, 0) :
-                                                              Vec3<T>(1, 0, 0),
-                        n));
-    const Vec3<T> y = cross(n, x);
+    const T r1           = static_cast<T>(2) * Pi<T> * (u1 - 1);
+    const T r2s          = std::sqrt(u2);
+    const auto [x, y]    = basis(n);
     return normalize(x * std::cos(r1) * r2s + y * std::sin(r1) * r2s +
                      n * std::sqrt(1 - u2));
 }
@@ -241,55 +237,6 @@ schlick(const T cd, const T eta) noexcept
     T r0 = (1 - eta) / (1 + eta);
     r0 *= r0;
     return r0 + (1 - r0) * static_pow<5>(1 - cd);
-}
-
-/// @brief Compute relative index of refraction.
-///
-/// Incident medium is vacuum (1).
-template <std::floating_point T>
-static T
-compute_eta(const T ior, const bool enter) noexcept
-{
-    return enter ? 1 / ior : ior;
-}
-
-template <std::floating_point T>
-static T
-reflectance(const T cos_theta, const T eta) noexcept
-{
-    return schlick(std::abs(cos_theta), eta);
-}
-
-template <std::floating_point T>
-static Vec3<T>
-reflect(const Vec3<T>& n, const Vec3<T>& i, const T cos_theta) noexcept
-{
-    return i + n * cos_theta * static_cast<T>(2);
-}
-
-/// @brief Trowbridge-Reitz microfacet distribution.
-/// @param dotWmWg dot product of normal and microfacet.
-/// @param alpha surface roughness.
-///
-/// See @cite Trowbridge:75 and @cite 10.2312:EGWR/EGSR07/195-206
-template <std::floating_point T>
-static T
-gtr(const T dotWmWg, const T alpha) noexcept
-{
-    const T D = alpha / (alpha + 1 / (dotWmWg * dotWmWg) - 1);
-    return D * D;
-}
-
-/// @brief Microfacet geometry attenuation factor.
-/// @param nu cosine of angle.
-/// @param alpha surface rougness.
-///
-/// See @cite 10.2312:EGWR/EGSR07/195-206
-template <std::floating_point T>
-static T
-gaf(const T nu, const T alpha)
-{
-    return 2 / (1 + std::sqrt(1 + alpha * (1 / (nu * nu) - 1)));
 }
 
 /// @brief Cornell box description.
@@ -444,11 +391,17 @@ class cornell_box
     }
 };
 
-template <std::floating_point T>
-static Ray<T>
-bias_ray(const Vec3<T>& p, const Vec3<T>& d) noexcept
+using Scene   = cornell_box<float>;
+using Gallery = Scene::Gallery;
+using Camera  = Perspective<float>;
+using Vec2f   = Vec2<float>;
+using Vec3f   = Vec3<float>;
+using Counter = std::array<std::uint32_t, 2>;
+
+static Ray<float>
+bias_ray(const Vec3f& p, const Vec3f& d) noexcept
 {
-    constexpr T bias = 0.001;
+    constexpr float bias = 0.001;
     return {p + d * bias, d};
 }
 
@@ -459,12 +412,132 @@ luminance(const RGB<>& rgb) noexcept
     return 0.2126f * r + 0.7152f * g + 0.0722 * b;
 }
 
-using Scene   = cornell_box<float>;
-using Gallery = Scene::Gallery;
-using Camera  = Perspective<float>;
-using Vec2f   = Vec2<float>;
-using Vec3f   = Vec3<float>;
-using Counter = std::array<std::uint32_t, 2>;
+/// @brief Compute relative index of refraction.
+///
+/// Incident medium is vacuum (1).
+static float
+compute_eta(const float ior, const bool enter) noexcept
+{
+    return enter ? 1 / ior : ior;
+}
+
+static float
+reflectance(const float cos_theta, const float eta) noexcept
+{
+    return schlick(std::abs(cos_theta), eta);
+}
+
+static Vec3f
+reflect(const Vec3f& n, const Vec3f& i, const float cos_theta) noexcept
+{
+    return i + n * cos_theta * 2.f;
+}
+
+/// @brief Trowbridge-Reitz microfacet distribution.
+/// @param dotWmWg dot product of normal and microfacet.
+/// @param alpha surface roughness.
+///
+/// See @cite Trowbridge:75 and @cite 10.2312:EGWR/EGSR07/195-206
+static float
+gtr(const float dotWmWg, const float alpha) noexcept
+{
+    const float D = alpha / (alpha + 1 / (dotWmWg * dotWmWg) - 1);
+    return D * D;
+}
+
+/// @brief Microfacet geometry attenuation factor.
+/// @param cos_theta cosine of angle.
+/// @param alpha surface rougness.
+///
+/// See @cite 10.2312:EGWR/EGSR07/195-206
+static float
+gaf(const float cos_theta, const float alpha) noexcept
+{
+    return 2 / (1 + std::sqrt(1 + alpha * alpha *
+                                      (1 / (cos_theta * cos_theta) - 1)));
+}
+
+/// @brief Microfacet slope generation.
+///
+/// See @cite HeitzdEon2014
+static Vec2f
+get_slope(const float cos_theta, const Vec2f u) noexcept
+{
+    auto [sx, sy] = u;
+
+    if(cos_theta > 0.9999f)
+    {
+        const float r   = std::sqrt(sx / (1 - sx));
+        const float phi = Pi<float> * 2 * (1 - sy);
+        return Vec2f{r * std::cos(phi), r * std::sin(phi)};
+    }
+
+    const float cos_theta2 = cos_theta * cos_theta;
+    const float B2         = (1 - cos_theta2) / cos_theta2;
+    const float B          = std::sqrt(B2);
+    const float a          = 1 / B;
+    const float G1         = 2 / (1 + std::sqrt(1 + 1 / (a * a)));
+    const float A          = 2 * sx / G1 - 1;
+    const float A2         = A * A;
+    const float denom      = A2 - 1;
+    const float tmp =
+        1 / ((std::abs(denom) < 1e-6f) ? std::copysign(1e-6f, denom) : denom);
+    const float D       = std::sqrt(B2 * tmp * tmp - (A2 - B2) * tmp);
+    const float Btmp    = B * tmp;
+    const float slopex1 = Btmp - D;
+    const float slopex2 = Btmp + D;
+
+    const float retx = (A < 0 || slopex2 > 1 / B) ? slopex1 : slopex2;
+
+    float S;
+    if(sy > .5f)
+    {
+        S  = 1;
+        sy = 2 * (sy - .5f);
+    }
+    else
+    {
+        S  = -1;
+        sy = 2 * (.5f - sy);
+    }
+
+    const float z =
+        sy * std::fma(std::fma(sy, .27385f, -.73369f), sy, .46341f) /
+        std::fma(std::fma(std::fma(sy, .093073f, .309420f), sy, -1.f),
+                 sy,
+                 .597999f);
+    const float rety = S * z * std::sqrt(1 + retx * retx);
+
+    return Vec2f{retx, rety};
+}
+
+/// @brief Microfacet generation.
+/// @param wi incident direction.
+/// @param alpha surface roughness.
+///
+/// See @cite HeitzdEon2014
+static Vec3f
+microfacet(Vec3f wi, const float alpha, const Vec2f u) noexcept
+{
+    wi[0] *= alpha;
+    wi[1] *= alpha;
+
+    wi = normalize(wi);
+
+    const auto [wix, wiy, wiz] = wi;
+
+    const auto [sx, sy] = get_slope(wiz, u);
+
+    const float lensq  = std::sqrt(wix * wix + wiy * wiy);
+    const bool  tb     = lensq > 1e-12f;
+    const float cosphi = tb ? wix / lensq : 1.f;
+    const float sinphi = tb ? wiy / lensq : 0.f;
+
+    const float nx = std::fma(sinphi, sy, cosphi * sx) * alpha;
+    const float ny = std::fma(cosphi, sy, -sinphi * sx) * alpha;
+
+    return make_normal(-nx, -ny, 1.f);
+}
 
 inline constexpr std::array<std::uint32_t, 2> key{0x1dead000, 0x200beef};
 
@@ -589,16 +662,22 @@ struct Shading
     RGB<>
     operator()(const Gallery::Metall&) const noexcept
     {
-        const Vec3f wi = -i;
-        const Vec3f wo =
-            sample_hemisphere(n, sample_u(threefry2x32r32<key[0], key[1]>(c)));
-        const Vec3f wm = normalize(wi + wo);
-
+        const Vec3f wi    = -i;
         const float alpha = Gallery::Metall::alpha;
+        const auto [wmx, wmy, wmz] =
+            microfacet(wi, alpha, sample_u(threefry2x32r32<key[0], key[1]>(c)));
+        const auto [t, b] = basis(n);
+        const Vec3f wm    = normalize(t * wmx + b * wmy + n * wmz);
+        const Vec3f wo    = reflect(wm, i, dot(wm, wi));
+
+        float dotWgWo = dot(n, wo);
+
+        if(dotWgWo < 0) return RGB{0};
+
+        const Vec3f h = normalize(wi + wo);
 
         return radiance(bias_ray(p, wo), bump_ctr(c, 1003), depth + 1) *
-               gtr(dot(wm, n), alpha) * gaf(dot(n, wo), alpha) *
-               gaf(dot(n, wi), alpha);
+               gtr(dot(h, n), alpha) * gaf(dotWgWo, alpha);
     }
 };
 } // namespace loom
