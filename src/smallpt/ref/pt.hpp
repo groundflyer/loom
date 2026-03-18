@@ -20,7 +20,7 @@
 namespace loom
 {
 template <std::floating_point real>
-constexpr real
+static real
 convert_fov(const real fov) noexcept
 {
     return std::tan(fov * real(0.5));
@@ -165,14 +165,14 @@ MK_NIEBLOID(gen_canonical)
 MK_NIEBLOID(bump_ctr)
 
 /// @brief Generate vector of two random numbers [0, 1).
-Vec2<float>
+static Vec2<float>
 sample_u(const std::array<std::uint32_t, 2>& u) noexcept
 {
     return transform(gen_canonical, Vec2<std::uint32_t>(u));
 }
 
 template <std::floating_point T>
-Vec2<T>
+static Vec2<T>
 jitter_sample_pos(const T            width,
                   const Vec2<T>&     pos,
                   const Vec2<float>& u) noexcept
@@ -181,7 +181,7 @@ jitter_sample_pos(const T            width,
 }
 
 template <std::floating_point T>
-Vec3<T>
+static Vec3<T>
 sample_hemisphere(const Vec3<T>& n, const Vec2<T>& u) noexcept
 {
     const auto& [u1, u2] = u;
@@ -190,15 +190,6 @@ sample_hemisphere(const Vec3<T>& n, const Vec2<T>& u) noexcept
     const auto [x, y]    = basis(n);
     return normalize(x * std::cos(r1) * r2s + y * std::sin(r1) * r2s +
                      n * std::sqrt(1 - u2));
-}
-
-/// @brief Compute ratio.
-template <std::floating_point T>
-T
-ratio(const Vec2<T>& res) noexcept
-{
-    const auto& [w, h] = res;
-    return w / h;
 }
 
 /// @brief Pixel position to film sample space.
