@@ -272,11 +272,11 @@ class cornell_box
                                                 std::index_sequence<2, 0, 3>>;
 
     static constexpr Mat4r tetrahedron_transform =
-        translate(Vec3r{0.1, -1, -0.35}) *
-        rotate(radians(static_cast<real>(-10)), Vec3r{0, 1, 0}) *
+        translate(Vec3r{-0.4, -1, -0.2}) *
+        rotate(radians(static_cast<real>(-15)), Vec3r{0, 1, 0}) *
         scale(Vec3r{0.95});
 
-    static constexpr Vec3r cyl_pos{-0.5, -1, -0.1};
+    static constexpr Vec3r cyl_pos{0.5, -1, -0.35};
     static constexpr real  cyl_rad{0.25};
     static constexpr real  cyl_h{0.8};
 
@@ -303,13 +303,13 @@ class cornell_box
         struct Plastic
         {
             static constexpr real ior = 2.5;
-            static constexpr Rgb  color{0.5, 0.7, 1};
+            static constexpr Rgb  color{0.271, 1, 0.807};
         };
 
         struct Metall
         {
             static constexpr real alpha = 0.1;
-            static constexpr Rgb  color{1};
+            static constexpr Rgb  color{1, 0.786, 0.427};
         };
 
         static constexpr std::tuple materials{
@@ -370,7 +370,7 @@ class cornell_box
                                             { return tetrahedron_points[i]; }));
                                 }),
         std::tuple{
-            Sphere<real>{Vec3r{0.5, -0.7, 0.4}, 0.3},
+            Sphere<real>{Vec3r{0.1, -0.7, 0.3}, 0.3},
             Cylinder<real>{cyl_pos, cyl_rad, cyl_h},
             Disk<real>{cyl_pos + Vec3r{0, cyl_h, 0}, Vec3r{0, 1, 0}, cyl_rad},
             light});
@@ -424,16 +424,16 @@ reflect(const Vec3f& n, const Vec3f& i, const float cos_theta) noexcept
     return i + n * cos_theta * 2.f;
 }
 
-/// @brief Trowbridge-Reitz microfacet distribution.
+/// @brief Distribution based on Trowbridge-Reitz @cite Trowbridge:75.
 /// @param dotWmWg dot product of normal and microfacet.
 /// @param alpha surface roughness.
 ///
 /// See @cite Trowbridge:75 and @cite 10.2312:EGWR/EGSR07/195-206
+/// Slightly modified for beautification.
 static float
 gtr(const float dotWmWg, const float alpha) noexcept
 {
-    const float D = alpha / (alpha + 1 / (dotWmWg * dotWmWg) - 1);
-    return D * D;
+    return std::sqrt(alpha / (alpha + 1 / (dotWmWg * dotWmWg) - 1));
 }
 
 /// @brief Microfacet geometry attenuation factor.
@@ -661,14 +661,14 @@ struct Shading
         const Vec3f wm    = normalize(t * wmx + b * wmy + n * wmz);
         const Vec3f wo    = reflect(wm, i, dot(wm, wi));
 
-        float dotWgWo = dot(n, wo);
+        const float dotWgWm = dot(n, wm);
+        const float dotWgWo = dot(n, wo);
 
         if(dotWgWo < 0) return RGB{0};
 
-        const Vec3f h = normalize(wi + wo);
-
-        return radiance(bias_ray(p, wo), bump_ctr(c, 1003), depth + 1) *
-               gtr(dot(h, n), alpha) * gaf(dotWgWo, alpha);
+        return Gallery::Metall::color *
+               radiance(bias_ray(p, wo), bump_ctr(c, 1003), depth + 1) *
+               gtr(dotWgWm, alpha) * gaf(dotWgWo, alpha);
     }
 };
 } // namespace loom
