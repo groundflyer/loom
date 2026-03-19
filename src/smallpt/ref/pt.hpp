@@ -308,7 +308,7 @@ class cornell_box
 
         struct Metall
         {
-            static constexpr real alpha = 0.1;
+            static constexpr Vec2r alpha{0.3, 0.05};
             static constexpr Rgb  color{1, 0.786, 0.427};
         };
 
@@ -508,10 +508,12 @@ get_slope(const float cos_theta, const Vec2f u) noexcept
 ///
 /// See @cite HeitzdEon2014
 static Vec3f
-microfacet(Vec3f wi, const float alpha, const Vec2f u) noexcept
+microfacet(Vec3f wi, const Vec2f& alpha, const Vec2f u) noexcept
 {
-    wi[0] *= alpha;
-    wi[1] *= alpha;
+    const auto [alphax, alphay] = alpha;
+
+    wi[0] *= alphax;
+    wi[1] *= alphay;
 
     wi = normalize(wi);
 
@@ -524,10 +526,56 @@ microfacet(Vec3f wi, const float alpha, const Vec2f u) noexcept
     const float cosphi = tb ? wix / lensq : 1.f;
     const float sinphi = tb ? wiy / lensq : 0.f;
 
-    const float nx = std::fma(sinphi, sy, cosphi * sx) * alpha;
-    const float ny = std::fma(cosphi, sy, -sinphi * sx) * alpha;
+    const float nx = std::fma(sinphi, sy, cosphi * sx) * alphax;
+    const float ny = std::fma(cosphi, sy, -sinphi * sx) * alphay;
 
     return make_normal(-nx, -ny, 1.f);
+}
+
+/// @brief incident projected roughness
+static float
+anisorough_i(const Vec3f& wi,
+             const Vec3f& tu,
+             const Vec3f& tv,
+             const Vec2f  alpha) noexcept
+{
+    const float cs = dot(wi, tu);
+    const float sn = dot(wi, tv);
+
+    const auto [alphax, alphay] = alpha;
+
+    return std::sqrt(cs * cs * alphax * alphax + sn * sn * alphay * alphay);
+}
+
+/// @brief projected on surface rougness.
+static float
+anisorough_n(const Vec3f& wm,
+             const Vec3f& wg,
+             const Vec3f& tu,
+             const Vec3f& tv,
+             const float  dotWmWg,
+             const Vec2f& alpha) noexcept
+{
+    const Vec3f ph = normalize(wm - wg * dotWmWg);
+    const float cu = dot(ph, tu);
+    const float cv = dot(ph, tv);
+
+    const auto [alphax, alphay] = alpha;
+
+    return 1 / (cu * cu / alphax + cv * cv / alphay);
+}
+
+template <typename Prim>
+static Vec3f
+tangent(const Vec3f& /* p */, const Prim&) noexcept
+{
+    return Vec3f{0, 1, 0};
+}
+
+static Vec3f
+tangent(const Vec3f& p, const Disk<float>& prim) noexcept
+{
+    return normalize(p - prim.position);
 }
 
 inline constexpr std::array<std::uint32_t, 2> key{0x1dead000, 0x200beef};
@@ -540,6 +588,7 @@ struct Shading
     unsigned depth;
     Vec3f    p;
     Vec3f    n;
+    Vec3f    t;
     Vec3f    i;
 
     static RGB<>
@@ -553,15 +602,19 @@ struct Shading
 
         if(!isect) return {};
 
-        const Vec3f p = ray.origin + ray.dir * isect.t;
-        const Vec3f n = visit_at(
+        const Vec3f p     = ray.origin + ray.dir * isect.t;
+        const auto [n, t] = visit_at(
             prim_id,
-            [&p](const auto& prim) noexcept { return normal(p, prim); },
+            [&p](const auto& prim) noexcept
+            {
+                return std::pair{normal(p, prim), tangent(p, prim)}
+                 ;
+        },
             Scene::geometry,
-            constant(Vec3f{0, 1, 0}));
+            constant(std::pair{Vec3f{0, 1, 0}, Vec3f{0, 1, 0}}));
 
         return visit_at(Gallery::mat_idxs[prim_id],
-                        Shading{c, depth, p, n, ray.dir},
+                        Shading{c, depth, p, n, t, ray.dir},
                         Gallery::materials,
                         constant(RGB{1, 0, 1}));
     }
@@ -654,21 +707,24 @@ struct Shading
     operator()(const Gallery::Metall&) const noexcept
     {
         const Vec3f wi    = -i;
-        const float alpha = Gallery::Metall::alpha;
+        const Vec2f alpha = Gallery::Metall::alpha;
         const auto [wmx, wmy, wmz] =
             microfacet(wi, alpha, sample_u(threefry2x32r32<key[0], key[1]>(c)));
-        const auto [t, b] = basis(n);
-        const Vec3f wm    = normalize(t * wmx + b * wmy + n * wmz);
-        const Vec3f wo    = reflect(wm, i, dot(wm, wi));
+        const Vec3f b  = cross(n, t);
+        const Vec3f wm = normalize(t * wmx + b * wmy + n * wmz);
+        const Vec3f wo = reflect(wm, i, dot(wm, wi));
 
         const float dotWgWm = dot(n, wm);
         const float dotWgWo = dot(n, wo);
 
         if(dotWgWo < 0) return RGB{0};
 
+        const float alpha_n = anisorough_n(wm, n, t, b, dotWgWm, alpha);
+        const float alpha_o = anisorough_i(wo, t, b, alpha);
+
         return Gallery::Metall::color *
                radiance(bias_ray(p, wo), bump_ctr(c, 1003), depth + 1) *
-               gtr(dotWgWm, alpha) * gaf(dotWgWo, alpha);
+               gtr(dotWgWm, alpha_n) * gaf(dotWgWo, alpha_o);
     }
 };
 } // namespace loom
