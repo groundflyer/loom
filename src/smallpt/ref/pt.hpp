@@ -309,7 +309,12 @@ class cornell_box
         struct Metall
         {
             static constexpr Vec2r alpha{0.3, 0.05};
-            static constexpr Rgb  color{1, 0.786, 0.427};
+            static constexpr Rgb   color{1, 0.786, 0.427};
+        };
+
+        struct Window
+        {
+            static constexpr real ior = 1.56;
         };
 
         static constexpr std::tuple materials{
@@ -319,7 +324,8 @@ class cornell_box
             Plastic{},                 // 3
             Glass{},                   // 4
             Metall{},                  // 5
-            Emission{}                 // 6
+            Emission{},                // 6
+            Window{}                   // 7
         };
 
         // Material indicies for primitives
@@ -329,7 +335,7 @@ class cornell_box
             1, // red wall
             2, // green wall
             0, // grey ceiling
-            0, // grey wall
+            7, // grey wall
                // objects
             3, // plastic tetrahedron of three primitives
             3,
@@ -725,6 +731,23 @@ struct Shading
         return Gallery::Metall::color *
                radiance(bias_ray(p, wo), bump_ctr(c, 1003), depth + 1) *
                gtr(dotWgWm, alpha_n) * gaf(dotWgWo, alpha_o);
+    }
+
+    RGB<>
+    operator()(const Gallery::Window&) const noexcept
+    {
+        const Vec3f wi        = -i;
+        const float cos_theta = dot(n, wi);
+        const bool  into      = cos_theta > 0;
+        const float eta       = compute_eta(Gallery::Window::ior, into);
+        const float f         = reflectance(cos_theta, eta);
+
+        const auto [sx, sy] = sample_u(threefry2x32r32<key[0], key[1]>(c));
+
+        if(sx < f || sy < 0.4)
+            return reflection();
+        else
+            return RGB<>{0};
     }
 };
 } // namespace loom
