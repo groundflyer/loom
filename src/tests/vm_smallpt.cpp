@@ -34,32 +34,6 @@ KERNEL(bump_test, VAR(std::uint32_t, c0), VAR(std::uint32_t, c1), VAR(std::uint3
     INSERT_MACRO(vm::bump_ctr, CS(c0), CS(c1), CS(i), CS(tmp1), CS(tmp2), CS(tmp3))
 KERNEL_END(VAR(std::uint32_t, c0), VAR(std::uint32_t, c1));
 
-// cross product of two vectors is vector perpendicular to both of them
-template <std::floating_point T>
-TKERNEL6(cross_dot_test, x0, x1, x2, y0, y1, y2)
-    INSERT_TMACRO(vm::vec3_cross, CS(z), CS(x), CS(y), CS(t1)),
-    INSERT_TMACRO(vm::vec3_dot, CS(t1), CS(x), CS(z)),
-    INSERT_TMACRO(vm::vec3_dot, CS(t2), CS(y), CS(z)),
-    TABS(t1, t1),
-    TABS(t2, t2),
-    TLE(t1, t1, 1e-6),
-    TLE(t2, t2, 1e-6),
-    ILAND(t1, t1, t2)
-KERNEL_END(IVAR(t1));
-
-template <std::floating_point T>
-TKERNEL6(cross_test, x0, x1, x2, y0, y1, y2)
-    INSERT_TMACRO(vm::vec3_cross, CS(z), CS(x), CS(y), CS(t1))
-TKERNEL_END3(z0, z1, z2);
-
-template <std::floating_point T>
-TKERNEL12(mat_vec_dot_test,
-          m00, m01, m02,
-          m10, m11, m12,
-          m20, m21, m22,
-          x0, x1, x2)
-    INSERT_TMACRO(vm::mat_vec3_dot, CS(y), CS(m), CS(x))
-KERNEL_END(TVAR(y0), TVAR(y1), TVAR(y2));
 
 template <std::floating_point T>
 TKERNEL5(sample_hemi_test, n0, n1, n2, u0, u1)
@@ -214,9 +188,6 @@ main(int argc, char* argv[])
     vm::bse::function<threefry2x32_test>          bse_threefry2x32;
     vm::bse::function<gen_canon_test<float>>      bse_gen_canon;
     vm::bse::function<bump_test>                  bse_bump;
-    vm::bse::function<cross_dot_test<float>>      bse_cross_dot;
-    vm::bse::function<cross_test<float>>          bse_cross;
-    vm::bse::function<mat_vec_dot_test<float>>    bse_mat_vec_dot;
     vm::bse::function<sample_hemi_test<float>>    bse_sample_hemi;
     vm::bse::function<sample_space_test<float>>   bse_sample_space;
     vm::bse::function<disk_isect_test<float>>     bse_disk_isect;
@@ -253,50 +224,6 @@ main(int argc, char* argv[])
             { return bump_ctr(std::array<std::uint32_t, 2>{c0, c1}, i); },
             cmp_tuple_arr),
         "bump counter"));
-
-    const auto g2v3 = [&]() noexcept
-    { return std::tuple{gf(), gf(), gf(), gf(), gf(), gf()}; };
-
-    track.check(NamedTest(tm.invariant(g2v3, bse_cross_dot, std::identity{}),
-                          "cross dot test"));
-
-    track.check(NamedFuzzyTest(tm.fuzzy_with_ref(
-                                   g2v3,
-                                   bse_cross,
-                                   [](float x0,
-                                      float x1,
-                                      float x2,
-                                      float y0,
-                                      float y1,
-                                      float y2) noexcept
-                                   {
-                                       const auto [z0, z1, z2] =
-                                           cross(Vec3f{x0, x1, x2},
-                                                 Vec3f{y0, y1, y2});
-                                       return std::tuple{z0, z1, z2};
-                                   },
-                                   test::uni_tuple_cmp{ulp_cmp{ulp}}),
-                               "cross test",
-                               0.01));
-
-    track.check(NamedFuzzyTest(
-        tm.fuzzy_with_ref(
-            [&]() noexcept
-            {
-                std::array<float, 12> ret;
-                for(std::size_t i = 0; i < 12; ++i) ret[i] = gf();
-                return ret;
-            },
-            bse_mat_vec_dot,
-            [](const auto& arr) noexcept
-            {
-                Matrix<float, 3, 3, std::array> m{arr};
-                Vector<float, 3, std::array>    v{arr[9], arr[10], arr[11]};
-                return dot(m, v);
-            },
-            vec3_ulp_cmp),
-        "matrix-vector product",
-        0.01));
 
     track.check(NamedFuzzyTest(
         tm.fuzzy_with_ref(

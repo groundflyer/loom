@@ -250,6 +250,7 @@ if(BUILD_TESTS)
     threadpool.cpp
     sort.cpp
     vm_smallpt.cpp
+    vm_linal.cpp
   )
 
   # header-only fmt in case if system fmt is not linked to libc++
@@ -261,6 +262,7 @@ if(BUILD_TESTS)
     test_vm_root_finding
     test_vm_mp
     test_vm_embedded_simd
+    test_vm_linal
     test_sort)
 
   set(TESTS_SRC_DIR src/tests)
