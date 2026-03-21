@@ -35,6 +35,7 @@ struct type_sequence
 {
 };
 
+/// @brief Check if provided type @p T is loom::type_sequence.
 template <typename T>
 struct is_type_sequence : std::false_type
 {
@@ -44,6 +45,10 @@ template <typename... Ts>
 struct is_type_sequence<type_sequence<Ts...>> : std::true_type
 {
 };
+
+/// @brief Helper variable template for loom::is_type_sequence.
+template <typename T>
+constexpr inline bool is_type_sequence_v = is_type_sequence<T>::value;
 
 /// @brief Pair of types.
 template <typename A, typename B>
