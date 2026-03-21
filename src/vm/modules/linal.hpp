@@ -67,21 +67,6 @@ class make_reg_mat
 template <CharSequence P, std::size_t N>
 using make_reg_mat_t = make_reg_mat<P, N>::type;
 
-/// @brief Extract element at @p I when @p T is loom::type_sequence.
-template <typename T, std::uint8_t I>
-struct maybe_elem : std::type_identity<T>
-{
-};
-
-template <typelist::List T, std::uint8_t I>
-struct maybe_elem<T, I> : std::type_identity<typelist::at<I, T>>
-{
-};
-
-/// @brief Helper alias for vm::maybe_elem.
-template <typename T, std::uint8_t I>
-using maybe_elem_t = maybe_elem<T, I>::type;
-
 /// @brief Generate macro of binary map with two vectors.
 /// @tparam Op operator. See available operators in vm/operators.hpp
 /// @tparam T variables type.
@@ -98,8 +83,8 @@ class make_bin_map
     template <std::uint8_t I>
     using f = Compute<Op,
                       Variable<T, typelist::at<I, Dst>>,
-                      Variable<T, maybe_elem_t<A, I>>,
-                      Variable<T, maybe_elem_t<B, I>>>;
+                      Variable<T, typelist::proj<I, A>>,
+                      Variable<T, typelist::proj<I, B>>>;
 
   public:
     using type =

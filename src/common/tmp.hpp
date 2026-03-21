@@ -716,6 +716,17 @@ struct self_caller
         return std::invoke(T{}, std::forward<Args>(args)...);
     }
 };
+
+template <typename T, std::uint8_t I>
+struct proj : std::type_identity<T>
+{
+};
+
+template <typename T, std::uint8_t I>
+    requires(is_type_sequence_v<T>)
+struct proj<T, I> : std::type_identity<typename at<I, T>::type>
+{
+};
 } // namespace detail
 
 /// @defgroup Typelist Typelist
@@ -752,6 +763,11 @@ inline constexpr std::size_t length = detail::length<L>::value;
 /// If @p L is too short, the resulting type is void.
 template <std::size_t I, List L>
 using at = detail::at<I, L>::type;
+
+/// @brief Extract @p Ith class when @p T is loom::type_sequence, otherwise get
+/// @p T.
+template <std::size_t I, typename T>
+using proj = detail::proj<T, I>::type;
 
 /// @brief Extract the first class from @p L.
 template <List L>
