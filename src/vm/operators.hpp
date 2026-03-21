@@ -1,6 +1,53 @@
 // -*- C++ -*-
 /// @file operators.hpp
-/// @brief Extra operations and their default implementations
+/// @brief Extra operations and their default implementations.
+///
+/// For basic operations reusing STL:
+///
+/// Arithmetic operations:
+/// * std::plus
+/// * std::minus
+/// * std::multiplies
+/// * std::divides
+/// * std::modulus
+/// * std::negate
+///
+/// Comparison operations:
+/// * std::equal_to
+/// * std::not_equal_to
+/// * std::grater
+/// * std::less
+/// * std::gretaer_equal
+/// * std::less_equal
+///
+/// Logical operations:
+/// * std::ligical_and
+/// * std::logical_or
+/// * std::logical_not
+///
+/// Bitwise operations
+/// * std::bit_and
+/// * std::bit_or
+/// * std::bit_xor
+/// * std::bit_not
+///
+/// Undocumented operators generated with preprocessor:
+///
+/// Binary operations:
+/// * loom::vm::ops::min
+/// * loom::vm::ops::max
+///
+/// Floating point unary operations:
+/// * loom::vm::ops::round
+/// * loom::vm::ops::ceil
+/// * loom::vm::ops::floor
+/// * loom::vm::ops::trunc
+/// * loom::vm::ops::sin
+/// * loom::vm::ops::cos
+/// * loom::vm::ops::sqrt
+///
+/// Floating point binary operations:
+/// * loom::vm::ops::copysign
 
 #pragma once
 
