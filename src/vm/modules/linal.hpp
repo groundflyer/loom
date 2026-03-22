@@ -67,6 +67,26 @@ class make_reg_mat
 template <CharSequence P, std::size_t N>
 using make_reg_mat_t = make_reg_mat<P, N>::type;
 
+template <typename T,
+          std::size_t N,
+          template <typename, std::size_t> typename F>
+struct maybe_make : std::type_identity<T>
+{
+};
+
+template <CharSequence P,
+          std::size_t  N,
+          template <typename, std::size_t> typename F>
+struct maybe_make<P, N, F> : std::type_identity<F<P, N>>
+{
+};
+
+template <typename T, std::size_t N>
+using maybe_make_reg_array_t = maybe_make<T, N, make_reg_array_t>::type;
+
+template <typename T, std::size_t N>
+using maybe_make_reg_mat_t = maybe_make<T, N, make_reg_mat_t>::type;
+
 /// @brief Generate macro of binary map with two vectors.
 /// @tparam Op operator. See available operators in vm/operators.hpp
 /// @tparam T variables type.
@@ -226,68 +246,67 @@ using sq_br = char_sequence<'[', i2c<I>, ']'>;
 #define MAT_PARM_DECL(NAME, N) \
     CS_JOIN(CS_JOIN(CS(NAME), detail::sq_br<N>), detail::sq_br<N>)
 
-#define MAKE_STD_BINOP_VEC_VEC_MACRO(N, NAME, OP)                \
-    using __macro_decl_vec_vec##N##_##NAME =                     \
-        macro_decl<CS(vec_vec##N##_##NAME),                      \
-                   ARR_PARM_DECL(dst, N),                        \
-                   ARR_PARM_DECL(a, N),                          \
-                   ARR_PARM_DECL(b, N)>;                         \
-    template <typename T, typename DST, typename A, typename B>  \
-    struct vec_vec##N##_##NAME :                                 \
-        std::type_identity<                                      \
-            typename make_bin_map<std::OP<T>,                    \
-                                  T,                             \
-                                  make_reg_array_t<DST, N>,      \
-                                  make_reg_array_t<A, N>,        \
-                                  make_reg_array_t<B, N>>::type> \
-    {                                                            \
-    };
-
-#define MAKE_STD_BINOP_VEC_SCALAR_MACRO(N, NAME, OP)                       \
-    using __macro_decl_vec##N##_scalar_##NAME =                            \
-        macro_decl<CS(vec##N##_scalar_##NAME),                             \
-                   ARR_PARM_DECL(dst, N),                                  \
-                   ARR_PARM_DECL(a, N),                                    \
-                   CS(b)>;                                                 \
-    template <typename T, typename DST, typename A, typename B>            \
-    struct vec##N##_scalar_##NAME :                                        \
-        std::type_identity<typename make_bin_map<std::OP<T>,               \
-                                                 T,                        \
-                                                 make_reg_array_t<DST, N>, \
-                                                 make_reg_array_t<A, N>,   \
-                                                 B>::type>                 \
-    {                                                                      \
-    };
-
-#define MAKE_OPS_UNOP_VEC_MACRO(N, OP)                                         \
-    using __macro_decl_vec##N##_##OP = macro_decl<CS(vec##N##_##OP),           \
-                                                  ARR_PARM_DECL(dst, N),       \
-                                                  ARR_PARM_DECL(a, N)>;        \
-    template <typename T, typename DST, typename A>                            \
-    struct vec##N##_##OP :                                                     \
-        std::type_identity<typename make_un_map<ops::OP<T>,                    \
-                                                T,                             \
-                                                make_reg_array_t<DST, N>,      \
-                                                make_reg_array_t<A, N>>::type> \
-    {                                                                          \
-    };
-
-#define MAKE_MAT_VEC_MACRO(N)                                          \
-    using __macro_decl_mat_vec##N = macro_decl<CS(mat_vec##N),         \
-                                               ARR_PARM_DECL(dst, N),  \
-                                               MAT_PARM_DECL(mat, N),  \
-                                               ARR_PARM_DECL(vec, N)>; \
-    template <typename T,                                              \
-              CharSequence DST,                                        \
-              CharSequence MAT,                                        \
-              CharSequence VEC>                                        \
-    struct mat_vec##N :                                                \
+#define MAKE_STD_BINOP_VEC_VEC_MACRO(N, NAME, OP)                      \
+    using __macro_decl_vec_vec##N##_##NAME =                           \
+        macro_decl<CS(vec_vec##N##_##NAME),                            \
+                   ARR_PARM_DECL(dst, N),                              \
+                   ARR_PARM_DECL(a, N),                                \
+                   ARR_PARM_DECL(b, N)>;                               \
+    template <typename T, typename DST, typename A, typename B>        \
+    struct vec_vec##N##_##NAME :                                       \
         std::type_identity<                                            \
-            typename make_mat_vec<T,                                   \
-                                  make_reg_array_t<DST, N>,            \
-                                  make_reg_mat_t<MAT, N>,              \
-                                  make_reg_array_t<VEC, N>>::type>     \
+            typename make_bin_map<std::OP<T>,                          \
+                                  T,                                   \
+                                  maybe_make_reg_array_t<DST, N>,      \
+                                  maybe_make_reg_array_t<A, N>,        \
+                                  maybe_make_reg_array_t<B, N>>::type> \
     {                                                                  \
+    };
+
+#define MAKE_STD_BINOP_VEC_SCALAR_MACRO(N, NAME, OP)              \
+    using __macro_decl_vec##N##_scalar_##NAME =                   \
+        macro_decl<CS(vec##N##_scalar_##NAME),                    \
+                   ARR_PARM_DECL(dst, N),                         \
+                   ARR_PARM_DECL(a, N),                           \
+                   CS(b)>;                                        \
+    template <typename T, typename DST, typename A, typename B>   \
+    struct vec##N##_scalar_##NAME :                               \
+        std::type_identity<                                       \
+            typename make_bin_map<std::OP<T>,                     \
+                                  T,                              \
+                                  maybe_make_reg_array_t<DST, N>, \
+                                  maybe_make_reg_array_t<A, N>,   \
+                                  B>::type>                       \
+    {                                                             \
+    };
+
+#define MAKE_OPS_UNOP_VEC_MACRO(N, OP)                                   \
+    using __macro_decl_vec##N##_##OP = macro_decl<CS(vec##N##_##OP),     \
+                                                  ARR_PARM_DECL(dst, N), \
+                                                  ARR_PARM_DECL(a, N)>;  \
+    template <typename T, typename DST, typename A>                      \
+    struct vec##N##_##OP :                                               \
+        std::type_identity<                                              \
+            typename make_un_map<ops::OP<T>,                             \
+                                 T,                                      \
+                                 maybe_make_reg_array_t<DST, N>,         \
+                                 maybe_make_reg_array_t<A, N>>::type>    \
+    {                                                                    \
+    };
+
+#define MAKE_MAT_VEC_MACRO(N)                                            \
+    using __macro_decl_mat_vec##N = macro_decl<CS(mat_vec##N),           \
+                                               ARR_PARM_DECL(dst, N),    \
+                                               MAT_PARM_DECL(mat, N),    \
+                                               ARR_PARM_DECL(vec, N)>;   \
+    template <typename T, typename DST, typename MAT, typename VEC>      \
+    struct mat_vec##N :                                                  \
+        std::type_identity<                                              \
+            typename make_mat_vec<T,                                     \
+                                  maybe_make_reg_array_t<DST, N>,        \
+                                  maybe_make_reg_mat_t<MAT, N>,          \
+                                  maybe_make_reg_array_t<VEC, N>>::type> \
+    {                                                                    \
     };
 
 MAKE_STD_BINOP_VEC_VEC_MACRO(2, add, plus)
@@ -331,8 +350,8 @@ template <typename T, CharSequence DST, typename A, typename B>
 struct vec3_dot :
     std::type_identity<typename make_dot<T,
                                          DST,
-                                         make_reg_array_t<A, 3>,
-                                         make_reg_array_t<B, 3>>::type>
+                                         maybe_make_reg_array_t<A, 3>,
+                                         maybe_make_reg_array_t<B, 3>>::type>
 {
 };
 
@@ -351,9 +370,9 @@ template <typename T,
           CharSequence Tmp>
 struct vec3_cross :
     std::type_identity<typename make_cross<T,
-                                           make_reg_array_t<DST, 3>,
-                                           make_reg_array_t<A, 3>,
-                                           make_reg_array_t<B, 3>,
+                                           maybe_make_reg_array_t<DST, 3>,
+                                           maybe_make_reg_array_t<A, 3>,
+                                           maybe_make_reg_array_t<B, 3>,
                                            Tmp>::type>
 {
 };

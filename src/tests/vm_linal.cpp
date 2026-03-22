@@ -38,6 +38,15 @@ TKERNEL12(mat_vec_dot_test,
     INSERT_TMACRO(vm::mat_vec3, CS(y), CS(m), CS(x))
 KERNEL_END(TVAR(y0), TVAR(y1), TVAR(y2));
 
+using l = CS(1);
+using o = CS(0);
+using id_mat = type_sequence<type_sequence<l, o, o>, type_sequence<o, l, o>, type_sequence<o, o, l>>;
+
+template <std::floating_point T>
+TKERNEL3(const_mat_vec, v0, v1, v2)
+    INSERT_TMACRO(vm::mat_vec3, CS(y), id_mat, CS(v))
+TKERNEL_END3(y0, y1, y2);
+
 // clang-format on
 
 using Vec3f = Vector<float, 3, std::array>;
@@ -55,8 +64,10 @@ main(int argc, char* argv[])
     vm::bse::function<cross_dot_test<float>>   bse_cross_dot;
     vm::bse::function<cross_test<float>>       bse_cross;
     vm::bse::function<mat_vec_dot_test<float>> bse_mat_vec_dot;
+    vm::bse::function<const_mat_vec<float>>    bse_cmat;
 
     auto       gf   = rs.make_gen<float>(-1e6, 1e6);
+    auto       gf3  = [&]() noexcept { return std::tuple{gf(), gf(), gf()}; };
     const auto g2v3 = [&]() noexcept
     { return std::tuple{gf(), gf(), gf(), gf(), gf(), gf()}; };
     const auto vec3_ulp_cmp = [](const auto& t, const auto& r) noexcept
@@ -106,6 +117,9 @@ main(int argc, char* argv[])
                                    vec3_ulp_cmp),
                                "matrix-vector product",
                                0.01));
+
+    track.check(NamedTest(tm.test(gf3, bse_cmat, std::equal_to<>{}),
+                          "identity matrix multiplication"));
 
     return track.ret_code();
 }
