@@ -392,13 +392,7 @@ template <typename _Variable>
 consteval std::optional<vartype<_Variable>>
 parse_literal() noexcept
 {
-    constexpr std::string_view s = varview<_Variable>;
-    using type                   = vartype<_Variable>;
-
-    if constexpr(std::is_integral_v<vartype<_Variable>>)
-        return s2i_base_prefix<type>(s);
-    else
-        return s2f<type>(s);
+    return s2n<vartype<_Variable>>(varview<_Variable>);
 }
 
 template <typename _Variable>

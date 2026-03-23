@@ -403,6 +403,22 @@ struct read_number_fn<T, throws>
 };
 } // namespace fn
 
+namespace detail
+{
+template <typename T>
+struct select_parser;
+
+template <std::floating_point T>
+struct select_parser<T> : std::type_identity<fn::s2f_fn<T>>
+{
+};
+
+template <std::integral T>
+struct select_parser<T> : std::type_identity<fn::s2i_base_prefix_fn<T>>
+{
+};
+} // namespace detail
+
 MK_NIEBLOID(is_alpha_upper);
 MK_NIEBLOID(is_alpha_lower);
 MK_NIEBLOID(is_alpha);
@@ -414,15 +430,25 @@ MK_NIEBLOID(any_string);
 
 // std::from_chars is not constexpr until C++23
 
+/// @brief Constexpr read integer value.
 template <std::integral Int = int>
 constexpr inline fn::s2i_fn<Int> s2i{};
 
+/// @brief Constexpr read integer value detecting base from prefix.
 template <std::integral Int = int>
 constexpr inline fn::s2i_base_prefix_fn<Int> s2i_base_prefix{};
 
+/// @brief Constexpr read floating point value.
 template <std::floating_point T = float>
 constexpr inline fn::s2f_fn<T> s2f{};
 
+/// @brief Constexpr read integer or floating point number.
+template <typename T>
+constexpr inline typename detail::select_parser<T>::type s2n{};
+
+/// @brief Read number.
+/// @tparam throws if set, throws loom::ReadException.
+/// @return T if @p throws, otherwise std::optional<T>.
 template <typename T, bool throws = false>
 constexpr inline fn::read_number_fn<T, throws> read_number{};
 } // namespace loom
