@@ -857,4 +857,16 @@ array2tuple(const std::array<T, N>& a) noexcept
                       { return {vals...}; },
                       a);
 }
+
+/// @brief Convert tuple to array.
+template <template <typename...> typename Tuple, typename T, typename... Ts>
+    requires(std::conjunction_v<std::is_same<T, Ts>...>)
+constexpr std::array<T, sizeof...(Ts) + 1>
+tuple2array(const Tuple<T, Ts...>& t) noexcept
+{
+    return std::apply(
+        [](const auto... vs) constexpr noexcept
+        -> std::array<T, sizeof...(Ts) + 1> { return {vs...}; },
+        t);
+}
 } // namespace loom
