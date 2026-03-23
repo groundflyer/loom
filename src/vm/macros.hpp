@@ -875,14 +875,18 @@
 #define CMOV(TYPE, CTYPE, DST, C, A, B) \
     CMOV_CS(TYPE, CTYPE, CS(DST), CS(C), CS(A), CS(B))
 
-#define FMA_CS(TYPE, DST, X, Y, Z)        \
-    loom::vm::Compute<loom::vm::ops::fma, \
-                      VAR_CS(TYPE, DST),  \
-                      VAR_CS(TYPE, X),    \
-                      VAR_CS(TYPE, Y),    \
+#define FMOP_CS(OP, TYPE, DST, X, Y, Z)  \
+    loom::vm::Compute<OP,                \
+                      VAR_CS(TYPE, DST), \
+                      VAR_CS(TYPE, X),   \
+                      VAR_CS(TYPE, Y),   \
                       VAR_CS(TYPE, Z)>
+#define FMA_CS(...)        FMOP_CS(loom::vm::ops::fma, __VA_ARGS__)
+#define FMS_CS(...)        FMOP_CS(loom::vm::ops::fms, __VA_ARGS__)
 #define TFMA_CS(...)       FMA_CS(MAJOR_TYPE, __VA_ARGS__)
 #define TFMA(DST, X, Y, Z) TFMA_CS(CS(DST), CS(X), CS(Y), CS(Z))
+#define TFMS_CS(...)       FMS_CS(MAJOR_TYPE, __VA_ARGS__)
+#define TFMS(DST, X, Y, Z) TFMS_CS(CS(DST), CS(X), CS(Y), CS(Z))
 
 #define SCTN(DST_TYPE, IDX_TYPE, DST, IDX, ...)                             \
     loom::vm::Compute<loom::vm::ops::sct<DST_TYPE,                          \

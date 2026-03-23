@@ -299,6 +299,20 @@ struct rsqrt_intrinsics_wrangler
     }
 };
 
+/// @brief Intrinsics wrangler for fused multiply-subtract.
+template <std::floating_point T, fsize_t N>
+struct fms_intrinsics_wranger
+{
+    using vector_type = packed_vector<T, N>;
+
+    /// @brief Fallback implementation.
+    static vector_type _FORCE_INLINE
+    op(const vector_type x, const vector_type y, const vector_type z) noexcept
+    {
+        return __builtin_elementwise_fma(x, y, -z);
+    }
+};
+
 #define MK_MASK_IO_INTRINSICS(TYPE, EXT, LOAD_INTR, STORE_INTR) \
     template <>                                                 \
     struct mask_io_intrinsics_wrangler<TYPE, EXT>               \
@@ -413,6 +427,20 @@ struct rsqrt_intrinsics_wrangler
         }                                             \
     };
 
+#define MK_FMS_INTRINSICS(TYPE, EXT, INTR)            \
+    template <>                                       \
+    struct fms_intrinsics_wranger<TYPE, EXT>          \
+    {                                                 \
+        using vector_type = packed_vector<TYPE, EXT>; \
+        static vector_type _FORCE_INLINE              \
+        op(const vector_type x,                       \
+           const vector_type y,                       \
+           const vector_type z) noexcept              \
+        {                                             \
+            return INTR(x, y, z);                     \
+        }                                             \
+    };
+
 // SSE
 MK_RSQRT_INTRINSICS(float, 4, _mm_rsqrt_ps)
 
@@ -434,6 +462,9 @@ MK_MASK_IO_INTRINSICS(std::int32_t,
                       8,
                       _mm256_maskload_epi32,
                       _mm256_maskstore_epi32)
+
+MK_FMS_INTRINSICS(float, 8, _mm256_fmsub_ps)
+MK_FMS_INTRINSICS(double, 4, _mm256_fmsub_pd)
 
 #if defined(__AVX512F__)
 MK_AVX512_MASK8(double)
@@ -497,6 +528,9 @@ MK_AVX512_GATHER_SCATTER_INTRINSICS(std::uint64_t, 8, _mm512_i32gather_epi64, _m
 
 MK_RSQRT_INTRINSICS(float, 16, _mm512_rsqrt14_ps)
 MK_RSQRT_INTRINSICS(double, 8, _mm512_rsqrt14_pd)
+
+MK_FMS_INTRINSICS(float, 16, _mm512_fmsub_ps)
+MK_FMS_INTRINSICS(double, 8, _mm512_fmsub_pd)
 
 #if defined(__AVX512BW__)
 MK_AVX512_CMP_INTRINSICS(std::int8_t, 64, _mm512_cmpeq_epi8_mask)
@@ -570,6 +604,23 @@ struct remap_comp<N, ops::fma, T, T, T, T>
                    const packed_vector<T, N> z) const noexcept
         {
             return __builtin_elementwise_fma(x, y, z);
+        }
+    };
+};
+
+template <fsize_t N, std::floating_point T>
+struct remap_comp<N, ops::fms, T, T, T, T>
+{
+    using wrangler = fms_intrinsics_wranger<T, N>;
+
+    struct type
+    {
+        constexpr packed_vector<T, N> _FORCE_INLINE
+        operator()(const packed_vector<T, N> x,
+                   const packed_vector<T, N> y,
+                   const packed_vector<T, N> z) const noexcept
+        {
+            return wrangler::op(x, y, z);
         }
     };
 };

@@ -133,6 +133,19 @@ struct fma
     }
 };
 
+/// @brief Fused multiply-subtract.
+///
+/// Implements x * y - z.
+struct fms
+{
+    template <std::floating_point T>
+    T
+    operator()(const T x, const T y, const T z) const noexcept
+    {
+        return std::fma(x, y, -z);
+    }
+};
+
 /// @brief Reciprocal square root @f$f(x) = \frac{1}{\sqrt{x}}@f$.
 template <std::floating_point T>
 struct rsqrt
