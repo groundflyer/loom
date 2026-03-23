@@ -740,6 +740,28 @@ struct remap_comp<N, ops::rsqrt<T>, T, T>
     };
 };
 
+/// @brief Remap select constant.
+template <fsize_t N, typename T, typename I, typename L>
+    requires(typelist::length<L> <= N)
+struct remap_comp<N, ops::sct<T, I, L>, T, I>
+{
+    using vector_type = packed_vector<T, N>;
+
+    static constexpr vector_type table =
+        std::apply([](const auto... vals) constexpr noexcept -> vector_type
+                   { return {vals...}; },
+                   ops::sct<T, I, L>::values);
+
+    struct type
+    {
+        vector_type _FORCE_INLINE
+        operator()(const packed_vector<I, N> i) const noexcept
+        {
+            return __builtin_shufflevector(table, i);
+        }
+    };
+};
+
 #define MK_REMAP_BINOP(FUNC, OP, R)                                \
     template <fsize_t N, typename T>                               \
     struct remap_comp<N, FUNC<T>, R, T, T>                         \

@@ -1,6 +1,8 @@
 // -*- C++ -*-
 /// @file operators.hpp
-/// @brief Extra operations and their default implementations.
+/// @brief Additional computation operations and their default implementations.
+///
+/// Operators described here are used in vm::Compute.
 ///
 /// For basic operations reusing STL:
 ///
@@ -51,7 +53,12 @@
 
 #pragma once
 
+#include <common/string.hpp>
+#include <common/tmp.hpp>
+#include <common/tuple.hpp>
+
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <concepts>
 
@@ -134,6 +141,34 @@ struct rsqrt
     operator()(const T x) const noexcept
     {
         return static_cast<T>(1) / std::sqrt(x);
+    }
+};
+
+/// @brief Select constant.
+/// @tparam T value type.
+/// @tparam List list of constants.
+///
+/// This special instruction selects a constant from @p L using index value.
+///
+/// When size of @p List is two just use cmov.
+template <typename T, std::integral I, typelist::List L>
+    requires(typelist::length<L> >= 3)
+struct sct
+{
+    static constexpr std::array<T, typelist::length<L>> values = tuple2array(
+        typelist::maybe_collect(L{},
+                                []<CharSequence S>() constexpr noexcept -> T
+                                {
+                                    constexpr std::optional<T> pr =
+                                        s2n<T>(cs2sv<S>);
+                                    static_assert(pr.has_value());
+                                    return pr.value();
+                                }));
+
+    T
+    operator()(const I i) const noexcept
+    {
+        return values[i];
     }
 };
 

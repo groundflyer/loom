@@ -248,6 +248,14 @@ TKERNEL1(rsqrt_test, x)
     TLT(x, x, 1e-4)
 KERNEL_END(IVAR(x));
 
+
+template <typename T>
+TKERNEL1(sct_inv_test, i)
+    ISCT4(o, i, 0, 10, 20, 30),
+    IMUL(i, i, 10),
+    IEQ(o, i, o)
+IKERNEL_END1(o);
+
 // clang-format on
 
 // validation programs
