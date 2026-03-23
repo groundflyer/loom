@@ -724,7 +724,7 @@ struct remap_comp<N, ops::cos<T>, T, T>
     };
 };
 
-/// @brief Remap rsqrt operation.
+/// @brief Remap rsqrt operation ops::rsqrt.
 template <fsize_t N, typename T>
 struct remap_comp<N, ops::rsqrt<T>, T, T>
 {
@@ -740,7 +740,7 @@ struct remap_comp<N, ops::rsqrt<T>, T, T>
     };
 };
 
-/// @brief Remap select constant.
+/// @brief Remap select constant ops::sct.
 template <fsize_t N, typename T, typename I, typename L>
     requires(typelist::length<L> <= N)
 struct remap_comp<N, ops::sct<T, I, L>, T, I>
@@ -758,6 +758,32 @@ struct remap_comp<N, ops::sct<T, I, L>, T, I>
         operator()(const packed_vector<I, N> i) const noexcept
         {
             return __builtin_shufflevector(table, i);
+        }
+    };
+};
+
+/// @brief Remap predicate accumulation ops::pacc.
+template <fsize_t N,
+          typename T,
+          std::integral I,
+          template <typename> typename Acc,
+          template <typename> typename Cmp>
+struct remap_comp<N, ops::pacc<T, I, Acc, Cmp>, I, I, T, T>
+{
+    static constexpr typename remap_comp<N, Acc<I>, I, I, I>::type acc{};
+    static constexpr typename remap_comp<N, Cmp<T>, I, T, T>::type cmp{};
+
+    using vector_type = packed_vector<T, N>;
+    using mask_type   = packed_vector<I, N>;
+
+    struct type
+    {
+        mask_type _FORCE_INLINE
+        operator()(const mask_type   p,
+                   const vector_type x,
+                   const vector_type y) const noexcept
+        {
+            return acc(p, cmp(x, y));
         }
     };
 };

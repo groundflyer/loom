@@ -17,9 +17,9 @@
 /// Comparison operations:
 /// * std::equal_to
 /// * std::not_equal_to
-/// * std::grater
+/// * std::greater
 /// * std::less
-/// * std::gretaer_equal
+/// * std::greater_equal
 /// * std::less_equal
 ///
 /// Logical operations:
@@ -169,6 +169,41 @@ struct sct
     operator()(const I i) const noexcept
     {
         return values[i];
+    }
+};
+
+/// @brief Predicate accumulation.
+/// @tparam T type of comparing operands.
+/// @tparam I type of accumulating boolean values.
+/// @tparam Acc boolean accumulator. Possible values:
+/// * std::logical_and
+/// * std::logical_or
+/// @tparam Cmp comparison operator. Possible values:
+/// * std::equal_to
+/// * std::not_equal_to
+/// * std::greater
+/// * std::less
+/// * std::greater_equal
+/// * std::less_equal
+///
+/// Performs comparison @f$\circ@f$ and accumulates
+/// the result with boolean operator @f$\star@f$:
+///
+/// @f$p \star (x \circ y)@f$
+template <typename T,
+          std::integral I,
+          template <typename> typename Acc,
+          template <typename> typename Cmp>
+class pacc
+{
+    static constexpr Acc<I> acc{};
+    static constexpr Cmp<T> cmp{};
+
+  public:
+    I
+    operator()(const I p, const T x, const T y) const noexcept
+    {
+        return acc(p, cmp(x, y));
     }
 };
 

@@ -940,8 +940,23 @@
                                          loom::type_sequence<__VA_ARGS__>>, \
                       VAR_CS(DST_TYPE, DST),                                \
                       VAR_CS(IDX_TYPE, IDX)>
-#define TSCTN_CS(...)     SCTN_CS(MAJOR_TYPE, INDEX_TYPE, __VA_ARGS__)
-#define ISCTN_CS(...)     SCTN_CS(INDEX_TYPE, INDEX_TYPE, __VA_ARGS__)
+#define TSCTN_CS(...) SCTN_CS(MAJOR_TYPE, INDEX_TYPE, __VA_ARGS__)
+#define ISCTN_CS(...) SCTN_CS(INDEX_TYPE, INDEX_TYPE, __VA_ARGS__)
+
+#define PACC(ACC_OP, CMP_OP, PTYPE, CTYPE, DST, P, X, Y)                 \
+    loom::vm::Compute<                                                   \
+        loom::vm::ops::pacc<CTYPE, PTYPE, ACC_OP<PTYPE>, CMP_OP<CTYPE>>, \
+        VAR(PTYPE, DST),                                                 \
+        VAR(PTYPE, P),                                                   \
+        VAR(CTYPE, X),                                                   \
+        VAR(CTYPE, Y)>
+#define PACC_CS(ACC_OP, CMP_OP, PTYPE, CTYPE, DST, P, X, Y)              \
+    loom::vm::Compute<                                                   \
+        loom::vm::ops::pacc<CTYPE, PTYPE, ACC_OP<PTYPE>, CMP_OP<CTYPE>>, \
+        VAR_CS(PTYPE, DST),                                              \
+        VAR_CS(PTYPE, P),                                                \
+        VAR_CS(CTYPE, X),                                                \
+        VAR_CS(CTYPE, Y)>
 
 #define ADD(...)          BINOP(std::plus, __VA_ARGS__)
 #define SUB(...)          BINOP(std::minus, __VA_ARGS__)
@@ -1138,3 +1153,93 @@
 
 #define IMIN_CS(...)      MIN_CS(INDEX_TYPE, __VA_ARGS__)
 #define IMAX_CS(...)      MAX_CS(INDEX_TYPE, __VA_ARGS__)
+
+#define PACCAND(...)      PACC(std::logical_and, __VA_ARGS__)
+#define PACCOR(...)       PACC(std::logical_or, __VA_ARGS__)
+
+#define PACCAND_CS(...)   PACC_CS(std::logical_and, __VA_ARGS__)
+#define PACCOR_CS(...)    PACC_CS(std::logical_or, __VA_ARGS__)
+
+#define ANDEQ(...)        PACCAND(std::equal_to, __VA_ARGS__)
+#define ANDNEQ(...)       PACCAND(std::not_equal_to, __VA_ARGS__)
+#define ANDGT(...)        PACCAND(std::greater, __VA_ARGS__)
+#define ANDLT(...)        PACCAND(std::less, __VA_ARGS__)
+#define ANDGE(...)        PACCAND(std::greater_equal, __VA_ARGS__)
+#define ANDLE(...)        PACCAND(std::less_equal, __VA_ARGS__)
+
+#define OREQ(...)         PACCOR(std::equal_to, __VA_ARGS__)
+#define ORNEQ(...)        PACCOR(std::not_equal_to, __VA_ARGS__)
+#define ORGT(...)         PACCOR(std::greater, __VA_ARGS__)
+#define ORLT(...)         PACCOR(std::less, __VA_ARGS__)
+#define ORGE(...)         PACCOR(std::greater_equal, __VA_ARGS__)
+#define ORLE(...)         PACCOR(std::less_equal, __VA_ARGS__)
+
+#define ANDEQ_CS(...)     PACCAND_CS(std::equal_to, __VA_ARGS__)
+#define ANDNEQ_CS(...)    PACCAND_CS(std::not_equal_to, __VA_ARGS__)
+#define ANDGT_CS(...)     PACCAND_CS(std::greater, __VA_ARGS__)
+#define ANDLT_CS(...)     PACCAND_CS(std::less, __VA_ARGS__)
+#define ANDGE_CS(...)     PACCAND_CS(std::greater_equal, __VA_ARGS__)
+#define ANDLE_CS(...)     PACCAND_CS(std::less_equal, __VA_ARGS__)
+
+#define OREQ_CS(...)      PACCOR_CS(std::equal_to, __VA_ARGS__)
+#define ORNEQ_CS(...)     PACCOR_CS(std::not_equal_to, __VA_ARGS__)
+#define ORGT_CS(...)      PACCOR_CS(std::greater, __VA_ARGS__)
+#define ORLT_CS(...)      PACCOR_CS(std::less, __VA_ARGS__)
+#define ORGE_CS(...)      PACCOR_CS(std::greater_equal, __VA_ARGS__)
+#define ORLE_CS(...)      PACCOR_CS(std::less_equal, __VA_ARGS__)
+
+#define TANDEQ(...)       ANDEQ(INDEX_TYPE, MAJOR_TYPE, __VA_ARGS__)
+#define TANDNEQ(...)      ANDNEQ(INDEX_TYPE, MAJOR_TYPE, __VA_ARGS__)
+#define TANDGT(...)       ANDGT(INDEX_TYPE, MAJOR_TYPE, __VA_ARGS__)
+#define TANDLT(...)       ANDLT(INDEX_TYPE, MAJOR_TYPE, __VA_ARGS__)
+#define TANDGE(...)       ANDGE(INDEX_TYPE, MAJOR_TYPE, __VA_ARGS__)
+#define TANDLE(...)       ANDLE(INDEX_TYPE, MAJOR_TYPE, __VA_ARGS__)
+
+#define TOREQ(...)        OREQ(INDEX_TYPE, MAJOR_TYPE, __VA_ARGS__)
+#define TORNEQ(...)       ORNEQ(INDEX_TYPE, MAJOR_TYPE, __VA_ARGS__)
+#define TORGT(...)        ORGT(INDEX_TYPE, MAJOR_TYPE, __VA_ARGS__)
+#define TORLT(...)        ORLT(INDEX_TYPE, MAJOR_TYPE, __VA_ARGS__)
+#define TORGE(...)        ORGE(INDEX_TYPE, MAJOR_TYPE, __VA_ARGS__)
+#define TORLE(...)        ORLE(INDEX_TYPE, MAJOR_TYPE, __VA_ARGS__)
+
+#define IANDEQ(...)       ANDEQ(INDEX_TYPE, INDEX_TYPE, __VA_ARGS__)
+#define IANDNEQ(...)      ANDNEQ(INDEX_TYPE, INDEX_TYPE, __VA_ARGS__)
+#define IANDGT(...)       ANDGT(INDEX_TYPE, INDEX_TYPE, __VA_ARGS__)
+#define IANDLT(...)       ANDLT(INDEX_TYPE, INDEX_TYPE, __VA_ARGS__)
+#define IANDGE(...)       ANDGE(INDEX_TYPE, INDEX_TYPE, __VA_ARGS__)
+#define IANDLE(...)       ANDLE(INDEX_TYPE, INDEX_TYPE, __VA_ARGS__)
+
+#define IOREQ(...)        OREQ(INDEX_TYPE, INDEX_TYPE, __VA_ARGS__)
+#define IORNEQ(...)       ORNEQ(INDEX_TYPE, INDEX_TYPE, __VA_ARGS__)
+#define IORGT(...)        ORGT(INDEX_TYPE, INDEX_TYPE, __VA_ARGS__)
+#define IORLT(...)        ORLT(INDEX_TYPE, INDEX_TYPE, __VA_ARGS__)
+#define IORGE(...)        ORGE(INDEX_TYPE, INDEX_TYPE, __VA_ARGS__)
+#define IORLE(...)        ORLE(INDEX_TYPE, INDEX_TYPE, __VA_ARGS__)
+
+#define TANDEQ_CS(...)    ANDEQ_CS(INDEX_TYPE, MAJOR_TYPE, __VA_ARGS__)
+#define TANDNEQ_CS(...)   ANDNEQ_CS(INDEX_TYPE, MAJOR_TYPE, __VA_ARGS__)
+#define TANDGT_CS(...)    ANDGT_CS(INDEX_TYPE, MAJOR_TYPE, __VA_ARGS__)
+#define TANDLT_CS(...)    ANDLT_CS(INDEX_TYPE, MAJOR_TYPE, __VA_ARGS__)
+#define TANDGE_CS(...)    ANDGE_CS(INDEX_TYPE, MAJOR_TYPE, __VA_ARGS__)
+#define TANDLE_CS(...)    ANDLE_CS(INDEX_TYPE, MAJOR_TYPE, __VA_ARGS__)
+
+#define TOREQ_CS(...)     OREQ_CS(INDEX_TYPE, MAJOR_TYPE, __VA_ARGS__)
+#define TORNEQ_CS(...)    ORNEQ_CS(INDEX_TYPE, MAJOR_TYPE, __VA_ARGS__)
+#define TORGT_CS(...)     ORGT_CS(INDEX_TYPE, MAJOR_TYPE, __VA_ARGS__)
+#define TORLT_CS(...)     ORLT_CS(INDEX_TYPE, MAJOR_TYPE, __VA_ARGS__)
+#define TORGE_CS(...)     ORGE_CS(INDEX_TYPE, MAJOR_TYPE, __VA_ARGS__)
+#define TORLE_CS(...)     ORLE_CS(INDEX_TYPE, MAJOR_TYPE, __VA_ARGS__)
+
+#define IANDEQ_CS(...)    ANDEQ_CS(INDEX_TYPE, INDEX_TYPE, __VA_ARGS__)
+#define IANDNEQ_CS(...)   ANDNEQ_CS(INDEX_TYPE, INDEX_TYPE, __VA_ARGS__)
+#define IANDGT_CS(...)    ANDGT_CS(INDEX_TYPE, INDEX_TYPE, __VA_ARGS__)
+#define IANDLT_CS(...)    ANDLT_CS(INDEX_TYPE, INDEX_TYPE, __VA_ARGS__)
+#define IANDGE_CS(...)    ANDGE_CS(INDEX_TYPE, INDEX_TYPE, __VA_ARGS__)
+#define IANDLE_CS(...)    ANDLE_CS(INDEX_TYPE, INDEX_TYPE, __VA_ARGS__)
+
+#define IOREQ_CS(...)     OREQ_CS(INDEX_TYPE, INDEX_TYPE, __VA_ARGS__)
+#define IORNEQ_CS(...)    ORNEQ_CS(INDEX_TYPE, INDEX_TYPE, __VA_ARGS__)
+#define IORGT_CS(...)     ORGT_CS(INDEX_TYPE, INDEX_TYPE, __VA_ARGS__)
+#define IORLT_CS(...)     ORLT_CS(INDEX_TYPE, INDEX_TYPE, __VA_ARGS__)
+#define IORGE_CS(...)     ORGE_CS(INDEX_TYPE, INDEX_TYPE, __VA_ARGS__)
+#define IORLE_CS(...)     ORLE_CS(INDEX_TYPE, INDEX_TYPE, __VA_ARGS__)
