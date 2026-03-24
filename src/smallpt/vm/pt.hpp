@@ -13,6 +13,8 @@ namespace loom::vm
 {
 // clang-format off
 
+using EPSILON = CS(0.0001);
+
 /// @struct loom::vm::isect_disk
 /// @brief Ray-disk intersection port.
 /// @param[out] hit intersection test value destination
@@ -49,32 +51,50 @@ MACRO_END;
 /// @param[in] a
 /// @param[in] b
 /// @param[in] c
-/// @param tmp storage for temporal values
+/// @param tmp1 storage for temporal values
+/// @param tmp2 storage for temporal values
 ///
 /// Values bound to @p a, @p b, @p c are invalidated.
 
 template <std::floating_point T>
-TMACRO6(solve_quadratic, s, x, a, b, c, tmp)
-    TMUL_CS(tmp, b, b),
-    TMUL_CS(c, c, a),
-    TMUL_CS(c, c, CS(4)),
-    TSUB_CS(c, tmp, c),         // c <- D
-    TMUL_CS(tmp, a, CS(0.5)),   // tmp <- factor
-    TSQRT_CS(s, c),             // s <- sqrt(D)
-    TNEG_CS(b, b),              // b <- (-b)
-    TADD_CS(a, b, s),           // a <- (-b)+sqrt(D)
-    TMUL_CS(a, a, tmp),         // a <- x1
-    TSUB_CS(x, b, s),           // x <- (-b)-sqrt(D)
-    TMUL_CS(x, x, tmp),         // x <- x2
-    TLT_CS(tmp, a, CS(0)),      // tmp <- x1<0
-    IPJMP2_CS(tmp, sq_mid, sq_tail),
+TMACRO7(solve_quadratic, s, x, a, b, c, tmp1, tmp2)
+    TABS_CS(s, a),              // s <- abs(a)
+    TGT_CS(s, s, EPSILON),      // s <- a !~ 0
+    IPJMP2_CS(s, sq_head1, sq_mid1),
+    LABEL(sq_head1),
+    TABS_CS(s, b),              // s <- abs(b)
+    TGT_CS(s, s, EPSILON),      // s <- b !~ 0
+    IPJMP2_CS(s, sq_end, sq_head2),
+    LABEL(sq_head2),
+    TNEG_CS(x, c),              // x <- -c
+    TDIV_CS(x, x, b),           // x <- -c/b
+    JMP(sq_end),
+    LABEL(sq_mid1),
+    TMUL_CS(tmp1, c, a),
+    TMUL_CS(tmp1, tmp1, CS(4)),
+    TFMS_CS(tmp1, b, b, tmp1),   // tmp1 <- D
+    TGE_CS(s, tmp1, CS(0)),      // s <- D>=0
+    IPJMP2_CS(s, sq_end, sq_mid2),
+    LABEL(sq_mid2),
+    TSQRT_CS(s, tmp1),           // s <- sqrt(D)
+    TLT_CS(x, b, CS(0)),         // x <- b<0
+    TSUB_CS(tmp2, b, s),         // tmp2 <- b-sqrt(D)
+    TADD_CS(b, b, s),            // b <- b+sqrt(D)
+    TCMOV_CS(b, x, tmp2, b),     // b <- b<0 ? b-sqrt(D) : b+sqrt(D)
+    TMUL_CS(b, b, CS(-0.5)),     // b <- temp
+    TDIV_CS(x, b, a),            // x <- x1
+    TDIV_CS(c, c, b),            // c <- x2
+    TLT_CS(b, x, CS(0)),         // b <- x1<0
+    TCMOV_CS(x, b, c, x),        // x <- x1<0 ? x2 : x1
+    IPJMP2_CS(b, sq_mid, sq_tail),
     LABEL(sq_mid),
-    TLT_CS(tmp, x, CS(0)),      // tmp <- x2<0
-    TMIN_CS(b, a, x),           // b <- min(x1, x2)
-    TCMOV_CS(x, tmp, a, b),     // x <- (x2<0) ? x1 : x2
+    TLT_CS(b, c, CS(0)),         // b <- x2<0
+    TMIN_CS(s, x, c),            // s <- min(x1, x2)
+    TCMOV_CS(x, b, x, s),        // x <- (x2<0) ? x1 : min(x1, x2)
     LABEL(sq_tail),
-    TMUL_CS(s, c, x),           // s <- D*x
-    TGE_CS(s, s, CS(0))         // s <- (D*x) >= 0
+    TMUL_CS(s, tmp1, x),         // s <- D*x
+    TGE_CS(s, s, CS(0)),         // s <- (D*x) >= 0
+    LABEL(sq_end)
 MACRO_END;
 
 /// @struct loom::vm::isect_sphere
@@ -88,7 +108,7 @@ MACRO_END;
 /// @param tmp1-3 storage for temporary values
 
 template <std::floating_point T>
-TMACRO9(isect_sphere, hit, t, o, d, p, r, tmp1, tmp2, tmp3)
+TMACRO10(isect_sphere, hit, t, o, d, p, r, tmp1, tmp2, tmp3, tmp4)
     INSERT_TMACRO(vec_vec3_sub, o, o, p),        // o <- pc
     TMUL_CS(r, r, r),                            // r <- r*r
     INSERT_TMACRO(vec3_length2, t, o),           // t <- length2(pc)
@@ -96,10 +116,8 @@ TMACRO9(isect_sphere, hit, t, o, d, p, r, tmp1, tmp2, tmp3)
     INSERT_TMACRO(vec3_scalar_mul, o, o, CS(2)), // o <- pc*2
     INSERT_TMACRO(vec3_dot, tmp1, d, o),         // tmp1 <- b
     INSERT_TMACRO(vec3_length2, r, d),           // r <- a
-    INSERT_TMACRO(solve_quadratic, hit, t, r, tmp1, tmp2, tmp3)
+    INSERT_TMACRO(solve_quadratic, hit, t, r, tmp1, tmp2, tmp3, tmp4)
 MACRO_END;
-
-using EPSILON = CS(0.0001);
 
 /// @struct loom::vm::isect_triangle
 /// @brief Ray-triangle intersection port.

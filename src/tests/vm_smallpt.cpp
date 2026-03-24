@@ -34,7 +34,6 @@ KERNEL(bump_test, VAR(std::uint32_t, c0), VAR(std::uint32_t, c1), VAR(std::uint3
     INSERT_MACRO(vm::bump_ctr, CS(c0), CS(c1), CS(i), CS(tmp1), CS(tmp2), CS(tmp3))
 KERNEL_END(VAR(std::uint32_t, c0), VAR(std::uint32_t, c1));
 
-
 template <std::floating_point T>
 TKERNEL5(sample_hemi_test, n0, n1, n2, u0, u1)
     INSERT_TMACRO(vm::sample_hemisphere, CS(d0), CS(d1), CS(d2), CS(n0), CS(n1), CS(n2), CS(u0), CS(u1), CS(x), CS(t0), CS(t1))
@@ -62,7 +61,7 @@ KERNEL_END(IVAR(hit), TVAR(t));
 
 template <std::floating_point T>
 TKERNEL3(quadratic_test, a, b, c)
-    INSERT_TMACRO(vm::solve_quadratic, CS(s), CS(x), CS(a), CS(b), CS(c), CS(t))
+    INSERT_TMACRO(vm::solve_quadratic, CS(s), CS(x), CS(a), CS(b), CS(c), CS(t), CS(t2))
 KERNEL_END(IVAR(s), TVAR(x));
 
 template <std::floating_point T>
@@ -71,7 +70,7 @@ TKERNEL10(sphere_isect_test,
           d0, d1, d2,
           p0, p1, p2,
           r)
-    INSERT_TMACRO(vm::isect_sphere, CS(hit), CS(t), CS(o), CS(d), CS(p), CS(r), CS(tmp1), CS(tmp2), CS(tmp3))
+    INSERT_TMACRO(vm::isect_sphere, CS(hit), CS(t), CS(o), CS(d), CS(p), CS(r), CS(tmp1), CS(tmp2), CS(tmp3), CS(tmp4))
 KERNEL_END(IVAR(hit), TVAR(t));
 
 template <std::floating_point T>
@@ -299,11 +298,23 @@ main(int argc, char* argv[])
 
     track.dep_check(
         NamedFuzzyTest(
-            tm.fuzzy_with_ref([&]() noexcept
-                              { return std::tuple{gf(), gf(), gf()}; },
-                              bse_quadratic,
-                              [](const auto... ks) noexcept
-                              { return std::tuple{quadratic(ks...)}; }),
+            tm.fuzzy_with_ref(
+                [&]() noexcept { return std::tuple{gf(), gf(), gf()}; },
+                bse_quadratic,
+                [](const auto... ks) noexcept { return quadratic(ks...); },
+                [&](const auto& t, const auto& v) noexcept
+                {
+                    const auto [utr, tx] = t;
+                    const bool tr        = static_cast<bool>(utr);
+                    const auto [vr, vx]  = v;
+                    if(tr == vr)
+                    {
+                        if(tr && vr) return almost_equal(tx, vx, ulp);
+                        return true;
+                    }
+
+                    return false;
+                }),
             "quadratic",
             0.01),
         NamedFuzzyTest(

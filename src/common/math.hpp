@@ -282,11 +282,11 @@ quadratic(const T a, const T b, const T c) noexcept
     if(almost_equal(a, T{0}, 10))
     {
         if(!almost_equal(b, T{0}, 10)) return {true, -c / b};
-        return {false, 0};
+        return {false, -1};
     }
     const T D = b * b - T{4} * a * c;
 
-    if(D < 0) return {false, 0};
+    if(D < 0) return {false, -1};
 
     T sqrtD{};
     if(std::is_constant_evaluated())
@@ -299,8 +299,7 @@ quadratic(const T a, const T b, const T c) noexcept
     const T x1 = temp / a;
     const T x2 = c / temp;
 
-    const T& x =
-        std::signbit(x1) ? x2 : (std::signbit(x2) ? x1 : std::min(x1, x2));
-    return std::pair{!std::signbit(D * x), x};
+    const T& x = (x1 < 0) ? x2 : ((x2 < 0) ? x1 : std::min(x1, x2));
+    return std::pair{((D * x) >= 0), x};
 }
 } // namespace loom
