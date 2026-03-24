@@ -169,16 +169,13 @@ class make_cross
 
     template <std::uint8_t K, std::uint8_t I, std::uint8_t J>
     using s = type_sequence<Compute<std::multiplies<MAJOR_TYPE>,
-                                    tvar_idx<Dst, K>,
-                                    tvar_idx<A, I>,
-                                    tvar_idx<B, J>>,
-                            Compute<std::multiplies<MAJOR_TYPE>,
                                     Variable<MAJOR_TYPE, TMP>,
                                     tvar_idx<A, J>,
                                     tvar_idx<B, I>>,
-                            Compute<std::minus<MAJOR_TYPE>,
+                            Compute<ops::fms,
                                     tvar_idx<Dst, K>,
-                                    tvar_idx<Dst, K>,
+                                    tvar_idx<A, I>,
+                                    tvar_idx<B, J>,
                                     Variable<MAJOR_TYPE, TMP>>>;
 
   public:
