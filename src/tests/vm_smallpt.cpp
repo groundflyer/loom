@@ -35,6 +35,13 @@ KERNEL(bump_test, VAR(std::uint32_t, c0), VAR(std::uint32_t, c1), VAR(std::uint3
 KERNEL_END(VAR(std::uint32_t, c0), VAR(std::uint32_t, c1));
 
 template <std::floating_point T>
+TKERNEL3(onb_test, n0, n1, n2)
+    INSERT_TMACRO(vm::onb, CS(b0), CS(b1), CS(b2), CS(t0), CS(t1), CS(t2), CS(n0), CS(n1), CS(n2)),
+    INSERT_TMACRO(vm::vec3_norm, CS(b), CS(tmp)),
+    INSERT_TMACRO(vm::vec3_norm, CS(t), CS(tmp))
+TKERNEL_END6(b0, b1, b2, t0, t1, t2);
+
+template <std::floating_point T>
 TKERNEL5(sample_hemi_test, n0, n1, n2, u0, u1)
     INSERT_TMACRO(vm::sample_hemisphere, CS(d0), CS(d1), CS(d2), CS(n0), CS(n1), CS(n2), CS(u0), CS(u1), CS(x), CS(t0), CS(t1))
 TKERNEL_END3(d0, d1, d2);
@@ -110,10 +117,36 @@ using Vec3f = Vector<float, 3, std::array>;
 using Vec2f = Vector<float, 2, std::array>;
 using Vec2u = Vector<unsigned, 2, std::array>;
 
-static constexpr int ulp = 30;
+static constexpr int     ulp = 30;
+constexpr inline ulp_cmp fcmp{ulp};
+
+struct fcmp_tuple
+{
+    template <typename T>
+    bool
+    operator()(const T& t1, const T& t2) const noexcept
+    {
+        return fold_tuple(map_tuple(zip_tuples(t1, t2),
+                                    [](const auto& p) noexcept -> bool
+                                    {
+                                        const auto [a, b] = p;
+                                        return fcmp(a, b);
+                                    }),
+                          std::logical_and<bool>{});
+    }
+};
+
+constexpr inline fcmp_tuple fcmpt{};
+
+template <typename T, std::size_t N>
+static auto
+to_tuple(const std::array<T, N>& a) noexcept
+{
+    return array2tuple(a);
+}
 
 template <typename T>
-auto
+static auto
 to_tuple(const Disk<T>& prim) noexcept
 {
     const auto& [p, n, r] = prim;
@@ -121,16 +154,16 @@ to_tuple(const Disk<T>& prim) noexcept
 }
 
 template <typename T>
-auto
+static auto
 to_tuple(const Sphere<T>& prim) noexcept
 {
     return std::tuple_cat(array2tuple(prim.center.data()),
                           std::tuple{prim.radius});
 }
 
-template <typename T, std::size_t N>
-auto
-to_tuple(const std::array<T, N>& prim) noexcept
+template <typename T, std::size_t N, std::size_t M>
+static auto
+to_tuple(const std::array<Vector<T, M, std::array>, N>& prim) noexcept
 {
     return std::apply([](const auto&... vs) noexcept
                       { return std::tuple_cat(array2tuple(vs.data())...); },
@@ -138,11 +171,18 @@ to_tuple(const std::array<T, N>& prim) noexcept
 }
 
 template <typename T>
-auto
+static auto
 to_tuple(const Ray<T>& ray) noexcept
 {
     const auto& [o, d] = ray;
     return array2tuple(array_cat(o.data(), d.data()));
+}
+
+template <typename T, std::size_t N>
+static auto
+to_tuple(const Vector<T, N, std::array>& v) noexcept
+{
+    return array2tuple(v.data());
 }
 
 int
@@ -163,23 +203,12 @@ main(int argc, char* argv[])
 
     const auto cmp_tuple_arr = [](const auto& a, const auto& b) noexcept
     { return std::get<0>(a) == b[0] && std::get<1>(a) == b[1]; };
-    const auto vec2_ulp_cmp = [](const auto& t, const auto& r) noexcept
-    {
-        return almost_equal(std::get<0>(t), r[0], ulp) &&
-               almost_equal(std::get<1>(t), r[1], ulp);
-    };
-    const auto vec3_ulp_cmp = [](const auto& t, const auto& r) noexcept
-    {
-        return almost_equal(std::get<0>(t), r[0], ulp) &&
-               almost_equal(std::get<1>(t), r[1], ulp) &&
-               almost_equal(std::get<2>(t), r[2], ulp);
-    };
     const auto cmp_isects = [](const auto& a, const auto& b) noexcept
     {
         const bool ai = a.intersect;
         const bool bi = b.intersect;
         if(ai && bi)
-            return almost_equal(a.t, b.t, ulp);
+            return fcmp(a.t, b.t);
         else
             return ai == bi;
     };
@@ -196,6 +225,7 @@ main(int argc, char* argv[])
     vm::bse::function<triangle_isect_test<float>> bse_triangle_isect;
     vm::bse::function<quad_isect_test<float>>     bse_quad_isect;
     vm::bse::function<ray_dir_test<float>>        bse_ray_dir_test;
+    vm::bse::function<onb_test<float>>            bse_onb;
 
     track.dep_check(
         NamedTest(
@@ -226,17 +256,29 @@ main(int argc, char* argv[])
         "bump counter"));
 
     track.check(NamedFuzzyTest(
+        tm.fuzzy_with_ref([&]() noexcept { return normalize(gv3()); },
+                          [&bse_onb](const Vec3f& n) noexcept
+                          { return bse_onb(n[0], n[1], n[2]); },
+                          [](const Vec3f& n) noexcept
+                          {
+                              const auto [b, t] = basis(n);
+                              return std::tuple_cat(to_tuple(b), to_tuple(t));
+                          },
+                          fcmpt),
+        "orthonormal basis",
+        0.01));
+
+    track.check(NamedFuzzyTest(
         tm.fuzzy_with_ref(
             [&]() noexcept
             {
-                return std::pair{normalize(Vec3f{generate<3>(gf)}),
-                                 Vec2f{generate<2>(g_canon)}};
+                return std::pair{normalize(gv3()), Vec2f{generate<2>(g_canon)}};
             },
             [&bse_sample_hemi](const Vec3f& n, const Vec2f& u) noexcept
             { return bse_sample_hemi(n[0], n[1], n[2], u[0], u[1]); },
             [](const Vec3f& n, const Vec2f& u) noexcept
-            { return sample_hemisphere(n, u); },
-            vec3_ulp_cmp),
+            { return to_tuple(sample_hemisphere(n, u)); },
+            fcmpt),
         "sample hemisphere",
         0.01));
 
@@ -258,9 +300,9 @@ main(int argc, char* argv[])
                                        ToSampleSpace<float> f{
                                            Vec2u{w, h}
                                        };
-                                       return f(Vec2u{x, y});
+                                       return to_tuple(f(Vec2u{x, y}));
                                    },
-                                   vec2_ulp_cmp),
+                                   fcmpt),
                                "sample film space",
                                0.01));
 
@@ -308,13 +350,11 @@ main(int argc, char* argv[])
                     const auto [utr, tx] = t;
                     const bool tr        = static_cast<bool>(utr);
                     const auto [vr, vx]  = v;
-                    if(tr == vr)
-                    {
-                        if(tr && vr) return almost_equal(tx, vx, ulp);
-                        return true;
-                    }
 
-                    return false;
+                    if(tr && vr)
+                        return fcmp(tx, vx);
+                    else
+                        return tr == vr;
                 }),
             "quadratic",
             0.01),
