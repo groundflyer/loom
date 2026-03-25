@@ -98,25 +98,25 @@ TMACRO7(solve_quadratic, s, x, a, b, c, tmp1, tmp2)
 MACRO_END;
 
 /// @struct loom::vm::isect_sphere
-/// @brief Ray-sphere intersection port.
-/// @param[out] hit intersection test value destination
-/// @param[out] t root (distance to intersection) destination
+/// @brief Ray-sphere intersection port. Prepares coeffs for solve_quadratic.
+/// @param[out] a
+/// @param[out] b
+/// @param[out] c
 /// @param[in] o vec[3] ray origin
 /// @param[in] d vec[3] ray direction
 /// @param[in] p vec[3] sphere position
 /// @param[in] r sphere radius
-/// @param tmp1-3 storage for temporary values
+/// @param (v)tmp1-2 storage for temporary values
 
 template <std::floating_point T>
-TMACRO10(isect_sphere, hit, t, o, d, p, r, tmp1, tmp2, tmp3, tmp4)
-    INSERT_TMACRO(vec_vec3_sub, o, o, p),        // o <- pc
-    TMUL_CS(r, r, r),                            // r <- r*r
-    INSERT_TMACRO(vec3_length2, t, o),           // t <- length2(pc)
-    TSUB_CS(tmp2, t, r),                         // tmp2 <- c
-    INSERT_TMACRO(vec3_scalar_mul, o, o, CS(2)), // o <- pc*2
-    INSERT_TMACRO(vec3_dot, tmp1, d, o),         // tmp1 <- b
-    INSERT_TMACRO(vec3_length2, r, d),           // r <- a
-    INSERT_TMACRO(solve_quadratic, hit, t, r, tmp1, tmp2, tmp3, tmp4)
+TMACRO10(prep_isect_sphere, a, b, c, o, d, p, r, tmp1, tmp2, vtmp1)
+    INSERT_TMACRO(vec_vec3_sub, vtmp1, o, p),               // vtmp1 <- pc
+    TMUL_CS(tmp1, r, r),                                    // tmp1 <- r*r
+    INSERT_TMACRO(vec3_length2, tmp2, vtmp1),               // tmp2 <- length2(pc)
+    TSUB_CS(c, tmp2, tmp1),                                 // c <- c
+    INSERT_TMACRO(vec3_scalar_mul, vtmp1, vtmp1, CS(2)),    // vtmp1 <- pc*2
+    INSERT_TMACRO(vec3_dot, b, d, vtmp1),                   // b <- b
+    INSERT_TMACRO(vec3_length2, a, d)                       // a <- a
 MACRO_END;
 
 /// @struct loom::vm::isect_triangle

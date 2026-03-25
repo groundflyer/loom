@@ -70,7 +70,8 @@ TKERNEL10(sphere_isect_test,
           d0, d1, d2,
           p0, p1, p2,
           r)
-    INSERT_TMACRO(vm::isect_sphere, CS(hit), CS(t), CS(o), CS(d), CS(p), CS(r), CS(tmp1), CS(tmp2), CS(tmp3), CS(tmp4))
+    INSERT_TMACRO(vm::prep_isect_sphere, CS(a), CS(b), CS(c), CS(o), CS(d), CS(p), CS(r), CS(tmp1), CS(tmp2), CS(vtmp1)),
+    INSERT_TMACRO(vm::solve_quadratic, CS(hit), CS(t), CS(a), CS(b), CS(c), CS(tmp1), CS(tmp2))
 KERNEL_END(IVAR(hit), TVAR(t));
 
 template <std::floating_point T>
