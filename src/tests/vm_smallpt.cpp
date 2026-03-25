@@ -43,7 +43,11 @@ TKERNEL_END6(b0, b1, b2, t0, t1, t2);
 
 template <std::floating_point T>
 TKERNEL5(sample_hemi_test, n0, n1, n2, u0, u1)
-    INSERT_TMACRO(vm::sample_hemisphere, CS(d0), CS(d1), CS(d2), CS(n0), CS(n1), CS(n2), CS(u0), CS(u1), CS(x), CS(t0), CS(t1))
+    INSERT_TMACRO(vm::onb, CS(b0), CS(b1), CS(b2), CS(t0), CS(t1), CS(t2), CS(n0), CS(n1), CS(n2)),
+    INSERT_TMACRO(vm::vec3_norm, CS(b), CS(tmp0)),
+    INSERT_TMACRO(vm::vec3_norm, CS(t), CS(tmp0)),
+    INSERT_TMACRO(vm::sample_hemisphere, CS(d), CS(n), CS(b), CS(t), CS(u0), CS(u1), CS(tmp0), CS(tmp1)),
+    INSERT_TMACRO(vm::vec3_norm, CS(d), CS(tmp0))
 TKERNEL_END3(d0, d1, d2);
 
 template <std::floating_point T>
@@ -255,32 +259,33 @@ main(int argc, char* argv[])
             cmp_tuple_arr),
         "bump counter"));
 
-    track.check(NamedFuzzyTest(
-        tm.fuzzy_with_ref([&]() noexcept { return normalize(gv3()); },
-                          [&bse_onb](const Vec3f& n) noexcept
-                          { return bse_onb(n[0], n[1], n[2]); },
-                          [](const Vec3f& n) noexcept
-                          {
-                              const auto [b, t] = basis(n);
-                              return std::tuple_cat(to_tuple(b), to_tuple(t));
-                          },
-                          fcmpt),
-        "orthonormal basis",
-        0.01));
-
-    track.check(NamedFuzzyTest(
-        tm.fuzzy_with_ref(
-            [&]() noexcept
-            {
-                return std::pair{normalize(gv3()), Vec2f{generate<2>(g_canon)}};
-            },
-            [&bse_sample_hemi](const Vec3f& n, const Vec2f& u) noexcept
-            { return bse_sample_hemi(n[0], n[1], n[2], u[0], u[1]); },
-            [](const Vec3f& n, const Vec2f& u) noexcept
-            { return to_tuple(sample_hemisphere(n, u)); },
-            fcmpt),
-        "sample hemisphere",
-        0.01));
+    track.dep_check(
+        NamedFuzzyTest(tm.fuzzy_with_ref(
+                           [&]() noexcept { return normalize(gv3()); },
+                           [&bse_onb](const Vec3f& n) noexcept
+                           { return bse_onb(n[0], n[1], n[2]); },
+                           [](const Vec3f& n) noexcept
+                           {
+                               const auto [b, t] = basis(n);
+                               return std::tuple_cat(to_tuple(b), to_tuple(t));
+                           },
+                           fcmpt),
+                       "orthonormal basis",
+                       0.01),
+        NamedFuzzyTest(
+            tm.fuzzy_with_ref(
+                [&]() noexcept
+                {
+                    return std::pair{normalize(gv3()),
+                                     Vec2f{generate<2>(g_canon)}};
+                },
+                [&bse_sample_hemi](const Vec3f& n, const Vec2f& u) noexcept
+                { return bse_sample_hemi(n[0], n[1], n[2], u[0], u[1]); },
+                [](const Vec3f& n, const Vec2f& u) noexcept
+                { return to_tuple(sample_hemisphere(n, u)); },
+                fcmpt),
+            "sample hemisphere",
+            0.01));
 
     track.check(NamedFuzzyTest(tm.fuzzy_with_ref(
                                    [&]() noexcept
