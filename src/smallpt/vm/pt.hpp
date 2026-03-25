@@ -315,6 +315,25 @@ MACRO_END;
 using PI_CS = CS(3.141592653589793);
 using PI2_CS = CS(6.283185307179586);
 
+TMACRO9(onb, b0, b1, b2, t0, t1, t2, n0, n1, n2)
+    TCOPYSIGN_CS(t2, CS(1), n2), // t2 <- sign
+    TADD_CS(b0, t2, n2),
+    TDIV_CS(b0, CS(-1), b0),    // b0 <- a
+    TMUL_CS(t0, n0, n1),
+    TMUL_CS(t0, t0, b0),        // t0 <- b
+    TMUL_CS(t1, b0, n1),
+    TMUL_CS(t1, t1, n1),
+    TADD_CS(t1, t1, t2),
+    TMUL_CS(b0, b0, n0),
+    TMUL_CS(b0, b0, n0),
+    TMUL_CS(b0, b0, t2),
+    TADD_CS(b0, b0, CS(1)),
+    TMUL_CS(b1, t2, t0),
+    TNEG_CS(b2, t2),
+    TMUL_CS(b2, b2, n0),
+    TNEG_CS(t2, n1)
+MACRO_END;
+
 // these parameters must be indexed
 /// @tparam dst vec[3]
 /// @tparam n vec[3]
