@@ -805,6 +805,7 @@ zip_with_for_each(F&&     f,
 #undef _FOR_EACH_EXPR
 #undef _ZIP_WITH_FOR_EACH_EXPR
 
+/// @brief Zip tuples of equal sizes.
 template <typename Tuple, typename... Rest>
     requires(... && (std::tuple_size_v<std::remove_cvref_t<Tuple>> ==
                      std::tuple_size_v<std::remove_cvref_t<Rest>>))
