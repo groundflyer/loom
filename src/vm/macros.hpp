@@ -314,6 +314,15 @@
 #define TKERNEL_END3(a, b, c) \
     KERNEL_END                \
     (TVAR(a), TVAR(b), TVAR(c))
+#define TKERNEL_END4(o1, o2, o3, o4) \
+    KERNEL_END                       \
+    (TVAR(o1), TVAR(o2), TVAR(o3), TVAR(o4))
+#define TKERNEL_END5(o1, o2, o3, o4, o5) \
+    KERNEL_END                           \
+    (TVAR(o1), TVAR(o2), TVAR(o3), TVAR(o4), TVAR(o5))
+#define TKERNEL_END6(o1, o2, o3, o4, o5, o6) \
+    KERNEL_END                               \
+    (TVAR(o1), TVAR(o2), TVAR(o3), TVAR(o4), TVAR(o5), TVAR(o6))
 #define IKERNEL1(NAME, v)    KERNEL(NAME, IVAR(v))
 #define IKERNEL2(NAME, a, b) KERNEL(NAME, IVAR(a), IVAR(b))
 #define IKERNEL_END1(v) \
