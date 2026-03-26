@@ -197,6 +197,7 @@ class Track
         r ? "PASS" : "FAIL", \
         fmt::fg(r ? fmt::terminal_color::green : fmt::terminal_color::red))
 
+    template <bool is_last>
     static void
     print_status(std::string_view name, bool p, unsigned l = 0) noexcept
     {
@@ -204,13 +205,14 @@ class Track
             fmt::print("{:<4} {:>8} {:\u2500<{}} {}\n",
                        _OK(p),
                        ' ',
-                       "\u251c",
+                       is_last ? "\u2514" : "\u251c",
                        l,
                        name);
         else
             fmt::print("{:<4} {:>8} {}\n", _OK(p), ' ', name);
     }
 
+    template <bool is_last>
     static void
     print_status(std::string_view         name,
                  bool                     p,
@@ -223,7 +225,7 @@ class Track
             fmt::print("{:<4} {:>7.3f}% {:\u2500<{}} {}\n",
                        _OK(p),
                        e,
-                       "\u251c",
+                       is_last ? "\u2514" : "\u251c",
                        l,
                        name);
         else
@@ -257,19 +259,19 @@ class Track
         return std::invoke(std::forward<Test>(test));
     }
 
-#define RUN_NTEST                        \
-    const bool p = run_test(ntest.test); \
-    print_status(ntest.name, p, l);      \
+#define RUN_NTEST                            \
+    const bool p = run_test(ntest.test);     \
+    print_status<is_last>(ntest.name, p, l); \
     return p
 
-    template <typename Test, typename Name>
+    template <bool is_last, typename Test, typename Name>
     static bool
     run_print(const NamedTest<Test, Name>& ntest, unsigned l = 0) noexcept
     {
         RUN_NTEST;
     }
 
-    template <typename Test, typename Name>
+    template <bool is_last, typename Test, typename Name>
     static bool
     run_print(NamedTest<Test, Name>& ntest, unsigned l = 0) noexcept
     {
@@ -278,20 +280,20 @@ class Track
 
 #undef RUN_NTEST
 
-#define RUN_NFTEST                                \
-    const auto error = run_test(nftest.test);     \
-    const bool p     = error <= nftest.threshold; \
-    print_status(nftest.name, p, error, l);       \
+#define RUN_NFTEST                                   \
+    const auto error = run_test(nftest.test);        \
+    const bool p     = error <= nftest.threshold;    \
+    print_status<is_last>(nftest.name, p, error, l); \
     return p
 
-    template <typename Test, typename Name>
+    template <bool is_last, typename Test, typename Name>
     static bool
     run_print(const NamedFuzzyTest<Test, Name>& nftest, unsigned l = 0) noexcept
     {
         RUN_NFTEST;
     }
 
-    template <typename Test, typename Name>
+    template <bool is_last, typename Test, typename Name>
     static bool
     run_print(NamedFuzzyTest<Test, Name>& nftest, unsigned l = 0) noexcept
     {
@@ -303,7 +305,7 @@ class Track
     unsigned m_total{};
     unsigned m_passed{};
 
-    template <typename Test>
+    template <bool is_last, typename Test>
     bool
     run_print_count(Test&& test, unsigned& counter, unsigned l = 0) noexcept
     {
@@ -311,21 +313,22 @@ class Track
         if constexpr(is_tuple_v<tt>)
         {
             constexpr unsigned ltotal = std::tuple_size_v<tt>;
-            const unsigned     lp     = std::apply(
-                [&]<typename... Tests>(Tests&&... tests) noexcept
+            unsigned           lp     = 0;
+            intlist::for_each(
+                [&]<std::size_t I>() noexcept
                 {
-                    return (0u + ... +
-                            static_cast<unsigned>(
-                                run_print_count(std::forward<Tests>(tests),
-                                                counter,
-                                                l)));
+                    lp += static_cast<unsigned>(
+                        run_print_count<(is_last && I == ltotal - 1)>(
+                            std::get<I>(test),
+                            counter,
+                            l));
                 },
-                std::forward<Test>(test));
+                std::make_index_sequence<ltotal>{});
             return lp == ltotal;
         }
         else
         {
-            const bool p = run_print(std::forward<Test>(test), l);
+            const bool p = run_print<is_last>(std::forward<Test>(test), l);
             counter++;
             m_passed += p;
             return p;
@@ -338,8 +341,10 @@ class Track
             std::index_sequence<Is...>,
             Tests&&... tests) noexcept
     {
-        return (... &&
-                run_print_count(std::forward<Tests>(tests), counter, Is + 1));
+        return (... && run_print_count<Is == sizeof...(Is) - 1>(
+                           std::forward<Tests>(tests),
+                           counter,
+                           Is));
     }
 
     /// @brief Print conclusion.
@@ -364,7 +369,7 @@ class Track
     bool
     check(Test&& test) noexcept
     {
-        const bool p = run_print(std::forward<Test>(test));
+        const bool p = run_print<false>(std::forward<Test>(test));
         ++m_total;
         m_passed += p;
         return p;
