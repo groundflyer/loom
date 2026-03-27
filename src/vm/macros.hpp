@@ -957,19 +957,17 @@
 #define ISCTN_CS(...) SCTN_CS(INDEX_TYPE, INDEX_TYPE, __VA_ARGS__)
 
 #define PACC(ACC_OP, CMP_OP, PTYPE, CTYPE, DST, P, X, Y)                 \
-    loom::vm::Compute<                                                   \
-        loom::vm::ops::pacc<CTYPE, PTYPE, ACC_OP<PTYPE>, CMP_OP<CTYPE>>, \
-        VAR(PTYPE, DST),                                                 \
-        VAR(PTYPE, P),                                                   \
-        VAR(CTYPE, X),                                                   \
-        VAR(CTYPE, Y)>
+    loom::vm::Compute<loom::vm::ops::pacc<CTYPE, PTYPE, ACC_OP, CMP_OP>, \
+                      VAR(PTYPE, DST),                                   \
+                      VAR(PTYPE, P),                                     \
+                      VAR(CTYPE, X),                                     \
+                      VAR(CTYPE, Y)>
 #define PACC_CS(ACC_OP, CMP_OP, PTYPE, CTYPE, DST, P, X, Y)              \
-    loom::vm::Compute<                                                   \
-        loom::vm::ops::pacc<CTYPE, PTYPE, ACC_OP<PTYPE>, CMP_OP<CTYPE>>, \
-        VAR_CS(PTYPE, DST),                                              \
-        VAR_CS(PTYPE, P),                                                \
-        VAR_CS(CTYPE, X),                                                \
-        VAR_CS(CTYPE, Y)>
+    loom::vm::Compute<loom::vm::ops::pacc<CTYPE, PTYPE, ACC_OP, CMP_OP>, \
+                      VAR_CS(PTYPE, DST),                                \
+                      VAR_CS(PTYPE, P),                                  \
+                      VAR_CS(CTYPE, X),                                  \
+                      VAR_CS(CTYPE, Y)>
 
 #define ADD(...)          BINOP(std::plus, __VA_ARGS__)
 #define SUB(...)          BINOP(std::minus, __VA_ARGS__)
