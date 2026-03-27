@@ -119,6 +119,8 @@ main(int argc, char* argv[])
     { return Sphere(posgen(), rad_dist(g)); };
     const auto disk_gen = [&]() noexcept
     { return Disk(posgen(), normgen(), rad_dist(g)); };
+    const auto cyl_gen = [&]() noexcept
+    { return Cylinder{posgen(), rad_dist(g), rad_dist(g)}; };
     const auto triangle_gen = [&]() noexcept
     { return Triangle<R>{posgen(), posgen(), posgen()}; };
     const auto quad_gen = [&]() noexcept
@@ -178,6 +180,9 @@ main(int argc, char* argv[])
                                triangle_gen,
                                sample_prim);
     ret += intersect_test_prim("Quad: sample/trace", quad_gen, sample_prim);
+    ret += intersect_test_prim("Cylinder sample/trace",
+                               cyl_gen,
+                               sample_selfoccluded_prim);
 
     ret += bound_test_prim("Sphere: bound", sphere_gen);
     ret += bound_test_prim("Disk: bound", disk_gen);

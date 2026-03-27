@@ -54,9 +54,14 @@ normal(Vec3<T> pos, const Cylinder<T>& prim) noexcept
 template <std::floating_point T,
           template <typename, std::size_t> typename SContainer>
 constexpr Vec3<T>
-sample(const Vec2<T, SContainer>&, const Cylinder<T>& prim) noexcept
+sample(const Vec2<T, SContainer>& s, const Cylinder<T>& prim) noexcept
 {
-    return prim.position; // mock
+    const auto [p, r, h] = prim;
+    const auto [t1, t2]  = s;
+
+    const T theta = static_cast<T>(2) * Pi<T> * t2;
+    return p + Vec3<T>{std::sin(theta), 0, std::cos(theta)} * r +
+           Vec3<T>{0, t2 * h, 0};
 }
 
 template <std::floating_point T>
