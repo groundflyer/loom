@@ -906,46 +906,46 @@
 
 #define TSCTN(...)                  SCTN(MAJOR_TYPE, INDEX_TYPE, __VA_ARGS__)
 #define ISCTN(...)                  SCTN(INDEX_TYPE, INDEX_TYPE, __VA_ARGS__)
-#define TSCT3(DST, IDX, C1, C2, C3) TSCTN(DST, IDX, CS(C1), CS(C2), CS(C3))
-#define TSCT4(DST, IDX, C1, C2, C3, C4) \
-    TSCTN(DST, IDX, CS(C1), CS(C2), CS(C3), CS(C4))
-#define TSCT5(DST, IDX, C1, C2, C3, C4, C5) \
-    TSCTN(DST, IDX, CS(C1), CS(C2), CS(C3), CS(C4), CS(C5))
-#define TSCT6(DST, IDX, C1, C2, C3, C4, C5, C6) \
-    TSCTN(DST, IDX, CS(C1), CS(C2), CS(C3), CS(C4), CS(C5), CS(C6))
-#define TSCT7(DST, IDX, C1, C2, C3, C4, C5, C6, C7) \
-    TSCTN(DST, IDX, CS(C1), CS(C2), CS(C3), CS(C4), CS(C5), CS(C6), CS(C7))
-#define TSCT8(DST, IDX, C1, C2, C3, C4, C5, C6, C7, C8) \
+#define TSCT3(DST, IDX, C0, C1, C2) TSCTN(DST, IDX, CS(C0), CS(C1), CS(C2))
+#define TSCT4(DST, IDX, C0, C1, C2, C3) \
+    TSCTN(DST, IDX, CS(C0), CS(C1), CS(C2), CS(C3))
+#define TSCT5(DST, IDX, C0, C1, C2, C3, C4) \
+    TSCTN(DST, IDX, CS(C0), CS(C1), CS(C2), CS(C3), CS(C4))
+#define TSCT6(DST, IDX, C0, C1, C2, C3, C4, C5) \
+    TSCTN(DST, IDX, CS(C0), CS(C1), CS(C2), CS(C3), CS(C4), CS(C5))
+#define TSCT7(DST, IDX, C0, C1, C2, C3, C4, C5, C6) \
+    TSCTN(DST, IDX, CS(C0), CS(C1), CS(C2), CS(C3), CS(C4), CS(C5), CS(C6))
+#define TSCT8(DST, IDX, C0, C1, C2, C3, C4, C5, C6, C7) \
     TSCTN(DST,                                          \
           IDX,                                          \
+          CS(C0),                                       \
           CS(C1),                                       \
           CS(C2),                                       \
           CS(C3),                                       \
           CS(C4),                                       \
           CS(C5),                                       \
           CS(C6),                                       \
-          CS(C7),                                       \
-          CS(C8))
-#define ISCT3(DST, IDX, C1, C2, C3) ISCTN(DST, IDX, CS(C1), CS(C2), CS(C3))
-#define ISCT4(DST, IDX, C1, C2, C3, C4) \
-    ISCTN(DST, IDX, CS(C1), CS(C2), CS(C3), CS(C4))
-#define ISCT5(DST, IDX, C1, C2, C3, C4, C5) \
-    ISCTN(DST, IDX, CS(C1), CS(C2), CS(C3), CS(C4), CS(C5))
-#define ISCT6(DST, IDX, C1, C2, C3, C4, C5, C6) \
-    ISCTN(DST, IDX, CS(C1), CS(C2), CS(C3), CS(C4), CS(C5), CS(C6))
-#define ISCT7(DST, IDX, C1, C2, C3, C4, C5, C6, C7) \
-    ISCTN(DST, IDX, CS(C1), CS(C2), CS(C3), CS(C4), CS(C5), CS(C6), CS(C7))
-#define ISCT8(DST, IDX, C1, C2, C3, C4, C5, C6, C7, C8) \
+          CS(C7))
+#define ISCT3(DST, IDX, C0, C1, C2) ISCTN(DST, IDX, CS(C0), CS(C1), CS(C2))
+#define ISCT4(DST, IDX, C0, C1, C2, C3) \
+    ISCTN(DST, IDX, CS(C0), CS(C1), CS(C2), CS(C3))
+#define ISCT5(DST, IDX, C0, C1, C2, C3, C4) \
+    ISCTN(DST, IDX, CS(C0), CS(C1), CS(C2), CS(C3), CS(C4))
+#define ISCT6(DST, IDX, C0, C1, C2, C3, C4, C5) \
+    ISCTN(DST, IDX, CS(C0), CS(C1), CS(C2), CS(C3), CS(C4), CS(C5))
+#define ISCT7(DST, IDX, C0, C1, C2, C3, C4, C5, C6) \
+    ISCTN(DST, IDX, CS(C0), CS(C1), CS(C2), CS(C3), CS(C4), CS(C5), CS(C6))
+#define ISCT8(DST, IDX, C0, C1, C2, C3, C4, C5, C6, C7) \
     ISCTN(DST,                                          \
           IDX,                                          \
+          CS(C0),                                       \
           CS(C1),                                       \
           CS(C2),                                       \
           CS(C3),                                       \
           CS(C4),                                       \
           CS(C5),                                       \
           CS(C6),                                       \
-          CS(C7),                                       \
-          CS(C8))
+          CS(C7))
 
 #define SCTN_CS(DST_TYPE, IDX_TYPE, DST, IDX, ...)                          \
     loom::vm::Compute<loom::vm::ops::sct<DST_TYPE,                          \
