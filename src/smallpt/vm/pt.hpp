@@ -145,8 +145,7 @@ TMACRO10(isect_triangle, hit, t, o, d, vert0, vert1, vert2, tmp1, tmp2, vtmp)
     INSERT_TMACRO(vec3_dot, tmp1, vert0, vtmp),                  // tmp1 <- dot(tvec, pvec)
     TMUL_CS(tmp1, tmp1, t),                                      // tmp1 <- u
     TGE_CS(hit, tmp1, CS(0)),                                    // hit <- u>=0
-    TLE_CS(tmp2, tmp1, CS(1)),                                   // tmp2 <- u<=1
-    ILAND_CS(hit, hit, tmp2),                                    // hit <- (u>=0)&&(u<=1)
+    TANDLE_CS(hit, hit, tmp1, CS(1)),                            // hit <- (u>=0)&&(u<=1)
     IPJMP2_CS(hit, isect_triangle_end, isect_triangle_mid2),     // if hit then mid2 else end
     LABEL(isect_triangle_mid2),
     INSERT_TMACRO(vec3_cross, vtmp, vert0, vert1, tmp2),         // vtmp <- qvec
@@ -154,8 +153,7 @@ TMACRO10(isect_triangle, hit, t, o, d, vert0, vert1, vert2, tmp1, tmp2, vtmp)
     TMUL_CS(tmp2, tmp2, t),                                      // tmp2 <- v
     TGE_CS(hit, tmp2, CS(0)),                                    // hit <- v>=0
     TADD_CS(tmp1, tmp1, tmp2),                                   // tmp1 <- u+v
-    TLE_CS(tmp1, tmp1, CS(1)),                                   // tmp1 <- (u+v)<=1
-    ILAND_CS(hit, hit, tmp1),                                    // hit <- (v>=0)&&(v+u<=1)
+    TANDLE_CS(hit, hit, tmp1, CS(1)),                            // hit <- (v>=0)&&(v+u<=1)
     IPJMP2_CS(hit, isect_triangle_end, isect_triangle_mid3),     // if hit then mid3 else end
     LABEL(isect_triangle_mid3),
     INSERT_TMACRO(vec3_dot, tmp1, vert2, vtmp),                  // tmp1 <- dot(edge2, qvec)
@@ -191,8 +189,7 @@ TMACRO14(isect_quad, hit, t, o, d, v00, v01, v11, v10,
     INSERT_TMACRO(vec3_dot, alpha, vtmp1, vtmp3),           // alpha <- dot(T, p)
     TDIV_CS(alpha, alpha, D),                               // alpha <- alpha
     TGE_CS(hit, alpha, CS(0)),                              // hit <- alpha>=0
-    TLE_CS(t, alpha, CS(1)),                                // t <- alpha<=1
-    ILAND_CS(hit, hit, t),                                  // hit <- range01(alpha)
+    TANDLE_CS(hit, hit, alpha, CS(1)),                      // hit <- range01(alpha)
     IPJMP2_CS(hit, isect_quad_end, isect_quad_l2),          // if hit then l2 else end
     LABEL(isect_quad_l2),
     INSERT_TMACRO(vec_vec3_sub, vtmp1, v10, v00),           // vtmp1 <- e01
@@ -201,8 +198,7 @@ TMACRO14(isect_quad, hit, t, o, d, v00, v01, v11, v10,
     INSERT_TMACRO(vec3_dot, beta, d, vtmp3),                // beta <- dot(d, Q)
     TDIV_CS(beta, beta, D),                                 // beta <- beta
     TGE_CS(hit, beta, CS(0)),                               // hit <- beta>=0
-    TLE_CS(t, beta, CS(1)),                                 // t <- beta<=1
-    ILAND_CS(hit, hit, t),                                  // hit <- range01(beta)
+    TANDLE_CS(hit, hit, beta, CS(1)),                       // hit <- range01(beta)
     IPJMP2_CS(hit, isect_quad_end, isect_quad_l3),          // if hit then l3 else end
     LABEL(isect_quad_l3),
     TADD_CS(t, alpha, beta),                                // t <- alpha + beta
@@ -402,95 +398,33 @@ template <std::floating_point T>
 TMACRO3(traverse, pid, o, d)
     TMOV(t, 1e6),               // t <- 1e6
     IMOV_CS(pid, CS(5)),        // pid <- miss
-    // prim 0 - floor
-    TMOV(vr00, -1),             // vr0 <- v00 = vertex 0 (-1, -1, 1)
-    TMOV(vr01, -1),
-    TMOV(vr02, 1),
-    TMOV(vr10, 1),              // vr1 <- v01 = vertex 3 (1, -1, 1)
-    TMOV(vr11, -1),
-    TMOV(vr12, 1),
-    TMOV(vr20, 1),              // vr2 <- v11 = vertex 2 (1, -1, -1)
-    TMOV(vr21, -1),
-    TMOV(vr22, -1),
-    TMOV(vr30, -1),             // vr3 <- v10 = vertex 1 (-1, -1, -1)
-    TMOV(vr31, -1),
-    TMOV(vr32, -1),
-    IMOV(pp, 0),                // next: set_vtxs_right_wall
-    JMP(isect_quad),
-    LABEL(set_vtxs_right_wall),
-    // prim 1 - right wall
-    TMOV(vr00, -1),             // vr0 <- v00 = vertex 0 (-1, -1, 1)
-    TMOV(vr01, -1),
-    TMOV(vr02, 1),
-    TMOV(vr10, -1),             // vr1 <- v01 = vertex 1 (-1, -1, -1)
-    TMOV(vr11, -1),
-    TMOV(vr12, -1),
-    TMOV(vr20, -1),             // vr2 <- v11 = vertex 5 (-1, 1, -1)
-    TMOV(vr21, 1),
-    TMOV(vr22, -1),
-    TMOV(vr30, -1),             // vr3 <- v10 = vertex 4 (-1, 1, 1)
-    TMOV(vr31, 1),
-    TMOV(vr32, 1),
-    IMOV(pp, 1),                // next: set_vtxs_left_wall
-    JMP(isect_quad),
-    LABEL(set_vtxs_left_wall),
-    // prim 2 - left wall
-    TMOV(vr00, 1),              // vr0 <- v00 = vertex 2 (1, -1, -1)
-    TMOV(vr01, -1),
-    TMOV(vr02, -1),
-    TMOV(vr10, 1),              // vr1 <- v01 = vertex 3 (1, -1, 1)
-    TMOV(vr11, -1),
-    TMOV(vr12, 1),
-    TMOV(vr20, 1),              // vr2 <- v11 = vertex 7 (1, 1, 1)
-    TMOV(vr21, 1),
-    TMOV(vr22, 1),
-    TMOV(vr30, 1),              // vr3 <- v10 = vertex 6 (1, 1, -1)
-    TMOV(vr31, 1),
-    TMOV(vr32, -1),
-    IMOV(pp, 2),                // next: set_vtxs_ceiling
-    JMP(isect_quad),
-    LABEL(set_vtxs_ceiling),
-    // prim 3 - ceiling
-    TMOV(vr00, -1),             // vr0 <- v00 = vertex 4 (-1, 1, 1)
-    TMOV(vr01, 1),
-    TMOV(vr02, 1),
-    TMOV(vr10, -1),             // vr1 <- v01 = vertex 5 (-1, 1, -1)
-    TMOV(vr11, 1),
-    TMOV(vr12, -1),
-    TMOV(vr20, 1),              // vr2 <- v11 = vertex 6 (1, 1, -1)
-    TMOV(vr21, 1),
-    TMOV(vr22, -1),
-    TMOV(vr30, 1),              // vr3 <- v10 = vertex 7 (1, 1, 1)
-    TMOV(vr31, 1),
-    TMOV(vr32, 1),
-    IMOV(pp, 3),                // next: set_vtxs_back_wall
-    JMP(isect_quad),
-    LABEL(set_vtxs_back_wall),
-    // prim 4 - back wall
-    TMOV(vr00, -1),             // vr0 <- v00 = vertex 1 (-1, -1, -1)
-    TMOV(vr01, -1),
-    TMOV(vr02, -1),
-    TMOV(vr10, 1),              // vr1 <- v01 = vertex 2 (1, -1, -1)
-    TMOV(vr11, -1),
-    TMOV(vr12, -1),
-    TMOV(vr20, 1),              // vr2 <- v11 = vertex 6 (1, 1, -1)
-    TMOV(vr21, 1),
-    TMOV(vr22, -1),
-    TMOV(vr30, -1),             // vr3 <- v10 = vertex 5 (-1, 1, -1)
-    TMOV(vr31, 1),
-    TMOV(vr32, -1),
-    IMOV(pp, 4),                // next: traverse_room_end
-    JMP(isect_quad),
-    LABEL(isect_quad),
+    IMOV(pp, 0),
+    LABEL(isect_wall),
+// set vertices pos <vr> using wall index <pp>
+// 0 - floor, 1 - left wall, 2 - right wall, 3 - ceiling, 4 - back wall
+//                   0   1   2   3   4
+    TSCT5(vr00, pp, -1, -1,  1, -1, -1),
+    TSCT5(vr01, pp, -1, -1, -1,  1, -1),
+    TSCT5(vr02, pp,  1,  1, -1,  1, -1),
+    TSCT5(vr10, pp,  1, -1,  1, -1,  1),
+    TSCT5(vr11, pp, -1, -1, -1,  1, -1),
+    TSCT5(vr12, pp,  1, -1,  1, -1, -1),
+    TSCT5(vr20, pp,  1, -1,  1,  1,  1),
+    TSCT5(vr21, pp, -1,  1,  1,  1,  1),
+    TSCT5(vr22, pp, -1, -1,  1, -1, -1),
+    TSCT5(vr30, pp, -1, -1,  1,  1, -1),
+    TSCT5(vr31, pp, -1,  1,  1,  1,  1),
+    TSCT5(vr32, pp, -1,  1, -1,  1, -1),
     INSERT_TMACRO(isect_quad, CS(hit), CS(ct), o, d,
                   CS(vr0), CS(vr1), CS(vr2), CS(vr3),
                   CS(vr4), CS(vr5), CS(vr6),
                   CS(tmp0), CS(tmp1), CS(tmp2)),
-    TLT(tmp0, ct, t),           // tmp0 <- ct < t
-    ILAND(tmp0, tmp0, hit),
-    TCMOV(t, tmp0, ct, t),
-    ICMOV_CS(pid, CS(tmp0), CS(pp), pid),
-    IPJMP5(pp, set_vtxs_right_wall, set_vtxs_left_wall, set_vtxs_ceiling, set_vtxs_back_wall, traverse_room_end),
+    TANDLT(hit, hit, ct, t),    // hit < hit && ct < t
+    TCMOV(t, hit, ct, t),
+    ICMOV_CS(pid, CS(hit), CS(pp), pid),
+    IEQ(tmp0, pp, 4),
+    IADD(pp, pp, 1),
+    IPJMP2(tmp0, isect_wall, traverse_room_end),
     LABEL(traverse_room_end)
 MACRO_END;
 
@@ -499,36 +433,15 @@ MACRO_END;
 // pid[in] primitive id
 template <std::floating_point T>
 TMACRO4(set_materials, clrr, clrg, clrb, pid)
-    IPJMP6(pid, set_clr_floor, set_clr_right_wall, set_clr_left_wall, set_clr_ceiling, set_clr_back_wall, set_clr_miss),
-    LABEL(set_clr_floor),       // white floor
-    TMOV_CS(clrr, CS(0.8)),
-    TMOV_CS(clrg, CS(0.8)),
-    TMOV_CS(clrb, CS(0.8)),
-    JMP(set_materials_end),
-    LABEL(set_clr_right_wall),   // red wall
-    TMOV_CS(clrr, CS(1)),
-    TMOV_CS(clrg, CS(0.2)),
-    TMOV_CS(clrb, CS(0.2)),
-    JMP(set_materials_end),
-    LABEL(set_clr_left_wall),  // green wall
-    TMOV_CS(clrr, CS(0.2)),
-    TMOV_CS(clrg, CS(1)),
-    TMOV_CS(clrb, CS(0.2)),
-    JMP(set_materials_end),
-    LABEL(set_clr_ceiling),     // blue ceiling for now
-    TMOV_CS(clrr, CS(0.2)),
-    TMOV_CS(clrg, CS(0.2)),
-    TMOV_CS(clrb, CS(1)),
-    JMP(set_materials_end),
-    LABEL(set_clr_back_wall),   // yellow back wall for now
-    TMOV_CS(clrr, CS(1)),
-    TMOV_CS(clrg, CS(1)),
-    TMOV_CS(clrb, CS(0.2)),
-    JMP(set_materials_end),
-    LABEL(set_clr_miss),
-    TMOV_CS(clrr, CS(0)),
-    TMOV_CS(clrg, CS(0)),
-    TMOV_CS(clrb, CS(0)),
-    LABEL(set_materials_end)
+// 0 - white floor
+// 1 - red wall
+// 2 - green wall
+// 3 - blue ceiling
+// 4 - yellow back wall
+// 5 - miss
+//                     0    1    2    3    4   5
+    TSCT6(clrr, pid, 0.8,   1, 0.2, 0.2,   1,  0),
+    TSCT6(clrg, pid, 0.8, 0.2,   1, 0.2,   1,  0),
+    TSCT6(clrb, pid, 0.8, 0.2, 0.2,   1, 0.2,  0)
 MACRO_END;
 } // namespace loom::vm
