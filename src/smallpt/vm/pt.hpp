@@ -97,7 +97,7 @@ TMACRO7(solve_quadratic, s, x, a, b, c, tmp1, tmp2)
     LABEL(sq_end)
 MACRO_END;
 
-/// @struct loom::vm::isect_sphere
+/// @struct loom::vm::prep_isect_sphere
 /// @brief Ray-sphere intersection port. Prepares coeffs for solve_quadratic.
 /// @param[out] a
 /// @param[out] b
@@ -117,6 +117,33 @@ TMACRO10(prep_isect_sphere, a, b, c, o, d, p, r, tmp1, tmp2, vtmp1)
     INSERT_TMACRO(vec3_scalar_mul, vtmp1, vtmp1, CS(2)),    // vtmp1 <- pc*2
     INSERT_TMACRO(vec3_dot, b, d, vtmp1),                   // b <- b
     INSERT_TMACRO(vec3_length2, a, d)                       // a <- a
+MACRO_END;
+
+// cylinder intersection algorithm:
+// o = o - p
+// cyl_prep_abc
+// solve_quadratic
+// cyl_fin
+
+// r is constant
+template <std::floating_point T>
+TMACRO10(cyl_prep_abc, a, b, c, ox, oy, oz, dx, dy, dz, r)
+    TMUL_CS(a, dz, dz),
+    TFMA_CS(a, dx, dx, a),
+    TMUL_CS(b, oz, dz),
+    TFMA_CS(b, ox, dx, b),
+    TMUL_CS(b, b, CS(2)),
+    TMUL_CS(c, r, r),
+    TFMS_CS(c, oz, oz, c),
+    TFMA_CS(c, ox, ox, c)
+MACRO_END;
+
+// h is constant
+template <std::floating_point T>
+TMACRO6(cyl_fin, hit, t, oy, dy, y, h)
+    TFMA_CS(y, dy, t, oy),
+    TANDGE_CS(hit, hit, y, CS(0)),
+    TANDLE_CS(hit, hit, y, h)
 MACRO_END;
 
 /// @struct loom::vm::isect_triangle

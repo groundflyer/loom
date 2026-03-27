@@ -81,8 +81,16 @@ TKERNEL10(sphere_isect_test,
           d0, d1, d2,
           p0, p1, p2,
           r)
-    INSERT_TMACRO(vm::prep_isect_sphere, CS(a), CS(b), CS(c), CS(o), CS(d), CS(p), CS(r), CS(tmp1), CS(tmp2), CS(vtmp1)),
-    INSERT_TMACRO(vm::solve_quadratic, CS(hit), CS(t), CS(a), CS(b), CS(c), CS(tmp1), CS(tmp2))
+    INSERT_TMACRO(vm::prep_isect_sphere, CS(a), CS(b), CS(c), CS(o), CS(d), CS(p), CS(r), CS(tmp0), CS(tmp1), CS(vtmp1)),
+    INSERT_TMACRO(vm::solve_quadratic, CS(hit), CS(t), CS(a), CS(b), CS(c), CS(tmp0), CS(tmp1))
+KERNEL_END(IVAR(hit), TVAR(t));
+
+template <std::floating_point T>
+TKERNEL11(cylinder_isect_test, o0, o1, o2, d0, d1, d2, p0, p1, p2, r, h)
+    INSERT_TMACRO(vm::vec_vec3_sub, CS(o), CS(o), CS(p)),
+    INSERT_TMACRO(vm::cyl_prep_abc, CS(a), CS(b), CS(c), CS(o0), CS(o1), CS(o2), CS(d0), CS(d1), CS(d2), CS(r)),
+    INSERT_TMACRO(vm::solve_quadratic, CS(hit), CS(t), CS(a), CS(b), CS(c), CS(tmp0), CS(tmp1)),
+    INSERT_TMACRO(vm::cyl_fin, CS(hit), CS(t), CS(o1), CS(d1), CS(tmp0), CS(h))
 KERNEL_END(IVAR(hit), TVAR(t));
 
 template <std::floating_point T>
@@ -149,6 +157,13 @@ to_tuple(const std::array<T, N>& a) noexcept
     return array2tuple(a);
 }
 
+template <typename T, std::size_t N>
+static auto
+to_tuple(const Vector<T, N, std::array>& v) noexcept
+{
+    return to_tuple(v.data());
+}
+
 template <typename T>
 static auto
 to_tuple(const Disk<T>& prim) noexcept
@@ -161,8 +176,15 @@ template <typename T>
 static auto
 to_tuple(const Sphere<T>& prim) noexcept
 {
-    return std::tuple_cat(array2tuple(prim.center.data()),
-                          std::tuple{prim.radius});
+    return std::tuple_cat(to_tuple(prim.center), std::tuple{prim.radius});
+}
+
+template <typename T>
+static auto
+to_tuple(const Cylinder<T>& prim) noexcept
+{
+    const auto [p, r, h] = prim;
+    return std::tuple_cat(to_tuple(p), std::tuple{r, h});
 }
 
 template <typename T, std::size_t N, std::size_t M>
@@ -182,13 +204,6 @@ to_tuple(const Ray<T>& ray) noexcept
     return array2tuple(array_cat(o.data(), d.data()));
 }
 
-template <typename T, std::size_t N>
-static auto
-to_tuple(const Vector<T, N, std::array>& v) noexcept
-{
-    return array2tuple(v.data());
-}
-
 int
 main(int argc, char* argv[])
 {
@@ -199,6 +214,7 @@ main(int argc, char* argv[])
     auto gu32    = rs.make_gen<std::uint32_t>(0, -1u);
     auto gur     = rs.make_gen<unsigned>(30, 1000);
     auto gf      = rs.make_gen<float>(-1e6, 1e6);
+    auto gfp     = rs.make_gen<float>(0.1, 1e6);
     auto gf11    = rs.make_gen<float>(-1, 1);
     auto g_canon = rs.make_gen<float>();
     auto gb      = rs.make_gen<bool>(0.5);
@@ -226,6 +242,7 @@ main(int argc, char* argv[])
     vm::bse::function<disk_isect_test<float>>     bse_disk_isect;
     vm::bse::function<quadratic_test<float>>      bse_quadratic;
     vm::bse::function<sphere_isect_test<float>>   bse_sphere_isect;
+    vm::bse::function<cylinder_isect_test<float>> bse_cylinder_isect;
     vm::bse::function<triangle_isect_test<float>> bse_triangle_isect;
     vm::bse::function<quad_isect_test<float>>     bse_quad_isect;
     vm::bse::function<ray_dir_test<float>>        bse_ray_dir_test;
@@ -363,14 +380,24 @@ main(int argc, char* argv[])
                 }),
             "quadratic",
             0.01),
-        NamedFuzzyTest(
-            tm.fuzzy_with_ref(
-                mk_isect_g([&]() noexcept { return Sphere{gv3(), gf()}; }),
-                mk_isect_t(bse_sphere_isect),
-                intersect,
-                cmp_isects),
-            "ray-sphere intersection",
-            0.01));
+        std::pair{
+            NamedFuzzyTest(
+                tm.fuzzy_with_ref(
+                    mk_isect_g([&]() noexcept { return Sphere{gv3(), gfp()}; }),
+                    mk_isect_t(bse_sphere_isect),
+                    intersect,
+                    cmp_isects),
+                "ray-sphere intersection",
+                0.01),
+            NamedFuzzyTest(
+                tm.fuzzy_with_ref(
+                    mk_isect_g([&]() noexcept
+                               { return Cylinder{gv3(), gfp(), gfp()}; }),
+                    mk_isect_t(bse_cylinder_isect),
+                    intersect,
+                    cmp_isects),
+                "ray-cylinder intersection",
+                0.01)});
 
     track.check(NamedFuzzyTest(
         tm.fuzzy_with_ref(mk_isect_g([&]() noexcept -> Triangle<float>
