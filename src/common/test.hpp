@@ -313,18 +313,17 @@ class Track
         if constexpr(is_tuple_v<tt>)
         {
             constexpr unsigned ltotal = std::tuple_size_v<tt>;
-            unsigned           lp     = 0;
-            intlist::for_each(
-                [&]<std::size_t I>() noexcept
-                {
-                    lp += static_cast<unsigned>(
-                        run_print_count<(is_last && I == ltotal - 1)>(
-                            std::get<I>(test),
-                            counter,
-                            l));
-                },
-                std::make_index_sequence<ltotal>{});
-            return lp == ltotal;
+            return fold_tuple(intlist::collect<std::array<unsigned, ltotal>>(
+                                  std::make_index_sequence<ltotal>{},
+                                  [&]<std::size_t I>() noexcept -> unsigned
+                                  {
+                                      return run_print_count<(is_last &&
+                                                              I == ltotal - 1)>(
+                                          std::get<I>(test),
+                                          counter,
+                                          l);
+                                  }),
+                              std::plus<unsigned>{}) == ltotal;
         }
         else
         {

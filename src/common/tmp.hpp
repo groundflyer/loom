@@ -1666,18 +1666,22 @@ for_each(F&& f,
     (..., f.template operator()<Is>(std::forward<Args>(args)...));
 }
 
-/// @brief Invoke @p f with each number of @p list as the first
+/// @brief Invoke @p f with each number of @p list as template
 /// parameter and @p args as the rest parameters and collect results into
-/// std::array.
-template <typename F, std::integral T, T... Is, typename... Args>
-constexpr std::array<std::remove_cvref_t<std::invoke_result_t<F, T>>,
-                     sizeof...(Is)>
+/// @p Tuple.
+template <typename Tuple,
+          typename F,
+          std::integral T,
+          T... Is,
+          typename... Args>
+constexpr Tuple
 collect(std::integer_sequence<T, Is...> /*list*/,
         F&& f,
-        Args&&... args) noexcept(std::is_nothrow_invocable_v<F, T>)
+        Args&&... args) noexcept((... &&
+                                  noexcept(f.template operator()<Is>(
+                                      std::forward<Args>(args)...))))
 {
-    return {
-        std::invoke(std::forward<F>(f), Is, std::forward<Args>(args)...)...};
+    return {f.template operator()<Is>(std::forward<Args>(args)...)...};
 }
 /// @}
 } // namespace intlist

@@ -360,9 +360,9 @@ class cornell_box
     },
             []<typename idxs>() noexcept -> Quad<real>
             {
-                return intlist::collect(idxs{},
-                                        [](const std::size_t i) noexcept
-                                        { return room_points[i]; });
+                return intlist::collect<Quad<real>>(idxs{},
+                                                    []<std::size_t i>() noexcept
+                                                    { return room_points[i]; });
             }),
         // objects
         typelist::maybe_collect(tetrahedron_geo_descr{},
@@ -370,9 +370,9 @@ class cornell_box
                                 {
                                     return apply_transform(
                                         tetrahedron_transform,
-                                        intlist::collect(
+                                        intlist::collect<Triangle<real>>(
                                             idxs{},
-                                            [](const std::size_t i) noexcept
+                                            []<std::size_t i>() noexcept
                                             { return tetrahedron_points[i]; }));
                                 }),
         std::tuple{
