@@ -360,11 +360,7 @@ using __macro_decl_vec3_cross =
 /// @param[in] A vec[3] a
 /// @param[in] B vec[3] b
 /// @param tmp storage for temporary values
-template <typename T,
-          CharSequence DST,
-          CharSequence A,
-          CharSequence B,
-          CharSequence Tmp>
+template <typename T, typename DST, typename A, typename B, CharSequence Tmp>
 struct vec3_cross :
     std::type_identity<typename make_cross<T,
                                            maybe_make_reg_array_t<DST, 3>,
