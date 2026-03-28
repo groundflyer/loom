@@ -926,6 +926,18 @@
           CS(C5),                                       \
           CS(C6),                                       \
           CS(C7))
+#define TSCT9(DST, IDX, C0, C1, C2, C3, C4, C5, C6, C7, C8) \
+    TSCTN(DST,                                              \
+          IDX,                                              \
+          CS(C0),                                           \
+          CS(C1),                                           \
+          CS(C2),                                           \
+          CS(C3),                                           \
+          CS(C4),                                           \
+          CS(C5),                                           \
+          CS(C6),                                           \
+          CS(C7),                                           \
+          CS(C8))
 #define ISCT3(DST, IDX, C0, C1, C2) ISCTN(DST, IDX, CS(C0), CS(C1), CS(C2))
 #define ISCT4(DST, IDX, C0, C1, C2, C3) \
     ISCTN(DST, IDX, CS(C0), CS(C1), CS(C2), CS(C3))
