@@ -393,25 +393,50 @@ TMACRO5(to_sample_space, sx, sy, w, h, r)
     TSUB_CS(sy, sy, CS(0.5))
 MACRO_END;
 
-struct default_cam
+struct scene
 {
-    // fov = 60
-    using TAN_FOV_HALF = CS(0.5773503780365);
+    // fov = 110
+    using CAM_TAN_FOV_HALF = CS(1.4281482696533203);
 
-    using POS0 = CS(0);
-    using POS1 = CS(0);
-    using POS2 = CS(4);
+    using CAM_Px = CS(0);
+    using CAM_Py = CS(0);
+    using CAM_Pz = CS(2);
 
-    using DIR0 = CS(0);
-    using DIR1 = CS(0);
-    using DIR2 = CS(-1);
+    using CAM_Dx = CS(0);
+    using CAM_Dy = CS(0);
+    using CAM_Dz = CS(-1);
+
+    // tetrahedron points
+    using TH_V0x = CS(-0.7878358364105225);
+    using TH_V0y = CS(-1);
+    using TH_V0z = CS(-0.5878359079360962);
+
+    using TH_V1x = CS(-0.5419577956199646);
+    using TH_V1y = CS(-1);
+    using TH_V1z = CS(0.3297936916351318);
+
+    using TH_V2x = CS(0.1297936737537384);
+    using TH_V2y = CS(-1);
+    using TH_V2z = CS(-0.3419578075408936);
+
+    using TH_V3x = CS(-0.4000000059604645);
+    using TH_V3y = CS(-0.1772758364677429);
+    using TH_V3z = CS(-0.2000000029802322);
+
+    // cylinder
+    using CL_Px = CS(0.5);
+    using CL_Py = CS(-1);
+    using CL_Pz = CS(-0.35);
+
+    using CL_R = CS(0.25);
+    using CL_H = CS(0.8);
 };
 
 // d is d[3], but we set only x and y, z = -1
 template <std::floating_point T>
 TMACRO2(gen_ray_dir, d0, d1)
-    TMUL_CS(d0, d0, default_cam::TAN_FOV_HALF),
-    TMUL_CS(d1, d1, default_cam::TAN_FOV_HALF),
+    TMUL_CS(d0, d0, scene::CAM_TAN_FOV_HALF),
+    TMUL_CS(d1, d1, scene::CAM_TAN_FOV_HALF),
     TNEG_CS(d0, d0),
     TNEG_CS(d1, d1)
     // TSUB_CS(d0, default_cam::DIR0, ndc0),
@@ -424,9 +449,9 @@ MACRO_END;
 template <std::floating_point T>
 TMACRO3(traverse, pid, o, d)
     TMOV(t, 1e6),               // t <- 1e6
-    IMOV_CS(pid, CS(5)),        // pid <- miss
+    IMOV_CS(pid, CS(8)),        // pid <- miss
     IMOV(pp, 0),
-    LABEL(isect_wall),
+    LABEL(traverse_box),        // ray-trace walls loop
 // set vertices pos <vr> using wall index <pp>
 // 0 - floor, 1 - left wall, 2 - right wall, 3 - ceiling, 4 - back wall
 //                   0   1   2   3   4
@@ -446,12 +471,33 @@ TMACRO3(traverse, pid, o, d)
                   CS(vr0), CS(vr1), CS(vr2), CS(vr3),
                   CS(vr4), CS(vr5), CS(vr6),
                   CS(tmp0), CS(tmp1), CS(tmp2)),
-    TANDLT(hit, hit, ct, t),    // hit < hit && ct < t
+    TANDLT(hit, hit, ct, t),    // hit <- hit && ct < t
     TCMOV(t, hit, ct, t),
     ICMOV_CS(pid, CS(hit), CS(pp), pid),
     IEQ(tmp0, pp, 4),
     IADD(pp, pp, 1),
-    IPJMP2(tmp0, isect_wall, traverse_room_end),
+    ICMOV(pp, tmp0, 0, pp),
+    IPJMP2(tmp0, traverse_box, traverse_tetrahedron),
+    LABEL(traverse_tetrahedron), // ray-trace tetrahedron sides loop
+// set vertices pos <vr> using polygon index <pp>
+    TSCTN_CS(CS(vr00), CS(pp), scene::TH_V0x, scene::TH_V1x, scene::TH_V2x),
+    TSCTN_CS(CS(vr01), CS(pp), scene::TH_V0y, scene::TH_V1y, scene::TH_V2y),
+    TSCTN_CS(CS(vr02), CS(pp), scene::TH_V0z, scene::TH_V1z, scene::TH_V2z),
+    TSCTN_CS(CS(vr10), CS(pp), scene::TH_V1x, scene::TH_V2x, scene::TH_V0x),
+    TSCTN_CS(CS(vr11), CS(pp), scene::TH_V1y, scene::TH_V2y, scene::TH_V0y),
+    TSCTN_CS(CS(vr12), CS(pp), scene::TH_V1z, scene::TH_V2z, scene::TH_V0z),
+    TMOV_CS(CS(vr20), scene::TH_V3x),
+    TMOV_CS(CS(vr21), scene::TH_V3y),
+    TMOV_CS(CS(vr22), scene::TH_V3z),
+    INSERT_TMACRO(isect_triangle, CS(hit), CS(ct), o, d, CS(vr0), CS(vr1), CS(vr2),
+                  CS(tmp0), CS(tmp1), CS(vr3)),
+    TANDLT(hit, hit, ct, t),    // hit <- tmp2 && ct < t
+    TCMOV(t, hit, ct, t),
+    IADD(tmp1, pp, 5),          // real pid
+    ICMOV_CS(pid, CS(hit), CS(tmp1), pid),
+    IEQ(tmp0, pp, 2),
+    IADD(pp, pp, 1),
+    IPJMP2(tmp0, traverse_tetrahedron, traverse_room_end),
     LABEL(traverse_room_end)
 MACRO_END;
 
@@ -465,10 +511,13 @@ TMACRO4(set_materials, clrr, clrg, clrb, pid)
 // 2 - green wall
 // 3 - blue ceiling
 // 4 - yellow back wall
-// 5 - miss
-//                     0    1    2    3    4   5
-    TSCT6(clrr, pid, 0.8,   1, 0.2, 0.2,   1,  0),
-    TSCT6(clrg, pid, 0.8, 0.2,   1, 0.2,   1,  0),
-    TSCT6(clrb, pid, 0.8, 0.2, 0.2,   1, 0.2,  0)
+// 5 - pink tetrahedron
+// 6 - pink tetrahedron
+// 7 - pink tetrahedron
+// 8 - miss
+//                     0    1    2    3    4    5    6    7   8
+    TSCT9(clrr, pid, 0.8,   1, 0.2, 0.2,   1, 0.8, 0.8, 0.8,  0),
+    TSCT9(clrg, pid, 0.8, 0.2,   1, 0.2,   1, 0.2, 0.2, 0.2,  0),
+    TSCT9(clrb, pid, 0.8, 0.2, 0.2,   1, 0.2, 0.8, 0.8, 0.8,  0)
 MACRO_END;
 } // namespace loom::vm

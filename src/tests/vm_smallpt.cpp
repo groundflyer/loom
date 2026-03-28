@@ -119,7 +119,7 @@ KERNEL_END(IVAR(hit), TVAR(t));
 template <std::floating_point T>
 TKERNEL2(ray_dir_test, d0, d1)
     INSERT_TMACRO(vm::gen_ray_dir, CS(d0), CS(d1)),
-    TMOV_CS(CS(d2), vm::default_cam::DIR2),
+    TMOV_CS(CS(d2), vm::scene::CAM_Dz),
     INSERT_TMACRO(vm::vec3_norm, CS(d), CS(tmp))
 TKERNEL_END3(d0, d1, d2);
 

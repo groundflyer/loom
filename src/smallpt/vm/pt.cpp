@@ -26,11 +26,11 @@ KERNEL(pt, IVAR(pix), IVAR(res), TVAR(r))
     MOV(TVAR(d1), IVAR(d1)),
     INSERT_TMACRO(to_sample_space, CS(d0), CS(d1), CS(w), CS(h), CS(r)),
     INSERT_TMACRO(gen_ray_dir, CS(d0), CS(d1)),
-    TMOV_CS(CS(d2), default_cam::DIR2),
+    TMOV_CS(CS(d2), scene::CAM_Dz),
     INSERT_TMACRO(vm::vec3_norm, CS(d), CS(tmp0)),
-    TMOV_CS(CS(p0), default_cam::POS0),
-    TMOV_CS(CS(p1), default_cam::POS1),
-    TMOV_CS(CS(p2), default_cam::POS2),
+    TMOV_CS(CS(p0), scene::CAM_Px),
+    TMOV_CS(CS(p1), scene::CAM_Py),
+    TMOV_CS(CS(p2), scene::CAM_Pz),
     INSERT_TMACRO(traverse, CS(pid), CS(p), CS(d)),
     INSERT_TMACRO(set_materials, CS(clrr), CS(clrg), CS(clrb), CS(pid))
 KERNEL_END(TVAR(clrr), TVAR(clrg), TVAR(clrb), TVAR(t));
