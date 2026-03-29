@@ -458,6 +458,10 @@
               typename P10>                                    \
     __MACRO_DEF_BEGIN(NAME)
 
+#define TMACRO(NAME)               \
+    __MACRO_DECLARE(NAME);         \
+    template <typename MAJOR_TYPE> \
+    __MACRO_DEF_BEGIN(NAME)
 #define TMACRO1(NAME, P1)                       \
     __MACRO_DECLARE(NAME, CS(P1));              \
     template <typename MAJOR_TYPE, typename P1> \
@@ -938,6 +942,78 @@
           CS(C6),                                           \
           CS(C7),                                           \
           CS(C8))
+#define TSCT10(DST, IDX, C0, C1, C2, C3, C4, C5, C6, C7, C8, C9) \
+    TSCTN(DST,                                                   \
+          IDX,                                                   \
+          CS(C0),                                                \
+          CS(C1),                                                \
+          CS(C2),                                                \
+          CS(C3),                                                \
+          CS(C4),                                                \
+          CS(C5),                                                \
+          CS(C6),                                                \
+          CS(C7),                                                \
+          CS(C8),                                                \
+          CS(C9))
+#define TSCT11(DST, IDX, C0, C1, C2, C3, C4, C5, C6, C7, C8, C9, C10) \
+    TSCTN(DST,                                                        \
+          IDX,                                                        \
+          CS(C0),                                                     \
+          CS(C1),                                                     \
+          CS(C2),                                                     \
+          CS(C3),                                                     \
+          CS(C4),                                                     \
+          CS(C5),                                                     \
+          CS(C6),                                                     \
+          CS(C7),                                                     \
+          CS(C8),                                                     \
+          CS(C9),                                                     \
+          CS(C10))
+#define TSCT12(DST, IDX, C0, C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11) \
+    TSCTN(DST,                                                             \
+          IDX,                                                             \
+          CS(C0),                                                          \
+          CS(C1),                                                          \
+          CS(C2),                                                          \
+          CS(C3),                                                          \
+          CS(C4),                                                          \
+          CS(C5),                                                          \
+          CS(C6),                                                          \
+          CS(C7),                                                          \
+          CS(C8),                                                          \
+          CS(C9),                                                          \
+          CS(C10),                                                         \
+          CS(C11))
+#define TSCT13(DST, \
+               IDX, \
+               C0,  \
+               C1,  \
+               C2,  \
+               C3,  \
+               C4,  \
+               C5,  \
+               C6,  \
+               C7,  \
+               C8,  \
+               C9,  \
+               C10, \
+               C11, \
+               C12) \
+    TSCTN(DST,      \
+          IDX,      \
+          CS(C0),   \
+          CS(C1),   \
+          CS(C2),   \
+          CS(C3),   \
+          CS(C4),   \
+          CS(C5),   \
+          CS(C6),   \
+          CS(C7),   \
+          CS(C8),   \
+          CS(C9),   \
+          CS(C10),  \
+          CS(C11),  \
+          CS(C12))
 #define ISCT3(DST, IDX, C0, C1, C2) ISCTN(DST, IDX, CS(C0), CS(C1), CS(C2))
 #define ISCT4(DST, IDX, C0, C1, C2, C3) \
     ISCTN(DST, IDX, CS(C0), CS(C1), CS(C2), CS(C3))
