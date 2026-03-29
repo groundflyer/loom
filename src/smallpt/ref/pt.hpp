@@ -335,7 +335,7 @@ class cornell_box
             1, // red wall
             2, // green wall
             0, // grey ceiling
-            7, // grey wall
+            7, // back window
                // objects
             3, // plastic tetrahedron of three primitives
             3,

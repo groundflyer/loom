@@ -167,6 +167,10 @@ main(int argc, char* argv[])
     logger.debug("Let's go");
 
     const Camera cam = Scene::camera();
+    // fmt::println("{:.16f}", cam.tan_fov_half);
+    // fmt::println("{:::.16f}", std::get<5>(Scene::geometry));
+    // fmt::println("{:::.16f}", std::get<6>(Scene::geometry));
+    // fmt::println("{:::.16f}", std::get<7>(Scene::geometry));
     // CameraCapture cc{cam};
     // FilmCapture   fc{&film};
     // DummyAction   da{&film.img};
