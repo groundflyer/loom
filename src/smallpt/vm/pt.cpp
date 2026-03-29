@@ -28,11 +28,11 @@ KERNEL(pt, IVAR(pix), IVAR(res), TVAR(r))
     INSERT_TMACRO(gen_ray_dir, CS(d0), CS(d1)),
     TMOV_CS(CS(d2), scene::CAM_Dz),
     INSERT_TMACRO(vm::vec3_norm, CS(d), CS(tmp0)),
-    TMOV_CS(CS(p0), scene::CAM_Px),
-    TMOV_CS(CS(p1), scene::CAM_Py),
-    TMOV_CS(CS(p2), scene::CAM_Pz),
-    INSERT_TMACRO(traverse, CS(pid), CS(p), CS(d)),
-    INSERT_TMACRO(set_materials, CS(clrr), CS(clrg), CS(clrb), CS(pid))
+    TMOV_CS(CS(o0), scene::CAM_Px),
+    TMOV_CS(CS(o1), scene::CAM_Py),
+    TMOV_CS(CS(o2), scene::CAM_Pz),
+    INSERT_TMACRO(traverse_scene),
+    INSERT_TMACRO(set_materials)
 KERNEL_END(TVAR(clrr), TVAR(clrg), TVAR(clrb), TVAR(t));
 
 // clang-format on

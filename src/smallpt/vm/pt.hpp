@@ -428,8 +428,11 @@ struct scene
     using CL_Py = CS(-1);
     using CL_Pz = CS(-0.35);
 
+    using CL_P = type_sequence<CL_Px, CL_Py, CL_Pz>;
+
     using CL_R = CS(0.25);
     using CL_H = CS(0.8);
+    using CL_C = CS(-0.2);      // cap y
 };
 
 // d is d[3], but we set only x and y, z = -1
@@ -443,13 +446,10 @@ TMACRO2(gen_ray_dir, d0, d1)
     // TSUB_CS(d1, default_cam::DIR1, ndc1),
 MACRO_END;
 
-// pid[out] primitive id
-// o[in] v[3] ray origin
-// d[in] v[3] ray direction
 template <std::floating_point T>
-TMACRO3(traverse, pid, o, d)
+TMACRO(traverse_scene)
     TMOV(t, 1e6),               // t <- 1e6
-    IMOV_CS(pid, CS(8)),        // pid <- miss
+    IMOV(pid, 12),        // pid <- miss
     IMOV(pp, 0),
     LABEL(traverse_box),        // ray-trace walls loop
 // set vertices pos <vr> using wall index <pp>
@@ -467,13 +467,13 @@ TMACRO3(traverse, pid, o, d)
     TSCT5(vr30, pp, -1, -1,  1,  1, -1),
     TSCT5(vr31, pp, -1,  1,  1,  1,  1),
     TSCT5(vr32, pp, -1,  1, -1,  1, -1),
-    INSERT_TMACRO(isect_quad, CS(hit), CS(ct), o, d,
+    INSERT_TMACRO(isect_quad, CS(hit), CS(ct), CS(o), CS(d),
                   CS(vr0), CS(vr1), CS(vr2), CS(vr3),
                   CS(vr4), CS(vr5), CS(vr6),
                   CS(tmp0), CS(tmp1), CS(tmp2)),
     TANDLT(hit, hit, ct, t),    // hit <- hit && ct < t
     TCMOV(t, hit, ct, t),
-    ICMOV_CS(pid, CS(hit), CS(pp), pid),
+    ICMOV(pid, hit, pp, pid),
     IEQ(tmp0, pp, 4),
     IADD(pp, pp, 1),
     ICMOV(pp, tmp0, 0, pp),
@@ -489,23 +489,73 @@ TMACRO3(traverse, pid, o, d)
     TMOV_CS(CS(vr20), scene::TH_V3x),
     TMOV_CS(CS(vr21), scene::TH_V3y),
     TMOV_CS(CS(vr22), scene::TH_V3z),
-    INSERT_TMACRO(isect_triangle, CS(hit), CS(ct), o, d, CS(vr0), CS(vr1), CS(vr2),
+    INSERT_TMACRO(isect_triangle, CS(hit), CS(ct), CS(o), CS(d), CS(vr0), CS(vr1), CS(vr2),
                   CS(tmp0), CS(tmp1), CS(vr3)),
-    TANDLT(hit, hit, ct, t),    // hit <- tmp2 && ct < t
+    TANDLT(hit, hit, ct, t),    // hit <- hit && ct < t
     TCMOV(t, hit, ct, t),
     IADD(tmp1, pp, 5),          // real pid
-    ICMOV_CS(pid, CS(hit), CS(tmp1), pid),
+    ICMOV(pid, hit, tmp1, pid),
     IEQ(tmp0, pp, 2),
     IADD(pp, pp, 1),
-    IPJMP2(tmp0, traverse_tetrahedron, traverse_room_end),
+    IPJMP2(tmp0, traverse_tetrahedron, traverse_sphere),
+    LABEL(traverse_sphere),
+    TMOV(vr00, 0.1),
+    TMOV(vr01, -0.7),
+    TMOV(vr02, 0.3),
+    INSERT_TMACRO(prep_isect_sphere, CS(vr10), CS(vr11), CS(vr12),
+                  CS(o), CS(d), CS(vr0), CS(0.3), CS(tmp0), CS(tmp1), CS(vr2)),
+    IMOV(pp, 8),                // sphere pid
+    LABEL(traverse_solve_quadratic),
+    INSERT_TMACRO(solve_quadratic, CS(hit), CS(ct), CS(vr10), CS(vr11), CS(vr12), CS(tmp0), CS(tmp1)),
+    IEQ(tmp0, pp, 8),           // tracing sphere?
+    IPJMP2(tmp0, traverse_cylinder_fin, traverse_sphere_fin),
+    LABEL(traverse_sphere_fin),
+    TANDLT(hit, hit, ct, t),    // hit <- hit && ct < t
+    TCMOV(t, hit, ct, t),
+    ICMOV(pid, hit, pp, pid),
+    LABEL(traverse_cylinder),
+    INSERT_TMACRO(vec_vec3_sub, CS(vr0), CS(o), scene::CL_P),
+    INSERT_TMACRO(cyl_prep_abc, CS(vr10), CS(vr11), CS(vr12), CS(vr00), CS(vr01), CS(vr02), CS(d0), CS(d1), CS(d2), scene::CL_R),
+    IMOV(pp, 9),
+    JMP(traverse_solve_quadratic),
+    LABEL(traverse_cylinder_fin),
+    INSERT_TMACRO(cyl_fin, CS(hit), CS(ct), CS(vr01), CS(d1), CS(tmp0), scene::CL_H),
+    TANDLT(hit, hit, ct, t),    // hit <- hit && ct < t
+    TCMOV(t, hit, ct, t),
+    ICMOV(pid, hit, pp, pid),
+    IMOV(pp, 10),
+    TMOV_CS(CS(vr00), scene::CL_Px),
+    TMOV_CS(CS(vr01), scene::CL_C),
+    TMOV_CS(CS(vr02), scene::CL_Pz),
+    TMOV(vr10, 0),
+    TMOV(vr11, 1),
+    TMOV(vr12, 0),
+    TMOV_CS(CS(tmp0), scene::CL_R),
+    LABEL(traverse_disk),
+    INSERT_TMACRO(isect_disk, CS(hit), CS(ct), CS(o), CS(d), CS(vr0), CS(vr1), CS(tmp0), CS(vr2), CS(tmp1)),
+    TANDLT(hit, hit, ct, t),    // hit <- hit && ct < t
+    TCMOV(t, hit, ct, t),
+    ICMOV(pid, hit, pp, pid),
+    IEQ(tmp1, pp, 11),          // tracing light?
+    IMOV(pp, 11),               // set light parameters
+    TMOV(vr00, 0),
+    TMOV(vr01, 0.9999),
+    TMOV(vr02, 0),
+    TMOV(vr10, 0),
+    TMOV(vr11, -1),
+    TMOV(vr12, 0),
+    TMOV(tmp0, 0.35),
+    IPJMP2(tmp1, traverse_disk, traverse_room_end),
     LABEL(traverse_room_end)
 MACRO_END;
 
+using clrr = CS(clrr);
+using clrg = CS(clrg);
+using clrb = CS(clrb);
+
 // set colors and normal
-// clr[rgb][out] rgb[3] color
-// pid[in] primitive id
 template <std::floating_point T>
-TMACRO4(set_materials, clrr, clrg, clrb, pid)
+TMACRO(set_materials)
 // 0 - white floor
 // 1 - red wall
 // 2 - green wall
@@ -514,10 +564,14 @@ TMACRO4(set_materials, clrr, clrg, clrb, pid)
 // 5 - pink tetrahedron
 // 6 - pink tetrahedron
 // 7 - pink tetrahedron
-// 8 - miss
-//                     0    1    2    3    4    5    6    7   8
-    TSCT9(clrr, pid, 0.8,   1, 0.2, 0.2,   1, 0.8, 0.8, 0.8,  0),
-    TSCT9(clrg, pid, 0.8, 0.2,   1, 0.2,   1, 0.2, 0.2, 0.2,  0),
-    TSCT9(clrb, pid, 0.8, 0.2, 0.2,   1, 0.2, 0.8, 0.8, 0.8,  0)
+// 8 - violet sphere
+// 9 - light blue cylinder
+// 10 - cylinder cap
+// 11 - light
+// 12 - miss
+//                      0    1    2    3    4    5    6    7    8    9   10 11 12
+    TSCT13(clrr, pid, 0.8,   1, 0.2, 0.2,   1, 0.8, 0.8, 0.8, 0.6,   0,   0, 1, 0),
+    TSCT13(clrg, pid, 0.8, 0.2,   1, 0.2,   1, 0.2, 0.2, 0.2,   0,   1,   1, 1, 0),
+    TSCT13(clrb, pid, 0.8, 0.2, 0.2,   1, 0.2, 0.8, 0.8, 0.8,   1, 0.8, 0.8, 1, 0)
 MACRO_END;
 } // namespace loom::vm
