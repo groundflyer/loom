@@ -44,11 +44,11 @@ render(Image& img) noexcept
     const auto [w, h]    = img.res();
     const unsigned res   = w << 16 | h;
     const float    ratio = static_cast<float>(w) / static_cast<float>(h);
-    for(auto it = img.begin(); it != img.end(); ++it)
+    for(auto [pos, pix]: img)
     {
-        const auto [x, y]       = it.pos();
+        const auto [x, y]       = pos;
         const auto [r, g, b, t] = f(x << 16 | y, res, ratio);
-        *it                     = RGBA{r, g, b, 1};
+        pix                     = RGBA{r, g, b, 1};
     }
 }
 

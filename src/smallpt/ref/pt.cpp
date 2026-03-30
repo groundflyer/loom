@@ -34,10 +34,11 @@ render(Image&                 img,
     const float pw          = ratio / res[0]; // pixel width
 
 #pragma omp parallel for schedule(dynamic)
-    for(auto it = img.begin(); it != img.end(); ++it)
+    for(auto [pos, pix]: img)
     {
-        const Vec2f         pp   = sample_space(it.pos()); // pixel position
-        const std::uint32_t c0   = it.pos()[1] * img.res()[0] + it.pos()[0];
+        const auto [px, py]      = pos;
+        const Vec2f         pp   = sample_space(pos); // pixel position
+        const std::uint32_t c0   = px * img.res()[0] + py;
         unsigned            ns   = 0;
         float               mean = .0f;
         float               m2   = .0f;
@@ -63,7 +64,7 @@ render(Image&                 img,
             r += v;
         }
 
-        *it = RGBA{r / static_cast<float>(ns), 1};
+        pix = RGBA{r / static_cast<float>(ns), 1};
 
         progress.fetch_add(1, std::memory_order_relaxed);
     }
