@@ -112,12 +112,10 @@ test_stream(std::string_view compiler_name,
         {
             auto tp = shop.get_thread_pool();
             if constexpr(affine_threads)
-            {
-                if(threads_number <= std::thread::hardware_concurrency() / 2)
-                    tp.affine_physical();
-                else
-                    tp.affine_full();
-            }
+                tp.affine(threads_number <=
+                                  std::thread::hardware_concurrency() / 2 ?
+                              AFFINITY::PHYSICAL :
+                              AFFINITY::FULL);
 
             while(!mp::is_complete(ic)) shop.exchange(ic, oc);
             shop.set();

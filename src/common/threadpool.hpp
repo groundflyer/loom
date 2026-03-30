@@ -205,6 +205,23 @@ class CPUTopology : public std::ranges::view_interface<CPUTopology>
     ~CPUTopology() { hwloc_topology_destroy(p_topology); }
 };
 
+/// @brief Threadpool affinity method.
+///
+/// Extra threads (if threadpool size exceeds the number of CPUs) never affined.
+///
+/// Physical affinity example:
+/// The topology of a SMT2 CPU with 4 physical cores and 8
+/// logical cores is [[0, 4], [1, 5], [2, 6], [3, 7]]. First physical core
+/// provides two logical cores indexed 0 and 4, second - 1 and 5, etc.
+/// Correspondingly first thread is affined to logical cores 0 and 4,
+/// second - to 1 and 5, etc.
+enum class AFFINITY
+{
+    FULL,    /*!< Affine every thread to a separate logical core. */
+    PHYSICAL /*!< Affine every thread to logical siblings of each physical core.
+              */
+};
+
 constexpr inline std::size_t dynamic_size = static_cast<std::size_t>(-1);
 
 /// @brief Constant sized thread pool.
@@ -220,6 +237,47 @@ class thread_pool
     join_all() noexcept
     {
         loom::for_each(m_threads, [](std::thread& t) noexcept { t.join(); });
+    }
+
+    void
+    affine_full() noexcept
+    {
+        std::size_t idx = 0;
+
+        return loom::for_each(
+            m_threads,
+            [](std::thread& t, std::size_t& idx) noexcept
+            {
+                if(idx < std::thread::hardware_concurrency())
+                {
+                    set_thread_affinity(t.native_handle(), idx);
+                    ++idx;
+                }
+                else
+                    return;
+            },
+            idx);
+    }
+
+    void
+    affine_physical() noexcept
+    {
+        CPUTopology top;
+        auto        iter = top.begin();
+
+        return loom::for_each(
+            m_threads,
+            [&top](std::thread& t, auto& iter) noexcept
+            {
+                if(iter != top.end())
+                {
+                    set_thread_affinity(t.native_handle(), *iter);
+                    ++iter;
+                }
+                else
+                    return;
+            },
+            iter);
     }
 
   public:
@@ -251,58 +309,14 @@ class thread_pool
         m_threads = std::move(rhs.m_threads);
     }
 
-    /// @brief Affine every thread to a separate logical core.
-    /// Extra threads are not affined.
+    /// @brief Affine threads.
     void
-    affine_full() noexcept
+    affine(const AFFINITY a = AFFINITY::FULL) noexcept
     {
-        std::size_t idx = 0;
-
-        return loom::for_each(
-            m_threads,
-            [](std::thread& t, std::size_t& idx) noexcept
-            {
-                if(idx < std::thread::hardware_concurrency())
-                {
-                    set_thread_affinity(t.native_handle(), idx);
-                    ++idx;
-                }
-                else
-                    return;
-            },
-            idx);
-    }
-
-    /// @brief Affine every thread to logical siblings of each physical core.
-    /// Extra threads are not affined.
-    ///
-    /// For example, the topology of a SMT2 CPU with 4 physical cores and 8
-    /// logical cores is [[0, 4], [1, 5], [2, 6], [3, 7]]. First physical core
-    /// provides two logical cores indexed 0 and 4, second - 1 and 5, etc.
-    /// Correspondingly first thread is affined to logical cores 0 and 4,
-    /// second - to 1 and 5, etc.
-    ///
-    /// If the size of thread pool @p N is bigger than the number of physical
-    /// cores, extra threads are not affined.
-    void
-    affine_physical() noexcept
-    {
-        CPUTopology top;
-        auto        iter = top.begin();
-
-        return loom::for_each(
-            m_threads,
-            [&top](std::thread& t, auto& iter) noexcept
-            {
-                if(iter != top.end())
-                {
-                    set_thread_affinity(t.native_handle(), *iter);
-                    ++iter;
-                }
-                else
-                    return;
-            },
-            iter);
+        if(a == AFFINITY::FULL)
+            affine_full();
+        else
+            affine_physical();
     }
 
     ~thread_pool() { join_all(); }
@@ -313,6 +327,32 @@ template <>
 class thread_pool<dynamic_size>
 {
     std::vector<std::thread> m_threads;
+
+    void
+    affine_full() noexcept
+    {
+        for(std::size_t i = 0;
+            i < std::min(static_cast<std::size_t>(
+                             std::thread::hardware_concurrency()),
+                         m_threads.size());
+            ++i)
+            set_thread_affinity(m_threads[i].native_handle(), i);
+    }
+
+    void
+    affine_physical() noexcept
+    {
+        CPUTopology top;
+        auto        iter = top.begin();
+
+        for(std::size_t i = 0;
+            i < std::min(static_cast<std::size_t>(
+                             std::thread::hardware_concurrency()),
+                         m_threads.size()) &&
+            iter != top.end();
+            ++i, ++iter)
+            set_thread_affinity(m_threads[i].native_handle(), *iter);
+    }
 
     void
     join_all() noexcept
@@ -357,36 +397,14 @@ class thread_pool<dynamic_size>
         return *this;
     }
 
-    /// @brief Affine every thread to a separate logical core.
-    /// Extra threads are not affined.
+    /// @brief Affine threads.
     void
-    affine_full() noexcept
+    affine(const AFFINITY a = AFFINITY::FULL) noexcept
     {
-        for(std::size_t i = 0;
-            i < std::min(static_cast<std::size_t>(
-                             std::thread::hardware_concurrency()),
-                         m_threads.size());
-            ++i)
-            set_thread_affinity(m_threads[i].native_handle(), i);
-    }
-
-    /// @brief Affine every thread to logical siblings of each physical core.
-    /// Extra threads are not affined.
-    ///
-    /// @copydetails thread_pool<N>::affine_physical()
-    void
-    affine_physical() noexcept
-    {
-        CPUTopology top;
-        auto        iter = top.begin();
-
-        for(std::size_t i = 0;
-            i < std::min(static_cast<std::size_t>(
-                             std::thread::hardware_concurrency()),
-                         m_threads.size()) &&
-            iter != top.end();
-            ++i, ++iter)
-            set_thread_affinity(m_threads[i].native_handle(), *iter);
+        if(a == AFFINITY::FULL)
+            affine_full();
+        else
+            affine_physical();
     }
 
     ~thread_pool() { join_all(); }
