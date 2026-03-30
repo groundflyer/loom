@@ -241,6 +241,13 @@ struct cmp_intrinsics_wrangler
     {
         return lhs == rhs;
     }
+
+    /// @brief Compare for equality.
+    static mask_type _FORCE_INLINE
+    neq(const vector_type lhs, const vector_type rhs) noexcept
+    {
+        return lhs != rhs;
+    }
 };
 
 /// @brief Intrinsics wrangler for blend operations.
@@ -366,17 +373,23 @@ struct fms_intrinsics_wranger
         }                                                              \
     };
 
-#define MK_AVX512_CMP_INTRINSICS(TYPE, EXT, INTR)                 \
-    template <>                                                   \
-    struct cmp_intrinsics_wrangler<TYPE, EXT>                     \
-    {                                                             \
-        using vector_type = packed_vector<TYPE, EXT>;             \
-        using mask_type   = mask_t<TYPE, EXT>;                    \
-        static mask_type _FORCE_INLINE                            \
-        eq(const vector_type lhs, const vector_type rhs) noexcept \
-        {                                                         \
-            return INTR(lhs, rhs);                                \
-        }                                                         \
+#define MK_AVX512_CMP_INTRINSICS(TYPE, EXT, EQINTR, NEQINTR)       \
+    template <>                                                    \
+    struct cmp_intrinsics_wrangler<TYPE, EXT>                      \
+    {                                                              \
+        using vector_type = packed_vector<TYPE, EXT>;              \
+        using mask_type   = mask_t<TYPE, EXT>;                     \
+        static_assert(std::unsigned_integral<mask_type>);          \
+        static mask_type _FORCE_INLINE                             \
+        eq(const vector_type lhs, const vector_type rhs) noexcept  \
+        {                                                          \
+            return EQINTR(lhs, rhs);                               \
+        }                                                          \
+        static mask_type _FORCE_INLINE                             \
+        neq(const vector_type lhs, const vector_type rhs) noexcept \
+        {                                                          \
+            return NEQINTR(lhs, rhs);                              \
+        }                                                          \
     };
 
 #define MK_AVX512_BLEND_INTRINSICS(TYPE, EXT, INTR)   \
@@ -505,12 +518,12 @@ MK_AVX512_MASK_IO_INTRINSICS(std::uint64_t,
 
 // clang-format 20 fucks up here
 // clang-format off
-MK_AVX512_CMP_INTRINSICS(float, 16, _mm512_cmpeq_ps_mask)
-MK_AVX512_CMP_INTRINSICS(double, 8, _mm512_cmpeq_pd_mask)
-MK_AVX512_CMP_INTRINSICS(std::int32_t, 16, _mm512_cmpeq_epi32_mask)
-MK_AVX512_CMP_INTRINSICS(std::uint32_t, 16, _mm512_cmpeq_epu32_mask)
-MK_AVX512_CMP_INTRINSICS(std::int64_t, 8, _mm512_cmpeq_epi64_mask)
-MK_AVX512_CMP_INTRINSICS(std::uint64_t, 8, _mm512_cmpeq_epu64_mask)
+MK_AVX512_CMP_INTRINSICS(float, 16, _mm512_cmpeq_ps_mask, _mm512_cmpneq_ps_mask)
+MK_AVX512_CMP_INTRINSICS(double, 8, _mm512_cmpeq_pd_mask, _mm512_cmpneq_pd_mask)
+MK_AVX512_CMP_INTRINSICS(std::int32_t, 16, _mm512_cmpeq_epi32_mask, _mm512_cmpneq_epi32_mask)
+MK_AVX512_CMP_INTRINSICS(std::uint32_t, 16, _mm512_cmpeq_epu32_mask, _mm512_cmpneq_epu32_mask)
+MK_AVX512_CMP_INTRINSICS(std::int64_t, 8, _mm512_cmpeq_epi64_mask, _mm512_cmpneq_epi64_mask)
+MK_AVX512_CMP_INTRINSICS(std::uint64_t, 8, _mm512_cmpeq_epu64_mask, _mm512_cmpneq_epu64_mask)
 
 MK_AVX512_BLEND_INTRINSICS(float, 16, _mm512_mask_blend_ps)
 MK_AVX512_BLEND_INTRINSICS(double, 8, _mm512_mask_blend_pd)
@@ -533,10 +546,10 @@ MK_FMS_INTRINSICS(float, 16, _mm512_fmsub_ps)
 MK_FMS_INTRINSICS(double, 8, _mm512_fmsub_pd)
 
 #if defined(__AVX512BW__)
-MK_AVX512_CMP_INTRINSICS(std::int8_t, 64, _mm512_cmpeq_epi8_mask)
-MK_AVX512_CMP_INTRINSICS(std::uint8_t, 64, _mm512_cmpeq_epu8_mask)
-MK_AVX512_CMP_INTRINSICS(std::int16_t, 32, _mm512_cmpeq_epi16_mask)
-MK_AVX512_CMP_INTRINSICS(std::uint16_t, 32, _mm512_cmpeq_epu16_mask)
+MK_AVX512_CMP_INTRINSICS(std::int8_t, 64, _mm512_cmpeq_epi8_mask, _mm512_cmpneq_epi8_mask)
+MK_AVX512_CMP_INTRINSICS(std::uint8_t, 64, _mm512_cmpeq_epu8_mask, _mm512_cmpneq_epu8_mask)
+MK_AVX512_CMP_INTRINSICS(std::int16_t, 32, _mm512_cmpeq_epi16_mask, _mm512_cmpneq_epi16_mask)
+MK_AVX512_CMP_INTRINSICS(std::uint16_t, 32, _mm512_cmpeq_epu16_mask, _mm512_cmpneq_epu16_mask)
 
 MK_AVX512_BLEND_INTRINSICS(std::int8_t, 64, _mm512_mask_blend_epi8)
 MK_AVX512_BLEND_INTRINSICS(std::uint8_t, 64, _mm512_mask_blend_epi8)
@@ -1719,7 +1732,7 @@ counting_sort(_Memory& in, _Memory& out) noexcept
 
     // fill out
 #if defined(__AVX512F__)
-    using index_vector = packed_vector<fsize_t, N>;
+    using index_vector = packed_vector<index_t, N>;
     for(int i = in.size() - 1; i >= 0; i -= static_cast<int>(N))
     {
         index_vector vindex_out;
@@ -1739,7 +1752,7 @@ counting_sort(_Memory& in, _Memory& out) noexcept
                 using wrangler =
                     gather_scatter_intrinsics_wrangler<vartype<Var>,
                                                        N,
-                                                       fsize_t>;
+                                                       index_t>;
 
                 wrangler::scatter(
                     out.template get<Var>().data(),
