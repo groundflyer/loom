@@ -439,7 +439,7 @@ reflect(const Vec3f& n, const Vec3f& i, const float cos_theta) noexcept
 static float
 gtr(const float dotWmWg, const float alpha) noexcept
 {
-    return std::sqrt(alpha / (alpha + 1 / (dotWmWg * dotWmWg) - 1));
+    return alpha / (alpha + 1 / (dotWmWg * dotWmWg) - 1);
 }
 
 /// @brief Microfacet geometry attenuation factor.
