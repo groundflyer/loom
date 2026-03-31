@@ -20,7 +20,6 @@
     devShells.${system}.default = pkgs.mkShell {
       packages = with pkgs; [
         llvm.libcxxClang
-        llvm.openmp
         cmake
         fmtLibcxx
         glfw

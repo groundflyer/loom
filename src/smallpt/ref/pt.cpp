@@ -4,6 +4,7 @@
 
 #include <common/functional.hpp>
 #include <common/logging.hpp>
+#include <common/threadpool.hpp>
 #include <common/timer.hpp>
 #include <common/tuple.hpp>
 #include <smallpt/common/common.hpp>
@@ -22,10 +23,10 @@ using namespace loom;
 using namespace std::literals;
 
 void
-render(Image&                 img,
-       const Camera&          cam,
-       const float            threshold,
-       std::atomic<unsigned>& progress) noexcept
+render(Image&            img,
+       const Camera&     cam,
+       const float       threshold,
+       std::atomic_uint& progress) noexcept
 {
     constexpr unsigned min_samples = 64;
 
@@ -33,41 +34,44 @@ render(Image&                 img,
     const auto [res, ratio] = sample_space;
     const float pw          = ratio / res[0]; // pixel width
 
-#pragma omp parallel for schedule(dynamic)
-    for(auto [pos, pix]: img)
-    {
-        const auto [px, py]      = pos;
-        const Vec2f         pp   = sample_space(pos); // pixel position
-        const std::uint32_t c0   = px * img.res()[0] + py;
-        unsigned            ns   = 0;
-        float               mean = .0f;
-        float               m2   = .0f;
-
-        RGB r{};
-
-        while(ns < min_samples ||
-              std::sqrt(m2 / static_cast<float>(ns - 1)) / ns >= threshold)
+    parallel_for_each(
+        img,
+        [&](auto val) noexcept
         {
-            const RGB v = Shading::radiance(
-                cam(jitter_sample_pos(pw,
-                                      pp,
-                                      sample_u(threefry2x32r32<key[0], key[1]>(
-                                          Counter{c0, ns})))),
-                Counter{c0, ns + min_samples + 1001});
-            const float x = std::min(luminance(v), 1.f);
-            ++ns;
-            const float delta = x - mean;
-            mean += delta / ns;
-            const float delta2 = x - mean;
-            m2 += delta * delta2;
+            auto [pos, pix]          = val;
+            const auto [px, py]      = pos;
+            const Vec2f         pp   = sample_space(pos); // pixel position
+            const std::uint32_t c0   = px * img.res()[0] + py;
+            unsigned            ns   = 0;
+            float               mean = .0f;
+            float               m2   = .0f;
 
-            r += v;
-        }
+            RGB r{};
 
-        pix = RGBA{r / static_cast<float>(ns), 1};
+            while(ns < min_samples ||
+                  std::sqrt(m2 / static_cast<float>(ns - 1)) / ns >= threshold)
+            {
+                const RGB v = Shading::radiance(
+                    cam(jitter_sample_pos(
+                        pw,
+                        pp,
+                        sample_u(
+                            threefry2x32r32<key[0], key[1]>(Counter{c0, ns})))),
+                    Counter{c0, ns + min_samples + 1001});
+                const float x = std::min(luminance(v), 1.f);
+                ++ns;
+                const float delta = x - mean;
+                mean += delta / ns;
+                const float delta2 = x - mean;
+                m2 += delta * delta2;
 
-        progress.fetch_add(1, std::memory_order_relaxed);
-    }
+                r += v;
+            }
+
+            pix = RGBA{r / static_cast<float>(ns), 1};
+
+            progress.fetch_add(1, std::memory_order_relaxed);
+        });
 }
 
 #if 0
@@ -189,9 +193,9 @@ main(int argc, char* argv[])
         logger.debug("image ready");
         logger.info("Image res: {}x{}; sampling threshold {}", resx, resy, t);
 
-        const unsigned        num_pix = product(img.res());
-        std::atomic<unsigned> progress{};
-        std::thread           watcher{
+        const unsigned   num_pix = img.size();
+        std::atomic_uint progress{};
+        std::thread      watcher{
             [&logger, &progress, num_pix]() noexcept
             {
                 while(progress.load(std::memory_order_relaxed) < num_pix)
