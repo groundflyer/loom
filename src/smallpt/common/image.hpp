@@ -12,171 +12,35 @@
 
 namespace loom
 {
-static Vec2u
-get_pos2(const unsigned pos, const unsigned width) noexcept
-{
-    return Vec2u{pos % width, pos / width};
-}
-
-template <typename T>
-class ScanlineIterator : std::random_access_iterator_tag
-{
-    unsigned m_size;
-    unsigned m_width;
-    unsigned m_pos;
-
-  public:
-    using difference_type = int;
-
-    ScanlineIterator() = default;
-
-    ScanlineIterator(unsigned size, unsigned width, unsigned pos) noexcept :
-        m_size(size), m_width(width), m_pos(pos)
-    {
-    }
-
-    ScanlineIterator(const Vec2u& res, unsigned pos = 0u) noexcept :
-        m_size(product(res)), m_width(get_x(res)), m_pos(pos)
-    {
-    }
-
-    unsigned
-    pos() const noexcept
-    {
-        return m_pos;
-    }
-
-    Vec2u
-    pos2() const noexcept
-    {
-        CHECK_INDEX(m_pos, m_size);
-        return get_pos2(m_pos, m_width);
-    }
-
-    bool
-    operator==(std::default_sentinel_t) const noexcept
-    {
-        return m_pos == m_size;
-    }
-
-    bool
-    operator==(const ScanlineIterator& rhs) const noexcept
-    {
-        return m_pos == rhs.m_pos;
-    }
-
-    std::strong_ordering
-    operator<=>(const ScanlineIterator& rhs) const noexcept
-    {
-        return m_pos <=> rhs.m_pos;
-    }
-
-    T&
-    operator++() noexcept
-    {
-        ++m_pos;
-        return static_cast<T&>(*this);
-    }
-
-    T
-    operator++(int) noexcept
-    {
-        T tmp(static_cast<T>(*this));
-        operator++();
-        return tmp;
-    }
-
-    T&
-    operator--() noexcept
-    {
-        --m_pos;
-        return static_cast<T&>(*this);
-    }
-
-    T
-    operator--(int) noexcept
-    {
-        T ret(static_cast<T>(*this));
-        --m_pos;
-        return ret;
-    }
-
-    T
-    operator+(difference_type rhs) const noexcept
-    {
-        return T{m_size, m_width, m_pos + static_cast<unsigned>(rhs)};
-    }
-
-    difference_type
-    operator+(ScanlineIterator rhs) const noexcept
-    {
-        return m_pos + rhs.m_pos;
-    }
-
-    T&
-    operator+=(difference_type rhs) noexcept
-    {
-        m_pos += rhs;
-        return static_cast<T&>(*this);
-    }
-
-    T
-    operator-(difference_type rhs) const noexcept
-    {
-        return T{m_size, m_width, static_cast<unsigned>(m_pos - rhs)};
-    }
-
-    difference_type
-    operator-(ScanlineIterator rhs) const noexcept
-    {
-        return m_pos - rhs.m_pos;
-    }
-
-    T&
-    operator-=(difference_type rhs) noexcept
-    {
-        m_pos -= rhs;
-        return static_cast<T&>(*this);
-    }
-
-    auto
-    operator[](difference_type n) const noexcept
-    {
-        CHECK_INDEX(n, static_cast<int>(count()));
-        const Vec2u p2 = get_pos2(m_pos + n, m_width);
-        return std::pair{p2, static_cast<const T&>(*this).pixel(p2)};
-    }
-
-    unsigned
-    count() const noexcept
-    {
-        return m_size - m_pos;
-    }
-
-    friend T
-    operator+(difference_type n, ScanlineIterator j) noexcept
-    {
-        return T{j.m_size, j.m_width, static_cast<unsigned>(n) + j.m_pos};
-    }
-};
-
 // num_pixels for number of pixels vectors<T, NC>
 // size for number of elements of type T
 template <typename T, std::size_t NC, typename Allocator = std::allocator<T>>
 class ScanlineImage
 {
     Vec2u       m_res;
-    std::size_t m_size  = full_size(m_res);
+    std::size_t m_size  = full_size();
     Allocator   m_alloc = Allocator();
     T*          p_data  = nullptr;
 
     using _ref        = Vector<T, NC, std::span>;
     using _value_type = std::pair<Vec2u, _ref>;
 
-    static std::size_t
-    full_size(const Vec2u& res) noexcept
+    std::size_t
+    pixel_num() const noexcept
     {
-        return product(res) * NC;
+        return product(m_res);
+    }
+
+    std::size_t
+    full_size() const noexcept
+    {
+        return pixel_num() * NC;
+    }
+
+    Vec2u
+    pos2(const unsigned pos) const noexcept
+    {
+        return Vec2u{pos % m_res[0], pos / m_res[0]};
     }
 
     std::size_t
@@ -187,24 +51,26 @@ class ScanlineImage
         return NC * (y * width() + x);
     }
 
-    class _iterator : public ScanlineIterator<_iterator>
+    class _iterator : public std::random_access_iterator_tag
     {
-        using base = ScanlineIterator<_iterator>;
         ScanlineImage* p_img;
+        unsigned       m_size;
+        unsigned       m_width;
+        unsigned       m_pos;
 
       public:
-        using value_type = _value_type;
-
-        using base::base;
+        using value_type      = _value_type;
+        using difference_type = int;
 
         _iterator() = default;
 
-        _iterator(ScanlineImage& _img, const unsigned pos = 0) noexcept :
-            base(_img.res(), pos), p_img(&_img)
+        _iterator(ScanlineImage* img, unsigned pos = 0) noexcept :
+            p_img(img), m_size(img->size()), m_width(img->m_res[0]), m_pos(pos)
         {
         }
-        _iterator(const ScanlineImage& _img, const unsigned pos = 0) noexcept :
-            base(_img.res(), pos), p_img(&_img)
+
+        _iterator(const ScanlineImage* img, unsigned pos = 0) noexcept :
+            p_img(img), m_size(img->size()), m_width(img->m_res[0]), m_pos(pos)
         {
         }
 
@@ -217,9 +83,114 @@ class ScanlineImage
         value_type
         operator*() const noexcept
         {
-            CHECK_INDEX(base::pos(), p_img->size());
-            const Vec2u pos = base::pos2();
-            return value_type{pos, pixel(pos)};
+            return value_type{p_img->pos2(m_pos), p_img->at(m_pos)};
+        }
+
+        bool
+        operator==(std::default_sentinel_t) const noexcept
+        {
+            return m_pos >= m_size;
+        }
+
+        bool
+        operator==(const _iterator& rhs) const noexcept
+        {
+            return m_pos == rhs.m_pos;
+        }
+
+        std::strong_ordering
+        operator<=>(const _iterator& rhs) const noexcept
+        {
+            return m_pos <=> rhs.m_pos;
+        }
+
+        _iterator&
+        operator++() noexcept
+        {
+            ++m_pos;
+            return *this;
+        }
+
+        _iterator
+        operator++(int) noexcept
+        {
+            _iterator ret(*this);
+            operator++();
+            return ret;
+        }
+
+        _iterator&
+        operator--() noexcept
+        {
+            --m_pos;
+            return *this;
+        }
+
+        _iterator
+        operator--(int) noexcept
+        {
+            _iterator ret(*this);
+            --m_pos;
+            return ret;
+        }
+
+        _iterator
+        operator+(difference_type rhs) const noexcept
+        {
+            return {p_img, m_pos + static_cast<unsigned>(rhs)};
+        }
+
+        _iterator
+        operator+(const _iterator& rhs) const noexcept
+        {
+            return {p_img, m_pos + rhs.m_pos};
+        }
+
+        _iterator&
+        operator+=(difference_type rhs) noexcept
+        {
+            m_pos += rhs;
+            return *this;
+        }
+
+        _iterator
+        operator-(difference_type rhs) const noexcept
+        {
+            return {p_img, static_cast<unsigned>(m_pos - rhs)};
+        }
+
+        difference_type
+        operator-(const _iterator& rhs) const noexcept
+        {
+            return static_cast<difference_type>(m_pos) -
+                   static_cast<difference_type>(rhs.m_pos);
+        }
+
+        _iterator&
+        operator-=(difference_type rhs) noexcept
+        {
+            m_pos -= rhs;
+            return static_cast<T&>(*this);
+        }
+
+        auto
+        operator[](difference_type n) const noexcept
+        {
+            CHECK_INDEX(n, static_cast<int>(count()));
+            const std::size_t p = m_pos + n;
+            return std::pair{p_img->pos2(p), p_img->at(p)};
+        }
+
+        unsigned
+        count() const noexcept
+        {
+            return m_size - m_pos;
+        }
+
+        friend _iterator
+        operator+(difference_type n, const _iterator& j) noexcept
+        {
+            return {j.p_img, static_cast<unsigned>(n) + j.m_pos};
         }
     };
 
@@ -261,13 +232,13 @@ class ScanlineImage
     explicit ScanlineImage(const Allocator& alloc) noexcept : m_alloc(alloc) {}
 
     ScanlineImage(const Vec2u& res, const Allocator& alloc = Allocator()) :
-        m_res(res), m_size(full_size(m_res)), m_alloc(alloc)
+        m_res(res), m_size(full_size()), m_alloc(alloc)
     {
         allocate();
     }
 
     ScanlineImage(const ScanlineImage& rhs) :
-        m_res(rhs.m_res), m_size(full_size(m_res)), m_alloc(rhs.m_alloc)
+        m_res(rhs.m_res), m_size(full_size()), m_alloc(rhs.m_alloc)
     {
         allocate();
         std::copy(rhs.p_data, rhs.p_data + rhs.size(), p_data);
@@ -320,42 +291,42 @@ class ScanlineImage
         return *this;
     }
 
-    ~ScanlineImage() noexcept { deallocate(); }
+    ~ScanlineImage() { deallocate(); }
 
     iterator
     begin() noexcept
     {
-        return iterator(*this, 0u);
+        return iterator(this);
     }
 
     iterator
     end() noexcept
     {
-        return iterator(*this, size());
+        return iterator(this, size());
     }
 
     const_iterator
     begin() const noexcept
     {
-        return const_iterator(*this, 0u);
+        return const_iterator(this);
     }
 
     const_iterator
     end() const noexcept
     {
-        return const_iterator(*this, size());
+        return const_iterator(this, size());
     }
 
     const_iterator
     cbegin() const noexcept
     {
-        return const_iterator(*this, 0u);
+        return const_iterator(this);
     }
 
     const_iterator
     cend() const noexcept
     {
-        return const_iterator(*this, size());
+        return const_iterator(this, size());
     }
 
     reference
@@ -375,15 +346,15 @@ class ScanlineImage
     _ref
     at(const std::size_t i) noexcept
     {
-        CHECK_INDEX(i, size() * NC);
-        return Vector(std::span<T, NC>(p_data + i, NC));
+        CHECK_INDEX(i, m_size);
+        return Vector(std::span<T, NC>(p_data + i * NC, NC));
     }
 
     const _ref
     at(const std::size_t i) const noexcept
     {
-        CHECK_INDEX(i, size() * NC);
-        return Vector(std::span<T, NC>(p_data + i, NC));
+        CHECK_INDEX(i, m_size);
+        return Vector(std::span<T, NC>(p_data + i * NC, NC));
     }
 
     _ref
@@ -413,7 +384,7 @@ class ScanlineImage
     std::size_t
     size() const noexcept
     {
-        return product(m_res);
+        return pixel_num();
     }
 
     const Vec2u&
