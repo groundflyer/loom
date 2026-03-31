@@ -6,6 +6,7 @@
 
 #include "debug.hpp"
 #include "forbid.hpp"
+#include "memory.hpp"
 #include "tmp.hpp"
 #include "tuple.hpp"
 
@@ -217,6 +218,7 @@ class CPUTopology : public std::ranges::view_interface<CPUTopology>
 /// second - to 1 and 5, etc.
 enum class AFFINITY
 {
+    NONE,    /*!< Don't affine threads. */
     FULL,    /*!< Affine every thread to a separate logical core. */
     PHYSICAL /*!< Affine every thread to logical siblings of each physical core.
               */
@@ -313,10 +315,12 @@ class thread_pool
     void
     affine(const AFFINITY a = AFFINITY::FULL) noexcept
     {
-        if(a == AFFINITY::FULL)
-            affine_full();
-        else
-            affine_physical();
+        switch(a)
+        {
+        case AFFINITY::FULL: affine_full(); break;
+        case AFFINITY::PHYSICAL: affine_physical(); break;
+        default: break;
+        }
     }
 
     ~thread_pool() { join_all(); }
@@ -401,12 +405,70 @@ class thread_pool<dynamic_size>
     void
     affine(const AFFINITY a = AFFINITY::FULL) noexcept
     {
-        if(a == AFFINITY::FULL)
-            affine_full();
-        else
-            affine_physical();
+        switch(a)
+        {
+        case AFFINITY::FULL: affine_full(); break;
+        case AFFINITY::PHYSICAL: affine_physical(); break;
+        default: break;
+        }
     }
 
     ~thread_pool() { join_all(); }
 };
+
+/// @brief Apply a given function object @p f to the elements of the source
+/// range @p r in parallel.
+/// @tparam N static thread pool size.
+/// @param r source range.
+/// @param f function to apply.
+/// @param a threads affinity.
+/// @param cs number of elements processed together in one thread.
+/// @param nw dynamic thread pool size.
+template <std::size_t                      N = dynamic_size,
+          std::ranges::random_access_range R,
+          typename F>
+    requires(std::ranges::sized_range<R>)
+void
+parallel_for_each(
+    R&&               r,
+    F&&               f,
+    const std::size_t cs = 64,
+    const AFFINITY    a  = AFFINITY::NONE,
+    const std::size_t nw =
+        N == dynamic_size ?
+            std::thread::hardware_concurrency() :
+            N) noexcept(is_nothrow_invopplicable_v<F,
+                                                   std::ranges::range_value_t<
+                                                       R>>)
+{
+    PADDED_VALUE(std::atomic_size_t, counter{0});
+
+    const std::size_t s = std::ranges::size(r);
+
+    const auto get_tp = [&](auto worker) noexcept
+    {
+        if constexpr(N == dynamic_size)
+            return thread_pool<N>(nw, worker);
+        else
+            return thread_pool<N>(worker);
+    };
+
+    auto tp = get_tp(
+        [&, &c = counter]()
+        {
+            while(true)
+            {
+                const std::size_t b =
+                    c.fetch_add(cs, std::memory_order_relaxed);
+
+                if(b >= s) return;
+
+                std::ranges::for_each(
+                    std::views::counted(std::ranges::begin(r) + b, cs),
+                    f);
+            }
+        });
+
+    tp.affine(a);
+}
 } // namespace loom
