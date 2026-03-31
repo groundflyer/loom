@@ -74,4 +74,12 @@ struct cache_line_capacity
 template <typename T>
 inline constexpr std::size_t cache_line_capacity_v =
     cache_line_capacity<T>::value;
+
+/// @brief Declare a value protected from false sharing.
+#define PADDED_VALUE(TYPE, NAME)                 \
+    union alignas(cache_line_size)               \
+    {                                            \
+        TYPE         NAME;                       \
+        std::uint8_t __padding[cache_line_size]; \
+    }
 } // namespace loom
