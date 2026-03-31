@@ -104,7 +104,7 @@ class ScanlineIterator : std::random_access_iterator_tag
     T
     operator+(difference_type rhs) const noexcept
     {
-        return {m_size, m_width, m_pos + static_cast<unsigned>(rhs)};
+        return T{m_size, m_width, m_pos + static_cast<unsigned>(rhs)};
     }
 
     difference_type
@@ -123,7 +123,7 @@ class ScanlineIterator : std::random_access_iterator_tag
     T
     operator-(difference_type rhs) const noexcept
     {
-        return {m_size, m_width, static_cast<unsigned>(m_pos - rhs)};
+        return T{m_size, m_width, static_cast<unsigned>(m_pos - rhs)};
     }
 
     difference_type
@@ -156,7 +156,7 @@ class ScanlineIterator : std::random_access_iterator_tag
     friend T
     operator+(difference_type n, ScanlineIterator j) noexcept
     {
-        return {j.m_size, j.m_width, static_cast<unsigned>(n) + j.m_pos};
+        return T{j.m_size, j.m_width, static_cast<unsigned>(n) + j.m_pos};
     }
 };
 
@@ -165,12 +165,19 @@ class ScanlineIterator : std::random_access_iterator_tag
 template <typename T, std::size_t NC, typename Allocator = std::allocator<T>>
 class ScanlineImage
 {
-    Vec2u     m_res;
-    Allocator m_alloc = Allocator();
-    T*        p_data  = nullptr;
+    Vec2u       m_res;
+    std::size_t m_size  = full_size(m_res);
+    Allocator   m_alloc = Allocator();
+    T*          p_data  = nullptr;
 
-    using _ref = Vector<T, NC, std::span>;
+    using _ref        = Vector<T, NC, std::span>;
     using _value_type = std::pair<Vec2u, _ref>;
+
+    static std::size_t
+    full_size(const Vec2u& res) noexcept
+    {
+        return product(res) * NC;
+    }
 
     std::size_t
     pos(const std::size_t x, const std::size_t y) const noexcept
@@ -183,10 +190,12 @@ class ScanlineImage
     class _iterator : public ScanlineIterator<_iterator>
     {
         using base = ScanlineIterator<_iterator>;
-        ScanlineImage * p_img;
+        ScanlineImage* p_img;
 
       public:
         using value_type = _value_type;
+
+        using base::base;
 
         _iterator() = default;
 
@@ -208,7 +217,7 @@ class ScanlineImage
         value_type
         operator*() const noexcept
         {
-            CHECK_INDEX(base::pos(), img->size());
+            CHECK_INDEX(base::pos(), p_img->size());
             const Vec2u pos = base::pos2();
             return value_type{pos, pixel(pos)};
         }
@@ -218,7 +227,26 @@ class ScanlineImage
     reinit() noexcept
     {
         m_res  = Vec2u{0u};
+        m_size = 0;
         p_data = nullptr;
+    }
+
+    void
+    allocate()
+    {
+        p_data = std::allocator_traits<Allocator>::allocate(m_alloc, m_size);
+
+        for(std::size_t i = 0; i < m_size; ++i)
+            std::allocator_traits<Allocator>::construct(m_alloc, p_data + i);
+    }
+
+    void
+    deallocate() noexcept
+    {
+        for(std::size_t i = 0; i < size(); ++i)
+            std::allocator_traits<Allocator>::destroy(m_alloc, p_data + i);
+
+        std::allocator_traits<Allocator>::deallocate(m_alloc, p_data, m_size);
     }
 
   public:
@@ -233,23 +261,21 @@ class ScanlineImage
     explicit ScanlineImage(const Allocator& alloc) noexcept : m_alloc(alloc) {}
 
     ScanlineImage(const Vec2u& res, const Allocator& alloc = Allocator()) :
-        m_res(res), m_alloc(alloc)
+        m_res(res), m_size(full_size(m_res)), m_alloc(alloc)
     {
-        p_data = std::allocator_traits<Allocator>::allocate(m_alloc, size());
-
-        for(std::size_t i = 0; i < size(); ++i)
-            std::allocator_traits<Allocator>::construct(m_alloc, p_data + i);
+        allocate();
     }
 
     ScanlineImage(const ScanlineImage& rhs) :
-        m_res(rhs.m_res), m_alloc(rhs.m_alloc)
+        m_res(rhs.m_res), m_size(full_size(m_res)), m_alloc(rhs.m_alloc)
     {
-        p_data = std::allocator_traits<Allocator>::allocate(m_alloc, size());
+        allocate();
         std::copy(rhs.p_data, rhs.p_data + rhs.size(), p_data);
     }
 
     ScanlineImage(ScanlineImage&& rhs) :
-        m_res(rhs.m_res), m_alloc(std::move(rhs.m_alloc)), p_data(rhs.p_data)
+        m_res(rhs.m_res), m_size(rhs.m_size), m_alloc(std::move(rhs.m_alloc)),
+        p_data(rhs.p_data)
     {
         rhs.reinit();
     }
@@ -259,25 +285,17 @@ class ScanlineImage
     {
         if(&rhs == this) return *this;
 
-        if(size() != rhs.size())
+        if(m_size != rhs.m_size)
         {
-            if(p_data)
-            {
-                for(std::size_t i = 0; i < size(); ++i)
-                    std::allocator_traits<Allocator>::destroy(m_alloc,
-                                                              p_data + i);
+            if(p_data) deallocate();
 
-                std::allocator_traits<Allocator>::deallocate(m_alloc,
-                                                             p_data,
-                                                             size());
-            }
+            m_res  = rhs.m_res;
+            m_size = rhs.m_size;
 
-            m_res = rhs.m_res;
-            p_data =
-                std::allocator_traits<Allocator>::allocate(m_alloc, size());
+            allocate();
         }
 
-        std::copy(rhs.p_data, rhs.p_data + rhs.size(), p_data);
+        std::copy(rhs.p_data, rhs.p_data + rhs.m_size, p_data);
 
         return *this;
     }
@@ -289,18 +307,10 @@ class ScanlineImage
 
         if(size() != rhs.size())
         {
-            if(p_data)
-            {
-                for(std::size_t i = 0; i < size(); ++i)
-                    std::allocator_traits<Allocator>::destroy(m_alloc,
-                                                              p_data + i);
+            if(p_data) deallocate();
 
-                std::allocator_traits<Allocator>::deallocate(m_alloc,
-                                                             p_data,
-                                                             size());
-            }
-
-            m_res = rhs.m_res;
+            m_res  = rhs.m_res;
+            m_size = rhs.m_size;
         }
 
         p_data = rhs.p_data;
@@ -310,13 +320,7 @@ class ScanlineImage
         return *this;
     }
 
-    ~ScanlineImage() noexcept
-    {
-        for(std::size_t i = 0; i < size(); ++i)
-            std::allocator_traits<Allocator>::destroy(m_alloc, p_data + i);
-
-        std::allocator_traits<Allocator>::deallocate(m_alloc, p_data, size());
-    }
+    ~ScanlineImage() noexcept { deallocate(); }
 
     iterator
     begin() noexcept
@@ -327,7 +331,7 @@ class ScanlineImage
     iterator
     end() noexcept
     {
-        return iterator(*this, num_pixels());
+        return iterator(*this, size());
     }
 
     const_iterator
@@ -339,7 +343,7 @@ class ScanlineImage
     const_iterator
     end() const noexcept
     {
-        return const_iterator(*this, num_pixels());
+        return const_iterator(*this, size());
     }
 
     const_iterator
@@ -351,7 +355,7 @@ class ScanlineImage
     const_iterator
     cend() const noexcept
     {
-        return const_iterator(*this, num_pixels());
+        return const_iterator(*this, size());
     }
 
     reference
@@ -371,14 +375,14 @@ class ScanlineImage
     _ref
     at(const std::size_t i) noexcept
     {
-        CHECK_INDEX(i, size());
+        CHECK_INDEX(i, size() * NC);
         return Vector(std::span<T, NC>(p_data + i, NC));
     }
 
     const _ref
     at(const std::size_t i) const noexcept
     {
-        CHECK_INDEX(i, size());
+        CHECK_INDEX(i, size() * NC);
         return Vector(std::span<T, NC>(p_data + i, NC));
     }
 
@@ -407,15 +411,9 @@ class ScanlineImage
     }
 
     std::size_t
-    num_pixels() const noexcept
-    {
-        return product(m_res);
-    }
-
-    std::size_t
     size() const noexcept
     {
-        return num_pixels() * NC;
+        return product(m_res);
     }
 
     const Vec2u&
