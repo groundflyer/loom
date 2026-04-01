@@ -8,10 +8,18 @@
 
 #include <common/argparse.hpp>
 #include <common/string.hpp>
+#include <common/threadpool.hpp>
 
 namespace loom
 {
 using Image = ScanlineImage<float, 4>;
+
+template <typename... Args>
+static void
+parallel_render(Image& img, Args&&... args) noexcept
+{
+    parallel_for_each(img, std::forward<Args>(args)...);
+}
 
 auto
 parse_args(int argc, char* argv[]) noexcept

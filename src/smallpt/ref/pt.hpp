@@ -12,9 +12,11 @@
 #include <common/functional.hpp>
 #include <common/math.hpp>
 #include <common/tuple.hpp>
+#include <smallpt/common/common.hpp>
 #include <smallpt/common/typedefs.hpp>
 
 #include <array>
+#include <atomic>
 #include <cstdint>
 
 namespace loom
@@ -748,6 +750,68 @@ struct Shading
             return reflection();
         else
             return RGB<>{0};
+    }
+};
+
+class render_pixel
+{
+    static constexpr unsigned min_samples = 64;
+
+    const Camera cam = Scene::camera();
+
+    const unsigned             m_width;
+    const ToSampleSpace<float> m_sample_space;
+    const float                m_pw; // pixel width
+    const float                m_threshold;
+
+    std::atomic_uint* p_progress;
+
+  public:
+    render_pixel(const Image&      img,
+                 const float       threshold,
+                 std::atomic_uint* progress) noexcept :
+        m_width(img.width()), m_sample_space(img.res()),
+        m_pw(m_sample_space.ratio / m_sample_space.res[0]),
+        m_threshold(threshold), p_progress(progress)
+    {
+    }
+
+    template <typename Pixel>
+    void
+    operator()(Pixel val) const noexcept
+    {
+        auto [pos, pix]          = val;
+        const auto [px, py]      = pos;
+        const Vec2f         pp   = m_sample_space(pos); // pixel position
+        const std::uint32_t c0   = px * m_width + py;
+        unsigned            ns   = 0;
+        float               mean = .0f;
+        float               m2   = .0f;
+
+        RGB r{};
+
+        while(ns < min_samples ||
+              std::sqrt(m2 / static_cast<float>(ns - 1)) / ns >= m_threshold)
+        {
+            const RGB v = Shading::radiance(
+                cam(jitter_sample_pos(m_pw,
+                                      pp,
+                                      sample_u(threefry2x32r32<key[0], key[1]>(
+                                          Counter{c0, ns})))),
+                Counter{c0, ns + min_samples + 1001});
+            const float x = std::min(luminance(v), 1.f);
+            ++ns;
+            const float delta = x - mean;
+            mean += delta / ns;
+            const float delta2 = x - mean;
+            m2 += delta * delta2;
+
+            r += v;
+        }
+
+        pix = RGBA{r / static_cast<float>(ns), 1};
+
+        p_progress->fetch_add(1, std::memory_order_relaxed);
     }
 };
 } // namespace loom

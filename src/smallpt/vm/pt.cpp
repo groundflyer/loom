@@ -10,33 +10,6 @@
 using namespace loom;
 using namespace vm;
 
-// clang-format off
-
-// pix 16/16 x/y
-// res 16/16 w/h
-template <std::same_as<float> T>
-KERNEL(pt, IVAR(pix), IVAR(res), TVAR(r))
-    IRSHFT(d0, pix, 16),
-    IBAND(d1, pix, 0xffff),
-    IRSHFT(w, res, 16),
-    IBAND(h, res, 0xffff),
-    MOV(TVAR(w), IVAR(w)),
-    MOV(TVAR(h), IVAR(h)),
-    MOV(TVAR(d0), IVAR(d0)),
-    MOV(TVAR(d1), IVAR(d1)),
-    INSERT_TMACRO(to_sample_space, CS(d0), CS(d1), CS(w), CS(h), CS(r)),
-    INSERT_TMACRO(gen_ray_dir, CS(d0), CS(d1)),
-    TMOV_CS(CS(d2), scene::CAM_Dz),
-    INSERT_TMACRO(vm::vec3_norm, CS(d), CS(tmp0)),
-    TMOV_CS(CS(o0), scene::CAM_Px),
-    TMOV_CS(CS(o1), scene::CAM_Py),
-    TMOV_CS(CS(o2), scene::CAM_Pz),
-    INSERT_TMACRO(traverse_scene),
-    INSERT_TMACRO(set_materials)
-KERNEL_END(TVAR(clrr), TVAR(clrg), TVAR(clrb), TVAR(t));
-
-// clang-format on
-
 void
 render(Image& img) noexcept
 {

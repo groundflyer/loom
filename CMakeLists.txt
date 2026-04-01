@@ -376,7 +376,7 @@ if(BUILD_BENCHMARKS)
 endif()
 
 add_executable(pt_ref src/smallpt/ref/pt.cpp)
-target_link_libraries(pt_ref PUBLIC ${GL_LIBS} Threads::Threads)
+target_link_libraries(pt_ref PUBLIC ${GL_LIBS} Threads::Threads PkgConfig::HWLOC)
 if (USE_SYSTEM_FMT AND (NOT FmtLibcxx))
   target_link_libraries(pt_ref PUBLIC fmt::fmt-header-only)
 else()

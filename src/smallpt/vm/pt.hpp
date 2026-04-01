@@ -574,4 +574,28 @@ TMACRO(set_materials)
     TSCT13(clrg, pid, 0.8, 0.2,   1, 0.2,   1, 0.2, 0.2, 0.2,   0,   1,   1, 1, 0),
     TSCT13(clrb, pid, 0.8, 0.2, 0.2,   1, 0.2, 0.8, 0.8, 0.8,   1, 0.8, 0.8, 1, 0)
 MACRO_END;
+
+// save up on variables by encoding pixel position and resolution into single uint32 value:
+// pix 16/16 x/y
+// res 16/16 w/h
+template <std::same_as<float> T>
+KERNEL(pt, IVAR(pix), IVAR(res), TVAR(r))
+    IRSHFT(d0, pix, 16),
+    IBAND(d1, pix, 0xffff),
+    IRSHFT(w, res, 16),
+    IBAND(h, res, 0xffff),
+    MOV(TVAR(w), IVAR(w)),
+    MOV(TVAR(h), IVAR(h)),
+    MOV(TVAR(d0), IVAR(d0)),
+    MOV(TVAR(d1), IVAR(d1)),
+    INSERT_TMACRO(to_sample_space, CS(d0), CS(d1), CS(w), CS(h), CS(r)),
+    INSERT_TMACRO(gen_ray_dir, CS(d0), CS(d1)),
+    TMOV_CS(CS(d2), scene::CAM_Dz),
+    INSERT_TMACRO(vm::vec3_norm, CS(d), CS(tmp0)),
+    TMOV_CS(CS(o0), scene::CAM_Px),
+    TMOV_CS(CS(o1), scene::CAM_Py),
+    TMOV_CS(CS(o2), scene::CAM_Pz),
+    INSERT_TMACRO(traverse_scene),
+    INSERT_TMACRO(set_materials)
+KERNEL_END(TVAR(clrr), TVAR(clrg), TVAR(clrb), TVAR(t));
 } // namespace loom::vm
