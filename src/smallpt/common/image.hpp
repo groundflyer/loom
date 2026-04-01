@@ -1,6 +1,6 @@
 // -*- C++ -*-
-// image.hpp --
-//
+/// @file image.hpp
+/// @brief Multi-channel raster image.
 
 #pragma once
 
@@ -12,8 +12,24 @@
 
 namespace loom
 {
-// num_pixels for number of pixels vectors<T, NC>
-// size for number of elements of type T
+/// @brief Multi-channel raster image.
+/// @tparam T channel value type.
+/// @tparam NC number of channels.
+///
+/// Classes specialized from this template satisfy
+/// std::ranges::random_access_range and std::ranges::sized_range.
+///
+/// When iterating over an image value type is a pair of pixel coordinates and a
+/// view to the pixel.
+///
+/// For example:
+/// @code{.cpp}
+/// for (auto [pos, pix]: img)
+/// {
+///     const auto [px, py] = pos;
+///     pix = compute_new_pixel_value(px, py);
+/// }
+/// @endcode
 template <typename T, std::size_t NC, typename Allocator = std::allocator<T>>
 class ScanlineImage
 {
@@ -40,7 +56,7 @@ class ScanlineImage
     Vec2u
     pos2(const unsigned pos) const noexcept
     {
-        return Vec2u{pos % m_res[0], pos / m_res[0]};
+        return Vec2u{pos % width(), pos / width()};
     }
 
     std::size_t
@@ -65,12 +81,12 @@ class ScanlineImage
         _iterator() = default;
 
         _iterator(ScanlineImage* img, unsigned pos = 0) noexcept :
-            p_img(img), m_size(img->size()), m_width(img->m_res[0]), m_pos(pos)
+            p_img(img), m_size(img->size()), m_width(img->width()), m_pos(pos)
         {
         }
 
         _iterator(const ScanlineImage* img, unsigned pos = 0) noexcept :
-            p_img(img), m_size(img->size()), m_width(img->m_res[0]), m_pos(pos)
+            p_img(img), m_size(img->size()), m_width(img->width()), m_pos(pos)
         {
         }
 
