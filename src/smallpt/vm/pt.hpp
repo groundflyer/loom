@@ -423,6 +423,25 @@ struct scene
     using TH_V3y = CS(-0.1772758364677429);
     using TH_V3z = CS(-0.2000000029802322);
 
+    // tetrahedron normals
+    using TH0_Nx = CS(-0.9163577556610107);
+    using TH0_Ny = CS(0.3162277340888977);
+    using TH0_Nz = CS(0.2455372512340546);
+
+    using TH1_Nx = CS(0.6708204150199890);
+    using TH1_Ny = CS(0.3162277936935425);
+    using TH1_Nz = TH1_Nx;
+
+    using TH2_Nx = CS(0.2455373108386993);
+    using TH2_Ny = TH1_Ny;
+    using TH2_Nz = CS(-0.9163576960563660);
+
+    // sphere position
+    using SP_Px = CS(0.1);
+    using SP_Py = CS(-0.7);
+    using SP_Pz = CS(0.3);
+    using SP_P = type_sequence<SP_Px, SP_Py, SP_Pz>;
+
     // cylinder
     using CL_Px = CS(0.5);
     using CL_Py = CS(-1);
@@ -499,9 +518,9 @@ TMACRO(traverse_scene)
     IADD(pp, pp, 1),
     IPJMP2(tmp0, traverse_tetrahedron, traverse_sphere),
     LABEL(traverse_sphere),
-    TMOV(vr00, 0.1),
-    TMOV(vr01, -0.7),
-    TMOV(vr02, 0.3),
+    TMOV_CS(CS(vr00), scene::SP_Px),
+    TMOV_CS(CS(vr01), scene::SP_Py),
+    TMOV_CS(CS(vr02), scene::SP_Pz),
     INSERT_TMACRO(prep_isect_sphere, CS(vr10), CS(vr11), CS(vr12),
                   CS(o), CS(d), CS(vr0), CS(0.3), CS(tmp0), CS(tmp1), CS(vr2)),
     IMOV(pp, 8),                // sphere pid
@@ -568,11 +587,41 @@ TMACRO(set_materials)
 // 9 - light blue cylinder
 // 10 - cylinder cap
 // 11 - light
-// 12 - miss
-//                      0    1    2    3    4    5    6    7    8    9   10 11 12
-    TSCT13(clrr, pid, 0.8,   1, 0.2, 0.2,   1, 0.8, 0.8, 0.8, 0.6,   0,   0, 1, 0),
-    TSCT13(clrg, pid, 0.8, 0.2,   1, 0.2,   1, 0.2, 0.2, 0.2,   0,   1,   1, 1, 0),
-    TSCT13(clrb, pid, 0.8, 0.2, 0.2,   1, 0.2, 0.8, 0.8, 0.8,   1, 0.8, 0.8, 1, 0)
+    LABEL(set_materials),
+//                      0    1    2    3    4    5    6    7    8    9   10 11
+    TSCT12(clrr, pid, 0.8,   1, 0.2, 0.2,   1, 0.8, 0.8, 0.8, 0.6,   0,   0, 1),
+    TSCT12(clrg, pid, 0.8, 0.2,   1, 0.2,   1, 0.2, 0.2, 0.2,   0,   1,   1, 1),
+    TSCT12(clrb, pid, 0.8, 0.2, 0.2,   1, 0.2, 0.8, 0.8, 0.8,   1, 0.8, 0.8, 1),
+    IEQ(tmp0, pid, 10),
+    IOREQ(tmp0, tmp0, pid, 11), // tmp0 <- cap or light?
+    IEQ(tmp1, pid, 8),
+    IOREQ(tmp1, tmp1, pid, 9),  // tmp1 <- sphere or cylinder
+    IMOV(pp, 0),                // assume polygons
+    ICMOV(pp, tmp0, 1, pp),
+    ISUB(tmp2, pid, 6),         // speculatively
+    ICMOV(pp, tmp1, tmp2, pp),
+    IPJMP4(pp, set_polygon_normal, set_disk_normal, compute_sphere_normal, compute_cylinder_normal),
+    LABEL(set_polygon_normal),  // just set precomputed normals. not fair, but who cares
+    TSCTN_CS(CS(vr00), CS(pid), CS(0), CS(1), CS(-1), CS(0), CS(0), scene::TH0_Nx, scene::TH1_Nx, scene::TH2_Nx),
+    TSCTN_CS(CS(vr01), CS(pid), CS(1), CS(0), CS(0), CS(-1), CS(0), scene::TH0_Ny, scene::TH1_Ny, scene::TH2_Ny),
+    TSCTN_CS(CS(vr02), CS(pid), CS(0), CS(0), CS(0), CS(0), CS(1), scene::TH0_Nz, scene::TH1_Nz, scene::TH2_Nz),
+    JMP(set_materials_end),
+    LABEL(set_disk_normal),
+    TMOV(vr00, 0),
+    TMOV(vr02, 0),
+    IEQ(tmp0, pid, 10),         // tmp0 <- cap?
+    TCMOV(vr01, tmp0, 1, -1),
+    JMP(set_materials_end),
+    LABEL(compute_sphere_normal),
+    INSERT_TMACRO(vec_vec3_sub, CS(vr0), CS(o), scene::SP_P),
+    INSERT_TMACRO(vec3_norm, CS(vr0), CS(tmp0)),
+    JMP(set_materials_end),
+    LABEL(compute_cylinder_normal),
+    TMOV(vr01, 0),
+    TSUB_CS(CS(vr00), CS(o0), scene::CL_Px),
+    TSUB_CS(CS(vr02), CS(o2), scene::CL_Pz),
+    INSERT_TMACRO(vec3_norm, CS(vr0), CS(tmp0)),
+    LABEL(set_materials_end)
 MACRO_END;
 
 // save up on variables by encoding pixel position and resolution into single uint32 value:
@@ -596,6 +645,18 @@ KERNEL(pt, IVAR(pix), IVAR(res), TVAR(r))
     TMOV_CS(CS(o1), scene::CAM_Py),
     TMOV_CS(CS(o2), scene::CAM_Pz),
     INSERT_TMACRO(traverse_scene),
-    INSERT_TMACRO(set_materials)
+    TMOV(clrr, 0),
+    TMOV(clrg, 0),
+    TMOV(clrb, 0),
+    IEQ(tmp0, pid, 12),                // tmp0 <- miss?
+    IPJMP2(tmp0, set_materials, HALT), // miss ? terminate program
+    INSERT_TMACRO(vec3_scalar_mul, CS(vr0), CS(d), CS(t)),
+    INSERT_TMACRO(vec_vec3_add, CS(o), CS(o), CS(vr0)), // compute new position
+    INSERT_TMACRO(set_materials),
+    INSERT_TMACRO(vec3_negate, CS(vr2), CS(d)), // vr2 <- wi
+    INSERT_TMACRO(vec3_dot, CS(tmp0), CS(vr0), CS(vr2)),
+    TMUL(clrr, clrr, tmp0),
+    TMUL(clrg, clrg, tmp0),
+    TMUL(clrb, clrb, tmp0)
 KERNEL_END(TVAR(clrr), TVAR(clrg), TVAR(clrb), TVAR(t));
 } // namespace loom::vm
