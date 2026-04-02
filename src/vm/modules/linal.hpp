@@ -277,14 +277,14 @@ using sq_br = char_sequence<'[', i2c<I>, ']'>;
     {                                                             \
     };
 
-#define MAKE_OPS_UNOP_VEC_MACRO(N, OP)                                   \
+#define MAKE_OPS_UNOP_VEC_MACRO(N, OP, NS)                               \
     using __macro_decl_vec##N##_##OP = macro_decl<CS(vec##N##_##OP),     \
                                                   ARR_PARM_DECL(dst, N), \
                                                   ARR_PARM_DECL(a, N)>;  \
     template <typename T, typename DST, typename A>                      \
     struct vec##N##_##OP :                                               \
         std::type_identity<                                              \
-            typename make_un_map<ops::OP<T>,                             \
+            typename make_un_map<NS::OP<T>,                              \
                                  T,                                      \
                                  maybe_make_reg_array_t<DST, N>,         \
                                  maybe_make_reg_array_t<A, N>>::type>    \
@@ -326,7 +326,8 @@ MAKE_STD_BINOP_VEC_SCALAR_MACRO(3, sub, minus)
 MAKE_STD_BINOP_VEC_SCALAR_MACRO(3, mul, multiplies)
 MAKE_STD_BINOP_VEC_SCALAR_MACRO(3, div, divides)
 
-MAKE_OPS_UNOP_VEC_MACRO(3, abs)
+MAKE_OPS_UNOP_VEC_MACRO(3, abs, ops)
+MAKE_OPS_UNOP_VEC_MACRO(3, negate, std)
 
 MAKE_MAT_VEC_MACRO(2)
 MAKE_MAT_VEC_MACRO(3)
