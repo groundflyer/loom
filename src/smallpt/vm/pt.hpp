@@ -452,6 +452,8 @@ struct scene
     using CL_R = CS(0.25);
     using CL_H = CS(0.8);
     using CL_C = CS(-0.2);      // cap y
+
+    using CL_CP = type_sequence<CL_Px, CL_C, CL_Pz>; // cap position
 };
 
 // d is d[3], but we set only x and y, z = -1
@@ -592,6 +594,9 @@ TMACRO(set_materials)
     TSCT12(clrr, pid, 0.8,   1, 0.2, 0.2,   1, 0.8, 0.8, 0.8, 0.6,   0,   0, 1),
     TSCT12(clrg, pid, 0.8, 0.2,   1, 0.2,   1, 0.2, 0.2, 0.2,   0,   1,   1, 1),
     TSCT12(clrb, pid, 0.8, 0.2, 0.2,   1, 0.2, 0.8, 0.8, 0.8,   1, 0.8, 0.8, 1),
+    TMOV(vr10, 0),              // default tangent (0, 1, 0)
+    TMOV(vr11, 1),
+    TMOV(vr12, 0),
     IEQ(tmp0, pid, 10),
     IOREQ(tmp0, tmp0, pid, 11), // tmp0 <- cap or light?
     IEQ(tmp1, pid, 8),
@@ -610,7 +615,12 @@ TMACRO(set_materials)
     TMOV(vr00, 0),
     TMOV(vr02, 0),
     IEQ(tmp0, pid, 10),         // tmp0 <- cap?
+    INSERT_TMACRO(vec_vec3_sub, CS(vr2), CS(o), scene::CL_CP), // compute tangent speculatively
+    INSERT_TMACRO(vec3_norm, CS(vr2), CS(tmp1)),               // normalize tangent
     TCMOV(vr01, tmp0, 1, -1),
+    TCMOV(vr10, tmp0, vr20, vr10),
+    TCMOV(vr11, tmp0, vr21, vr11),
+    TCMOV(vr12, tmp0, vr22, vr12),
     JMP(set_materials_end),
     LABEL(compute_sphere_normal),
     INSERT_TMACRO(vec_vec3_sub, CS(vr0), CS(o), scene::SP_P),
