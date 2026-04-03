@@ -228,6 +228,10 @@ constexpr inline std::size_t dynamic_size = static_cast<std::size_t>(-1);
 
 /// @brief Constant sized thread pool.
 /// @tparam N number of threads.
+///
+/// By default, threads join synchronously upon thread pool destruction, thus
+/// the current scope might be blocked until all threads complete their tasks.
+/// To avoid this behavior use detach().
 template <std::size_t N>
 class thread_pool
 {
@@ -238,7 +242,11 @@ class thread_pool
     void
     join_all() noexcept
     {
-        loom::for_each(m_threads, [](std::thread& t) noexcept { t.join(); });
+        visit(
+            [](std::thread& t) noexcept
+            {
+                if(t.joinable()) t.join();
+            });
     }
 
     void
@@ -246,8 +254,7 @@ class thread_pool
     {
         std::size_t idx = 0;
 
-        return loom::for_each(
-            m_threads,
+        return visit(
             [](std::thread& t, std::size_t& idx) noexcept
             {
                 if(idx < std::thread::hardware_concurrency())
@@ -267,8 +274,7 @@ class thread_pool
         CPUTopology top;
         auto        iter = top.begin();
 
-        return loom::for_each(
-            m_threads,
+        return visit(
             [&top](std::thread& t, auto& iter) noexcept
             {
                 if(iter != top.end())
@@ -311,6 +317,18 @@ class thread_pool
         m_threads = std::move(rhs.m_threads);
     }
 
+    /// @brief Visit each thread.
+    template <typename Visitor, typename... Args>
+    requires(std::is_invocable_v<Visitor, std::thread&, Args...>)
+    void
+    visit(Visitor&& v, Args&&... args) noexcept(
+        std::is_nothrow_invocable_v<Visitor, std::thread&, Args...>)
+    {
+        loom::for_each(m_threads,
+                       std::forward<Visitor>(v),
+                       std::forward<Args>(args)...);
+    }
+
     /// @brief Affine threads.
     void
     affine(const AFFINITY a = AFFINITY::FULL) noexcept
@@ -323,10 +341,21 @@ class thread_pool
         }
     }
 
+    /// @brief Detach all threads.
+    void
+    detach()
+    {
+        visit([](std::thread& t) { if(t.joinable()) t.detach(); });
+    }
+
     ~thread_pool() { join_all(); }
 };
 
 /// @brief Thread pool with size determined at runtime.
+///
+/// By default, threads join synchronously upon thread pool destruction, thus
+/// the current scope might be blocked until all threads complete their tasks.
+/// To avoid this behavior use detach().
 template <>
 class thread_pool<dynamic_size>
 {
@@ -361,7 +390,7 @@ class thread_pool<dynamic_size>
     void
     join_all() noexcept
     {
-        for(std::thread& t: m_threads) t.join();
+        for(std::thread& t: m_threads) if(t.joinable()) t.join();
     }
 
   public:
@@ -401,6 +430,16 @@ class thread_pool<dynamic_size>
         return *this;
     }
 
+    /// @brief Visit each thread.
+    template <typename Visitor, typename... Args>
+    requires(std::is_invocable_v<Visitor, std::thread&, Args...>)
+    void
+    visit(Visitor&& v, Args&&... args) noexcept(
+        std::is_nothrow_invocable_v<Visitor, std::thread&, Args...>)
+    {
+        for(std::thread& t: m_threads) std::invoke(v, t, args...);
+    }
+
     /// @brief Affine threads.
     void
     affine(const AFFINITY a = AFFINITY::FULL) noexcept
@@ -411,6 +450,13 @@ class thread_pool<dynamic_size>
         case AFFINITY::PHYSICAL: affine_physical(); break;
         default: break;
         }
+    }
+
+    /// @brief Detach all threads.
+    void
+    detach()
+    {
+        for(std::thread& t: m_threads) if(t.joinable()) t.detach();
     }
 
     ~thread_pool() { join_all(); }
