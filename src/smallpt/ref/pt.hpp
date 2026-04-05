@@ -187,7 +187,7 @@ static Vec3<T>
 sample_hemisphere(const Vec3<T>& n, const Vec2<T>& u) noexcept
 {
     const auto& [u1, u2] = u;
-    const T r1           = static_cast<T>(2) * Pi<T> * (u1 - 1);
+    const T r1           = static_cast<T>(2) * Pi<T> * (u1 - 0.5);
     const T r2s          = std::sqrt(u2);
     const auto [x, y]    = basis(n);
     return normalize(x * std::cos(r1) * r2s + y * std::sin(r1) * r2s +
@@ -407,8 +407,7 @@ bias_ray(const Vec3f& p, const Vec3f& d) noexcept
 static float
 luminance(const RGB<>& rgb) noexcept
 {
-    const auto [r, g, b] = rgb;
-    return 0.2126f * r + 0.7152f * g + 0.0722 * b;
+    return dot(rgb, RGB{0.2126f, 0.7152f, 0.0722});
 }
 
 /// @brief Compute relative index of refraction.
@@ -627,14 +626,54 @@ struct Shading
                         constant(RGB{1, 0, 1}));
     }
 
+    /// @brief Direct lighting estimator.
+    /// @return light pdf and cos_theta.
+    static std::optional<std::pair<float, float>>
+    direct(const Vec3f& p, const Vec3f& n, const Counter& c) noexcept
+    {
+        constexpr float pa =
+            Scene::light.radius * Scene::light.radius * Pi<float>;
+
+        const Vec3f lp =
+            sample(sample_u(threefry2x32r32<key[0], key[1]>(c)), Scene::light);
+        const Vec3f d = normalize(lp - p);
+        const float cos_theta = dot(n, d);
+
+        if (cos_theta < 0) return {};
+
+        const auto [prim_id, isect] =
+            std::apply(Hider{bias_ray(p, d)},
+                       Scene::geometry);
+
+        if(!isect || prim_id != 11) return {};
+
+        return {
+            {pa * isect.t * isect.t / std::abs(dot(Scene::light.normal, d)), cos_theta}
+        };
+    }
+
     RGB<>
-    diffuse(const RGB<>& color) const noexcept
+    lambert(const RGB<>& color) const noexcept
     {
         const Vec3f d =
             sample_hemisphere(n, sample_u(threefry2x32r32<key[0], key[1]>(c)));
-        const float r = dot(n, d);
-        return color *
-               radiance(bias_ray(p, d), bump_ctr(c, 641833), depth + 1) * r;
+        // const float cos_theta = dot(n, d);
+        const RGB<> gi =
+            radiance(bias_ray(p, d), bump_ctr(c, 641833), depth + 1);
+#if 0
+        const float bsdf_pdf = cos_theta / Pi<float>;
+        const auto  dr       = direct(p, n, bump_ctr(c, 301489));
+        if(dr)
+        {
+            const auto [light_pdf, dc] = dr.value();
+            const float di             = light_pdf + bsdf_pdf;
+
+            return color *
+                   ((gi / di) + (Scene::Gallery::Emission::value * dc) / di);
+        }
+        else
+#endif
+        return color * gi;
     }
 
     RGB<>
@@ -658,7 +697,7 @@ struct Shading
     RGB<>
     operator()(const Gallery::Lambert& mat) const noexcept
     {
-        return diffuse(mat.color);
+        return lambert(mat.color);
     }
 
     RGB<>
@@ -708,7 +747,7 @@ struct Shading
         if(gen_canonical(sx) < f)
             return reflection();
         else
-            return diffuse(Gallery::Plastic::color);
+            return lambert(Gallery::Plastic::color);
     }
 
     RGB<>
@@ -728,11 +767,10 @@ struct Shading
         if(dotWgWo < 0) return RGB{0};
 
         const float alpha_n = anisorough_n(wm, n, t, b, dotWgWm, alpha);
-        const float alpha_o = anisorough_i(wo, t, b, alpha);
+        const float G1      = gaf(dotWgWm, alpha_n);
 
         return Gallery::Metall::color *
-               radiance(bias_ray(p, wo), bump_ctr(c, 1003), depth + 1) *
-               gtr(dotWgWm, alpha_n) * gaf(dotWgWo, alpha_o);
+               radiance(bias_ray(p, wo), bump_ctr(c, 1003), depth + 1) * G1;
     }
 
     RGB<>

@@ -364,7 +364,7 @@ MACRO_END;
 /// @tparam t vec[3]
 /// all of them modified
 TMACRO8(sample_hemisphere, dst, n, b, t, u0, u1, tmp0, tmp1)
-    TSUB_CS(u0, u0, CS(1)),
+    TSUB_CS(u0, u0, CS(0.5)),
     TMUL_CS(u0, u0, PI2_CS),    // u0 <- r1
     TSQRT_CS(tmp0, u1),         // tmp0 <- r2s
     TCOS_CS(tmp1, u0),
@@ -573,6 +573,9 @@ MACRO_END;
 using clrr = CS(clrr);
 using clrg = CS(clrg);
 using clrb = CS(clrb);
+
+// vr0[3] <- normal
+// vr1[3] <- tangent
 
 // set colors and normal
 template <std::floating_point T>
