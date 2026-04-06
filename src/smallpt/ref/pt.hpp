@@ -294,7 +294,7 @@ class cornell_box
 
         struct Emission
         {
-            static constexpr real value = 20;
+            static constexpr real value = 5;
         };
 
         struct Glass
@@ -590,6 +590,7 @@ inline constexpr std::array<std::uint32_t, 2> key{0x1dead000, 0x200beef};
 struct Shading
 {
     static constexpr unsigned max_depth = 4;
+    static constexpr float    p_nee     = 0.5f;
 
     Counter  c;
     unsigned depth;
@@ -627,28 +628,29 @@ struct Shading
     }
 
     /// @brief Direct lighting estimator.
-    /// @return light pdf and cos_theta.
-    static std::optional<std::pair<float, float>>
+    /// @return light PDF, cos(theta) and direction to light.
+    static std::optional<std::tuple<float, float, Vec3f>>
     direct(const Vec3f& p, const Vec3f& n, const Counter& c) noexcept
     {
-        constexpr float pa =
-            Scene::light.radius * Scene::light.radius * Pi<float>;
-
         const Vec3f lp =
             sample(sample_u(threefry2x32r32<key[0], key[1]>(c)), Scene::light);
-        const Vec3f d = normalize(lp - p);
+        const Vec3f d         = normalize(lp - p);
         const float cos_theta = dot(n, d);
 
-        if (cos_theta < 0) return {};
+        if(cos_theta < 0) return {};
 
         const auto [prim_id, isect] =
-            std::apply(Hider{bias_ray(p, d)},
-                       Scene::geometry);
+            std::apply(Hider{bias_ray(p, d)}, Scene::geometry);
 
         if(!isect || prim_id != 11) return {};
 
+        const float     l = distance(Scene::light.position, p);
+        constexpr float pa =
+            Scene::light.radius * Scene::light.radius * Pi<float>;
+
         return {
-            {pa * isect.t * isect.t / std::abs(dot(Scene::light.normal, d)), cos_theta}
+            {l * l / (std::abs(dot(Scene::light.normal, d)) * pa),
+             cos_theta, d}
         };
     }
 
@@ -657,23 +659,24 @@ struct Shading
     {
         const Vec3f d =
             sample_hemisphere(n, sample_u(threefry2x32r32<key[0], key[1]>(c)));
-        // const float cos_theta = dot(n, d);
-        const RGB<> gi =
-            radiance(bias_ray(p, d), bump_ctr(c, 641833), depth + 1);
-#if 0
-        const float bsdf_pdf = cos_theta / Pi<float>;
-        const auto  dr       = direct(p, n, bump_ctr(c, 301489));
-        if(dr)
-        {
-            const auto [light_pdf, dc] = dr.value();
-            const float di             = light_pdf + bsdf_pdf;
 
-            return color *
-                   ((gi / di) + (Scene::Gallery::Emission::value * dc) / di);
+        auto cc = bump_ctr(c, 98793);
+
+        RGB L = radiance(bias_ray(p, d), cc, depth + 1);
+
+        cc = bump_ctr(c, 641833);
+
+        const auto [r, _] = threefry2x32r32<key[0], key[1]>(cc);
+        if(gen_canonical(r) < p_nee)
+        {
+            const auto dr = direct(p, n, bump_ctr(cc, 398));
+            if(dr)
+            {
+                const auto [p_l, ctl, _] = dr.value();
+                L += Scene::Gallery::Emission::value * ctl / (p_l * p_nee);
+            }
         }
-        else
-#endif
-        return color * gi;
+        return color * L;
     }
 
     RGB<>
@@ -755,9 +758,10 @@ struct Shading
     {
         const Vec3f wi    = -i;
         const Vec2f alpha = Gallery::Metall::alpha;
+        const Vec3f b     = cross(n, t);
+
         const auto [wmx, wmy, wmz] =
             microfacet(wi, alpha, sample_u(threefry2x32r32<key[0], key[1]>(c)));
-        const Vec3f b  = cross(n, t);
         const Vec3f wm = normalize(t * wmx + b * wmy + n * wmz);
         const Vec3f wo = reflect(wm, i, dot(wm, wi));
 
@@ -769,8 +773,29 @@ struct Shading
         const float alpha_n = anisorough_n(wm, n, t, b, dotWgWm, alpha);
         const float G1      = gaf(dotWgWm, alpha_n);
 
-        return Gallery::Metall::color *
-               radiance(bias_ray(p, wo), bump_ctr(c, 1003), depth + 1) * G1;
+        auto cc = bump_ctr(c, 1003);
+        RGB  L  = radiance(bias_ray(p, wo), cc, depth + 1) * G1;
+
+        cc                = bump_ctr(cc, 23434);
+        const auto [r, _] = threefry2x32r32<key[0], key[1]>(cc);
+        if(gen_canonical(r) < p_nee)
+        {
+            const auto dr = direct(p, n, bump_ctr(cc, 6453));
+            if(dr)
+            {
+                const auto [p_l, ctl, l] = dr.value();
+                const Vec3f wm           = normalize(wi + l);
+                const float dotWgWm      = dot(n, wm);
+                const float alpha_n = anisorough_n(wm, n, t, b, dotWgWm, alpha);
+                const float alpha_i = anisorough_i(wi, n, t, alpha);
+                const float f       = gtr(dotWgWm, alpha_n);
+                L += Scene::Gallery::Emission::value * f *
+                     gaf(dot(n, wi), alpha_i) * gaf(dotWgWm, alpha_n) /
+                     (4 * dot(wi, n) * p_nee);
+            }
+        }
+
+        return Gallery::Metall::color * L;
     }
 
     RGB<>
