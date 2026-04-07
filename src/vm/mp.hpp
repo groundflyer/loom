@@ -63,7 +63,7 @@ struct Context
     Lock              lock; // protects sorting vs. exchange
     bool              need_sort = false;
 
-    PADDED_VALUE(std::atomic_flag, exchange_available{});
+    PADDED_VALUE(std::atomic_flag, exchange_available);
 
     FORBID_ALL(Context);
 
@@ -122,7 +122,7 @@ struct Context
 /// @brief One-sided signal.
 class alignas(cache_line_size) Signal
 {
-    PADDED_VALUE(std::atomic_flag, m_flag{});
+    PADDED_VALUE(std::atomic_flag, m_flag);
 
   public:
     Signal() noexcept = default;

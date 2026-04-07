@@ -79,7 +79,7 @@ inline constexpr std::size_t cache_line_capacity_v =
 #define PADDED_VALUE(TYPE, NAME)                 \
     union alignas(cache_line_size)               \
     {                                            \
-        TYPE         NAME;                       \
+        TYPE         NAME{};                     \
         std::uint8_t __padding[cache_line_size]; \
     }
 } // namespace loom

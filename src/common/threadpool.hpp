@@ -487,7 +487,7 @@ parallel_for_each(
                                                    std::ranges::range_value_t<
                                                        R>>)
 {
-    PADDED_VALUE(std::atomic_size_t, counter{0});
+    PADDED_VALUE(std::atomic_size_t, counter);
 
     const std::size_t s = std::ranges::size(r);
 
