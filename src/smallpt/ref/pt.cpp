@@ -18,6 +18,12 @@
 using namespace loom;
 using namespace std::literals;
 
+struct shared_counters
+{
+    std::atomic_uint   progress{};
+    std::atomic_size_t ray_count{};
+};
+
 int
 main(int argc, char* argv[])
 {
@@ -40,10 +46,12 @@ main(int argc, char* argv[])
         logger.debug("image ready");
         logger.info("Image res: {}x{}; sampling threshold {}", resx, resy, t);
 
-        const unsigned   num_pix = img.size();
-        std::atomic_uint progress{};
-        std::thread      watcher{
-            [&logger, &progress, num_pix]() noexcept
+        const unsigned num_pix = img.size();
+
+        PADDED_VALUE(shared_counters, scc);
+
+        std::thread watcher{
+            [&logger, &progress = scc.progress, num_pix]() noexcept
             {
                 while(progress.load(std::memory_order_relaxed) < num_pix)
                 {
@@ -60,7 +68,8 @@ main(int argc, char* argv[])
 
         ElapsedTimer<> timer;
 
-        parallel_render(img, render_pixel(img, t, &progress));
+        parallel_render(img,
+                        render_pixel(img, t, &scc.progress, &scc.ray_count));
         const auto e = timer.elapsed();
         watcher.join();
 
@@ -69,6 +78,13 @@ main(int argc, char* argv[])
 #else
         logger.info("Elapsed time {:.3%M:%S}", e);
 #endif
+        logger.info(
+            "Average traversal rate: {} MRay/s",
+            static_cast<double>(scc.ray_count.load(std::memory_order_acquire) /
+                                100000ul) /
+                static_cast<double>(
+                    std::chrono::duration_cast<std::chrono::seconds>(e)
+                        .count()));
         logger.debug("making viewport");
         auto viewport = make_viewport(resx, resy, sink, sink, sink);
         logger.debug("render is ready. Loading...");

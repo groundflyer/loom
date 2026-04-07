@@ -589,26 +589,31 @@ inline constexpr std::array<std::uint32_t, 2> key{0x1dead000, 0x200beef};
 
 struct Shading
 {
+    using ret_t = std::pair<RGB<>, unsigned>;
+
     static constexpr unsigned max_depth = 4;
     static constexpr float    p_nee     = 0.5f;
 
     Counter  c;
     unsigned depth;
+    unsigned ray_count;
     Vec3f    p;
     Vec3f    n;
     Vec3f    t;
     Vec3f    i;
 
-    static RGB<>
+    static ret_t
     radiance(const Ray<float>& ray,
              const Counter&    c,
-             unsigned          depth = 0) noexcept
+             const unsigned    depth     = 0,
+             unsigned          ray_count = 0) noexcept
     {
-        if(depth > max_depth) return {};
+        if(depth > max_depth) return {{}, ray_count};
 
         const auto [prim_id, isect] = std::apply(Hider{ray}, Scene::geometry);
+        ray_count++;
 
-        if(!isect) return {};
+        if(!isect) return {{}, ray_count};
 
         const Vec3f p     = ray.origin + ray.dir * isect.t;
         const auto [n, t] = visit_at(
@@ -622,9 +627,17 @@ struct Shading
             constant(std::pair{Vec3f{0, 1, 0}, Vec3f{0, 1, 0}}));
 
         return visit_at(Gallery::mat_idxs[prim_id],
-                        Shading{c, depth, p, n, t, ray.dir},
+                        Shading{
+                            c,
+                            depth,
+                            ray_count,
+                            p,
+                            n,
+                            t,
+                            ray.dir
+        },
                         Gallery::materials,
-                        constant(RGB{1, 0, 1}));
+                        constant(ret_t{RGB{1, 0, 1}, ray_count}));
     }
 
     /// @brief Direct lighting estimator.
@@ -654,7 +667,7 @@ struct Shading
         };
     }
 
-    RGB<>
+    ret_t
     lambert(const RGB<>& color) const noexcept
     {
         const Vec3f d =
@@ -662,24 +675,29 @@ struct Shading
 
         auto cc = bump_ctr(c, 98793);
 
-        RGB L = radiance(bias_ray(p, d), cc, depth + 1);
+        auto [L, rc] = radiance(bias_ray(p, d), cc, depth + 1, ray_count);
 
-        cc = bump_ctr(c, 641833);
+        cc = bump_ctr(cc, 72381);
 
         const auto [r, _] = threefry2x32r32<key[0], key[1]>(cc);
+
+        cc = bump_ctr(cc, 397);
+
         if(gen_canonical(r) < p_nee)
         {
-            const auto dr = direct(p, n, bump_ctr(cc, 398));
+            const auto dr = direct(p, n, cc);
             if(dr)
             {
                 const auto [p_l, ctl, _] = dr.value();
                 L += Scene::Gallery::Emission::value * ctl / (p_l * p_nee);
             }
+            rc++;
         }
-        return color * L;
+
+        return {color * L, rc};
     }
 
-    RGB<>
+    ret_t
     reflection() const noexcept
     {
         const float cos_theta = dot(n, -i);
@@ -688,22 +706,23 @@ struct Shading
 
         return radiance(bias_ray(p, reflect(nfn, i, cos_theta)),
                         bump_ctr(c, 312398),
-                        depth + 1);
+                        depth + 1,
+                        ray_count);
     }
 
-    RGB<>
+    ret_t
     operator()(const Gallery::Emission&) const noexcept
     {
-        return RGB{Gallery::Emission::value};
+        return {RGB{Gallery::Emission::value}, ray_count};
     }
 
-    RGB<>
+    ret_t
     operator()(const Gallery::Lambert& mat) const noexcept
     {
         return lambert(mat.color);
     }
 
-    RGB<>
+    ret_t
     operator()(const Gallery::Glass& /* mat */) const noexcept
     {
         const float cos_theta = dot(n, -i);
@@ -714,15 +733,16 @@ struct Shading
         const float ddn       = dot(i, nfn);
         const float cos2t     = 1 - eta * eta * (1 - ddn * ddn);
 
-        auto refraction = [&]() noexcept
+        auto refraction = [&]() noexcept -> ret_t
         {
-            return radiance(
+            const auto [L, rc] = radiance(
                 bias_ray(
                     p,
                     normalize(i * eta - n * ((into ? 1 : -1) *
                                              (ddn * eta + std::sqrt(cos2t))))),
                 bump_ctr(c, 987523),
                 depth + 1);
+            return {L / (eta * eta), rc};
         };
 
         if(cos2t < 0) // total internal reflection
@@ -733,10 +753,10 @@ struct Shading
         if(gen_canonical(sx) < f)
             return reflection();
         else
-            return refraction() / (eta * eta);
+            return refraction();
     }
 
-    RGB<>
+    ret_t
     operator()(const Gallery::Plastic&) const noexcept
     {
         const Vec3f wi        = -i;
@@ -753,7 +773,7 @@ struct Shading
             return lambert(Gallery::Plastic::color);
     }
 
-    RGB<>
+    ret_t
     operator()(const Gallery::Metall&) const noexcept
     {
         const Vec3f wi    = -i;
@@ -768,13 +788,14 @@ struct Shading
         const float dotWgWm = dot(n, wm);
         const float dotWgWo = dot(n, wo);
 
-        if(dotWgWo < 0) return RGB{0};
+        if(dotWgWo < 0) return {RGB{0}, ray_count};
 
         const float alpha_n = anisorough_n(wm, n, t, b, dotWgWm, alpha);
         const float G1      = gaf(dotWgWm, alpha_n);
 
-        auto cc = bump_ctr(c, 1003);
-        RGB  L  = radiance(bias_ray(p, wo), cc, depth + 1) * G1;
+        auto cc      = bump_ctr(c, 1003);
+        auto [L, rc] = radiance(bias_ray(p, wo), cc, depth + 1, ray_count);
+        L *= G1;
 
         cc                = bump_ctr(cc, 23434);
         const auto [r, _] = threefry2x32r32<key[0], key[1]>(cc);
@@ -789,16 +810,17 @@ struct Shading
                 const float alpha_n = anisorough_n(wm, n, t, b, dotWgWm, alpha);
                 const float alpha_i = anisorough_i(wi, n, t, alpha);
                 const float f       = gtr(dotWgWm, alpha_n);
+                rc++;
                 L += Scene::Gallery::Emission::value * f *
                      gaf(dot(n, wi), alpha_i) * gaf(dotWgWm, alpha_n) /
                      (4 * dot(wi, n) * p_nee);
             }
         }
 
-        return Gallery::Metall::color * L;
+        return {Gallery::Metall::color * L, rc};
     }
 
-    RGB<>
+    ret_t
     operator()(const Gallery::Window&) const noexcept
     {
         const Vec3f wi        = -i;
@@ -812,7 +834,7 @@ struct Shading
         if(sx < f || sy < 0.4)
             return reflection();
         else
-            return RGB<>{0};
+            return {RGB{0}, ray_count};
     }
 };
 
@@ -827,15 +849,17 @@ class render_pixel
     const float                m_pw; // pixel width
     const float                m_threshold;
 
-    std::atomic_uint* p_progress;
+    std::atomic_uint*   p_progress;
+    std::atomic_size_t* p_ray_count;
 
   public:
-    render_pixel(const Image&      img,
-                 const float       threshold,
-                 std::atomic_uint* progress) noexcept :
+    render_pixel(const Image&        img,
+                 const float         threshold,
+                 std::atomic_uint*   progress,
+                 std::atomic_size_t* ray_count) noexcept :
         m_width(img.width()), m_sample_space(img.res()),
         m_pw(m_sample_space.ratio / m_sample_space.res[0]),
-        m_threshold(threshold), p_progress(progress)
+        m_threshold(threshold), p_progress(progress), p_ray_count(ray_count)
     {
     }
 
@@ -848,6 +872,7 @@ class render_pixel
         const Vec2f         pp   = m_sample_space(pos); // pixel position
         const std::uint32_t c0   = px * m_width + py;
         unsigned            ns   = 0;
+        unsigned            prc  = 0; // pixel rount count
         float               mean = .0f;
         float               m2   = .0f;
 
@@ -856,7 +881,7 @@ class render_pixel
         while(ns < min_samples ||
               std::sqrt(m2 / static_cast<float>(ns - 1)) / ns >= m_threshold)
         {
-            const RGB v = Shading::radiance(
+            const auto [v, rc] = Shading::radiance(
                 cam(jitter_sample_pos(m_pw,
                                       pp,
                                       sample_u(threefry2x32r32<key[0], key[1]>(
@@ -870,11 +895,13 @@ class render_pixel
             m2 += delta * delta2;
 
             r += v;
+            prc += rc;
         }
 
         pix = RGBA{r / static_cast<float>(ns), 1};
 
         p_progress->fetch_add(1, std::memory_order_relaxed);
+        p_ray_count->fetch_add(prc, std::memory_order_relaxed);
     }
 };
 } // namespace loom
