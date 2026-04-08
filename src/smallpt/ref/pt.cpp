@@ -79,7 +79,7 @@ main(int argc, char* argv[])
         logger.info("Elapsed time {:.3%M:%S}", e);
 #endif
         logger.info(
-            "Average traversal rate: {} MRay/s",
+            "Average traversal rate {:.2f} MRay/s",
             static_cast<double>(scc.ray_count.load(std::memory_order_acquire) /
                                 100000ul) /
                 static_cast<double>(

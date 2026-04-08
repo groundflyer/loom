@@ -305,7 +305,7 @@ class cornell_box
         struct Plastic
         {
             static constexpr real ior = 2.5;
-            static constexpr Rgb  color{0.271, 1, 0.807};
+            static constexpr Rgb  color{0, 0.212, 0.553};
         };
 
         struct Metall
