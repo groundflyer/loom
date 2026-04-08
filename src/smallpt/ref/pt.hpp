@@ -187,7 +187,7 @@ static Vec3<T>
 sample_hemisphere(const Vec3<T>& n, const Vec2<T>& u) noexcept
 {
     const auto& [u1, u2] = u;
-    const T r1           = static_cast<T>(2) * Pi<T> * (u1 - 0.5);
+    const T r1           = static_cast<T>(2) * Pi<T> * (u1 - T{0.5});
     const T r2s          = std::sqrt(u2);
     const auto [x, y]    = basis(n);
     return normalize(x * std::cos(r1) * r2s + y * std::sin(r1) * r2s +
