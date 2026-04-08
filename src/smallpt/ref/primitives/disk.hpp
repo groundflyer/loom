@@ -60,12 +60,12 @@ template <std::floating_point T,
 constexpr Vec3<T>
 sample(const Vec2<T, SContainer>& s, const Disk<T>& prim) noexcept
 {
-    const auto& [p, zaxis, r] = prim;
-    const auto& [t1, t2]      = s;
-    const T        sr         = r * sqrt(t1);
-    const T        theta      = static_cast<T>(2) * Pi<T> * t2;
-    const Vec3<T> point{sr * sin(theta), sr * cos(theta), 0};
-    return dot(basis_matrix(zaxis), point) + p;
+    const auto& [p, n, r] = prim;
+    const auto& [u0, u1]  = s;
+    const T sr            = r * sqrt(u0);
+    const T theta         = static_cast<T>(2) * Pi<T> * (u1 - T{0.5});
+    const auto [x, y]     = basis(n);
+    return x * sr * std::sin(theta) + y * sr * std::cos(theta) + p;
 }
 
 /// @brief Return disk position.
