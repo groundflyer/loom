@@ -454,7 +454,30 @@ struct scene
     using CL_C = CS(-0.2);      // cap y
 
     using CL_CP = type_sequence<CL_Px, CL_C, CL_Pz>; // cap position
+
+    // light
+    using L_P = type_sequence<CS(0), CS(0.9999), CS(0)>;
+    using L_N = type_sequence<CS(0), CS(-1), CS(0)>;
+    using L_B = type_sequence<CS(1), CS(0), CS(0)>;
+    using L_T = type_sequence<CS(0), CS(0), CS(1)>;
+    using L_E = CS(5);
+    using L_R = CS(0.35);
 };
+
+TMACRO5(sample_light_disk, dst, u0, u1, tmp, vtmp)
+    TSQRT_CS(u0, u0),
+    TMUL_CS(u0, u0, scene::L_R),         // u0 <- sr
+    TSUB_CS(u1, u1, CS(0.5)),
+    TMUL_CS(u1, u1, PI2_CS),    // u1 <- theta
+    TSIN_CS(tmp, u1),
+    TMUL_CS(tmp, tmp, u0),
+    INSERT_TMACRO(vec3_scalar_mul, dst, scene::L_B, tmp),
+    TCOS_CS(tmp, u1),
+    TMUL_CS(tmp, tmp, u0),
+    INSERT_TMACRO(vec3_scalar_mul, vtmp, scene::L_T, tmp),
+    INSERT_TMACRO(vec_vec3_add, dst, dst, vtmp),
+    INSERT_TMACRO(vec_vec3_add, dst, dst, scene::L_P)
+MACRO_END;
 
 // d is d[3], but we set only x and y, z = -1
 template <std::floating_point T>

@@ -123,6 +123,11 @@ TKERNEL2(ray_dir_test, d0, d1)
     INSERT_TMACRO(vm::vec3_norm, CS(d), CS(tmp))
 TKERNEL_END3(d0, d1, d2);
 
+template <std::floating_point T>
+TKERNEL2(sample_light_test, u0, u1)
+    INSERT_TMACRO(vm::sample_light_disk, CS(dst), CS(u0), CS(u1), CS(tmp0), CS(vtmp0))
+TKERNEL_END3(dst0, dst1, dst2);
+
 // clang-format on
 
 using Vec3f = Vector<float, 3, std::array>;
@@ -247,6 +252,7 @@ main(int argc, char* argv[])
     vm::bse::function<quad_isect_test<float>>     bse_quad_isect;
     vm::bse::function<ray_dir_test<float>>        bse_ray_dir_test;
     vm::bse::function<onb_test<float>>            bse_onb;
+    vm::bse::function<sample_light_test<float>>   bse_sample_light;
 
     track.dep_check(
         NamedTest(
@@ -303,6 +309,17 @@ main(int argc, char* argv[])
                 fcmpt),
             "sample hemisphere",
             0.01));
+
+    track.check(
+        NamedFuzzyTest(tm.fuzzy_with_ref(
+                           gv2s,
+                           [&bse_sample_light](const Vec2f& u) noexcept
+                           { return bse_sample_light(u[0], u[1]); },
+                           [](const Vec2f& u) noexcept
+                           { return to_tuple(sample(u, Scene::light)); },
+                           fcmpt),
+                       "sample light",
+                       0.01));
 
     track.check(NamedFuzzyTest(tm.fuzzy_with_ref(
                                    [&]() noexcept
