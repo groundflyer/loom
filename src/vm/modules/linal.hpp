@@ -130,6 +130,37 @@ class make_un_map
         intlist::map_t<f, std::make_index_sequence<typelist::length<Src>>>;
 };
 
+/// @brief Generate macro of ternary map with three vectors.
+/// @tparam Op operator. See available operators in vm/operators.hpp
+/// @tparam T variables type.
+/// @tparam Dst vector of destination registers.
+/// @tparam A vector or scalar for the first operand.
+/// @tparam B vector or scalar for the second operand.
+/// @tparam C vector or scalar for the second operand.
+///
+/// At least one of @p A and @p B should be vector.
+template <typename Op,
+          typename T,
+          typelist::List Dst,
+          typename A,
+          typename B,
+          typename C>
+    requires((typelist::List<A> || typelist::List<B>) &&
+             !(CharSequence<A> && CharSequence<B>))
+class make_ternary_map
+{
+    template <std::uint8_t I>
+    using f = Compute<Op,
+                      Variable<T, typelist::at<I, Dst>>,
+                      Variable<T, typelist::proj<I, A>>,
+                      Variable<T, typelist::proj<I, B>>,
+                      Variable<T, typelist::proj<I, C>>>;
+
+  public:
+    using type =
+        intlist::map_t<f, std::make_index_sequence<typelist::length<Dst>>>;
+};
+
 /// @brief Generate macro for dot product of two vectors.
 /// @tparam Dst destination register identifier.
 template <typename MAJOR_TYPE,
@@ -277,7 +308,7 @@ using sq_br = char_sequence<'[', i2c<I>, ']'>;
     {                                                             \
     };
 
-#define MAKE_OPS_UNOP_VEC_MACRO(N, OP, NS)                               \
+#define MAKE_UNOP_VEC_MACRO(N, OP, NS)                                   \
     using __macro_decl_vec##N##_##OP = macro_decl<CS(vec##N##_##OP),     \
                                                   ARR_PARM_DECL(dst, N), \
                                                   ARR_PARM_DECL(a, N)>;  \
@@ -289,6 +320,25 @@ using sq_br = char_sequence<'[', i2c<I>, ']'>;
                                  maybe_make_reg_array_t<DST, N>,         \
                                  maybe_make_reg_array_t<A, N>>::type>    \
     {                                                                    \
+    };
+
+#define MAKE_TERNARY_OP_VEC_VEC_MACRO(N, NAME, OP)                          \
+    using __macro_decl_vec_vec##N##_##NAME =                                \
+        macro_decl<CS(vec_vec##N##_##NAME),                                 \
+                   ARR_PARM_DECL(dst, N),                                   \
+                   ARR_PARM_DECL(a, N),                                     \
+                   ARR_PARM_DECL(b, N),                                     \
+                   ARR_PARM_DECL(c, N)>;                                    \
+    template <typename T, typename DST, typename A, typename B, typename C> \
+    struct vec_vec##N##_##NAME :                                            \
+        std::type_identity<                                                 \
+            typename make_ternary_map<ops::OP,                              \
+                                      T,                                    \
+                                      maybe_make_reg_array_t<DST, N>,       \
+                                      maybe_make_reg_array_t<A, N>,         \
+                                      maybe_make_reg_array_t<B, N>,         \
+                                      maybe_make_reg_array_t<C, N>>::type>  \
+    {                                                                       \
     };
 
 #define MAKE_MAT_VEC_MACRO(N)                                            \
@@ -326,15 +376,18 @@ MAKE_STD_BINOP_VEC_SCALAR_MACRO(3, sub, minus)
 MAKE_STD_BINOP_VEC_SCALAR_MACRO(3, mul, multiplies)
 MAKE_STD_BINOP_VEC_SCALAR_MACRO(3, div, divides)
 
-MAKE_OPS_UNOP_VEC_MACRO(3, abs, ops)
-MAKE_OPS_UNOP_VEC_MACRO(3, negate, std)
+MAKE_UNOP_VEC_MACRO(3, abs, ops)
+MAKE_UNOP_VEC_MACRO(3, negate, std)
+
+MAKE_TERNARY_OP_VEC_VEC_MACRO(3, fma, fma)
+MAKE_TERNARY_OP_VEC_VEC_MACRO(3, fms, fms)
 
 MAKE_MAT_VEC_MACRO(2)
 MAKE_MAT_VEC_MACRO(3)
 
 #undef MAKE_STD_BINOP_VEC_VEC_MACRO
 #undef MAKE_STD_BINOP_VEC_SCALAR_MACRO
-#undef MAKE_OPS_UNOP_VEC_MACRO
+#undef MAKE_UNOP_VEC_MACRO
 #undef MAKE_MAT_VEC_MACRO
 
 using __macro_decl_vec3_dot =
