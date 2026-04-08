@@ -185,6 +185,23 @@ struct sct
     }
 };
 
+/// @brief Select value using index. Generalization of ops::cmov.
+/// @tparam T value type.
+/// @tparam I index type.
+///
+/// Unlike ops::sct works with registers.
+template <typename T, std::integral I>
+struct slt
+{
+    template <std::same_as<T>... Ts>
+        requires(sizeof...(Ts) >= 2)
+    T
+    operator()(const I i, const Ts... args) const noexcept
+    {
+        return std::array<T, sizeof...(Ts)>{args...}[i];
+    }
+};
+
 /// @brief Predicate accumulation.
 /// @tparam T type of comparing operands.
 /// @tparam I type of accumulating boolean values.

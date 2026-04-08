@@ -65,11 +65,12 @@ main(int argc, char* argv[])
         tm,
         rs);
 
-    test_suite_types(all_uints{},
-                     SimpleSIMDSuite<sct_inv_test, GM_U3>{},
-                     track,
-                     tm,
-                     rs);
+    test_suites_types(all_uints{},
+                      type_sequence<SimpleSIMDSuite<sct_inv_test, GM_U3>,
+                                    SimpleSIMDSuite<slt_inv_test, GM_U3>>{},
+                      track,
+                      tm,
+                      rs);
 
     return track.ret_code();
 }

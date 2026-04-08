@@ -826,6 +826,39 @@ struct remap_comp<N, ops::sct<T, I, L>, T, I>
     };
 };
 
+/// @brief Remap select value ops::slt.
+template <fsize_t N, typename T, typename I, typename... Args>
+struct remap_comp<N, ops::slt<T, I>, T, I, Args...>
+{
+    using vector_type       = packed_vector<T, N>;
+    using index_vector_type = packed_vector<I, N>;
+
+    template <I Idx, typename... Rest>
+    static vector_type _FORCE_INLINE
+    impl(const index_vector_type i,
+         const vector_type       head,
+         const Rest... tail) noexcept
+    {
+        constexpr index_vector_type cur_idx = broadcast<N>(Idx);
+
+        if constexpr(sizeof...(Rest) > 0)
+            return cur_idx == i ? head : impl<Idx + 1>(i, tail...);
+        else
+            return head;
+    }
+
+    struct type
+    {
+        template <std::same_as<vector_type>... Vs>
+            requires(sizeof...(Vs) >= 2)
+        vector_type _FORCE_INLINE
+        operator()(const index_vector_type i, const Vs... vs) const noexcept
+        {
+            return impl<0>(i, vs...);
+        }
+    };
+};
+
 /// @brief Remap predicate accumulation ops::pacc.
 template <fsize_t N,
           typename T,

@@ -256,6 +256,17 @@ TKERNEL1(sct_inv_test, i)
     IEQ(o, i, o)
 IKERNEL_END1(o);
 
+template <typename T>
+IKERNEL1(slt_inv_test, i)
+    TMOV(a, 0),
+    TMOV(b, 10),
+    TMOV(c, 20),
+    TMOV(d, 30),
+    TSLT4(o, i, a, b, c, d),
+    TMUL(i, i, 10),
+    TEQ(o, i, o)
+IKERNEL_END1(o);
+
 // clang-format on
 
 // validation programs

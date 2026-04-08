@@ -1044,6 +1044,40 @@
 #define TSCTN_CS(...) SCTN_CS(MAJOR_TYPE, INDEX_TYPE, __VA_ARGS__)
 #define ISCTN_CS(...) SCTN_CS(INDEX_TYPE, INDEX_TYPE, __VA_ARGS__)
 
+#define SLT(DST_TYPE, IDX_TYPE, ...) \
+    loom::vm::Compute<loom::vm::ops::slt<DST_TYPE, IDX_TYPE>, __VA_ARGS__>
+
+#define TSLT(...) SLT(MAJOR_TYPE, INDEX_TYPE, __VA_ARGS__)
+#define ISLT(...) SLT(INDEX_TYPE, INDEX_TYPE, __VA_ARGS__)
+
+#define TSLT3(DST, IDX, V0, V1, V2) \
+    TSLT(TVAR(DST), IVAR(IDX), TVAR(V0), TVAR(V1), TVAR(V2))
+#define TSLT4(DST, IDX, V0, V1, V2, V3) \
+    TSLT(TVAR(DST), IVAR(IDX), TVAR(V0), TVAR(V1), TVAR(V2), TVAR(V3))
+#define TSLT3_CS(DST, IDX, V0, V1, V2) \
+    TSLT(TVAR_CS(DST), IVAR_CS(IDX), TVAR_CS(V0), TVAR_CS(V1), TVAR_CS(V2))
+#define TSLT4_CS(DST, IDX, V0, V1, V2, V3) \
+    TSLT(TVAR_CS(DST),                     \
+         IVAR_CS(IDX),                     \
+         TVAR_CS(V0),                      \
+         TVAR_CS(V1),                      \
+         TVAR_CS(V2),                      \
+         TVAR_CS(V3))
+
+#define ISLT3(DST, IDX, V0, V1, V2) \
+    ISLT(IVAR(DST), IVAR(IDX), IVAR(V0), IVAR(V1), IVAR(V2))
+#define ISLT4(DST, IDX, V0, V1, V2, V3) \
+    ISLT(IVAR(DST), IVAR(IDX), IVAR(V0), IVAR(V1), IVAR(V2), IVAR(V3))
+#define ISLT3_CS(DST, IDX, V0, V1, V2) \
+    ISLT(IVAR_CS(DST), IVAR_CS(IDX), IVAR_CS(V0), IVAR_CS(V1), IVAR_CS(V2))
+#define ISLT4_CS(DST, IDX, V0, V1, V2, V3) \
+    ISLT(IVAR_CS(DST),                     \
+         IVAR_CS(IDX),                     \
+         IVAR_CS(V0),                      \
+         IVAR_CS(V1),                      \
+         IVAR_CS(V2),                      \
+         IVAR_CS(V3))
+
 #define PACC(ACC_OP, CMP_OP, PTYPE, CTYPE, DST, P, X, Y)                 \
     loom::vm::Compute<loom::vm::ops::pacc<CTYPE, PTYPE, ACC_OP, CMP_OP>, \
                       VAR(PTYPE, DST),                                   \
