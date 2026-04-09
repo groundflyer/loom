@@ -185,7 +185,7 @@ TMACRO10(isect_triangle, hit, t, o, d, vert0, vert1, vert2, tmp1, tmp2, vtmp)
     LABEL(isect_triangle_mid3),
     INSERT_TMACRO(vec3_dot, tmp1, vert2, vtmp),                  // tmp1 <- dot(edge2, qvec)
     TMUL_CS(t, tmp1, t),                                         // t <- dot(edge2, qvec)*inv_det
-    IMOV_CS(hit, CS(1)),                                         // hit <- true
+    TGT_CS(hit, t, CS(0)),                                       // hit <- t>0
     LABEL(isect_triangle_end)
 MACRO_END;
 

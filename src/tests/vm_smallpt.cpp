@@ -423,7 +423,7 @@ main(int argc, char* argv[])
                           intersect,
                           cmp_isects),
         "ray-triangle intersection",
-        0.025));
+        0.01));
 
     track.check(NamedFuzzyTest(
         tm.fuzzy_with_ref(mk_isect_g(
