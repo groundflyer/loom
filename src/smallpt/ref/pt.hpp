@@ -657,13 +657,12 @@ struct Shading
 
         if(!isect || prim_id != 11) return {};
 
-        const float     l = distance(Scene::light.position, p);
+        const float     l = length2(Scene::light.position - p);
         constexpr float pa =
             Scene::light.radius * Scene::light.radius * Pi<float>;
 
         return {
-            {l * l / (std::abs(dot(Scene::light.normal, d)) * pa),
-             cos_theta, d}
+            {l / (std::abs(dot(Scene::light.normal, d)) * pa), cos_theta, d}
         };
     }
 
