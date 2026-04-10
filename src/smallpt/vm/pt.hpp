@@ -609,12 +609,8 @@ TMACRO(traverse_scene)
     LABEL(traverse_room_end)
 MACRO_END;
 
-using clr0 = CS(clr0);
-using clr1 = CS(clr1);
-using clr2 = CS(clr2);
-
-// vr0[3] <- normal
-// vr1[3] <- tangent
+// n[3] <- normal
+// t[3] <- tangent
 
 // set colors and normal
 template <std::floating_point T>
@@ -635,9 +631,9 @@ TMACRO(set_materials)
     TSCT12(clr0, pid, 0.8,   1, 0.2, 0.2,   1, 0.8, 0.8, 0.8, 0.6,   0,   0, 1),
     TSCT12(clr1, pid, 0.8, 0.2,   1, 0.2,   1, 0.2, 0.2, 0.2,   0,   1,   1, 1),
     TSCT12(clr2, pid, 0.8, 0.2, 0.2,   1, 0.2, 0.8, 0.8, 0.8,   1, 0.8, 0.8, 1),
-    TMOV(vr10, 0),              // default tangent (0, 1, 0)
-    TMOV(vr11, 1),
-    TMOV(vr12, 0),
+    TMOV(t0, 0),              // default tangent (0, 1, 0)
+    TMOV(t1, 1),
+    TMOV(t2, 0),
     IEQ(tmp0, pid, 10),
     IOREQ(tmp0, tmp0, pid, 11), // tmp0 <- cap or light?
     IEQ(tmp1, pid, 8),
@@ -648,30 +644,30 @@ TMACRO(set_materials)
     ICMOV(rp, tmp1, tmp2, rp),
     IPJMP4(rp, set_polygon_normal, set_disk_normal, compute_sphere_normal, compute_cylinder_normal),
     LABEL(set_polygon_normal),  // just set precomputed normals. not fair, but who cares
-    TSCTN_CS(CS(vr00), CS(pid), CS(0), CS(1), CS(-1), CS(0), CS(0), scene::TH0_Nx, scene::TH1_Nx, scene::TH2_Nx),
-    TSCTN_CS(CS(vr01), CS(pid), CS(1), CS(0), CS(0), CS(-1), CS(0), scene::TH0_Ny, scene::TH1_Ny, scene::TH2_Ny),
-    TSCTN_CS(CS(vr02), CS(pid), CS(0), CS(0), CS(0), CS(0), CS(1), scene::TH0_Nz, scene::TH1_Nz, scene::TH2_Nz),
+    TSCTN_CS(CS(n0), CS(pid), CS(0), CS(1), CS(-1), CS(0), CS(0), scene::TH0_Nx, scene::TH1_Nx, scene::TH2_Nx),
+    TSCTN_CS(CS(n1), CS(pid), CS(1), CS(0), CS(0), CS(-1), CS(0), scene::TH0_Ny, scene::TH1_Ny, scene::TH2_Ny),
+    TSCTN_CS(CS(n2), CS(pid), CS(0), CS(0), CS(0), CS(0), CS(1), scene::TH0_Nz, scene::TH1_Nz, scene::TH2_Nz),
     JMP(set_materials_end),
     LABEL(set_disk_normal),
-    TMOV(vr00, 0),
-    TMOV(vr02, 0),
+    TMOV(n0, 0),
+    TMOV(n2, 0),
     IEQ(tmp0, pid, 10),         // tmp0 <- cap?
     INSERT_TMACRO(vec_vec3_sub, CS(vr2), CS(o), scene::CL_CP), // compute tangent speculatively
     INSERT_TMACRO(vec3_norm, CS(vr2), CS(tmp1)),               // normalize tangent
-    TCMOV(vr01, tmp0, 1, -1),
-    TCMOV(vr10, tmp0, vr20, vr10),
-    TCMOV(vr11, tmp0, vr21, vr11),
-    TCMOV(vr12, tmp0, vr22, vr12),
+    TCMOV(n1, tmp0, 1, -1),
+    TCMOV(t0, tmp0, vr20, t0),
+    TCMOV(t1, tmp0, vr21, t1),
+    TCMOV(t2, tmp0, vr22, t2),
     JMP(set_materials_end),
     LABEL(compute_sphere_normal),
-    INSERT_TMACRO(vec_vec3_sub, CS(vr0), CS(o), scene::SP_P),
-    INSERT_TMACRO(vec3_norm, CS(vr0), CS(tmp0)),
+    INSERT_TMACRO(vec_vec3_sub, CS(n), CS(o), scene::SP_P),
+    INSERT_TMACRO(vec3_norm, CS(n), CS(tmp0)),
     JMP(set_materials_end),
     LABEL(compute_cylinder_normal),
-    TMOV(vr01, 0),
-    TSUB_CS(CS(vr00), CS(o0), scene::CL_Px),
-    TSUB_CS(CS(vr02), CS(o2), scene::CL_Pz),
-    INSERT_TMACRO(vec3_norm, CS(vr0), CS(tmp0)),
+    TMOV(n1, 0),
+    TSUB_CS(CS(n0), CS(o0), scene::CL_Px),
+    TSUB_CS(CS(n2), CS(o2), scene::CL_Pz),
+    INSERT_TMACRO(vec3_norm, CS(n), CS(tmp0)),
     LABEL(set_materials_end)
 MACRO_END;
 
@@ -689,33 +685,30 @@ MACRO_END;
 
 // rpt - return pointer tracing
 // 0: post_primary
-// 1: post_direct_lighting
+// 1: direct_lighting_pdf
 // 2: dl_end
 
 template <std::floating_point T>
-TMACRO7(direct_lighting, pdf_l, n, c0, c1, tmp0, tmp1, vtmp0)
+TMACRO7(direct_lighting, hit, pdf_l, c0, c1, tmp0, tmp1, vtmp0)
     TMOV_CS(pdf_l, CS(0)),
     INSERT_MACRO(threefry2x32r32, c0, c1, scene::K0, scene::K1, scene::K2, tmp0, tmp1),
-    INSERT_TMACRO(gen_canonical, c0),
-    INSERT_TMACRO(gen_canonical, c1),
+    INSERT_TMACRO(sample_u, c0, c1),
     INSERT_TMACRO(sample_light_disk, CS(d), c0, c1, tmp0, vtmp0),
     INSERT_TMACRO(vec_vec3_sub, CS(d), CS(d), CS(o)),
-    INSERT_TMACRO(vec3_norm, CS(d), tmp0),                        // d <- d
-    INSERT_TMACRO(vec3_dot, tmp0, CS(d), n),
+    INSERT_TMACRO(vec3_norm, CS(d), tmp0),
+    INSERT_TMACRO(vec3_dot, tmp0, CS(d), CS(n)),
     TGT_CS(tmp0, tmp0, CS(0)),
     ICMOV_CS(CS(rpt), tmp0, CS(1), CS(2)),
     INSERT_TMACRO(bias_ray, vtmp0),
     IPJMP2_CS(tmp0, dl_end, traverse_scene),
-    LABEL(post_direct_lighting),
-    // TMOV_CS(pdf_l, CS(1)),
-    // INSERT_TMACRO(vec_vec3_sub, vtmp0, scene::L_P, CS(o)),
-    // INSERT_TMACRO(vec3_length2, pdf_l, vtmp0), // pdf_l <- l
-    // INSERT_TMACRO(vec3_dot, tmp0, scene::L_N, n),
-    // TABS_CS(tmp0, tmp0),
-    // TMUL_CS(tmp0, tmp0, scene::L_A),
-    // TDIV_CS(pdf_l, pdf_l, tmp0),
-    IEQ_CS(tmp0, CS(pid), CS(11)),
-    TCMOV_CS(pdf_l, tmp0, CS(1), CS(0)),
+    LABEL(direct_lighting_pdf),
+    INSERT_TMACRO(vec_vec3_sub, vtmp0, scene::L_P, CS(o)),
+    INSERT_TMACRO(vec3_length2, pdf_l, vtmp0), // pdf_l <- l
+    INSERT_TMACRO(vec3_dot, tmp0, scene::L_N, CS(d)),
+    TABS_CS(tmp0, tmp0),
+    TMUL_CS(tmp0, tmp0, scene::L_A),
+    TDIV_CS(pdf_l, pdf_l, tmp0),
+    IEQ_CS(hit, CS(pid), CS(11)),
     LABEL(dl_end)
 MACRO_END;
 
@@ -746,7 +739,7 @@ KERNEL(pt, IVAR(pix), IVAR(res), TVAR(r))
     IMOV(rpt, 0),
     LABEL(traverse_scene),
     INSERT_TMACRO(traverse_scene),
-    IPJMP3(rpt, post_primary, post_direct_lighting, dl_end),
+    IPJMP3(rpt, post_primary, direct_lighting_pdf, dl_end),
     LABEL(post_primary),
     TMOV(clr0, 0),
     TMOV(clr1, 0),
@@ -761,22 +754,12 @@ KERNEL(pt, IVAR(pix), IVAR(res), TVAR(r))
     INSERT_TMACRO(vec3_scalar_mul, CS(vr0), CS(d), CS(t)),
     INSERT_TMACRO(vec_vec3_add, CS(o), CS(o), CS(vr0)), // compute new position
     INSERT_TMACRO(set_materials),
-    INSERT_TMACRO(vec3_negate, CS(vr2), CS(d)), // vr2 <- wi
-    INSERT_TMACRO(vec3_dot, CS(tmp0), CS(vr0), CS(vr2)),
-    TSQRT(tmp0, tmp0),
-    INSERT_TMACRO(vec3_scalar_mul, CS(clr), CS(clr), CS(tmp0)),
-    INSERT_TMACRO(direct_lighting, CS(pdf_l), CS(vr0), CS(c0), CS(c1), CS(tmp0), CS(tmp1), CS(vr2)),
-    INSERT_TMACRO(vec3_scalar_mul, CS(clr), CS(clr), CS(pdf_l))
-
-    // TMUL_CS(CS(vr31), CS(tmp1), scene::L_E),
-    // TDIV(tmp3, vr31, tmp0),
-    // TMUL(vr32, clr0, tmp3),
-    // TGT(vr30, pdf_l, 0),
-    // TCMOV(clr0, vr30, 1, 0),
-    // // TMUL(vr32, clr1, tmp3),
-    // TCMOV(clr1, vr30, 1, 0),
-    // // TMUL(vr32, clr2, tmp3),
-    // TCMOV(clr2, vr30, 1, 0)
-    // INSERT_MACRO(bump_ctr, CS(c0), CS(c1), CS(43823), CS(tmp0), CS(tmp1), CS(tmp2))
+    INSERT_TMACRO(direct_lighting, CS(tmp2), CS(pdf_l), CS(c0), CS(c1), CS(tmp0), CS(tmp1), CS(vr2)),
+    INSERT_TMACRO(vec3_dot, CS(tmp0), CS(d), CS(n)),
+    TMAX(tmp0, tmp0, 0),
+    TMUL_CS(CS(tmp0), CS(tmp0), scene::L_E),
+    TDIV(tmp0, tmp0, pdf_l),
+    TCMOV(tmp0, tmp2, tmp0, 0),
+    INSERT_TMACRO(vec3_scalar_mul, CS(clr), CS(clr), CS(tmp0))
 KERNEL_END(TVAR(clr0), TVAR(clr1), TVAR(clr2), TVAR(t));
 } // namespace loom::vm
