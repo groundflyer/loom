@@ -695,11 +695,9 @@ MACRO_END;
 // 2: dl_end
 
 template <std::floating_point T>
-TMACRO7(direct_lighting, hit, pdf_l, c0, c1, tmp0, tmp1, vtmp0)
+TMACRO7(direct_lighting, hit, pdf_l, u0, u1, tmp0, tmp1, vtmp0)
     TMOV_CS(pdf_l, CS(0)),
-    INSERT_MACRO(threefry2x32r32, c0, c1, scene::K0, scene::K1, scene::K2, tmp0, tmp1),
-    INSERT_TMACRO(sample_u, c0, c1),
-    INSERT_TMACRO(sample_light_disk, CS(d), c0, c1, tmp0, vtmp0),
+    INSERT_TMACRO(sample_light_disk, CS(d), u0, u1, tmp0, vtmp0),
     INSERT_TMACRO(vec_vec3_sub, CS(d), CS(d), CS(o)),
     INSERT_TMACRO(vec3_norm, CS(d), tmp0),
     INSERT_TMACRO(vec3_dot, tmp0, CS(d), CS(n)),
@@ -761,7 +759,11 @@ KERNEL(pt, IVAR(pix), IVAR(res), TVAR(r))
     INSERT_TMACRO(vec3_scalar_mul, CS(vr0), CS(d), CS(t)),
     INSERT_TMACRO(vec_vec3_add, CS(o), CS(o), CS(vr0)), // compute new position
     INSERT_TMACRO(set_materials),
-    INSERT_TMACRO(direct_lighting, CS(tmp2), CS(pdf_l), CS(c0), CS(c1), CS(tmp0), CS(tmp1), CS(vr2)),
+    IMOV(u0, c0),
+    IMOV(u1, c1),
+    INSERT_MACRO(threefry2x32r32, CS(u0), CS(u1), scene::K0, scene::K1, scene::K2, CS(tmp0), CS(tmp1)),
+    INSERT_TMACRO(sample_u, CS(u0), CS(u1)),
+    INSERT_TMACRO(direct_lighting, CS(tmp2), CS(pdf_l), CS(u0), CS(u1), CS(tmp0), CS(tmp1), CS(vr2)),
     INSERT_TMACRO(vec3_dot, CS(tmp0), CS(d), CS(n)),
     TMAX(tmp0, tmp0, 0),
     TMUL_CS(CS(tmp0), CS(tmp0), scene::L_E),
