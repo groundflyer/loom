@@ -754,15 +754,18 @@ KERNEL(pt, IVAR(pix), IVAR(res), TVAR(r))
     TCMOV_CS(CS(tmp1), CS(tmp0), scene::L_E, CS(0)),
     INSERT_TMACRO(vec3_scalar_add, CS(L), CS(L), CS(tmp1)),
     IOREQ(tmp0, tmp0, pid, 12),                // tmp0 <- miss?
+    IORGE_CS(CS(tmp0), CS(tmp0), CS(depth), scene::MAXDEPTH),
     IPJMP2(tmp0, set_materials, HALT), // miss ? terminate program
     LABEL(set_materials),
     INSERT_TMACRO(vec3_scalar_mul, CS(vr0), CS(d), CS(t)),
     INSERT_TMACRO(vec_vec3_add, CS(o), CS(o), CS(vr0)), // compute new position
     INSERT_TMACRO(set_materials),
+    LABEL(roll),
     IMOV(u0, c0),
     IMOV(u1, c1),
     INSERT_MACRO(threefry2x32r32, CS(u0), CS(u1), scene::K0, scene::K1, scene::K2, CS(tmp0), CS(tmp1)),
     INSERT_TMACRO(sample_u, CS(u0), CS(u1)),
+    LABEL(direct_lighting),
     INSERT_TMACRO(direct_lighting, CS(tmp2), CS(pdf_l), CS(u0), CS(u1), CS(tmp0), CS(tmp1), CS(vr2)),
     INSERT_TMACRO(vec3_dot, CS(tmp0), CS(d), CS(n)),
     TMAX(tmp0, tmp0, 0),
