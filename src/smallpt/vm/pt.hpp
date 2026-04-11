@@ -476,6 +476,12 @@ struct scene
     using K0 = CS(0xf00dead);
     using K1 = CS(0xba0beef);
     using K2 = CS(0x4a06042);   // C0 ^ C1
+
+    // bounce max depth
+    using MAXDEPTH = CS(3);
+
+    // minimum pixel samples
+    using MINSAMPLES = CS(32);
 };
 
 TMACRO5(sample_light_disk, dst, u0, u1, tmp, vtmp)
@@ -736,18 +742,19 @@ KERNEL(pt, IVAR(pix), IVAR(res), TVAR(r))
     TMOV_CS(CS(o0), scene::CAM_Px),
     TMOV_CS(CS(o1), scene::CAM_Py),
     TMOV_CS(CS(o2), scene::CAM_Pz),
+    TMOV(L0, 0),
+    TMOV(L1, 0),
+    TMOV(L2, 0),
+    IMOV(rc, 0),
     IMOV(rpt, 0),
+    IMOV(depth, 0),
     LABEL(traverse_scene),
     INSERT_TMACRO(traverse_scene),
     IPJMP3(rpt, post_primary, direct_lighting_pdf, dl_end),
     LABEL(post_primary),
-    TMOV(clr0, 0),
-    TMOV(clr1, 0),
-    TMOV(clr2, 0),
     IEQ(tmp0, pid, 11),                // hit light?
-    TCMOV(clr0, tmp0, 1, 0),
-    TCMOV(clr1, tmp0, 1, 0),
-    TCMOV(clr2, tmp0, 1, 0),
+    TCMOV_CS(CS(tmp1), CS(tmp0), scene::L_E, CS(0)),
+    INSERT_TMACRO(vec3_scalar_add, CS(L), CS(L), CS(tmp1)),
     IOREQ(tmp0, tmp0, pid, 12),                // tmp0 <- miss?
     IPJMP2(tmp0, set_materials, HALT), // miss ? terminate program
     LABEL(set_materials),
@@ -760,6 +767,7 @@ KERNEL(pt, IVAR(pix), IVAR(res), TVAR(r))
     TMUL_CS(CS(tmp0), CS(tmp0), scene::L_E),
     TDIV(tmp0, tmp0, pdf_l),
     TCMOV(tmp0, tmp2, tmp0, 0),
-    INSERT_TMACRO(vec3_scalar_mul, CS(clr), CS(clr), CS(tmp0))
-KERNEL_END(TVAR(clr0), TVAR(clr1), TVAR(clr2), TVAR(t));
+    INSERT_TMACRO(vec3_scalar_add, CS(L), CS(L), CS(tmp0)), // direct light contribution
+    INSERT_TMACRO(vec_vec3_mul, CS(L), CS(L), CS(clr)) // color factor
+KERNEL_END(TVAR(L0), TVAR(L1), TVAR(L2), TVAR(t));
 } // namespace loom::vm
