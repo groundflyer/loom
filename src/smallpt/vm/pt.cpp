@@ -14,13 +14,12 @@ void
 render(Image& img) noexcept
 {
     bse::function<pt<float>> f;
-    const auto [w, h]    = img.res();
-    const unsigned res   = w << 16 | h;
-    const float    ratio = static_cast<float>(w) / static_cast<float>(h);
+    const auto [w, h]  = img.res();
+    const unsigned res = w << 16 | h;
     for(auto [pos, pix]: img)
     {
         const auto [x, y]       = pos;
-        const auto [r, g, b, t] = f(x << 16 | y, res, ratio);
+        const auto [r, g, b, t] = f(x << 16 | y, res);
         pix                     = RGBA{r, g, b, 1};
     }
 }

@@ -690,7 +690,7 @@ TMACRO1(unbias_ray, vtmp0)
 MACRO_END;
 
 // rpt - return pointer tracing
-// 0: post_primary
+// 0: post_traversal
 // 1: direct_lighting_pdf
 // 2: lambert_indirect
 
@@ -715,23 +715,24 @@ TMACRO7(direct_lighting, hit, pdf_l, u0, u1, tmp0, tmp1, vtmp0)
 MACRO_END;
 
 // save up on variables by encoding pixel position and resolution into single uint32 value:
-// pix 16/16 x/y
-// res 16/16 w/h
+// d2 <- pixel position 16/16 x/y
+// tmp0 <- resolution 16/16 w/h
 template <std::same_as<float> T>
-KERNEL(pt, IVAR(pix), IVAR(res), TVAR(r))
-    IRSHFT(d0, pix, 16),
-    IBAND(d1, pix, 0xffff),
-    IRSHFT(w, res, 16),
-    IBAND(h, res, 0xffff),
+KERNEL(pt, IVAR(d2), IVAR(tmp0))
+    IRSHFT(d0, d2, 16),
+    IBAND(d1, d2, 0xffff),
+    IRSHFT(tmp1, tmp0, 16),     // tmp1 <- w
+    IBAND(tmp2, tmp0, 0xffff),  // tmp2 <- h
     IMOV(c0, d0),
-    IMUL(c0, c0, w),
+    IMUL(c0, c0, tmp1),
     IADD(c0, c0, d1),
     IMOV(c1, 0),
-    MOV(TVAR(w), IVAR(w)),
-    MOV(TVAR(h), IVAR(h)),
+    MOV(TVAR(tmp1), IVAR(tmp1)),
+    MOV(TVAR(tmp2), IVAR(tmp2)),
     MOV(TVAR(d0), IVAR(d0)),
     MOV(TVAR(d1), IVAR(d1)),
-    INSERT_TMACRO(to_sample_space, CS(d0), CS(d1), CS(w), CS(h), CS(r)),
+    TDIV(tmp0, tmp1, tmp2),     // tmp0 <- ratio
+    INSERT_TMACRO(to_sample_space, CS(d0), CS(d1), CS(tmp1), CS(tmp2), CS(tmp0)),
     INSERT_TMACRO(gen_ray_dir, CS(d0), CS(d1)),
     TMOV_CS(CS(d2), scene::CAM_Dz),
     INSERT_TMACRO(vm::vec3_norm, CS(d), CS(tmp0)),
@@ -750,8 +751,8 @@ KERNEL(pt, IVAR(pix), IVAR(res), TVAR(r))
     LABEL(traverse_scene),
     INSERT_TMACRO(bias_ray, CS(vr0)),
     INSERT_TMACRO(traverse_scene),
-    IPJMP3(rpt, post_primary, direct_lighting_pdf, lambert_indirect),
-    LABEL(post_primary),
+    IPJMP3(rpt, post_traversal, direct_lighting_pdf, lambert_indirect),
+    LABEL(post_traversal),
     IEQ(tmp0, pid, 11),                // hit light?
     TCMOV_CS(CS(tmp1), CS(tmp0), scene::L_E, CS(0)),
     INSERT_TMACRO(vec3_scalar_add, CS(L), CS(L), CS(tmp1)),
