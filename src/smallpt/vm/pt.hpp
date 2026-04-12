@@ -692,7 +692,7 @@ MACRO_END;
 // rpt - return pointer tracing
 // 0: post_primary
 // 1: direct_lighting_pdf
-// 2: dl_end
+// 2: lambert_indirect
 
 template <std::floating_point T>
 TMACRO7(direct_lighting, hit, pdf_l, u0, u1, tmp0, tmp1, vtmp0)
@@ -703,8 +703,7 @@ TMACRO7(direct_lighting, hit, pdf_l, u0, u1, tmp0, tmp1, vtmp0)
     INSERT_TMACRO(vec3_dot, tmp0, CS(d), CS(n)),
     TGT_CS(tmp0, tmp0, CS(0)),
     ICMOV_CS(CS(rpt), tmp0, CS(1), CS(2)),
-    INSERT_TMACRO(bias_ray, vtmp0),
-    IPJMP2_CS(tmp0, dl_end, traverse_scene),
+    IPJMP2_CS(tmp0, lambert_indirect, traverse_scene),
     LABEL(direct_lighting_pdf),
     INSERT_TMACRO(vec_vec3_sub, vtmp0, scene::L_P, CS(o)),
     INSERT_TMACRO(vec3_length2, pdf_l, vtmp0), // pdf_l <- l
@@ -712,8 +711,7 @@ TMACRO7(direct_lighting, hit, pdf_l, u0, u1, tmp0, tmp1, vtmp0)
     TABS_CS(tmp0, tmp0),
     TMUL_CS(tmp0, tmp0, scene::L_A),
     TDIV_CS(pdf_l, pdf_l, tmp0),
-    IEQ_CS(hit, CS(pid), CS(11)),
-    LABEL(dl_end)
+    IEQ_CS(hit, CS(pid), CS(11))
 MACRO_END;
 
 // save up on variables by encoding pixel position and resolution into single uint32 value:
@@ -743,16 +741,21 @@ KERNEL(pt, IVAR(pix), IVAR(res), TVAR(r))
     TMOV(L0, 0),
     TMOV(L1, 0),
     TMOV(L2, 0),
+    TMOV(clr0, 1),
+    TMOV(clr1, 1),
+    TMOV(clr2, 1),
     IMOV(rc, 0),
     IMOV(rpt, 0),
     IMOV(depth, 0),
     LABEL(traverse_scene),
+    INSERT_TMACRO(bias_ray, CS(vr0)),
     INSERT_TMACRO(traverse_scene),
-    IPJMP3(rpt, post_primary, direct_lighting_pdf, dl_end),
+    IPJMP3(rpt, post_primary, direct_lighting_pdf, lambert_indirect),
     LABEL(post_primary),
     IEQ(tmp0, pid, 11),                // hit light?
     TCMOV_CS(CS(tmp1), CS(tmp0), scene::L_E, CS(0)),
     INSERT_TMACRO(vec3_scalar_add, CS(L), CS(L), CS(tmp1)),
+    INSERT_TMACRO(vec_vec3_mul, CS(L), CS(L), CS(clr)), // color factor
     IOREQ(tmp0, tmp0, pid, 12),                // tmp0 <- miss?
     IORGE_CS(CS(tmp0), CS(tmp0), CS(depth), scene::MAXDEPTH),
     IPJMP2(tmp0, set_materials, HALT), // miss ? terminate program
@@ -760,11 +763,14 @@ KERNEL(pt, IVAR(pix), IVAR(res), TVAR(r))
     INSERT_TMACRO(vec3_scalar_mul, CS(vr0), CS(d), CS(t)),
     INSERT_TMACRO(vec_vec3_add, CS(o), CS(o), CS(vr0)), // compute new position
     INSERT_TMACRO(set_materials),
+    IMOV(rpt, 0),
     LABEL(roll),
     IMOV(u0, c0),
     IMOV(u1, c1),
     INSERT_MACRO(threefry2x32r32, CS(u0), CS(u1), scene::K0, scene::K1, scene::K2, CS(tmp0), CS(tmp1)),
+    INSERT_MACRO(bump_ctr, CS(c0), CS(c1), CS(1357), CS(tmp0), CS(tmp1), CS(tmp2)),
     INSERT_TMACRO(sample_u, CS(u0), CS(u1)),
+    IPJMP2(rpt, direct_lighting, lambert_indirect),
     LABEL(direct_lighting),
     INSERT_TMACRO(direct_lighting, CS(tmp2), CS(pdf_l), CS(u0), CS(u1), CS(tmp0), CS(tmp1), CS(vr2)),
     INSERT_TMACRO(vec3_dot, CS(tmp0), CS(d), CS(n)),
@@ -773,6 +779,18 @@ KERNEL(pt, IVAR(pix), IVAR(res), TVAR(r))
     TDIV(tmp0, tmp0, pdf_l),
     TCMOV(tmp0, tmp2, tmp0, 0),
     INSERT_TMACRO(vec3_scalar_add, CS(L), CS(L), CS(tmp0)), // direct light contribution
-    INSERT_TMACRO(vec_vec3_mul, CS(L), CS(L), CS(clr)) // color factor
+    INSERT_TMACRO(vec_vec3_mul, CS(L), CS(L), CS(clr)), // color factor
+    IMOV(rpt, 1),
+    JMP(roll),
+// hemisphere sampling
+    LABEL(lambert_indirect),
+    INSERT_TMACRO(vm::onb, CS(vr00), CS(vr01), CS(vr02), CS(t0), CS(t1), CS(t2), CS(n0), CS(n1), CS(n2)),
+    INSERT_TMACRO(vm::vec3_norm, CS(vr0), CS(tmp0)),
+    INSERT_TMACRO(vm::vec3_norm, CS(t), CS(tmp0)),
+    INSERT_TMACRO(vm::sample_hemisphere, CS(d), CS(n), CS(vr0), CS(t), CS(u0), CS(u1), CS(tmp0), CS(tmp1)),
+    INSERT_TMACRO(vm::vec3_norm, CS(d), CS(tmp0)),
+    IMOV(rpt, 0),
+    IADD(depth, depth, 1),
+    JMP(traverse_scene)
 KERNEL_END(TVAR(L0), TVAR(L1), TVAR(L2), TVAR(t));
 } // namespace loom::vm
