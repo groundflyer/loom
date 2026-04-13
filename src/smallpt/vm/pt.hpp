@@ -690,6 +690,12 @@ TMACRO1(unbias_ray, vtmp0)
 MACRO_END;
 
 // rpt - return pointer tracing
+//
+// roll:
+// 0: traverse_scene
+// 1: lambert_indirect
+//
+// traverse_scene:
 // 0: post_traversal
 // 1: direct_lighting_pdf
 // 2: lambert_indirect
@@ -701,9 +707,9 @@ TMACRO7(direct_lighting, hit, pdf_l, u0, u1, tmp0, tmp1, vtmp0)
     INSERT_TMACRO(vec_vec3_sub, CS(d), CS(d), CS(o)),
     INSERT_TMACRO(vec3_norm, CS(d), tmp0),
     INSERT_TMACRO(vec3_dot, tmp0, CS(d), CS(n)),
-    TGT_CS(tmp0, tmp0, CS(0)),
-    ICMOV_CS(CS(rpt), tmp0, CS(1), CS(2)),
-    IPJMP2_CS(tmp0, lambert_indirect, traverse_scene),
+    TGT_CS(tmp0, tmp0, CS(0)),  // tmp0 <- cos(theta)>0
+    IMOV(rpt, 1),               // return to compute pdf after traverse, or skip to lambert indirect after roll
+    IPJMP2_CS(tmp0, roll, traverse_scene),
     LABEL(direct_lighting_pdf),
     INSERT_TMACRO(vec_vec3_sub, vtmp0, scene::L_P, CS(o)),
     INSERT_TMACRO(vec3_length2, pdf_l, vtmp0), // pdf_l <- l
@@ -749,6 +755,14 @@ KERNEL(pt, IVAR(d2), IVAR(tmp0), IVAR(ns))
     IMOV(rpt, 0),
     IMOV(depth, 0),
     IMOV(sc, 0),                // sample count
+// roll
+    LABEL(roll),
+    IMOV(u0, c0),
+    IMOV(u1, c1),
+    INSERT_MACRO(threefry2x32r32, CS(u0), CS(u1), scene::K0, scene::K1, scene::K2, CS(tmp0), CS(tmp1)),
+    INSERT_MACRO(bump_ctr, CS(c0), CS(c1), CS(1357), CS(tmp0), CS(tmp1), CS(tmp2)),
+    INSERT_TMACRO(sample_u, CS(u0), CS(u1)),
+    IPJMP2(rpt, traverse_scene, lambert_indirect),
 // traverse
     LABEL(traverse_scene),
     INSERT_TMACRO(bias_ray, CS(vr0)),
@@ -769,15 +783,6 @@ KERNEL(pt, IVAR(d2), IVAR(tmp0), IVAR(ns))
     INSERT_TMACRO(vec3_scalar_mul, CS(vr0), CS(d), CS(t)),
     INSERT_TMACRO(vec_vec3_add, CS(o), CS(o), CS(vr0)), // compute new position
     INSERT_TMACRO(set_materials),
-    IMOV(rpt, 0),
-// roll
-    LABEL(roll),
-    IMOV(u0, c0),
-    IMOV(u1, c1),
-    INSERT_MACRO(threefry2x32r32, CS(u0), CS(u1), scene::K0, scene::K1, scene::K2, CS(tmp0), CS(tmp1)),
-    INSERT_MACRO(bump_ctr, CS(c0), CS(c1), CS(1357), CS(tmp0), CS(tmp1), CS(tmp2)),
-    INSERT_TMACRO(sample_u, CS(u0), CS(u1)),
-    IPJMP2(rpt, direct_lighting, lambert_indirect),
 // direct lighting
     LABEL(direct_lighting),
     INSERT_TMACRO(direct_lighting, CS(tmp2), CS(pdf_l), CS(u0), CS(u1), CS(tmp0), CS(tmp1), CS(vr2)),
