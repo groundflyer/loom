@@ -871,7 +871,7 @@ class render_pixel
         const Vec2f         pp   = m_sample_space(pos); // pixel position
         const std::uint32_t c0   = px * m_width + py;
         unsigned            ns   = 0;
-        unsigned            prc  = 0; // pixel rount count
+        unsigned            prc  = 0; // pixel ray count
         float               mean = .0f;
         float               m2   = .0f;
 
