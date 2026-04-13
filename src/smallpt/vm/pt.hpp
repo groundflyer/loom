@@ -700,26 +700,6 @@ MACRO_END;
 // 1: direct_lighting_pdf
 // 2: lambert_indirect
 
-template <std::floating_point T>
-TMACRO7(direct_lighting, hit, pdf_l, u0, u1, tmp0, tmp1, vtmp0)
-    TMOV_CS(pdf_l, CS(0)),
-    INSERT_TMACRO(sample_light_disk, CS(d), u0, u1, tmp0, vtmp0),
-    INSERT_TMACRO(vec_vec3_sub, CS(d), CS(d), CS(o)),
-    INSERT_TMACRO(vec3_norm, CS(d), tmp0),
-    INSERT_TMACRO(vec3_dot, tmp0, CS(d), CS(n)),
-    TGT_CS(tmp0, tmp0, CS(0)),  // tmp0 <- cos(theta)>0
-    IMOV(rpt, 1),               // return to compute pdf after traverse, or skip to lambert indirect after roll
-    IPJMP2_CS(tmp0, roll, traverse_scene),
-    LABEL(direct_lighting_pdf),
-    INSERT_TMACRO(vec_vec3_sub, vtmp0, scene::L_P, CS(o)),
-    INSERT_TMACRO(vec3_length2, pdf_l, vtmp0), // pdf_l <- l
-    INSERT_TMACRO(vec3_dot, tmp0, scene::L_N, CS(d)),
-    TABS_CS(tmp0, tmp0),
-    TMUL_CS(tmp0, tmp0, scene::L_A),
-    TDIV_CS(pdf_l, pdf_l, tmp0),
-    IEQ_CS(hit, CS(pid), CS(11))
-MACRO_END;
-
 // save up on variables by encoding pixel position and resolution into single uint32 value:
 // d2 <- pixel position 16/16 x/y
 // tmp0 <- resolution 16/16 w/h
@@ -760,7 +740,7 @@ KERNEL(pt, IVAR(d2), IVAR(tmp0), IVAR(ns))
     IMOV(u0, c0),
     IMOV(u1, c1),
     INSERT_MACRO(threefry2x32r32, CS(u0), CS(u1), scene::K0, scene::K1, scene::K2, CS(tmp0), CS(tmp1)),
-    INSERT_MACRO(bump_ctr, CS(c0), CS(c1), CS(1357), CS(tmp0), CS(tmp1), CS(tmp2)),
+    INSERT_MACRO(bump_ctr, CS(c0), CS(c1), CS(1), CS(tmp0), CS(tmp1), CS(tmp2)),
     INSERT_TMACRO(sample_u, CS(u0), CS(u1)),
     IPJMP2(rpt, traverse_scene, lambert_indirect),
 // traverse
@@ -785,7 +765,24 @@ KERNEL(pt, IVAR(d2), IVAR(tmp0), IVAR(ns))
     INSERT_TMACRO(set_materials),
 // direct lighting
     LABEL(direct_lighting),
-    INSERT_TMACRO(direct_lighting, CS(tmp2), CS(pdf_l), CS(u0), CS(u1), CS(tmp0), CS(tmp1), CS(vr2)),
+    TMOV(pdf_l, 0),
+    INSERT_TMACRO(sample_light_disk, CS(d), CS(u0), CS(u1), CS(tmp0), CS(vr2)),
+    INSERT_TMACRO(vec_vec3_sub, CS(d), CS(d), CS(o)),
+    INSERT_TMACRO(vec3_norm, CS(d), CS(tmp0)),
+    INSERT_TMACRO(vec3_dot, CS(tmp0), CS(d), CS(n)),
+    TGT(tmp0, tmp0, 0),  // tmp0 <- cos(theta)>0
+    IMOV(rpt, 1),               // return to compute pdf after traverse, or skip to lambert indirect after roll
+    IPJMP2(tmp0, roll, traverse_scene),
+// direct lighting pdf
+    LABEL(direct_lighting_pdf),
+    INSERT_TMACRO(vec_vec3_sub, CS(vr2), scene::L_P, CS(o)),
+    INSERT_TMACRO(vec3_length2, CS(pdf_l), CS(vr2)), // pdf_l <- l
+    INSERT_TMACRO(vec3_dot, CS(tmp0), scene::L_N, CS(d)),
+    TABS(tmp0, tmp0),
+    TMUL_CS(CS(tmp0), CS(tmp0), scene::L_A),
+    TDIV(pdf_l, pdf_l, tmp0),
+    IEQ(tmp2, pid, 11),
+// finish computing pdf
     INSERT_TMACRO(vec3_dot, CS(tmp0), CS(d), CS(n)),
     TMAX(tmp0, tmp0, 0),
     TMUL_CS(CS(tmp0), CS(tmp0), scene::L_E),
