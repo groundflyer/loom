@@ -16,12 +16,15 @@ render(Image& img) noexcept
     bse::function<pt<float>> f;
     const auto [w, h]  = img.res();
     const unsigned res = w << 16 | h;
+    std::size_t    trc{};
     for(auto [pos, pix]: img)
     {
-        const auto [x, y]       = pos;
-        const auto [r, g, b, t] = f(x << 16 | y, res);
-        pix                     = RGBA{r, g, b, 1};
+        const auto [x, y]        = pos;
+        const auto [r, g, b, rc] = f(x << 16 | y, res, 8);
+        pix                      = RGBA{r, g, b, 1};
+        trc += rc;
     }
+    fmt::println("total ray count: {}", trc);
 }
 
 int
