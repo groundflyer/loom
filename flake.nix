@@ -36,6 +36,7 @@
       shellHook = ''
       export CMAKE_EXPORT_COMPILE_COMMANDS=1
       export NIX_ENFORCE_NO_NATIVE=0
+      ulimit -s unlimited
       '';
     };
   };
