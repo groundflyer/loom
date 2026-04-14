@@ -247,10 +247,10 @@ struct collected_type
 template <typename T, typename... Ts>
 struct collected_type<type_sequence<T, Ts...>>
 {
-    using type =
-        std::conditional_t<typelist::same<type_sequence<T, Ts...>>,
-                           T,
-                           typelist::to<type_sequence<T, Ts...>, loom::Union>>;
+    using type = std::conditional_t<
+        typelist::same<type_sequence<T, Ts...>>,
+        T,
+        typelist::to<typelist::nub<type_sequence<T, Ts...>>, loom::Union>>;
 };
 
 /// @brief Infers register types merging variables with same names into unions.
