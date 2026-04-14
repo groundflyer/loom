@@ -389,7 +389,7 @@ target_compile_options(pt_ref PUBLIC $<$<CONFIG:RelWithDebInfo>:-fsanitize=addre
 target_link_options(pt_ref PUBLIC $<$<CONFIG:RelWithDebInfo>:-fsanitize=address>)
 
 add_executable(pt_vm src/smallpt/vm/pt.cpp)
-target_link_libraries(pt_vm PUBLIC ${GL_LIBS})
+target_link_libraries(pt_vm PUBLIC ${GL_LIBS} Threads::Threads PkgConfig::HWLOC)
 if (USE_SYSTEM_FMT AND (NOT FmtLibcxx))
   target_link_libraries(pt_vm PUBLIC fmt::fmt-header-only)
 else()

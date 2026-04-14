@@ -837,7 +837,7 @@ struct Shading
     }
 };
 
-class render_pixel
+class RenderPixel
 {
     static constexpr unsigned min_samples = 64;
 
@@ -852,10 +852,10 @@ class render_pixel
     std::atomic_size_t* p_ray_count;
 
   public:
-    render_pixel(const Image&        img,
-                 const float         threshold,
-                 std::atomic_uint*   progress,
-                 std::atomic_size_t* ray_count) noexcept :
+    RenderPixel(const Image&        img,
+                const float         threshold,
+                std::atomic_uint*   progress,
+                std::atomic_size_t* ray_count) noexcept :
         m_width(img.width()), m_sample_space(img.res()),
         m_pw(m_sample_space.ratio / m_sample_space.res[0]),
         m_threshold(threshold), p_progress(progress), p_ray_count(ray_count)
