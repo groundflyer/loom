@@ -83,10 +83,10 @@ log_stats(Logger& logger, const Dur& e, const std::size_t rc) noexcept
 #else
     logger.info("Elapsed time {:.3%M:%S}", e);
 #endif
-    logger.info(
-        "Average traversal rate {:.2f} MRay/s",
-        static_cast<double>(rc / 100000ul) /
-            static_cast<double>(
-                std::chrono::duration_cast<std::chrono::seconds>(e).count()));
+    logger.info("Average traversal rate {:.2f} MRay/s",
+                static_cast<double>(rc / 100ul) /
+                    static_cast<double>(
+                        std::chrono::duration_cast<std::chrono::milliseconds>(e)
+                            .count()));
 }
 } // namespace loom
