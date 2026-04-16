@@ -11,40 +11,23 @@
 using namespace loom;
 using namespace vm;
 
-void
-render(Image& img, unsigned ns) noexcept
-{
-    const auto [w, h]  = img.res();
-    const unsigned res = w << 16 | h;
-    std::size_t    trc{};
-    for(auto [pos, pix]: img)
-    {
-        bse::function<pt<float>> f;
-        const auto [x, y]        = pos;
-        const auto [r, g, b, rc] = f(x << 16 | y, res, ns);
-        pix                      = RGBA{r, g, b, 1};
-        trc += rc;
-    }
-    fmt::println("total ray count: {}", trc);
-}
-
 class RenderPixelBSE
 {
     unsigned w;
     unsigned h;
     unsigned res;
-    unsigned ns;
+    float    threshold;
 
     std::atomic_uint&   progress;
     std::atomic_size_t& ray_count;
 
   public:
     RenderPixelBSE(const Image&        img,
-                   unsigned            _ns,
+                   float               _threshold,
                    std::atomic_uint&   _p,
                    std::atomic_size_t& _rc) noexcept :
-        w(img.width()), h(img.height()), res(w << 16 | h), ns(_ns),
-        progress(_p), ray_count(_rc)
+        w(img.width()), h(img.height()), res(w << 16 | h),
+        threshold(_threshold), progress(_p), ray_count(_rc)
     {
     }
 
@@ -57,7 +40,7 @@ class RenderPixelBSE
         auto [pos, pix] = val;
 
         const auto [x, y]        = pos;
-        const auto [r, g, b, rc] = f(x << 16 | y, res, ns);
+        const auto [r, g, b, rc] = f(x << 16 | y, res, threshold);
         pix                      = RGBA{r, g, b, 1};
 
         progress.fetch_add(1, std::memory_order_relaxed);
@@ -75,12 +58,12 @@ main(int argc, char* argv[])
     try
     {
         const auto [resx, resy] = parse_results.template get_opt<'r'>();
-        const unsigned ns       = parse_results.template get_opt<'n'>();
+        const float threshold   = parse_results.template get_opt<'t'>();
         if(resx < 0 || resy < 0)
             throw std::runtime_error("Negative resolution");
 
         Image img(Vec2u{resx, resy});
-        logger.info("Image res: {}x{}; number of samples: {}", resx, resy, ns);
+        logger.info("Image res: {}x{}; threshold: {}", resx, resy, threshold);
 
         PADDED_VALUE(SharedCounters, scc);
 
@@ -92,8 +75,9 @@ main(int argc, char* argv[])
 
         ElapsedTimer<> timer;
 
-        parallel_render(img,
-                        RenderPixelBSE(img, ns, scc.progress, scc.ray_count));
+        parallel_render(
+            img,
+            RenderPixelBSE(img, threshold, scc.progress, scc.ray_count));
 
         const auto e = timer.elapsed();
 
