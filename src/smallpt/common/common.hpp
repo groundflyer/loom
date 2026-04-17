@@ -59,10 +59,6 @@ parse_args(int argc, char* argv[]) noexcept
                                             {"width", "height"},
                                             {1000, 1000},
                                             read_number<int, true>),
-            argparse::option<'n', "samples">("number of pixel samples",
-                                             "N",
-                                             16u,
-                                             read_number<unsigned, true>),
             argparse::flag<'v', "verbose">("verbose logging")},
         {argc, argv});
 }

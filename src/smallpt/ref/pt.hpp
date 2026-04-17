@@ -848,17 +848,17 @@ class RenderPixel
     const float                m_pw; // pixel width
     const float                m_threshold;
 
-    std::atomic_uint*   p_progress;
-    std::atomic_size_t* p_ray_count;
+    std::atomic_uint&   r_progress;
+    std::atomic_size_t& r_ray_count;
 
   public:
-    RenderPixel(const Image&        img,
+    RenderPixel(const Vec2u&        res,
                 const float         threshold,
-                std::atomic_uint*   progress,
-                std::atomic_size_t* ray_count) noexcept :
-        m_width(img.width()), m_sample_space(img.res()),
+                std::atomic_uint&   progress,
+                std::atomic_size_t& ray_count) noexcept :
+        m_width(res[0]), m_sample_space(res),
         m_pw(m_sample_space.ratio / m_sample_space.res[0]),
-        m_threshold(threshold), p_progress(progress), p_ray_count(ray_count)
+        m_threshold(threshold), r_progress(progress), r_ray_count(ray_count)
     {
     }
 
@@ -899,8 +899,8 @@ class RenderPixel
 
         pix = RGBA{r / static_cast<float>(ns), 1};
 
-        p_progress->fetch_add(1, std::memory_order_relaxed);
-        p_ray_count->fetch_add(prc, std::memory_order_relaxed);
+        r_progress.fetch_add(1, std::memory_order_relaxed);
+        r_ray_count.fetch_add(prc, std::memory_order_relaxed);
     }
 };
 } // namespace loom

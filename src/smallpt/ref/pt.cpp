@@ -33,7 +33,8 @@ main(int argc, char* argv[])
 
         if(t < 0) throw std::runtime_error("Negative sampling threshold");
 
-        Image img(Vec2u{resx, resy});
+        const Vec2u res{resx, resy};
+        Image       img(res);
         logger.debug("image ready");
         logger.info("Image res: {}x{}; sampling threshold: {}", resx, resy, t);
 
@@ -45,8 +46,7 @@ main(int argc, char* argv[])
 
         ElapsedTimer<> timer;
 
-        parallel_render(img,
-                        RenderPixel(img, t, &scc.progress, &scc.ray_count));
+        parallel_render(img, RenderPixel(res, t, scc.progress, scc.ray_count));
         const auto e = timer.elapsed();
         watcher.join();
 
