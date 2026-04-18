@@ -593,6 +593,7 @@ struct Shading
 
     static constexpr unsigned max_depth = 4;
     static constexpr float    p_nee     = 0.5f;
+    static constexpr unsigned ctr_incr  = 39916801;
 
     Counter  c;
     unsigned depth;
@@ -642,7 +643,7 @@ struct Shading
 
     /// @brief Direct lighting estimator.
     /// @return light PDF, cos(theta) and direction to light.
-    static std::optional<std::tuple<float, float, Vec3f>>
+    static std::pair<std::optional<std::tuple<float, float, Vec3f>>, unsigned>
     direct(const Vec3f& p, const Vec3f& n, const Counter& c) noexcept
     {
         const Vec3f lp =
@@ -650,20 +651,20 @@ struct Shading
         const Vec3f d         = normalize(lp - p);
         const float cos_theta = dot(n, d);
 
-        if(cos_theta < 0) return {};
+        if(cos_theta < 0) return {{}, 0}; // haven't trace
 
         const auto [prim_id, isect] =
             std::apply(Hider{bias_ray(p, d)}, Scene::geometry);
 
-        if(!isect || prim_id != 11) return {};
+        if(!isect || prim_id != 11) return {{}, 1}; // traced one ray
 
         const float     l = length2(Scene::light.position - p);
         constexpr float pa =
             Scene::light.radius * Scene::light.radius * Pi<float>;
 
         return {
-            {l / (std::abs(dot(Scene::light.normal, d)) * pa), cos_theta, d}
-        };
+            {{l / (std::abs(dot(Scene::light.normal, d)) * pa), cos_theta, d}},
+            1u};
     }
 
     ret_t
@@ -672,25 +673,25 @@ struct Shading
         const Vec3f d =
             sample_hemisphere(n, sample_u(threefry2x32r32<key[0], key[1]>(c)));
 
-        auto cc = bump_ctr(c, 98793);
+        auto cc = bump_ctr(c, ctr_incr);
 
         auto [L, rc] = radiance(bias_ray(p, d), cc, depth + 1, ray_count);
 
-        cc = bump_ctr(cc, 72381);
+        cc = bump_ctr(cc, ctr_incr);
 
         const auto [r, _] = threefry2x32r32<key[0], key[1]>(cc);
 
-        cc = bump_ctr(cc, 397);
+        cc = bump_ctr(cc, ctr_incr);
 
         if(gen_canonical(r) < p_nee)
         {
-            const auto dr = direct(p, n, cc);
+            const auto [dr, drc] = direct(p, n, cc);
+            rc += drc;
             if(dr)
             {
                 const auto [p_l, ctl, _] = dr.value();
                 L += Scene::Gallery::Emission::value * ctl / (p_l * p_nee);
             }
-            rc++;
         }
 
         return {color * L, rc};
@@ -704,7 +705,7 @@ struct Shading
         const Vec3f nfn       = into ? n : -n;
 
         return radiance(bias_ray(p, reflect(nfn, i, cos_theta)),
-                        bump_ctr(c, 312398),
+                        bump_ctr(c, ctr_incr),
                         depth + 1,
                         ray_count);
     }
@@ -739,7 +740,7 @@ struct Shading
                     p,
                     normalize(i * eta - n * ((into ? 1 : -1) *
                                              (ddn * eta + std::sqrt(cos2t))))),
-                bump_ctr(c, 987523),
+                bump_ctr(c, ctr_incr),
                 depth + 1);
             return {L / (eta * eta), rc};
         };
@@ -792,15 +793,16 @@ struct Shading
         const float alpha_n = anisorough_n(wm, n, t, b, dotWgWm, alpha);
         const float G1      = gaf(dotWgWm, alpha_n);
 
-        auto cc      = bump_ctr(c, 1003);
+        auto cc      = bump_ctr(c, ctr_incr);
         auto [L, rc] = radiance(bias_ray(p, wo), cc, depth + 1, ray_count);
         L *= G1;
 
-        cc                = bump_ctr(cc, 23434);
+        cc                = bump_ctr(cc, ctr_incr);
         const auto [r, _] = threefry2x32r32<key[0], key[1]>(cc);
         if(gen_canonical(r) < p_nee)
         {
-            const auto dr = direct(p, n, bump_ctr(cc, 6453));
+            const auto [dr, drc] = direct(p, n, bump_ctr(cc, ctr_incr));
+            rc += drc;
             if(dr)
             {
                 const auto [p_l, ctl, l] = dr.value();
@@ -809,7 +811,6 @@ struct Shading
                 const float alpha_n = anisorough_n(wm, n, t, b, dotWgWm, alpha);
                 const float alpha_i = anisorough_i(wi, n, t, alpha);
                 const float f       = gtr(dotWgWm, alpha_n);
-                rc++;
                 L += Scene::Gallery::Emission::value * f *
                      gaf(dot(n, wi), alpha_i) * gaf(dotWgWm, alpha_n) /
                      (4 * dot(wi, n) * p_nee);
