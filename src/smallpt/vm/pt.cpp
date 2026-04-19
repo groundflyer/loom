@@ -1,6 +1,6 @@
 // -*- C++ -*-
 // pt.cpp
-#if !(defined(__AVX512F__) && defined(__AVX2__) && defined(__AVX__))
+#if !(defined(__AVX512F__) || defined(__AVX2__) || defined(__AVX__))
 #error "This program requires at least AVX"
 #endif
 
@@ -74,18 +74,19 @@ struct RenderPixelSIMDPredicated : RenderPixelBase
                                                 << tail_size,
                                             vrc);
 #else // AVX or AVX2
+        static constexpr std::uint32_t l = static_cast<std::uint32_t>(-1);
         static constexpr simd::native_vector<std::uint32_t> masks[8] = {
-            { 0,  0,  0,  0,  0,  0,  0,  0},
-            {-1,  0,  0,  0,  0,  0,  0,  0},
-            {-1, -1,  0,  0,  0,  0,  0,  0},
-            {-1, -1, -1,  0,  0,  0,  0,  0},
-            {-1, -1, -1, -1,  0,  0,  0,  0},
-            {-1, -1, -1, -1, -1,  0,  0,  0},
-            {-1, -1, -1, -1, -1, -1, -1,  0},
-            {-1, -1, -1, -1, -1, -1, -1, -1}
+            {0, 0, 0, 0, 0, 0, 0, 0},
+            {l, 0, 0, 0, 0, 0, 0, 0},
+            {l, l, 0, 0, 0, 0, 0, 0},
+            {l, l, l, 0, 0, 0, 0, 0},
+            {l, l, l, l, 0, 0, 0, 0},
+            {l, l, l, l, l, 0, 0, 0},
+            {l, l, l, l, l, l, l, 0},
+            {l, l, l, l, l, l, l, l}
         };
 
-        return __builtin_reduce_add(vrc & simd::load<N>(masks[N - tail_size]));
+        return __builtin_reduce_add(vrc & masks[N - tail_size]);
 #endif
     }
 
