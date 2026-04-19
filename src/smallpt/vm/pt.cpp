@@ -59,6 +59,7 @@ struct RenderPixelBSE : RenderPixelBase
     }
 };
 
+template <typename P>
 struct RenderPixelSIMDPredicated : RenderPixelBase
 {
     using RenderPixelBase::RenderPixelBase;
@@ -94,7 +95,7 @@ struct RenderPixelSIMDPredicated : RenderPixelBase
     void
     operator()(Chunk view) const noexcept
     {
-        simd::embedded_function<pt<float>> f;
+        simd::embedded_function<P> f;
 
         const simd::native_vector<std::uint32_t> vres = simd::broadcast<N>(res);
         const simd::native_vector<float>   vt = simd::broadcast<N>(threshold);
@@ -137,6 +138,9 @@ struct RenderPixelSIMDPredicated : RenderPixelBase
     }
 };
 
+// using smallpt         = pt<float>;
+using smallpt_primary = primary<float>;
+
 int
 main(int argc, char* argv[])
 {
@@ -146,7 +150,7 @@ main(int argc, char* argv[])
 
     try
     {
-        constexpr std::size_t ncores = NUM_CORES_P;
+        constexpr std::size_t ncores = NUM_CORES_L;
 
         const auto [resx, resy] = parse_results.template get_opt<'r'>();
         const float threshold   = parse_results.template get_opt<'t'>();
@@ -171,14 +175,11 @@ main(int argc, char* argv[])
 
         ElapsedTimer<> timer;
 
+        using f = RenderPixelSIMDPredicated<smallpt_primary>;
+
         parallel_for_each<ncores>(
-            ranges::views::chunk(img, RenderPixelSIMDPredicated::N),
-            RenderPixelSIMDPredicated(res,
-                                      threshold,
-                                      scc.progress,
-                                      scc.ray_count),
-            64,
-            AFFINITY::PHYSICAL);
+            ranges::views::chunk(img, f::N),
+            f(res, threshold, scc.progress, scc.ray_count));
         // parallel_render(
         //     img,
         //     RenderPixelBSE(img, threshold, scc.progress, scc.ray_count));

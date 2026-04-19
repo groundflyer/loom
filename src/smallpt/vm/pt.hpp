@@ -841,7 +841,7 @@ KERNEL(pt, IVAR(d2), IVAR(tmp0), IVAR(ns))
     INSERT_TMACRO(vec3_scalar_div, CS(L), CS(L), CS(sc))
 KERNEL_END(TVAR(L0), TVAR(L1), TVAR(L2), IVAR(rc));
 
-#elif 1
+#else
 
 template <std::same_as<float> T>
 KERNEL(pt, IVAR(d2), IVAR(tmp0), TVAR(threshold))
@@ -954,10 +954,45 @@ KERNEL(pt, IVAR(d2), IVAR(tmp0), TVAR(threshold))
     INSERT_TMACRO(vec3_scalar_div, CS(L), CS(L), CS(ns))
 KERNEL_END(TVAR(L0), TVAR(L1), TVAR(L2), IVAR(rc));
 
-#else
+#endif
+
+template <std::floating_point T>
+TMACRO(set_colors)
+// 0 - grey floor
+// 1 - red wall
+// 2 - green wall
+// 3 - grey ceiling
+// 4 - dark grey back wall
+// 5 - blue tetrahedron
+// 6
+// 7
+// 8 - pink sphere
+// 9 - orange cylinder
+// 10 - orange cylinder cap
+// 11 - light
+// set colors
+    IMIN(tmp0, pid, 7),
+//                      0    1    2    3    4      5      6      7
+    TSCT8(clr0, tmp0, 0.8, 1.0, 0.2, 0.8, 0.3,   0.0,   0.0,   0.0),
+    TSCT8(clr1, tmp0, 0.8, 0.4, 1.0, 0.8, 0.4, 0.212, 0.212, 0.212),
+    TSCT8(clr2, tmp0, 0.8, 0.2, 0.4, 0.8, 0.4, 0.553, 0.553, 0.553),
+    IMAX(tmp0, pid, 8),
+    IMIN(tmp0, tmp0, 11),
+    ISUB(tmp0, tmp0, 8),
+//                      8      9     10    11
+    TSCT4(vr00, tmp0, 0.8,   1.0,   1.0, 1.0),
+    TSCT4(vr01, tmp0, 0.2, 0.786, 0.786, 1.0),
+    TSCT4(vr02, tmp0, 0.8, 0.427, 0.427, 1.0),
+    ILE(tmp0, pid, 7),
+    TCMOV(clr0, tmp0, clr0, vr00),
+    TCMOV(clr1, tmp0, clr1, vr01),
+    TCMOV(clr2, tmp0, clr2, vr02)
+MACRO_END;
+
+using primary_nsamples = CS(128);
 
 template <std::same_as<float> T>
-KERNEL(pt, IVAR(d2), IVAR(tmp0), IVAR(ns))
+KERNEL(primary, IVAR(d2), IVAR(tmp0), TVAR(u0))
     IRSHFT(d0, d2, 16),
     IBAND(d1, d2, 0xffff),
     IRSHFT(tmp1, tmp0, 16),     // tmp1 <- w
@@ -972,6 +1007,7 @@ KERNEL(pt, IVAR(d2), IVAR(tmp0), IVAR(ns))
     MOV(TVAR(pp1), IVAR(d1)),
     TDIV(tmp0, tmp1, tmp2),     // tmp0 <- ratio
     TDIV(pw, tmp0, tmp1),       // pw <- pixel width
+    TMUL(pw, pw, u0),
     INSERT_TMACRO(to_sample_space, CS(pp0), CS(pp1), CS(tmp1), CS(tmp2), CS(tmp0)),
     TMOV(L0, 0),                // pixel contribution
     TMOV(L1, 0),
@@ -979,21 +1015,16 @@ KERNEL(pt, IVAR(d2), IVAR(tmp0), IVAR(ns))
     IMOV(rc, 0),                // ray count
     IMOV(rpt, 0),
     IMOV(sc, 0),                // sample count
-// roll
+// pixel sample
     LABEL(roll),
     IMOV(u0, c0),
     IMOV(u1, c1),
     INSERT_MACRO(threefry2x32r32, CS(u0), CS(u1), scene::K0, scene::K1, scene::K2, CS(tmp0), CS(tmp1)),
     INSERT_MACRO(bump_ctr, CS(c0), CS(c1), CS(1357), CS(tmp0), CS(tmp1), CS(tmp2)),
     INSERT_TMACRO(sample_u, CS(u0), CS(u1)),
-// sample pixel
-    LABEL(sample_pixel),
     TMOV_CS(CS(o0), scene::CAM_Px),
     TMOV_CS(CS(o1), scene::CAM_Py),
     TMOV_CS(CS(o2), scene::CAM_Pz),
-    TMOV(PL0, 1),               // path product
-    TMOV(PL1, 1),
-    TMOV(PL2, 1),
     TMOV(d0, pp0),
     TMOV(d1, pp1),
     TMOV(clr0, 0),
@@ -1005,36 +1036,15 @@ KERNEL(pt, IVAR(d2), IVAR(tmp0), IVAR(ns))
     INSERT_TMACRO(gen_ray_dir, CS(d0), CS(d1)),
     TMOV_CS(CS(d2), scene::CAM_Dz),
     INSERT_TMACRO(vm::vec3_norm, CS(d), CS(tmp0)),
-// traverse
-    LABEL(traverse_scene),
     INSERT_TMACRO(bias_ray, CS(vr0)),
     INSERT_TMACRO(traverse_scene),
     IADD(rc, rc, 1),
-// post traverse
-    LABEL(post_traversal),
-    IEQ(tmp0, pid, 11),                // hit light?
-    TCMOV_CS(CS(tmp1), CS(tmp0), scene::L_E, CS(0)),
-    INSERT_TMACRO(vec3_scalar_mul, CS(PL), CS(PL), CS(1)), // final path factor
-    IOREQ(tmp0, tmp0, pid, 12),                // tmp0 <- miss?
-    // IORGE_CS(CS(tmp0), CS(tmp0), CS(depth), CS(1)), //scene::MAXDEPTH),
-    IPJMP2(tmp0, set_materials, fin_sample), // miss ? contribute sample
-// set materials
-    LABEL(set_materials),
-    INSERT_TMACRO(vec3_scalar_mul, CS(vr0), CS(d), CS(t)),
-    INSERT_TMACRO(vec_vec3_add, CS(o), CS(o), CS(vr0)), // compute new position
-    INSERT_TMACRO(set_materials),
-    TMOV(PL0, clr0),
-    TMOV(PL1, clr1),
-    TMOV(PL2, clr2),
-    LABEL(fin_sample),
-    INSERT_TMACRO(vec_vec3_add, CS(L), CS(L), CS(PL)),
-    IGE(tmp0, sc, ns),
+    INSERT_TMACRO(set_colors),
+    INSERT_TMACRO(vec_vec3_add, CS(L), CS(L), CS(clr)),
+    IGE_CS(CS(tmp0), CS(sc), primary_nsamples),
     IPJMP2(tmp0, roll, fin_pixel),
+// finalize
     LABEL(fin_pixel),
-    MOV(TVAR(sc), IVAR(sc)),
-    INSERT_TMACRO(vec_vec3_add, CS(L), CS(L), CS(PL)),
-    INSERT_TMACRO(vec3_scalar_div, CS(L), CS(L), CS(sc))
+    INSERT_TMACRO(vec3_scalar_div, CS(L), CS(L), primary_nsamples)
 KERNEL_END(TVAR(L0), TVAR(L1), TVAR(L2), IVAR(rc));
-
-#endif
 } // namespace loom::vm
