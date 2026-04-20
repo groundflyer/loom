@@ -301,25 +301,44 @@ class Vector
     }
 
     constexpr Vector&
-    operator=(const Vector& rhs) noexcept
+    operator=(const Vector& rhs) & noexcept
     {
         m_data = rhs.m_data;
         return *this;
     }
 
+    constexpr void
+    operator=(const Vector& rhs) const&& noexcept
+    {
+        m_data = rhs.m_data;
+    }
+
     template <template <typename, std::size_t> typename Container2>
     constexpr Vector&
-    operator=(const Vector<T, N, Container2>& rhs) noexcept
+    operator=(const Vector<T, N, Container2>& rhs) & noexcept
     {
         for(std::size_t i = 0; i < N; ++i) m_data[i] = rhs[i];
         return *this;
     }
 
+    template <template <typename, std::size_t> typename Container2>
+    constexpr void
+    operator=(const Vector<T, N, Container2>& rhs) const&& noexcept
+    {
+        for(std::size_t i = 0; i < N; ++i) m_data[i] = rhs[i];
+    }
+
     constexpr Vector&
-    operator=(const T& rhs) noexcept
+    operator=(const T& rhs) & noexcept
     {
         for(T& i: m_data) i = rhs;
         return *this;
+    }
+
+    constexpr void
+    operator=(const T& rhs) const&& noexcept
+    {
+        for(T& i: m_data) i = rhs;
     }
 
     constexpr auto

@@ -94,12 +94,6 @@ class ScanlineImage
         {
         }
 
-        _ref
-        pixel(const Vec2u p) const noexcept
-        {
-            return (*p_img)[p];
-        }
-
         value_type
         operator*() const noexcept
         {
@@ -440,6 +434,39 @@ class ScanlineImage
     end(ScanlineImage& img) noexcept
     {
         return img.end();
+    }
+};
+
+template <typename It>
+class OutputAdapter
+{
+    It m_iter;
+
+  public:
+    using difference_type = It::difference_type;
+    using value_type      = It::value_type::second_type;
+
+    explicit OutputAdapter(It it) noexcept : m_iter(it) {}
+
+    OutputAdapter&
+    operator++() noexcept
+    {
+        ++m_iter;
+        return *this;
+    }
+
+    OutputAdapter
+    operator++(int) noexcept
+    {
+        OutputAdapter tmp{*this};
+        ++m_iter;
+        return tmp;
+    }
+
+    value_type
+    operator*() const noexcept
+    {
+        return (*m_iter).second;
     }
 };
 } // namespace loom
