@@ -844,9 +844,9 @@ KERNEL_END(TVAR(L0), TVAR(L1), TVAR(L2), IVAR(rc));
 #else
 
 template <std::same_as<float> T>
-KERNEL(pt, IVAR(d2), IVAR(tmp0), TVAR(threshold))
-    IRSHFT(d0, d2, 16),
-    IBAND(d1, d2, 0xffff),
+KERNEL(pt, IVAR(ppp), IVAR(tmp0), TVAR(threshold))
+    IRSHFT(d0, ppp, 16),
+    IBAND(d1, ppp, 0xffff),
     IRSHFT(tmp1, tmp0, 16),     // tmp1 <- w
     IBAND(tmp2, tmp0, 0xffff),  // tmp2 <- h
     IMOV(c0, d0),
@@ -952,7 +952,7 @@ KERNEL(pt, IVAR(d2), IVAR(tmp0), TVAR(threshold))
     LABEL(fin_pixel),
     MOV(TVAR(ns), IVAR(ns)),
     INSERT_TMACRO(vec3_scalar_div, CS(L), CS(L), CS(ns))
-KERNEL_END(TVAR(L0), TVAR(L1), TVAR(L2), IVAR(rc));
+KERNEL_END(TVAR(L0), TVAR(L1), TVAR(L2), IVAR(rc), IVAR(ppp));
 
 #endif
 
@@ -992,9 +992,9 @@ MACRO_END;
 using primary_nsamples = CS(128);
 
 template <std::same_as<float> T>
-KERNEL(primary, IVAR(d2), IVAR(tmp0), TVAR(u0))
-    IRSHFT(d0, d2, 16),
-    IBAND(d1, d2, 0xffff),
+KERNEL(primary, IVAR(ppp), IVAR(tmp0), TVAR(u0))
+    IRSHFT(d0, ppp, 16),
+    IBAND(d1, ppp, 0xffff),
     IRSHFT(tmp1, tmp0, 16),     // tmp1 <- w
     IBAND(tmp2, tmp0, 0xffff),  // tmp2 <- h
     IMOV(c0, d0),
@@ -1046,5 +1046,5 @@ KERNEL(primary, IVAR(d2), IVAR(tmp0), TVAR(u0))
 // finalize
     LABEL(fin_pixel),
     INSERT_TMACRO(vec3_scalar_div, CS(L), CS(L), primary_nsamples)
-KERNEL_END(TVAR(L0), TVAR(L1), TVAR(L2), IVAR(rc));
+KERNEL_END(TVAR(L0), TVAR(L1), TVAR(L2), IVAR(rc), IVAR(ppp));
 } // namespace loom::vm
