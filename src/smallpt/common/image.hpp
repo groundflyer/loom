@@ -12,6 +12,24 @@
 
 namespace loom
 {
+/// @brief Compute a pair of pixel coordinates x, y from its linear offset.
+constexpr Vec2u
+pixel_coords(const unsigned offset, const unsigned width) noexcept
+{
+    return Vec2u{offset % width, offset / width};
+}
+
+/// @brief Compute linear array offset from pixel coordinates.
+constexpr unsigned
+pixel_offset(const Vec2u&   coords,
+             const unsigned width,
+             const unsigned nc) noexcept
+{
+    const auto [x, y] = coords;
+    CHECK_INDEX(x, width);
+    return nc * (y * width + x);
+}
+
 /// @brief Multi-channel raster image.
 /// @tparam T channel value type.
 /// @tparam NC number of channels.
@@ -30,7 +48,7 @@ namespace loom
 ///     pix = compute_new_pixel_value(px, py);
 /// }
 /// @endcode
-template <typename T, std::size_t NC, typename Allocator = std::allocator<T>>
+template <typename T, unsigned NC, typename Allocator = std::allocator<T>>
 class ScanlineImage
 {
     Vec2u       m_res;
@@ -42,7 +60,7 @@ class ScanlineImage
     using _value_type = std::pair<Vec2u, _ref>;
 
     std::size_t
-    pixel_num() const noexcept
+    pixel_count() const noexcept
     {
         return product(m_res);
     }
@@ -50,21 +68,7 @@ class ScanlineImage
     std::size_t
     full_size() const noexcept
     {
-        return pixel_num() * NC;
-    }
-
-    Vec2u
-    pos2(const unsigned pos) const noexcept
-    {
-        return Vec2u{pos % width(), pos / width()};
-    }
-
-    std::size_t
-    pos(const std::size_t x, const std::size_t y) const noexcept
-    {
-        CHECK_INDEX(x, width());
-        CHECK_INDEX(y, height());
-        return NC * (y * width() + x);
+        return pixel_count() * NC;
     }
 
     class _iterator : public std::random_access_iterator_tag
@@ -99,7 +103,8 @@ class ScanlineImage
         value_type
         operator*() const noexcept
         {
-            return value_type{p_img->pos2(m_pos), p_img->at(m_pos)};
+            return value_type{pixel_coords(m_pos, p_img->width()),
+                              p_img->at(m_pos)};
         }
 
         bool
@@ -193,8 +198,8 @@ class ScanlineImage
         operator[](difference_type n) const noexcept
         {
             CHECK_INDEX(n, static_cast<int>(count()));
-            const std::size_t p = m_pos + n;
-            return std::pair{p_img->pos2(p), p_img->at(p)};
+            const unsigned p = m_pos + n;
+            return std::pair{pixel_coords(p, p_img->width()), p_img->at(p)};
         }
 
         unsigned
@@ -348,50 +353,48 @@ class ScanlineImage
     reference
     operator[](const Vec2u& pos) noexcept
     {
-        const auto& [x, y] = pos;
-        return at(x, y);
+        return at(pos);
     }
 
     const_reference
     operator[](const Vec2u& pos) const noexcept
     {
-        const auto& [x, y] = pos;
-        return at(x, y);
+        return at(pos);
     }
 
-    _ref
-    at(const std::size_t i) noexcept
+    reference
+    at(const unsigned i) noexcept
     {
         CHECK_INDEX(i, m_size);
         return Vector(std::span<T, NC>(p_data + i * NC, NC));
     }
 
-    const _ref
-    at(const std::size_t i) const noexcept
+    const_reference
+    at(const unsigned i) const noexcept
     {
         CHECK_INDEX(i, m_size);
         return Vector(std::span<T, NC>(p_data + i * NC, NC));
     }
 
-    _ref
-    at(const std::size_t x, const std::size_t y) noexcept
+    reference
+    at(const Vec2u& coords) noexcept
     {
-        return at(pos(x, y));
+        return at(pixel_offset(coords, width(), NC));
     }
 
-    const _ref
-    at(const std::size_t x, const std::size_t y) const noexcept
+    const_reference
+    at(const Vec2u& coords) const noexcept
     {
-        return at(pos(x, y));
+        return at(pixel_offset(coords, width(), NC));
     }
 
-    std::size_t
+    unsigned
     width() const noexcept
     {
         return m_res.get<0>();
     }
 
-    std::size_t
+    unsigned
     height() const noexcept
     {
         return m_res.get<1>();
@@ -400,7 +403,7 @@ class ScanlineImage
     std::size_t
     size() const noexcept
     {
-        return pixel_num();
+        return pixel_count();
     }
 
     const Vec2u&
