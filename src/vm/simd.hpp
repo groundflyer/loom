@@ -19,6 +19,7 @@
 
 #include <algorithm>
 #include <cstdlib>
+#include <ratio>
 
 #include <immintrin.h>
 
@@ -1518,7 +1519,7 @@ class make_block_compiler<STITCH::MASKED, Block, LabelMap, BPVar>
 
     template <typename _MemoryView>
         requires(pv_extent<_MemoryView> == N)
-    static void _FORCE_INLINE
+    static auto _FORCE_INLINE
     spill(_MemoryView view, Storage& storage, const mask_type mask) noexcept
     {
         typelist::for_each(
@@ -1535,6 +1536,7 @@ class make_block_compiler<STITCH::MASKED, Block, LabelMap, BPVar>
             view,
             storage,
             mask);
+        return storage.bp();
     }
 
   public:
@@ -1544,7 +1546,7 @@ class make_block_compiler<STITCH::MASKED, Block, LabelMap, BPVar>
 
         template <typename _MemoryView>
             requires(pv_extent<_MemoryView> == N)
-        void _FORCE_INLINE
+        auto _FORCE_INLINE
         operator()(_MemoryView view) const noexcept
         {
 #ifdef ACTUALLY_DO_MASKED_LOAD
@@ -1553,7 +1555,7 @@ class make_block_compiler<STITCH::MASKED, Block, LabelMap, BPVar>
             Storage storage = alloc(view);
 #endif
             kernel(storage);
-            spill(view, storage, mask);
+            return spill(view, storage, mask);
         }
     };
 };
@@ -1574,7 +1576,7 @@ struct popcnt_helper
     }
 
     // AVX-512
-    uint_of_bits_t<N> _FORCE_INLINE
+    int _FORCE_INLINE
     operator()(const uint_of_bits_t<N> k) const noexcept
     {
         return std::popcount(k);
@@ -1764,7 +1766,7 @@ counting_sort(_Memory& in, _Memory& out) noexcept
     for(index_t i = 1; i < num_bins; ++i) bins[i] += bins[i - 1];
 
     // fill out
-#if defined(__AVX512F__)
+#if defined(__AVX512F__) && VECTORIZE_COUNTING_SORT
     using index_vector = packed_vector<index_t, N>;
     for(int i = in.size() - 1; i >= 0; i -= static_cast<int>(N))
     {
@@ -2207,7 +2209,7 @@ class aligned_chunks :
 template <STITCH stitch>
 struct visitor_selector
 {
-    template <typename _Memory, typename _CompiledBlocks, Kernel K>
+    template <typename _Memory, typename _CompiledBlocks, Kernel K, typename _>
     struct type
     {
         using memory_view = _Memory::view_type;
@@ -2238,13 +2240,21 @@ struct visitor_selector
 template <>
 struct visitor_selector<STITCH::MASKED>
 {
-    template <typename _Memory, typename _CompiledBlocks, Kernel K>
+    template <typename _Memory,
+              typename _CompiledBlocks,
+              Kernel K,
+              typename utr>
     struct type
     {
         using memory_view = _Memory::view_type;
         using index_t     = K::index_t;
 
         static constexpr fsize_t N = native_vector_extent_v<index_t>;
+
+        static constexpr fsize_t threshold =
+            (N * utr::num + utr::den - 1) / utr::den;
+
+        static constexpr popcnt_helper<index_t, N> popcnt{};
 
         using index_vector_t = packed_vector<index_t, N>;
 
@@ -2256,16 +2266,33 @@ struct visitor_selector<STITCH::MASKED>
                 [](auto view) noexcept
                     requires(pv_extent<decltype(view)> == N)
                 {
-                    const index_t        start = view.bp()[0];
-                    const index_vector_t bps   = load<N>(view.bp().data());
+                    index_vector_t bps    = load<N>(view.bp().data());
+                    index_t        start  = bps[0];
+                    bool           repeat = true;
 
-                    for(const auto [bp, mask]: block_set<K, N>{bps, start})
-                        typelist::visit_at(
-                            bp,
-                            [&]<typename Block>() noexcept
-                            { Block{mask}(view); },
-                            _CompiledBlocks{},
-                            sink);
+                    while(repeat)
+                    {
+                        fsize_t m = 0;
+
+                        for(const auto [bp, mask]: block_set<K, N>{bps, start})
+                        {
+                            typelist::visit_at(
+                                bp,
+                                [&]<typename Block>() noexcept
+                                { bps = Block{mask}(view); },
+                                _CompiledBlocks{},
+                                sink);
+
+                            if(bp != K::halt_pos)
+                                m = std::max(
+                                    m,
+                                    static_cast<fsize_t>(popcnt(mask)));
+                        }
+
+                        repeat = m >= threshold;
+                        start  = 0;
+                        m      = 0;
+                    };
                 });
         }
 
@@ -2290,8 +2317,14 @@ using SIMDAlignedAllocator =
 /// @tparam stitch execution method.
 /// @tparam sort_method sorting algorithm to use.
 /// @tparam concurrent allow concurrent computation in the stream.
-template <Kernel K, STITCH stitch, SORT sort_method, bool concurrent = false>
-    requires(typelist::of_same_size<typename K::reg_types>)
+/// @tparam utr utilization threshold ratio for masked stitch.
+template <Kernel K,
+          STITCH stitch,
+          SORT   sort_method,
+          bool   concurrent = false,
+          typename utr      = std::ratio<1>>
+    requires(typelist::of_same_size<typename K::reg_types> && utr::num > 0 &&
+             utr::den > 0 && utr::num <= utr::den)
 class compiler
 {
     using labelmap  = K::labelmap;
@@ -2328,7 +2361,7 @@ class compiler
         bve::StreamFacade<K, std::vector, allocator, sorter>>;
     using memory_facade = bve::MemoryFacade<K, std::vector, allocator, sorter>;
 
-    using visitor = select_visitor<stitch, memory, compiled_blocks, K>;
+    using visitor = select_visitor<stitch, memory, compiled_blocks, K, utr>;
 
     class single_block_evaluator : public memory_facade
     {
