@@ -32,7 +32,8 @@ struct StreamPair
                            async ? " async" : "");
     }
 
-    using stream_type = simd::stream<K, stitch, sort_method, async>;
+    using stream_type =
+        simd::stream<K, stitch, sort_method, async, std::ratio<1, 2>>;
 
     stream_type                stream;
     StreamWrapper<stream_type> wrapper{&stream};

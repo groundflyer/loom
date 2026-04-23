@@ -1519,7 +1519,7 @@ class make_block_compiler<STITCH::MASKED, Block, LabelMap, BPVar>
 
     template <typename _MemoryView>
         requires(pv_extent<_MemoryView> == N)
-    static auto _FORCE_INLINE
+    static void _FORCE_INLINE
     spill(_MemoryView view, Storage& storage, const mask_type mask) noexcept
     {
         typelist::for_each(
@@ -1536,7 +1536,6 @@ class make_block_compiler<STITCH::MASKED, Block, LabelMap, BPVar>
             view,
             storage,
             mask);
-        return storage.bp();
     }
 
   public:
@@ -1546,7 +1545,7 @@ class make_block_compiler<STITCH::MASKED, Block, LabelMap, BPVar>
 
         template <typename _MemoryView>
             requires(pv_extent<_MemoryView> == N)
-        auto _FORCE_INLINE
+        void _FORCE_INLINE
         operator()(_MemoryView view) const noexcept
         {
 #ifdef ACTUALLY_DO_MASKED_LOAD
@@ -1555,7 +1554,7 @@ class make_block_compiler<STITCH::MASKED, Block, LabelMap, BPVar>
             Storage storage = alloc(view);
 #endif
             kernel(storage);
-            return spill(view, storage, mask);
+            spill(view, storage, mask);
         }
     };
 };
@@ -2243,7 +2242,7 @@ struct visitor_selector<STITCH::MASKED>
     template <typename _Memory,
               typename _CompiledBlocks,
               Kernel K,
-              typename utr>
+              typename UTR>
     struct type
     {
         using memory_view = _Memory::view_type;
@@ -2252,7 +2251,7 @@ struct visitor_selector<STITCH::MASKED>
         static constexpr fsize_t N = native_vector_extent_v<index_t>;
 
         static constexpr fsize_t threshold =
-            (N * utr::num + utr::den - 1) / utr::den;
+            (N * UTR::num + UTR::den - 1) / UTR::den;
 
         static constexpr popcnt_helper<index_t, N> popcnt{};
 
@@ -2279,7 +2278,7 @@ struct visitor_selector<STITCH::MASKED>
                             typelist::visit_at(
                                 bp,
                                 [&]<typename Block>() noexcept
-                                { bps = Block{mask}(view); },
+                                { Block{mask}(view); },
                                 _CompiledBlocks{},
                                 sink);
 
@@ -2292,6 +2291,7 @@ struct visitor_selector<STITCH::MASKED>
                         repeat = m >= threshold;
                         start  = 0;
                         m      = 0;
+                        bps    = load<N>(view.bp().data());
                     };
                 });
         }
@@ -2317,14 +2317,14 @@ using SIMDAlignedAllocator =
 /// @tparam stitch execution method.
 /// @tparam sort_method sorting algorithm to use.
 /// @tparam concurrent allow concurrent computation in the stream.
-/// @tparam utr utilization threshold ratio for masked stitch.
+/// @tparam UTR utilization threshold ratio for masked stitch.
 template <Kernel K,
           STITCH stitch,
           SORT   sort_method,
           bool   concurrent = false,
-          typename utr      = std::ratio<1>>
-    requires(typelist::of_same_size<typename K::reg_types> && utr::num > 0 &&
-             utr::den > 0 && utr::num <= utr::den)
+          typename UTR      = std::ratio<1, 2>>
+    requires(typelist::of_same_size<typename K::reg_types> && UTR::num > 0 &&
+             UTR::den > 0 && UTR::num <= UTR::den)
 class compiler
 {
     using labelmap  = K::labelmap;
@@ -2361,7 +2361,7 @@ class compiler
         bve::StreamFacade<K, std::vector, allocator, sorter>>;
     using memory_facade = bve::MemoryFacade<K, std::vector, allocator, sorter>;
 
-    using visitor = select_visitor<stitch, memory, compiled_blocks, K, utr>;
+    using visitor = select_visitor<stitch, memory, compiled_blocks, K, UTR>;
 
     class single_block_evaluator : public memory_facade
     {
@@ -2466,12 +2466,21 @@ class compiler
     };
 };
 
-template <Kernel K, STITCH stitch, SORT sort_method>
-using function = compiler<K, stitch, sort_method, false>::function;
+/// @brief Alias for function-like invocation.
+template <Kernel K,
+          STITCH stitch,
+          SORT   sort_method,
+          typename UTR = std::ratio<1, 2>>
+using function = compiler<K, stitch, sort_method, false, UTR>::function;
 
-template <Kernel K, STITCH stitch, SORT sort_method, bool concurrent = false>
+/// @brief Alias for streaming invocation.
+template <Kernel K,
+          STITCH stitch,
+          SORT   sort_method,
+          bool   concurrent = false,
+          typename UTR      = std::ratio<1, 2>>
     requires(!K::singular)
-using stream = compiler<K, stitch, sort_method, concurrent>::stream;
+using stream = compiler<K, stitch, sort_method, concurrent, UTR>::stream;
 
 template <typename Block, typename LabelMap, typename BPVar, fsize_t N>
 class make_embedded_masked_runner

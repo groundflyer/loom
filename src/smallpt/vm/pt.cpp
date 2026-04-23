@@ -164,7 +164,8 @@ function_render(Image& img, const float t)
     if(img.size() % simd::native_vector_extent_v<float> != 0)
         throw std::runtime_error("Image size is not aligned to SIMD lane size");
 
-    simd::function<K, simd::MASKED, simd::COUNTING_SORT> f(img.size());
+    simd::function<K, simd::MASKED, simd::COUNTING_SORT, std::ratio<1, 2>> f(
+        img.size());
 
     const auto r = f.template operator()<true>(std::views::transform(
         img,
@@ -193,8 +194,8 @@ function_render(Image& img, const float t)
     return ret;
 }
 
-// using smallpt = pt<float>;
-using smallpt_primary = primary<float>;
+using smallpt = pt<float>;
+// using smallpt_primary = primary<float>;
 
 int
 main(int argc, char* argv[])
@@ -241,7 +242,7 @@ main(int argc, char* argv[])
         //     img,
         //     RenderPixelBSE(img, threshold, scc.progress, scc.ray_count));
 
-        const std::size_t rc = function_render<smallpt_primary>(img, threshold);
+        const std::size_t rc = function_render<smallpt>(img, threshold);
 
         const auto e = timer.elapsed();
 

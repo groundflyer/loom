@@ -83,7 +83,11 @@ struct test_suite
         simd::function<cubic_fz_p, simd::WAVEFRONT, simd::bve_INTROSORT>
             simd_cubic_fz(tm.num_runs);
 
-        simd::stream<cubic_fz_p, simd::MASKED, simd::COUNTING_SORT, true>
+        simd::stream<cubic_fz_p,
+                     simd::MASKED,
+                     simd::COUNTING_SORT,
+                     true,
+                     std::ratio<1, 2>>
                       simd_stream_fz(tm.num_runs / 4);
         StreamWrapper simd_stream_wrapper_fz{&simd_stream_fz};
 

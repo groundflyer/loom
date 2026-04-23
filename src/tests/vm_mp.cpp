@@ -180,7 +180,8 @@ struct make_simd_context
     }
 
     template <Kernel K>
-    using compiler = simd::stream<K, stitch, sort_method, true>;
+    using compiler =
+        simd::stream<K, stitch, sort_method, true, std::ratio<1, 2>>;
 
     template <Kernel K>
     using context = mp::Context<K, compiler>;
