@@ -14,6 +14,7 @@
 #include <vm/simd.hpp>
 
 #include <range/v3/view/chunk.hpp>
+#include <range/v3/view/subrange.hpp>
 
 #include <algorithm>
 
@@ -39,6 +40,43 @@ encode_res(const Vec2u& res) noexcept
     const auto [w, h] = res;
     return w << 16 | h;
 }
+
+template <typename K>
+class InputEncoder
+{
+    std::uint32_t m_res;
+    float         m_t;
+
+  public:
+    InputEncoder(const Vec2u& res, const float t) noexcept :
+        m_res(encode_res(res)), m_t(t)
+    {
+    }
+
+    template <typename Ip>
+    input_type<K>
+    operator()(const Ip ip) const noexcept
+    {
+        return {encode_pp(ip.first), m_res, m_t};
+    }
+};
+
+template <typename K>
+class OutputPixelConverter
+{
+    std::size_t& r_rc;
+
+  public:
+    OutputPixelConverter(std::size_t& rc) noexcept : r_rc(rc) {}
+
+    RGBA<>
+    operator()(const output_type<K>& o) const noexcept
+    {
+        const auto [r, g, b, rc, _] = o;
+        r_rc += rc;
+        return RGBA{r, g, b, 1};
+    }
+};
 
 struct RenderPixelBase
 {
@@ -167,10 +205,8 @@ function_render(Image& img, const float t)
     simd::function<K, simd::MASKED, simd::COUNTING_SORT, std::ratio<1, 2>> f(
         img.size());
 
-    const auto r = f.template operator()<true>(std::views::transform(
-        img,
-        [res = encode_res(img.res()), t](auto ip) noexcept -> input_type<K>
-        { return {encode_pp(ip.first), res, t}; }));
+    const auto r = f.template operator()<true>(
+        std::views::transform(img, InputEncoder<K>(img.res(), t)));
 
     std::vector<output_type<K>> result_buffer;
     result_buffer.reserve(img.size());
@@ -182,14 +218,64 @@ function_render(Image& img, const float t)
         { return pixel_offset(decode_pp(std::get<4>(t)), width, 4); });
     std::size_t ret = 0;
 
-    std::ranges::copy(std::views::transform(result_buffer,
-                                            [&ret](const auto& t) noexcept
-                                            {
-                                                const auto [r, g, b, rc, _] = t;
-                                                ret += rc;
-                                                return RGBA{r, g, b, 1};
-                                            }),
-                      OutputAdapter<Image::iterator>(img.begin()));
+    std::ranges::copy(
+        std::views::transform(result_buffer, OutputPixelConverter<K>(ret)),
+        OutputAdapter<Image::iterator>(img.begin()));
+
+    return ret;
+}
+
+template <typename K>
+static std::size_t
+stream_render(Image& img, const float t, const unsigned stream_size)
+{
+    if(stream_size % simd::native_vector_extent_v<float> != 0)
+        throw std::runtime_error(
+            "Stream size is not aligned to SIMD lane size");
+
+    if(img.size() < stream_size)
+        throw std::runtime_error("Image size is less than stream size");
+
+    simd::stream<K, simd::MASKED, simd::COUNTING_SORT, false, std::ratio<1, 2>>
+        s(stream_size);
+
+    std::vector<output_type<K>> result_buffer;
+    result_buffer.reserve(img.size());
+    auto        inserter = std::back_inserter(result_buffer);
+    std::size_t ret      = 0;
+
+    auto view = std::views::transform(img, InputEncoder<K>(img.res(), t));
+    auto it   = s.set_inputs(view);
+
+    s();
+    s.sort();
+
+    while(it != std::ranges::end(view))
+    {
+        auto exs = s.exchange(ranges::subrange(it, std::ranges::end(view)));
+        it += std::ranges::size(exs);
+        std::ranges::copy(exs, inserter);
+        s();
+        s.sort();
+    }
+
+    while(!s.done())
+    {
+        s();
+        s.sort();
+    }
+
+    std::ranges::copy(s.get_output_zipped(), inserter);
+
+    std::ranges::sort(
+        result_buffer,
+        std::less<unsigned>{},
+        [width = img.width()](const auto& t) noexcept
+        { return pixel_offset(decode_pp(std::get<4>(t)), width, 4); });
+
+    std::ranges::copy(
+        std::views::transform(result_buffer, OutputPixelConverter<K>(ret)),
+        OutputAdapter<Image::iterator>(img.begin()));
 
     return ret;
 }
@@ -242,7 +328,8 @@ main(int argc, char* argv[])
         //     img,
         //     RenderPixelBSE(img, threshold, scc.progress, scc.ray_count));
 
-        const std::size_t rc = function_render<smallpt>(img, threshold);
+        // const std::size_t rc = function_render<smallpt>(img, threshold);
+        const std::size_t rc = stream_render<smallpt>(img, threshold, 256);
 
         const auto e = timer.elapsed();
 
