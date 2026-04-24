@@ -5,6 +5,7 @@
 #endif
 
 #include "pt.hpp"
+#include "utils.hpp"
 
 #include <common/logging.hpp>
 #include <common/timer.hpp>
@@ -20,26 +21,6 @@
 
 using namespace loom;
 using namespace vm;
-
-static std::uint32_t
-encode_pp(const Vec2u& p) noexcept
-{
-    const auto [x, y] = p;
-    return x << 16 | y;
-}
-
-static Vec2u
-decode_pp(const std::uint32_t p) noexcept
-{
-    return Vec2u(p >> 16, p & 0xffff);
-}
-
-static std::uint32_t
-encode_res(const Vec2u& res) noexcept
-{
-    const auto [w, h] = res;
-    return w << 16 | h;
-}
 
 template <typename K>
 class InputEncoder

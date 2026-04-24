@@ -2468,17 +2468,17 @@ class compiler
 
 /// @brief Alias for function-like invocation.
 template <Kernel K,
-          STITCH stitch,
-          SORT   sort_method,
-          typename UTR = std::ratio<1, 2>>
+          STITCH stitch      = MASKED,
+          SORT   sort_method = COUNTING_SORT,
+          typename UTR       = std::ratio<1, 2>>
 using function = compiler<K, stitch, sort_method, false, UTR>::function;
 
 /// @brief Alias for streaming invocation.
 template <Kernel K,
-          STITCH stitch,
-          SORT   sort_method,
-          bool   concurrent = false,
-          typename UTR      = std::ratio<1, 2>>
+          STITCH stitch      = MASKED,
+          SORT   sort_method = COUNTING_SORT,
+          bool   concurrent  = false,
+          typename UTR       = std::ratio<1, 2>>
     requires(!K::singular)
 using stream = compiler<K, stitch, sort_method, concurrent, UTR>::stream;
 
