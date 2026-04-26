@@ -989,8 +989,6 @@ TMACRO(set_colors)
     TCMOV(clr2, tmp0, clr2, vr02)
 MACRO_END;
 
-using primary_nsamples = CS(128);
-
 template <std::same_as<float> T>
 KERNEL(primary, IVAR(ppp), IVAR(tmp0), TVAR(u0))
     IRSHFT(d0, ppp, 16),
@@ -1041,10 +1039,183 @@ KERNEL(primary, IVAR(ppp), IVAR(tmp0), TVAR(u0))
     IADD(rc, rc, 1),
     INSERT_TMACRO(set_colors),
     INSERT_TMACRO(vec_vec3_add, CS(L), CS(L), CS(clr)),
-    IGE_CS(CS(tmp0), CS(sc), primary_nsamples),
+    IGE_CS(CS(tmp0), CS(sc), scene::MINSAMPLES),
     IPJMP2(tmp0, roll, fin_pixel),
 // finalize
     LABEL(fin_pixel),
-    INSERT_TMACRO(vec3_scalar_div, CS(L), CS(L), primary_nsamples)
+    INSERT_TMACRO(vec3_scalar_div, CS(L), CS(L), scene::MINSAMPLES)
 KERNEL_END(TVAR(L0), TVAR(L1), TVAR(L2), IVAR(rc), IVAR(ppp));
+
+template <std::same_as<float> T, typename C>
+KERNEL(pt_const, IVAR(ppp))
+    IRSHFT(d0, ppp, 16),
+    IBAND(d1, ppp, 0xffff),
+    IMOV(c0, d0),
+    IMUL_CS(CS(c0), CS(c0), typename C::WIDTH),
+    IADD(c0, c0, d1),
+    IMOV(c1, 0),
+    TMOV_CS(CS(tmp1), typename C::WIDTH),
+    TMOV_CS(CS(tmp2), typename C::HEIGHT),
+    MOV(TVAR(pp0), IVAR(d0)),
+    MOV(TVAR(pp1), IVAR(d1)),
+    TDIV(tmp0, tmp1, tmp2),     // tmp0 <- ratio
+    TDIV(pw, tmp0, tmp1),       // pw <- pixel width
+    TMOV(mean, 0),
+    TMOV(m2, 0),
+    INSERT_TMACRO(to_sample_space, CS(pp0), CS(pp1), CS(tmp1), CS(tmp2), CS(tmp0)),
+    TMOV(L0, 0),                // pixel contribution
+    TMOV(L1, 0),
+    TMOV(L2, 0),
+    IMOV(rc, 0),                // ray count
+    IMOV(rpt, 0),
+    IMOV(ns, 0),                // sample count
+// roll
+    LABEL(roll),
+    IMOV(u0, c0),
+    IMOV(u1, c1),
+    INSERT_MACRO(threefry2x32r32, CS(u0), CS(u1), scene::K0, scene::K1, scene::K2, CS(tmp0), CS(tmp1)),
+    INSERT_MACRO(bump_ctr, CS(c0), CS(c1), CS(39916801), CS(tmp0), CS(tmp1), CS(tmp2)),
+    INSERT_TMACRO(sample_u, CS(u0), CS(u1)),
+    IPJMP3(rpt, sample_pixel, traverse_scene, lambert_indirect),
+// sample pixel
+    LABEL(sample_pixel),
+    TMOV_CS(CS(o0), scene::CAM_Px),
+    TMOV_CS(CS(o1), scene::CAM_Py),
+    TMOV_CS(CS(o2), scene::CAM_Pz),
+    TMOV(PL0, 1),               // path product
+    TMOV(PL1, 1),
+    TMOV(PL2, 1),
+    TMOV(d0, pp0),
+    TMOV(d1, pp1),
+    TMOV(clr0, 0),
+    TMOV(clr1, 0),
+    TMOV(clr2, 0),
+    IMOV(depth, 0),
+    IADD(ns, ns, 1),
+    INSERT_TMACRO(jitter_sample_pos, CS(pw), CS(d), CS(u), CS(tmp0)),
+    INSERT_TMACRO(gen_ray_dir, CS(d0), CS(d1)),
+    TMOV_CS(CS(d2), scene::CAM_Dz),
+    INSERT_TMACRO(vm::vec3_norm, CS(d), CS(tmp0)),
+// traverse
+    LABEL(traverse_scene),
+    INSERT_TMACRO(bias_ray, CS(vr0)),
+    INSERT_TMACRO(traverse_scene),
+    IADD(rc, rc, 1),
+// post traverse
+    LABEL(post_traversal),
+    IEQ(tmp0, pid, 11),                // hit light?
+    TCMOV_CS(CS(tmp1), CS(tmp0), scene::L_E, CS(1)),
+    IEQ(tmp2, pid, 12),                                       // miss?
+    IORGE_CS(CS(tmp2), CS(tmp2), CS(depth), scene::MAXDEPTH), // ||depth>=maxdepth
+    TCMOV(tmp1, tmp2, 0, tmp1),                               // miss||depth>=maxdepth?0:l|1
+    INSERT_TMACRO(vec3_scalar_mul, CS(PL), CS(PL), CS(tmp1)), // contribute to path
+    ILOR(tmp0, tmp0, tmp2),                                   // hit light||miss||depth>=maxdepth
+    IPJMP2(tmp0, set_materials, fin_sample), // contribute sample otherwise proceed
+// set materials
+    LABEL(set_materials),
+    INSERT_TMACRO(vec3_scalar_mul, CS(vr0), CS(d), CS(t)),
+    INSERT_TMACRO(vec_vec3_add, CS(o), CS(o), CS(vr0)), // compute new position
+    INSERT_TMACRO(set_materials),
+    IMOV(rpt, 2),
+    JMP(roll),
+// indirect diffuse
+    LABEL(lambert_indirect),
+    INSERT_TMACRO(onb, CS(vr00), CS(vr01), CS(vr02), CS(t0), CS(t1), CS(t2), CS(n0), CS(n1), CS(n2)),
+    INSERT_TMACRO(vec3_norm, CS(vr0), CS(tmp0)),
+    INSERT_TMACRO(vec3_norm, CS(t), CS(tmp0)),
+    INSERT_TMACRO(sample_hemisphere, CS(d), CS(n), CS(vr0), CS(t), CS(u0), CS(u1), CS(tmp0), CS(tmp1)),
+    INSERT_TMACRO(vec3_norm, CS(d), CS(tmp0)),
+    INSERT_TMACRO(vec_vec3_mul, CS(PL), CS(PL), CS(clr)),
+    IMOV(rpt, 0),
+    IADD(depth, depth, 1),
+    JMP(traverse_scene),
+// fin sample
+    LABEL(fin_sample),
+    INSERT_TMACRO(vec_vec3_add, CS(L), CS(L), CS(PL)), // contribute sample
+    MOV(TVAR(tmp2), IVAR(ns)),                         // tmp2 <- ns
+    INSERT_TMACRO(luminance, CS(tmp0), CS(PL)),        // computing variance
+    TMIN(tmp0, tmp0, 1),                               // tmp0 <- x
+    TSUB(tmp1, tmp0, mean),                            // tmp1 <- delta
+    TDIV(vr00, tmp1, tmp2),                            // vr00 <- delta/ns
+    TADD(mean, mean, vr00),                            // mean += delta/ns
+    TSUB(vr01, tmp0, mean),                            // vr01 <- delta2
+    TFMA(m2, tmp1, vr01, m2),                          // m2 += delta*delta2
+    ISUB(tmp1, ns, 1),          // computing threshold condition
+    MOV(TVAR(tmp1), IVAR(tmp1)),
+    TDIV(tmp1, m2, tmp1),
+    TSQRT(tmp1, tmp1),
+    TDIV(tmp1, tmp1, tmp2),     // tmp1 <- std::sqrt(m2 / (ns - 1)) / ns
+    TLT_CS(CS(tmp1), CS(tmp1), typename C::THRESHOLD), // tmp1 > treshold
+    IANDGE_CS(CS(tmp0), CS(tmp1), CS(ns), scene::MINSAMPLES),
+    IMOV(rpt, 0),
+    IPJMP2(tmp0, roll, fin_pixel),
+// fin pixel
+    LABEL(fin_pixel),
+    MOV(TVAR(ns), IVAR(ns)),
+    INSERT_TMACRO(vec3_scalar_div, CS(L), CS(L), CS(ns))
+KERNEL_END(TVAR(L0), TVAR(L1), TVAR(L2), IVAR(rc), IVAR(ppp));
+
+template <std::same_as<float> T, typename C>
+KERNEL(primary_const, IVAR(ppp))
+    IRSHFT(d0, ppp, 16),
+    IBAND(d1, ppp, 0xffff),
+    IMOV(c0, d0),
+    IMUL_CS(CS(c0), CS(c0), typename C::WIDTH),
+    IADD(c0, c0, d1),
+    IMOV(c1, 0),
+    TMOV_CS(CS(tmp1), typename C::WIDTH),
+    TMOV_CS(CS(tmp2), typename C::HEIGHT),
+    MOV(TVAR(pp0), IVAR(d0)),
+    MOV(TVAR(pp1), IVAR(d1)),
+    TDIV(tmp0, tmp1, tmp2),     // tmp0 <- ratio
+    TDIV(pw, tmp0, tmp1),       // pw <- pixel width
+    TMUL_CS(CS(pw), CS(pw), typename C::BLUR),
+    INSERT_TMACRO(to_sample_space, CS(pp0), CS(pp1), CS(tmp1), CS(tmp2), CS(tmp0)),
+    TMOV(L0, 0),                // pixel contribution
+    TMOV(L1, 0),
+    TMOV(L2, 0),
+    IMOV(rc, 0),                // ray count
+    IMOV(rpt, 0),
+    IMOV(sc, 0),                // sample count
+// pixel sample
+    LABEL(roll),
+    IMOV(u0, c0),
+    IMOV(u1, c1),
+    INSERT_MACRO(threefry2x32r32, CS(u0), CS(u1), scene::K0, scene::K1, scene::K2, CS(tmp0), CS(tmp1)),
+    INSERT_MACRO(bump_ctr, CS(c0), CS(c1), CS(1357), CS(tmp0), CS(tmp1), CS(tmp2)),
+    INSERT_TMACRO(sample_u, CS(u0), CS(u1)),
+    TMOV_CS(CS(o0), scene::CAM_Px),
+    TMOV_CS(CS(o1), scene::CAM_Py),
+    TMOV_CS(CS(o2), scene::CAM_Pz),
+    TMOV(d0, pp0),
+    TMOV(d1, pp1),
+    TMOV(clr0, 0),
+    TMOV(clr1, 0),
+    TMOV(clr2, 0),
+    IMOV(depth, 0),
+    IADD(sc, sc, 1),
+    INSERT_TMACRO(jitter_sample_pos, CS(pw), CS(d), CS(u), CS(tmp0)),
+    INSERT_TMACRO(gen_ray_dir, CS(d0), CS(d1)),
+    TMOV_CS(CS(d2), scene::CAM_Dz),
+    INSERT_TMACRO(vm::vec3_norm, CS(d), CS(tmp0)),
+    INSERT_TMACRO(bias_ray, CS(vr0)),
+    INSERT_TMACRO(traverse_scene),
+    IADD(rc, rc, 1),
+    INSERT_TMACRO(set_colors),
+    INSERT_TMACRO(vec_vec3_add, CS(L), CS(L), CS(clr)),
+    IGE_CS(CS(tmp0), CS(sc), typename C::NSAMPLES),
+    IPJMP2(tmp0, roll, fin_pixel),
+// finalize
+    LABEL(fin_pixel),
+    INSERT_TMACRO(vec3_scalar_div, CS(L), CS(L), typename C::NSAMPLES)
+KERNEL_END(TVAR(L0), TVAR(L1), TVAR(L2), IVAR(rc), IVAR(ppp));
+
+template <typename R, typename T, typename N>
+struct constants
+{
+    using WIDTH = R;
+    using HEIGHT = R;
+    using THRESHOLD = T;
+    using NSAMPLES = N;
+};
 } // namespace loom::vm

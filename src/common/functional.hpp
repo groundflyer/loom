@@ -129,6 +129,22 @@ struct fold_wrapper
 };
 } // namespace detail
 
+/// @brief Accumulate @p args with @p op.
+template <typename BinaryOp, typename... Args>
+constexpr decltype(auto)
+fold(BinaryOp&& op, Args&&... args) noexcept
+{
+    return (... % detail::fold_wrapper(op, args)).operand;
+}
+
+/// @brief Compose functions, e.g. compose(a, b, c) = a(b(c())).
+template <typename... Fs>
+constexpr decltype(auto)
+compose(Fs&&... fs)
+{
+    return fold(detail::ComposeOp{}, std::forward<Fs>(fs)...);
+}
+
 namespace fn
 {
 template <typename T, bool list_init = true>
@@ -167,6 +183,21 @@ struct sink_fn
     operator()(Ts&&...) const noexcept
     {
     }
+
+    COMPOSE_OP
+};
+
+template <std::size_t I>
+struct elem_fn
+{
+    template <typename Tuple>
+    constexpr decltype(auto)
+    operator()(Tuple&& t) const noexcept
+    {
+        return std::get<0>(std::forward<Tuple>(t));
+    }
+
+    COMPOSE_OP
 };
 } // namespace fn
 
@@ -183,21 +214,18 @@ inline constexpr fn::tuple_maker_fn<T> tuple_maker;
 /// @brief Doesn't do anything.
 inline constexpr fn::sink_fn sink;
 
-/// @brief Accumulate @p args with @p op.
-template <typename BinaryOp, typename... Args>
-constexpr decltype(auto)
-fold(BinaryOp&& op, Args&&... args) noexcept
-{
-    return (... % detail::fold_wrapper(op, args)).operand;
-}
+/// @brief Niebloid that always returns the first element of a tuple-like
+/// object.
+inline constexpr fn::elem_fn<0> first;
 
-/// @brief Compose functions, e.g. compose(a, b, c) = a(b(c())).
-template <typename... Fs>
-constexpr decltype(auto)
-compose(Fs&&... fs)
-{
-    return fold(detail::ComposeOp{}, std::forward<Fs>(fs)...);
-}
+/// @brief Niebloid that always returns the second element of a tuple-like
+/// object.
+inline constexpr fn::elem_fn<1> second;
+
+/// @brief Niebloid that always return the @p Ith element of a tuple-like
+/// object.
+template <std::size_t I>
+inline constexpr fn::elem_fn<I> elem;
 
 /// @brief Create a functional object that takes its two arguments in the
 /// reverse order of @p f.

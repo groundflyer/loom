@@ -341,7 +341,11 @@ if(BUILD_BENCHMARKS)
     endif()
   endif()
 
-  set(bm_srcs)
+  set(BM_SRC_DIR src/benchmarks)
+
+  set(bm_srcs pt.cpp)
+
+  set(fmt_ho bm_pt)
 
   add_custom_target(benchmarks)
 
@@ -349,16 +353,21 @@ if(BUILD_BENCHMARKS)
     string(REPLACE ".cpp" "" name ${src})
     string(PREPEND name "bm_")
 
-    add_executable(${name} ${src})
+    add_executable(${name} ${BM_SRC_DIR}/${src})
 
-    target_link_libraries(${name} PRIVATE ${FMTLIB})
-
-    if(${name} MATCHES "bm_mp_.+")
-      target_link_libraries(${name} PRIVATE Threads::Threads)
+    if (USE_SYSTEM_FMT AND (NOT FmtLibcxx) AND (name IN_LIST fmt_ho))
+      target_link_libraries(${name} PRIVATE fmt::fmt-header-only)
+    else()
+      target_link_libraries(${name} PRIVATE fmt::fmt)
     endif()
+
+    target_include_directories(${name} PUBLIC src)
     target_compile_definitions(${name} PRIVATE -DREPO_HASH="${REPO_HASH}")
     add_dependencies(benchmarks ${name})
   endforeach()
+
+  target_compile_options(bm_pt PUBLIC -ftemplate-depth=2048 -fbracket-depth=512 -ftemplate-backtrace-limit=1)
+  target_compile_options(bm_pt PUBLIC $<$<CONFIG:Release>:-ffast-math>)
 endif()
 
 add_executable(pt_ref src/smallpt/ref/pt.cpp)

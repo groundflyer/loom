@@ -70,6 +70,16 @@ parallel_render(Image& img, Args&&... args) noexcept
     parallel_for_each(img, std::forward<Args>(args)...);
 }
 
+template <typename Duration>
+static double
+traversal_rate(const std::size_t rc, const Duration& dur) noexcept
+{
+    return static_cast<double>(rc / 100ul) /
+           static_cast<double>(
+               std::chrono::duration_cast<std::chrono::milliseconds>(dur)
+                   .count());
+}
+
 template <typename Dur>
 static void
 log_stats(Logger& logger, const Dur& e, const std::size_t rc) noexcept
@@ -79,10 +89,6 @@ log_stats(Logger& logger, const Dur& e, const std::size_t rc) noexcept
 #else
     logger.info("Elapsed time {:.3%M:%S}", e);
 #endif
-    logger.info("Average traversal rate {:.2f} MRay/s",
-                static_cast<double>(rc / 100ul) /
-                    static_cast<double>(
-                        std::chrono::duration_cast<std::chrono::milliseconds>(e)
-                            .count()));
+    logger.info("Average traversal rate {:.2f} MRay/s", traversal_rate(rc, e));
 }
 } // namespace loom

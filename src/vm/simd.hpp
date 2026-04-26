@@ -42,19 +42,23 @@ constexpr inline fsize_t simd_width = 16; // 128
 constexpr inline fsize_t simd_align = 16;
 #endif
 
+struct info
+{
+#if defined(__AVX512F__)
+    static constexpr char value[] = "avx512f";
+#elif defined(__AVX2__)
+    static constexpr char value[] = "avx2";
+#elif defined(__AVX__)
+    static constexpr char value[] = "avx";
+#else
+    static constexpr char value[] = "sse4.2 or older";
+#endif
+};
+
 void
 print_info() noexcept
 {
-#if defined(__AVX512F__)
-    constexpr char info[] = "avx512f";
-#elif defined(__AVX2__)
-    constexpr char info[] = "avx2";
-#elif defined(__AVX__)
-    constexpr char info[] = "avx";
-#else
-    constexpr char info[] = "sse4.2 or older";
-#endif
-    fmt::print("Using x86-64 vector extensions: {}\n", info);
+    fmt::print("Using x86-64 vector extensions: {}\n", info::value);
 }
 
 template <typename _ProxyView>
