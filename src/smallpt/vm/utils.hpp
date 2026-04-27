@@ -47,7 +47,7 @@ masked_ray_count(const vm::simd::native_vector<std::uint32_t> vrc,
                                             << tail_size,
                                         vrc);
 #else // AVX or AVX2
-    static constexpr std::size_t   N = simd::native_vector_extent_v<float>;
+    static constexpr std::size_t   N = vm::simd::native_vector_extent_v<float>;
     static constexpr std::uint32_t l = static_cast<std::uint32_t>(-1);
     static constexpr vm::simd::native_vector<std::uint32_t> masks[8] = {
         {0, 0, 0, 0, 0, 0, 0, 0},

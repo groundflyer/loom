@@ -71,22 +71,36 @@ print_results(std::array<bm_result<Dur>, N>&& results) noexcept
     fmt::print("{0:-^{1}}{2}{0:-^9}{2}{0:-^9}\n", "", id_width + 1, "\u253c");
 
     for(const auto& [id, dur]: results)
-        fmt::print("{:<{}} | {:^6.3%S}s | {:>3.0f}%\n",
+#if FMT_VERSION < 110000
+        fmt::print(
+            "{:<{}} | {:>6.03f}s | {:>3.0f}%\n",
+            id,
+            id_width,
+            static_cast<double>(
+                std::chrono::duration_cast<std::chrono::milliseconds>(dur)
+                    .count()) /
+                1000,
+            (static_cast<double>(dur.count()) /
+             static_cast<double>(fastest_dur.count())) *
+                100);
+#else
+        fmt::print("{:<{}} | {:>6.3%S}s | {:>3.0f}%\n",
                    id,
                    id_width,
                    dur,
                    (static_cast<double>(dur.count()) /
                     static_cast<double>(fastest_dur.count())) *
                        100);
+#endif
 }
 
 template <typename C>
 Image
 get_img() noexcept
 {
-    constexpr unsigned w =
+    const unsigned w =
         read_number<unsigned>(cs2sv<typename C::WIDTH>).value();
-    constexpr unsigned h =
+    const unsigned h =
         read_number<unsigned>(cs2sv<typename C::HEIGHT>).value();
     return Image(Vec2u(w, h));
 }
