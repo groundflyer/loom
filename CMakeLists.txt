@@ -196,6 +196,9 @@ if(BUILD_DOC)
     set(DOXYGEN_INTERACTIVE_SVG YES)
     set(DOXYGEN_TOC_EXPAND YES)
     set(DOXYGEN_USE_MATHJAX YES)
+    set(DOXYGEN_MATHJAX_VERSION MathJax_4)
+    set(DOXYGEN_MATHJAX_FORMAT chtml)
+    set(DOXYGEN_MATHJAX_RELPATH "../mathjax")
     set(DOXYGEN_CITE_BIB_FILES
       ${BIB_DIR}/Duff2017Basis.bib
       ${BIB_DIR}/other.bib
@@ -205,6 +208,7 @@ if(BUILD_DOC)
     doxygen_add_docs(doc ${_SRC_DIR} ${DOC_DIR} ALL
       COMMENT "Generating documentation with Doxygen"
       WORKING_DIRECTORY ${_SRC_DIR})
+    file(COPY ${DOC_DIR}/tex-chtml.js DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/mathjax)
   else()
     message(SEND_ERROR "Doxygen not found. Can't generate documentation.")
   endif()
