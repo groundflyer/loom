@@ -38,7 +38,7 @@ MK_NIEBLOID(encode_pp);
 MK_NIEBLOID(decode_pp);
 MK_NIEBLOID(encode_res);
 
-static int _FORCE_INLINE
+static int FORCE_INLINE
 masked_ray_count(const vm::simd::native_vector<std::uint32_t> vrc,
                  const std::size_t tail_size) noexcept
 {

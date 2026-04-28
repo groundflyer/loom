@@ -732,11 +732,11 @@ struct standard_compiler
 
     using instructions = typelist::map<eval, Block>;
 
-    template <typename _Memory>
+    template <typename... Args>
     constexpr void
-    operator()(_Memory&& memory) const noexcept
+    operator()(Args&&... args) const noexcept
     {
-        typelist::instantiate(instructions{}, std::forward<_Memory>(memory));
+        typelist::instantiate(instructions{}, std::forward<Args>(args)...);
     }
 };
 

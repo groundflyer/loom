@@ -23,7 +23,7 @@
 
 #include <immintrin.h>
 
-#define _FORCE_INLINE __attribute__((always_inline, nodebug))
+#define FORCE_INLINE __attribute__((always_inline, nodebug))
 
 namespace loom::vm::simd
 {
@@ -148,7 +148,7 @@ constexpr inline fsize_t native_instruction_width_v =
 /// @brief Load @p N values and pack them into vector of width @p N
 /// from aligned memory location @p src.
 template <fsize_t N, typename T>
-packed_vector<T, N> _FORCE_INLINE
+packed_vector<T, N> FORCE_INLINE
 load(T const* p) noexcept
 {
     return *(packed_vector<T, N>*)p;
@@ -156,7 +156,7 @@ load(T const* p) noexcept
 
 /// @brief Store values from packed vector into aligned memory location @p dst.
 template <fsize_t N, typename T>
-void _FORCE_INLINE
+void FORCE_INLINE
 store(T* dst, packed_vector<T, N> src) noexcept
 {
     *(packed_vector<T, N>*)dst = src;
@@ -165,14 +165,14 @@ store(T* dst, packed_vector<T, N> src) noexcept
 namespace detail
 {
 template <fsize_t, typename T>
-constexpr T _FORCE_INLINE
+constexpr T FORCE_INLINE
 id(T v) noexcept
 {
     return v;
 }
 
 template <fsize_t N, typename T, std::size_t... Is>
-constexpr packed_vector<T, N> _FORCE_INLINE
+constexpr packed_vector<T, N> FORCE_INLINE
 broadcast_impl(T v, std::index_sequence<Is...>) noexcept
 {
     packed_vector<T, N> ret = {id<Is>(v)...};
@@ -180,7 +180,7 @@ broadcast_impl(T v, std::index_sequence<Is...>) noexcept
 }
 
 template <typename T, typename... Ts>
-static constexpr T _FORCE_INLINE
+static constexpr T FORCE_INLINE
 nest_fma(T x2, T k1, T k2, Ts... ks) noexcept
 {
     if constexpr(sizeof...(Ts) > 0)
@@ -192,7 +192,7 @@ nest_fma(T x2, T k1, T k2, Ts... ks) noexcept
 
 /// @brief Broadcast a value to all elements of the resulting packed vector.
 template <fsize_t N, typename T>
-constexpr packed_vector<T, N> _FORCE_INLINE
+constexpr packed_vector<T, N> FORCE_INLINE
 broadcast(const T v) noexcept
 {
     // clang broadcast syntax doesn't work
@@ -218,14 +218,14 @@ struct mask_io_intrinsics_wrangler
     using mask_type   = mask_t<T, N>;
 
     /// @brief Fallback implementation for mask load.
-    static vector_type _FORCE_INLINE
+    static vector_type FORCE_INLINE
     load(T const* p, const mask_type mask) noexcept
     {
         return mask ? simd::load<N>(p) : broadcast<N>(static_cast<T>(0));
     }
 
     /// @brief Fallback implementation for mask store.
-    static void _FORCE_INLINE
+    static void FORCE_INLINE
     store(T* dest, const mask_type mask, const vector_type value) noexcept
     {
         simd::store<N>(dest, mask ? value : simd::load<N>(dest));
@@ -241,14 +241,14 @@ struct cmp_intrinsics_wrangler
     using mask_type   = mask_t<T, N>;
 
     /// @brief Compare for equality.
-    static mask_type _FORCE_INLINE
+    static mask_type FORCE_INLINE
     eq(const vector_type lhs, const vector_type rhs) noexcept
     {
         return lhs == rhs;
     }
 
     /// @brief Compare for equality.
-    static mask_type _FORCE_INLINE
+    static mask_type FORCE_INLINE
     neq(const vector_type lhs, const vector_type rhs) noexcept
     {
         return lhs != rhs;
@@ -264,7 +264,7 @@ struct blend_intrinsics_wrangler
     using mask_type   = mask_t<T, N>;
 
     /// @brief Blend packed vectors.
-    static vector_type _FORCE_INLINE
+    static vector_type FORCE_INLINE
     blend(const mask_type k, const vector_type a, const vector_type b) noexcept
     {
         return k ? b : a;
@@ -280,7 +280,7 @@ struct gather_scatter_intrinsics_wrangler
     using index_type  = packed_vector<I, N>;
 
     /// @brief Fallback implementation for gather operation.
-    static vector_type _FORCE_INLINE
+    static vector_type FORCE_INLINE
     gather(index_type vindex, T const* base_addr) noexcept
     {
         vector_type ret;
@@ -289,7 +289,7 @@ struct gather_scatter_intrinsics_wrangler
     }
 
     /// @brief Fallback implementation for scatter operation.
-    static void _FORCE_INLINE
+    static void FORCE_INLINE
     scatter(T* base_addr, index_type vindex, vector_type a) noexcept
     {
         for(unsigned i = 0; i < N; ++i) *(base_addr + vindex[i]) = a[i];
@@ -304,7 +304,7 @@ struct rsqrt_intrinsics_wrangler
     using vector_type = packed_vector<T, N>;
 
     /// @brief Fallback implementation.
-    static vector_type _FORCE_INLINE
+    static vector_type FORCE_INLINE
     op(vector_type x) noexcept
     {
         return broadcast<N>(static_cast<T>(1)) / __builtin_elementwise_sqrt(x);
@@ -318,7 +318,7 @@ struct fms_intrinsics_wranger
     using vector_type = packed_vector<T, N>;
 
     /// @brief Fallback implementation.
-    static vector_type _FORCE_INLINE
+    static vector_type FORCE_INLINE
     op(const vector_type x, const vector_type y, const vector_type z) noexcept
     {
         return __builtin_elementwise_fma(x, y, -z);
@@ -331,12 +331,12 @@ struct fms_intrinsics_wranger
     {                                                           \
         using vector_type = packed_vector<TYPE, EXT>;           \
         using mask_type   = mask_t<TYPE, EXT>;                  \
-        static vector_type _FORCE_INLINE                        \
+        static vector_type FORCE_INLINE                         \
         load(TYPE const* p, const mask_type mask) noexcept      \
         {                                                       \
             return LOAD_INTR(p, mask);                          \
         }                                                       \
-        static void _FORCE_INLINE                               \
+        static void FORCE_INLINE                                \
         store(TYPE*             dest,                           \
               const mask_type   mask,                           \
               const vector_type value) noexcept                 \
@@ -364,12 +364,12 @@ struct fms_intrinsics_wranger
         using vector_type = packed_vector<TYPE, EXT>;                  \
         using mask_type   = mask_t<TYPE, EXT>;                         \
         static constexpr vector_type src{};                            \
-        static vector_type _FORCE_INLINE                               \
+        static vector_type FORCE_INLINE                                \
         load(TYPE const* p, const mask_type mask) noexcept             \
         {                                                              \
             return LOAD_INTR(src, mask, p);                            \
         }                                                              \
-        static void _FORCE_INLINE                                      \
+        static void FORCE_INLINE                                       \
         store(TYPE*             dest,                                  \
               const mask_type   mask,                                  \
               const vector_type value) noexcept                        \
@@ -385,12 +385,12 @@ struct fms_intrinsics_wranger
         using vector_type = packed_vector<TYPE, EXT>;              \
         using mask_type   = mask_t<TYPE, EXT>;                     \
         static_assert(std::unsigned_integral<mask_type>);          \
-        static mask_type _FORCE_INLINE                             \
+        static mask_type FORCE_INLINE                              \
         eq(const vector_type lhs, const vector_type rhs) noexcept  \
         {                                                          \
             return EQINTR(lhs, rhs);                               \
         }                                                          \
-        static mask_type _FORCE_INLINE                             \
+        static mask_type FORCE_INLINE                              \
         neq(const vector_type lhs, const vector_type rhs) noexcept \
         {                                                          \
             return NEQINTR(lhs, rhs);                              \
@@ -403,7 +403,7 @@ struct fms_intrinsics_wranger
     {                                                 \
         using vector_type = packed_vector<TYPE, EXT>; \
         using mask_type   = mask_t<TYPE, EXT>;        \
-        static vector_type _FORCE_INLINE              \
+        static vector_type FORCE_INLINE               \
         blend(const mask_type   k,                    \
               const vector_type a,                    \
               const vector_type b) noexcept           \
@@ -421,12 +421,12 @@ struct fms_intrinsics_wranger
     {                                                                       \
         using vector_type = packed_vector<TYPE, EXT>;                       \
         using index_type  = packed_vector<fsize_t, EXT>;                    \
-        static vector_type _FORCE_INLINE                                    \
+        static vector_type FORCE_INLINE                                     \
         gather(index_type vindex, TYPE const* base_addr) noexcept           \
         {                                                                   \
             return GATHER_INTR(vindex, base_addr, sizeof(TYPE));            \
         }                                                                   \
-        static void _FORCE_INLINE                                           \
+        static void FORCE_INLINE                                            \
         scatter(TYPE* base_addr, index_type vindex, vector_type a) noexcept \
         {                                                                   \
             SCATTER_INTR(base_addr, vindex, a, sizeof(TYPE));               \
@@ -438,7 +438,7 @@ struct fms_intrinsics_wranger
     struct rsqrt_intrinsics_wrangler<TYPE, EXT>       \
     {                                                 \
         using vector_type = packed_vector<TYPE, EXT>; \
-        static vector_type _FORCE_INLINE              \
+        static vector_type FORCE_INLINE               \
         op(vector_type x) noexcept                    \
         {                                             \
             return INTR(x);                           \
@@ -450,7 +450,7 @@ struct fms_intrinsics_wranger
     struct fms_intrinsics_wranger<TYPE, EXT>          \
     {                                                 \
         using vector_type = packed_vector<TYPE, EXT>; \
-        static vector_type _FORCE_INLINE              \
+        static vector_type FORCE_INLINE               \
         op(const vector_type x,                       \
            const vector_type y,                       \
            const vector_type z) noexcept              \
@@ -585,7 +585,7 @@ struct remap_comp<N, std::identity, Dst, Src>
 {
     struct type
     {
-        constexpr packed_vector<Dst, N> _FORCE_INLINE
+        constexpr packed_vector<Dst, N> FORCE_INLINE
         operator()(const packed_vector<Src, N> src) const noexcept
         {
             if constexpr(std::is_same_v<Dst, Src>)
@@ -601,7 +601,7 @@ struct remap_comp<N, ops::cmov, T, I, T, T>
 {
     struct type
     {
-        constexpr packed_vector<T, N> _FORCE_INLINE
+        constexpr packed_vector<T, N> FORCE_INLINE
         operator()(const packed_vector<I, N> c,
                    const packed_vector<T, N> a,
                    const packed_vector<T, N> b) const noexcept
@@ -616,7 +616,7 @@ struct remap_comp<N, ops::fma, T, T, T, T>
 {
     struct type
     {
-        constexpr packed_vector<T, N> _FORCE_INLINE
+        constexpr packed_vector<T, N> FORCE_INLINE
         operator()(const packed_vector<T, N> x,
                    const packed_vector<T, N> y,
                    const packed_vector<T, N> z) const noexcept
@@ -633,7 +633,7 @@ struct remap_comp<N, ops::fms, T, T, T, T>
 
     struct type
     {
-        constexpr packed_vector<T, N> _FORCE_INLINE
+        constexpr packed_vector<T, N> FORCE_INLINE
         operator()(const packed_vector<T, N> x,
                    const packed_vector<T, N> y,
                    const packed_vector<T, N> z) const noexcept
@@ -661,7 +661,7 @@ struct remap_comp<N, ops::sin<T>, T, T>
 
     struct type
     {
-        constexpr vector_type _FORCE_INLINE
+        constexpr vector_type FORCE_INLINE
         operator()(const vector_type x) const noexcept
         {
             const vector_type x2 = x * x;
@@ -734,7 +734,7 @@ struct remap_comp<N, ops::cos<T>, T, T>
 
     struct type
     {
-        constexpr vector_type _FORCE_INLINE
+        constexpr vector_type FORCE_INLINE
         operator()(const vector_type x) const noexcept
         {
             const vector_type x2 = x * x;
@@ -801,7 +801,7 @@ struct remap_comp<N, ops::rsqrt<T>, T, T>
 
     struct type
     {
-        packed_vector<T, N> _FORCE_INLINE
+        packed_vector<T, N> FORCE_INLINE
         operator()(const packed_vector<T, N> x) const noexcept
         {
             return rsqrt_wrangler::op(x);
@@ -823,7 +823,7 @@ struct remap_comp<N, ops::sct<T, I, L>, T, I>
 
     struct type
     {
-        vector_type _FORCE_INLINE
+        vector_type FORCE_INLINE
         operator()(const packed_vector<I, N> i) const noexcept
         {
             return __builtin_shufflevector(table, i);
@@ -839,7 +839,7 @@ struct remap_comp<N, ops::slt<T, I>, T, I, Args...>
     using index_vector_type = packed_vector<I, N>;
 
     template <I Idx, typename... Rest>
-    static vector_type _FORCE_INLINE
+    static vector_type FORCE_INLINE
     impl(const index_vector_type i,
          const vector_type       head,
          const Rest... tail) noexcept
@@ -856,7 +856,7 @@ struct remap_comp<N, ops::slt<T, I>, T, I, Args...>
     {
         template <std::same_as<vector_type>... Vs>
             requires(sizeof...(Vs) >= 2)
-        vector_type _FORCE_INLINE
+        vector_type FORCE_INLINE
         operator()(const index_vector_type i, const Vs... vs) const noexcept
         {
             return impl<0>(i, vs...);
@@ -880,7 +880,7 @@ struct remap_comp<N, ops::pacc<T, I, Acc, Cmp>, I, I, T, T>
 
     struct type
     {
-        mask_type _FORCE_INLINE
+        mask_type FORCE_INLINE
         operator()(const mask_type   p,
                    const vector_type x,
                    const vector_type y) const noexcept
@@ -896,7 +896,7 @@ struct remap_comp<N, ops::pacc<T, I, Acc, Cmp>, I, I, T, T>
     {                                                              \
         struct type                                                \
         {                                                          \
-            constexpr packed_vector<R, N> _FORCE_INLINE            \
+            constexpr packed_vector<R, N> FORCE_INLINE             \
             operator()(const packed_vector<T, N> a,                \
                        const packed_vector<T, N> b) const noexcept \
             {                                                      \
@@ -911,7 +911,7 @@ struct remap_comp<N, ops::pacc<T, I, Acc, Cmp>, I, I, T, T>
     {                                                              \
         struct type                                                \
         {                                                          \
-            constexpr packed_vector<R, N> _FORCE_INLINE            \
+            constexpr packed_vector<R, N> FORCE_INLINE             \
             operator()(const packed_vector<T, N> a) const noexcept \
             {                                                      \
                 return OP a;                                       \
@@ -925,7 +925,7 @@ struct remap_comp<N, ops::pacc<T, I, Acc, Cmp>, I, I, T, T>
     {                                                              \
         struct type                                                \
         {                                                          \
-            constexpr packed_vector<T, N> _FORCE_INLINE            \
+            constexpr packed_vector<T, N> FORCE_INLINE             \
             operator()(const packed_vector<T, N> a,                \
                        const packed_vector<T, N> b) const noexcept \
             {                                                      \
@@ -940,7 +940,7 @@ struct remap_comp<N, ops::pacc<T, I, Acc, Cmp>, I, I, T, T>
     {                                                              \
         struct type                                                \
         {                                                          \
-            constexpr packed_vector<T, N> _FORCE_INLINE            \
+            constexpr packed_vector<T, N> FORCE_INLINE             \
             operator()(const packed_vector<T, N> a) const noexcept \
             {                                                      \
                 return NEW(a);                                     \
@@ -1086,25 +1086,44 @@ class eval;
 template <typename Target, typename LabelMap, fsize_t N>
 class eval<Jump<Target>, LabelMap, N>
 {
-    using constant                  = typelist::lookup<Target, LabelMap>;
-    using index_t                   = get_index_t<LabelMap>;
+    using constant       = typelist::lookup<Target, LabelMap>;
+    using index_t        = get_index_t<LabelMap>;
+    using mask_type      = mask_t<index_t, N>;
+    using io_wrangler    = mask_io_intrinsics_wrangler<index_t, N>;
+    using blend_wrangler = blend_intrinsics_wrangler<index_t, N>;
+
     static constexpr index_t target = constant{}();
 
-    packed_vector<index_t, N>
-    get() const noexcept
+    static packed_vector<index_t, N> FORCE_INLINE
+    get() noexcept
     {
         return broadcast<N>(target);
     }
 
   public:
     template <typename _Memory>
-    void _FORCE_INLINE
+    void FORCE_INLINE
     operator()(_Memory&& mem) const noexcept
     {
         if constexpr(pv_extent<std::remove_cvref_t<_Memory>> == N)
             store<N>(std::forward<_Memory>(mem).bp().data(), get());
         else
             std::forward<_Memory>(mem).bp() = get();
+    }
+
+    template <typename _Memory>
+    void FORCE_INLINE
+    operator()(_Memory&& mem, const mask_type mask) const noexcept
+    {
+        if constexpr(pv_extent<std::remove_cvref_t<_Memory>> == N)
+            io_wrangler::store(std::forward<_Memory>(mem).bp().data(),
+                               mask,
+                               get());
+        else
+            std::forward<_Memory>(mem).bp() =
+                blend_wrangler::blend(mask,
+                                      std::forward<_Memory>(mem).bp(),
+                                      get());
     }
 };
 
@@ -1116,15 +1135,19 @@ template <typename Op,
     requires(... && (sizeof(vartype<Dst>) == sizeof(vartype<Args>)))
 class eval<Compute<Op, Dst, Args...>, LabelMap, N>
 {
-    using T         = vartype<Dst>;
-    using index_t   = get_index_t<LabelMap>;
-    using vector_op = remap_comp_t<N, Op, vartype<Dst>, vartype<Args>...>;
-    using loader_t  = var_loader<N>;
+    using T              = vartype<Dst>;
+    using index_t        = get_index_t<LabelMap>;
+    using vector_op      = remap_comp_t<N, Op, vartype<Dst>, vartype<Args>...>;
+    using loader_t       = var_loader<N>;
+    using mask_type      = mask_t<T, N>;
+    using io_wrangler    = mask_io_intrinsics_wrangler<T, N>;
+    using blend_wrangler = blend_intrinsics_wrangler<T, N>;
+
     static constexpr loader_t loader{};
 
     template <typename _Memory>
-    packed_vector<T, N> _FORCE_INLINE
-    compute(_Memory&& mem) const noexcept
+    static packed_vector<T, N> FORCE_INLINE
+    compute(_Memory&& mem) noexcept
     {
         auto vars = typelist::maybe_collect(type_sequence<Args...>{},
                                             loader,
@@ -1134,7 +1157,7 @@ class eval<Compute<Op, Dst, Args...>, LabelMap, N>
 
   public:
     template <typename _Memory>
-    void _FORCE_INLINE
+    void FORCE_INLINE
     operator()(_Memory&& mem) const noexcept
     {
         if constexpr(pv_extent<std::remove_cvref_t<_Memory>> == N)
@@ -1143,6 +1166,23 @@ class eval<Compute<Op, Dst, Args...>, LabelMap, N>
         else
             std::forward<_Memory>(mem).template get<Dst>() =
                 compute(std::forward<_Memory>(mem));
+    }
+
+    template <typename _Memory>
+    void FORCE_INLINE
+    operator()(_Memory&& mem, const mask_type mask) const noexcept
+    {
+        if constexpr(pv_extent<std::remove_cvref_t<_Memory>> == N)
+            io_wrangler::store(
+                std::forward<_Memory>(mem).template get<Dst>().data(),
+                mask,
+                compute(std::forward<_Memory>(mem)));
+        else
+            std::forward<_Memory>(mem).template get<Dst>() =
+                blend_wrangler::blend(
+                    mask,
+                    std::forward<_Memory>(mem).template get<Dst>(),
+                    compute(std::forward<_Memory>(mem)));
     }
 };
 
@@ -1157,7 +1197,7 @@ struct shuffler<std::integer_sequence<index_t, a, b>, N>
     static constexpr IdxVec va = broadcast<N>(a);
     static constexpr IdxVec vb = broadcast<N>(b);
 
-    IdxVec _FORCE_INLINE
+    IdxVec FORCE_INLINE
     operator()(const IdxVec var) const noexcept
     {
         return var ? vb : va;
@@ -1171,7 +1211,7 @@ struct shuffler<std::integer_sequence<index_t, is...>, N>
     using IdxVec                  = packed_vector<index_t, N>;
     static constexpr IdxVec table = {is...};
 
-    IdxVec _FORCE_INLINE
+    IdxVec FORCE_INLINE
     operator()(const IdxVec var) const noexcept
     {
         return __builtin_shufflevector(table, var);
@@ -1181,13 +1221,17 @@ struct shuffler<std::integer_sequence<index_t, is...>, N>
 template <typename Var, typename Labels, typename LabelMap, fsize_t N>
 class eval<ParmJump<Var, Labels>, LabelMap, N>
 {
-    using index_t = get_index_t<LabelMap>;
-    using idxs    = pjmp_idxs<ParmJump<Var, Labels>, LabelMap>;
+    using index_t        = get_index_t<LabelMap>;
+    using idxs           = pjmp_idxs<ParmJump<Var, Labels>, LabelMap>;
+    using mask_type      = mask_t<index_t, N>;
+    using io_wrangler    = mask_io_intrinsics_wrangler<index_t, N>;
+    using blend_wrangler = blend_intrinsics_wrangler<index_t, N>;
+
     static constexpr shuffler<idxs, N> op{};
 
   public:
     template <typename _Memory>
-    void _FORCE_INLINE
+    void FORCE_INLINE
     operator()(_Memory&& mem) const noexcept
     {
         if constexpr(pv_extent<std::remove_cvref_t<_Memory>> == N)
@@ -1200,6 +1244,24 @@ class eval<ParmJump<Var, Labels>, LabelMap, N>
         else
             std::forward<_Memory>(mem).bp() =
                 op(std::forward<_Memory>(mem).template get<Var>());
+    }
+
+    template <typename _Memory>
+    void FORCE_INLINE
+    operator()(_Memory&& mem, const mask_type mask) const noexcept
+    {
+        if constexpr(pv_extent<std::remove_cvref_t<_Memory>> == N)
+        {
+            index_t* dst = std::forward<_Memory>(mem).bp().data();
+            index_t* src =
+                std::forward<_Memory>(mem).template get<Var>().data();
+            io_wrangler::store(dst, mask, op(load<N>(src)));
+        }
+        else
+            std::forward<_Memory>(mem).bp() = blend_wrangler::blend(
+                mask,
+                std::forward<_Memory>(mem).bp(),
+                op(std::forward<_Memory>(mem).template get<Var>()));
     }
 };
 
@@ -1372,7 +1434,7 @@ class make_block_compiler<STITCH::MINIKERNEL, Block, LabelMap, BPVar>
         static constexpr Kernel kernel{};
 
         template <typename _ProxyRow>
-        static Storage _FORCE_INLINE
+        static Storage FORCE_INLINE
         alloc(_ProxyRow row) noexcept
         {
             Storage storage;
@@ -1386,7 +1448,7 @@ class make_block_compiler<STITCH::MINIKERNEL, Block, LabelMap, BPVar>
         }
 
         template <typename _ProxyRow>
-        static void _FORCE_INLINE
+        static void FORCE_INLINE
         spill(_ProxyRow row, Storage& storage) noexcept
         {
             typelist::for_each(
@@ -1399,7 +1461,7 @@ class make_block_compiler<STITCH::MINIKERNEL, Block, LabelMap, BPVar>
 
       public:
         template <typename _ProxyRow>
-        void _FORCE_INLINE
+        void FORCE_INLINE
         operator()(_ProxyRow row) const noexcept
         {
             Storage storage = alloc(row);
@@ -1417,7 +1479,7 @@ class make_block_compiler<STITCH::MINIKERNEL, Block, LabelMap, BPVar>
 
         template <typename _MemoryView>
             requires(pv_extent<_MemoryView> == N)
-        static Storage _FORCE_INLINE
+        static Storage FORCE_INLINE
         alloc(_MemoryView view) noexcept
         {
             Storage storage;
@@ -1435,7 +1497,7 @@ class make_block_compiler<STITCH::MINIKERNEL, Block, LabelMap, BPVar>
 
         template <typename _MemoryView>
             requires(pv_extent<_MemoryView> == N)
-        static void _FORCE_INLINE
+        static void FORCE_INLINE
         spill(_MemoryView view, Storage& storage) noexcept
         {
             typelist::for_each(
@@ -1452,7 +1514,7 @@ class make_block_compiler<STITCH::MINIKERNEL, Block, LabelMap, BPVar>
       public:
         template <typename _MemoryView>
             requires(pv_extent<_MemoryView> == N)
-        void _FORCE_INLINE
+        void FORCE_INLINE
         operator()(_MemoryView view) const noexcept
         {
             Storage storage = alloc(view);
@@ -1483,7 +1545,7 @@ class make_block_compiler<STITCH::MASKED, Block, LabelMap, BPVar>
 
     template <typename _MemoryView>
         requires(pv_extent<_MemoryView> == N)
-    static Storage _FORCE_INLINE
+    static Storage FORCE_INLINE
     alloc(_MemoryView view, const mask_type mask) noexcept
     {
         Storage storage;
@@ -1505,7 +1567,7 @@ class make_block_compiler<STITCH::MASKED, Block, LabelMap, BPVar>
 
     template <typename _MemoryView>
         requires(pv_extent<_MemoryView> == N)
-    static Storage _FORCE_INLINE
+    static Storage FORCE_INLINE
     alloc(_MemoryView view) noexcept
     {
         Storage storage;
@@ -1523,7 +1585,7 @@ class make_block_compiler<STITCH::MASKED, Block, LabelMap, BPVar>
 
     template <typename _MemoryView>
         requires(pv_extent<_MemoryView> == N)
-    static void _FORCE_INLINE
+    static void FORCE_INLINE
     spill(_MemoryView view, Storage& storage, const mask_type mask) noexcept
     {
         typelist::for_each(
@@ -1549,7 +1611,7 @@ class make_block_compiler<STITCH::MASKED, Block, LabelMap, BPVar>
 
         template <typename _MemoryView>
             requires(pv_extent<_MemoryView> == N)
-        void _FORCE_INLINE
+        void FORCE_INLINE
         operator()(_MemoryView view) const noexcept
         {
 #ifdef ACTUALLY_DO_MASKED_LOAD
@@ -1571,7 +1633,7 @@ using block_compiler =
 template <std::integral T, fsize_t N>
 struct popcnt_helper
 {
-    T _FORCE_INLINE
+    T FORCE_INLINE
     operator()(const packed_vector<T, N> vec) const noexcept
     {
         return __builtin_reduce_add(
@@ -1579,7 +1641,7 @@ struct popcnt_helper
     }
 
     // AVX-512
-    int _FORCE_INLINE
+    int FORCE_INLINE
     operator()(const uint_of_bits_t<N> k) const noexcept
     {
         return std::popcount(k);
@@ -1590,14 +1652,14 @@ struct popcnt_helper
 template <std::integral T, fsize_t N>
 struct logical_reduce_helper
 {
-    static bool _FORCE_INLINE
+    static bool FORCE_INLINE
     land(const packed_vector<T, N> vec) noexcept
     {
         return __builtin_reduce_and(vec);
     }
 
     // AVX-512
-    static bool _FORCE_INLINE
+    static bool FORCE_INLINE
     land(const uint_of_bits_t<N> k) noexcept
     {
         return k == static_cast<uint_of_bits_t<N>>(-1);
@@ -1641,13 +1703,13 @@ class block_set : public std::ranges::view_interface<block_set<K, N, ret_sum>>
         index_t              m_pos{};
         ret_t                m_ret;
 
-        static _FORCE_INLINE index_t
+        static FORCE_INLINE index_t
         fit_inc(const index_t i) noexcept
         {
             return fit_block_index<K>(i + static_cast<index_t>(1));
         }
 
-        _FORCE_INLINE bool
+        FORCE_INLINE bool
         sum(const index_t pos) noexcept
         {
             if constexpr(ret_sum)
@@ -1666,7 +1728,7 @@ class block_set : public std::ranges::view_interface<block_set<K, N, ret_sum>>
             }
         }
 
-        _FORCE_INLINE index_t
+        FORCE_INLINE index_t
         next(index_t pos) noexcept
         {
             while(!sum(pos)) pos = fit_inc(pos);
@@ -2209,6 +2271,177 @@ class aligned_chunks :
     }
 };
 
+template <typename Block,
+          typename LabelMap,
+          typename BPVar,
+          fsize_t N,
+          bool    alloc_temp_storage>
+class make_embedded_masked_runner
+{
+    using index_t = vartype<BPVar>;
+
+    using helper = minikernel_helper<Block, LabelMap, BPVar, N>;
+
+    using Kernel      = helper::simd_kernel;
+    using TempStorage = helper::simd_storage;
+
+    using mask_type = mask_t<index_t, N>;
+
+    static constexpr Kernel kernel{};
+
+    template <typename _MainStorage>
+    static TempStorage FORCE_INLINE
+    alloc(const _MainStorage& main_storage) noexcept
+    {
+        TempStorage ret;
+        typelist::for_each(
+            typename helper::load_vars{},
+            []<typename Var>(const _MainStorage& main_storage,
+                             TempStorage&        tmp_storage) noexcept
+            {
+                tmp_storage.template get<Var>() =
+                    main_storage.template get<Var>();
+            },
+            main_storage,
+            ret);
+        return ret;
+    }
+
+    template <typename _MainStorage>
+    static void FORCE_INLINE
+    spill(_MainStorage&   main_storage,
+          TempStorage&    tmp_storage,
+          const mask_type mask) noexcept
+    {
+        typelist::for_each(
+            typename helper::store_vars{},
+            []<typename Var>(_MainStorage&   main_storage,
+                             TempStorage&    tmp_storage,
+                             const mask_type mask) noexcept
+            {
+                auto& orig     = main_storage.template get<Var>();
+                using wrangler = blend_intrinsics_wrangler<vartype<Var>, N>;
+                orig           = wrangler::blend(mask,
+                                       orig,
+                                       tmp_storage.template get<Var>());
+            },
+            main_storage,
+            tmp_storage,
+            mask);
+    }
+
+  public:
+    struct type
+    {
+        const mask_type mask;
+
+        template <typename _MainStorage>
+        void FORCE_INLINE
+        operator()(_MainStorage& main_storage) const noexcept
+        {
+            if constexpr(alloc_temp_storage)
+            {
+                TempStorage tmp_storage = alloc(main_storage);
+                kernel(tmp_storage);
+                spill(main_storage, tmp_storage, mask);
+            }
+            else
+                kernel(main_storage, mask);
+        }
+    };
+};
+
+template <typename Block,
+          typename LabelMap,
+          typename BPVar,
+          fsize_t N,
+          bool    alloc_temp_storage>
+using embedded_masked_runner =
+    make_embedded_masked_runner<Block, LabelMap, BPVar, N, alloc_temp_storage>::
+        type;
+
+template <Kernel K, bool alloc_temp_storage>
+    requires(typelist::of_same_size<typename K::reg_types>)
+class embedded_compiler
+{
+    using labelmap  = K::labelmap;
+    using blocks    = K::blocks;
+    using reg_names = K::reg_names;
+    using reg_types = K::reg_types;
+    using bp        = K::bp;
+    using index_t   = K::index_t;
+
+    static constexpr bool    singular = K::singular;
+    static constexpr fsize_t N        = native_vector_extent_v<index_t>;
+    static constexpr packed_vector<index_t, N> halt_pos =
+        broadcast<N>(K::halt_pos);
+
+    template <typename... Ts>
+    using memory = KernelMemory<Ts..., N>;
+
+    using facade = bse::MemoryFacade<
+        K,
+        memory,
+        decltype([]() constexpr noexcept -> packed_vector<index_t, N>
+                 { return broadcast<N>(static_cast<index_t>(0)); })>;
+
+    class single_block_evaluator : facade
+    {
+        template <typename I, typename _LabelMap>
+        using simd_eval = eval<I, _LabelMap, N>;
+
+        using Kernel =
+            standard_compiler<typelist::head<blocks>, labelmap, simd_eval>;
+
+        static constexpr Kernel block{};
+
+      public:
+        using program = K;
+
+        template <typename... Args>
+        auto
+        operator()(const Args... args) noexcept
+        {
+            facade::set_inputs(args...);
+            facade::step(block);
+            return facade::get_outputs();
+        }
+    };
+
+    class evaluator : facade
+    {
+        template <typename Block>
+        using compile_block =
+            embedded_masked_runner<Block, labelmap, bp, N, alloc_temp_storage>;
+
+        using compiled_blocks = typelist::map<compile_block, blocks>;
+
+        using cmp = cmp_intrinsics_wrangler<index_t, N>;
+        using lrh = logical_reduce_helper<index_t, N>;
+
+      public:
+        template <typename... Args>
+        auto
+        operator()(const Args... args) noexcept
+        {
+            facade::set_inputs(args...);
+            while(!lrh::land(cmp::eq(facade::bp(), halt_pos)))
+                for(const auto [bp, mask]: block_set<K, N>{facade::bp()})
+                    typelist::visit_at(
+                        bp,
+                        [&]<typename Runner>() noexcept
+                        { facade::step(Runner{mask}); },
+                        compiled_blocks{},
+                        sink);
+            return facade::get_outputs();
+        }
+    };
+
+  public:
+    using type =
+        std::conditional_t<singular, single_block_evaluator, evaluator>;
+};
+
 template <STITCH stitch>
 struct visitor_selector
 {
@@ -2486,162 +2719,6 @@ template <Kernel K,
     requires(!K::singular)
 using stream = compiler<K, stitch, sort_method, concurrent, UTR>::stream;
 
-template <typename Block, typename LabelMap, typename BPVar, fsize_t N>
-class make_embedded_masked_runner
-{
-    using index_t = vartype<BPVar>;
-
-    using helper = minikernel_helper<Block, LabelMap, BPVar, N>;
-
-    using Kernel      = helper::simd_kernel;
-    using TempStorage = helper::simd_storage;
-
-    using mask_type = mask_t<index_t, N>;
-
-    static constexpr Kernel kernel{};
-
-    template <typename _MainStorage>
-    static TempStorage _FORCE_INLINE
-    alloc(const _MainStorage& main_storage) noexcept
-    {
-        TempStorage ret;
-        typelist::for_each(
-            typename helper::load_vars{},
-            []<typename Var>(const _MainStorage& main_storage,
-                             TempStorage&        tmp_storage) noexcept
-            {
-                tmp_storage.template get<Var>() =
-                    main_storage.template get<Var>();
-            },
-            main_storage,
-            ret);
-        return ret;
-    }
-
-    template <typename _MainStorage>
-    static void _FORCE_INLINE
-    spill(_MainStorage&   main_storage,
-          TempStorage&    tmp_storage,
-          const mask_type mask) noexcept
-    {
-        typelist::for_each(
-            typename helper::store_vars{},
-            []<typename Var>(_MainStorage&   main_storage,
-                             TempStorage&    tmp_storage,
-                             const mask_type mask) noexcept
-            {
-                auto& orig     = main_storage.template get<Var>();
-                using wrangler = blend_intrinsics_wrangler<vartype<Var>, N>;
-                orig           = wrangler::blend(mask,
-                                       orig,
-                                       tmp_storage.template get<Var>());
-            },
-            main_storage,
-            tmp_storage,
-            mask);
-    }
-
-  public:
-    struct type
-    {
-        const mask_type mask;
-
-        template <typename _MainStorage>
-        void _FORCE_INLINE
-        operator()(_MainStorage& main_storage) const noexcept
-        {
-            TempStorage tmp_storage = alloc(main_storage);
-            kernel(tmp_storage);
-            spill(main_storage, tmp_storage, mask);
-        }
-    };
-};
-
-template <typename Block, typename LabelMap, typename BPVar, fsize_t N>
-using embedded_masked_runner =
-    make_embedded_masked_runner<Block, LabelMap, BPVar, N>::type;
-
-template <Kernel K>
-    requires(typelist::of_same_size<typename K::reg_types>)
-class embedded_compiler
-{
-    using labelmap  = K::labelmap;
-    using blocks    = K::blocks;
-    using reg_names = K::reg_names;
-    using reg_types = K::reg_types;
-    using bp        = K::bp;
-    using index_t   = K::index_t;
-
-    static constexpr bool    singular = K::singular;
-    static constexpr fsize_t N        = native_vector_extent_v<index_t>;
-    static constexpr packed_vector<index_t, N> halt_pos =
-        broadcast<N>(K::halt_pos);
-
-    template <typename... Ts>
-    using memory = KernelMemory<Ts..., N>;
-
-    using facade = bse::MemoryFacade<
-        K,
-        memory,
-        decltype([]() constexpr noexcept -> packed_vector<index_t, N>
-                 { return broadcast<N>(static_cast<index_t>(0)); })>;
-
-    class single_block_evaluator : facade
-    {
-        template <typename I, typename _LabelMap>
-        using simd_eval = eval<I, _LabelMap, N>;
-
-        using Kernel =
-            standard_compiler<typelist::head<blocks>, labelmap, simd_eval>;
-
-        static constexpr Kernel block{};
-
-      public:
-        using program = K;
-
-        template <typename... Args>
-        auto
-        operator()(const Args... args) noexcept
-        {
-            facade::set_inputs(args...);
-            facade::step(block);
-            return facade::get_outputs();
-        }
-    };
-
-    class evaluator : facade
-    {
-        template <typename Block>
-        using compile_block = embedded_masked_runner<Block, labelmap, bp, N>;
-
-        using compiled_blocks = typelist::map<compile_block, blocks>;
-
-        using cmp = cmp_intrinsics_wrangler<index_t, N>;
-        using lrh = logical_reduce_helper<index_t, N>;
-
-      public:
-        template <typename... Args>
-        auto
-        operator()(const Args... args) noexcept
-        {
-            facade::set_inputs(args...);
-            while(!lrh::land(cmp::eq(facade::bp(), halt_pos)))
-                for(const auto [bp, mask]: block_set<K, N>{facade::bp()})
-                    typelist::visit_at(
-                        bp,
-                        [&]<typename Runner>() noexcept
-                        { facade::step(Runner{mask}); },
-                        compiled_blocks{},
-                        sink);
-            return facade::get_outputs();
-        }
-    };
-
-  public:
-    using type =
-        std::conditional_t<singular, single_block_evaluator, evaluator>;
-};
-
-template <Kernel K>
-using embedded_function = embedded_compiler<K>::type;
+template <Kernel K, bool alloc_temp_storage = false>
+using embedded_function = embedded_compiler<K, alloc_temp_storage>::type;
 } // namespace loom::vm::simd
