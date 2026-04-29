@@ -16,8 +16,72 @@ namespace loom
 {
 /// @brief Generic unsafe union.
 template <typename... Ts>
+class Union;
+
+template <typename T1, typename T2>
+    requires(std::is_default_constructible_v<T1> &&
+             std::is_default_constructible_v<T2>)
+class Union<T1, T2>
+{
+    union
+    {
+        T1 a;
+        T2 b;
+    };
+
+    template <typename T>
+    static constexpr bool has = typelist::elem<T, type_pair<T1, T2>>;
+
+  public:
+    template <typename T>
+    constexpr Union&
+    operator=(const T& rhs) noexcept
+        requires(has<T>)
+    {
+        ref<T>() = rhs;
+        return *this;
+    }
+
+    template <typename T>
+    constexpr explicit
+    operator T() const noexcept
+        requires(has<T>)
+    {
+        return ref<T>();
+    }
+
+    template <std::same_as<T1> T>
+    constexpr T1&
+    ref() noexcept
+    {
+        return a;
+    }
+
+    template <std::same_as<T2> T>
+    constexpr T2&
+    ref() noexcept
+    {
+        return b;
+    }
+
+    template <std::same_as<T1> T>
+    constexpr const T1&
+    ref() const noexcept
+    {
+        return a;
+    }
+
+    template <std::same_as<T2> T>
+    constexpr const T2&
+    ref() const noexcept
+    {
+        return b;
+    }
+};
+
+template <typename... Ts>
     requires(std::conjunction_v<std::is_default_constructible<Ts>...>)
-class Union
+class Union<Ts...>
 {
     alignas(Ts...) std::byte m_data[std::max({sizeof(Ts)...})];
 
@@ -35,7 +99,8 @@ class Union
     }
 
     template <typename T>
-    constexpr explicit operator T() const noexcept
+    constexpr explicit
+    operator T() const noexcept
         requires(has<T>)
     {
         return ref<T>();
@@ -95,7 +160,8 @@ class ProxyUnion
     }
 
     template <typename T>
-    constexpr explicit operator T() const noexcept
+    constexpr explicit
+    operator T() const noexcept
         requires(has<T>)
     {
         return ref<T>();
