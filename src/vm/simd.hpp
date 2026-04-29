@@ -433,6 +433,112 @@ struct fms_intrinsics_wranger
         }                                                                   \
     };
 
+#define MK_AVX512_MASK_ADD_SUB_MIN_MAX_INTRINSICS(TYPE,               \
+                                                  EXT,                \
+                                                  ADD_INTR,           \
+                                                  SUB_INTR,           \
+                                                  MIN_INTR,           \
+                                                  MAX_INTR)           \
+    template <>                                                       \
+    struct avx512_mask_add_sub_min_max_intrinsics_wrangler<TYPE, EXT> \
+    {                                                                 \
+        using vector_type = packed_vector<TYPE, EXT>;                 \
+        using mask_type   = mask_t<TYPE, EXT>;                        \
+        static vector_type FORCE_INLINE                               \
+        add(const vector_type src,                                    \
+            const mask_type   mask,                                   \
+            const vector_type a,                                      \
+            const vector_type b) noexcept                             \
+        {                                                             \
+            return ADD_INTR(src, mask, a, b);                         \
+        }                                                             \
+        static vector_type FORCE_INLINE                               \
+        sub(const vector_type src,                                    \
+            const mask_type   mask,                                   \
+            const vector_type a,                                      \
+            const vector_type b) noexcept                             \
+        {                                                             \
+            return SUB_INTR(src, mask, a, b);                         \
+        }                                                             \
+        static vector_type FORCE_INLINE                               \
+        min(const vector_type src,                                    \
+            const mask_type   mask,                                   \
+            const vector_type a,                                      \
+            const vector_type b) noexcept                             \
+        {                                                             \
+            return MIN_INTR(src, mask, a, b);                         \
+        }                                                             \
+        static vector_type FORCE_INLINE                               \
+        max(const vector_type src,                                    \
+            const mask_type   mask,                                   \
+            const vector_type a,                                      \
+            const vector_type b) noexcept                             \
+        {                                                             \
+            return MAX_INTR(src, mask, a, b);                         \
+        }                                                             \
+    };
+
+#define MK_AVX512_MASK_MUL_DIV_INTRINSICS(TYPE, EXT, MUL_INTR, DIV_INTR) \
+    template <>                                                          \
+    struct avx512_mask_mul_div_intrinsics_wrangler<TYPE, EXT>            \
+    {                                                                    \
+        using vector_type = packed_vector<TYPE, EXT>;                    \
+        using mask_type   = mask_t<TYPE, EXT>;                           \
+        static vector_type FORCE_INLINE                                  \
+        mul(const vector_type src,                                       \
+            const mask_type   mask,                                      \
+            const vector_type a,                                         \
+            const vector_type b) noexcept                                \
+        {                                                                \
+            return MUL_INTR(src, mask, a, b);                            \
+        }                                                                \
+        static vector_type FORCE_INLINE                                  \
+        div(const vector_type src,                                       \
+            const mask_type   mask,                                      \
+            const vector_type a,                                         \
+            const vector_type b) noexcept                                \
+        {                                                                \
+            return DIV_INTR(src, mask, a, b);                            \
+        }                                                                \
+    };
+
+#define MK_AVX512_MASK_ABS_INTRINSICS(TYPE, EXT, INTR)    \
+    template <>                                           \
+    struct avx512_mask_abs_intrinsics_wrangler<TYPE, EXT> \
+    {                                                     \
+        using vector_type = packed_vector<TYPE, EXT>;     \
+        using mask_type   = mask_t<TYPE, EXT>;            \
+        static vector_type FORCE_INLINE                   \
+        abs(const vector_type src,                        \
+            const mask_type   mask,                       \
+            const vector_type v2) noexcept                \
+        {                                                 \
+            return INTR(src, mask, v2);                   \
+        }                                                 \
+    };
+
+#define MK_AVX512_MASK_SQRT_INTRINSICS(TYPE, EXT, SQRT_INTR, RSQRT_INTR) \
+    template <>                                                          \
+    struct avx512_mask_sqrt_intrinsics_wrangler<TYPE, EXT>               \
+    {                                                                    \
+        using vector_type = packed_vector<TYPE, EXT>;                    \
+        using mask_type   = mask_t<TYPE, EXT>;                           \
+        static vector_type FORCE_INLINE                                  \
+        sqrt(const vector_type src,                                      \
+             const mask_type   mask,                                     \
+             const vector_type v2) noexcept                              \
+        {                                                                \
+            return SQRT_INTR(src, mask, v2);                             \
+        }                                                                \
+        static vector_type FORCE_INLINE                                  \
+        rsqrt(const vector_type src,                                     \
+              const mask_type   mask,                                    \
+              const vector_type v2) noexcept                             \
+        {                                                                \
+            return RSQRT_INTR(src, mask, v2);                            \
+        }                                                                \
+    };
+
 #define MK_RSQRT_INTRINSICS(TYPE, EXT, INTR)          \
     template <>                                       \
     struct rsqrt_intrinsics_wrangler<TYPE, EXT>       \
@@ -485,6 +591,138 @@ MK_FMS_INTRINSICS(float, 8, _mm256_fmsub_ps)
 MK_FMS_INTRINSICS(double, 4, _mm256_fmsub_pd)
 
 #if defined(__AVX512F__)
+/// @brief AVX512 intrinsics wrangler for masked addition, substraction, minimum
+/// and maximum.
+template <typename T, fsize_t N>
+struct avx512_mask_add_sub_min_max_intrinsics_wrangler
+{
+    using vector_type    = packed_vector<T, N>;
+    using mask_type      = mask_t<T, N>;
+    using blend_wrangler = blend_intrinsics_wrangler<T, N>;
+
+    /// @brief Addition fallback implementation.
+    static vector_type FORCE_INLINE
+    add(const vector_type src,
+        const mask_type   mask,
+        const vector_type a,
+        const vector_type b) noexcept
+    {
+        return blend_wrangler::blend(mask, src, a + b);
+    }
+
+    /// @brief Subtraction fallback implementation.
+    static vector_type FORCE_INLINE
+    sub(const vector_type src,
+        const mask_type   mask,
+        const vector_type a,
+        const vector_type b) noexcept
+    {
+        return blend_wrangler::blend(mask, src, a - b);
+    }
+
+    /// @brief Minimum fallback implementation.
+    static vector_type FORCE_INLINE
+    min(const vector_type src,
+        const mask_type   mask,
+        const vector_type a,
+        const vector_type b) noexcept
+    {
+        return blend_wrangler::blend(mask,
+                                     src,
+                                     __builtin_elemintwise_min(a, b));
+    }
+
+    /// @brief Maximum fallback implementation.
+    static vector_type FORCE_INLINE
+    max(const vector_type src,
+        const mask_type   mask,
+        const vector_type a,
+        const vector_type b) noexcept
+    {
+        return blend_wrangler::blend(mask,
+                                     src,
+                                     __builtin_elemintwise_max(a, b));
+    }
+};
+
+/// @brief AVX512 intrinsics wrangler for division.
+template <typename T, fsize_t N>
+struct avx512_mask_mul_div_intrinsics_wrangler
+{
+    using vector_type    = packed_vector<T, N>;
+    using mask_type      = mask_t<T, N>;
+    using blend_wrangler = blend_intrinsics_wrangler<T, N>;
+
+    /// @brief Multiplication fallback implementation.
+    static vector_type FORCE_INLINE
+    mul(const vector_type src,
+        const mask_type   mask,
+        const vector_type a,
+        const vector_type b) noexcept
+    {
+        return blend_wrangler::blend(mask, src, a * b);
+    }
+
+    /// @brief Division fallback implementation.
+    static vector_type FORCE_INLINE
+    div(const vector_type src,
+        const mask_type   mask,
+        const vector_type a,
+        const vector_type b) noexcept
+    {
+        return blend_wrangler::blend(mask, src, a / b);
+    }
+};
+
+/// @brief AVX512 intrinsics wrangler for abs.
+template <typename T, fsize_t N>
+struct avx512_mask_abs_intrinsics_wrangler
+{
+    using vector_type    = packed_vector<T, N>;
+    using mask_type      = mask_t<T, N>;
+    using blend_wrangler = blend_intrinsics_wrangler<T, N>;
+
+    /// @brief Abs fallback implementation.
+    static vector_type FORCE_INLINE
+    abs(const vector_type src,
+        const mask_type   mask,
+        const vector_type v2) noexcept
+    {
+        return blend_wrangler::blend(mask, src, __builtin_elementwise_abs(v2));
+    }
+};
+
+/// @brief AVX512 intrinsics wrangler for square root and reciprocal square
+/// root.
+template <typename T, fsize_t N>
+struct avx512_mask_sqrt_intrinsics_wrangler
+{
+    using vector_type    = packed_vector<T, N>;
+    using mask_type      = mask_t<T, N>;
+    using blend_wrangler = blend_intrinsics_wrangler<T, N>;
+
+    /// @brief Square root fallback implementation.
+    static vector_type FORCE_INLINE
+    sqrt(const vector_type src,
+         const mask_type   mask,
+         const vector_type v2) noexcept
+    {
+        return blend_wrangler::blend(mask, src, __builtin_elementwise_sqrt(v2));
+    }
+
+    /// @brief Reciprocal square root fallback implementation.
+    static vector_type FORCE_INLINE
+    rsqrt(const vector_type src,
+          const mask_type   mask,
+          const vector_type v2) noexcept
+    {
+        return blend_wrangler::blend(mask,
+                                     src,
+                                     broadcast<N>(static_cast<T>(1)) /
+                                         __builtin_elementwise_sqrt(v2));
+    }
+};
+
 MK_AVX512_MASK8(double)
 MK_AVX512_MASK8(std::int64_t)
 MK_AVX512_MASK8(std::uint64_t)
@@ -544,6 +782,48 @@ MK_AVX512_GATHER_SCATTER_INTRINSICS(std::uint32_t, 16, _mm512_i32gather_epi32, _
 MK_AVX512_GATHER_SCATTER_INTRINSICS(std::int64_t, 8, _mm512_i32gather_epi64, _mm512_i32scatter_epi64)
 MK_AVX512_GATHER_SCATTER_INTRINSICS(std::uint64_t, 8, _mm512_i32gather_epi64, _mm512_i32scatter_epi64)
 
+MK_AVX512_MASK_ADD_SUB_MIN_MAX_INTRINSICS(float, 16,
+                                          _mm512_mask_add_ps,
+                                          _mm512_mask_sub_ps,
+                                          _mm512_mask_min_ps,
+                                          _mm512_mask_max_ps)
+MK_AVX512_MASK_ADD_SUB_MIN_MAX_INTRINSICS(double, 8,
+                                          _mm512_mask_add_pd,
+                                          _mm512_mask_sub_pd,
+                                          _mm512_mask_min_pd,
+                                          _mm512_mask_max_pd)
+MK_AVX512_MASK_ADD_SUB_MIN_MAX_INTRINSICS(std::int32_t, 16,
+                                          _mm512_mask_add_epi32,
+                                          _mm512_mask_sub_epi32,
+                                          _mm512_mask_min_epi32,
+                                          _mm512_mask_max_epi32)
+MK_AVX512_MASK_ADD_SUB_MIN_MAX_INTRINSICS(std::uint32_t, 16,
+                                          _mm512_mask_add_epi32,
+                                          _mm512_mask_sub_epi32,
+                                          _mm512_mask_min_epu32,
+                                          _mm512_mask_max_epu32)
+MK_AVX512_MASK_ADD_SUB_MIN_MAX_INTRINSICS(std::int64_t, 8,
+                                          _mm512_mask_add_epi64,
+                                          _mm512_mask_sub_epi64,
+                                          _mm512_mask_min_epi64,
+                                          _mm512_mask_max_epi64)
+MK_AVX512_MASK_ADD_SUB_MIN_MAX_INTRINSICS(std::uint64_t, 8,
+                                          _mm512_mask_add_epi64,
+                                          _mm512_mask_sub_epi64,
+                                          _mm512_mask_min_epu64,
+                                          _mm512_mask_max_epu64)
+
+MK_AVX512_MASK_MUL_DIV_INTRINSICS(float, 16, _mm512_mask_mul_ps, _mm512_mask_div_ps)
+MK_AVX512_MASK_MUL_DIV_INTRINSICS(double, 8, _mm512_mask_mul_pd, _mm512_mask_div_pd)
+
+MK_AVX512_MASK_ABS_INTRINSICS(float, 16, _mm512_mask_abs_ps)
+MK_AVX512_MASK_ABS_INTRINSICS(double, 8, _mm512_mask_abs_pd)
+MK_AVX512_MASK_ABS_INTRINSICS(std::int32_t, 16, _mm512_mask_abs_epi32)
+MK_AVX512_MASK_ABS_INTRINSICS(std::int64_t, 8, _mm512_mask_abs_epi64)
+
+MK_AVX512_MASK_SQRT_INTRINSICS(float, 16, _mm512_mask_sqrt_ps, _mm512_mask_rsqrt14_ps)
+MK_AVX512_MASK_SQRT_INTRINSICS(double, 8, _mm512_mask_sqrt_pd, _mm512_mask_rsqrt14_pd)
+
 MK_RSQRT_INTRINSICS(float, 16, _mm512_rsqrt14_ps)
 MK_RSQRT_INTRINSICS(double, 8, _mm512_rsqrt14_pd)
 
@@ -560,6 +840,30 @@ MK_AVX512_BLEND_INTRINSICS(std::int8_t, 64, _mm512_mask_blend_epi8)
 MK_AVX512_BLEND_INTRINSICS(std::uint8_t, 64, _mm512_mask_blend_epi8)
 MK_AVX512_BLEND_INTRINSICS(std::int16_t, 32, _mm512_mask_blend_epi16)
 MK_AVX512_BLEND_INTRINSICS(std::uint16_t, 32, _mm512_mask_blend_epi16)
+
+MK_AVX512_MASK_ADD_SUB_MIN_MAX_INTRINSICS(std::int8_t, 64,
+                                          _mm512_mask_add_epi8,
+                                          _mm512_mask_sub_epi8,
+                                          _mm512_mask_min_epi8,
+                                          _mm512_mask_max_epi8)
+MK_AVX512_MASK_ADD_SUB_MIN_MAX_INTRINSICS(std::uint8_t, 64,
+                                          _mm512_mask_add_epi8,
+                                          _mm512_mask_sub_epi8,
+                                          _mm512_mask_min_epu8,
+                                          _mm512_mask_max_epu8)
+MK_AVX512_MASK_ADD_SUB_MIN_MAX_INTRINSICS(std::int16_t, 32,
+                                          _mm512_mask_add_epi16,
+                                          _mm512_mask_sub_epi16,
+                                          _mm512_mask_min_epi16,
+                                          _mm512_mask_max_epi16)
+MK_AVX512_MASK_ADD_SUB_MIN_MAX_INTRINSICS(std::uint16_t, 32,
+                                          _mm512_mask_add_epi16,
+                                          _mm512_mask_sub_epi16,
+                                          _mm512_mask_min_epu16,
+                                          _mm512_mask_max_epu16)
+
+MK_AVX512_MASK_ABS_INTRINSICS(std::int8_t, 64, _mm512_mask_abs_epi8)
+MK_AVX512_MASK_ABS_INTRINSICS(std::int16_t, 32, _mm512_mask_abs_epi16)
 #endif
 #endif
 #endif
@@ -1004,6 +1308,227 @@ MK_REMAP_BIN_FUNC(ops::max, __builtin_elementwise_max)
 template <fsize_t N, typename Op, typename Ret, typename... Args>
 using remap_comp_t = remap_comp<N, Op, Ret, Args...>::type;
 
+/// @brief Default masked computation.
+template <fsize_t N, typename Op, typename Ret, typename... Args>
+struct remap_comp_mask
+{
+    using orig_comp      = remap_comp_t<N, Op, Ret, Args...>::type;
+    using mask_type      = mask_t<Ret, N>;
+    using blend_wrangler = blend_intrinsics_wrangler<Ret, N>;
+
+    static constexpr orig_comp comp{};
+
+    struct type
+    {
+        mask_type mask;
+
+        template <typename... VArgs>
+        packed_vector<Ret, N> FORCE_INLINE
+        operator()(const packed_vector<Ret, N> src,
+                   const VArgs... args) const noexcept
+        {
+            return blend_wrangler::blend(mask, src, comp(args...));
+        }
+    };
+};
+
+#ifdef __AVX512F__
+/// @brief Remap masked addition.
+template <fsize_t N, typename T>
+struct remap_comp_mask<N, std::plus<T>, T, T, T>
+{
+    using vector_type = packed_vector<T, N>;
+    using mask_type   = mask_t<T, N>;
+    using wrangler    = avx512_mask_add_sub_min_max_intrinsics_wrangler<T, N>;
+
+    struct type
+    {
+        mask_type k;
+
+        vector_type FORCE_INLINE
+        operator()(const vector_type src,
+                   const vector_type a,
+                   const vector_type b) const noexcept
+        {
+            return wrangler::add(src, k, a, b);
+        }
+    };
+};
+
+/// @brief Remap masked subtract.
+template <fsize_t N, typename T>
+struct remap_comp_mask<N, std::minus<T>, T, T, T>
+{
+    using vector_type = packed_vector<T, N>;
+    using mask_type   = mask_t<T, N>;
+    using wrangler    = avx512_mask_add_sub_min_max_intrinsics_wrangler<T, N>;
+
+    struct type
+    {
+        mask_type k;
+
+        vector_type FORCE_INLINE
+        operator()(const vector_type src,
+                   const vector_type a,
+                   const vector_type b) const noexcept
+        {
+            return wrangler::sub(src, k, a, b);
+        }
+    };
+};
+
+/// @brief Remap masked minimum.
+template <fsize_t N, typename T>
+struct remap_comp_mask<N, ops::min<T>, T, T, T>
+{
+    using vector_type = packed_vector<T, N>;
+    using mask_type   = mask_t<T, N>;
+    using wrangler    = avx512_mask_add_sub_min_max_intrinsics_wrangler<T, N>;
+
+    struct type
+    {
+        mask_type k;
+
+        vector_type FORCE_INLINE
+        operator()(const vector_type src,
+                   const vector_type a,
+                   const vector_type b) const noexcept
+        {
+            return wrangler::min(src, k, a, b);
+        }
+    };
+};
+
+/// @brief Remap masked maximum.
+template <fsize_t N, typename T>
+struct remap_comp_mask<N, ops::max<T>, T, T, T>
+{
+    using vector_type = packed_vector<T, N>;
+    using mask_type   = mask_t<T, N>;
+    using wrangler    = avx512_mask_add_sub_min_max_intrinsics_wrangler<T, N>;
+
+    struct type
+    {
+        mask_type k;
+
+        vector_type FORCE_INLINE
+        operator()(const vector_type src,
+                   const vector_type a,
+                   const vector_type b) const noexcept
+        {
+            return wrangler::max(src, k, a, b);
+        }
+    };
+};
+
+/// @brief Remap masked multiplication.
+template <fsize_t N, typename T>
+struct remap_comp_mask<N, std::multiplies<T>, T, T, T>
+{
+    using vector_type = packed_vector<T, N>;
+    using mask_type   = mask_t<T, N>;
+    using wrangler    = avx512_mask_mul_div_intrinsics_wrangler<T, N>;
+
+    struct type
+    {
+        mask_type k;
+
+        vector_type FORCE_INLINE
+        operator()(const vector_type src,
+                   const vector_type a,
+                   const vector_type b) const noexcept
+        {
+            return wrangler::mul(src, k, a, b);
+        }
+    };
+};
+
+/// @brief Remap masked division.
+template <fsize_t N, typename T>
+struct remap_comp_mask<N, std::divides<T>, T, T, T>
+{
+    using vector_type = packed_vector<T, N>;
+    using mask_type   = mask_t<T, N>;
+    using wrangler    = avx512_mask_mul_div_intrinsics_wrangler<T, N>;
+
+    struct type
+    {
+        mask_type k;
+
+        vector_type FORCE_INLINE
+        operator()(const vector_type src,
+                   const vector_type a,
+                   const vector_type b) const noexcept
+        {
+            return wrangler::div(src, k, a, b);
+        }
+    };
+};
+
+/// @brief Remap masked abs.
+template <fsize_t N, typename T>
+struct remap_comp_mask<N, ops::abs<T>, T, T>
+{
+    using vector_type = packed_vector<T, N>;
+    using mask_type   = mask_t<T, N>;
+    using wrangler    = avx512_mask_abs_intrinsics_wrangler<T, N>;
+
+    struct type
+    {
+        mask_type k;
+
+        vector_type FORCE_INLINE
+        operator()(const vector_type src, const vector_type v2) const noexcept
+        {
+            return wrangler::abs(src, k, v2);
+        }
+    };
+};
+
+/// @brief Remap masked square root.
+template <fsize_t N, typename T>
+struct remap_comp_mask<N, ops::sqrt<T>, T, T>
+{
+    using vector_type = packed_vector<T, N>;
+    using mask_type   = mask_t<T, N>;
+    using wrangler    = avx512_mask_sqrt_intrinsics_wrangler<T, N>;
+
+    struct type
+    {
+        mask_type k;
+
+        vector_type FORCE_INLINE
+        operator()(const vector_type src, const vector_type v2) const noexcept
+        {
+            return wrangler::sqrt(src, k, v2);
+        }
+    };
+};
+
+/// @brief Remap masked reciprocal square root.
+template <fsize_t N, typename T>
+struct remap_comp_mask<N, ops::rsqrt<T>, T, T>
+{
+    using vector_type = packed_vector<T, N>;
+    using mask_type   = mask_t<T, N>;
+    using wrangler    = avx512_mask_sqrt_intrinsics_wrangler<T, N>;
+
+    struct type
+    {
+        mask_type k;
+
+        vector_type FORCE_INLINE
+        operator()(const vector_type src, const vector_type v2) const noexcept
+        {
+            return wrangler::rsqrt(src, k, v2);
+        }
+    };
+};
+#endif
+
+template <fsize_t N, typename Op, typename Ret, typename... Args>
+using remap_comp_mask_t = remap_comp_mask<N, Op, Ret, Args...>::type;
+
 template <typename T, fsize_t N>
 struct vectorize_union
 {
@@ -1135,13 +1660,14 @@ template <typename Op,
     requires(... && (sizeof(vartype<Dst>) == sizeof(vartype<Args>)))
 class eval<Compute<Op, Dst, Args...>, LabelMap, N>
 {
-    using T              = vartype<Dst>;
-    using index_t        = get_index_t<LabelMap>;
-    using vector_op      = remap_comp_t<N, Op, vartype<Dst>, vartype<Args>...>;
-    using loader_t       = var_loader<N>;
-    using mask_type      = mask_t<T, N>;
-    using io_wrangler    = mask_io_intrinsics_wrangler<T, N>;
-    using blend_wrangler = blend_intrinsics_wrangler<T, N>;
+    using T         = vartype<Dst>;
+    using index_t   = get_index_t<LabelMap>;
+    using vector_op = remap_comp_t<N, Op, vartype<Dst>, vartype<Args>...>;
+    using vector_mask_op =
+        remap_comp_mask_t<N, Op, vartype<Dst>, vartype<Args>...>;
+    using loader_t    = var_loader<N>;
+    using mask_type   = mask_t<T, N>;
+    using io_wrangler = mask_io_intrinsics_wrangler<T, N>;
 
     static constexpr loader_t loader{};
 
@@ -1153,6 +1679,16 @@ class eval<Compute<Op, Dst, Args...>, LabelMap, N>
                                             loader,
                                             std::forward<_Memory>(mem));
         return invopply(vector_op{}, vars);
+    }
+
+    template <typename _Memory>
+    static packed_vector<T, N> FORCE_INLINE
+    compute(_Memory&& mem, const mask_type mask) noexcept
+    {
+        auto vars = typelist::maybe_collect(type_sequence<Dst, Args...>{},
+                                            loader,
+                                            std::forward<_Memory>(mem));
+        return invopply(vector_mask_op{mask}, vars);
     }
 
   public:
@@ -1179,10 +1715,7 @@ class eval<Compute<Op, Dst, Args...>, LabelMap, N>
                 compute(std::forward<_Memory>(mem)));
         else
             std::forward<_Memory>(mem).template get<Dst>() =
-                blend_wrangler::blend(
-                    mask,
-                    std::forward<_Memory>(mem).template get<Dst>(),
-                    compute(std::forward<_Memory>(mem)));
+                compute(std::forward<_Memory>(mem), mask);
     }
 };
 
