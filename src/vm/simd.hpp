@@ -1561,26 +1561,26 @@ class KernelMemory
 
   public:
     template <typename Var>
-    std::add_lvalue_reference_t<vec<vartype<Var>>>
+    std::add_lvalue_reference_t<vec<vartype<Var>>> FORCE_INLINE
     get() noexcept
     {
         return helper::template get<vec_var<Var>>(m_data);
     }
 
-    std::add_lvalue_reference_t<vec<vartype<BPVar>>>
+    std::add_lvalue_reference_t<vec<vartype<BPVar>>> FORCE_INLINE
     bp() noexcept
     {
         return get<BPVar>();
     }
 
     template <typename Var>
-    vec<vartype<Var>>
-    get() const noexcept
+    FORCE_INLINE vec<vartype<Var>>
+                 get() const noexcept
     {
         return helper::template get<vec_var<Var>>(m_data);
     }
 
-    vec<vartype<BPVar>>
+    vec<vartype<BPVar>> FORCE_INLINE
     bp() const noexcept
     {
         return get<BPVar>();
@@ -1591,7 +1591,7 @@ template <fsize_t N>
 struct var_loader
 {
     template <typename Var, typename _Memory>
-    decltype(auto)
+    packed_vector<vartype<Var>, N> FORCE_INLINE
     operator()(_Memory&& mem) const noexcept
     {
         constexpr auto l = parse_literal<Var>();
@@ -1669,26 +1669,22 @@ class eval<Compute<Op, Dst, Args...>, LabelMap, N>
     using mask_type   = mask_t<T, N>;
     using io_wrangler = mask_io_intrinsics_wrangler<T, N>;
 
-    static constexpr loader_t loader{};
+    static constexpr loader_t  loader{};
+    static constexpr vector_op vop{};
 
     template <typename _Memory>
     static packed_vector<T, N> FORCE_INLINE
     compute(_Memory&& mem) noexcept
     {
-        auto vars = typelist::maybe_collect(type_sequence<Args...>{},
-                                            loader,
-                                            std::forward<_Memory>(mem));
-        return invopply(vector_op{}, vars);
+        return vop(loader.template operator()<Args>(mem)...);
     }
 
     template <typename _Memory>
     static packed_vector<T, N> FORCE_INLINE
     compute(_Memory&& mem, const mask_type mask) noexcept
     {
-        auto vars = typelist::maybe_collect(type_sequence<Dst, Args...>{},
-                                            loader,
-                                            std::forward<_Memory>(mem));
-        return invopply(vector_mask_op{mask}, vars);
+        return vector_mask_op{mask}(loader.template operator()<Dst>(mem),
+                                    loader.template operator()<Args>(mem)...);
     }
 
   public:
@@ -2279,26 +2275,26 @@ class block_set : public std::ranges::view_interface<block_set<K, N, ret_sum>>
         {
         }
 
-        bool
+        bool FORCE_INLINE
         operator==(std::default_sentinel_t) const noexcept
         {
             return m_sum > N;
         }
 
-        value_type
+        value_type FORCE_INLINE
         operator*() const noexcept
         {
             return {m_pos, m_ret};
         }
 
-        _iterator&
+        _iterator& FORCE_INLINE
         operator++() noexcept
         {
             m_pos = next(fit_inc(m_pos));
             return *this;
         }
 
-        _iterator
+        _iterator FORCE_INLINE
         operator++(int) noexcept
         {
             _iterator ret(*this);
@@ -2314,13 +2310,13 @@ class block_set : public std::ranges::view_interface<block_set<K, N, ret_sum>>
     {
     }
 
-    _iterator
+    _iterator FORCE_INLINE
     begin() const noexcept
     {
         return {m_bps, m_init_pos};
     }
 
-    std::default_sentinel_t
+    std::default_sentinel_t FORCE_INLINE
     end() const noexcept
     {
         return std::default_sentinel;
