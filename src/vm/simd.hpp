@@ -25,14 +25,19 @@
 
 #define FORCE_INLINE __attribute__((always_inline, nodebug))
 
+/// @brief Virtual machine SIMD backend.
 namespace loom::vm::simd
 {
+/// @brief Fast size type.
 using fsize_t = bve::fsize_t;
 
+/// @brief Constant idicating dynamic size of a bve::ProxyView.
 constexpr inline fsize_t dynamic_extent = bve::dynamic_extent;
 
 #if defined(__AVX512F__)
+/// @brief SIMD vector size in bytes.
 constexpr inline fsize_t simd_width = 64; // 512
+/// @brief SIMD vector alignment.
 constexpr inline fsize_t simd_align = 64;
 #elif defined(__AVX2__) || defined(__AVX__)
 constexpr inline fsize_t simd_width = 32; // 256
@@ -42,6 +47,7 @@ constexpr inline fsize_t simd_width = 16; // 128
 constexpr inline fsize_t simd_align = 16;
 #endif
 
+/// @brief Current x86-64 vector extension infostring.
 struct info
 {
 #if defined(__AVX512F__)
@@ -55,27 +61,32 @@ struct info
 #endif
 };
 
+/// @brief Print current x86-64 vector extension.
 void
 print_info() noexcept
 {
     fmt::print("Using x86-64 vector extensions: {}\n", info::value);
 }
 
-template <typename _ProxyView>
+/// @brief Test if provided type is bve::ProxyView and provide its size.
+template <typename T>
 struct proxy_view_extent
 {
     static constexpr fsize_t value = 1;
 };
 
+/// @brief Get the size of bve::ProxyView.
 template <typename Data, typename Helper, typename BPVar, fsize_t N>
 struct proxy_view_extent<bve::ProxyView<Data, Helper, BPVar, N>>
 {
     static constexpr fsize_t value = N;
 };
 
+/// @brief Helper alias to check and get bve::ProxyView size.
 template <typename _ProxyView>
 constexpr inline fsize_t pv_extent = proxy_view_extent<_ProxyView>::value;
 
+/// @brief Same as simd_align, but takes into account -DNARROW_AVX_INT.
 template <typename T>
 struct get_native_vector_align
 {
@@ -86,16 +97,21 @@ struct get_native_vector_align
 #endif
 };
 
+/// @brief Create aligned SIMD packed vector type that consist of @p N elements
+/// of type @p T.
 template <typename T, fsize_t N>
-struct get_packed_vector
+struct make_packed_vector
 {
     typedef T type __attribute__((vector_size(N * sizeof(T)),
                                   aligned(get_native_vector_align<T>::value)));
 };
 
+/// @brief Helper alias.
 template <typename T, fsize_t N>
-using packed_vector = get_packed_vector<T, N>::type;
+using packed_vector = make_packed_vector<T, N>::type;
 
+/// @brief Compute extent of the widest native SIMD vector for type @p T.
+/// Takes into account -DNARROW_AVX_INT definition.
 template <typename T>
 struct native_vector_extent
 {
@@ -109,41 +125,48 @@ struct native_vector_extent
     static constexpr fsize_t value = _width / sizeof(T);
 };
 
+/// @brief Get native widest SIMD vector extent for instruction @p I.
 template <typename I, typename index_t>
-struct native_instruction_width;
+struct native_instruction_extent;
 
+/// @brief vm::Compute specialization.
 template <typename Op,
           typename Dst,
           typename Arg1,
           typename... Args,
           typename index_t>
-struct native_instruction_width<Compute<Op, Dst, Arg1, Args...>, index_t>
+struct native_instruction_extent<Compute<Op, Dst, Arg1, Args...>, index_t>
 {
     static constexpr fsize_t value = native_vector_extent<vartype<Arg1>>::value;
 };
 
+/// @brief vm::Jump specialization.
 template <typename Target, typename index_t>
-struct native_instruction_width<Jump<Target>, index_t>
+struct native_instruction_extent<Jump<Target>, index_t>
 {
     static constexpr fsize_t value = native_vector_extent<index_t>::value;
 };
 
+/// @brief vm::ParmJump specialization.
 template <typename Var, typename Labels, typename index_t>
-struct native_instruction_width<ParmJump<Var, Labels>, index_t>
+struct native_instruction_extent<ParmJump<Var, Labels>, index_t>
 {
     static constexpr fsize_t value = native_vector_extent<index_t>::value;
 };
 
+/// @brief Helper alias.
 template <typename T>
 constexpr inline fsize_t native_vector_extent_v =
     native_vector_extent<T>::value;
 
+/// @brief Helper alias.
 template <typename T>
 using native_vector = packed_vector<T, native_vector_extent_v<T>>;
 
+/// @brief Helper alias.
 template <typename I, typename index_t>
-constexpr inline fsize_t native_instruction_width_v =
-    native_instruction_width<I, index_t>::value;
+constexpr inline fsize_t native_instruction_extent_v =
+    native_instruction_extent<I, index_t>::value;
 
 /// @brief Load @p N values and pack them into vector of width @p N
 /// from aligned memory location @p src.
@@ -1924,7 +1947,7 @@ struct minikernel_helper
 template <typename I, typename LabelMap, typename BPVar>
 class make_wavefront_instruction_runner
 {
-    static constexpr fsize_t N = native_instruction_width_v<I, vartype<BPVar>>;
+    static constexpr fsize_t N = native_instruction_extent_v<I, vartype<BPVar>>;
 
   public:
     using type = bulk_dispatcher<eval<I, LabelMap, N>,
@@ -2805,7 +2828,7 @@ template <typename Block,
           typename BPVar,
           fsize_t N,
           bool    alloc_temp_storage>
-class make_embedded_masked_runner
+class make_embedded_masked_block_compiler
 {
     using index_t = vartype<BPVar>;
 
@@ -2885,91 +2908,12 @@ template <typename Block,
           typename BPVar,
           fsize_t N,
           bool    alloc_temp_storage>
-using embedded_masked_runner =
-    make_embedded_masked_runner<Block, LabelMap, BPVar, N, alloc_temp_storage>::
-        type;
-
-template <Kernel K, bool alloc_temp_storage>
-    requires(typelist::of_same_size<typename K::reg_types>)
-class embedded_compiler
-{
-    using labelmap  = K::labelmap;
-    using blocks    = K::blocks;
-    using reg_names = K::reg_names;
-    using reg_types = K::reg_types;
-    using bp        = K::bp;
-    using index_t   = K::index_t;
-
-    static constexpr bool    singular = K::singular;
-    static constexpr fsize_t N        = native_vector_extent_v<index_t>;
-    static constexpr packed_vector<index_t, N> halt_pos =
-        broadcast<N>(K::halt_pos);
-
-    template <typename... Ts>
-    using memory = KernelMemory<Ts..., N>;
-
-    using facade = bse::MemoryFacade<
-        K,
-        memory,
-        decltype([]() constexpr noexcept -> packed_vector<index_t, N>
-                 { return broadcast<N>(static_cast<index_t>(0)); })>;
-
-    class single_block_evaluator : facade
-    {
-        template <typename I, typename _LabelMap>
-        using simd_eval = eval<I, _LabelMap, N>;
-
-        using Kernel =
-            standard_compiler<typelist::head<blocks>, labelmap, simd_eval>;
-
-        static constexpr Kernel block{};
-
-      public:
-        using program = K;
-
-        template <typename... Args>
-        auto
-        operator()(const Args... args) noexcept
-        {
-            facade::set_inputs(args...);
-            facade::step(block);
-            return facade::get_outputs();
-        }
-    };
-
-    class evaluator : facade
-    {
-        template <typename Block>
-        using compile_block =
-            embedded_masked_runner<Block, labelmap, bp, N, alloc_temp_storage>;
-
-        using compiled_blocks = typelist::map<compile_block, blocks>;
-
-        using cmp = cmp_intrinsics_wrangler<index_t, N>;
-        using lrh = logical_reduce_helper<index_t, N>;
-
-      public:
-        template <typename... Args>
-        auto
-        operator()(const Args... args) noexcept
-        {
-            facade::set_inputs(args...);
-            while(!lrh::land(cmp::eq(facade::bp(), halt_pos)))
-                for(const auto [bp, mask]: block_set<K, N>{facade::bp()})
-                    typelist::visit_at(
-                        bp,
-                        [&]<typename Runner>() noexcept
-                        { facade::step(Runner{mask}); },
-                        compiled_blocks{},
-                        sink);
-            return facade::get_outputs();
-        }
-    };
-
-  public:
-    using type =
-        std::conditional_t<singular, single_block_evaluator, evaluator>;
-};
+using embedded_masked_block_compiler =
+    make_embedded_masked_block_compiler<Block,
+                                        LabelMap,
+                                        BPVar,
+                                        N,
+                                        alloc_temp_storage>::type;
 
 template <STITCH stitch>
 struct visitor_selector
@@ -3048,10 +2992,9 @@ struct visitor_selector<STITCH::MASKED>
                                 _CompiledBlocks{},
                                 sink);
 
-                            if(bp != K::halt_pos)
-                                m = std::max(
-                                    m,
-                                    static_cast<fsize_t>(popcnt(mask)));
+                            m = std::max(m,
+                                         static_cast<fsize_t>(popcnt(mask)) *
+                                             (bp != K::halt_pos));
                         }
 
                         repeat = m >= threshold;
@@ -3230,6 +3173,92 @@ class compiler
             stream_facade::visit(visitor{});
         }
     };
+};
+
+template <Kernel K, bool alloc_temp_storage>
+    requires(typelist::of_same_size<typename K::reg_types>)
+class embedded_compiler
+{
+    using labelmap  = K::labelmap;
+    using blocks    = K::blocks;
+    using reg_names = K::reg_names;
+    using reg_types = K::reg_types;
+    using bp        = K::bp;
+    using index_t   = K::index_t;
+
+    static constexpr bool    singular = K::singular;
+    static constexpr fsize_t N        = native_vector_extent_v<index_t>;
+    static constexpr packed_vector<index_t, N> halt_pos =
+        broadcast<N>(K::halt_pos);
+
+    template <typename... Ts>
+    using memory = KernelMemory<Ts..., N>;
+
+    using facade = bse::MemoryFacade<
+        K,
+        memory,
+        decltype([]() constexpr noexcept -> packed_vector<index_t, N>
+                 { return broadcast<N>(static_cast<index_t>(0)); })>;
+
+    class single_block_evaluator : facade
+    {
+        template <typename I, typename _LabelMap>
+        using simd_eval = eval<I, _LabelMap, N>;
+
+        using Kernel =
+            standard_compiler<typelist::head<blocks>, labelmap, simd_eval>;
+
+        static constexpr Kernel block{};
+
+      public:
+        using program = K;
+
+        template <typename... Args>
+        auto
+        operator()(const Args... args) noexcept
+        {
+            facade::set_inputs(args...);
+            facade::step(block);
+            return facade::get_outputs();
+        }
+    };
+
+    class evaluator : facade
+    {
+        template <typename Block>
+        using compile_block =
+            embedded_masked_block_compiler<Block,
+                                           labelmap,
+                                           bp,
+                                           N,
+                                           alloc_temp_storage>;
+
+        using compiled_blocks = typelist::map<compile_block, blocks>;
+
+        using cmp = cmp_intrinsics_wrangler<index_t, N>;
+        using lrh = logical_reduce_helper<index_t, N>;
+
+      public:
+        template <typename... Args>
+        auto
+        operator()(const Args... args) noexcept
+        {
+            facade::set_inputs(args...);
+            while(!lrh::land(cmp::eq(facade::bp(), halt_pos)))
+                for(const auto [bp, mask]: block_set<K, N>{facade::bp()})
+                    typelist::visit_at(
+                        bp,
+                        [&]<typename Runner>() noexcept
+                        { facade::step(Runner{mask}); },
+                        compiled_blocks{},
+                        sink);
+            return facade::get_outputs();
+        }
+    };
+
+  public:
+    using type =
+        std::conditional_t<singular, single_block_evaluator, evaluator>;
 };
 
 /// @brief Alias for function-like invocation.
