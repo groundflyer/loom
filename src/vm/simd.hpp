@@ -1549,21 +1549,26 @@ struct remap_comp_mask<N, ops::rsqrt<T>, T, T>
 };
 #endif
 
+/// @brief Helper alias.
 template <fsize_t N, typename Op, typename Ret, typename... Args>
 using remap_comp_mask_t = remap_comp_mask<N, Op, Ret, Args...>::type;
 
+/// @brief Ensure loom::Union correctly converted to union of packed vectors.
+/// Fundamental type specialisation.
 template <typename T, fsize_t N>
-struct vectorize_union
+struct vectorize_union : make_packed_vector<T, N>
 {
-    using type = packed_vector<T, N>;
 };
 
+/// @brief Ensure loom::Union correctly converted to union of packed vectors.
+/// Union specialisation.
 template <typename... Ts, fsize_t N>
 struct vectorize_union<Union<Ts...>, N>
 {
     using type = Union<packed_vector<Ts, N>...>;
 };
 
+/// @brief Local memory pool of SIMD vectors.
 template <typename RegTypes, typename RegNames, typename BPVar, fsize_t N>
 class KernelMemory
 {
@@ -1610,6 +1615,7 @@ class KernelMemory
     }
 };
 
+/// @brief Helper class that destinguish local memory pool against proxy view and register values against constants.
 template <fsize_t N>
 struct var_loader
 {
@@ -1628,9 +1634,11 @@ struct var_loader
     }
 };
 
+/// @brief Defines SIMD evaluation of instruction @p I.
 template <typename I, typename LabelMap, fsize_t N>
 class eval;
 
+/// @brief vm::Jump evaluation specialization.
 template <typename Target, typename LabelMap, fsize_t N>
 class eval<Jump<Target>, LabelMap, N>
 {
@@ -1675,6 +1683,7 @@ class eval<Jump<Target>, LabelMap, N>
     }
 };
 
+/// @brief Generic vm::Compute evaluation specialization.
 template <typename Op,
           typename Dst,
           typename... Args,
@@ -1683,14 +1692,13 @@ template <typename Op,
     requires(... && (sizeof(vartype<Dst>) == sizeof(vartype<Args>)))
 class eval<Compute<Op, Dst, Args...>, LabelMap, N>
 {
-    using T         = vartype<Dst>;
-    using index_t   = get_index_t<LabelMap>;
-    using vector_op = remap_comp_t<N, Op, vartype<Dst>, vartype<Args>...>;
-    using vector_mask_op =
-        remap_comp_mask_t<N, Op, vartype<Dst>, vartype<Args>...>;
-    using loader_t    = var_loader<N>;
-    using mask_type   = mask_t<T, N>;
-    using io_wrangler = mask_io_intrinsics_wrangler<T, N>;
+    using T              = vartype<Dst>;
+    using index_t        = get_index_t<LabelMap>;
+    using vector_op      = remap_comp_t<N, Op, T, vartype<Args>...>;
+    using vector_mask_op = remap_comp_mask_t<N, Op, T, vartype<Args>...>;
+    using loader_t       = var_loader<N>;
+    using mask_type      = mask_t<T, N>;
+    using io_wrangler    = mask_io_intrinsics_wrangler<T, N>;
 
     static constexpr loader_t  loader{};
     static constexpr vector_op vop{};
@@ -1738,9 +1746,159 @@ class eval<Compute<Op, Dst, Args...>, LabelMap, N>
     }
 };
 
+#ifdef __AVX512F__
+/// @brief Special case masked FMA with destructive update of destination
+/// register when dst = a.
+template <typename A, typename B, typename C, typename LabelMap, fsize_t N>
+    requires(std::is_floating_point_v<vartype<A>>)
+class eval<Compute<ops::fma, A, A, B, C>, LabelMap, N>
+{
+    using T              = vartype<A>;
+    using index_t        = get_index_t<LabelMap>;
+    using vector_op      = remap_comp_t<N, ops::fma, T, T, T, T>;
+    using vector_mask_op = remap_comp_mask_t<N, ops::fma, T, T, T, T>;
+    using loader_t       = var_loader<N>;
+    using mask_type      = mask_t<T, N>;
+    using io_wrangler    = mask_io_intrinsics_wrangler<T, N>;
+
+    static constexpr loader_t  loader{};
+    static constexpr vector_op vop{};
+
+    template <typename _Memory>
+    static packed_vector<T, N> FORCE_INLINE
+    compute(_Memory&& mem) noexcept
+    {
+        return vop(loader.template operator()<A>(mem),
+                   loader.template operator()<B>(mem),
+                   loader.template operator()<C>(mem));
+    }
+
+    template <typename _Memory>
+    static packed_vector<T, N> FORCE_INLINE
+    compute(_Memory&& mem, const mask_type mask) noexcept
+    {
+        if constexpr(std::is_same_v<T, float>)
+            return _mm512_mask_fmadd_ps(loader.template operator()<A>(mem),
+                                        mask,
+                                        loader.template operator()<B>(mem),
+                                        loader.template operator()<C>(mem));
+        else if constexpr(std::is_same_v<T, double>)
+            return _mm512_mask_fmadd_pd(loader.template operator()<A>(mem),
+                                        mask,
+                                        loader.template operator()<B>(mem),
+                                        loader.template operator()<C>(mem));
+        else
+            // or _mm512_mask_fmadd_ph for AVX512FP16
+            static_assert(false, "Unsupported operation");
+    }
+
+  public:
+    template <typename _Memory>
+    void FORCE_INLINE
+    operator()(_Memory&& mem) const noexcept
+    {
+        if constexpr(pv_extent<std::remove_cvref_t<_Memory>> == N)
+            store<N>(std::forward<_Memory>(mem).template get<A>().data(),
+                     compute(std::forward<_Memory>(mem)));
+        else
+            std::forward<_Memory>(mem).template get<A>() =
+                compute(std::forward<_Memory>(mem));
+    }
+
+    template <typename _Memory>
+    void FORCE_INLINE
+    operator()(_Memory&& mem, const mask_type mask) const noexcept
+    {
+        if constexpr(pv_extent<std::remove_cvref_t<_Memory>> == N)
+            io_wrangler::store(
+                std::forward<_Memory>(mem).template get<A>().data(),
+                mask,
+                compute(std::forward<_Memory>(mem)));
+        else
+            std::forward<_Memory>(mem).template get<A>() =
+                compute(std::forward<_Memory>(mem), mask);
+    }
+};
+
+/// @brief Special case masked FMS with destructive update of destination
+/// register when dst = a.
+template <typename A, typename B, typename C, typename LabelMap, fsize_t N>
+    requires(std::is_floating_point_v<vartype<A>>)
+class eval<Compute<ops::fms, A, A, B, C>, LabelMap, N>
+{
+    using T              = vartype<A>;
+    using index_t        = get_index_t<LabelMap>;
+    using vector_op      = remap_comp_t<N, ops::fms, T, T, T, T>;
+    using vector_mask_op = remap_comp_mask_t<N, ops::fms, T, T, T, T>;
+    using loader_t       = var_loader<N>;
+    using mask_type      = mask_t<T, N>;
+    using io_wrangler    = mask_io_intrinsics_wrangler<T, N>;
+
+    static constexpr loader_t  loader{};
+    static constexpr vector_op vop{};
+
+    template <typename _Memory>
+    static packed_vector<T, N> FORCE_INLINE
+    compute(_Memory&& mem) noexcept
+    {
+        return vop(loader.template operator()<A>(mem),
+                   loader.template operator()<B>(mem),
+                   loader.template operator()<C>(mem));
+    }
+
+    template <typename _Memory>
+    static packed_vector<T, N> FORCE_INLINE
+    compute(_Memory&& mem, const mask_type mask) noexcept
+    {
+        if constexpr(std::is_same_v<T, float>)
+            return _mm512_mask_fmsub_ps(loader.template operator()<A>(mem),
+                                        mask,
+                                        loader.template operator()<B>(mem),
+                                        loader.template operator()<C>(mem));
+        else if constexpr(std::is_same_v<T, double>)
+            return _mm512_mask_fmsub_pd(loader.template operator()<A>(mem),
+                                        mask,
+                                        loader.template operator()<B>(mem),
+                                        loader.template operator()<C>(mem));
+        else
+            // or _mm512_mask_fmsub_ph for AVX512FP16
+            static_assert(false, "Unsupported operation");
+    }
+
+  public:
+    template <typename _Memory>
+    void FORCE_INLINE
+    operator()(_Memory&& mem) const noexcept
+    {
+        if constexpr(pv_extent<std::remove_cvref_t<_Memory>> == N)
+            store<N>(std::forward<_Memory>(mem).template get<A>().data(),
+                     compute(std::forward<_Memory>(mem)));
+        else
+            std::forward<_Memory>(mem).template get<A>() =
+                compute(std::forward<_Memory>(mem));
+    }
+
+    template <typename _Memory>
+    void FORCE_INLINE
+    operator()(_Memory&& mem, const mask_type mask) const noexcept
+    {
+        if constexpr(pv_extent<std::remove_cvref_t<_Memory>> == N)
+            io_wrangler::store(
+                std::forward<_Memory>(mem).template get<A>().data(),
+                mask,
+                compute(std::forward<_Memory>(mem)));
+        else
+            std::forward<_Memory>(mem).template get<A>() =
+                compute(std::forward<_Memory>(mem), mask);
+    }
+};
+#endif
+
+/// @brief Helper class for prametric jumps.
 template <typename Idxs, fsize_t N>
 struct shuffler;
 
+/// @brief Helper specialization for two-way jump.
 template <typename index_t, index_t a, index_t b, fsize_t N>
 struct shuffler<std::integer_sequence<index_t, a, b>, N>
 {
@@ -1756,6 +1914,7 @@ struct shuffler<std::integer_sequence<index_t, a, b>, N>
     }
 };
 
+/// @brief Helper specialization for multi-way jump.
 template <typename index_t, index_t... is, fsize_t N>
     requires(sizeof...(is) <= N)
 struct shuffler<std::integer_sequence<index_t, is...>, N>
@@ -1770,6 +1929,7 @@ struct shuffler<std::integer_sequence<index_t, is...>, N>
     }
 };
 
+/// @brief vm::ParmJump evaluation specialization.
 template <typename Var, typename Labels, typename LabelMap, fsize_t N>
 class eval<ParmJump<Var, Labels>, LabelMap, N>
 {
@@ -1817,6 +1977,7 @@ class eval<ParmJump<Var, Labels>, LabelMap, N>
     }
 };
 
+/// @brief Unrolls loops of evaluations into cache line.
 template <typename SIMDRunner,
           typename SerialRunner,
           fsize_t N,
@@ -1921,6 +2082,7 @@ enum STITCH
     MASKED      /*!< masked minikerenel */
 };
 
+/// @brief Helper class for minikernel evaluation.
 template <typename Block, typename LabelMap, typename BPVar, fsize_t N>
 struct minikernel_helper
 {
@@ -1956,9 +2118,11 @@ class make_wavefront_instruction_runner
                                  sizeof(vartype<BPVar>)>;
 };
 
+/// @brief Selects block compiler using @p stitch.
 template <STITCH stitch, typename... Args>
 class make_block_compiler;
 
+/// @brief Wavefront specialization.
 template <typename Block, typename LabelMap, typename BPVar>
 class make_block_compiler<STITCH::WAVEFRONT, Block, LabelMap, BPVar>
 {
@@ -2079,6 +2243,7 @@ class make_block_compiler<STITCH::MINIKERNEL, Block, LabelMap, BPVar>
     using type = bulk_dispatcher<SIMDRunner, SerialRunner, N, sizeof(index_t)>;
 };
 
+/// @brief Masked minikernel specialization.
 template <typename Block, typename LabelMap, typename BPVar>
 class make_block_compiler<STITCH::MASKED, Block, LabelMap, BPVar>
 {
@@ -2177,6 +2342,7 @@ class make_block_compiler<STITCH::MASKED, Block, LabelMap, BPVar>
     };
 };
 
+/// @brief Helper typedef.
 template <STITCH stitch, typename Block, typename LabelMap, typename BPVar>
 using block_compiler =
     make_block_compiler<stitch, Block, LabelMap, BPVar>::type;
@@ -2437,13 +2603,15 @@ struct is_counting_sorter<CountingSorter<K, M>> : std::true_type
 {
 };
 
+/// @brief Sort selection enumeration.
 enum SORT
 {
-    bve_INTROSORT     = bve::INTROSORT,
-    bve_COUNTING_SORT = bve::COUNTING_SORT,
-    COUNTING_SORT
+    bve_INTROSORT     = bve::INTROSORT,     /*!< use bve::introsort */
+    bve_COUNTING_SORT = bve::COUNTING_SORT, /*!< use bve::counting_sort */
+    COUNTING_SORT                           /*!< use simd::counting_sort */
 };
 
+/// @brief Sorter selection helper class.
 template <SORT sort_method>
 struct select_sorter;
 
@@ -2577,6 +2745,9 @@ class ConcurrentStreamFacade :
     }
 };
 
+/// @brief Helper grouper range view over memory pool. Splits proxy views by
+/// block pointer value. Stops either on halt block pointer or end of the memory
+/// pool.
 template <typename _Memory, auto halt_pos>
 class memory_chunks :
     public std::ranges::view_interface<memory_chunks<_Memory, halt_pos>>
@@ -2712,6 +2883,7 @@ class memory_chunks :
     }
 };
 
+/// @brief Same as memory_chunks, but iterated proxy views are of constant size @p N.
 template <typename _Memory, fsize_t N, auto halt_pos>
 class aligned_chunks :
     public std::ranges::view_interface<aligned_chunks<_Memory, N, halt_pos>>
@@ -2823,6 +2995,7 @@ class aligned_chunks :
     }
 };
 
+/// @brief Compiler for embedded masked block execution.
 template <typename Block,
           typename LabelMap,
           typename BPVar,
@@ -2903,6 +3076,7 @@ class make_embedded_masked_block_compiler
     };
 };
 
+/// @brief Helper typedef.
 template <typename Block,
           typename LabelMap,
           typename BPVar,
@@ -2915,6 +3089,7 @@ using embedded_masked_block_compiler =
                                         N,
                                         alloc_temp_storage>::type;
 
+/// @brief Create default step visitor for memory facade.
 template <STITCH stitch>
 struct visitor_selector
 {
@@ -2946,6 +3121,7 @@ struct visitor_selector
     };
 };
 
+/// @brief Create masked execution step visitor.
 template <>
 struct visitor_selector<STITCH::MASKED>
 {
@@ -3013,6 +3189,7 @@ struct visitor_selector<STITCH::MASKED>
     };
 };
 
+/// @brief Helper typedef.
 template <STITCH stitch, typename... Args>
 using select_visitor = visitor_selector<stitch>::template type<Args...>;
 
@@ -3175,6 +3352,7 @@ class compiler
     };
 };
 
+/// @brief Compiler for embedded SIMD execution.
 template <Kernel K, bool alloc_temp_storage>
     requires(typelist::of_same_size<typename K::reg_types>)
 class embedded_compiler
