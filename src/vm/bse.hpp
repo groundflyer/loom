@@ -8,7 +8,7 @@
 
 namespace loom::vm::bse
 {
-template <typename RegTypes, typename RegNames, typename BPVar>
+template <typename RegTypes, typename RegNames, typename PCVar>
 class Memory
 {
     using helper = MemoryHelper<RegTypes, RegNames>;
@@ -26,11 +26,11 @@ class Memory
         return helper::template get<Var>(m_data);
     }
 
-    /// @brief Access block pointer.
-    std::add_lvalue_reference_t<vartype<BPVar>>
-    bp() noexcept
+    /// @brief Access program counter.
+    std::add_lvalue_reference_t<vartype<PCVar>>
+    pc() noexcept
     {
-        return get<BPVar>();
+        return get<PCVar>();
     }
 
     /// @brief Access a variable.
@@ -41,11 +41,11 @@ class Memory
         return helper::template get<Var>(m_data);
     }
 
-    /// @brief Access block pointer.
-    std::add_lvalue_reference_t<std::add_const_t<vartype<BPVar>>>
-    bp() const noexcept
+    /// @brief Access program counter.
+    std::add_lvalue_reference_t<std::add_const_t<vartype<PCVar>>>
+    pc() const noexcept
     {
-        return get<BPVar>();
+        return get<PCVar>();
     }
 };
 
@@ -57,20 +57,20 @@ class MemoryFacade
 {
     using reg_names   = K::reg_names;
     using reg_types   = K::reg_types;
-    using bp_var      = K::bp;
+    using pc_var      = K::pc;
     using input_vars  = K::input_vars;
     using output_vars = K::output_vars;
     using index_t     = K::index_t;
 
     static constexpr auto reset_val = GetResetVal{}();
 
-    _Memory<reg_types, reg_names, bp_var> memory;
+    _Memory<reg_types, reg_names, pc_var> memory;
 
     void
     reset() noexcept
     {
         // no-op when singular
-        if constexpr(!K::singular) memory.bp() = reset_val;
+        if constexpr(!K::singular) memory.pc() = reset_val;
     }
 
   public:
@@ -104,10 +104,10 @@ class MemoryFacade
     }
 
     constexpr auto
-    bp() const noexcept
+    pc() const noexcept
     {
         // no-op when singular
-        if constexpr(!K::singular) return memory.bp();
+        if constexpr(!K::singular) return memory.pc();
     }
 };
 
@@ -151,9 +151,9 @@ class basic_scalar_compiler
         operator()(const Args&... args) noexcept
         {
             facade::set_inputs(args...);
-            while(facade::bp() != halt_pos)
+            while(facade::pc() != halt_pos)
                 visit_at(
-                    facade::bp(),
+                    facade::pc(),
                     [&](auto block) constexpr noexcept { facade::step(block); },
                     blocks,
                     sink);

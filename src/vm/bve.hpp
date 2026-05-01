@@ -51,7 +51,7 @@ template <typename T,
           template <typename> typename Allocator>
 using vector_union_t = vector_union<T, Vector, Allocator>::type;
 
-template <typename Data, typename Helper, typename _BP>
+template <typename Data, typename Helper, typename _PC>
 class ProxyRow
 {
     Data&   m_data;
@@ -72,7 +72,7 @@ class ProxyRow
     }
 
   public:
-    using index_t = vartype<_BP>;
+    using index_t = vartype<_PC>;
 
     FORBID_DEFAULT(ProxyRow);
 
@@ -114,9 +114,9 @@ class ProxyRow
     }
 
     std::add_const_t<std::add_lvalue_reference_t<index_t>>
-    bp() const noexcept
+    pc() const noexcept
     {
-        return get<_BP>();
+        return get<_PC>();
     }
 
     template <typename Var>
@@ -127,9 +127,9 @@ class ProxyRow
     }
 
     decltype(auto)
-    bp() noexcept
+    pc() noexcept
     {
-        return get<_BP>();
+        return get<_PC>();
     }
 
     friend void
@@ -143,7 +143,7 @@ class ProxyRow
     }
 };
 
-template <typename Data, typename Helper, typename _BP, fsize_t N>
+template <typename Data, typename Helper, typename _PC, fsize_t N>
 class ProxyView
 {
     Data&   m_data;
@@ -173,7 +173,7 @@ class ProxyView
 
     ProxyView(Data& data, fsize_t pos) noexcept : m_data(data), m_pos(pos) {}
 
-    ProxyRow<Data, Helper, _BP>
+    ProxyRow<Data, Helper, _PC>
     operator[](const fsize_t n) const noexcept
     {
         return {m_data, shift(n)};
@@ -181,21 +181,21 @@ class ProxyView
 
     template <fsize_t N2>
         requires(N2 <= N)
-    ProxyView<Data, Helper, _BP, N2>
+    ProxyView<Data, Helper, _PC, N2>
     view(const fsize_t pos = 0) const noexcept
     {
         ASSERT(N2 <= N - pos, "Extent too big");
         return {m_data, shift(pos)};
     }
 
-    ProxyView<Data, Helper, _BP, dynamic_extent>
+    ProxyView<Data, Helper, _PC, dynamic_extent>
     view(const fsize_t pos, const fsize_t ext) const noexcept
     {
         ASSERT(ext <= N - pos, "Extent too big");
         return {m_data, shift(pos), ext};
     }
 
-    ProxyView<Data, Helper, _BP, dynamic_extent>
+    ProxyView<Data, Helper, _PC, dynamic_extent>
     view(const fsize_t pos = 0) const noexcept
     {
         return view(pos, size() - pos);
@@ -210,10 +210,10 @@ class ProxyView
             N);
     }
 
-    std::span<vartype<_BP>, N>
-    bp() const noexcept
+    std::span<vartype<_PC>, N>
+    pc() const noexcept
     {
-        return get<_BP>();
+        return get<_PC>();
     }
 
     constexpr fsize_t
@@ -229,8 +229,8 @@ class ProxyView
     }
 };
 
-template <typename Data, typename Helper, typename _BP>
-class ProxyView<Data, Helper, _BP, dynamic_extent>
+template <typename Data, typename Helper, typename _PC>
+class ProxyView<Data, Helper, _PC, dynamic_extent>
 {
     Data&   m_data;
     fsize_t m_pos;
@@ -262,28 +262,28 @@ class ProxyView<Data, Helper, _BP, dynamic_extent>
     {
     }
 
-    ProxyRow<Data, Helper, _BP>
+    ProxyRow<Data, Helper, _PC>
     operator[](const fsize_t n) const noexcept
     {
         return {m_data, shift(n)};
     }
 
     template <fsize_t N>
-    ProxyView<Data, Helper, _BP, N>
+    ProxyView<Data, Helper, _PC, N>
     view(const fsize_t pos) const noexcept
     {
         ASSERT(N <= size() - pos, "Extent too big");
         return {m_data, shift(pos)};
     }
 
-    ProxyView<Data, Helper, _BP, dynamic_extent>
+    ProxyView<Data, Helper, _PC, dynamic_extent>
     view(const fsize_t pos, const fsize_t ext) const noexcept
     {
         ASSERT(ext <= size() - pos, "Extent too big");
         return {m_data, shift(pos), ext};
     }
 
-    ProxyView<Data, Helper, _BP, dynamic_extent>
+    ProxyView<Data, Helper, _PC, dynamic_extent>
     view(const fsize_t pos = 0) const noexcept
     {
         return view(pos, size() - pos);
@@ -297,10 +297,10 @@ class ProxyView<Data, Helper, _BP, dynamic_extent>
                 m_ext};
     }
 
-    std::span<vartype<_BP>, std::dynamic_extent>
-    bp() const noexcept
+    std::span<vartype<_PC>, std::dynamic_extent>
+    pc() const noexcept
     {
-        return get<_BP>();
+        return get<_PC>();
     }
 
     fsize_t
@@ -316,7 +316,7 @@ class ProxyView<Data, Helper, _BP, dynamic_extent>
     }
 };
 
-template <typename Data, typename Helper, typename _BP>
+template <typename Data, typename Helper, typename _PC>
 class MemoryIterator : public std::contiguous_iterator_tag
 {
     Data*   p_data = nullptr;
@@ -325,7 +325,7 @@ class MemoryIterator : public std::contiguous_iterator_tag
 
   public:
     using difference_type = std::ptrdiff_t;
-    using value_type      = ProxyRow<Data, Helper, _BP>;
+    using value_type      = ProxyRow<Data, Helper, _PC>;
 
     MemoryIterator() noexcept = default;
 
@@ -477,7 +477,7 @@ class MemoryIterator : public std::contiguous_iterator_tag
 
 template <typename RegTypes,
           typename RegNames,
-          typename _BP,
+          typename _PC,
           template <typename, typename> typename _Vector = std::vector,
           template <typename> typename Allocator         = std::allocator>
 class Memory
@@ -495,13 +495,13 @@ class Memory
     Data m_data;
 
     template <fsize_t N>
-    using proxy_view = ProxyView<Data, helper, _BP, N>;
+    using proxy_view = ProxyView<Data, helper, _PC, N>;
 
   public:
-    using value_type     = bve::ProxyRow<Data, helper, _BP>;
+    using value_type     = bve::ProxyRow<Data, helper, _PC>;
     using view_type      = proxy_view<dynamic_extent>;
-    using iterator       = bve::MemoryIterator<Data, helper, _BP>;
-    using const_iterator = bve::MemoryIterator<const Data, helper, _BP>;
+    using iterator       = bve::MemoryIterator<Data, helper, _PC>;
+    using const_iterator = bve::MemoryIterator<const Data, helper, _PC>;
 
     Memory() noexcept = default;
     explicit Memory(fsize_t n) { resize(n); }
@@ -614,16 +614,16 @@ class Memory
                 size()};
     }
 
-    std::span<vartype<_BP>>
-    bp() noexcept
+    std::span<vartype<_PC>>
+    pc() noexcept
     {
-        return get<_BP>();
+        return get<_PC>();
     }
 
-    std::span<vartype<_BP>>
-    bp() const noexcept
+    std::span<vartype<_PC>>
+    pc() const noexcept
     {
-        return get<_BP>();
+        return get<_PC>();
     }
 
     void
@@ -697,7 +697,7 @@ struct sort_helper<MemoryIterator<Ts...>>
     constexpr type
     operator()(ProxyRow<Ts...> r) const noexcept
     {
-        return r.bp();
+        return r.pc();
     }
 
     static void
@@ -861,12 +861,12 @@ introsort(I first, I last, Cmp cmp = Cmp{}) noexcept
         cmp);
 }
 
-/// @brief Fit block pointer into bins.
+/// @brief Fit program counter into bins.
 template <std::unsigned_integral I>
 constexpr I
-fit_in_bins(const I bp, const I halt_pos) noexcept
+fit_in_bins(const I pc, const I halt_pos) noexcept
 {
-    return std::min(bp, halt_pos);
+    return std::min(pc, halt_pos);
 }
 
 /// @brief Counting sort implementation.
@@ -884,7 +884,7 @@ counting_sort(_Memory& in, _Memory& out) noexcept
     index_t bins[num_bins] = {};
 
     // histogram
-    for(index_t bp: in.bp()) ++bins[fit_in_bins(bp, halt_pos)];
+    for(index_t pc: in.pc()) ++bins[fit_in_bins(pc, halt_pos)];
 
     const fsize_t ret = bins[num_bins - 1];
 
@@ -893,7 +893,7 @@ counting_sort(_Memory& in, _Memory& out) noexcept
 
     // fill out
     for(int i = in.size() - 1; i >= 0; --i)
-        out[--bins[fit_in_bins(in.bp()[i], halt_pos)]] = in[i];
+        out[--bins[fit_in_bins(in.pc()[i], halt_pos)]] = in[i];
 
     return ret;
 }
@@ -1015,14 +1015,14 @@ template <Kernel K,
           typename Sorter                                = SimpleSorter<K,
                                                                         Memory<typename K::reg_types,
                                                                                typename K::reg_names,
-                                                                               typename K::bp,
+                                                                               typename K::pc,
                                                                                _Vector,
                                                                                Allocator>>>
 class MemoryFacade : public Sorter
 {
     using reg_names   = K::reg_names;
     using reg_types   = K::reg_types;
-    using bp_var      = K::bp;
+    using pc_var      = K::pc;
     using input_vars  = K::input_vars;
     using output_vars = K::output_vars;
     using index_t     = K::index_t;
@@ -1073,7 +1073,7 @@ class MemoryFacade : public Sorter
             std::forward<Args>(args)...);
 
         // reset
-        if constexpr(!K::singular) row.bp() = 0;
+        if constexpr(!K::singular) row.pc() = 0;
     }
 
     template <typename _ProxyRow>
@@ -1166,14 +1166,14 @@ class MemoryFacade : public Sorter
     void
     reset() noexcept
     {
-        if constexpr(!K::singular) std::ranges::fill(Sorter::mem().bp(), 0);
+        if constexpr(!K::singular) std::ranges::fill(Sorter::mem().pc(), 0);
     }
 
     auto
     done() noexcept
     {
         if constexpr(!K::singular)
-            return Sorter::mem().bp().front() == halt_pos;
+            return Sorter::mem().pc().front() == halt_pos;
     }
 
     fsize_t
@@ -1196,8 +1196,8 @@ exchange_from(_MemoryFacade& facade, Input&& input, Iter bgn) noexcept
     return ranges::views::zip_with(
         [](auto row, auto inputs)
         {
-            ASSERT(row.bp() ==
-                       static_cast<std::remove_cvref_t<decltype(row.bp())>>(-1),
+            ASSERT(row.pc() ==
+                       static_cast<std::remove_cvref_t<decltype(row.pc())>>(-1),
                    "Exchanging with incomplete program!");
 
             auto val = _MemoryFacade::get_row_output(row);
@@ -1218,14 +1218,14 @@ template <Kernel K,
           typename Sorter                                = SimpleSorter<K,
                                                                         Memory<typename K::reg_types,
                                                                                typename K::reg_names,
-                                                                               typename K::bp,
+                                                                               typename K::pc,
                                                                                _Vector,
                                                                                Allocator>>>
 class StreamFacade : public MemoryFacade<K, _Vector, Allocator, Sorter>
 {
     using reg_names   = K::reg_names;
     using reg_types   = K::reg_types;
-    using bp_var      = K::bp;
+    using pc_var      = K::pc;
     using input_vars  = K::input_vars;
     using output_vars = K::output_vars;
     using index_t     = K::index_t;
@@ -1249,7 +1249,7 @@ class StreamFacade : public MemoryFacade<K, _Vector, Allocator, Sorter>
             std::forward<Input>(input),
             std::ranges::find_if(facade::mem(),
                                  [](auto row) constexpr noexcept
-                                 { return row.bp() == halt_pos; }));
+                                 { return row.pc() == halt_pos; }));
     }
 };
 
@@ -1285,7 +1285,7 @@ struct vector_eval<Jump<Target>, LabelMap>
     {
         std::ranges::for_each(std::forward<_Memory>(mem),
                               [](auto row) constexpr noexcept
-                              { row.bp() = std::invoke(f); });
+                              { row.pc() = std::invoke(f); });
     }
 };
 
@@ -1300,7 +1300,7 @@ struct vector_eval<ParmJump<Var, Labels>, LabelMap>
     {
         std::ranges::for_each(std::forward<_Memory>(mem),
                               [](auto row) noexcept
-                              { row.bp() = table[row.template get<Var>()]; });
+                              { row.pc() = table[row.template get<Var>()]; });
     }
 };
 
@@ -1334,7 +1334,7 @@ class basic_vector_compiler
     using blocks    = K::blocks;
     using reg_names = K::reg_names;
     using reg_types = K::reg_types;
-    using bp        = K::bp;
+    using pc        = K::pc;
     using vars      = K::variables;
     using index_t   = K::index_t;
 
@@ -1346,7 +1346,7 @@ class basic_vector_compiler
 
     using compiled_blocks = typelist::map<compile_block, blocks>;
 
-    using memory = Memory<reg_types, reg_names, bp>;
+    using memory = Memory<reg_types, reg_names, pc>;
 
     static constexpr SORT final_sort_method =
         singular ? INTROSORT : sort_method;
@@ -1388,14 +1388,14 @@ class basic_vector_compiler
             std::ranges::for_each(
                 ranges::views::filter(mem,
                                       [](auto row) constexpr noexcept
-                                      { return row.bp() != halt_pos; }) |
+                                      { return row.pc() != halt_pos; }) |
                     ranges::views::chunk_by(
                         [](auto a, auto b) constexpr noexcept
-                        { return a.bp() == b.bp(); }),
+                        { return a.pc() == b.pc(); }),
                 [](auto grp) constexpr noexcept
                 {
                     visit_at(
-                        ranges::front(grp).bp(),
+                        ranges::front(grp).pc(),
                         [grp](auto block) constexpr noexcept { block(grp); },
                         blocks,
                         sink);

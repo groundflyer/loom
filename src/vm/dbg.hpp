@@ -709,7 +709,7 @@ print_state(K, const _Mem& mem, const std::bitset<N>& mask, unsigned cw)
     using labels    = K::labels;
     using variables = typelist::tail<typename K::variables>;
 
-    print_word(get_label_name(labels{}, mem.bp(), K::halt_pos),
+    print_word(get_label_name(labels{}, mem.pc(), K::halt_pos),
                max_label_width<labels>);
     typelist::for_each_masked(
         variables{},
@@ -822,7 +822,7 @@ class debug_compiler
         step()
         {
             visit_at(
-                facade::bp(),
+                facade::pc(),
                 [&](auto block) noexcept { facade::step(block); },
                 blocks,
                 sink);
@@ -856,7 +856,7 @@ class debug_compiler
             base::header();
 
             char c = m_reader();
-            while(base::bp() != halt_pos && c != stop)
+            while(base::pc() != halt_pos && c != stop)
             {
                 if(c == step)
                     base::step();
@@ -888,7 +888,7 @@ class debug_compiler
 
             base::header();
 
-            while(base::bp() != halt_pos && m_step_number++ < m_max_steps)
+            while(base::pc() != halt_pos && m_step_number++ < m_max_steps)
                 base::step();
         }
     };
@@ -902,7 +902,7 @@ template <Kernel K, typelist::List Macros = type_sequence<>, typename InputOpt>
 int
 inspect(InputOpt inopt, int argc, char* argv[]) noexcept
 {
-    // ignore BP
+    // ignore PC
     constexpr auto vars = typelist::tail<typename K::variables>{};
 
     const auto pr = argparse::parse(

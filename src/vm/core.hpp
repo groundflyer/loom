@@ -39,16 +39,16 @@ using varname = _Variable::name;
 template <typename _Variable>
 constexpr inline std::string_view varview = _Variable::nameview;
 
-/// @brief Name reserved for Block Pointer register.
-inline constexpr char _bp_char[] = "BP";
+/// @brief Name reserved for Program Counter register.
+inline constexpr char _pc_char[] = "PC";
 
-/// @brief char_sequence for _bp_char.
-using _bp_name = sl2cs<_bp_char>;
+/// @brief char_sequence for _pc_char.
+using _pc_name = sl2cs<_pc_char>;
 
-/// @brief Checks that @p _Vars not named _bp_name.
+/// @brief Checks that @p _Vars not named _pc_name.
 template <typename... _Vars>
-inline constexpr bool not_bp =
-    !(std::conjunction_v<std::is_same<_bp_name, varname<_Vars>>...>);
+inline constexpr bool not_pc =
+    !(std::conjunction_v<std::is_same<_pc_name, varname<_Vars>>...>);
 
 /// @brief Describes a computation operation.
 ///
@@ -56,7 +56,7 @@ inline constexpr bool not_bp =
 /// @tparam Dst variable result written to.
 /// @tparam Args variables which values used as parameters to @p Op.
 template <typename Op, typename Dst, typename... Args>
-    requires(not_bp<Dst, Args...> &&
+    requires(not_pc<Dst, Args...> &&
              std::is_invocable_r_v<vartype<Dst>, Op, vartype<Args>...>)
 struct Compute
 {
@@ -152,55 +152,55 @@ struct is_statement :
 };
 
 /// @brief Get the variable @p Instruction stores result to.
-template <typename Instruction, typename BPVar>
+template <typename Instruction, typename PCVar>
 struct stored_var;
 
-template <typename BPVar, typename Op, typename Dst, typename... Ts>
-struct stored_var<Compute<Op, Dst, Ts...>, BPVar>
+template <typename PCVar, typename Op, typename Dst, typename... Ts>
+struct stored_var<Compute<Op, Dst, Ts...>, PCVar>
 {
     using type = Dst;
 };
 
-template <typename BPVar, typename Target>
-struct stored_var<Jump<Target>, BPVar>
+template <typename PCVar, typename Target>
+struct stored_var<Jump<Target>, PCVar>
 {
-    using type = BPVar;
+    using type = PCVar;
 };
 
-template <typename BPVar, typename Var, typename... Labels>
-struct stored_var<ParmJump<Var, Labels...>, BPVar>
+template <typename PCVar, typename Var, typename... Labels>
+struct stored_var<ParmJump<Var, Labels...>, PCVar>
 {
-    using type = BPVar;
+    using type = PCVar;
 };
 
-template <typename Instruction, typename BPVar>
-using stored_var_t = stored_var<Instruction, BPVar>::type;
+template <typename Instruction, typename PCVar>
+using stored_var_t = stored_var<Instruction, PCVar>::type;
 
 /// @brief Get list of variables used in @p Instruction.
-template <typename Instruction, typename BPVar>
+template <typename Instruction, typename PCVar>
 struct ins_vars;
 
-template <typename BPVar, typename Op, typename Dst, typename... Args>
-struct ins_vars<Compute<Op, Dst, Args...>, BPVar>
+template <typename PCVar, typename Op, typename Dst, typename... Args>
+struct ins_vars<Compute<Op, Dst, Args...>, PCVar>
 {
     using type = type_sequence<Dst, Args...>;
 };
 
-template <typename BPVar, typename Target>
-struct ins_vars<Jump<Target>, BPVar>
+template <typename PCVar, typename Target>
+struct ins_vars<Jump<Target>, PCVar>
 {
-    using type = type_sequence<BPVar>;
+    using type = type_sequence<PCVar>;
 };
 
-template <typename BPVar, typename Var, typename... Labels>
-struct ins_vars<ParmJump<Var, Labels...>, BPVar>
+template <typename PCVar, typename Var, typename... Labels>
+struct ins_vars<ParmJump<Var, Labels...>, PCVar>
 {
-    using type = type_sequence<BPVar, Var>;
+    using type = type_sequence<PCVar, Var>;
 };
 
 /// @brief Get all variables used in @p Instruction.
-template <typename Instruction, typename BPVar>
-using ins_vars_t = ins_vars<Instruction, BPVar>::type;
+template <typename Instruction, typename PCVar>
+using ins_vars_t = ins_vars<Instruction, PCVar>::type;
 
 template <typename Name, typename VarTypes, typename Vars>
 struct collect;
@@ -266,17 +266,17 @@ struct infer_reg_types
 template <typename Vars, typename Names>
 using infer_reg_types_t = infer_reg_types<Vars, Names>::type;
 
-template <typename Block, typename BPVar>
+template <typename Block, typename PCVar>
 struct block_vars
 {
     template <typename C>
-    using f = ins_vars_t<C, BPVar>;
+    using f = ins_vars_t<C, PCVar>;
 
     using type = typelist::nub<typelist::concat<typelist::map<f, Block>>>;
 };
 
-template <typename Block, typename BPVar>
-using block_vars_t = block_vars<Block, BPVar>::type;
+template <typename Block, typename PCVar>
+using block_vars_t = block_vars<Block, PCVar>::type;
 
 template <typename T>
 struct access_wrapper
@@ -431,29 +431,29 @@ struct store_tag
     using type = Var;
 };
 
-template <typename Instruction, typename BPVar>
+template <typename Instruction, typename PCVar>
 struct load_store_seq;
 
-template <typename BPVar, typename Op, typename Dst, typename... Args>
-struct load_store_seq<Compute<Op, Dst, Args...>, BPVar>
+template <typename PCVar, typename Op, typename Dst, typename... Args>
+struct load_store_seq<Compute<Op, Dst, Args...>, PCVar>
 {
     using type = type_sequence<load_tag<Args>..., store_tag<Dst>>;
 };
 
-template <typename BPVar, typename Target>
-struct load_store_seq<Jump<Target>, BPVar>
+template <typename PCVar, typename Target>
+struct load_store_seq<Jump<Target>, PCVar>
 {
-    using type = type_sequence<store_tag<BPVar>>;
+    using type = type_sequence<store_tag<PCVar>>;
 };
 
-template <typename BPVar, typename Var, typename... Labels>
-struct load_store_seq<ParmJump<Var, Labels...>, BPVar>
+template <typename PCVar, typename Var, typename... Labels>
+struct load_store_seq<ParmJump<Var, Labels...>, PCVar>
 {
-    using type = type_sequence<load_tag<Var>, store_tag<BPVar>>;
+    using type = type_sequence<load_tag<Var>, store_tag<PCVar>>;
 };
 
-template <typename Instruction, typename BPVar>
-using load_store_seq_t = load_store_seq<Instruction, BPVar>::type;
+template <typename Instruction, typename PCVar>
+using load_store_seq_t = load_store_seq<Instruction, PCVar>::type;
 
 template <typename Tag, typename Set>
 struct store_set;
@@ -632,14 +632,14 @@ class update_jmps
 } // namespace detail
 
 /// @brief Select only variables needed to load.
-template <typename Block, typename BPVar>
+template <typename Block, typename PCVar>
 class load_list
 {
     template <typename Tag>
     using p = std::negation<is_literal<typename Tag::type>>;
 
     template <typename C>
-    using f = detail::load_store_seq_t<C, BPVar>;
+    using f = detail::load_store_seq_t<C, PCVar>;
 
     using seq = typelist::filter<p, typelist::concat<typelist::map<f, Block>>>;
 
@@ -662,22 +662,22 @@ class load_list
                               seq>>>;
 };
 
-template <typename Block, typename BPVar>
-using load_list_t = load_list<Block, BPVar>::type;
+template <typename Block, typename PCVar>
+using load_list_t = load_list<Block, PCVar>::type;
 
 /// @brief Select variables to write.
-template <typename Block, typename BPVar>
+template <typename Block, typename PCVar>
 class store_list
 {
     template <typename I>
-    using f = stored_var_t<I, BPVar>;
+    using f = stored_var_t<I, PCVar>;
 
   public:
     using type = typelist::map<f, Block>;
 };
 
-template <typename Block, typename BPVar>
-using store_list_t = store_list<Block, BPVar>::type;
+template <typename Block, typename PCVar>
+using store_list_t = store_list<Block, PCVar>::type;
 
 template <typename Instruction, typename LabelMap>
 struct standard_eval;
@@ -703,7 +703,7 @@ struct standard_eval<Jump<Target>, LabelMap>
     constexpr void
     operator()(_Memory&& mem) const noexcept
     {
-        std::forward<_Memory>(mem).bp() = value;
+        std::forward<_Memory>(mem).pc() = value;
     }
 };
 
@@ -717,7 +717,7 @@ struct standard_eval<ParmJump<Var, Labels>, LabelMap>
     constexpr void
     operator()(_Memory&& mem) const noexcept
     {
-        std::forward<_Memory>(mem).bp() =
+        std::forward<_Memory>(mem).pc() =
             table[std::forward<_Memory>(mem).template get<Var>()];
     }
 };
@@ -872,10 +872,10 @@ struct kernel_blank
 
     static_assert(!std::is_void_v<index_t>);
 
-    using bp = Variable<index_t, _bp_name>;
+    using pc = Variable<index_t, _pc_name>;
 
     template <typename C>
-    using command_dst_t = stored_var_t<C, bp>;
+    using command_dst_t = stored_var_t<C, pc>;
 
     using stated_comps = typelist::filter<is_compute, instructions>;
     static_assert(!typelist::empty<stated_comps>);
@@ -913,7 +913,7 @@ struct kernel_blank
     static constexpr bool singular = num_blocks == 1;
 
     using variables = std::
-        conditional_t<singular, stated_vars, typelist::cons<bp, stated_vars>>;
+        conditional_t<singular, stated_vars, typelist::cons<pc, stated_vars>>;
     static_assert(typelist::all<same_size_union, variables>);
 
     /// @brief Names of registers.

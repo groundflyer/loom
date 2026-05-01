@@ -472,9 +472,9 @@ using remap_comp_t = remap_comp<Op>::type;
 
 /// @brief Initializes ranges with @p n_pos.
 /// @param bgns contains ranges' starts, the index of the first range element in
-/// @p bps.
+/// @p pcs.
 /// @param ends contains ranges' ends, the index after the last range element in
-/// @p bps.
+/// @p pcs.
 /// @tparam N size of arrays @p bgns and @p ends.
 template <gsize_t N>
 void
@@ -485,14 +485,14 @@ pre_counter(gsize_t* bgns, gsize_t* ends) noexcept
 
 /// @brief Ensures that the ranges set correctly.
 /// @copydetails cuda::pre_counter
-/// @param bps_size maximum possible value for a range.
-/// @param dbp default block pointer.
+/// @param pcs_size maximum possible value for a range.
+/// @param dpc default program counter.
 template <gsize_t N>
 void
 post_counter(gsize_t*      bgns,
              gsize_t*      ends,
-             const gsize_t bps_size,
-             const gsize_t dbp) noexcept
+             const gsize_t pcs_size,
+             const gsize_t dpc) noexcept
 {
     // none of ranges are set
     bool none = true;
@@ -507,33 +507,33 @@ post_counter(gsize_t*      bgns,
         if(b == n_pos && e != n_pos) b = 0;
         // beginning is set, but end is not set
         else if(b != n_pos && e == n_pos)
-            e = bps_size;
+            e = pcs_size;
 
 #ifdef DEBUG
         // both points must be either n_pos or of a valid range
-        assert(b == n_pos || b < bps_size);
-        assert(e == n_pos || e < bps_size);
+        assert(b == n_pos || b < pcs_size);
+        assert(e == n_pos || e < pcs_size);
         assert(b <= e);
 #endif
     }
 
     if(none)
     {
-        bgns[dbp] = 0;
-        ends[dbp] = bps_size;
+        bgns[dpc] = 0;
+        ends[dpc] = pcs_size;
     }
 }
 
 /// @brief Computes ranges of chunks containing equal values saving them to @p
 /// bgns and @p ends.
 /// @param bgns contains ranges' starts, the index of the first range element in
-/// @p bps.
+/// @p pcs.
 /// @param ends contains ranges' ends, the index after the last range element in
-/// @p bps.
+/// @p pcs.
 /// @param N size of @p bgns and @p ends.
-/// @param bps block pointers.
-/// @param bps_size size of @p bps.
-/// @tparam bp_t block pointer type.
+/// @param pcs program counters.
+/// @param pcs_size size of @p pcs.
+/// @tparam pc_t program counter type.
 ///
 /// Basically parallel version of @p groupby / @p chunkby(==) with known number
 /// of chunks which is @f$N = C + 1@f$ where @p C is number of blocks. The last
@@ -545,22 +545,22 @@ __global__ void
 chunk_counter(gsize_t* bgns,
               gsize_t* ends,
               gsize_t  N,
-              index_t* bps,
-              gsize_t  bps_size,
+              index_t* pcs,
+              gsize_t  pcs_size,
               index_t  halt_pos)
 {
     const gsize_t idxl = blockIdx.x * blockDim.x + threadIdx.x;
 
-    const index_t bpl = bps[idxl];
+    const index_t pcl = pcs[idxl];
 
     auto get_pos = [&](index_t p) -> gsize_t
     { return p == halt_pos ? (N - 1) : p; };
 
-    if(idxl < bps_size - 1)
+    if(idxl < pcs_size - 1)
     {
         const gsize_t idxr = idxl + 1;
-        const index_t bpr  = bps[idxr];
-        if(bpl != bpr) ends[get_pos(bpl)] = bgns[get_pos(bpr)] = idxr;
+        const index_t pcr  = pcs[idxr];
+        if(pcl != pcr) ends[get_pos(pcl)] = bgns[get_pos(pcr)] = idxr;
     }
 }
 
@@ -600,10 +600,10 @@ __device__ void
 cmp_swap_rows(std::index_sequence<Idxs...>, const bool ascending, Ts&... rows)
 {
     constexpr std::size_t offset = sizeof...(Idxs);
-    /// block pointer should be at 0
-    const std::unsigned_integral auto bpl = select_arg<0>(rows...);
-    const std::unsigned_integral auto bpr = select_arg<offset>(rows...);
-    if(ascending == (bpl > bpr))
+    /// program counter should be at 0
+    const std::unsigned_integral auto pcl = select_arg<0>(rows...);
+    const std::unsigned_integral auto pcr = select_arg<offset>(rows...);
+    if(ascending == (pcl > pcr))
         (...,
          swap(select_arg<Idxs>(rows...), select_arg<Idxs + offset>(rows...)));
 }
@@ -636,7 +636,7 @@ bitonic_merge(const unsigned msl,
                   columns[e]...);
 }
 
-template <typename C, typename LabelMap, typename VarMap, typename BPVar>
+template <typename C, typename LabelMap, typename VarMap, typename PCVar>
 struct eval;
 
 template <typename Op,
@@ -644,8 +644,8 @@ template <typename Op,
           typename... VarArgs,
           typename LabelMap,
           typename VarMap,
-          typename BPVar>
-struct eval<Compute<Op, Dst, VarArgs...>, LabelMap, VarMap, BPVar>
+          typename PCVar>
+struct eval<Compute<Op, Dst, VarArgs...>, LabelMap, VarMap, PCVar>
 {
     template <typename Var>
         requires(typelist::elem<Var, typelist::map<fst_t, VarMap>>)
@@ -663,17 +663,17 @@ struct eval<Compute<Op, Dst, VarArgs...>, LabelMap, VarMap, BPVar>
     }
 };
 
-template <typename Target, typename LabelMap, typename VarMap, typename BPVar>
-struct eval<Jump<Target>, LabelMap, VarMap, BPVar>
+template <typename Target, typename LabelMap, typename VarMap, typename PCVar>
+struct eval<Jump<Target>, LabelMap, VarMap, PCVar>
 {
     static constexpr auto value = typelist::lookup<Target, LabelMap>::value;
-    static constexpr auto bpi   = typelist::lookup<BPVar, VarMap>::value;
+    static constexpr auto pci   = typelist::lookup<PCVar, VarMap>::value;
 
     template <typename... Args>
     __device__ void
     operator()(Args&... args) const
     {
-        select_arg<bpi>(args...) = value;
+        select_arg<pci>(args...) = value;
     }
 };
 
@@ -681,29 +681,29 @@ template <typename Var,
           typename Labels,
           typename LabelMap,
           typename VarMap,
-          typename BPVar>
-struct eval<ParmJump<Var, Labels>, LabelMap, VarMap, BPVar>
+          typename PCVar>
+struct eval<ParmJump<Var, Labels>, LabelMap, VarMap, PCVar>
 {
     static constexpr auto vari  = typelist::lookup<Var, VarMap>::value;
-    static constexpr auto bpi   = typelist::lookup<BPVar, VarMap>::value;
+    static constexpr auto pci   = typelist::lookup<PCVar, VarMap>::value;
     static constexpr auto table = pjmp_arr<ParmJump<Var, Labels>, LabelMap>;
 
     template <typename... Args>
     __device__ void
     operator()(Args&... args) const
     {
-        select_arg<bpi>(args...) = table[select_arg<vari>(args...)];
+        select_arg<pci>(args...) = table[select_arg<vari>(args...)];
     }
 };
 
-template <typename Block, typename LabelMap, typename BPVar>
+template <typename Block, typename LabelMap, typename PCVar>
 struct compiler
 {
-    using vars = block_vars_t<Block, BPVar>;
+    using vars = block_vars_t<Block, PCVar>;
 
     template <typename Command>
     using cuda_eval =
-        cuda::eval<Command, LabelMap, typelist::enumerate<vars>, BPVar>;
+        cuda::eval<Command, LabelMap, typelist::enumerate<vars>, PCVar>;
 
     using instructions = typelist::map<cuda_eval, Block>;
 
@@ -819,7 +819,7 @@ class chunk_ranges :
 {
     struct range
     {
-        index_t bp;
+        index_t pc;
         gsize_t bgn;
         gsize_t end;
     };
@@ -828,13 +828,13 @@ class chunk_ranges :
     {
         gsize_t* p_bgns;
         gsize_t* p_ends;
-        index_t  m_bp = 0;
+        index_t  m_pc = 0;
 
         /// @brief Checks if current range is empty.
         bool
         empty() const noexcept
         {
-            return p_ends[m_bp] - p_bgns[m_bp] == 0;
+            return p_ends[m_pc] - p_bgns[m_pc] == 0;
         }
 
         /// @brief Checks if current range can be jumped to and executed.
@@ -843,14 +843,14 @@ class chunk_ranges :
         bool
         executable() const noexcept
         {
-            return m_bp < N - 1;
+            return m_pc < N - 1;
         }
 
         /// @brief Find next usefull block.
         void
         next() noexcept
         {
-            do ++m_bp;
+            do ++m_pc;
             while(empty() && executable());
         }
 
@@ -860,11 +860,11 @@ class chunk_ranges :
 
         _iterator() noexcept = default;
 
-        _iterator(index_t* bgns, index_t* ends, index_t bp = 0) noexcept :
-            p_bgns(bgns), p_ends(ends), m_bp(bp)
+        _iterator(index_t* bgns, index_t* ends, index_t pc = 0) noexcept :
+            p_bgns(bgns), p_ends(ends), m_pc(pc)
         {
             // find first useful block
-            while(empty() && executable()) ++m_bp;
+            while(empty() && executable()) ++m_pc;
         }
 
         bool
@@ -876,19 +876,19 @@ class chunk_ranges :
         bool
         operator==(const _iterator& rhs) const noexcept
         {
-            return m_bp == rhs.m_bp;
+            return m_pc == rhs.m_pc;
         }
 
         std::strong_ordering
         operator<=>(const _iterator& rhs) const noexcept
         {
-            return m_bp <=> rhs.m_bp;
+            return m_pc <=> rhs.m_pc;
         }
 
         value_type
         operator*() const noexcept
         {
-            return {m_bp, p_bgns[m_bp], p_ends[m_bp]};
+            return {m_pc, p_bgns[m_pc], p_ends[m_pc]};
         }
 
         _iterator&
@@ -917,9 +917,9 @@ class chunk_ranges :
     gsize_t*                 pd_bgns;
     gsize_t*                 pd_ends;
 
-    // block pointers columns
-    index_t* pd_bps;
-    index_t* ph_bp0;
+    // program counters columns
+    index_t* pd_pcs;
+    index_t* ph_pc0;
     gsize_t  m_size;
 
     template <typename A>
@@ -949,18 +949,18 @@ class chunk_ranges :
                       pd_bgns,
                       pd_ends,
                       N,
-                      pd_bps,
+                      pd_pcs,
                       m_size,
                       halt_pos);
         cudaDeviceSynchronize();
 
         DEVICE_TO_HOST(ph_bgns, pd_bgns, N);
         DEVICE_TO_HOST(ph_ends, pd_ends, N);
-        DEVICE_TO_HOST(ph_bp0, pd_bps, 1);
+        DEVICE_TO_HOST(ph_pc0, pd_pcs, 1);
 
-        const gsize_t dbp = *ph_bp0 == halt_pos ? N - 1 : *ph_bp0;
+        const gsize_t dpc = *ph_pc0 == halt_pos ? N - 1 : *ph_pc0;
 
-        post_counter<N>(ph_bgns, ph_ends, m_size, dbp);
+        post_counter<N>(ph_bgns, ph_ends, m_size, dpc);
     }
 
   public:
@@ -969,13 +969,13 @@ class chunk_ranges :
 
     chunk_ranges() = default;
 
-    chunk_ranges(index_t* bps, gsize_t bps_size) :
+    chunk_ranges(index_t* pcs, gsize_t pcs_size) :
         ph_bgns(alloc(m_ha)), ph_ends(alloc(m_ha)), pd_bgns(alloc(m_da)),
-        pd_ends(alloc(m_da)), pd_bps(bps), ph_bp0(alloc(m_ha, 1)),
-        m_size(bps_size)
+        pd_ends(alloc(m_da)), pd_pcs(pcs), ph_pc0(alloc(m_ha, 1)),
+        m_size(pcs_size)
     {
         ph_bgns[0]     = 0;
-        ph_ends[0]     = bps_size;
+        ph_ends[0]     = pcs_size;
         ph_bgns[N - 1] = ph_ends[N - 1] = n_pos;
     }
 
@@ -1005,7 +1005,7 @@ class chunk_ranges :
         dealloc(ph_ends, m_ha);
         dealloc(pd_bgns, m_da);
         dealloc(pd_ends, m_da);
-        dealloc(ph_bp0, m_ha);
+        dealloc(ph_pc0, m_ha);
     }
 };
 
@@ -1018,11 +1018,11 @@ class MemoryFacade
     using input_vars  = K::input_vars;
     using output_vars = K::output_vars;
     using vars        = K::variables;
-    using bp_var      = K::bp;
+    using pc_var      = K::pc;
     using index_t     = K::index_t;
 
     using memory = bve::
-        Memory<reg_types, reg_names, bp_var, SimpleVector, DeviceAllocator>;
+        Memory<reg_types, reg_names, pc_var, SimpleVector, DeviceAllocator>;
 
     static constexpr bool singular = K::singular;
 
@@ -1172,10 +1172,10 @@ class MemoryFacade
     {
         if constexpr(!singular)
         {
-            index_t*       bps = mem.bp().data();
+            index_t*       pcs = mem.pc().data();
             const unsigned n   = mem.size();
 
-            LAUNCH_KERNEL(set_constant, n, 0, n, bps, static_cast<index_t>(0));
+            LAUNCH_KERNEL(set_constant, n, 0, n, pcs, static_cast<index_t>(0));
             cudaDeviceSynchronize();
         }
     }
@@ -1200,7 +1200,7 @@ class StreamFacade : public MemoryFacade<K>
     using facade      = MemoryFacade<K>;
     using input_vars  = facade::input_vars;
     using output_vars = facade::output_vars;
-    using bp_var      = facade::bp_var;
+    using pc_var      = facade::pc_var;
     using index_t     = facade::index_t;
     using memory      = facade::memory;
 
@@ -1218,9 +1218,9 @@ class StreamFacade : public MemoryFacade<K>
   protected:
     using input_buffer_t  = make_buffer_t<input_vars>;
     using output_buffer_t = make_buffer_t<output_vars>;
-    using bp_buffer_t     = buffer_t<index_t>;
+    using pc_buffer_t     = buffer_t<index_t>;
 
-    bp_buffer_t     m_bpbuf;
+    pc_buffer_t     m_pcbuf;
     input_buffer_t  m_inbuf;
     output_buffer_t m_outbuf;
 
@@ -1279,13 +1279,13 @@ class StreamFacade : public MemoryFacade<K>
     void
     reset_range(gsize_t begin, gsize_t end) noexcept
     {
-        index_t* bps = facade::mem.bp().data();
+        index_t* pcs = facade::mem.pc().data();
 
         LAUNCH_KERNEL(set_constant,
                       facade::mem.size(),
                       begin,
                       end,
-                      bps,
+                      pcs,
                       static_cast<index_t>(0));
         cudaDeviceSynchronize();
     }
@@ -1316,7 +1316,7 @@ class cuda_evaluator
     using blocks      = K::blocks;
     using reg_names   = K::reg_names;
     using reg_types   = K::reg_types;
-    using bp          = K::bp;
+    using pc          = K::pc;
     using index_t     = K::index_t;
     using vars        = K::variables;
     using input_vars  = K::input_vars;
@@ -1326,12 +1326,12 @@ class cuda_evaluator
     static constexpr auto    halt_pos   = K::halt_pos;
 
     template <typename C>
-    using compile_block = cuda::compiler<C, labelmap, bp>;
+    using compile_block = cuda::compiler<C, labelmap, pc>;
 
     using compiled_blocks = typelist::map<compile_block, blocks>;
 
     using memory =
-        bve::Memory<reg_types, reg_names, bp, SimpleVector, DeviceAllocator>;
+        bve::Memory<reg_types, reg_names, pc, SimpleVector, DeviceAllocator>;
     using memory_facade = MemoryFacade<K>;
     using stream_facade = StreamFacade<K>;
 
@@ -1364,7 +1364,7 @@ class cuda_evaluator
         chunk_ranges<num_chunks, index_t, halt_pos> chunks;
 
         explicit visitor(memory& mem) noexcept :
-            chunks(mem.bp().data(), mem.size())
+            chunks(mem.pc().data(), mem.size())
         {
         }
 
@@ -1375,9 +1375,9 @@ class cuda_evaluator
                 chunks,
                 [&](auto rng) noexcept
                 {
-                    auto [bp, bgn, end] = rng;
+                    auto [pc, bgn, end] = rng;
                     visit_at(
-                        bp,
+                        pc,
                         [&](auto block) noexcept
                         { run_block_kernel(block, mem, bgn, end); },
                         blocks,

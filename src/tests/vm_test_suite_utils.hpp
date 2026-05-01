@@ -108,8 +108,8 @@ template <std::size_t _num_blocks,
 struct mock_kernel
 {
     using index_t    = uint_of_size_t<sizeof(vartype<typelist::head<vars>>)>;
-    using bp         = Variable<index_t, _bp_name>;
-    using variables  = typelist::cons<bp, vars>;
+    using pc         = Variable<index_t, _pc_name>;
+    using variables  = typelist::cons<pc, vars>;
     using variables1 = variables;
     using reg_names  = typelist::map<varname, variables>;
     using reg_types  = typelist::map<vartype, variables>;

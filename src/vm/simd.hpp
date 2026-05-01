@@ -76,8 +76,8 @@ struct proxy_view_extent
 };
 
 /// @brief Get the size of bve::ProxyView.
-template <typename Data, typename Helper, typename BPVar, fsize_t N>
-struct proxy_view_extent<bve::ProxyView<Data, Helper, BPVar, N>>
+template <typename Data, typename Helper, typename PCVar, fsize_t N>
+struct proxy_view_extent<bve::ProxyView<Data, Helper, PCVar, N>>
 {
     static constexpr fsize_t value = N;
 };
@@ -1569,7 +1569,7 @@ struct vectorize_union<Union<Ts...>, N>
 };
 
 /// @brief Local memory pool of SIMD vectors.
-template <typename RegTypes, typename RegNames, typename BPVar, fsize_t N>
+template <typename RegTypes, typename RegNames, typename PCVar, fsize_t N>
 class KernelMemory
 {
     template <typename T>
@@ -1595,10 +1595,10 @@ class KernelMemory
         return helper::template get<vec_var<Var>>(m_data);
     }
 
-    std::add_lvalue_reference_t<vec<vartype<BPVar>>> FORCE_INLINE
-    bp() noexcept
+    std::add_lvalue_reference_t<vec<vartype<PCVar>>> FORCE_INLINE
+    pc() noexcept
     {
-        return get<BPVar>();
+        return get<PCVar>();
     }
 
     template <typename Var>
@@ -1608,10 +1608,10 @@ class KernelMemory
         return helper::template get<vec_var<Var>>(m_data);
     }
 
-    vec<vartype<BPVar>> FORCE_INLINE
-    bp() const noexcept
+    vec<vartype<PCVar>> FORCE_INLINE
+    pc() const noexcept
     {
-        return get<BPVar>();
+        return get<PCVar>();
     }
 };
 
@@ -1662,9 +1662,9 @@ class eval<Jump<Target>, LabelMap, N>
     operator()(_Memory&& mem) const noexcept
     {
         if constexpr(pv_extent<std::remove_cvref_t<_Memory>> == N)
-            store<N>(std::forward<_Memory>(mem).bp().data(), get());
+            store<N>(std::forward<_Memory>(mem).pc().data(), get());
         else
-            std::forward<_Memory>(mem).bp() = get();
+            std::forward<_Memory>(mem).pc() = get();
     }
 
     template <typename _Memory>
@@ -1672,13 +1672,13 @@ class eval<Jump<Target>, LabelMap, N>
     operator()(_Memory&& mem, const mask_type mask) const noexcept
     {
         if constexpr(pv_extent<std::remove_cvref_t<_Memory>> == N)
-            io_wrangler::store(std::forward<_Memory>(mem).bp().data(),
+            io_wrangler::store(std::forward<_Memory>(mem).pc().data(),
                                mask,
                                get());
         else
-            std::forward<_Memory>(mem).bp() =
+            std::forward<_Memory>(mem).pc() =
                 blend_wrangler::blend(mask,
-                                      std::forward<_Memory>(mem).bp(),
+                                      std::forward<_Memory>(mem).pc(),
                                       get());
     }
 };
@@ -1948,13 +1948,13 @@ class eval<ParmJump<Var, Labels>, LabelMap, N>
     {
         if constexpr(pv_extent<std::remove_cvref_t<_Memory>> == N)
         {
-            index_t* dst = std::forward<_Memory>(mem).bp().data();
+            index_t* dst = std::forward<_Memory>(mem).pc().data();
             index_t* src =
                 std::forward<_Memory>(mem).template get<Var>().data();
             store<N>(dst, op(load<N>(src)));
         }
         else
-            std::forward<_Memory>(mem).bp() =
+            std::forward<_Memory>(mem).pc() =
                 op(std::forward<_Memory>(mem).template get<Var>());
     }
 
@@ -1964,15 +1964,15 @@ class eval<ParmJump<Var, Labels>, LabelMap, N>
     {
         if constexpr(pv_extent<std::remove_cvref_t<_Memory>> == N)
         {
-            index_t* dst = std::forward<_Memory>(mem).bp().data();
+            index_t* dst = std::forward<_Memory>(mem).pc().data();
             index_t* src =
                 std::forward<_Memory>(mem).template get<Var>().data();
             io_wrangler::store(dst, mask, op(load<N>(src)));
         }
         else
-            std::forward<_Memory>(mem).bp() = blend_wrangler::blend(
+            std::forward<_Memory>(mem).pc() = blend_wrangler::blend(
                 mask,
-                std::forward<_Memory>(mem).bp(),
+                std::forward<_Memory>(mem).pc(),
                 op(std::forward<_Memory>(mem).template get<Var>()));
     }
 };
@@ -2083,39 +2083,39 @@ enum STITCH
 };
 
 /// @brief Helper class for minikernel evaluation.
-template <typename Block, typename LabelMap, typename BPVar, fsize_t N>
+template <typename Block, typename LabelMap, typename PCVar, fsize_t N>
 struct minikernel_helper
 {
-    using load_vars  = load_list_t<Block, BPVar>;
-    using store_vars = store_list_t<Block, BPVar>;
+    using load_vars  = load_list_t<Block, PCVar>;
+    using store_vars = store_list_t<Block, PCVar>;
 
     using vars    = typelist::nub<typelist::join<load_vars, store_vars>>;
-    using index_t = vartype<BPVar>;
+    using index_t = vartype<PCVar>;
 
     using reg_names = typelist::nub<typelist::map<varname, vars>>;
     using reg_types = infer_reg_types_t<vars, reg_names>;
 
     using serial_kernel  = standard_compiler<Block, LabelMap>;
-    using serial_storage = bse::Memory<reg_types, reg_names, BPVar>;
+    using serial_storage = bse::Memory<reg_types, reg_names, PCVar>;
 
     template <typename I, typename _LabelMap>
     using simd_eval = eval<I, _LabelMap, N>;
 
     using simd_kernel  = standard_compiler<Block, LabelMap, simd_eval>;
-    using simd_storage = KernelMemory<reg_types, reg_names, BPVar, N>;
+    using simd_storage = KernelMemory<reg_types, reg_names, PCVar, N>;
 };
 
 /// @brief Executes a single instruction @p I through the whole view.
-template <typename I, typename LabelMap, typename BPVar>
+template <typename I, typename LabelMap, typename PCVar>
 class make_wavefront_instruction_runner
 {
-    static constexpr fsize_t N = native_instruction_extent_v<I, vartype<BPVar>>;
+    static constexpr fsize_t N = native_instruction_extent_v<I, vartype<PCVar>>;
 
   public:
     using type = bulk_dispatcher<eval<I, LabelMap, N>,
                                  standard_eval<I, LabelMap>,
                                  N,
-                                 sizeof(vartype<BPVar>)>;
+                                 sizeof(vartype<PCVar>)>;
 };
 
 /// @brief Selects block compiler using @p stitch.
@@ -2123,25 +2123,25 @@ template <STITCH stitch, typename... Args>
 class make_block_compiler;
 
 /// @brief Wavefront specialization.
-template <typename Block, typename LabelMap, typename BPVar>
-class make_block_compiler<STITCH::WAVEFRONT, Block, LabelMap, BPVar>
+template <typename Block, typename LabelMap, typename PCVar>
+class make_block_compiler<STITCH::WAVEFRONT, Block, LabelMap, PCVar>
 {
     template <typename I, typename _LabelMap>
-    using eval = make_wavefront_instruction_runner<I, _LabelMap, BPVar>::type;
+    using eval = make_wavefront_instruction_runner<I, _LabelMap, PCVar>::type;
 
   public:
     using type = standard_compiler<Block, LabelMap, eval>;
 };
 
 /// @brief Executes @p Block as SIMD kernel.
-template <typename Block, typename LabelMap, typename BPVar>
-class make_block_compiler<STITCH::MINIKERNEL, Block, LabelMap, BPVar>
+template <typename Block, typename LabelMap, typename PCVar>
+class make_block_compiler<STITCH::MINIKERNEL, Block, LabelMap, PCVar>
 {
-    using index_t = vartype<BPVar>;
+    using index_t = vartype<PCVar>;
 
     static constexpr fsize_t N = native_vector_extent_v<index_t>;
 
-    using helper = minikernel_helper<Block, LabelMap, BPVar, N>;
+    using helper = minikernel_helper<Block, LabelMap, PCVar, N>;
 
     class SerialRunner
     {
@@ -2244,14 +2244,14 @@ class make_block_compiler<STITCH::MINIKERNEL, Block, LabelMap, BPVar>
 };
 
 /// @brief Masked minikernel specialization.
-template <typename Block, typename LabelMap, typename BPVar>
-class make_block_compiler<STITCH::MASKED, Block, LabelMap, BPVar>
+template <typename Block, typename LabelMap, typename PCVar>
+class make_block_compiler<STITCH::MASKED, Block, LabelMap, PCVar>
 {
-    using index_t = vartype<BPVar>;
+    using index_t = vartype<PCVar>;
 
     static constexpr fsize_t N = native_vector_extent_v<index_t>;
 
-    using helper = minikernel_helper<Block, LabelMap, BPVar, N>;
+    using helper = minikernel_helper<Block, LabelMap, PCVar, N>;
 
     using Kernel  = helper::simd_kernel;
     using Storage = helper::simd_storage;
@@ -2343,9 +2343,9 @@ class make_block_compiler<STITCH::MASKED, Block, LabelMap, BPVar>
 };
 
 /// @brief Helper typedef.
-template <STITCH stitch, typename Block, typename LabelMap, typename BPVar>
+template <STITCH stitch, typename Block, typename LabelMap, typename PCVar>
 using block_compiler =
-    make_block_compiler<stitch, Block, LabelMap, BPVar>::type;
+    make_block_compiler<stitch, Block, LabelMap, PCVar>::type;
 
 /// @brief Helper to count the number of logical 1 in packed vector @p vec.
 template <std::integral T, fsize_t N>
@@ -2388,7 +2388,7 @@ struct logical_reduce_helper
 ///
 /// Takes native SIMD vector of block indices as input and optional initial
 /// postion in case of sorted input.
-/// Iterates over the set and returns a pair of block pointer number and its
+/// Iterates over the set and returns a pair of program counter number and its
 /// vector mask. If @p ret_sum is set, the second value is the number of
 /// repetitions of the block number in the input.
 ///
@@ -2409,7 +2409,7 @@ class block_set : public std::ranges::view_interface<block_set<K, N, ret_sum>>
     static constexpr index_t                   halt_pos   = K::halt_pos;
     static constexpr popcnt_helper<index_t, N> popcnt{};
 
-    const index_vector_t m_bps;
+    const index_vector_t m_pcs;
     const index_t        m_init_pos{};
 
     class _iterator : public std::input_iterator_tag
@@ -2417,7 +2417,7 @@ class block_set : public std::ranges::view_interface<block_set<K, N, ret_sum>>
         using ret_t = std::conditional_t<ret_sum, index_t, mask_type>;
 
         index_t              m_sum{};
-        const index_vector_t m_bps;
+        const index_vector_t m_pcs;
         index_t              m_pos{};
         ret_t                m_ret;
 
@@ -2432,14 +2432,14 @@ class block_set : public std::ranges::view_interface<block_set<K, N, ret_sum>>
         {
             if constexpr(ret_sum)
             {
-                const mask_type mask = cmp::eq(m_bps, broadcast<N>(pos));
+                const mask_type mask = cmp::eq(m_pcs, broadcast<N>(pos));
                 m_ret                = popcnt(mask);
                 m_sum += m_ret;
                 return m_ret;
             }
             else
             {
-                m_ret             = cmp::eq(m_bps, broadcast<N>(pos));
+                m_ret             = cmp::eq(m_pcs, broadcast<N>(pos));
                 const index_t ret = popcnt(m_ret);
                 m_sum += ret;
                 return ret;
@@ -2458,9 +2458,9 @@ class block_set : public std::ranges::view_interface<block_set<K, N, ret_sum>>
         using value_type      = std::pair<index_t, ret_t>;
 
         _iterator() noexcept = default;
-        _iterator(const index_vector_t bps,
+        _iterator(const index_vector_t pcs,
                   const index_t        initial_pos = 0) noexcept :
-            m_sum(0), m_bps(bps), m_pos(next(initial_pos))
+            m_sum(0), m_pcs(pcs), m_pos(next(initial_pos))
         {
         }
 
@@ -2494,15 +2494,15 @@ class block_set : public std::ranges::view_interface<block_set<K, N, ret_sum>>
 
   public:
     block_set() noexcept = default;
-    block_set(const index_vector_t bps, const index_t initial_pos = 0) noexcept
-        : m_bps(bps), m_init_pos(initial_pos)
+    block_set(const index_vector_t pcs, const index_t initial_pos = 0) noexcept
+        : m_pcs(pcs), m_init_pos(initial_pos)
     {
     }
 
     _iterator FORCE_INLINE
     begin() const noexcept
     {
-        return {m_bps, m_init_pos};
+        return {m_pcs, m_init_pos};
     }
 
     std::default_sentinel_t FORCE_INLINE
@@ -2527,7 +2527,7 @@ counting_sort(_Memory& in, _Memory& out) noexcept
 
     ASSERT(in.size() % N == 0, "Size should be aligned to vector width");
 
-    using bp_index_vector = packed_vector<index_t, N>;
+    using pc_index_vector = packed_vector<index_t, N>;
 
     constexpr index_t halt_pos = static_cast<index_t>(K::num_blocks);
 
@@ -2536,10 +2536,10 @@ counting_sort(_Memory& in, _Memory& out) noexcept
     // histogram
     for(index_t pos = 0; pos < in.size(); pos += N)
     {
-        const bp_index_vector bps =
-            load<N>(in.template view<N>(pos).bp().data());
-        for(const auto [bp, sum]: block_set<K, N, true>(bps))
-            bins[bve::fit_in_bins(bp, halt_pos)] += sum;
+        const pc_index_vector pcs =
+            load<N>(in.template view<N>(pos).pc().data());
+        for(const auto [pc, sum]: block_set<K, N, true>(pcs))
+            bins[bve::fit_in_bins(pc, halt_pos)] += sum;
     }
 
     const fsize_t ret = bins[num_bins - 1];
@@ -2559,7 +2559,7 @@ counting_sort(_Memory& in, _Memory& out) noexcept
         {
             const int ij   = i - j;
             const int j2   = N - j - 1;
-            vindex_out[j2] = --bins[bve::fit_in_bins(in.bp()[ij], halt_pos)];
+            vindex_out[j2] = --bins[bve::fit_in_bins(in.pc()[ij], halt_pos)];
             vindex_in[j2]  = ij;
         }
 
@@ -2580,7 +2580,7 @@ counting_sort(_Memory& in, _Memory& out) noexcept
     }
 #else
     for(int i = in.size() - 1; i >= 0; --i)
-        out[--bins[bve::fit_in_bins(in.bp()[i], halt_pos)]] = in[i];
+        out[--bins[bve::fit_in_bins(in.pc()[i], halt_pos)]] = in[i];
 #endif
 
     return ret;
@@ -2647,7 +2647,7 @@ class ConcurrentStreamFacade :
 {
     using reg_names   = K::reg_names;
     using reg_types   = K::reg_types;
-    using bp_var      = K::bp;
+    using pc_var      = K::pc;
     using input_vars  = K::input_vars;
     using output_vars = K::output_vars;
     using index_t     = K::index_t;
@@ -2714,7 +2714,7 @@ class ConcurrentStreamFacade :
         else
         {
             facade::sort();
-            return update_pos(std::ranges::count(facade::mem().bp(), halt_pos));
+            return update_pos(std::ranges::count(facade::mem().pc(), halt_pos));
         }
     }
 
@@ -2746,7 +2746,7 @@ class ConcurrentStreamFacade :
 };
 
 /// @brief Helper grouper range view over memory pool. Splits proxy views by
-/// block pointer value. Stops either on halt block pointer or end of the memory
+/// program counter value. Stops either on halt program counter or end of the memory
 /// pool.
 template <typename _Memory, auto halt_pos>
 class memory_chunks :
@@ -2758,11 +2758,11 @@ class memory_chunks :
 
     template <typename index_t>
     static fsize_t
-    chunk_size(std::span<index_t> bps) noexcept
+    chunk_size(std::span<index_t> pcs) noexcept
     {
-        const index_t bp = bps.front();
+        const index_t pc = pcs.front();
         fsize_t       i  = 0;
-        while(i < bps.size() && bps[i] == bp) ++i;
+        while(i < pcs.size() && pcs[i] == pc) ++i;
         return i;
     }
 
@@ -2774,7 +2774,7 @@ class memory_chunks :
         fsize_t
         offset() const noexcept
         {
-            return chunk_size(m_view.bp().subspan(m_pos));
+            return chunk_size(m_view.pc().subspan(m_pos));
         }
 
         proxy_view
@@ -2829,7 +2829,7 @@ class memory_chunks :
         bool
         operator==(std::default_sentinel_t) const noexcept
         {
-            return m_pos == m_view.size() || m_view.bp()[m_pos] == halt_pos;
+            return m_pos == m_view.size() || m_view.pc()[m_pos] == halt_pos;
         }
 
         bool
@@ -2937,7 +2937,7 @@ class aligned_chunks :
         bool
         operator==(std::default_sentinel_t) const noexcept
         {
-            return m_pos >= m_view.size() || m_view.bp()[m_pos] == halt_pos;
+            return m_pos >= m_view.size() || m_view.pc()[m_pos] == halt_pos;
         }
 
         bool
@@ -2998,14 +2998,14 @@ class aligned_chunks :
 /// @brief Compiler for embedded masked block execution.
 template <typename Block,
           typename LabelMap,
-          typename BPVar,
+          typename PCVar,
           fsize_t N,
           bool    alloc_temp_storage>
 class make_embedded_masked_block_compiler
 {
-    using index_t = vartype<BPVar>;
+    using index_t = vartype<PCVar>;
 
-    using helper = minikernel_helper<Block, LabelMap, BPVar, N>;
+    using helper = minikernel_helper<Block, LabelMap, PCVar, N>;
 
     using Kernel      = helper::simd_kernel;
     using TempStorage = helper::simd_storage;
@@ -3079,13 +3079,13 @@ class make_embedded_masked_block_compiler
 /// @brief Helper typedef.
 template <typename Block,
           typename LabelMap,
-          typename BPVar,
+          typename PCVar,
           fsize_t N,
           bool    alloc_temp_storage>
 using embedded_masked_block_compiler =
     make_embedded_masked_block_compiler<Block,
                                         LabelMap,
-                                        BPVar,
+                                        PCVar,
                                         N,
                                         alloc_temp_storage>::type;
 
@@ -3105,7 +3105,7 @@ struct visitor_selector
                                   [](memory_view view) noexcept
                                   {
                                       typelist::visit_at(
-                                          view.bp().front(),
+                                          view.pc().front(),
                                           [&]<typename Block>() noexcept
                                           { Block{}(view); },
                                           _CompiledBlocks{},
@@ -3151,18 +3151,18 @@ struct visitor_selector<STITCH::MASKED>
                 [](auto view) noexcept
                     requires(pv_extent<decltype(view)> == N)
                 {
-                    index_vector_t bps    = load<N>(view.bp().data());
-                    index_t        start  = bps[0];
+                    index_vector_t pcs    = load<N>(view.pc().data());
+                    index_t        start  = pcs[0];
                     bool           repeat = true;
 
                     while(repeat)
                     {
                         fsize_t m = 0;
 
-                        for(const auto [bp, mask]: block_set<K, N>{bps, start})
+                        for(const auto [pc, mask]: block_set<K, N>{pcs, start})
                         {
                             typelist::visit_at(
-                                bp,
+                                pc,
                                 [&]<typename Block>() noexcept
                                 { Block{mask}(view); },
                                 _CompiledBlocks{},
@@ -3170,13 +3170,13 @@ struct visitor_selector<STITCH::MASKED>
 
                             m = std::max(m,
                                          static_cast<fsize_t>(popcnt(mask)) *
-                                             (bp != K::halt_pos));
+                                             (pc != K::halt_pos));
                         }
 
                         repeat = m >= threshold;
                         start  = 0;
                         m      = 0;
-                        bps    = load<N>(view.bp().data());
+                        pcs    = load<N>(view.pc().data());
                     };
                 });
         }
@@ -3198,7 +3198,7 @@ template <typename T>
 using SIMDAlignedAllocator =
     AlignedAllocator<T, get_native_vector_align<T>::value>;
 
-/// @brief SIMD backend.
+/// @brief Basic SIMD backend.
 /// @tparam K program to compile.
 /// @tparam stitch execution method.
 /// @tparam sort_method sorting algorithm to use.
@@ -3217,14 +3217,14 @@ class compiler
     using blocks    = K::blocks;
     using reg_names = K::reg_names;
     using reg_types = K::reg_types;
-    using bp        = K::bp;
+    using pc        = K::pc;
 
     static constexpr bool    singular = K::singular;
     static constexpr auto    halt_pos = K::halt_pos;
     static constexpr fsize_t align    = simd_align;
 
     template <typename Block>
-    using compile_block = block_compiler<stitch, Block, labelmap, bp>;
+    using compile_block = block_compiler<stitch, Block, labelmap, pc>;
 
     using compiled_blocks = typelist::map<compile_block, blocks>;
 
@@ -3234,7 +3234,7 @@ class compiler
                                          SIMDAlignedAllocator<T>>;
 
     using memory =
-        bve::Memory<reg_types, reg_names, bp, std::vector, allocator>;
+        bve::Memory<reg_types, reg_names, pc, std::vector, allocator>;
     using memory_view = memory::view_type;
 
     static constexpr SORT final_sort_method =
@@ -3361,7 +3361,7 @@ class embedded_compiler
     using blocks    = K::blocks;
     using reg_names = K::reg_names;
     using reg_types = K::reg_types;
-    using bp        = K::bp;
+    using pc        = K::pc;
     using index_t   = K::index_t;
 
     static constexpr bool    singular = K::singular;
@@ -3407,7 +3407,7 @@ class embedded_compiler
         using compile_block =
             embedded_masked_block_compiler<Block,
                                            labelmap,
-                                           bp,
+                                           pc,
                                            N,
                                            alloc_temp_storage>;
 
@@ -3422,10 +3422,10 @@ class embedded_compiler
         operator()(const Args... args) noexcept
         {
             facade::set_inputs(args...);
-            while(!lrh::land(cmp::eq(facade::bp(), halt_pos)))
-                for(const auto [bp, mask]: block_set<K, N>{facade::bp()})
+            while(!lrh::land(cmp::eq(facade::pc(), halt_pos)))
+                for(const auto [pc, mask]: block_set<K, N>{facade::pc()})
                     typelist::visit_at(
-                        bp,
+                        pc,
                         [&]<typename Runner>() noexcept
                         { facade::step(Runner{mask}); },
                         compiled_blocks{},
