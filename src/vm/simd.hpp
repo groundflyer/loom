@@ -1615,7 +1615,8 @@ class KernelMemory
     }
 };
 
-/// @brief Helper class that destinguish local memory pool against proxy view and register values against constants.
+/// @brief Helper class that destinguish local memory pool against proxy view
+/// and register values against constants.
 template <fsize_t N>
 struct var_loader
 {
@@ -2746,8 +2747,8 @@ class ConcurrentStreamFacade :
 };
 
 /// @brief Helper grouper range view over memory pool. Splits proxy views by
-/// program counter value. Stops either on halt program counter or end of the memory
-/// pool.
+/// program counter value. Stops either on halt program counter or end of the
+/// memory pool.
 template <typename _Memory, auto halt_pos>
 class memory_chunks :
     public std::ranges::view_interface<memory_chunks<_Memory, halt_pos>>
@@ -2883,7 +2884,8 @@ class memory_chunks :
     }
 };
 
-/// @brief Same as memory_chunks, but iterated proxy views are of constant size @p N.
+/// @brief Same as memory_chunks, but iterated proxy views are of constant size
+/// @p N.
 template <typename _Memory, fsize_t N, auto halt_pos>
 class aligned_chunks :
     public std::ranges::view_interface<aligned_chunks<_Memory, N, halt_pos>>
@@ -3219,9 +3221,8 @@ class compiler
     using reg_types = K::reg_types;
     using pc        = K::pc;
 
-    static constexpr bool    singular = K::singular;
-    static constexpr auto    halt_pos = K::halt_pos;
-    static constexpr fsize_t align    = simd_align;
+    static constexpr bool singular = K::singular;
+    static constexpr auto halt_pos = K::halt_pos;
 
     template <typename Block>
     using compile_block = block_compiler<stitch, Block, labelmap, pc>;
@@ -3439,6 +3440,183 @@ class embedded_compiler
         std::conditional_t<singular, single_block_evaluator, evaluator>;
 };
 
+/// @brief Hybrid masked compiler.
+template <Kernel K,
+          SORT   sort_method        = COUNTING_SORT,
+          bool   concurrent         = false,
+          bool   alloc_temp_storage = false,
+          typename UTR              = std::ratio<1, 2>>
+    requires(!K::singular && typelist::of_same_size<typename K::reg_types> &&
+             UTR::num > 0 && UTR::den > 0 && UTR::num <= UTR::den)
+class hybrid_compiler
+{
+    using labelmap  = K::labelmap;
+    using blocks    = K::blocks;
+    using reg_names = K::reg_names;
+    using reg_types = K::reg_types;
+    using pc        = K::pc;
+    using index_t   = K::index_t;
+    using vars      = K::variables;
+
+    static constexpr fsize_t N = native_vector_extent_v<index_t>;
+
+    static constexpr fsize_t threshold =
+        (N * UTR::num + UTR::den - 1) / UTR::den;
+
+    template <typename T>
+    using allocator = std::conditional_t<concurrent,
+                                         CacheLineAlignedAllocator<T>,
+                                         SIMDAlignedAllocator<T>>;
+
+    using memory =
+        bve::Memory<reg_types, reg_names, pc, std::vector, allocator>;
+    using memory_view = memory::view_type;
+
+    using sorter = select_sorter<sort_method>::template type<K, memory>;
+
+    using stream_facade = std::conditional_t<
+        concurrent,
+        ConcurrentStreamFacade<K, std::vector, allocator, sorter>,
+        bve::StreamFacade<K, std::vector, allocator, sorter>>;
+    using memory_facade = bve::MemoryFacade<K, std::vector, allocator, sorter>;
+
+    template <typename View>
+        requires(pv_extent<View> == N)
+    class LocalStorage : public KernelMemory<reg_types, reg_names, pc, N>
+    {
+        View m_view;
+
+      public:
+        LocalStorage(View view) noexcept : m_view(view)
+        {
+            typelist::for_each(
+                vars{},
+                []<typename Var>(View view, LocalStorage& local) noexcept
+                {
+                    local.template get<Var>() =
+                        load<N>(view.template get<Var>().data());
+                },
+                m_view,
+                *this);
+        }
+
+        ~LocalStorage()
+        {
+            typelist::for_each(
+                vars{},
+                []<typename Var>(View view, LocalStorage& storage) noexcept
+                {
+                    store<N>(view.template get<Var>().data(),
+                             storage.template get<Var>());
+                },
+                m_view,
+                *this);
+        }
+    };
+
+    struct visitor
+    {
+
+        static constexpr popcnt_helper<index_t, N> popcnt{};
+
+        using index_vector_t = packed_vector<index_t, N>;
+
+        template <typename Block>
+        using compile_block =
+            embedded_masked_block_compiler<Block,
+                                           labelmap,
+                                           pc,
+                                           N,
+                                           alloc_temp_storage>;
+
+        using compiled_blocks = typelist::map<compile_block, blocks>;
+
+        void
+        operator()(memory_view view) const noexcept
+        {
+            std::ranges::for_each(
+                aligned_chunks<memory, N, K::halt_pos>(view),
+                []<typename View>(View view) noexcept
+                    requires(pv_extent<View> == N)
+                {
+                    LocalStorage   storage(view);
+                    index_vector_t pcs    = storage.pc();
+                    index_t        start  = pcs[0];
+                    bool           repeat = true;
+
+                    while(repeat)
+                    {
+                        fsize_t m = 0;
+
+                        for(const auto [pc, mask]: block_set<K, N>{pcs, start})
+                        {
+                            typelist::visit_at(
+                                pc,
+                                [&]<typename Block>() noexcept
+                                { Block{mask}(storage); },
+                                compiled_blocks{},
+                                sink);
+
+                            m = std::max(m,
+                                         static_cast<fsize_t>(popcnt(mask)) *
+                                             (pc != K::halt_pos));
+                        }
+
+                        repeat = m >= threshold;
+                        start  = 0;
+                        m      = 0;
+                        pcs    = storage.pc();
+                    };
+                });
+        }
+
+        void
+        operator()(memory& mem) const noexcept
+        {
+            operator()(mem.view());
+        }
+    };
+
+  public:
+    class function : public memory_facade
+    {
+
+      public:
+        using program = K;
+        using memory_facade::memory_facade;
+
+        template <bool zip_outputs = false, typename... Args>
+        auto
+        operator()(Args&&... args) noexcept
+        {
+            memory_facade::set_inputs(std::forward<Args>(args)...);
+
+            while(!memory_facade::done())
+            {
+                memory_facade::visit(visitor{});
+                memory_facade::sort();
+            }
+
+            if constexpr(zip_outputs)
+                return memory_facade::get_output_zipped();
+            else
+                return memory_facade::get_outputs();
+        }
+    };
+
+    struct stream : public stream_facade
+    {
+        using program = K;
+        using stream_facade::stream_facade;
+
+        constexpr void
+        operator()() noexcept
+        {
+            stream_facade::visit(visitor{});
+        }
+    };
+};
+
 /// @brief Alias for function-like invocation.
 template <Kernel K,
           STITCH stitch      = MASKED,
@@ -3455,6 +3633,27 @@ template <Kernel K,
     requires(!K::singular)
 using stream = compiler<K, stitch, sort_method, concurrent, UTR>::stream;
 
+/// @brief Alias for hybrid function-like invocation.
+template <Kernel K,
+          SORT   sort_method        = COUNTING_SORT,
+          bool   concurrent         = false,
+          bool   alloc_temp_storage = false,
+          typename UTR              = std::ratio<1, 2>>
+using hybrid_function =
+    hybrid_compiler<K, sort_method, concurrent, alloc_temp_storage, UTR>::
+        function;
+
+/// @brief Alias for hybrid streaming invocation.
+template <Kernel K,
+          SORT   sort_method        = COUNTING_SORT,
+          bool   concurrent         = false,
+          bool   alloc_temp_storage = false,
+          typename UTR              = std::ratio<1, 2>>
+using hybrid_stream =
+    hybrid_compiler<K, sort_method, concurrent, alloc_temp_storage, UTR>::
+        stream;
+
+/// @brief Alias for embedded invocation.
 template <Kernel K, bool alloc_temp_storage = false>
 using embedded_function = embedded_compiler<K, alloc_temp_storage>::type;
 } // namespace loom::vm::simd

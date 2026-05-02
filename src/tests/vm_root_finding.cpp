@@ -81,7 +81,8 @@ struct test_suite
         simd::function<find_bounds_p, simd::WAVEFRONT, simd::bve_INTROSORT>
             simd_find_bounds(tm.num_runs);
         simd::function<cubic_fz_p, simd::WAVEFRONT, simd::bve_INTROSORT>
-            simd_cubic_fz(tm.num_runs);
+                                          simd_cubic_fz(tm.num_runs);
+        simd::hybrid_function<cubic_fz_p> hybrid_cubic_fz(tm.num_runs);
 
         simd::stream<cubic_fz_p,
                      simd::MASKED,
@@ -90,6 +91,9 @@ struct test_suite
                      std::ratio<1, 2>>
                       simd_stream_fz(tm.num_runs / 4);
         StreamWrapper simd_stream_wrapper_fz{&simd_stream_fz};
+
+        simd::hybrid_stream<cubic_fz_p> hybrid_stream_fz(tm.num_runs / 4);
+        StreamWrapper hybrid_stream_wrapper_fz{&hybrid_stream_fz};
 
         track.check(
             NamedFuzzyTest(tm.fuzzy_ulp(g_cubic, bse_cubic, val_eval, 10),
@@ -153,6 +157,43 @@ struct test_suite
                 return range_cmp_estimator<>{}(vals, ts);
             },
             fmt::format("({}) SIMD stream find zero", ti),
+            1e-2));
+        track.check(NamedFuzzyTest(
+            tm.fuzzy_rng_with_scalar_ref(
+                g_c4,
+                [&hybrid_cubic_fz, n = tm.num_runs](auto&&... vs) noexcept
+                {
+                    auto view = hybrid_cubic_fz.template operator()<true>(
+                        std::forward<decltype(vs)>(vs)...);
+                    std::vector<output_type<cubic_fz_p>> out;
+                    out.reserve(n);
+                    std::ranges::copy(view, std::back_inserter(out));
+                    return out;
+                },
+                val_cubic_fz),
+            fmt::format("({}) SIMD hybrid cubic find zero", ti),
+            1e-2));
+        track.check(NamedFuzzyTest(
+            [&hybrid_stream_wrapper_fz, &g_c4, n = tm.num_runs]() noexcept
+            {
+                std::vector<input_type<cubic_fz_p>> grs;
+                grs.reserve(n);
+                std::ranges::generate_n(std::back_inserter(grs), n, g_c4);
+
+                auto vals = hybrid_stream_wrapper_fz(grs);
+                std::ranges::sort(vals);
+
+                std::vector<output_type<cubic_fz_p>> ts;
+                ts.reserve(n);
+                std::ranges::transform(
+                    grs,
+                    std::back_inserter(ts),
+                    [](const auto& gs) noexcept
+                    { return std::apply(val_cubic_fz, gs); });
+                std::ranges::sort(ts);
+                return range_cmp_estimator<>{}(vals, ts);
+            },
+            fmt::format("({}) SIMD hybrid stream find zero", ti),
             1e-2));
 
         return track;
