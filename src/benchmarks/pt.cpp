@@ -107,20 +107,35 @@ get_img() noexcept
 
 template <template <typename, typename> typename PTK,
           typename C,
-          typename R,
+          typename UTR,
+          bool hybrid,
+          bool alloc_temp_storage,
           bool count_extra = false,
           typename Clock   = std::chrono::steady_clock>
 struct SIMDFunction
 {
     using kernel = PTK<float, C>;
 
+    static auto
+    get_func(const unsigned size) noexcept
+    {
+        if constexpr(hybrid)
+            return simd::hybrid_function<kernel,
+                                         simd::COUNTING_SORT,
+                                         false,
+                                         alloc_temp_storage,
+                                         UTR>(size);
+        else
+            return simd::
+                function<kernel, simd::MASKED, simd::COUNTING_SORT, UTR>(size);
+    }
+
     bm_result<typename Clock::duration>
     operator()() const noexcept
     {
         Image img = get_img<C>();
 
-        simd::function<kernel, simd::MASKED, simd::COUNTING_SORT, R> f(
-            img.size());
+        auto f = get_func(img.size());
 
         std::vector<output_type<kernel>> result_buffer;
         result_buffer.reserve(img.size());
@@ -147,18 +162,23 @@ struct SIMDFunction
 
         if constexpr(count_extra) e = timer.elapsed();
 
-        return {fmt::format("{} SIMD function|{}|UTR:{:.0f}%|rc:{}",
-                            simd::info::value,
-                            img.size(),
-                            ratio2percent<R>(),
-                            rc),
+        return {fmt::format(
+                    "{} {} SIMD function{}|{}|UTR:{:.0f}%|rc:{}",
+                    simd::info::value,
+                    hybrid ? "hybrid" : "legacy",
+                    hybrid ? (alloc_temp_storage ? "|with ts" : "|no ts") : "",
+                    img.size(),
+                    ratio2percent<UTR>(),
+                    rc),
                 e};
     }
 };
 
 template <template <typename, typename> typename PTK,
           typename C,
-          typename R,
+          typename UTR,
+          bool hybrid,
+          bool alloc_temp_storage,
           bool count_extra = false,
           typename Clock   = std::chrono::steady_clock>
 struct SIMDStream
@@ -167,13 +187,27 @@ struct SIMDStream
 
     unsigned stream_size = 64;
 
+    static auto
+    get_stream(unsigned stream_size) noexcept
+    {
+        if constexpr(hybrid)
+            return simd::hybrid_stream<kernel,
+                                       simd::COUNTING_SORT,
+                                       false,
+                                       alloc_temp_storage,
+                                       UTR>(stream_size);
+        else
+            return simd::
+                stream<kernel, simd::MASKED, simd::COUNTING_SORT, false, UTR>(
+                    stream_size);
+    }
+
     bm_result<typename Clock::duration>
     operator()() const noexcept
     {
         Image img = get_img<C>();
 
-        simd::stream<kernel, simd::MASKED, simd::COUNTING_SORT, false, R> s(
-            stream_size);
+        auto s = get_stream(stream_size);
 
         std::vector<output_type<kernel>> result_buffer;
         result_buffer.reserve(img.size());
@@ -221,11 +255,14 @@ struct SIMDStream
 
         if constexpr(count_extra) e = timer.elapsed();
 
-        return {fmt::format("{} SIMD stream|{}|UTR:{:.0f}%|rc:{}",
-                            simd::info::value,
-                            stream_size,
-                            ratio2percent<R>(),
-                            rc),
+        return {fmt::format(
+                    "{} {} SIMD stream{}|{}|UTR:{:.0f}%|rc:{}",
+                    simd::info::value,
+                    hybrid ? "hybrid" : "legacy",
+                    hybrid ? (alloc_temp_storage ? "|with ts" : "|no ts") : "",
+                    stream_size,
+                    ratio2percent<UTR>(),
+                    rc),
                 e};
     }
 };
@@ -268,6 +305,7 @@ struct BSE
 
 template <template <typename, typename> typename PTK,
           typename C,
+          bool alloc_temp,
           typename Clock = std::chrono::steady_clock>
 struct SIMDPredicated
 {
@@ -286,7 +324,7 @@ struct SIMDPredicated
             ranges::views::chunk(img, N),
             [&rc](auto&& chunk) noexcept
             {
-                simd::embedded_function<kernel> f;
+                simd::embedded_function<kernel, alloc_temp> f;
 
                 simd::native_vector<std::uint32_t> vpp;
 
@@ -323,8 +361,12 @@ struct SIMDPredicated
 
         auto e = timer.elapsed();
 
-        return {fmt::format("{} SIMD predicated|rc:{}", simd::info::value, rc),
-                e};
+        return {
+            fmt::format("{} SIMD predicated|{}|rc:{}",
+                        simd::info::value,
+                        alloc_temp ? "with temp storage" : "no temp storage",
+                        rc),
+            e};
     }
 };
 
@@ -333,9 +375,14 @@ using R1 = std::ratio<1, 2>;
 
 int main(/*int argc, char* argv[]*/)
 {
-    print_results(run_benchmarks(BSE<pt_const, C1>{},
-                                 SIMDPredicated<pt_const, C1>{},
-                                 SIMDStream<pt_const, C1, R1>{},
-                                 SIMDFunction<pt_const, C1, R1>{}));
+    print_results(
+        run_benchmarks(BSE<pt_const, C1>{},
+                       SIMDPredicated<pt_const, C1, false>{},
+                       SIMDPredicated<pt_const, C1, true>{},
+                       SIMDStream<pt_const, C1, R1, false, false>{},
+                       SIMDFunction<pt_const, C1, R1, false, false>{},
+                       SIMDStream<pt_const, C1, R1, true, false>{},
+                       SIMDFunction<pt_const, C1, R1, true, true>{},
+                       SIMDFunction<pt_const, C1, R1, true, false>{}));
     return 0;
 }
