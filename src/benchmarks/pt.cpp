@@ -24,12 +24,41 @@
 #include <chrono>
 #include <string>
 #include <string_view>
+#include <vector>
+
+namespace loom
+{
+namespace fn
+{
+template <typename O>
+static RGBA<>
+convert_out_pix(const O& o) noexcept
+{
+    const auto [r, g, b, _, __] = o;
+    return RGBA{r, g, b, 1};
+}
+} // namespace fn
+
+MK_NIEBLOID(convert_out_pix)
+} // namespace loom
 
 using namespace loom;
 using namespace vm;
 using namespace std::literals::string_literals;
 using namespace std::literals::string_view_literals;
 using namespace std::literals::chrono_literals;
+
+#if FMT_VERSION < 110000
+template <typename Dur>
+static double
+to_format(const Dur& dur) noexcept
+{
+    return static_cast<double>(
+               std::chrono::duration_cast<std::chrono::milliseconds>(dur)
+                   .count()) /
+           1000;
+}
+#endif
 
 template <typename R>
 static constexpr double
@@ -43,9 +72,22 @@ using bm_result = std::pair<std::string, Dur>;
 
 template <typename Dur = std::chrono::steady_clock::duration, typename... Bms>
 static std::array<bm_result<Dur>, sizeof...(Bms)>
-run_benchmarks(Bms... bms)
+run_benchmarks(Logger& logger, Bms... bms)
 {
-    return {bms()...};
+    auto decorate = [&](auto&& bm)
+    {
+        const std::string i{bm.info()};
+        logger.info("Benchmarking {}...", i);
+        const Dur dur = bm();
+#if FMT_VERSION < 110000
+        logger.info("Result {:.3f}s", to_format(dur));
+#else
+        logger.info("Result {:.3%S}s", dur);
+#endif
+        return bm_result<Dur>{std::move(i), dur};
+    };
+
+    return {decorate(bms)...};
 }
 
 template <typename Dur, std::size_t N>
@@ -72,17 +114,13 @@ print_results(std::array<bm_result<Dur>, N>&& results) noexcept
 
     for(const auto& [id, dur]: results)
 #if FMT_VERSION < 110000
-        fmt::print(
-            "{:<{}} | {:>6.03f}s | {:>3.0f}%\n",
-            id,
-            id_width,
-            static_cast<double>(
-                std::chrono::duration_cast<std::chrono::milliseconds>(dur)
-                    .count()) /
-                1000,
-            (static_cast<double>(dur.count()) /
-             static_cast<double>(fastest_dur.count())) *
-                100);
+        fmt::print("{:<{}} | {:>6.03f}s | {:>3.0f}%\n",
+                   id,
+                   id_width,
+                   to_format(dur),
+                   (static_cast<double>(dur.count()) /
+                    static_cast<double>(fastest_dur.count())) *
+                       100);
 #else
         fmt::print("{:<{}} | {:>6.3%S}s | {:>3.0f}%\n",
                    id,
@@ -108,7 +146,6 @@ get_img() noexcept
 template <template <typename, typename> typename PTK,
           typename C,
           typename UTR,
-          bool hybrid,
           bool alloc_temp_storage,
           bool count_extra = false,
           typename Clock   = std::chrono::steady_clock>
@@ -119,18 +156,22 @@ struct SIMDFunction
     static auto
     get_func(const unsigned size) noexcept
     {
-        if constexpr(hybrid)
-            return simd::hybrid_function<kernel,
-                                         simd::COUNTING_SORT,
-                                         false,
-                                         alloc_temp_storage,
-                                         UTR>(size);
-        else
-            return simd::
-                function<kernel, simd::MASKED, simd::COUNTING_SORT, UTR>(size);
+        return simd::hybrid_function<kernel,
+                                     simd::COUNTING_SORT,
+                                     false,
+                                     alloc_temp_storage,
+                                     UTR>(size);
     }
 
-    bm_result<typename Clock::duration>
+    std::string
+    info() const noexcept
+    {
+        return fmt::format("full range|{}|UTR:{:.0f}%",
+                           alloc_temp_storage ? "with ts" : "no ts",
+                           ratio2percent<UTR>());
+    }
+
+    Clock::duration
     operator()() const noexcept
     {
         Image img = get_img<C>();
@@ -153,31 +194,19 @@ struct SIMDFunction
             std::less<unsigned>{},
             [width = img.width()](const auto& t) noexcept
             { return pixel_offset(decode_pp(std::get<4>(t)), width, 4); });
-        std::size_t rc = 0;
 
-        std::ranges::copy(
-            std::views::transform(result_buffer,
-                                  OutputPixelConverter<kernel>(rc)),
-            OutputAdapter<Image::iterator>(img.begin()));
+        std::ranges::copy(std::views::transform(result_buffer, convert_out_pix),
+                          OutputAdapter<Image::iterator>(img.begin()));
 
         if constexpr(count_extra) e = timer.elapsed();
 
-        return {fmt::format(
-                    "{} {} SIMD function{}|{}|UTR:{:.0f}%|rc:{}",
-                    simd::info::value,
-                    hybrid ? "hybrid" : "legacy",
-                    hybrid ? (alloc_temp_storage ? "|with ts" : "|no ts") : "",
-                    img.size(),
-                    ratio2percent<UTR>(),
-                    rc),
-                e};
+        return e;
     }
 };
 
 template <template <typename, typename> typename PTK,
           typename C,
           typename UTR,
-          bool hybrid,
           bool alloc_temp_storage,
           bool count_extra = false,
           typename Clock   = std::chrono::steady_clock>
@@ -190,19 +219,23 @@ struct SIMDStream
     static auto
     get_stream(unsigned stream_size) noexcept
     {
-        if constexpr(hybrid)
-            return simd::hybrid_stream<kernel,
-                                       simd::COUNTING_SORT,
-                                       false,
-                                       alloc_temp_storage,
-                                       UTR>(stream_size);
-        else
-            return simd::
-                stream<kernel, simd::MASKED, simd::COUNTING_SORT, false, UTR>(
-                    stream_size);
+        return simd::hybrid_stream<kernel,
+                                   simd::COUNTING_SORT,
+                                   false,
+                                   alloc_temp_storage,
+                                   UTR>(stream_size);
     }
 
-    bm_result<typename Clock::duration>
+    std::string
+    info() const noexcept
+    {
+        return fmt::format("stream|{}|size:{}|UTR:{:.0f}%",
+                           alloc_temp_storage ? "with ts" : "no ts",
+                           stream_size,
+                           ratio2percent<UTR>());
+    }
+
+    Clock::duration
     operator()() const noexcept
     {
         Image img = get_img<C>();
@@ -211,8 +244,7 @@ struct SIMDStream
 
         std::vector<output_type<kernel>> result_buffer;
         result_buffer.reserve(img.size());
-        auto        inserter = std::back_inserter(result_buffer);
-        std::size_t rc       = 0;
+        auto inserter = std::back_inserter(result_buffer);
 
         auto view = std::views::transform(img, encode_pp | first);
 
@@ -248,22 +280,12 @@ struct SIMDStream
             [width = img.width()](const auto& t) noexcept
             { return pixel_offset(decode_pp(std::get<4>(t)), width, 4); });
 
-        std::ranges::copy(
-            std::views::transform(result_buffer,
-                                  OutputPixelConverter<kernel>(rc)),
-            OutputAdapter<Image::iterator>(img.begin()));
+        std::ranges::copy(std::views::transform(result_buffer, convert_out_pix),
+                          OutputAdapter<Image::iterator>(img.begin()));
 
         if constexpr(count_extra) e = timer.elapsed();
 
-        return {fmt::format(
-                    "{} {} SIMD stream{}|{}|UTR:{:.0f}%|rc:{}",
-                    simd::info::value,
-                    hybrid ? "hybrid" : "legacy",
-                    hybrid ? (alloc_temp_storage ? "|with ts" : "|no ts") : "",
-                    stream_size,
-                    ratio2percent<UTR>(),
-                    rc),
-                e};
+        return e;
     }
 };
 
@@ -274,57 +296,64 @@ struct BSE
 {
     using kernel = PTK<float, C>;
 
-    bm_result<typename Clock::duration>
+    std::string_view
+    info() const noexcept
+    {
+        return "BSE";
+    }
+
+    Clock::duration
     operator()() const noexcept
     {
-        Image       img = get_img<C>();
-        std::size_t rc  = 0;
+        Image img = get_img<C>();
 
         ElapsedTimer<Clock> timer;
 
         std::ranges::for_each(img,
-                              [&rc](auto val) noexcept
+                              [](auto val) noexcept
                               {
                                   bse::function<kernel> f;
 
                                   auto [pos, pix] = val;
 
-                                  const auto [r, g, b, lrc, _] =
+                                  const auto [r, g, b, _, __] =
                                       f(encode_pp(pos));
 
                                   pix = RGBA{r, g, b, 1};
-
-                                  rc += lrc;
                               });
 
-        auto e = timer.elapsed();
-
-        return {fmt::format("BSE|rc:{}", rc), e};
+        return timer.elapsed();
     }
 };
 
 template <template <typename, typename> typename PTK,
           typename C,
-          bool alloc_temp,
+          bool alloc_temp_storage,
           typename Clock = std::chrono::steady_clock>
-struct SIMDPredicated
+struct SIMDEmbedded
 {
     using kernel                   = PTK<float, C>;
     static constexpr std::size_t N = simd::native_vector_extent_v<float>;
 
-    bm_result<typename Clock::duration>
+    std::string
+    info() const noexcept
+    {
+        return fmt::format("embedded|{}",
+                           alloc_temp_storage ? "with ts" : "no ts");
+    }
+
+    Clock::duration
     operator()() const noexcept
     {
-        Image       img = get_img<C>();
-        std::size_t rc  = 0;
+        Image img = get_img<C>();
 
         ElapsedTimer<Clock> timer;
 
         std::ranges::for_each(
             ranges::views::chunk(img, N),
-            [&rc](auto&& chunk) noexcept
+            [](auto&& chunk) noexcept
             {
-                simd::embedded_function<kernel, alloc_temp> f;
+                simd::embedded_function<kernel, alloc_temp_storage> f;
 
                 simd::native_vector<std::uint32_t> vpp;
 
@@ -341,7 +370,8 @@ struct SIMDPredicated
                         vpp[i]              = encode_pp(pos);
                     }
 
-                    // guarantee tail elems to complete with the first element
+                    // guarantee tail elems to complete with
+                    // the first element
                     for(std::size_t i = tail_size; i < N; ++i) vpp[i] = vpp[0];
                 }
                 else
@@ -350,23 +380,13 @@ struct SIMDPredicated
                         vpp[i] = encode_pp(chunk[i].first);
                 }
 
-                const auto [vr, vg, vb, vrc, _] = f(vpp);
+                const auto [vr, vg, vb, _, __] = f(vpp);
 
                 for(std::size_t i = 0; i < vs; ++i)
                     chunk[i].second = RGBA{vr[i], vg[i], vb[i], 1};
-
-                rc += is_tail ? masked_ray_count(vrc, tail_size) :
-                                __builtin_reduce_add(vrc);
             });
 
-        auto e = timer.elapsed();
-
-        return {
-            fmt::format("{} SIMD predicated|{}|rc:{}",
-                        simd::info::value,
-                        alloc_temp ? "with temp storage" : "no temp storage",
-                        rc),
-            e};
+        return timer.elapsed();
     }
 };
 
@@ -375,14 +395,16 @@ using R1 = std::ratio<1, 2>;
 
 int main(/*int argc, char* argv[]*/)
 {
-    print_results(
-        run_benchmarks(BSE<pt_const, C1>{},
-                       SIMDPredicated<pt_const, C1, false>{},
-                       SIMDPredicated<pt_const, C1, true>{},
-                       SIMDStream<pt_const, C1, R1, false, false>{},
-                       SIMDFunction<pt_const, C1, R1, false, false>{},
-                       SIMDStream<pt_const, C1, R1, true, false>{},
-                       SIMDFunction<pt_const, C1, R1, true, true>{},
-                       SIMDFunction<pt_const, C1, R1, true, false>{}));
+    Logger logger(Logger::INFO);
+    logger.info("Using x86-64 vector extensions: {}", simd::info::value);
+
+    print_results(run_benchmarks(logger,
+                                 BSE<pt_const, C1>{},
+                                 SIMDEmbedded<pt_const, C1, false>{},
+                                 SIMDEmbedded<pt_const, C1, true>{},
+                                 SIMDStream<pt_const, C1, R1, false>{},
+                                 SIMDStream<pt_const, C1, R1, true>{},
+                                 SIMDFunction<pt_const, C1, R1, false>{},
+                                 SIMDFunction<pt_const, C1, R1, true>{}));
     return 0;
 }

@@ -50,7 +50,9 @@ constexpr inline fsize_t simd_align = 16;
 /// @brief Current x86-64 vector extension infostring.
 struct info
 {
-#if defined(__AVX512F__)
+#if defined(__AVX512F__) && defined(__AVX512BW__)
+    static constexpr char value[] = "avx512f,avx512bw";
+#elif defined(__AVX512F__)
     static constexpr char value[] = "avx512f";
 #elif defined(__AVX2__)
     static constexpr char value[] = "avx2";
