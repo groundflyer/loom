@@ -1573,6 +1573,10 @@ inline constexpr auto stdarray = detail::stdarray<L>::value;
 template <List L>
 inline constexpr bool has_duplicates = detail::has_duplicates<L>::value;
 
+/// @brief Check if @L is empty.
+template <List L>
+inline constexpr bool empty = length<L> == 0;
+
 /// @brief Remove duplicate elements from @p L.
 template <List L>
 using nub = detail::nub<L>::type;
