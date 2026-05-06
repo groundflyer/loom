@@ -214,7 +214,8 @@ struct SIMDStream
 {
     using kernel = PTK<float, C>;
 
-    unsigned stream_size = 64;
+    unsigned stream_size =
+        simd::native_vector_extent_v<float> * (kernel::num_blocks + 1);
 
     static auto
     get_stream(unsigned stream_size) noexcept
