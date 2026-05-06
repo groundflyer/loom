@@ -38,12 +38,12 @@ struct sorter_name<simd::CountingSorter<Ts...>>
 
 template <std::unsigned_integral Index, Index num_blocks>
 auto
-make_bp_gen(RandomState& rs, const double p = 0.9) noexcept
+make_pc_gen(RandomState& rs, const double p = 0.9) noexcept
 {
-    auto bp_gen   = rs.make_gen<Index>(static_cast<Index>(0), num_blocks - 1);
-    auto halt_gen = [bp_gen, gb = rs.make_gen<bool>(p)]() mutable noexcept
-    { return gb() ? bp_gen() : halt<Index>; };
-    return std::pair{bp_gen, halt_gen};
+    auto pc_gen   = rs.make_gen<Index>(static_cast<Index>(0), num_blocks - 1);
+    auto halt_gen = [pc_gen, gb = rs.make_gen<bool>(p)]() mutable noexcept
+    { return gb() ? pc_gen() : halt<Index>; };
+    return std::pair{pc_gen, halt_gen};
 }
 
 template <template <typename, typename> typename _Sorter, unsigned num_blocks>
@@ -57,7 +57,7 @@ struct CountingSortTestSuite
         using K         = mock_kernel<num_blocks, type_sequence<val_var>>;
         using reg_names = K::reg_names;
         using reg_types = K::reg_types;
-        using bp        = K::bp;
+        using pc        = K::pc;
         using index_t   = K::index_t;
 
         static constexpr std::hash<T> hash_v{};
@@ -65,12 +65,12 @@ struct CountingSortTestSuite
 
         using memory = bve::Memory<reg_types,
                                    reg_names,
-                                   bp,
+                                   pc,
                                    std::vector,
                                    CacheLineAlignedAllocator>;
         using sorter = _Sorter<K, memory>;
 
-        auto [_, bpgen] = make_bp_gen<index_t, num_blocks>(rs);
+        auto [_, pcgen] = make_pc_gen<index_t, num_blocks>(rs);
         auto sgen =
             [ugen = rs.make_gen<unsigned>(100u, 10000u)]() mutable noexcept
         { return align_top(ugen(), 32u); };
@@ -84,7 +84,7 @@ struct CountingSortTestSuite
                     [](auto r) noexcept
                     {
                         return hash_v(r.template get<val_var>()) +
-                               static_cast<std::size_t>(r.bp());
+                               static_cast<std::size_t>(r.pc());
                     }),
                 0ul);
         };
@@ -95,7 +95,7 @@ struct CountingSortTestSuite
             sorter         ret(s);
             for(unsigned i = 0; i < s; ++i)
             {
-                ret.mem().bp()[i]                    = bpgen();
+                ret.mem().pc()[i]                    = pcgen();
                 ret.mem().template get<val_var>()[i] = valgen();
             }
             return ret;
@@ -107,7 +107,7 @@ struct CountingSortTestSuite
         };
         auto v = [chash](sorter tr, sorter gr) noexcept
         {
-            return std::ranges::is_sorted(tr.mem().bp()) &&
+            return std::ranges::is_sorted(tr.mem().pc()) &&
                    chash(tr.mem()) == chash(gr.mem());
         };
 
@@ -127,7 +127,7 @@ main(int argc, char* argv[])
 
     using vec_type = std::vector<unsigned>;
 
-    auto [bp_gen, halt_gen] = make_bp_gen<unsigned, 20>(rs);
+    auto [pc_gen, halt_gen] = make_pc_gen<unsigned, 20>(rs);
     auto vec_gen            = [&halt_gen,
                     gn = rs.make_gen<unsigned>(min_vec_size,
                                                max_vec_size)]() mutable noexcept
@@ -145,7 +145,7 @@ main(int argc, char* argv[])
                                  [&](vec_type&& vec) noexcept
                                  {
                                      const auto p =
-                                         [m = bp_gen()](unsigned val) noexcept
+                                         [m = pc_gen()](unsigned val) noexcept
                                      { return val < m; };
                                      bve::partition(vec.begin(), vec.end(), p);
                                      return std::pair{std::move(vec), p};

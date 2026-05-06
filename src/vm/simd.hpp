@@ -18,6 +18,7 @@
 #include <fmt/core.h>
 
 #include <algorithm>
+#include <bitset>
 #include <cstdlib>
 #include <ratio>
 
@@ -1937,7 +1938,7 @@ template <typename Var, typename Labels, typename LabelMap, fsize_t N>
 class eval<ParmJump<Var, Labels>, LabelMap, N>
 {
     using index_t        = get_index_t<LabelMap>;
-    using idxs           = pjmp_idxs<ParmJump<Var, Labels>, LabelMap>;
+    using idxs           = jmp_idxs<ParmJump<Var, Labels>, LabelMap>;
     using mask_type      = mask_t<index_t, N>;
     using io_wrangler    = mask_io_intrinsics_wrangler<index_t, N>;
     using blend_wrangler = blend_intrinsics_wrangler<index_t, N>;
@@ -2387,6 +2388,14 @@ struct logical_reduce_helper
     }
 };
 
+/// @brief Fit program counter into bins.
+template <std::unsigned_integral I>
+I FORCE_INLINE
+fit_in_bins(const I pc, const I last_bin) noexcept
+{
+    return pc < last_bin ? pc : last_bin;
+}
+
 /// @brief Fast and lightweight set for block indices.
 ///
 /// Takes native SIMD vector of block indices as input and optional initial
@@ -2401,59 +2410,40 @@ struct logical_reduce_helper
 /// pointer and the number of repetitions of this block, otherwise the latter
 /// value is vector mask fot this block.
 template <Kernel K, fsize_t N, bool ret_sum = false>
-class block_set : public std::ranges::view_interface<block_set<K, N, ret_sum>>
+class groups : public std::ranges::view_interface<groups<K, N, ret_sum>>
 {
     using index_t        = K::index_t;
     using index_vector_t = packed_vector<index_t, N>;
     using mask_type      = mask_t<index_t, N>;
     using cmp            = cmp_intrinsics_wrangler<index_t, N>;
 
-    static constexpr index_t                   num_blocks = K::num_blocks;
-    static constexpr index_t                   halt_pos   = K::halt_pos;
-    static constexpr popcnt_helper<index_t, N> popcnt{};
+    static constexpr index_t num_blocks = K::num_blocks;
+    static constexpr index_t halt_pos   = K::halt_pos;
 
-    const index_vector_t m_pcs;
-    const index_t        m_init_pos{};
+    static_assert(num_blocks <= 63);
+
+    static constexpr popcnt_helper<index_t, N> popcnt{};
 
     class _iterator : public std::input_iterator_tag
     {
         using ret_t = std::conditional_t<ret_sum, index_t, mask_type>;
 
-        index_t              m_sum{};
-        const index_vector_t m_pcs;
-        index_t              m_pos{};
-        ret_t                m_ret;
+        index_vector_t m_pcs;
+        std::uint64_t  m_set;
 
-        static FORCE_INLINE index_t
-        fit_inc(const index_t i) noexcept
+        index_t FORCE_INLINE
+        get_pos() const noexcept
         {
-            return fit_block_index<K>(i + static_cast<index_t>(1));
+            return std::countr_zero(m_set);
         }
 
-        FORCE_INLINE bool
-        sum(const index_t pos) noexcept
+        auto FORCE_INLINE
+        get_second(const index_t pos) const noexcept
         {
             if constexpr(ret_sum)
-            {
-                const mask_type mask = cmp::eq(m_pcs, broadcast<N>(pos));
-                m_ret                = popcnt(mask);
-                m_sum += m_ret;
-                return m_ret;
-            }
+                return popcnt(cmp::eq(broadcast<N>(pos), m_pcs));
             else
-            {
-                m_ret             = cmp::eq(m_pcs, broadcast<N>(pos));
-                const index_t ret = popcnt(m_ret);
-                m_sum += ret;
-                return ret;
-            }
-        }
-
-        FORCE_INLINE index_t
-        next(index_t pos) noexcept
-        {
-            while(!sum(pos)) pos = fit_inc(pos);
-            return pos;
+                return cmp::eq(broadcast<N>(pos), m_pcs);
         }
 
       public:
@@ -2461,28 +2451,28 @@ class block_set : public std::ranges::view_interface<block_set<K, N, ret_sum>>
         using value_type      = std::pair<index_t, ret_t>;
 
         _iterator() noexcept = default;
-        _iterator(const index_vector_t pcs,
-                  const index_t        initial_pos = 0) noexcept :
-            m_sum(0), m_pcs(pcs), m_pos(next(initial_pos))
+        _iterator(const index_vector_t pcs, const std::uint64_t set) noexcept :
+            m_pcs(pcs), m_set(set)
         {
         }
 
         bool FORCE_INLINE
         operator==(std::default_sentinel_t) const noexcept
         {
-            return m_sum > N;
+            return m_set == static_cast<std::uint64_t>(0);
         }
 
         value_type FORCE_INLINE
         operator*() const noexcept
         {
-            return {m_pos, m_ret};
+            const index_t pos = fit_block_index<K>(get_pos());
+            return {pos, get_second(pos)};
         }
 
         _iterator& FORCE_INLINE
         operator++() noexcept
         {
-            m_pos = next(fit_inc(m_pos));
+            m_set ^= 1ul << get_pos();
             return *this;
         }
 
@@ -2490,22 +2480,26 @@ class block_set : public std::ranges::view_interface<block_set<K, N, ret_sum>>
         operator++(int) noexcept
         {
             _iterator ret(*this);
-            m_pos = next(fit_inc(m_pos));
+            m_set ^= 1ul << get_pos();
             return ret;
         }
     };
 
+    index_vector_t m_pcs;
+    std::uint64_t  m_set{};
+
   public:
-    block_set() noexcept = default;
-    block_set(const index_vector_t pcs, const index_t initial_pos = 0) noexcept
-        : m_pcs(pcs), m_init_pos(initial_pos)
+    groups() noexcept = default;
+    groups(const index_vector_t pcs) noexcept : m_pcs(pcs), m_set(0)
     {
+        for(fsize_t i = 0; i < N; ++i)
+            m_set |= 1ul << fit_in_bins(m_pcs[i], num_blocks);
     }
 
     _iterator FORCE_INLINE
     begin() const noexcept
     {
-        return {m_pcs, m_init_pos};
+        return {m_pcs, m_set};
     }
 
     std::default_sentinel_t FORCE_INLINE
@@ -2514,6 +2508,63 @@ class block_set : public std::ranges::view_interface<block_set<K, N, ret_sum>>
         return std::default_sentinel;
     }
 };
+
+/// @brief Return a view to set of possible destination blocks following @p pc.
+/// @param pc
+template <Kernel K>
+auto FORCE_INLINE
+dest_set(typename K::index_t pc) noexcept
+{
+    using def_type = std::ranges::subrange<
+        typename std::array<typename K::index_t, 1>::const_iterator>;
+
+    return typelist::visit_at(
+        pc,
+        []<intlist::List Jdxs>() noexcept
+        {
+            using l = intlist::purge<K::halt_pos, Jdxs>;
+            if constexpr(intlist::empty<l>)
+                return def_type();
+            else
+            {
+                static constexpr auto table = intlist::array<l>;
+                return std::ranges::subrange(table.cbegin(), table.cend());
+            }
+        },
+        []() noexcept { return def_type(); });
+}
+
+/// @brief Get pc of the major group and its mask.
+template <fsize_t N, Kernel K, typename Rng>
+auto FORCE_INLINE
+major_group(const packed_vector<typename K::index_t, N> pcs,
+            Rng&&                                       candidates) noexcept
+{
+    using index_t   = K::index_t;
+    using cmp       = cmp_intrinsics_wrangler<index_t, N>;
+    using mask_type = mask_t<index_t, N>;
+
+    constexpr popcnt_helper<index_t, N> popcnt{};
+
+    unsigned  pops = 0;
+    index_t   pc   = K::halt_pos;
+    mask_type mask{}; // empty mask
+
+    for(index_t cpc: candidates)
+    {
+        const mask_type cmask =
+            cmp::eq(broadcast<N>(static_cast<index_t>(cpc)), pcs);
+        const unsigned cpops = popcnt(cmask);
+        if(cpops > pops)
+        {
+            pops = cpops;
+            pc   = cpc;
+            mask = cmask;
+        }
+    }
+
+    return std::tuple{pc, mask, pops};
+}
 
 /// @brief Vectorized counting sort.
 /// @return number of halted blocks.
@@ -2541,8 +2592,8 @@ counting_sort(_Memory& in, _Memory& out) noexcept
     {
         const pc_index_vector pcs =
             load<N>(in.template view<N>(pos).pc().data());
-        for(const auto [pc, sum]: block_set<K, N, true>(pcs))
-            bins[bve::fit_in_bins(pc, halt_pos)] += sum;
+        for(const auto [pc, sum]: groups<K, N, true>(pcs))
+            bins[fit_in_bins(pc, halt_pos)] += sum;
     }
 
     const fsize_t ret = bins[num_bins - 1];
@@ -2562,7 +2613,7 @@ counting_sort(_Memory& in, _Memory& out) noexcept
         {
             const int ij   = i - j;
             const int j2   = N - j - 1;
-            vindex_out[j2] = --bins[bve::fit_in_bins(in.pc()[ij], halt_pos)];
+            vindex_out[j2] = --bins[fit_in_bins(in.pc()[ij], halt_pos)];
             vindex_in[j2]  = ij;
         }
 
@@ -2583,7 +2634,7 @@ counting_sort(_Memory& in, _Memory& out) noexcept
     }
 #else
     for(int i = in.size() - 1; i >= 0; --i)
-        out[--bins[bve::fit_in_bins(in.pc()[i], halt_pos)]] = in[i];
+        out[--bins[fit_in_bins(in.pc()[i], halt_pos)]] = in[i];
 #endif
 
     return ret;
@@ -3156,14 +3207,13 @@ struct visitor_selector<STITCH::MASKED>
                     requires(pv_extent<decltype(view)> == N)
                 {
                     index_vector_t pcs    = load<N>(view.pc().data());
-                    index_t        start  = pcs[0];
                     bool           repeat = true;
 
                     while(repeat)
                     {
                         fsize_t m = 0;
 
-                        for(const auto [pc, mask]: block_set<K, N>{pcs, start})
+                        for(const auto [pc, mask]: groups<K, N>{pcs})
                         {
                             typelist::visit_at(
                                 pc,
@@ -3178,7 +3228,6 @@ struct visitor_selector<STITCH::MASKED>
                         }
 
                         repeat = m >= threshold;
-                        start  = 0;
                         m      = 0;
                         pcs    = load<N>(view.pc().data());
                     };
@@ -3356,6 +3405,9 @@ class compiler
 };
 
 /// @brief Compiler for embedded SIMD execution.
+/// @tparam alloc_temp_storage allocate special temporal storage for currently
+/// executed basic block
+/// @tparam greedy use greedy reconvergence
 template <Kernel K, bool alloc_temp_storage>
     requires(typelist::of_same_size<typename K::reg_types>)
 class embedded_compiler
@@ -3425,14 +3477,16 @@ class embedded_compiler
         operator()(const Args... args) noexcept
         {
             facade::set_inputs(args...);
+
             while(!lrh::land(cmp::eq(facade::pc(), halt_pos)))
-                for(const auto [pc, mask]: block_set<K, N>{facade::pc()})
+                for(const auto [pc, mask]: groups<K, N>{facade::pc()})
                     typelist::visit_at(
                         pc,
                         [&]<typename Runner>() noexcept
                         { facade::step(Runner{mask}); },
                         compiled_blocks{},
                         sink);
+
             return facade::get_outputs();
         }
     };
@@ -3543,14 +3597,13 @@ class hybrid_compiler
                 {
                     LocalStorage   storage(view);
                     index_vector_t pcs    = storage.pc();
-                    index_t        start  = pcs[0];
                     bool           repeat = true;
 
                     while(repeat)
                     {
                         fsize_t m = 0;
 
-                        for(const auto [pc, mask]: block_set<K, N>{pcs, start})
+                        for(const auto [pc, mask]: groups<K, N>{pcs})
                         {
                             typelist::visit_at(
                                 pc,
@@ -3565,7 +3618,6 @@ class hybrid_compiler
                         }
 
                         repeat = m >= threshold;
-                        start  = 0;
                         m      = 0;
                         pcs    = storage.pc();
                     };

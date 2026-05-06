@@ -54,7 +54,7 @@ test_set(Track& track, ParmTestMaker tm, RandomState& rs) noexcept
     auto test = [](const arr_t& a) noexcept
     {
         const vec_t v = a2v(a);
-        return simd::block_set<K, N>{v};
+        return simd::groups<K, N>{v};
     };
 
     track.check(NamedTest(tm.test(gen,
