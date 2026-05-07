@@ -3412,14 +3412,26 @@ class compiler
     };
 };
 
+/// @brief Determines how embedded_compiler executes threads.
+enum SelectionStrategy
+{
+    GREEDY_FAIR,  /*!< Every thread in gang gets gets executed */
+    HYBRID_MAJOR, /*!< Only PCs having the majority are executed selecting
+                     between destination map and greedy search using utilization
+                     threshold */
+    GREEDY_MAJOR  /*!< Only PCs having the majority are executed selecting from
+                     greedy search */
+};
+
 /// @brief Compiler for embedded SIMD execution.
 /// @tparam alloc_temp_storage allocate special temporal storage for currently
 /// executed basic block
-/// @tparam greedy use greedy reconvergence
-template <Kernel K,
-          bool   alloc_temp_storage,
-          bool   greedy = false,
-          typename UTR  = std::ratio<1, 2>>
+/// @tparam strategy selection strategy to use
+/// @tparam UTR utilization threshold for HYBRID_MAJOR strategy
+template <Kernel            K,
+          bool              alloc_temp_storage,
+          SelectionStrategy strategy = GREEDY_MAJOR,
+          typename UTR               = std::ratio<1, 2>>
     requires(typelist::of_same_size<typename K::reg_types> && UTR::num > 0 &&
              UTR::den > 0 && UTR::num <= UTR::den)
 class embedded_compiler
@@ -3502,7 +3514,7 @@ class embedded_compiler
         {
             facade::set_inputs(args...);
 
-            if constexpr(greedy)
+            if constexpr(strategy == GREEDY_FAIR)
             {
                 while(!lrh::land(cmp::eq(facade::pc(), halt_pos)))
                     for(const index_t pc:
@@ -3517,7 +3529,7 @@ class embedded_compiler
                             compiled_blocks{},
                             sink);
             }
-            else
+            else if constexpr(strategy == HYBRID_MAJOR)
             {
                 index_t  pc              = 0;
                 mask_t   mask            = full_mask();
@@ -3542,6 +3554,26 @@ class embedded_compiler
                             greedy_groups<K, N, true>{facade::pc()});
 
                     use_next_groups = pops >= threshold;
+                }
+            }
+            else
+            {
+                index_t  pc   = 0;
+                mask_t   mask = full_mask();
+                unsigned pops = N;
+
+                while(!lrh::land(cmp::eq(facade::pc(), halt_pos)))
+                {
+                    typelist::visit_at(
+                        pc,
+                        [&]<typename Runner>() noexcept
+                        { facade::step(Runner{mask}); },
+                        compiled_blocks{},
+                        sink);
+
+                    std::tie(pc, mask, pops) = major_group<K, N>(
+                        facade::pc(),
+                        greedy_groups<K, N, true>{facade::pc()});
                 }
             }
 
@@ -3765,10 +3797,10 @@ using hybrid_stream =
         stream;
 
 /// @brief Alias for embedded invocation.
-template <Kernel K,
-          bool   alloc_temp_storage = false,
-          bool   greedy             = false,
-          typename UTR              = std::ratio<1, 2>>
+template <Kernel            K,
+          bool              alloc_temp_storage = false,
+          SelectionStrategy strategy           = GREEDY_MAJOR,
+          typename UTR                         = std::ratio<1, 2>>
 using embedded_function =
-    embedded_compiler<K, alloc_temp_storage, greedy, UTR>::type;
+    embedded_compiler<K, alloc_temp_storage, strategy, UTR>::type;
 } // namespace loom::vm::simd
