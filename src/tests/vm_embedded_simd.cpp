@@ -54,7 +54,7 @@ test_set(Track& track, ParmTestMaker tm, RandomState& rs) noexcept
     auto test = [](const arr_t& a) noexcept
     {
         const vec_t v = a2v(a);
-        return simd::groups<K, N>{v};
+        return simd::greedy_groups<K, N, false>{v};
     };
 
     track.check(NamedTest(tm.test(gen,
@@ -63,7 +63,8 @@ test_set(Track& track, ParmTestMaker tm, RandomState& rs) noexcept
                                   {
                                       set_t sa{a.cbegin(), a.cend()};
                                       set_t sr;
-                                      for(const auto [v, _]: r) sr.insert(v);
+                                      for(const index_t v: r)
+                                          sr.insert(fit_block_index<K>(v));
                                       return sa == sr;
                                   }),
                           fmt::format("block set: {}[{}]", ti, N)));

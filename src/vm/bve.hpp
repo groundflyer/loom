@@ -1292,7 +1292,7 @@ struct vector_eval<Jump<Target>, LabelMap>
 template <typename Var, typename Labels, typename LabelMap>
 struct vector_eval<ParmJump<Var, Labels>, LabelMap>
 {
-    static constexpr auto table = pjmp_arr<ParmJump<Var, Labels>, LabelMap>;
+    static constexpr auto table = jmp_arr<ParmJump<Var, Labels>, LabelMap>;
 
     template <typename _Memory>
     constexpr void

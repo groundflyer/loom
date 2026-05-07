@@ -2380,13 +2380,59 @@ fit_in_bins(const I pc, const I last_bin) noexcept
     return pc < last_bin ? pc : last_bin;
 }
 
+template <std::unsigned_integral index_t>
+class set_iterator : public std::input_iterator_tag
+{
+    std::uint64_t m_set;
+
+    index_t FORCE_INLINE
+    get_pos() const noexcept
+    {
+        return std::countr_zero(m_set);
+    }
+
+  public:
+    using difference_type = std::make_signed_t<index_t>;
+    using value_type      = index_t;
+
+    set_iterator() noexcept = default;
+    set_iterator(const std::uint64_t set) noexcept : m_set(set) {}
+
+    bool FORCE_INLINE
+    operator==(std::default_sentinel_t) const noexcept
+    {
+        return m_set == static_cast<std::uint64_t>(0);
+    }
+
+    value_type FORCE_INLINE
+    operator*() const noexcept
+    {
+        return get_pos();
+    }
+
+    set_iterator& FORCE_INLINE
+    operator++() noexcept
+    {
+        m_set ^= 1ul << get_pos();
+        return *this;
+    }
+
+    set_iterator FORCE_INLINE
+    operator++(int) noexcept
+    {
+        set_iterator ret(*this);
+        m_set ^= 1ul << get_pos();
+        return ret;
+    }
+};
+
 /// @brief Fast and lightweight set for block indices.
-///
 /// @tparam K kernel to make set for.
 /// @tparam N vector width.
 /// @tparam ignore_halt ignore halt block index.
 template <Kernel K, fsize_t N, bool ignore_halt>
-class groups : public std::ranges::view_interface<groups<K, N, ignore_halt>>
+class greedy_groups :
+    public std::ranges::view_interface<greedy_groups<K, N, ignore_halt>>
 {
     using index_t        = K::index_t;
     using index_vector_t = packed_vector<index_t, N>;
@@ -2396,57 +2442,14 @@ class groups : public std::ranges::view_interface<groups<K, N, ignore_halt>>
 
     static_assert(num_blocks <= 63 + ignore_halt);
 
-    class _iterator : public std::input_iterator_tag
-    {
-        std::uint64_t m_set;
-
-        index_t FORCE_INLINE
-        get_pos() const noexcept
-        {
-            return std::countr_zero(m_set);
-        }
-
-      public:
-        using difference_type = std::make_signed_t<index_t>;
-        using value_type      = index_t;
-
-        _iterator() noexcept = default;
-        _iterator(const std::uint64_t set) noexcept : m_set(set) {}
-
-        bool FORCE_INLINE
-        operator==(std::default_sentinel_t) const noexcept
-        {
-            return m_set == static_cast<std::uint64_t>(0);
-        }
-
-        value_type FORCE_INLINE
-        operator*() const noexcept
-        {
-            return get_pos();
-        }
-
-        _iterator& FORCE_INLINE
-        operator++() noexcept
-        {
-            m_set ^= 1ul << get_pos();
-            return *this;
-        }
-
-        _iterator FORCE_INLINE
-        operator++(int) noexcept
-        {
-            _iterator ret(*this);
-            m_set ^= 1ul << get_pos();
-            return ret;
-        }
-    };
-
     std::uint64_t m_set{};
 
   public:
-    groups() noexcept = default;
-    groups(const std::uint64_t set) noexcept : m_set(set) {}
-    groups(const index_vector_t pcs) noexcept : m_set(0)
+    using iterator = set_iterator<index_t>;
+
+    greedy_groups() noexcept = default;
+    greedy_groups(const std::uint64_t set) noexcept : m_set(set) {}
+    greedy_groups(const index_vector_t pcs) noexcept : m_set(0)
     {
         for(fsize_t i = 0; i < N; ++i)
             if constexpr(ignore_halt)
@@ -2456,7 +2459,57 @@ class groups : public std::ranges::view_interface<groups<K, N, ignore_halt>>
                 m_set |= 1ul << fit_in_bins(pcs[i], num_blocks);
     }
 
-    _iterator FORCE_INLINE
+    iterator FORCE_INLINE
+    begin() const noexcept
+    {
+        return {m_set};
+    }
+
+    std::default_sentinel_t FORCE_INLINE
+    end() const noexcept
+    {
+        return std::default_sentinel;
+    }
+};
+
+/// @brief Range over next possible block indices.
+template <Kernel K>
+class next_groups : public std::ranges::view_interface<next_groups<K>>
+{
+    using index_t  = K::index_t;
+    using dest_map = K::dest_map;
+
+    static constexpr index_t halt_pos = K::halt_pos;
+
+    static std::uint64_t FORCE_INLINE
+    dest_set(const index_t pc) noexcept
+    {
+        return typelist::visit_at(
+            pc,
+            []<intlist::List Jdxs>() constexpr noexcept
+            {
+                constexpr std::uint64_t ret = fold_tuple(
+                    map_tuple(
+                        intlist::stdarray<Jdxs>,
+                        [](const index_t pc) constexpr noexcept -> std::uint64_t
+                        { return pc != halt_pos ? 1ul << pc : 0; }),
+                    std::bit_or<std::uint64_t>{},
+                    static_cast<std::uint64_t>(0));
+                return ret;
+            },
+            dest_map{},
+            constant(0ul));
+    }
+
+    std::uint64_t m_set = 1;
+
+  public:
+    using iterator = set_iterator<index_t>;
+
+    next_groups() noexcept = default;
+    next_groups(const index_t pc) noexcept : m_set(dest_set(pc)) {}
+
+    iterator FORCE_INLINE
     begin() const noexcept
     {
         return {m_set};
@@ -2478,36 +2531,12 @@ make_mask(const index_t pc, const packed_vector<index_t, N> pcs) noexcept
     return cmp::eq(broadcast<N>(pc), pcs);
 }
 
-/// @brief Return a view to set of possible destination blocks following @p pc.
-/// @param pc
-template <Kernel K>
-auto FORCE_INLINE
-dest_set(typename K::index_t pc) noexcept
-{
-    using def_type = std::ranges::subrange<
-        typename std::array<typename K::index_t, 1>::const_iterator>;
-
-    return typelist::visit_at(
-        pc,
-        []<intlist::List Jdxs>() noexcept
-        {
-            using l = intlist::purge<K::halt_pos, Jdxs>;
-            if constexpr(intlist::empty<l>)
-                return def_type();
-            else
-            {
-                static constexpr auto table = intlist::array<l>;
-                return std::ranges::subrange(table.cbegin(), table.cend());
-            }
-        },
-        []() noexcept { return def_type(); });
-}
-
 /// @brief Get pc of the major group and its mask.
-template <fsize_t N, Kernel K, typename Rng>
-auto FORCE_INLINE
-major_group(const packed_vector<typename K::index_t, N> pcs,
-            Rng&&                                       candidates) noexcept
+template <Kernel K, fsize_t N, std::ranges::input_range Rng>
+std::tuple<typename K::index_t, mask_type<typename K::index_t, N>, unsigned>
+    FORCE_INLINE
+    major_group(const packed_vector<typename K::index_t, N> pcs,
+                Rng&&                                       candidates) noexcept
 {
     using index_t = K::index_t;
     using cmp     = cmp_intrinsics_wrangler<index_t, N>;
@@ -2532,7 +2561,7 @@ major_group(const packed_vector<typename K::index_t, N> pcs,
         }
     }
 
-    return std::tuple{pc, mask, pops};
+    return {pc, mask, pops};
 }
 
 /// @brief Vectorized counting sort.
@@ -2563,7 +2592,7 @@ counting_sort(_Memory& in, _Memory& out) noexcept
     {
         const index_vector_t pcs =
             load<N>(in.template view<N>(pos).pc().data());
-        for(const index_t pc: groups<K, N, false>(pcs))
+        for(const index_t pc: greedy_groups<K, N, false>(pcs))
             bins[pc] += popcnt(make_mask<N>(fit_block_index<K>(pc), pcs));
     }
 
@@ -3147,6 +3176,16 @@ struct visitor_selector
     };
 };
 
+/// @brief Compute minimum gang size.
+/// @tparam N lane size
+/// @tparam UTR utilization threshold ratio
+template <fsize_t N, typename UTR>
+consteval fsize_t
+get_threshold() noexcept
+{
+    return (N * UTR::num + UTR::den - 1) / UTR::den;
+}
+
 /// @brief Create masked execution step visitor.
 template <>
 struct visitor_selector<STITCH::MASKED>
@@ -3161,10 +3200,7 @@ struct visitor_selector<STITCH::MASKED>
         using index_t     = K::index_t;
 
         static constexpr fsize_t N = native_vector_extent_v<index_t>;
-
-        static constexpr fsize_t threshold =
-            (N * UTR::num + UTR::den - 1) / UTR::den;
-
+        static constexpr fsize_t threshold = get_thresold<N, UTR>();
         static constexpr popcnt_helper<index_t, N> popcnt{};
 
         using index_vector_t = packed_vector<index_t, N>;
@@ -3185,7 +3221,7 @@ struct visitor_selector<STITCH::MASKED>
                     {
                         fsize_t m = 0;
 
-                        for(const index_t pc: groups<K, N, true>{pcs})
+                        for(const index_t pc: greedy_groups<K, N, true>{pcs})
                         {
                             const mask_t mask = make_mask<N>(pc, pcs);
 
@@ -3380,8 +3416,12 @@ class compiler
 /// @tparam alloc_temp_storage allocate special temporal storage for currently
 /// executed basic block
 /// @tparam greedy use greedy reconvergence
-template <Kernel K, bool alloc_temp_storage>
-    requires(typelist::of_same_size<typename K::reg_types>)
+template <Kernel K,
+          bool   alloc_temp_storage,
+          bool   greedy = false,
+          typename UTR  = std::ratio<1, 2>>
+    requires(typelist::of_same_size<typename K::reg_types> && UTR::num > 0 &&
+             UTR::den > 0 && UTR::num <= UTR::den)
 class embedded_compiler
 {
     using labelmap  = K::labelmap;
@@ -3395,6 +3435,7 @@ class embedded_compiler
     static constexpr fsize_t N        = native_vector_extent_v<index_t>;
     static constexpr packed_vector<index_t, N> halt_pos =
         broadcast<N>(K::halt_pos);
+    static constexpr fsize_t threshold = get_threshold<N, UTR>();
 
     template <typename... Ts>
     using memory = KernelMemory<Ts..., N>;
@@ -3440,8 +3481,19 @@ class embedded_compiler
 
         using compiled_blocks = typelist::map<compile_block, blocks>;
 
-        using cmp = cmp_intrinsics_wrangler<index_t, N>;
-        using lrh = logical_reduce_helper<index_t, N>;
+        using cmp    = cmp_intrinsics_wrangler<index_t, N>;
+        using lrh    = logical_reduce_helper<index_t, N>;
+        using mask_t = mask_type<index_t, N>;
+
+        static constexpr mask_t
+        full_mask() noexcept
+        {
+#ifdef __AVX512F__
+            return static_cast<mask_t>(-1);
+#else
+            return broadcast<N>(static_cast<index_t>(-1));
+#endif
+        }
 
       public:
         template <typename... Args>
@@ -3450,17 +3502,48 @@ class embedded_compiler
         {
             facade::set_inputs(args...);
 
-            while(!lrh::land(cmp::eq(facade::pc(), halt_pos)))
-                for(const index_t pc: groups<K, N, true>{facade::pc()})
+            if constexpr(greedy)
+            {
+                while(!lrh::land(cmp::eq(facade::pc(), halt_pos)))
+                    for(const index_t pc:
+                        greedy_groups<K, N, true>{facade::pc()})
+                        typelist::visit_at(
+                            pc,
+                            [&,
+                             mask = make_mask<N>(
+                                 pc,
+                                 facade::pc())]<typename Runner>() noexcept
+                            { facade::step(Runner{mask}); },
+                            compiled_blocks{},
+                            sink);
+            }
+            else
+            {
+                index_t  pc              = 0;
+                mask_t   mask            = full_mask();
+                unsigned pops            = N;
+                bool     use_next_groups = true;
+
+                while(!lrh::land(cmp::eq(facade::pc(), halt_pos)))
+                {
                     typelist::visit_at(
                         pc,
-                        [&,
-                         mask = make_mask<N>(
-                             pc,
-                             facade::pc())]<typename Runner>() noexcept
+                        [&]<typename Runner>() noexcept
                         { facade::step(Runner{mask}); },
                         compiled_blocks{},
                         sink);
+
+                    if(use_next_groups)
+                        std::tie(pc, mask, pops) =
+                            major_group<K, N>(facade::pc(), next_groups<K>{pc});
+                    else
+                        std::tie(pc, mask, pops) = major_group<K, N>(
+                            facade::pc(),
+                            greedy_groups<K, N, true>{facade::pc()});
+
+                    use_next_groups = pops >= threshold;
+                }
+            }
 
             return facade::get_outputs();
         }
@@ -3578,7 +3661,7 @@ class hybrid_compiler
                     {
                         fsize_t m = 0;
 
-                        for(const index_t pc: groups<K, N, true>{pcs})
+                        for(const index_t pc: greedy_groups<K, N, true>{pcs})
                         {
                             const mask_t mask = make_mask<N>(pc, pcs);
                             typelist::visit_at(
@@ -3682,6 +3765,10 @@ using hybrid_stream =
         stream;
 
 /// @brief Alias for embedded invocation.
-template <Kernel K, bool alloc_temp_storage = false>
-using embedded_function = embedded_compiler<K, alloc_temp_storage>::type;
+template <Kernel K,
+          bool   alloc_temp_storage = false,
+          bool   greedy             = false,
+          typename UTR              = std::ratio<1, 2>>
+using embedded_function =
+    embedded_compiler<K, alloc_temp_storage, greedy, UTR>::type;
 } // namespace loom::vm::simd

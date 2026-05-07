@@ -372,6 +372,7 @@ if(BUILD_BENCHMARKS)
 
   target_compile_options(bm_pt PUBLIC -ftemplate-depth=2048 -fbracket-depth=512 -ftemplate-backtrace-limit=1)
   target_compile_options(bm_pt PUBLIC $<$<CONFIG:Release>:-ffast-math>)
+  # target_compile_options(bm_pt PUBLIC -save-temps)
 endif()
 
 add_executable(pt_ref src/smallpt/ref/pt.cpp)

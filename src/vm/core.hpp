@@ -367,11 +367,24 @@ struct MemoryHelper
     }
 };
 
-template <typename _ParmJump, typename LabelMap>
-struct parm_jump_helper;
+/// @brief Create array of target blocks for jump using label
+/// mapping.
+template <typename _Jump, typename LabelMap>
+struct jump_helper;
+
+template <typename Target, typename LabelMap>
+struct jump_helper<Jump<Target>, LabelMap>
+{
+    using idx = typelist::lookup<Target, LabelMap>;
+
+    using jump_idxs =
+        std::integer_sequence<typename idx::value_type, idx::value>;
+
+    static constexpr auto table = intlist::array<jump_idxs>;
+};
 
 template <typename Var, typename Labels, typename LabelMap>
-struct parm_jump_helper<ParmJump<Var, Labels>, LabelMap>
+struct jump_helper<ParmJump<Var, Labels>, LabelMap>
 {
     template <typename L>
         requires(typelist::key_elem<L, LabelMap>)
@@ -383,10 +396,32 @@ struct parm_jump_helper<ParmJump<Var, Labels>, LabelMap>
 };
 
 template <typename _ParmJump, typename LabelMap>
-using pjmp_idxs = parm_jump_helper<_ParmJump, LabelMap>::jump_idxs;
+using jmp_idxs = jump_helper<_ParmJump, LabelMap>::jump_idxs;
 
 template <typename _ParmJump, typename LabelMap>
-constexpr inline auto pjmp_arr = parm_jump_helper<_ParmJump, LabelMap>::table;
+constexpr inline auto jmp_arr = jump_helper<_ParmJump, LabelMap>::table;
+
+/// @brief Create destination map for basic blocks.
+template <typename Blocks, typename LabelMap>
+struct destination_map
+{
+    using type = type_sequence<>;
+};
+
+template <typename Blocks, typename LabelMap>
+    requires(typelist::length<Blocks> > 1)
+struct destination_map<Blocks, LabelMap>
+{
+    template <typename Block>
+    using f =
+        jmp_idxs<typelist::at<typelist::length<Block> - 1, Block>, LabelMap>;
+
+    using type = typelist::map<f, Blocks>;
+};
+
+/// @brief Helper typedef.
+template <typename Blocks, typename LabelMap>
+using destination_map_t = destination_map<Blocks, LabelMap>::type;
 
 template <typename _Variable>
 consteval std::optional<vartype<_Variable>>
@@ -662,6 +697,7 @@ class load_list
                               seq>>>;
 };
 
+/// @brief Helper typedef.
 template <typename Block, typename PCVar>
 using load_list_t = load_list<Block, PCVar>::type;
 
@@ -676,9 +712,11 @@ class store_list
     using type = typelist::map<f, Block>;
 };
 
+/// @brief Helper typedef.
 template <typename Block, typename PCVar>
 using store_list_t = store_list<Block, PCVar>::type;
 
+/// @brief Default instruction evaluation.
 template <typename Instruction, typename LabelMap>
 struct standard_eval;
 
@@ -711,7 +749,7 @@ template <typename Var, typename Labels, typename LabelMap>
     requires(std::is_same_v<vartype<Var>, get_index_t<LabelMap>>)
 struct standard_eval<ParmJump<Var, Labels>, LabelMap>
 {
-    static constexpr auto table = pjmp_arr<ParmJump<Var, Labels>, LabelMap>;
+    static constexpr auto table = jmp_arr<ParmJump<Var, Labels>, LabelMap>;
 
     template <typename _Memory>
     constexpr void
@@ -722,6 +760,7 @@ struct standard_eval<ParmJump<Var, Labels>, LabelMap>
     }
 };
 
+/// @brief Default evaluator.
 template <typename Block,
           typename LabelMap,
           template <typename, typename> typename Eval = standard_eval>
@@ -740,6 +779,7 @@ struct standard_compiler
     }
 };
 
+/// @brief Ensures that every block ends with a jump.
 template <typename Blocks, typename Labels>
 class ensure_last_jumps
 {
@@ -766,20 +806,25 @@ class ensure_last_jumps
     using type = typelist::map<f, typelist::enumerate<Blocks>>;
 };
 
-/// @brief Ensures that every block ends with a jump.
+/// @brief Helper typedef.
 template <typename Blocks, typename Labels>
 using ensure_last_jumps_t = ensure_last_jumps<Blocks, Labels>::type;
 
+/// @brief Trim extra labels in the beginning and ending of @p Instructions
+/// list.
 template <typename Instructions>
 using trim_t = detail::trim<Instructions>::type;
 
+/// @brief Update jumps to deleted labels.
 template <typename Instructions, typename LabelDict>
 using update_jumps_t = detail::update_jmps<Instructions, LabelDict>::type;
 
+/// @brief Remove adjascent labels.
 template <typename Instructions>
 using optimize_adjascent_labels = detail::optimize_adjacent_labels<
     type_pair<type_pair<Instructions, type_sequence<>>, type_sequence<>>>::type;
 
+/// @brief Remove adjascent labels and update jumps.
 template <typename Instructions>
 class optimize_labels
 {
@@ -795,6 +840,7 @@ class optimize_labels
     using type = update_jumps_t<ai, od>;
 };
 
+/// @brief Helper typedef.
 template <typename Instructions>
 using optimize_labels_t = optimize_labels<Instructions>::type;
 
@@ -937,6 +983,9 @@ struct kernel_blank
     using variables1 = typelist::map<
         make_var,
         typelist::zip<typelist::map<select_first_t, reg_types>, reg_names>>;
+
+    /// @brief Destinanion map.
+    using dest_map = destination_map_t<blocks, labelmap>;
 };
 
 template <typename K>
