@@ -3509,6 +3509,22 @@ class embedded_compiler
 #endif
         }
 
+        bool FORCE_INLINE
+        not_done() const noexcept
+        {
+            return !lrh::land(cmp::eq(facade::pc(), halt_pos));
+        }
+
+        void FORCE_INLINE
+        exec(const index_t pc, const mask_t mask) noexcept
+        {
+            typelist::visit_at(
+                pc,
+                [&]<typename Runner>() noexcept { facade::step(Runner{mask}); },
+                compiled_blocks{},
+                sink);
+        }
+
       public:
         template <typename... Args>
         auto
@@ -3518,18 +3534,10 @@ class embedded_compiler
 
             if constexpr(strategy == GREEDY_FAIR)
             {
-                while(!lrh::land(cmp::eq(facade::pc(), halt_pos)))
+                while(not_done())
                     for(const index_t pc:
                         greedy_groups<K, N, true>{facade::pc()})
-                        typelist::visit_at(
-                            pc,
-                            [&,
-                             mask = make_mask<N>(
-                                 pc,
-                                 facade::pc())]<typename Runner>() noexcept
-                            { facade::step(Runner{mask}); },
-                            compiled_blocks{},
-                            sink);
+                        exec(pc, make_mask<N>(pc, facade::pc()));
             }
             else if constexpr(strategy == HYBRID_MAJOR)
             {
@@ -3538,14 +3546,9 @@ class embedded_compiler
                 unsigned pops            = N;
                 bool     use_next_groups = true;
 
-                while(!lrh::land(cmp::eq(facade::pc(), halt_pos)))
+                while(not_done())
                 {
-                    typelist::visit_at(
-                        pc,
-                        [&]<typename Runner>() noexcept
-                        { facade::step(Runner{mask}); },
-                        compiled_blocks{},
-                        sink);
+                    exec(pc, mask);
 
                     if(use_next_groups)
                         std::tie(pc, mask, pops) =
@@ -3564,14 +3567,9 @@ class embedded_compiler
                 mask_t   mask = full_mask();
                 unsigned pops = N;
 
-                while(!lrh::land(cmp::eq(facade::pc(), halt_pos)))
+                while(not_done())
                 {
-                    typelist::visit_at(
-                        pc,
-                        [&]<typename Runner>() noexcept
-                        { facade::step(Runner{mask}); },
-                        compiled_blocks{},
-                        sink);
+                    exec(pc, mask);
 
                     std::tie(pc, mask, pops) = major_group<K, N>(
                         facade::pc(),
@@ -3586,28 +3584,13 @@ class embedded_compiler
                 bool                      do_major = true;
                 greedy_groups<K, N, true> g;
 
-                while(!lrh::land(cmp::eq(facade::pc(), halt_pos)))
+                while(not_done())
                 {
                     if(do_major)
-                        typelist::visit_at(
-                            pc,
-                            [&]<typename Runner>() noexcept
-                            { facade::step(Runner{mask}); },
-                            compiled_blocks{},
-                            sink);
+                        exec(pc, mask);
                     else
-                    {
                         for(const index_t gpc: g)
-                        {
-                            mask = make_mask<N>(gpc, facade::pc());
-                            typelist::visit_at(
-                                gpc,
-                                [&]<typename Runner>() noexcept
-                                { facade::step(Runner{mask}); },
-                                compiled_blocks{},
-                                sink);
-                        }
-                    }
+                            exec(gpc, make_mask<N>(gpc, facade::pc()));
 
                     g = greedy_groups<K, N, true>{facade::pc()};
                     std::tie(pc, mask, pops) =
