@@ -329,18 +329,34 @@ struct BSE
 
 template <template <typename, typename> typename PTK,
           typename C,
-          bool alloc_temp_storage,
+          bool                    alloc_temp_storage,
+          simd::SelectionStrategy strategy,
+          typename UTR   = std::ratio<1, 2>,
           typename Clock = std::chrono::steady_clock>
 struct SIMDEmbedded
 {
     using kernel                   = PTK<float, C>;
     static constexpr std::size_t N = simd::native_vector_extent_v<float>;
 
+    static constexpr std::string_view
+    strategy_string() noexcept
+    {
+        switch(strategy)
+        {
+        case(simd::GREEDY_FAIR): return "greedy fair";
+        case(simd::HYBRID_MAJOR): return "hybrid major";
+        case(simd::GREEDY_MAJOR): return "greedy major";
+        case(simd::HYBRID_FAIR): return "hybrid fair";
+        }
+    }
+
     std::string
     info() const noexcept
     {
-        return fmt::format("embedded|{}",
-                           alloc_temp_storage ? "with ts" : "no ts");
+        return fmt::format("embedded|{}|{}|UTR:{}%",
+                           alloc_temp_storage ? "with ts" : "no ts",
+                           strategy_string(),
+                           ratio2percent<UTR>());
     }
 
     Clock::duration
@@ -354,7 +370,9 @@ struct SIMDEmbedded
             ranges::views::chunk(img, N),
             [](auto&& chunk) noexcept
             {
-                simd::embedded_function<kernel, alloc_temp_storage> f;
+                simd::
+                    embedded_function<kernel, alloc_temp_storage, strategy, UTR>
+                        f;
 
                 simd::native_vector<std::uint32_t> vpp;
 
@@ -399,13 +417,17 @@ int main(/*int argc, char* argv[]*/)
     Logger logger(Logger::INFO);
     logger.info("Using x86-64 vector extensions: {}", simd::info::value);
 
-    print_results(run_benchmarks(logger,
-                                 BSE<pt_const, C1>{},
-                                 SIMDEmbedded<pt_const, C1, false>{},
-                                 SIMDEmbedded<pt_const, C1, true>{},
-                                 SIMDStream<pt_const, C1, R1, false>{},
-                                 SIMDStream<pt_const, C1, R1, true>{},
-                                 SIMDFunction<pt_const, C1, R1, false>{},
-                                 SIMDFunction<pt_const, C1, R1, true>{}));
+    print_results(
+        run_benchmarks(logger,
+                       BSE<pt_const, C1>{},
+                       SIMDEmbedded<pt_const, C1, false, simd::GREEDY_MAJOR>{},
+                       SIMDEmbedded<pt_const, C1, true, simd::GREEDY_FAIR>{},
+                       SIMDEmbedded<pt_const, C1, true, simd::HYBRID_MAJOR>{},
+                       SIMDEmbedded<pt_const, C1, true, simd::GREEDY_MAJOR>{},
+                       SIMDEmbedded<pt_const, C1, true, simd::HYBRID_FAIR>{},
+                       SIMDStream<pt_const, C1, R1, false>{},
+                       SIMDStream<pt_const, C1, R1, true>{},
+                       SIMDFunction<pt_const, C1, R1, false>{},
+                       SIMDFunction<pt_const, C1, R1, true>{}));
     return 0;
 }
