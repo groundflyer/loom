@@ -3199,8 +3199,8 @@ struct visitor_selector<STITCH::MASKED>
         using memory_view = _Memory::view_type;
         using index_t     = K::index_t;
 
-        static constexpr fsize_t N = native_vector_extent_v<index_t>;
-        static constexpr fsize_t threshold = get_thresold<N, UTR>();
+        static constexpr fsize_t N         = native_vector_extent_v<index_t>;
+        static constexpr fsize_t threshold = get_threshold<N, UTR>();
         static constexpr popcnt_helper<index_t, N> popcnt{};
 
         using index_vector_t = packed_vector<index_t, N>;
