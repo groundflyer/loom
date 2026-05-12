@@ -2470,6 +2470,12 @@ class greedy_groups :
     {
         return std::default_sentinel;
     }
+
+    fsize_t
+    size() const noexcept
+    {
+        return std::popcount(m_set);
+    }
 };
 
 /// @brief Range over next possible block indices.
@@ -3432,7 +3438,7 @@ enum SelectionStrategy
 /// @tparam UTR utilization threshold for HYBRID_MAJOR strategy
 template <Kernel            K,
           bool              alloc_temp_storage,
-          SelectionStrategy strategy = GREEDY_MAJOR,
+          SelectionStrategy strategy = HYBRID_MAJOR,
           typename UTR               = std::ratio<1, 2>>
     requires(typelist::of_same_size<typename K::reg_types> && UTR::num > 0 &&
              UTR::den > 0 && UTR::num <= UTR::den)
@@ -3610,8 +3616,6 @@ class embedded_compiler
 
 /// @brief Hybrid masked compiler.
 template <Kernel K,
-          SORT   sort_method        = COUNTING_SORT,
-          bool   concurrent         = false,
           bool   alloc_temp_storage = false,
           typename UTR              = std::ratio<1, 2>>
     requires(!K::singular && typelist::of_same_size<typename K::reg_types> &&
@@ -3628,25 +3632,17 @@ class hybrid_compiler
 
     static constexpr fsize_t N = native_vector_extent_v<index_t>;
 
-    static constexpr fsize_t threshold =
-        (N * UTR::num + UTR::den - 1) / UTR::den;
-
     template <typename T>
-    using allocator = std::conditional_t<concurrent,
-                                         CacheLineAlignedAllocator<T>,
-                                         SIMDAlignedAllocator<T>>;
+    using allocator = CacheLineAlignedAllocator<T>;
 
     using memory =
         bve::Memory<reg_types, reg_names, pc, std::vector, allocator>;
     using memory_view = memory::view_type;
 
-    using sorter = select_sorter<sort_method>::template type<K, memory>;
-
-    using stream_facade = std::conditional_t<
-        concurrent,
-        ConcurrentStreamFacade<K, std::vector, allocator, sorter>,
-        bve::StreamFacade<K, std::vector, allocator, sorter>>;
-    using memory_facade = bve::MemoryFacade<K, std::vector, allocator, sorter>;
+    using facade = ConcurrentStreamFacade<K,
+                                          std::vector,
+                                          allocator,
+                                          CountingSorter<K, memory>>;
 
     template <typename View>
         requires(pv_extent<View> == N)
@@ -3684,6 +3680,11 @@ class hybrid_compiler
 
     struct visitor
     {
+        static constexpr fsize_t gthreshold = get_threshold<N, UTR>();
+        static constexpr fsize_t sthreshold =
+            get_threshold<cache_line_capacity_v<index_t> * K::num_blocks,
+                          UTR>();
+
         static constexpr popcnt_helper<index_t, N> popcnt{};
 
         using index_vector_t = packed_vector<index_t, N>;
@@ -3704,33 +3705,37 @@ class hybrid_compiler
         {
             std::ranges::for_each(
                 aligned_chunks<memory, N, K::halt_pos>(view),
-                []<typename View>(View view) noexcept
+                [t = gthreshold * (view.size() > sthreshold)]<typename View>(
+                    View view) noexcept
                     requires(pv_extent<View> == N)
                 {
                     LocalStorage   storage(view);
-                    index_vector_t pcs    = storage.pc();
-                    bool           repeat = true;
+                    index_vector_t pcs             = storage.pc();
+                    bool           use_next_groups = true;
 
-                    while(repeat)
+                    auto [pc, mask, pops] =
+                        major_group<K, N>(pcs, greedy_groups<K, N, true>{pcs});
+
+                    while(pops > t)
                     {
-                        fsize_t m = 0;
+                        typelist::visit_at(
+                            pc,
+                            [&]<typename Block>() noexcept
+                            { Block{mask}(storage); },
+                            compiled_blocks{},
+                            sink);
 
-                        for(const index_t pc: greedy_groups<K, N, true>{pcs})
-                        {
-                            const mask_t mask = make_mask<N>(pc, pcs);
-                            typelist::visit_at(
-                                pc,
-                                [&]<typename Block>() noexcept
-                                { Block{mask}(storage); },
-                                compiled_blocks{},
-                                sink);
+                        pcs = storage.pc();
 
-                            m = std::max(m, static_cast<fsize_t>(popcnt(mask)));
-                        }
+                        if(use_next_groups)
+                            std::tie(pc, mask, pops) =
+                                major_group<K, N>(pcs, next_groups<K>{pc});
+                        else
+                            std::tie(pc, mask, pops) = major_group<K, N>(
+                                pcs,
+                                greedy_groups<K, N, true>{pcs});
 
-                        repeat = m >= threshold;
-                        m      = 0;
-                        pcs    = storage.pc();
+                        use_next_groups = pops > gthreshold;
                     };
                 });
         }
@@ -3743,41 +3748,41 @@ class hybrid_compiler
     };
 
   public:
-    class function : public memory_facade
+    class function : public facade
     {
 
       public:
         using program = K;
-        using memory_facade::memory_facade;
+        using facade::facade;
 
         template <bool zip_outputs = false, typename... Args>
         auto
         operator()(Args&&... args) noexcept
         {
-            memory_facade::set_inputs(std::forward<Args>(args)...);
+            facade::set_inputs(std::forward<Args>(args)...);
 
-            while(!memory_facade::done())
+            while(!facade::done())
             {
-                memory_facade::visit(visitor{});
-                memory_facade::sort();
+                facade::visit(visitor{});
+                facade::sort();
             }
 
             if constexpr(zip_outputs)
-                return memory_facade::get_output_zipped();
+                return facade::get_output_zipped();
             else
-                return memory_facade::get_outputs();
+                return facade::get_outputs();
         }
     };
 
-    struct stream : public stream_facade
+    struct stream : public facade
     {
         using program = K;
-        using stream_facade::stream_facade;
+        using facade::facade;
 
         constexpr void
         operator()() noexcept
         {
-            stream_facade::visit(visitor{});
+            facade::visit(visitor{});
         }
     };
 };
@@ -3800,23 +3805,15 @@ using stream = compiler<K, stitch, sort_method, concurrent, UTR>::stream;
 
 /// @brief Alias for hybrid function-like invocation.
 template <Kernel K,
-          SORT   sort_method        = COUNTING_SORT,
-          bool   concurrent         = false,
           bool   alloc_temp_storage = false,
           typename UTR              = std::ratio<1, 2>>
-using hybrid_function =
-    hybrid_compiler<K, sort_method, concurrent, alloc_temp_storage, UTR>::
-        function;
+using hybrid_function = hybrid_compiler<K, alloc_temp_storage, UTR>::function;
 
 /// @brief Alias for hybrid streaming invocation.
 template <Kernel K,
-          SORT   sort_method        = COUNTING_SORT,
-          bool   concurrent         = false,
           bool   alloc_temp_storage = false,
           typename UTR              = std::ratio<1, 2>>
-using hybrid_stream =
-    hybrid_compiler<K, sort_method, concurrent, alloc_temp_storage, UTR>::
-        stream;
+using hybrid_stream = hybrid_compiler<K, alloc_temp_storage, UTR>::stream;
 
 /// @brief Alias for embedded invocation.
 template <Kernel            K,

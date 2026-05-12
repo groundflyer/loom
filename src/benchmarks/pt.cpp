@@ -156,11 +156,7 @@ struct SIMDFunction
     static auto
     get_func(const unsigned size) noexcept
     {
-        return simd::hybrid_function<kernel,
-                                     simd::COUNTING_SORT,
-                                     false,
-                                     alloc_temp_storage,
-                                     UTR>(size);
+        return simd::hybrid_function<kernel, alloc_temp_storage, UTR>(size);
     }
 
     std::string
@@ -220,11 +216,8 @@ struct SIMDStream
     static auto
     get_stream(unsigned stream_size) noexcept
     {
-        return simd::hybrid_stream<kernel,
-                                   simd::COUNTING_SORT,
-                                   false,
-                                   alloc_temp_storage,
-                                   UTR>(stream_size);
+        return simd::hybrid_stream<kernel, alloc_temp_storage, UTR>(
+            stream_size);
     }
 
     std::string
@@ -411,23 +404,23 @@ struct SIMDEmbedded
 
 using C1 = constants<CS(128), CS(0.1), CS(64)>;
 using R1 = std::ratio<1, 2>;
+using R2 = std::ratio<1, 5>;
 
 int main(/*int argc, char* argv[]*/)
 {
     Logger logger(Logger::INFO);
     logger.info("Using x86-64 vector extensions: {}", simd::info::value);
 
-    print_results(
-        run_benchmarks(logger,
-                       BSE<pt_const, C1>{},
-                       SIMDEmbedded<pt_const, C1, false, simd::GREEDY_MAJOR>{},
-                       SIMDEmbedded<pt_const, C1, true, simd::GREEDY_FAIR>{},
-                       SIMDEmbedded<pt_const, C1, true, simd::HYBRID_MAJOR>{},
-                       SIMDEmbedded<pt_const, C1, true, simd::GREEDY_MAJOR>{},
-                       SIMDEmbedded<pt_const, C1, true, simd::HYBRID_FAIR>{},
-                       SIMDStream<pt_const, C1, R1, false>{},
-                       SIMDStream<pt_const, C1, R1, true>{},
-                       SIMDFunction<pt_const, C1, R1, false>{},
-                       SIMDFunction<pt_const, C1, R1, true>{}));
+    print_results(run_benchmarks(
+        logger,
+        BSE<pt_const, C1>{},
+        SIMDEmbedded<pt_const, C1, false, simd::GREEDY_MAJOR, R2>{},
+        SIMDEmbedded<pt_const, C1, true, simd::HYBRID_MAJOR, R2>{},
+        SIMDEmbedded<pt_const, C1, true, simd::GREEDY_MAJOR, R2>{},
+        SIMDEmbedded<pt_const, C1, true, simd::HYBRID_FAIR, R2>{},
+        SIMDStream<pt_const, C1, R2, false>{},
+        SIMDStream<pt_const, C1, R2, true>{},
+        SIMDFunction<pt_const, C1, R2, false>{},
+        SIMDFunction<pt_const, C1, R2, true>{}));
     return 0;
 }
