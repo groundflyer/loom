@@ -3209,6 +3209,8 @@ struct visitor_selector<STITCH::MASKED>
         static constexpr fsize_t threshold = get_threshold<N, UTR>();
         static constexpr popcnt_helper<index_t, N> popcnt{};
 
+        static_assert(threshold >= 2);
+
         using index_vector_t = packed_vector<index_t, N>;
         using mask_t         = mask_type<index_t, N>;
 
@@ -3457,6 +3459,8 @@ class embedded_compiler
         broadcast<N>(K::halt_pos);
     static constexpr fsize_t threshold = get_threshold<N, UTR>();
 
+    static_assert(threshold >= 2);
+
     template <typename... Ts>
     using memory = KernelMemory<Ts..., N>;
 
@@ -3564,7 +3568,7 @@ class embedded_compiler
                             facade::pc(),
                             greedy_groups<K, N, true>{facade::pc()});
 
-                    use_next_groups = pops >= threshold;
+                    use_next_groups = pops > threshold;
                 }
             }
             else if constexpr(strategy == GREEDY_MAJOR)
@@ -3601,7 +3605,7 @@ class embedded_compiler
                     g = greedy_groups<K, N, true>{facade::pc()};
                     std::tie(pc, mask, pops) =
                         major_group<K, N>(facade::pc(), g);
-                    do_major = pops >= threshold;
+                    do_major = pops > threshold;
                 }
             }
 
@@ -3684,6 +3688,8 @@ class hybrid_compiler
         static constexpr fsize_t sthreshold =
             get_threshold<cache_line_capacity_v<index_t> * K::num_blocks,
                           UTR>();
+
+        static_assert(gthreshold >= 2);
 
         static constexpr popcnt_helper<index_t, N> popcnt{};
 
