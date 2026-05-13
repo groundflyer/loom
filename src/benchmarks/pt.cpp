@@ -403,24 +403,44 @@ struct SIMDEmbedded
 };
 
 using C1 = constants<CS(128), CS(0.1), CS(64)>;
-using R1 = std::ratio<1, 2>;
-using R2 = std::ratio<1, 5>;
+
+template <typename T>
+using mk_embedded = SIMDEmbedded<pt_const,
+                                 C1,
+                                 typelist::head<T>::value,
+                                 typelist::at<1, T>::value,
+                                 typelist::at<2, T>>;
+
+template <int den, int... noms>
+using mk_utrs = type_sequence<std::ratio<noms, den>...>;
+
+template <simd::SelectionStrategy... Stgs>
+using mk_stgs =
+    type_sequence<std::integral_constant<simd::SelectionStrategy, Stgs>...>;
+
+using bools = type_sequence<std::true_type, std::false_type>;
+using utrs  = mk_utrs<8, 1, 2, 3, 4, 5, 6, 7>;
+using stgs  = mk_stgs<simd::GREEDY_FAIR,
+                      simd::HYBRID_MAJOR,
+                      simd::GREEDY_MAJOR,
+                      simd::HYBRID_FAIR>;
+
+using emb_product = typelist::cartesian<bools, stgs, utrs>;
+
+using embs = typelist::map<mk_embedded, emb_product>;
+
+template <typename... Bms>
+void
+run(Logger& logger, type_sequence<Bms...>)
+{
+    print_results(run_benchmarks(logger, BSE<pt_const, C1>{}, Bms{}...));
+}
 
 int main(/*int argc, char* argv[]*/)
 {
     Logger logger(Logger::INFO);
     logger.info("Using x86-64 vector extensions: {}", simd::info::value);
 
-    print_results(run_benchmarks(
-        logger,
-        BSE<pt_const, C1>{},
-        SIMDEmbedded<pt_const, C1, false, simd::GREEDY_MAJOR, R2>{},
-        SIMDEmbedded<pt_const, C1, true, simd::HYBRID_MAJOR, R2>{},
-        SIMDEmbedded<pt_const, C1, true, simd::GREEDY_MAJOR, R2>{},
-        SIMDEmbedded<pt_const, C1, true, simd::HYBRID_FAIR, R2>{},
-        SIMDStream<pt_const, C1, R2, false>{},
-        SIMDStream<pt_const, C1, R2, true>{},
-        SIMDFunction<pt_const, C1, R2, false>{},
-        SIMDFunction<pt_const, C1, R2, true>{}));
+    run(logger, embs{});
     return 0;
 }
