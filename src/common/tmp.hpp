@@ -856,6 +856,119 @@ using concat = foldr<join, type_sequence<>, L>;
 template <List L>
 using flatten = detail::flatten<L, type_sequence<>>::type;
 
+/// @brief Map a function returning a list over and concantenate the results.
+template <template <typename> typename F, List L>
+using concat_map = concat<map<F, L>>;
+
+namespace detail
+{
+template <typename... Ts>
+struct cartesian;
+
+template <typename As, typename Bs>
+struct cartesian<As, Bs>
+{
+    template <typename A>
+    struct f1
+    {
+        template <typename B>
+        struct f2
+        {
+            using type = type_pair<A, B>;
+        };
+
+        template <typename T>
+        using f2t = f2<T>::type;
+
+        using type = typelist::map<f2t, Bs>;
+    };
+
+    template <typename T>
+    using f1t = f1<T>::type;
+
+    using type = typelist::concat_map<f1t, As>;
+};
+
+template <typename As, typename Bs, typename Cs>
+struct cartesian<As, Bs, Cs>
+{
+    template <typename A>
+    struct f1
+    {
+        template <typename B>
+        struct f2
+        {
+            template <typename C>
+            struct f3
+            {
+                using type = type_sequence<A, B, C>;
+            };
+
+            template <typename T>
+            using f3t = f3<T>::type;
+
+            using type = typelist::map<f3t, Cs>;
+        };
+
+        template <typename T>
+        using f2t = f2<T>::type;
+
+        using type = typelist::concat_map<f2t, Bs>;
+    };
+
+    template <typename T>
+    using f1t = f1<T>::type;
+
+    using type = typelist::concat_map<f1t, As>;
+};
+
+template <typename As, typename Bs, typename Cs, typename Ds>
+struct cartesian<As, Bs, Cs, Ds>
+{
+    template <typename A>
+    struct f1
+    {
+        template <typename B>
+        struct f2
+        {
+            template <typename C>
+            struct f3
+            {
+                template <typename D>
+                struct f4
+                {
+                    using type = type_sequence<A, B, C, D>;
+                };
+
+                template <typename T>
+                using f4t = f4<T>::type;
+
+                using type = typelist::map<f4t, Ds>;
+            };
+
+            template <typename T>
+            using f3t = f3<T>::type;
+
+            using type = typelist::concat_map<f3t, Cs>;
+        };
+
+        template <typename T>
+        using f2t = f2<T>::type;
+
+        using type = typelist::concat_map<f2t, Bs>;
+    };
+
+    template <typename T>
+    using f1t = f1<T>::type;
+
+    using type = typelist::concat_map<f1t, As>;
+};
+} // namespace detail
+
+/// @brief Cartesian product of lists.
+template <List... Ls>
+using cartesian = detail::cartesian<Ls...>::type;
+
 /// @brief Given a list zipper (a pair of lists) take a step forward moving
 /// the head element from @p a to @p b.
 template <typename ListZipper>

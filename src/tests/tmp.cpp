@@ -154,6 +154,12 @@ static_assert(
             type_sequence<int8_t, int16_t, int32_t, int64_t, float, double>>,
         integer_sequence<size_t, 1, 2, 4, 8, 4, 8>>);
 static_assert(is_same_v<replace_with_dict<dict, testlist4>, testlist4_v>);
+static_assert(
+    is_same_v<cartesian<type_sequence<char, int>, type_sequence<float, double>>,
+              type_sequence<type_pair<char, float>,
+                            type_pair<char, double>,
+                            type_pair<int, float>,
+                            type_pair<int, double>>>);
 } // namespace loom::typelist
 
 int
