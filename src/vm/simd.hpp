@@ -3186,11 +3186,25 @@ struct visitor_selector
 /// @tparam N lane size
 /// @tparam UTR utilization threshold ratio
 template <fsize_t N, typename UTR>
-consteval fsize_t
-get_threshold() noexcept
+struct get_threshold :
+    std::integral_constant<fsize_t, (N * UTR::num + UTR::den - 1) / UTR::den>
 {
-    return (N * UTR::num + UTR::den - 1) / UTR::den;
-}
+};
+
+/// @brief Helper variable.
+template <fsize_t N, typename UTR>
+constexpr inline fsize_t get_threshold_v = get_threshold<N, UTR>::value;
+
+/// @brief Validate utilization threshod.
+template <typename UTR>
+struct val_utr :
+    std::bool_constant<(UTR::num > 0 && UTR::den > 0 && UTR::num <= UTR::den)>
+{
+};
+
+/// @brief Helper variable.
+template <typename UTR>
+constexpr inline bool val_utr_v = val_utr<UTR>::value;
 
 /// @brief Create masked execution step visitor.
 template <>
@@ -3206,7 +3220,7 @@ struct visitor_selector<STITCH::MASKED>
         using index_t     = K::index_t;
 
         static constexpr fsize_t N         = native_vector_extent_v<index_t>;
-        static constexpr fsize_t threshold = get_threshold<N, UTR>();
+        static constexpr fsize_t threshold = get_threshold_v<N, UTR>;
         static constexpr popcnt_helper<index_t, N> popcnt{};
 
         static_assert(threshold >= 2);
@@ -3278,8 +3292,7 @@ template <Kernel K,
           SORT   sort_method,
           bool   concurrent = false,
           typename UTR      = std::ratio<1, 2>>
-    requires(typelist::of_same_size<typename K::reg_types> && UTR::num > 0 &&
-             UTR::den > 0 && UTR::num <= UTR::den)
+    requires(typelist::of_same_size<typename K::reg_types> && val_utr_v<UTR>)
 class compiler
 {
     using labelmap  = K::labelmap;
@@ -3442,8 +3455,7 @@ template <Kernel            K,
           bool              alloc_temp_storage,
           SelectionStrategy strategy = HYBRID_MAJOR,
           typename UTR               = std::ratio<1, 2>>
-    requires(typelist::of_same_size<typename K::reg_types> && UTR::num > 0 &&
-             UTR::den > 0 && UTR::num <= UTR::den)
+    requires(typelist::of_same_size<typename K::reg_types> && val_utr_v<UTR>)
 class embedded_compiler
 {
     using labelmap  = K::labelmap;
@@ -3457,7 +3469,7 @@ class embedded_compiler
     static constexpr fsize_t N        = native_vector_extent_v<index_t>;
     static constexpr packed_vector<index_t, N> halt_pos =
         broadcast<N>(K::halt_pos);
-    static constexpr fsize_t threshold = get_threshold<N, UTR>();
+    static constexpr fsize_t threshold = get_threshold_v<N, UTR>;
 
     static_assert(threshold >= 2);
 
@@ -3568,7 +3580,7 @@ class embedded_compiler
                             facade::pc(),
                             greedy_groups<K, N, true>{facade::pc()});
 
-                    use_next_groups = pops > threshold;
+                    use_next_groups = pops >= threshold;
                 }
             }
             else if constexpr(strategy == GREEDY_MAJOR)
@@ -3605,7 +3617,7 @@ class embedded_compiler
                     g = greedy_groups<K, N, true>{facade::pc()};
                     std::tie(pc, mask, pops) =
                         major_group<K, N>(facade::pc(), g);
-                    do_major = pops > threshold;
+                    do_major = pops >= threshold;
                 }
             }
 
@@ -3621,9 +3633,10 @@ class embedded_compiler
 /// @brief Hybrid masked compiler.
 template <Kernel K,
           bool   alloc_temp_storage = false,
-          typename UTR              = std::ratio<1, 2>>
+          typename UTRt             = std::ratio<1, 2>,
+          typename UTRh             = UTRt>
     requires(!K::singular && typelist::of_same_size<typename K::reg_types> &&
-             UTR::num > 0 && UTR::den > 0 && UTR::num <= UTR::den)
+             val_utr_v<UTRt> && val_utr_v<UTRh>)
 class hybrid_compiler
 {
     using labelmap  = K::labelmap;
@@ -3684,12 +3697,11 @@ class hybrid_compiler
 
     struct visitor
     {
-        static constexpr fsize_t gthreshold = get_threshold<N, UTR>();
+        static constexpr fsize_t gthreshold = get_threshold_v<N, UTRt>;
         static constexpr fsize_t sthreshold =
-            get_threshold<cache_line_capacity_v<index_t> * K::num_blocks,
-                          UTR>();
-
-        static_assert(gthreshold >= 2);
+            get_threshold_v<cache_line_capacity_v<index_t> * K::num_blocks,
+                            UTRt>;
+        static constexpr fsize_t hthreshold = get_threshold_v<N, UTRh>;
 
         static constexpr popcnt_helper<index_t, N> popcnt{};
 
@@ -3741,7 +3753,7 @@ class hybrid_compiler
                                 pcs,
                                 greedy_groups<K, N, true>{pcs});
 
-                        use_next_groups = pops > gthreshold;
+                        use_next_groups = pops >= hthreshold;
                     };
                 });
         }
@@ -3785,7 +3797,7 @@ class hybrid_compiler
         using program = K;
         using facade::facade;
 
-        constexpr void
+        void
         operator()() noexcept
         {
             facade::visit(visitor{});
