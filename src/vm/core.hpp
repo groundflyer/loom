@@ -390,7 +390,8 @@ struct jump_helper<ParmJump<Var, Labels>, LabelMap>
         requires(typelist::key_elem<L, LabelMap>)
     using jump_idx = typelist::lookup<L, LabelMap>;
 
-    using jump_idxs = typelist::map<jump_idx, Labels>;
+    using jump_idxs =
+        typelist::to_integer_sequence<typelist::map<jump_idx, Labels>>;
 
     static constexpr auto table = intlist::array<jump_idxs>;
 };

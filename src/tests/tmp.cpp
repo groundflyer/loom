@@ -66,9 +66,8 @@ static_assert(is_same_v<nlperm<5, L>, pm_seq5>);
 } // namespace loom::intlist
 
 template <typename T>
-struct test_f
+struct test_f : integral_constant<size_t, sizeof(T)>
 {
-    static constexpr size_t value = sizeof(T);
 };
 
 namespace loom::typelist
@@ -150,8 +149,9 @@ static_assert(
 static_assert(is_same_v<flatten<flatten_test>, flatten_val>);
 static_assert(
     is_same_v<
-        map<test_f,
-            type_sequence<int8_t, int16_t, int32_t, int64_t, float, double>>,
+        to_integer_sequence<map<
+            test_f,
+            type_sequence<int8_t, int16_t, int32_t, int64_t, float, double>>>,
         integer_sequence<size_t, 1, 2, 4, 8, 4, 8>>);
 static_assert(is_same_v<replace_with_dict<dict, testlist4>, testlist4_v>);
 static_assert(
