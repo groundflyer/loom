@@ -136,23 +136,22 @@ template <typename C>
 Image
 get_img() noexcept
 {
-    const unsigned w =
-        read_number<unsigned>(cs2sv<typename C::WIDTH>).value();
-    const unsigned h =
-        read_number<unsigned>(cs2sv<typename C::HEIGHT>).value();
+    const unsigned w = read_number<unsigned>(cs2sv<typename C::WIDTH>).value();
+    const unsigned h = read_number<unsigned>(cs2sv<typename C::HEIGHT>).value();
     return Image(Vec2u(w, h));
 }
 
-template <template <typename, typename> typename PTK,
-          typename C,
-          typename UTR,
+using C      = constants<CS(128), CS(0.1), CS(64)>;
+using kernel = pt_const<float, C>;
+
+constexpr unsigned num_blocks = 44; // kernel::num_blocks;
+
+template <typename UTR,
           bool alloc_temp_storage,
           bool count_extra = false,
           typename Clock   = std::chrono::steady_clock>
 struct SIMDFunction
 {
-    using kernel = PTK<float, C>;
-
     static auto
     get_func(const unsigned size) noexcept
     {
@@ -162,8 +161,8 @@ struct SIMDFunction
     std::string
     info() const noexcept
     {
-        return fmt::format("full range|{}|UTR:{:.0f}%",
-                           alloc_temp_storage ? "with ts" : "no ts",
+        return fmt::format("full-range|ts:{}|UTR:{:.0f}%",
+                           alloc_temp_storage,
                            ratio2percent<UTR>());
     }
 
@@ -200,33 +199,29 @@ struct SIMDFunction
     }
 };
 
-template <template <typename, typename> typename PTK,
-          typename C,
-          typename UTR,
-          bool alloc_temp_storage,
-          bool count_extra = false,
-          typename Clock   = std::chrono::steady_clock>
+template <bool alloc_temp_storage,
+          typename UTRt,
+          typename UTRh,
+          unsigned stream_size,
+          bool     count_extra = false,
+          typename Clock       = std::chrono::steady_clock>
 struct SIMDStream
 {
-    using kernel = PTK<float, C>;
-
-    unsigned stream_size =
-        simd::native_vector_extent_v<float> * (kernel::num_blocks + 1);
-
     static auto
-    get_stream(unsigned stream_size) noexcept
+    get_stream() noexcept
     {
-        return simd::hybrid_stream<kernel, alloc_temp_storage, UTR>(
+        return simd::hybrid_stream<kernel, alloc_temp_storage, UTRt, UTRh>(
             stream_size);
     }
 
     std::string
     info() const noexcept
     {
-        return fmt::format("stream|{}|size:{}|UTR:{:.0f}%",
-                           alloc_temp_storage ? "with ts" : "no ts",
+        return fmt::format("stream|ts:{}|size:{}|UTRt:{:.0f}%|UTRh:{:.0f}%",
+                           alloc_temp_storage,
                            stream_size,
-                           ratio2percent<UTR>());
+                           ratio2percent<UTRt>(),
+                           ratio2percent<UTRh>());
     }
 
     Clock::duration
@@ -234,7 +229,7 @@ struct SIMDStream
     {
         Image img = get_img<C>();
 
-        auto s = get_stream(stream_size);
+        auto s = get_stream();
 
         std::vector<output_type<kernel>> result_buffer;
         result_buffer.reserve(img.size());
@@ -283,13 +278,9 @@ struct SIMDStream
     }
 };
 
-template <template <typename, typename> typename PTK,
-          typename C,
-          typename Clock = std::chrono::steady_clock>
+template <typename Clock = std::chrono::steady_clock>
 struct BSE
 {
-    using kernel = PTK<float, C>;
-
     std::string_view
     info() const noexcept
     {
@@ -320,15 +311,12 @@ struct BSE
     }
 };
 
-template <template <typename, typename> typename PTK,
-          typename C,
-          bool                    alloc_temp_storage,
+template <bool                    alloc_temp_storage,
           simd::SelectionStrategy strategy,
           typename UTR   = std::ratio<1, 2>,
           typename Clock = std::chrono::steady_clock>
 struct SIMDEmbedded
 {
-    using kernel                   = PTK<float, C>;
     static constexpr std::size_t N = simd::native_vector_extent_v<float>;
 
     static constexpr std::string_view
@@ -336,18 +324,18 @@ struct SIMDEmbedded
     {
         switch(strategy)
         {
-        case(simd::GREEDY_FAIR): return "greedy fair";
-        case(simd::HYBRID_MAJOR): return "hybrid major";
-        case(simd::GREEDY_MAJOR): return "greedy major";
-        case(simd::HYBRID_FAIR): return "hybrid fair";
+        case(simd::GREEDY_FAIR): return "greedy-fair";
+        case(simd::HYBRID_MAJOR): return "hybrid-major";
+        case(simd::GREEDY_MAJOR): return "greedy-major";
+        case(simd::HYBRID_FAIR): return "hybrid-fair";
         }
     }
 
     std::string
     info() const noexcept
     {
-        return fmt::format("embedded|{}|{}|UTR:{}%",
-                           alloc_temp_storage ? "with ts" : "no ts",
+        return fmt::format("embedded|ts:{}|{}|UTR:{}%",
+                           alloc_temp_storage,
                            strategy_string(),
                            ratio2percent<UTR>());
     }
@@ -402,14 +390,22 @@ struct SIMDEmbedded
     }
 };
 
-using C1 = constants<CS(128), CS(0.1), CS(64)>;
+template <typename T>
+using mk_embedded = SIMDEmbedded<true,               // ts bool
+                                 simd::HYBRID_MAJOR, // strategy
+                                 T>;                 // UTR
 
 template <typename T>
-using mk_embedded = SIMDEmbedded<pt_const,
-                                 C1,
-                                 typelist::head<T>::value,
-                                 typelist::at<1, T>::value,
-                                 typelist::at<2, T>>;
+using mk_stream = SIMDStream<false,                      // ts boolean
+                             typelist::at<0, T>,         // UTRt
+                             typelist::at<1, T>,         // UTRh
+                             typelist::at<2, T>::value>; // stream size
+
+template <typename R>
+using mk_size =
+    std::integral_constant<unsigned,
+                           simd::native_vector_extent_v<float> *
+                               simd::get_threshold_v<num_blocks, R>>;
 
 template <int den, int... noms>
 using mk_utrs = type_sequence<std::ratio<noms, den>...>;
@@ -419,21 +415,23 @@ using mk_stgs =
     type_sequence<std::integral_constant<simd::SelectionStrategy, Stgs>...>;
 
 using bools = type_sequence<std::true_type, std::false_type>;
-using utrs  = mk_utrs<8, 1, 2, 3, 4, 5, 6, 7>;
-using stgs  = mk_stgs<simd::GREEDY_FAIR,
-                      simd::HYBRID_MAJOR,
-                      simd::GREEDY_MAJOR,
-                      simd::HYBRID_FAIR>;
+using utrs  = mk_utrs<16, 1, 4, 8, 15>;
+using stgs  = mk_stgs<simd::HYBRID_MAJOR, simd::GREEDY_MAJOR>;
+using sizes = typelist::map<mk_size, mk_utrs<5, 1, 2, 3, 4>>;
 
-using emb_product = typelist::cartesian<bools, stgs, utrs>;
+using emb_product    = typelist::cartesian<bools, stgs, utrs>;
+using stream_product = typelist::cartesian<utrs, utrs, sizes>;
 
-using embs = typelist::map<mk_embedded, emb_product>;
+using embs    = typelist::map<mk_embedded, utrs>;
+using streams = typelist::map<mk_stream, stream_product>;
+
+using allbms = typelist::join<embs, streams>;
 
 template <typename... Bms>
 void
 run(Logger& logger, type_sequence<Bms...>)
 {
-    print_results(run_benchmarks(logger, BSE<pt_const, C1>{}, Bms{}...));
+    print_results(run_benchmarks(logger, BSE<>{}, Bms{}...));
 }
 
 int main(/*int argc, char* argv[]*/)
@@ -441,6 +439,6 @@ int main(/*int argc, char* argv[]*/)
     Logger logger(Logger::INFO);
     logger.info("Using x86-64 vector extensions: {}", simd::info::value);
 
-    run(logger, embs{});
+    run(logger, allbms{});
     return 0;
 }

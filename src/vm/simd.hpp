@@ -3471,8 +3471,6 @@ class embedded_compiler
         broadcast<N>(K::halt_pos);
     static constexpr fsize_t threshold = get_threshold_v<N, UTR>;
 
-    static_assert(threshold >= 2);
-
     template <typename... Ts>
     using memory = KernelMemory<Ts..., N>;
 
@@ -3824,14 +3822,18 @@ using stream = compiler<K, stitch, sort_method, concurrent, UTR>::stream;
 /// @brief Alias for hybrid function-like invocation.
 template <Kernel K,
           bool   alloc_temp_storage = false,
-          typename UTR              = std::ratio<1, 2>>
-using hybrid_function = hybrid_compiler<K, alloc_temp_storage, UTR>::function;
+          typename UTRt             = std::ratio<1, 2>,
+          typename UTRh             = UTRt>
+using hybrid_function =
+    hybrid_compiler<K, alloc_temp_storage, UTRt, UTRh>::function;
 
 /// @brief Alias for hybrid streaming invocation.
 template <Kernel K,
           bool   alloc_temp_storage = false,
-          typename UTR              = std::ratio<1, 2>>
-using hybrid_stream = hybrid_compiler<K, alloc_temp_storage, UTR>::stream;
+          typename UTRt             = std::ratio<1, 2>,
+          typename UTRh             = UTRt>
+using hybrid_stream =
+    hybrid_compiler<K, alloc_temp_storage, UTRt, UTRh>::stream;
 
 /// @brief Alias for embedded invocation.
 template <Kernel            K,
