@@ -3775,10 +3775,11 @@ class embedded_compiler
 };
 
 /// @brief Hybrid masked compiler.
-template <Kernel K,
-          bool   alloc_temp_storage = false,
-          typename UTRt             = std::ratio<1, 2>,
-          typename UTRh             = UTRt>
+template <Kernel             K,
+          bool               alloc_temp_storage = false,
+          ReconvergenceStyle style              = STATIC_MAJOR,
+          typename UTRt                         = std::ratio<1, 2>,
+          typename UTRh                         = UTRt>
     requires(!K::singular && typelist::of_same_size<typename K::reg_types> &&
              val_utr_v<UTRt> && val_utr_v<UTRh>)
 class hybrid_compiler
@@ -3878,27 +3879,62 @@ class hybrid_compiler
                     auto [pc, mask, pops] =
                         major_group<K, N>(pcs, greedy_groups<K, N, true>{pcs});
 
-                    while(pops > t)
+                    if constexpr(style == HYBRID_MAJOR)
                     {
-                        typelist::visit_at(
-                            pc,
-                            [&]<typename Block>() noexcept
-                            { Block{mask}(storage); },
-                            compiled_blocks{},
-                            sink);
+                        while(pops > t)
+                        {
+                            typelist::visit_at(
+                                pc,
+                                [&]<typename Block>() noexcept
+                                { Block{mask}(storage); },
+                                compiled_blocks{},
+                                sink);
 
-                        pcs = storage.pc();
+                            pcs = storage.pc();
 
-                        if(use_next_groups)
-                            std::tie(pc, mask, pops) =
-                                major_group<K, N>(pcs, next_groups<K>{pc});
-                        else
-                            std::tie(pc, mask, pops) = major_group<K, N>(
-                                pcs,
-                                greedy_groups<K, N, true>{pcs});
+                            if(use_next_groups)
+                                std::tie(pc, mask, pops) =
+                                    major_group<K, N>(pcs, next_groups<K>{pc});
+                            else
+                                std::tie(pc, mask, pops) = major_group<K, N>(
+                                    pcs,
+                                    greedy_groups<K, N, true>{pcs});
 
-                        use_next_groups = pops >= hthreshold;
-                    };
+                            use_next_groups = pops >= hthreshold;
+                        };
+                    }
+                    else if constexpr(style == STATIC_MAJOR)
+                    {
+                        std::uint64_t rem{};
+                        while(pops > t)
+                        {
+                            typelist::visit_at(
+                                pc,
+                                [&]<typename Block>() noexcept
+                                { Block{mask}(storage); },
+                                compiled_blocks{},
+                                sink);
+
+                            pcs = storage.pc();
+
+                            if(use_next_groups)
+                            {
+                                auto ngs = next_groups<K>{pc};
+                                rem |= ngs.data();
+                                std::tie(pc, mask, pops) =
+                                    major_group<K, N>(pcs, ngs);
+                            }
+                            else
+                            {
+                                auto sgs = simple_set<index_t>{rem};
+                                rem |= sgs.data();
+                                std::tie(pc, mask, pops) =
+                                    major_group<K, N>(pcs, sgs);
+                            }
+
+                            use_next_groups = pops >= hthreshold;
+                        };
+                    }
                 });
         }
 
@@ -3966,20 +4002,22 @@ template <Kernel K,
 using stream = compiler<K, stitch, sort_method, concurrent, UTR>::stream;
 
 /// @brief Alias for hybrid function-like invocation.
-template <Kernel K,
-          bool   alloc_temp_storage = false,
-          typename UTRt             = std::ratio<1, 2>,
-          typename UTRh             = UTRt>
+template <Kernel             K,
+          bool               alloc_temp_storage = false,
+          ReconvergenceStyle style              = STATIC_MAJOR,
+          typename UTRt                         = std::ratio<1, 2>,
+          typename UTRh                         = UTRt>
 using hybrid_function =
-    hybrid_compiler<K, alloc_temp_storage, UTRt, UTRh>::function;
+    hybrid_compiler<K, alloc_temp_storage, style, UTRt, UTRh>::function;
 
 /// @brief Alias for hybrid streaming invocation.
-template <Kernel K,
-          bool   alloc_temp_storage = false,
-          typename UTRt             = std::ratio<1, 2>,
-          typename UTRh             = UTRt>
+template <Kernel             K,
+          bool               alloc_temp_storage = false,
+          ReconvergenceStyle style              = STATIC_MAJOR,
+          typename UTRt                         = std::ratio<1, 2>,
+          typename UTRh                         = UTRt>
 using hybrid_stream =
-    hybrid_compiler<K, alloc_temp_storage, UTRt, UTRh>::stream;
+    hybrid_compiler<K, alloc_temp_storage, style, UTRt, UTRh>::stream;
 
 /// @brief Alias for embedded invocation.
 template <Kernel             K,

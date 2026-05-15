@@ -146,23 +146,41 @@ using kernel = pt_const<float, C>;
 
 constexpr unsigned num_blocks = 44; // kernel::num_blocks;
 
+template <simd::ReconvergenceStyle style>
+constexpr std::string_view
+style_string() noexcept
+{
+    switch(style)
+    {
+    case(simd::GREEDY_FAIR): return "greedy-fair";
+    case(simd::HYBRID_MAJOR): return "hybrid-major";
+    case(simd::GREEDY_MAJOR): return "greedy-major";
+    case(simd::HYBRID_FAIR): return "hybrid-fair";
+    case(simd::STATIC_FIRST): return "static-first";
+    case(simd::STATIC_MAJOR): return "static-major";
+    }
+}
+
 template <typename UTR,
-          bool alloc_temp_storage,
-          bool count_extra = false,
-          typename Clock   = std::chrono::steady_clock>
+          bool                     alloc_temp_storage,
+          simd::ReconvergenceStyle style,
+          bool                     count_extra = false,
+          typename Clock                       = std::chrono::steady_clock>
 struct SIMDFunction
 {
     static auto
     get_func(const unsigned size) noexcept
     {
-        return simd::hybrid_function<kernel, alloc_temp_storage, UTR>(size);
+        return simd::hybrid_function<kernel, alloc_temp_storage, style, UTR>(
+            size);
     }
 
     std::string
     info() const noexcept
     {
-        return fmt::format("full-range|ts:{}|UTR:{:.0f}%",
+        return fmt::format("full-range|ts:{}|{}|UTR:{:.0f}%",
                            alloc_temp_storage,
+                           style_string<style>(),
                            ratio2percent<UTR>());
     }
 
@@ -199,7 +217,8 @@ struct SIMDFunction
     }
 };
 
-template <bool alloc_temp_storage,
+template <bool                     alloc_temp_storage,
+          simd::ReconvergenceStyle style,
           typename UTRt,
           typename UTRh,
           unsigned stream_size,
@@ -210,15 +229,17 @@ struct SIMDStream
     static auto
     get_stream() noexcept
     {
-        return simd::hybrid_stream<kernel, alloc_temp_storage, UTRt, UTRh>(
-            stream_size);
+        return simd::
+            hybrid_stream<kernel, alloc_temp_storage, style, UTRt, UTRh>(
+                stream_size);
     }
 
     std::string
     info() const noexcept
     {
-        return fmt::format("stream|ts:{}|size:{}|UTRt:{:.0f}%|UTRh:{:.0f}%",
+        return fmt::format("stream|ts:{}|{}|size:{}|UTRt:{:.0f}%|UTRh:{:.0f}%",
                            alloc_temp_storage,
+                           style_string<style>(),
                            stream_size,
                            ratio2percent<UTRt>(),
                            ratio2percent<UTRh>());
@@ -319,26 +340,12 @@ struct SIMDEmbedded
 {
     static constexpr std::size_t N = simd::native_vector_extent_v<float>;
 
-    static constexpr std::string_view
-    style_string() noexcept
-    {
-        switch(style)
-        {
-        case(simd::GREEDY_FAIR): return "greedy-fair";
-        case(simd::HYBRID_MAJOR): return "hybrid-major";
-        case(simd::GREEDY_MAJOR): return "greedy-major";
-        case(simd::HYBRID_FAIR): return "hybrid-fair";
-        case(simd::STATIC_FIRST): return "static-first";
-        case(simd::STATIC_MAJOR): return "static-major";
-        }
-    }
-
     std::string
     info() const noexcept
     {
         return fmt::format("embedded|ts:{}|{}|UTR:{:.0f}%",
                            alloc_temp_storage,
-                           style_string(),
+                           style_string<style>(),
                            ratio2percent<UTR>());
     }
 
@@ -391,16 +398,16 @@ struct SIMDEmbedded
     }
 };
 
-template <typename T>
-using mk_embedded = SIMDEmbedded<false,              // ts bool
-                                 simd::HYBRID_MAJOR, // style
-                                 T>;                 // UTR
+// template <typename T>
+// using mk_embedded = SIMDEmbedded<false,              // ts bool
+//                                  simd::HYBRID_MAJOR, // style
+//                                  T>;                 // UTR
 
-template <typename T>
-using mk_stream = SIMDStream<true,                       // ts boolean
-                             typelist::at<0, T>,         // UTRt
-                             std::ratio<1, 16>,          // UTRh
-                             typelist::at<1, T>::value>; // stream size
+// template <typename T>
+// using mk_stream = SIMDStream<true,                       // ts boolean
+//                              typelist::at<0, T>,         // UTRt
+//                              std::ratio<1, 16>,          // UTRh
+//                              typelist::at<1, T>::value>; // stream size
 
 template <typename R>
 using mk_size =
@@ -408,32 +415,32 @@ using mk_size =
                            simd::native_vector_extent_v<float> *
                                simd::get_threshold_v<num_blocks, R>>;
 
-template <int den, int... noms>
-using mk_utrs = type_sequence<std::ratio<noms, den>...>;
+// template <int den, int... noms>
+// using mk_utrs = type_sequence<std::ratio<noms, den>...>;
 
-template <simd::ReconvergenceStyle... Stgs>
-using mk_stgs =
-    type_sequence<std::integral_constant<simd::ReconvergenceStyle, Stgs>...>;
+// template <simd::ReconvergenceStyle... Stgs>
+// using mk_stgs =
+//     type_sequence<std::integral_constant<simd::ReconvergenceStyle, Stgs>...>;
 
-using bools = type_sequence<std::true_type, std::false_type>;
-using utrs  = mk_utrs<16, 1, 4, 8, 15>;
-using stgs  = mk_stgs<simd::HYBRID_MAJOR, simd::GREEDY_MAJOR>;
-using sizes = typelist::map<mk_size, mk_utrs<5, 1, 2, 3, 4>>;
+// using bools = type_sequence<std::true_type, std::false_type>;
+// using utrs  = mk_utrs<16, 1, 4, 8, 15>;
+// using stgs  = mk_stgs<simd::HYBRID_MAJOR, simd::GREEDY_MAJOR>;
+// using sizes = typelist::map<mk_size, mk_utrs<5, 1, 2, 3, 4>>;
 
-// using emb_product    = typelist::cartesian<bools, stgs, utrs>;
-using stream_product = typelist::cartesian<utrs, sizes>;
+// // using emb_product    = typelist::cartesian<bools, stgs, utrs>;
+// using stream_product = typelist::cartesian<utrs, sizes>;
 
-using embs    = typelist::map<mk_embedded, utrs>;
-using streams = typelist::map<mk_stream, stream_product>;
+// using embs    = typelist::map<mk_embedded, utrs>;
+// using streams = typelist::map<mk_stream, stream_product>;
 
-using allbms = typelist::join<embs, streams>;
+// using allbms = typelist::join<embs, streams>;
 
-template <typename... Bms>
-void
-run(Logger& logger, type_sequence<Bms...>)
-{
-    print_results(run_benchmarks(logger, BSE<>{}, Bms{}...));
-}
+// template <typename... Bms>
+// void
+// run(Logger& logger, type_sequence<Bms...>)
+// {
+//     print_results(run_benchmarks(logger, BSE<>{}, Bms{}...));
+// }
 
 int main(/*int argc, char* argv[]*/)
 {
@@ -443,8 +450,18 @@ int main(/*int argc, char* argv[]*/)
     print_results(run_benchmarks(
         logger,
         BSE<>{},
-        SIMDEmbedded<false, simd::HYBRID_MAJOR, std::ratio<1, 16>>{},
-        SIMDEmbedded<false, simd::STATIC_MAJOR, std::ratio<1, 16>>{}));
+        SIMDEmbedded<true, simd::HYBRID_MAJOR, std::ratio<1, 16>>{},
+        SIMDEmbedded<true, simd::STATIC_MAJOR, std::ratio<1, 16>>{},
+        SIMDStream<true,
+                   simd::HYBRID_MAJOR,
+                   std::ratio<15, 16>,
+                   std::ratio<1, 16>,
+                   mk_size<std::ratio<2, 5>>::value>{},
+        SIMDStream<true,
+                   simd::STATIC_MAJOR,
+                   std::ratio<15, 16>,
+                   std::ratio<1, 16>,
+                   mk_size<std::ratio<2, 5>>::value>{}));
     // run(logger, allbms{});
     return 0;
 }
