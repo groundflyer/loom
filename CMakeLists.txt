@@ -387,6 +387,7 @@ target_include_directories(pt_ref PUBLIC src ${OPENGL_INCLUDE_DIR})
 target_compile_options(pt_ref PUBLIC $<$<CONFIG:Release>:-ffast-math>)
 target_compile_options(pt_ref PUBLIC $<$<CONFIG:RelWithDebInfo>:-fsanitize=address>)
 target_link_options(pt_ref PUBLIC $<$<CONFIG:RelWithDebInfo>:-fsanitize=address>)
+# target_compile_options(pt_ref PUBLIC -save-temps)
 
 add_executable(pt_vm src/smallpt/vm/pt.cpp)
 target_link_libraries(pt_vm PUBLIC ${GL_LIBS} Threads::Threads PkgConfig::HWLOC)
