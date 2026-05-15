@@ -2380,6 +2380,7 @@ fit_in_bins(const I pc, const I last_bin) noexcept
     return pc < last_bin ? pc : last_bin;
 }
 
+/// @brief Set iterator for block indices.
 template <std::unsigned_integral index_t>
 class set_iterator : public std::input_iterator_tag
 {
@@ -2423,6 +2424,48 @@ class set_iterator : public std::input_iterator_tag
         set_iterator ret(*this);
         m_set ^= 1ul << get_pos();
         return ret;
+    }
+
+    std::uint64_t FORCE_INLINE
+    data() const noexcept
+    {
+        return m_set;
+    }
+};
+
+template <typename index_t>
+class simple_set : public std::ranges::view_interface<simple_set<index_t>>
+{
+    std::uint64_t m_set = 0;
+
+  public:
+    using iterator = set_iterator<index_t>;
+
+    simple_set() noexcept = default;
+    simple_set(const std::uint64_t set) noexcept : m_set(set) {}
+
+    iterator FORCE_INLINE
+    begin() const noexcept
+    {
+        return {m_set};
+    }
+
+    std::default_sentinel_t FORCE_INLINE
+    end() const noexcept
+    {
+        return std::default_sentinel;
+    }
+
+    fsize_t FORCE_INLINE
+    size() const noexcept
+    {
+        return std::popcount(m_set);
+    }
+
+    std::uint64_t FORCE_INLINE
+    data() const noexcept
+    {
+        return m_set;
     }
 };
 
@@ -2471,7 +2514,7 @@ class greedy_groups :
         return std::default_sentinel;
     }
 
-    fsize_t
+    fsize_t FORCE_INLINE
     size() const noexcept
     {
         return std::popcount(m_set);
@@ -2526,6 +2569,18 @@ class next_groups : public std::ranges::view_interface<next_groups<K>>
     {
         return std::default_sentinel;
     }
+
+    fsize_t FORCE_INLINE
+    size() const noexcept
+    {
+        return std::popcount(m_set);
+    }
+
+    std::uint64_t FORCE_INLINE
+    data() const noexcept
+    {
+        return m_set;
+    }
 };
 
 template <fsize_t N, std::unsigned_integral index_t>
@@ -2568,6 +2623,34 @@ std::tuple<typename K::index_t, mask_type<typename K::index_t, N>, unsigned>
     }
 
     return {pc, mask, pops};
+}
+
+/// @brief Get pc of the first non-embty group and its mask.
+template <Kernel K, fsize_t N, std::ranges::input_range Rng>
+auto FORCE_INLINE
+first_group(const packed_vector<typename K::index_t, N> pcs,
+            Rng&&                                       candidates) noexcept
+{
+    using index_t = K::index_t;
+    using cmp     = cmp_intrinsics_wrangler<index_t, N>;
+    using mask_t  = mask_type<index_t, N>;
+
+    constexpr popcnt_helper<index_t, N> popcnt{};
+
+    unsigned pops = 0;
+    index_t  pc   = K::halt_pos;
+    mask_t   mask{}; // empty mask
+
+    set_iterator i = candidates.begin();
+
+    while(pops == 0 && i != candidates.end())
+    {
+        pc   = *i++;
+        mask = cmp::eq(broadcast<N>(pc), pcs);
+        pops = popcnt(mask);
+    }
+
+    return std::tuple{pc, mask, pops, i.data()};
 }
 
 /// @brief Vectorized counting sort.
@@ -3434,7 +3517,7 @@ class compiler
 };
 
 /// @brief Determines how embedded_compiler executes threads.
-enum SelectionStrategy
+enum ReconvergenceStyle
 {
     GREEDY_FAIR,  /*!< Every PC in gang gets gets its time */
     HYBRID_MAJOR, /*!< Only PCs having the majority are executed selecting
@@ -3442,19 +3525,23 @@ enum SelectionStrategy
                      hits threshold */
     GREEDY_MAJOR, /*!< Only PCs having the majority are executed selecting from
                     greedy search */
-    HYBRID_FAIR   /*!< Prefers greedy major grouping, when utilization hits
-                     threshold, switch to fair */
+    HYBRID_FAIR,  /*!< Prefers greedy major grouping, when utilization hits
+                    threshold, switch to fair */
+    STATIC_FIRST, /*!< Select first PC from destination map falling back to
+                     reminders set */
+    STATIC_MAJOR  /*!< Select PC based on the majority from destination map
+                     falling  back to reminders set */
 };
 
 /// @brief Compiler for embedded SIMD execution.
 /// @tparam alloc_temp_storage allocate special temporal storage for currently
 /// executed basic block
-/// @tparam strategy selection strategy to use
-/// @tparam UTR utilization threshold for HYBRID_MAJOR strategy
-template <Kernel            K,
-          bool              alloc_temp_storage,
-          SelectionStrategy strategy = HYBRID_MAJOR,
-          typename UTR               = std::ratio<1, 2>>
+/// @tparam style reconvergence style to use
+/// @tparam UTR utilization threshold for HYBRID_MAJOR style
+template <Kernel             K,
+          bool               alloc_temp_storage,
+          ReconvergenceStyle style = STATIC_MAJOR,
+          typename UTR             = std::ratio<1, 2>>
     requires(typelist::of_same_size<typename K::reg_types> && val_utr_v<UTR>)
 class embedded_compiler
 {
@@ -3552,14 +3639,14 @@ class embedded_compiler
         {
             facade::set_inputs(args...);
 
-            if constexpr(strategy == GREEDY_FAIR)
+            if constexpr(style == GREEDY_FAIR)
             {
                 while(not_done())
                     for(const index_t pc:
                         greedy_groups<K, N, true>{facade::pc()})
                         exec(pc, make_mask<N>(pc, facade::pc()));
             }
-            else if constexpr(strategy == HYBRID_MAJOR)
+            else if constexpr(style == HYBRID_MAJOR)
             {
                 index_t  pc              = 0;
                 mask_t   mask            = full_mask();
@@ -3581,7 +3668,7 @@ class embedded_compiler
                     use_next_groups = pops >= threshold;
                 }
             }
-            else if constexpr(strategy == GREEDY_MAJOR)
+            else if constexpr(style == GREEDY_MAJOR)
             {
                 index_t  pc   = 0;
                 mask_t   mask = full_mask();
@@ -3596,7 +3683,7 @@ class embedded_compiler
                         greedy_groups<K, N, true>{facade::pc()});
                 }
             }
-            else
+            else if constexpr(style == HYBRID_FAIR)
             {
                 index_t                   pc       = 0;
                 mask_t                    mask     = full_mask();
@@ -3616,6 +3703,65 @@ class embedded_compiler
                     std::tie(pc, mask, pops) =
                         major_group<K, N>(facade::pc(), g);
                     do_major = pops >= threshold;
+                }
+            }
+            else if constexpr(style == STATIC_FIRST)
+            {
+                index_t       pc              = 0;
+                mask_t        mask            = full_mask();
+                unsigned      pops            = N;
+                std::uint64_t rem             = 0;
+                bool          use_next_groups = true;
+
+                while(not_done())
+                {
+                    exec(pc, mask);
+
+                    std::uint64_t nrem;
+                    if(use_next_groups)
+                        std::tie(pc, mask, pops, nrem) =
+                            first_group<K, N>(facade::pc(), next_groups<K>{pc});
+                    else
+                        std::tie(pc, mask, pops, nrem) =
+                            first_group<K, N>(facade::pc(),
+                                              simple_set<index_t>{rem});
+
+                    rem &= ~(1ul << pc); // unset executed block
+                    rem |= nrem;         // add remainders
+
+                    use_next_groups = pops > 0;
+                }
+            }
+            else if constexpr(style == STATIC_MAJOR)
+            {
+                index_t       pc              = 0;
+                mask_t        mask            = full_mask();
+                unsigned      pops            = N;
+                std::uint64_t rem             = 0;
+                bool          use_next_groups = true;
+
+                while(not_done())
+                {
+                    exec(pc, mask);
+
+                    if(use_next_groups)
+                    {
+                        auto ngs = next_groups<K>{pc};
+                        rem |= ngs.data();
+                        std::tie(pc, mask, pops) =
+                            major_group<K, N>(facade::pc(), ngs);
+                    }
+                    else
+                    {
+                        auto sgs = simple_set<index_t>{rem};
+                        rem |= sgs.data();
+                        std::tie(pc, mask, pops) =
+                            major_group<K, N>(facade::pc(), sgs);
+                    }
+
+                    rem &= ~(1ul << pc); // unset executed block
+
+                    use_next_groups = pops > 0;
                 }
             }
 
@@ -3836,10 +3982,10 @@ using hybrid_stream =
     hybrid_compiler<K, alloc_temp_storage, UTRt, UTRh>::stream;
 
 /// @brief Alias for embedded invocation.
-template <Kernel            K,
-          bool              alloc_temp_storage = true,
-          SelectionStrategy strategy           = HYBRID_FAIR,
-          typename UTR                         = std::ratio<1, 2>>
+template <Kernel             K,
+          bool               alloc_temp_storage = true,
+          ReconvergenceStyle style              = STATIC_MAJOR,
+          typename UTR                          = std::ratio<1, 2>>
 using embedded_function =
-    embedded_compiler<K, alloc_temp_storage, strategy, UTR>::type;
+    embedded_compiler<K, alloc_temp_storage, style, UTR>::type;
 } // namespace loom::vm::simd

@@ -311,32 +311,34 @@ struct BSE
     }
 };
 
-template <bool                    alloc_temp_storage,
-          simd::SelectionStrategy strategy,
-          typename UTR   = std::ratio<1, 2>,
+template <bool                     alloc_temp_storage,
+          simd::ReconvergenceStyle style,
+          typename UTR   = std::ratio<1, 16>,
           typename Clock = std::chrono::steady_clock>
 struct SIMDEmbedded
 {
     static constexpr std::size_t N = simd::native_vector_extent_v<float>;
 
     static constexpr std::string_view
-    strategy_string() noexcept
+    style_string() noexcept
     {
-        switch(strategy)
+        switch(style)
         {
         case(simd::GREEDY_FAIR): return "greedy-fair";
         case(simd::HYBRID_MAJOR): return "hybrid-major";
         case(simd::GREEDY_MAJOR): return "greedy-major";
         case(simd::HYBRID_FAIR): return "hybrid-fair";
+        case(simd::STATIC_FIRST): return "static-first";
+        case(simd::STATIC_MAJOR): return "static-major";
         }
     }
 
     std::string
     info() const noexcept
     {
-        return fmt::format("embedded|ts:{}|{}|UTR:{}%",
+        return fmt::format("embedded|ts:{}|{}|UTR:{:.0f}%",
                            alloc_temp_storage,
-                           strategy_string(),
+                           style_string(),
                            ratio2percent<UTR>());
     }
 
@@ -351,9 +353,8 @@ struct SIMDEmbedded
             ranges::views::chunk(img, N),
             [](auto&& chunk) noexcept
             {
-                simd::
-                    embedded_function<kernel, alloc_temp_storage, strategy, UTR>
-                        f;
+                simd::embedded_function<kernel, alloc_temp_storage, style, UTR>
+                    f;
 
                 simd::native_vector<std::uint32_t> vpp;
 
@@ -391,15 +392,15 @@ struct SIMDEmbedded
 };
 
 template <typename T>
-using mk_embedded = SIMDEmbedded<true,               // ts bool
-                                 simd::HYBRID_MAJOR, // strategy
+using mk_embedded = SIMDEmbedded<false,              // ts bool
+                                 simd::HYBRID_MAJOR, // style
                                  T>;                 // UTR
 
 template <typename T>
-using mk_stream = SIMDStream<false,                      // ts boolean
+using mk_stream = SIMDStream<true,                       // ts boolean
                              typelist::at<0, T>,         // UTRt
-                             typelist::at<1, T>,         // UTRh
-                             typelist::at<2, T>::value>; // stream size
+                             std::ratio<1, 16>,          // UTRh
+                             typelist::at<1, T>::value>; // stream size
 
 template <typename R>
 using mk_size =
@@ -410,17 +411,17 @@ using mk_size =
 template <int den, int... noms>
 using mk_utrs = type_sequence<std::ratio<noms, den>...>;
 
-template <simd::SelectionStrategy... Stgs>
+template <simd::ReconvergenceStyle... Stgs>
 using mk_stgs =
-    type_sequence<std::integral_constant<simd::SelectionStrategy, Stgs>...>;
+    type_sequence<std::integral_constant<simd::ReconvergenceStyle, Stgs>...>;
 
 using bools = type_sequence<std::true_type, std::false_type>;
 using utrs  = mk_utrs<16, 1, 4, 8, 15>;
 using stgs  = mk_stgs<simd::HYBRID_MAJOR, simd::GREEDY_MAJOR>;
 using sizes = typelist::map<mk_size, mk_utrs<5, 1, 2, 3, 4>>;
 
-using emb_product    = typelist::cartesian<bools, stgs, utrs>;
-using stream_product = typelist::cartesian<utrs, utrs, sizes>;
+// using emb_product    = typelist::cartesian<bools, stgs, utrs>;
+using stream_product = typelist::cartesian<utrs, sizes>;
 
 using embs    = typelist::map<mk_embedded, utrs>;
 using streams = typelist::map<mk_stream, stream_product>;
@@ -439,6 +440,11 @@ int main(/*int argc, char* argv[]*/)
     Logger logger(Logger::INFO);
     logger.info("Using x86-64 vector extensions: {}", simd::info::value);
 
-    run(logger, allbms{});
+    print_results(run_benchmarks(
+        logger,
+        BSE<>{},
+        SIMDEmbedded<false, simd::HYBRID_MAJOR, std::ratio<1, 16>>{},
+        SIMDEmbedded<false, simd::STATIC_MAJOR, std::ratio<1, 16>>{}));
+    // run(logger, allbms{});
     return 0;
 }
