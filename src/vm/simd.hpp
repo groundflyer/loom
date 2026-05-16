@@ -3140,11 +3140,7 @@ class aligned_chunks :
 };
 
 /// @brief Compiler for embedded masked block execution.
-template <typename Block,
-          typename LabelMap,
-          typename PCVar,
-          fsize_t N,
-          bool    alloc_temp_storage>
+template <typename Block, typename LabelMap, typename PCVar, fsize_t N, bool ts>
 class make_embedded_masked_block_compiler
 {
     using index_t = vartype<PCVar>;
@@ -3208,7 +3204,7 @@ class make_embedded_masked_block_compiler
         void FORCE_INLINE
         operator()(_MainStorage& main_storage) const noexcept
         {
-            if constexpr(alloc_temp_storage)
+            if constexpr(ts)
             {
                 TempStorage tmp_storage = alloc(main_storage);
                 kernel(tmp_storage);
@@ -3221,17 +3217,9 @@ class make_embedded_masked_block_compiler
 };
 
 /// @brief Helper typedef.
-template <typename Block,
-          typename LabelMap,
-          typename PCVar,
-          fsize_t N,
-          bool    alloc_temp_storage>
+template <typename Block, typename LabelMap, typename PCVar, fsize_t N, bool ts>
 using embedded_masked_block_compiler =
-    make_embedded_masked_block_compiler<Block,
-                                        LabelMap,
-                                        PCVar,
-                                        N,
-                                        alloc_temp_storage>::type;
+    make_embedded_masked_block_compiler<Block, LabelMap, PCVar, N, ts>::type;
 
 /// @brief Create default step visitor for memory facade.
 template <STITCH stitch>
@@ -3517,7 +3505,7 @@ class compiler
 };
 
 /// @brief Determines how embedded_compiler executes threads.
-enum ReconvergenceStyle
+enum ReconvMethod
 {
     GREEDY_FAIR,  /*!< Every PC in gang gets gets its time */
     HYBRID_MAJOR, /*!< Only PCs having the majority are executed selecting
@@ -3534,14 +3522,14 @@ enum ReconvergenceStyle
 };
 
 /// @brief Compiler for embedded SIMD execution.
-/// @tparam alloc_temp_storage allocate special temporal storage for currently
+/// @tparam ts allocate special temporal storage for currently
 /// executed basic block
-/// @tparam style reconvergence style to use
-/// @tparam UTR utilization threshold for HYBRID_MAJOR style
-template <Kernel             K,
-          bool               alloc_temp_storage,
-          ReconvergenceStyle style = STATIC_MAJOR,
-          typename UTR             = std::ratio<1, 2>>
+/// @tparam rcnv reconvergence method to use
+/// @tparam UTR utilization threshold for HYBRID_MAJOR method
+template <Kernel       K,
+          bool         ts,
+          ReconvMethod rcnv = STATIC_MAJOR,
+          typename UTR      = std::ratio<1, 2>>
     requires(typelist::of_same_size<typename K::reg_types> && val_utr_v<UTR>)
 class embedded_compiler
 {
@@ -3594,11 +3582,7 @@ class embedded_compiler
     {
         template <typename Block>
         using compile_block =
-            embedded_masked_block_compiler<Block,
-                                           labelmap,
-                                           pc,
-                                           N,
-                                           alloc_temp_storage>;
+            embedded_masked_block_compiler<Block, labelmap, pc, N, ts>;
 
         using compiled_blocks = typelist::map<compile_block, blocks>;
 
@@ -3639,14 +3623,14 @@ class embedded_compiler
         {
             facade::set_inputs(args...);
 
-            if constexpr(style == GREEDY_FAIR)
+            if constexpr(rcnv == GREEDY_FAIR)
             {
                 while(not_done())
                     for(const index_t pc:
                         greedy_groups<K, N, true>{facade::pc()})
                         exec(pc, make_mask<N>(pc, facade::pc()));
             }
-            else if constexpr(style == HYBRID_MAJOR)
+            else if constexpr(rcnv == HYBRID_MAJOR)
             {
                 index_t  pc              = 0;
                 mask_t   mask            = full_mask();
@@ -3668,7 +3652,7 @@ class embedded_compiler
                     use_next_groups = pops >= threshold;
                 }
             }
-            else if constexpr(style == GREEDY_MAJOR)
+            else if constexpr(rcnv == GREEDY_MAJOR)
             {
                 index_t  pc   = 0;
                 mask_t   mask = full_mask();
@@ -3683,7 +3667,7 @@ class embedded_compiler
                         greedy_groups<K, N, true>{facade::pc()});
                 }
             }
-            else if constexpr(style == HYBRID_FAIR)
+            else if constexpr(rcnv == HYBRID_FAIR)
             {
                 index_t                   pc       = 0;
                 mask_t                    mask     = full_mask();
@@ -3705,7 +3689,7 @@ class embedded_compiler
                     do_major = pops >= threshold;
                 }
             }
-            else if constexpr(style == STATIC_FIRST)
+            else if constexpr(rcnv == STATIC_FIRST)
             {
                 index_t       pc              = 0;
                 mask_t        mask            = full_mask();
@@ -3732,7 +3716,7 @@ class embedded_compiler
                     use_next_groups = pops > 0;
                 }
             }
-            else if constexpr(style == STATIC_MAJOR)
+            else if constexpr(rcnv == STATIC_MAJOR)
             {
                 index_t       pc              = 0;
                 mask_t        mask            = full_mask();
@@ -3775,11 +3759,11 @@ class embedded_compiler
 };
 
 /// @brief Hybrid masked compiler.
-template <Kernel             K,
-          bool               alloc_temp_storage = false,
-          ReconvergenceStyle style              = STATIC_MAJOR,
-          typename UTRt                         = std::ratio<1, 2>,
-          typename UTRh                         = UTRt>
+template <Kernel       K,
+          bool         ts   = false,
+          ReconvMethod rcnv = STATIC_MAJOR,
+          typename UTRt     = std::ratio<1, 2>,
+          typename UTRh     = UTRt>
     requires(!K::singular && typelist::of_same_size<typename K::reg_types> &&
              val_utr_v<UTRt> && val_utr_v<UTRh>)
 class hybrid_compiler
@@ -3855,11 +3839,7 @@ class hybrid_compiler
 
         template <typename Block>
         using compile_block =
-            embedded_masked_block_compiler<Block,
-                                           labelmap,
-                                           pc,
-                                           N,
-                                           alloc_temp_storage>;
+            embedded_masked_block_compiler<Block, labelmap, pc, N, ts>;
 
         using compiled_blocks = typelist::map<compile_block, blocks>;
 
@@ -3879,7 +3859,7 @@ class hybrid_compiler
                     auto [pc, mask, pops] =
                         major_group<K, N>(pcs, greedy_groups<K, N, true>{pcs});
 
-                    if constexpr(style == HYBRID_MAJOR)
+                    if constexpr(rcnv == HYBRID_MAJOR)
                     {
                         while(pops > t)
                         {
@@ -3903,7 +3883,7 @@ class hybrid_compiler
                             use_next_groups = pops >= hthreshold;
                         };
                     }
-                    else if constexpr(style == STATIC_MAJOR)
+                    else if constexpr(rcnv == STATIC_MAJOR)
                     {
                         std::uint64_t rem{};
                         while(pops > t)
@@ -4002,28 +3982,25 @@ template <Kernel K,
 using stream = compiler<K, stitch, sort_method, concurrent, UTR>::stream;
 
 /// @brief Alias for hybrid function-like invocation.
-template <Kernel             K,
-          bool               alloc_temp_storage = false,
-          ReconvergenceStyle style              = STATIC_MAJOR,
-          typename UTRt                         = std::ratio<1, 2>,
-          typename UTRh                         = UTRt>
-using hybrid_function =
-    hybrid_compiler<K, alloc_temp_storage, style, UTRt, UTRh>::function;
+template <Kernel       K,
+          bool         ts   = false,
+          ReconvMethod rcnv = STATIC_MAJOR,
+          typename UTRt     = std::ratio<1, 2>,
+          typename UTRh     = std::ratio<1, 8>>
+using hybrid_function = hybrid_compiler<K, ts, rcnv, UTRt, UTRh>::function;
 
 /// @brief Alias for hybrid streaming invocation.
-template <Kernel             K,
-          bool               alloc_temp_storage = false,
-          ReconvergenceStyle style              = STATIC_MAJOR,
-          typename UTRt                         = std::ratio<1, 2>,
-          typename UTRh                         = UTRt>
-using hybrid_stream =
-    hybrid_compiler<K, alloc_temp_storage, style, UTRt, UTRh>::stream;
+template <Kernel       K,
+          bool         ts   = false,
+          ReconvMethod rcnv = STATIC_MAJOR,
+          typename UTRt     = std::ratio<1, 2>,
+          typename UTRh     = std::ratio<1, 8>>
+using hybrid_stream = hybrid_compiler<K, ts, rcnv, UTRt, UTRh>::stream;
 
 /// @brief Alias for embedded invocation.
-template <Kernel             K,
-          bool               alloc_temp_storage = true,
-          ReconvergenceStyle style              = STATIC_MAJOR,
-          typename UTR                          = std::ratio<1, 2>>
-using embedded_function =
-    embedded_compiler<K, alloc_temp_storage, style, UTR>::type;
+template <Kernel       K,
+          bool         ts   = true,
+          ReconvMethod rcnv = STATIC_MAJOR,
+          typename UTR      = std::ratio<1, 2>>
+using embedded_function = embedded_compiler<K, ts, rcnv, UTR>::type;
 } // namespace loom::vm::simd

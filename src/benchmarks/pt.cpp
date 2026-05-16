@@ -146,11 +146,11 @@ using kernel = pt_const<float, C>;
 
 constexpr unsigned num_blocks = 44; // kernel::num_blocks;
 
-template <simd::ReconvergenceStyle style>
+template <simd::ReconvMethod rcnv>
 constexpr std::string_view
-style_string() noexcept
+rcnv_string() noexcept
 {
-    switch(style)
+    switch(rcnv)
     {
     case(simd::GREEDY_FAIR): return "greedy-fair";
     case(simd::HYBRID_MAJOR): return "hybrid-major";
@@ -161,27 +161,28 @@ style_string() noexcept
     }
 }
 
-template <typename UTR,
-          bool                     alloc_temp_storage,
-          simd::ReconvergenceStyle style,
-          bool                     count_extra = false,
-          typename Clock                       = std::chrono::steady_clock>
+template <bool               ts,
+          simd::ReconvMethod rcnv,
+          typename UTRt,
+          typename UTRh,
+          bool count_extra = false,
+          typename Clock   = std::chrono::steady_clock>
 struct SIMDFunction
 {
     static auto
     get_func(const unsigned size) noexcept
     {
-        return simd::hybrid_function<kernel, alloc_temp_storage, style, UTR>(
-            size);
+        return simd::hybrid_function<kernel, ts, rcnv, UTRt, UTRh>(size);
     }
 
     std::string
     info() const noexcept
     {
-        return fmt::format("full-range|ts:{}|{}|UTR:{:.0f}%",
-                           alloc_temp_storage,
-                           style_string<style>(),
-                           ratio2percent<UTR>());
+        return fmt::format("full-range|ts:{}|{}|UTRt:{:.0f}%|UTRh:{:.0f}%",
+                           ts,
+                           rcnv_string<rcnv>(),
+                           ratio2percent<UTRt>(),
+                           ratio2percent<UTRh>());
     }
 
     Clock::duration
@@ -217,8 +218,8 @@ struct SIMDFunction
     }
 };
 
-template <bool                     alloc_temp_storage,
-          simd::ReconvergenceStyle style,
+template <bool               ts,
+          simd::ReconvMethod rcnv,
           typename UTRt,
           typename UTRh,
           unsigned stream_size,
@@ -229,17 +230,15 @@ struct SIMDStream
     static auto
     get_stream() noexcept
     {
-        return simd::
-            hybrid_stream<kernel, alloc_temp_storage, style, UTRt, UTRh>(
-                stream_size);
+        return simd::hybrid_stream<kernel, ts, rcnv, UTRt, UTRh>(stream_size);
     }
 
     std::string
     info() const noexcept
     {
         return fmt::format("stream|ts:{}|{}|size:{}|UTRt:{:.0f}%|UTRh:{:.0f}%",
-                           alloc_temp_storage,
-                           style_string<style>(),
+                           ts,
+                           rcnv_string<rcnv>(),
                            stream_size,
                            ratio2percent<UTRt>(),
                            ratio2percent<UTRh>());
@@ -332,8 +331,8 @@ struct BSE
     }
 };
 
-template <bool                     alloc_temp_storage,
-          simd::ReconvergenceStyle style,
+template <bool               ts,
+          simd::ReconvMethod rcnv,
           typename UTR   = std::ratio<1, 16>,
           typename Clock = std::chrono::steady_clock>
 struct SIMDEmbedded
@@ -344,8 +343,8 @@ struct SIMDEmbedded
     info() const noexcept
     {
         return fmt::format("embedded|ts:{}|{}|UTR:{:.0f}%",
-                           alloc_temp_storage,
-                           style_string<style>(),
+                           ts,
+                           rcnv_string<rcnv>(),
                            ratio2percent<UTR>());
     }
 
@@ -360,8 +359,7 @@ struct SIMDEmbedded
             ranges::views::chunk(img, N),
             [](auto&& chunk) noexcept
             {
-                simd::embedded_function<kernel, alloc_temp_storage, style, UTR>
-                    f;
+                simd::embedded_function<kernel, ts, rcnv, UTR> f;
 
                 simd::native_vector<std::uint32_t> vpp;
 
@@ -398,49 +396,13 @@ struct SIMDEmbedded
     }
 };
 
-// template <typename T>
-// using mk_embedded = SIMDEmbedded<false,              // ts bool
-//                                  simd::HYBRID_MAJOR, // style
-//                                  T>;                 // UTR
-
-// template <typename T>
-// using mk_stream = SIMDStream<true,                       // ts boolean
-//                              typelist::at<0, T>,         // UTRt
-//                              std::ratio<1, 16>,          // UTRh
-//                              typelist::at<1, T>::value>; // stream size
-
 template <typename R>
 using mk_size =
     std::integral_constant<unsigned,
                            simd::native_vector_extent_v<float> *
                                simd::get_threshold_v<num_blocks, R>>;
 
-// template <int den, int... noms>
-// using mk_utrs = type_sequence<std::ratio<noms, den>...>;
-
-// template <simd::ReconvergenceStyle... Stgs>
-// using mk_stgs =
-//     type_sequence<std::integral_constant<simd::ReconvergenceStyle, Stgs>...>;
-
-// using bools = type_sequence<std::true_type, std::false_type>;
-// using utrs  = mk_utrs<16, 1, 4, 8, 15>;
-// using stgs  = mk_stgs<simd::HYBRID_MAJOR, simd::GREEDY_MAJOR>;
-// using sizes = typelist::map<mk_size, mk_utrs<5, 1, 2, 3, 4>>;
-
-// // using emb_product    = typelist::cartesian<bools, stgs, utrs>;
-// using stream_product = typelist::cartesian<utrs, sizes>;
-
-// using embs    = typelist::map<mk_embedded, utrs>;
-// using streams = typelist::map<mk_stream, stream_product>;
-
-// using allbms = typelist::join<embs, streams>;
-
-// template <typename... Bms>
-// void
-// run(Logger& logger, type_sequence<Bms...>)
-// {
-//     print_results(run_benchmarks(logger, BSE<>{}, Bms{}...));
-// }
+constexpr unsigned stream_size25 = mk_size<std::ratio<2, 5>>::value;
 
 int main(/*int argc, char* argv[]*/)
 {
@@ -451,17 +413,42 @@ int main(/*int argc, char* argv[]*/)
         logger,
         BSE<>{},
         SIMDEmbedded<true, simd::HYBRID_MAJOR, std::ratio<1, 16>>{},
+        SIMDEmbedded<false, simd::HYBRID_MAJOR, std::ratio<1, 16>>{},
         SIMDEmbedded<true, simd::STATIC_MAJOR, std::ratio<1, 16>>{},
+        SIMDEmbedded<false, simd::STATIC_MAJOR, std::ratio<1, 16>>{},
         SIMDStream<true,
                    simd::HYBRID_MAJOR,
                    std::ratio<15, 16>,
                    std::ratio<1, 16>,
-                   mk_size<std::ratio<2, 5>>::value>{},
+                   stream_size25>{},
         SIMDStream<true,
                    simd::STATIC_MAJOR,
                    std::ratio<15, 16>,
                    std::ratio<1, 16>,
-                   mk_size<std::ratio<2, 5>>::value>{}));
-    // run(logger, allbms{});
+                   stream_size25>{},
+        SIMDStream<true,
+                   simd::HYBRID_MAJOR,
+                   std::ratio<1, 2>,
+                   std::ratio<1, 16>,
+                   stream_size25>{},
+        SIMDStream<true,
+                   simd::STATIC_MAJOR,
+                   std::ratio<1, 2>,
+                   std::ratio<1, 16>,
+                   stream_size25>{},
+        SIMDStream<true,
+                   simd::STATIC_MAJOR,
+                   std::ratio<1, 16>,
+                   std::ratio<1, 16>,
+                   stream_size25>{},
+        SIMDFunction<true,
+                     simd::STATIC_MAJOR,
+                     std::ratio<1, 16>,
+                     std::ratio<1, 16>>{},
+        SIMDFunction<true,
+                     simd::HYBRID_MAJOR,
+                     std::ratio<1, 16>,
+                     std::ratio<1, 16>>{}));
+
     return 0;
 }
