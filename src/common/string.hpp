@@ -401,6 +401,16 @@ struct read_number_fn<T, throws>
             return std::nullopt;
     }
 };
+
+std::string_view
+rtrim(std::string_view s) noexcept
+{
+    auto it = std::find_if(s.rbegin(),
+                           s.rend(),
+                           [](char c) noexcept { return !std::isspace(c); });
+
+    return s.substr(0, static_cast<std::size_t>(it.base() - s.begin()));
+}
 } // namespace fn
 
 namespace detail
@@ -427,6 +437,7 @@ MK_NIEBLOID(is_alphadigit);
 MK_NIEBLOID(upper);
 MK_NIEBLOID(lower);
 MK_NIEBLOID(any_string);
+MK_NIEBLOID(rtrim);
 
 // std::from_chars is not constexpr until C++23
 
