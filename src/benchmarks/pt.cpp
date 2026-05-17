@@ -4,7 +4,9 @@
 #error "This program requires at least AVX"
 #endif
 
+#include <common/argparse.hpp>
 #include <common/logging.hpp>
+#include <common/string.hpp>
 #include <common/timer.hpp>
 #include <smallpt/common/common.hpp>
 #include <smallpt/common/typedefs.hpp>
@@ -21,10 +23,16 @@
 
 #include <algorithm>
 #include <array>
+#include <cerrno>
 #include <chrono>
+#include <cstdio>
+#include <cstring>
+#include <stdexcept>
 #include <string>
 #include <string_view>
 #include <vector>
+
+#include <cpuid.h>
 
 namespace loom
 {
@@ -47,6 +55,38 @@ using namespace vm;
 using namespace std::literals::string_literals;
 using namespace std::literals::string_view_literals;
 using namespace std::literals::chrono_literals;
+
+static std::string
+get_cpu_model() noexcept
+{
+    std::uint32_t eax, ebx, ecx, edx;
+    __cpuid(1, eax, ebx, ecx, edx);
+
+    std::uint32_t stepping   = eax & 0xf;
+    std::uint32_t model      = (eax >> 4) & 0xf;
+    std::uint32_t family     = (eax >> 8) & 0xf;
+    std::uint32_t ext_model  = (eax >> 16) & 0xf;
+    std::uint32_t ext_family = (eax >> 20) & 0xff;
+
+    std::uint32_t display_family =
+        (family == 0xf) ? family + ext_family : family;
+    std::uint32_t display_model =
+        (family == 6 || family == 0xf) ? ((ext_model << 4) | model) : model;
+
+    __cpuid(0, eax, ebx, ecx, edx);
+
+    char vendor[13]{};
+
+    std::memcpy(vendor, &ebx, 4);
+    std::memcpy(vendor + 4, &edx, 4);
+    std::memcpy(vendor + 8, &ecx, 4);
+
+    return fmt::format("{} fam{} mod{} step{}",
+                       rtrim(vendor),
+                       display_family,
+                       display_model,
+                       stepping);
+}
 
 #if FMT_VERSION < 110000
 template <typename Dur>
@@ -72,7 +112,7 @@ using bm_result = std::pair<std::string, Dur>;
 
 template <typename Dur = std::chrono::steady_clock::duration, typename... Bms>
 static std::array<bm_result<Dur>, sizeof...(Bms)>
-run_benchmarks(Logger& logger, Bms... bms)
+run_benchmarks(Logger& logger, std::FILE* file, Bms... bms)
 {
     auto decorate = [&](auto&& bm)
     {
@@ -80,10 +120,34 @@ run_benchmarks(Logger& logger, Bms... bms)
         logger.info("Benchmarking {}...", i);
         const Dur dur = bm();
 #if FMT_VERSION < 110000
-        logger.info("Result {:.3f}s", to_format(dur));
+        const auto durs = to_format(dur);
+        logger.info("Result {:.3f}s", durs);
+        if(file)
+            fmt::print(file,
+                       "{:%FT%TZ},{},clang-{},{},{},{},{:.3f}\n",
+                       std::chrono::floor<std::chrono::seconds>(
+                           std::chrono::system_clock::now()),
+                       REPO_HASH,
+                       rtrim(__clang_version__),
+                       get_cpu_model(),
+                       simd::info::value,
+                       i,
+                       durs);
 #else
         logger.info("Result {:.3%S}s", dur);
+        if(file)
+            fmt::println(file,
+                         "{:%FT%TZ},{},clang-{},{},{},{},{:.3%S}",
+                         std::chrono::floor<std::chrono::seconds>(
+                             std::chrono::system_clock::now()),
+                         REPO_HASH,
+                         rtrim(__clang_version__),
+                         get_cpu_model(),
+                         simd::info::value,
+                         i,
+                         dur);
 #endif
+
         return bm_result<Dur>{std::move(i), dur};
     };
 
@@ -404,13 +468,38 @@ using mk_size =
 
 constexpr unsigned stream_size25 = mk_size<std::ratio<2, 5>>::value;
 
-int main(/*int argc, char* argv[]*/)
+int
+main(int argc, char* argv[])
 {
-    Logger logger(Logger::INFO);
+    auto parse_results = argparse::parse(
+        std::tuple{
+            argparse::flag<'v', "verbose">("verbose logging"),
+            argparse::option<'l', "log">("path to benchmark logs", "FILE", "")},
+        {argc, argv});
+    Logger logger(parse_results.template get_opt<'v'>() ? Logger::DEBUG :
+                                                          Logger::INFO);
+
+    std::FILE* file = nullptr;
+
+    const std::string_view path = parse_results.template get_opt<'l'>();
+
+    if(!path.empty())
+    {
+        file = std::fopen(path.data(), "a+");
+        if(!file)
+            logger.error("Failed to open {} for read/write: {}",
+                         path,
+                         strerror(errno));
+        else
+            logger.info("Logging results into {}", path);
+    }
+
+    logger.info("CPU: {}", get_cpu_model());
     logger.info("Using x86-64 vector extensions: {}", simd::info::value);
 
     print_results(run_benchmarks(
         logger,
+        file,
         BSE<>{},
         SIMDEmbedded<true, simd::HYBRID_MAJOR, std::ratio<1, 16>>{},
         SIMDEmbedded<false, simd::HYBRID_MAJOR, std::ratio<1, 16>>{},
@@ -449,6 +538,8 @@ int main(/*int argc, char* argv[]*/)
                      simd::HYBRID_MAJOR,
                      std::ratio<1, 16>,
                      std::ratio<1, 16>>{}));
+
+    if(file) std::fclose(file);
 
     return 0;
 }

@@ -24,11 +24,11 @@ CMAKE_ARGS=(
 )
 TEST=false
 BENCHMARK=false
-[ -z "${JOBS:-}" ] && JOBS=8
+[ -z "${JOBS:-}" ] && JOBS=4
 DO_BUILD=true
 CXX=g++
 TARGETS=()
-[ -z "${BM_RUNS:-}" ] && BM_RUNS=4
+[ -z "${BM_RUNS:-}" ] && BM_RUNS=1
 
 enable_tests() {
     CMAKE_ARGS+=(-DBUILD_TESTS=ON)
@@ -85,12 +85,8 @@ set_cmake_args_from_envs() {
 }
 
 run_benchmarks() {
-    CPUNAME=$(sed "s/[^a-zA-Z0-9]/ /g" <<< `uname -p` | xargs | sed "s/ /_/g")
-    COMPILER=${CXX}-`${CXX} --version | head -n1 | cut -f3 -d' '`
-
     if [ $BENCHMARK = true ]; then
-        pushd ${BUILD_DIR}/src/benchmarks
-        logdir=${SRC_DIR}/bm_results/${COMPILER}/${CPUNAME}
+        logdir=${SRC_DIR}/bm_results/
         mkdir -p ${logdir}
         for bm in bm_*; do
             log=${logdir}/${bm:3}.csv
@@ -99,7 +95,6 @@ run_benchmarks() {
                 ./${bm} -l ${log}
             done
         done
-        popd
     fi
 }
 
