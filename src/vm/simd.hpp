@@ -3861,16 +3861,21 @@ class hybrid_compiler
                     auto [pc, mask, pops] =
                         major_group<K, N>(pcs, greedy_groups<K, N, true>{pcs});
 
+                    auto exec = [&]() noexcept
+                    {
+                        typelist::visit_at(
+                            pc,
+                            [&]<typename Block>() noexcept
+                            { Block{mask}(storage); },
+                            compiled_blocks{},
+                            sink);
+                    };
+
                     if constexpr(rcnv == HYBRID_MAJOR)
                     {
                         while(pops > t)
                         {
-                            typelist::visit_at(
-                                pc,
-                                [&]<typename Block>() noexcept
-                                { Block{mask}(storage); },
-                                compiled_blocks{},
-                                sink);
+                            exec();
 
                             pcs = storage.pc();
 
@@ -3890,12 +3895,7 @@ class hybrid_compiler
                         std::uint64_t rem{};
                         while(pops > t)
                         {
-                            typelist::visit_at(
-                                pc,
-                                [&]<typename Block>() noexcept
-                                { Block{mask}(storage); },
-                                compiled_blocks{},
-                                sink);
+                            exec();
 
                             pcs = storage.pc();
 
