@@ -2696,28 +2696,32 @@ counting_sort(_Memory& in, _Memory& out) noexcept
     {
         index_vector vindex_out;
         index_vector vindex_in;
+        bool         is_halt = true;
         for(int j = 0; j < static_cast<int>(N); ++j)
         {
-            const int ij   = i - j;
-            const int j2   = N - j - 1;
-            vindex_out[j2] = --bins[fit_in_bins(in.pc()[ij], halt_pos)];
+            const int  ij = i - j;
+            const int  j2 = N - j - 1;
+            const auto pc = in.pc()[ij];
+            is_halt &= pc == halt_pos;
+            vindex_out[j2] = --bins[fit_in_bins(pc, halt_pos)];
             vindex_in[j2]  = ij;
         }
 
-        typelist::for_each(
-            typename K::variables1{},
-            [&]<typename Var>() noexcept
-            {
-                using wrangler =
-                    gather_scatter_intrinsics_wrangler<vartype<Var>,
-                                                       N,
-                                                       index_t>;
+        auto f = [&]<typename Var>() noexcept
+        {
+            using wrangler =
+                gather_scatter_intrinsics_wrangler<vartype<Var>, N, index_t>;
 
-                wrangler::scatter(
-                    out.template get<Var>().data(),
-                    vindex_out,
-                    wrangler::gather(vindex_in, in.template get<Var>().data()));
-            });
+            wrangler::scatter(
+                out.template get<Var>().data(),
+                vindex_out,
+                wrangler::gather(vindex_in, in.template get<Var>().data()));
+        };
+
+        if(is_halt)
+            typelist::for_each(typename K::output_vars{}, f);
+        else
+            typelist::for_each(typename K::variables1{}, f);
     }
 #else
     for(int i = in.size() - 1; i >= 0; --i)
