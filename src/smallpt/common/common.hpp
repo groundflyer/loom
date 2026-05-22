@@ -46,7 +46,7 @@ struct ProgressWatcher
     }
 };
 
-static auto
+auto
 parse_args(int argc, char* argv[]) noexcept
 {
     return argparse::parse(
