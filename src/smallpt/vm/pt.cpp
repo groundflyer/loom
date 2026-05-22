@@ -22,6 +22,56 @@
 using namespace loom;
 using namespace vm;
 
+static std::uint32_t
+encode_res(const Vec2u& res) noexcept
+{
+    const auto [w, h] = res;
+    return w << 16 | h;
+}
+
+static int FORCE_INLINE
+masked_ray_count(const vm::simd::native_vector<std::uint32_t> vrc,
+                 const std::size_t tail_size) noexcept
+{
+#if defined(__AVX512F__)
+    return _mm512_mask_reduce_add_epi32(static_cast<std::uint16_t>(-1)
+                                            << tail_size,
+                                        vrc);
+#else // AVX or AVX2
+    static constexpr std::size_t   N = vm::simd::native_vector_extent_v<float>;
+    static constexpr std::uint32_t l = static_cast<std::uint32_t>(-1);
+    static constexpr vm::simd::native_vector<std::uint32_t> masks[8] = {
+        {0, 0, 0, 0, 0, 0, 0, 0},
+        {l, 0, 0, 0, 0, 0, 0, 0},
+        {l, l, 0, 0, 0, 0, 0, 0},
+        {l, l, l, 0, 0, 0, 0, 0},
+        {l, l, l, l, 0, 0, 0, 0},
+        {l, l, l, l, l, 0, 0, 0},
+        {l, l, l, l, l, l, l, 0},
+        {l, l, l, l, l, l, l, l}
+    };
+
+    return __builtin_reduce_add(vrc & masks[N - tail_size]);
+#endif
+}
+
+template <typename K>
+class OutputPixelConverter
+{
+    std::size_t& r_rc;
+
+  public:
+    OutputPixelConverter(std::size_t& rc) noexcept : r_rc(rc) {}
+
+    RGBA<>
+    operator()(const vm::output_type<K>& o) const noexcept
+    {
+        const auto [r, g, b, rc, _] = o;
+        r_rc += rc;
+        return RGBA{r, g, b, 1};
+    }
+};
+
 template <typename K>
 class InputEncoder
 {
@@ -141,8 +191,12 @@ function_render(Image& img, const float t)
     if(img.size() % simd::native_vector_extent_v<float> != 0)
         throw std::runtime_error("Image size is not aligned to SIMD lane size");
 
-    simd::function<K, simd::MASKED, simd::COUNTING_SORT, std::ratio<1, 2>> f(
-        img.size());
+    simd::hybrid_function<K,
+                          true,
+                          simd::STATIC_MAJOR,
+                          std::ratio<1, 16>,
+                          std::ratio<1, 16>>
+        f(img.size());
 
     const auto r = f.template operator()<true>(
         std::views::transform(img, InputEncoder<K>(img.res(), t)));
@@ -175,7 +229,11 @@ stream_render(Image& img, const float t, const unsigned stream_size)
     if(img.size() < stream_size)
         throw std::runtime_error("Image size is less than stream size");
 
-    simd::stream<K, simd::MASKED, simd::COUNTING_SORT, false, std::ratio<1, 2>>
+    simd::hybrid_stream<K,
+                        true,
+                        simd::STATIC_MAJOR,
+                        std::ratio<1, 2>,
+                        std::ratio<1, 16>>
         s(stream_size);
 
     std::vector<output_type<K>> result_buffer;
@@ -259,16 +317,17 @@ main(int argc, char* argv[])
 
         ElapsedTimer<> timer;
 
-        // using f = RenderPixelSIMDPredicated<smallpt_primary>;
+        // using f = RenderPixelSIMDPredicated<smallpt>;
         // parallel_for_each<ncores>(
-        //     ranges::views::chunk(img, f::N),
-        //     f(res, threshold, scc.progress, scc.ray_count));
+        // std::ranges::for_each(ranges::views::chunk(img, f::N),
+        //                       f(res, threshold, scc.progress,
+        //                       scc.ray_count));
         // parallel_render(
         //     img,
         //     RenderPixelBSE(img, threshold, scc.progress, scc.ray_count));
 
         // const std::size_t rc = function_render<smallpt>(img, threshold);
-        const std::size_t rc = stream_render<smallpt>(img, threshold, 256);
+        const std::size_t rc = stream_render<smallpt>(img, threshold, 288);
 
         const auto e = timer.elapsed();
 
