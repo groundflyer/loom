@@ -4003,6 +4003,6 @@ using hybrid_stream = hybrid_compiler<K, ts, rcnv, UTRt, UTRh>::stream;
 template <Kernel       K,
           bool         ts   = true,
           ReconvMethod rcnv = STATIC_MAJOR,
-          typename UTR      = std::ratio<1, 2>>
+          typename UTR      = std::ratio<1, 8>>
 using embedded_function = embedded_compiler<K, ts, rcnv, UTR>::type;
 } // namespace loom::vm::simd
