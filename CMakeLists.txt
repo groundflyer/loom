@@ -358,20 +358,26 @@ if(BUILD_BENCHMARKS)
     string(PREPEND name "bm_")
 
     add_executable(${name} ${BM_SRC_DIR}/${src})
+    add_executable(${name}_fm ${BM_SRC_DIR}/${src})
 
     if (USE_SYSTEM_FMT AND (NOT FmtLibcxx) AND (name IN_LIST fmt_ho))
       target_link_libraries(${name} PRIVATE fmt::fmt-header-only)
+      target_link_libraries(${name}_fm PRIVATE fmt::fmt-header-only)
     else()
       target_link_libraries(${name} PRIVATE fmt::fmt)
+      target_link_libraries(${name}_fm PRIVATE fmt::fmt)
     endif()
 
     target_include_directories(${name} PUBLIC src)
     target_compile_definitions(${name} PRIVATE -DREPO_HASH="${REPO_HASH}")
-    add_dependencies(benchmarks ${name})
+    target_include_directories(${name}_fm PUBLIC src)
+    target_compile_definitions(${name}_fm PRIVATE -DREPO_HASH="${REPO_HASH}")
+    target_compile_options(${name}_fm PRIVATE $<$<CONFIG:Release>:-ffast-math>)
+    add_dependencies(benchmarks ${name} ${name}_fm)
   endforeach()
 
   target_compile_options(bm_pt PUBLIC -ftemplate-depth=2048 -fbracket-depth=512 -ftemplate-backtrace-limit=1)
-  target_compile_options(bm_pt PUBLIC $<$<CONFIG:Release>:-ffast-math>)
+  target_compile_options(bm_pt_fm PUBLIC -ftemplate-depth=2048 -fbracket-depth=512 -ftemplate-backtrace-limit=1)
   # target_compile_options(bm_pt PUBLIC -save-temps)
 endif()
 

@@ -340,8 +340,8 @@ main(int argc, char* argv[])
             logger.info("Logging results into {}", path);
     }
 
-    logger.info("CPU: {}", get_cpu_model());
-    logger.info("Using x86-64 vector extensions: {}", simd::info::value);
+    logger.info("CPU: {}; SIMD: {}", get_cpu_model(), simd::info::value);
+    logger.info("clang-{}; fast-math: {}", rtrim(__clang_version__), fast_math);
 
     print_results(run_benchmarks(
         logger,

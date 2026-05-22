@@ -79,6 +79,12 @@ ratio2percent() noexcept
 template <typename Dur = std::chrono::steady_clock::duration>
 using bm_result = std::pair<std::string, Dur>;
 
+#ifdef __FAST_MATH__
+constexpr inline bool fast_math = true;
+#else
+constexpr inline bool fast_math = false;
+#endif
+
 template <typename Dur = std::chrono::steady_clock::duration, typename... Bms>
 static std::array<bm_result<Dur>, sizeof...(Bms)>
 run_benchmarks(Logger& logger, std::FILE* file, Bms... bms)
@@ -93,11 +99,12 @@ run_benchmarks(Logger& logger, std::FILE* file, Bms... bms)
         logger.info("Result {:.3f}s", durs);
         if(file)
             fmt::print(file,
-                       "{:%FT%TZ},{},clang-{},{},{},{},{:.3f}\n",
+                       "{:%FT%TZ},{},clang-{},fast-math:{},{},{},{},{:.3f}\n",
                        std::chrono::floor<std::chrono::seconds>(
                            std::chrono::system_clock::now()),
                        REPO_HASH,
                        rtrim(__clang_version__),
+                       fast_math,
                        get_cpu_model(),
                        vm::simd::info::value,
                        i,
@@ -106,11 +113,12 @@ run_benchmarks(Logger& logger, std::FILE* file, Bms... bms)
         logger.info("Result {:.3%S}s", dur);
         if(file)
             fmt::println(file,
-                         "{:%FT%TZ},{},clang-{},{},{},{},{:.3%S}",
+                         "{:%FT%TZ},{},clang-{},fast-math:{},{},{},{},{:.3%S}",
                          std::chrono::floor<std::chrono::seconds>(
                              std::chrono::system_clock::now()),
                          REPO_HASH,
                          rtrim(__clang_version__),
+                         fast_math,
                          get_cpu_model(),
                          vm::simd::info::value,
                          i,
