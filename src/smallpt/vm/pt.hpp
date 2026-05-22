@@ -1210,12 +1210,13 @@ KERNEL(primary_const, IVAR(ppp))
     INSERT_TMACRO(vec3_scalar_div, CS(L), CS(L), typename C::NSAMPLES)
 KERNEL_END(TVAR(L0), TVAR(L1), TVAR(L2), IVAR(rc), IVAR(ppp));
 
-template <typename R, typename T, typename N>
+template <typename R, typename T, typename N, typename B = CS(1)>
 struct constants
 {
     using WIDTH = R;
     using HEIGHT = R;
     using THRESHOLD = T;
     using NSAMPLES = N;
+    using BLUR = B;
 };
 } // namespace loom::vm
