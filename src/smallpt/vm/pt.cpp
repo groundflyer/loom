@@ -220,7 +220,10 @@ function_render(Image& img, const float t)
 
 template <typename K>
 static std::size_t
-stream_render(Image& img, const float t, const unsigned stream_size)
+stream_render(Image&            img,
+              const float       t,
+              const unsigned    stream_size,
+              std::atomic_uint& progress)
 {
     if(stream_size % simd::native_vector_extent_v<float> != 0)
         throw std::runtime_error(
@@ -244,13 +247,17 @@ stream_render(Image& img, const float t, const unsigned stream_size)
     auto view = std::views::transform(img, InputEncoder<K>(img.res(), t));
     auto it   = s.set_inputs(view);
 
+    progress.fetch_add(stream_size, std::memory_order_relaxed);
+
     s();
     s.sort();
 
     while(it != std::ranges::end(view))
     {
         auto exs = s.exchange(ranges::subrange(it, std::ranges::end(view)));
-        it += std::ranges::size(exs);
+        const auto se = std::ranges::size(exs);
+        it += se;
+        progress.fetch_add(se, std::memory_order_relaxed);
         std::ranges::copy(exs, inserter);
         s();
         s.sort();
@@ -311,9 +318,9 @@ main(int argc, char* argv[])
 
         logger.debug("rendering...");
 
-        // std::thread watcher{
-        //     ProgressWatcher{logger, scc.progress, img.size()}
-        // };
+        std::thread watcher{
+            ProgressWatcher{logger, scc.progress, img.size()}
+        };
 
         ElapsedTimer<> timer;
 
@@ -327,11 +334,12 @@ main(int argc, char* argv[])
         //     RenderPixelBSE(img, threshold, scc.progress, scc.ray_count));
 
         // const std::size_t rc = function_render<smallpt>(img, threshold);
-        const std::size_t rc = stream_render<smallpt>(img, threshold, 288);
+        const std::size_t rc =
+            stream_render<smallpt>(img, threshold, 288, scc.progress);
 
         const auto e = timer.elapsed();
 
-        // watcher.join();
+        watcher.join();
 
         // log_stats(logger, e, scc.ray_count.load(std::memory_order_relaxed));
         log_stats(logger, e, rc);
