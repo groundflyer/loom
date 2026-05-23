@@ -24,11 +24,11 @@ CMAKE_ARGS=(
 )
 TEST=false
 BENCHMARK=false
-[ -z "${JOBS:-}" ] && JOBS=4
+[ -z "${JOBS:-}" ] && JOBS=1
 DO_BUILD=true
 CXX=g++
 TARGETS=()
-[ -z "${BM_RUNS:-}" ] && BM_RUNS=1
+[ -z "${BM_RUNS:-}" ] && BM_RUNS=4
 
 enable_tests() {
     CMAKE_ARGS+=(-DBUILD_TESTS=ON)
@@ -86,7 +86,9 @@ set_cmake_args_from_envs() {
 
 run_benchmarks() {
     if [ $BENCHMARK = true ]; then
-        logdir=${SRC_DIR}/bm_results/
+        user_id=`git config --get user.email | sha256sum | cut -c1-10`
+        host=`hostname | sha256sum | cut -c1-10`
+        logdir="${SRC_DIR}/bm_logs/${user_id}/${host}"
         mkdir -p ${logdir}
         for bm in bm_*; do
             log=${logdir}/${bm:3}.csv
