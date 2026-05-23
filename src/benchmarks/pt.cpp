@@ -17,8 +17,6 @@ using kernel = pt_const<float, C128>;
 
 constexpr unsigned num_blocks = 44; // kernel::num_blocks;
 
-using PTBSE = RenderBSE<kernel, C128>;
-
 template <bool ts, simd::ReconvMethod rcnv, typename UTR = std::ratio<1, 16>>
 using PTEmbedded = RenderSIMDEmbedded<kernel, C128, ts, rcnv, UTR>;
 
@@ -45,7 +43,6 @@ int
 main(int argc, char* argv[])
 {
     run({argc, argv},
-        PTBSE{},
         PTEmbedded<true, simd::HYBRID_MAJOR, std::ratio<1, 16>>{},
         PTEmbedded<false, simd::HYBRID_MAJOR, std::ratio<1, 16>>{},
         PTEmbedded<true, simd::STATIC_MAJOR, std::ratio<1, 16>>{},

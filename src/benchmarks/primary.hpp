@@ -7,7 +7,6 @@
 #define BM_PRIMARY(C)                                                         \
     using kernel                  = primary_const<float, C>;                  \
     constexpr unsigned num_blocks = kernel::num_blocks;                       \
-    using PrimaryBSE              = RenderBSE<kernel, C>;                     \
     template <bool               ts,                                          \
               simd::ReconvMethod rcnv,                                        \
               typename UTR = std::ratio<1, 16>>                               \
@@ -56,7 +55,6 @@
                           std::ratio<1, 16>,                                  \
                           std::ratio<1, 16>,                                  \
                           stream_size25>{},                                   \
-            PrimaryBSE{},                                                     \
             PrimaryEmbedded<true, simd::HYBRID_MAJOR, std::ratio<1, 16>>{},   \
             PrimaryEmbedded<false, simd::HYBRID_MAJOR, std::ratio<1, 16>>{},  \
             PrimaryEmbedded<true, simd::STATIC_MAJOR, std::ratio<1, 16>>{},   \
