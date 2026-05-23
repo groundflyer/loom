@@ -15,6 +15,6 @@
 using namespace loom;
 using namespace vm;
 
-using C2 = constants<CS(512), CS(0.1), CS(64), CS(10)>;
+using C2 = constants<CS(256), CS(0.1), CS(64), CS(10)>;
 
 BM_PRIMARY(C2)

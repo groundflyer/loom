@@ -1320,7 +1320,7 @@ using remap_comp_t = remap_comp<N, Op, Ret, Args...>::type;
 template <fsize_t N, typename Op, typename Ret, typename... Args>
 struct remap_comp_mask
 {
-    using orig_comp      = remap_comp_t<N, Op, Ret, Args...>::type;
+    using orig_comp      = remap_comp_t<N, Op, Ret, Args...>;
     using mask_t         = mask_type<Ret, N>;
     using blend_wrangler = blend_intrinsics_wrangler<Ret, N>;
 

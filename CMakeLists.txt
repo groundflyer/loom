@@ -349,8 +349,6 @@ if(BUILD_BENCHMARKS)
 
   set(bm_srcs pt.cpp primary.cpp primary2.cpp)
 
-  set(fmt_ho bm_pt)
-
   add_custom_target(benchmarks)
 
   foreach(src ${bm_srcs})
@@ -360,7 +358,7 @@ if(BUILD_BENCHMARKS)
     add_executable(${name} ${BM_SRC_DIR}/${src})
     add_executable(${name}_fm ${BM_SRC_DIR}/${src})
 
-    if (USE_SYSTEM_FMT AND (NOT FmtLibcxx) AND (name IN_LIST fmt_ho))
+    if (USE_SYSTEM_FMT AND (NOT FmtLibcxx))
       target_link_libraries(${name} PRIVATE fmt::fmt-header-only)
       target_link_libraries(${name}_fm PRIVATE fmt::fmt-header-only)
     else()
@@ -373,11 +371,11 @@ if(BUILD_BENCHMARKS)
     target_include_directories(${name}_fm PUBLIC src)
     target_compile_definitions(${name}_fm PRIVATE -DREPO_HASH="${REPO_HASH}")
     target_compile_options(${name}_fm PRIVATE $<$<CONFIG:Release>:-ffast-math>)
+    target_compile_options(${name} PUBLIC -ftemplate-depth=2048 -fbracket-depth=512 -ftemplate-backtrace-limit=1)
+    target_compile_options(${name}_fm PUBLIC -ftemplate-depth=2048 -fbracket-depth=512 -ftemplate-backtrace-limit=1)
     add_dependencies(benchmarks ${name} ${name}_fm)
   endforeach()
 
-  target_compile_options(bm_pt PUBLIC -ftemplate-depth=2048 -fbracket-depth=512 -ftemplate-backtrace-limit=1)
-  target_compile_options(bm_pt_fm PUBLIC -ftemplate-depth=2048 -fbracket-depth=512 -ftemplate-backtrace-limit=1)
   # target_compile_options(bm_pt PUBLIC -save-temps)
 endif()
 
