@@ -62,5 +62,7 @@ run(argparse::ArgsRange args, BMs&&... bms) noexcept
     logger.info("clang-{}; fast-math: {}", rtrim(__clang_version__), fast_math);
 
     print_results(run_benchmarks(logger, file, bms...));
+
+    if(file) std::fclose(file);
 }
 } // namespace loom

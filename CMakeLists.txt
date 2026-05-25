@@ -348,7 +348,7 @@ if(BUILD_BENCHMARKS)
 
   set(BM_SRC_DIR src/benchmarks)
 
-  set(bm_srcs pt.cpp primary.cpp primary2.cpp)
+  set(bm_srcs pt.cpp primary.cpp primary2.cpp threefry.cpp)
 
   add_custom_target(benchmarks)
 
