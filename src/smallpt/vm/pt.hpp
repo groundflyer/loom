@@ -6,9 +6,10 @@
 
 #include <vm/core.hpp>
 #include <vm/macros.hpp>
-#include <vm/modules/linal.hpp>
-#include <vm/modules/random.hpp>
 #include <vm/operators.hpp>
+
+#include <vm/lib/linal.hpp>
+#include <vm/lib/random.hpp>
 
 namespace loom::vm
 {
