@@ -210,13 +210,14 @@ template <typename K,
           vm::simd::ReconvMethod rcnv,
           typename UTRt,
           typename UTRh,
-          unsigned stream_size,
-          bool     count_extra = false,
-          typename Clock       = std::chrono::steady_clock>
+          bool count_extra = false,
+          typename Clock   = std::chrono::steady_clock>
 struct RenderSIMDStream
 {
-    static auto
-    get_stream() noexcept
+    unsigned stream_size = 512;
+
+    auto
+    get_stream() const noexcept
     {
         return vm::simd::hybrid_stream<K, ts, rcnv, UTRt, UTRh>(stream_size);
     }

@@ -14,13 +14,12 @@
     template <bool ts, simd::ReconvMethod rcnv, typename UTRt, typename UTRh> \
     using PrimaryFunction =                                                   \
         RenderSIMDFunction<kernel, C, ts, rcnv, UTRt, UTRh>;                  \
-    template <bool               ts,                                          \
-              simd::ReconvMethod rcnv,                                        \
-              typename UTRt,                                                  \
-              typename UTRh,                                                  \
-              unsigned stream_size>                                           \
-    using PrimaryStream =                                                     \
-        RenderSIMDStream<kernel, C, ts, rcnv, UTRt, UTRh, stream_size>;       \
+    template <bool ts, simd::ReconvMethod rcnv, typename UTRt, typename UTRh> \
+    using PrimaryStream = RenderSIMDStream<kernel, C, ts, rcnv, UTRt, UTRh>;  \
+    using FavStream     = PrimaryStream<false,                                \
+                                        simd::STATIC_MAJOR,                   \
+                                        std::ratio<1, 2>,                     \
+                                        std::ratio<1, 16>>;                   \
     template <typename R>                                                     \
     using mk_size =                                                           \
         std::integral_constant<unsigned,                                      \
@@ -33,28 +32,23 @@
             PrimaryStream<false,                                              \
                           simd::HYBRID_MAJOR,                                 \
                           std::ratio<15, 16>,                                 \
-                          std::ratio<1, 16>,                                  \
-                          stream_size25>{},                                   \
+                          std::ratio<1, 16>>{stream_size25},                  \
             PrimaryStream<false,                                              \
                           simd::STATIC_MAJOR,                                 \
                           std::ratio<15, 16>,                                 \
-                          std::ratio<1, 16>,                                  \
-                          stream_size25>{},                                   \
+                          std::ratio<1, 16>>{stream_size25},                  \
             PrimaryStream<false,                                              \
                           simd::HYBRID_MAJOR,                                 \
                           std::ratio<1, 2>,                                   \
-                          std::ratio<1, 16>,                                  \
-                          stream_size25>{},                                   \
-            PrimaryStream<false,                                              \
-                          simd::STATIC_MAJOR,                                 \
-                          std::ratio<1, 2>,                                   \
-                          std::ratio<1, 16>,                                  \
-                          stream_size25>{},                                   \
+                          std::ratio<1, 16>>{stream_size25},                  \
+            FavStream{stream_size25},                                         \
             PrimaryStream<false,                                              \
                           simd::STATIC_MAJOR,                                 \
                           std::ratio<1, 16>,                                  \
-                          std::ratio<1, 16>,                                  \
-                          stream_size25>{},                                   \
+                          std::ratio<1, 16>>{stream_size25},                  \
+            FavStream{mk_size<std::ratio<1, 2>>::value},                      \
+            FavStream{mk_size<std::ratio<1, 10>>::value},                     \
+            FavStream{mk_size<std::ratio<1, 1>>::value},                      \
             PrimaryEmbedded<true, simd::HYBRID_MAJOR, std::ratio<1, 16>>{},   \
             PrimaryEmbedded<false, simd::HYBRID_MAJOR, std::ratio<1, 16>>{},  \
             PrimaryEmbedded<true, simd::STATIC_MAJOR, std::ratio<1, 16>>{},   \
