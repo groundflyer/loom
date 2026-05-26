@@ -79,7 +79,7 @@ struct Context
             lock.unlock();
             need_sort = false;
 
-            if(ex) exchange_available.test_and_set(std::memory_order_release);
+            if(ex) exchange_available.test_and_set(std::memory_order_relaxed);
         }
     }
 
@@ -101,7 +101,7 @@ struct Context
     void
     try_exchange(InputIter& ib, const Sentinel s, OutIter& out) noexcept
     {
-        if(ib != s && exchange_available.test(std::memory_order_acquire) &&
+        if(ib != s && exchange_available.test(std::memory_order_relaxed) &&
            lock.try_lock())
         {
             auto exs = stream.exchange(ranges::subrange(ib, s));
@@ -114,7 +114,7 @@ struct Context
                                       ++ib;
                                   });
             lock.unlock();
-            exchange_available.clear(std::memory_order_release);
+            exchange_available.clear(std::memory_order_relaxed);
         }
     }
 };
@@ -131,13 +131,13 @@ class alignas(cache_line_size) Signal
 
     operator bool() const noexcept
     {
-        return m_flag.test(std::memory_order_acquire);
+        return m_flag.test(std::memory_order_relaxed);
     }
 
     bool
     set() noexcept
     {
-        return m_flag.test_and_set(std::memory_order_release);
+        return m_flag.test_and_set(std::memory_order_relaxed);
     }
 };
 
