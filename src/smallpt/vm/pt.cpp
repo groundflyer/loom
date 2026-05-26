@@ -12,6 +12,7 @@
 #include <smallpt/common/common.hpp>
 #include <smallpt/common/viewport.hpp>
 #include <vm/bse.hpp>
+#include <vm/mp.hpp>
 #include <vm/simd.hpp>
 
 #include <range/v3/view/chunk.hpp>
@@ -284,6 +285,77 @@ stream_render(Image&            img,
     return ret;
 }
 
+template <typename K>
+using mp_stream = simd::hybrid_stream<K,
+                                      false,
+                                      simd::STATIC_MAJOR,
+                                      std::ratio<1, 2>,
+                                      std::ratio<1, 16>>;
+
+template <typename K>
+using mp_context = mp::Context<K, mp_stream>;
+
+template <typename K, std::size_t ncores>
+static std::size_t
+mp_render(Image&            img,
+          const float       t,
+          const unsigned    stream_size,
+          std::atomic_uint& progress)
+{
+    if(stream_size % simd::native_vector_extent_v<float> != 0)
+        throw std::runtime_error(
+            "Stream size is not aligned to SIMD lane size");
+
+    if(img.size() < stream_size)
+        throw std::runtime_error("Image size is less than stream size");
+
+    mp::Shop<type_sequence<K>, mp_context, ncores> shop(stream_size);
+
+    std::vector<output_type<K>> result_buffer;
+
+    result_buffer.reserve(img.size());
+
+    auto input_view = std::views::transform(img, InputEncoder<K>(img.res(), t));
+
+    std::size_t old_size = 0;
+
+    auto oc = mp::make_output_collection(result_buffer);
+
+    {
+        auto ic = shop.bind_inputs(input_view);
+
+        progress.fetch_add(stream_size, std::memory_order_relaxed);
+
+        auto tp = shop.get_thread_pool();
+        tp.affine(AFFINITY::PHYSICAL);
+
+        while(!mp::is_complete(ic))
+        {
+            shop.exchange(ic, oc);
+            const std::size_t new_size = result_buffer.size();
+            progress.fetch_add(new_size - old_size, std::memory_order_relaxed);
+            old_size = new_size;
+        }
+        shop.set();
+    }
+    shop.finalize(oc);
+
+    progress.store(img.size(), std::memory_order_relaxed);
+
+    std::ranges::sort(
+        result_buffer,
+        std::less<unsigned>{},
+        [width = img.width()](const auto& t) noexcept
+        { return pixel_offset(decode_pp(std::get<4>(t)), width, 4); });
+
+    std::size_t ret = 0;
+    std::ranges::copy(
+        std::views::transform(result_buffer, OutputPixelConverter<K>(ret)),
+        OutputAdapter<Image::iterator>(img.begin()));
+
+    return ret;
+}
+
 using smallpt = pt<float>;
 // using smallpt_primary = primary<float>;
 
@@ -334,8 +406,10 @@ main(int argc, char* argv[])
         //     RenderPixelBSE(img, threshold, scc.progress, scc.ray_count));
 
         // const std::size_t rc = function_render<smallpt>(img, threshold);
+        // const std::size_t rc =
+        //     stream_render<smallpt>(img, threshold, 288, scc.progress);
         const std::size_t rc =
-            stream_render<smallpt>(img, threshold, 288, scc.progress);
+            mp_render<smallpt, ncores>(img, threshold, 288, scc.progress);
 
         const auto e = timer.elapsed();
 
