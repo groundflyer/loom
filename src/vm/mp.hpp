@@ -98,7 +98,7 @@ struct Context
 
     /// @brief Attempt to exchange. Used in supervisor/main thread.
     template <typename InputIter, typename Sentinel, typename OutIter>
-    void
+    bool
     try_exchange(InputIter& ib, const Sentinel s, OutIter& out) noexcept
     {
         if(ib != s && exchange_available.test(std::memory_order_relaxed) &&
@@ -109,13 +109,15 @@ struct Context
             std::ranges::for_each(exs,
                                   [&ib, &out](const auto& ex) noexcept
                                   {
-                                      out = ex;
+                                      *out = ex;
                                       ++out;
                                       ++ib;
                                   });
             lock.unlock();
             exchange_available.clear(std::memory_order_relaxed);
+            return true;
         }
+        return false;
     }
 };
 
@@ -335,22 +337,25 @@ class Shop : public ShopBase<Ks, Ctx, N>
     }
 
     template <typename InputCollection, typename OutputCollection>
-    void
+    bool
     exchange(InputCollection& ic, OutputCollection& oc) noexcept
     {
+        bool ret = false;
         base::visit(
-            [&ic, &oc](auto& bench) noexcept
+            [&](auto& bench) noexcept
             {
                 loom::zip_with_for_each(
-                    [](auto& ctx, auto& in, auto& out) noexcept
+                    [&ret](auto& ctx, auto& in, auto& out) noexcept
                     {
                         auto& [ib, ie] = in;
-                        ctx.try_exchange(ib, ie, out);
+
+                        ret = ctx.try_exchange(ib, ie, out) || ret;
                     },
                     bench,
                     ic,
                     oc);
             });
+        return ret;
     }
 
     template <typename OutputCollection>
