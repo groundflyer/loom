@@ -359,27 +359,27 @@ class ScanlineImage
     reference
     at(const unsigned i) noexcept
     {
-        CHECK_INDEX(i, m_size);
+        CHECK_INDEX(i, size());
         return Vector(std::span<T, NC>(p_data + i * NC, NC));
     }
 
     const_reference
     at(const unsigned i) const noexcept
     {
-        CHECK_INDEX(i, m_size);
+        CHECK_INDEX(i, size());
         return Vector(std::span<T, NC>(p_data + i * NC, NC));
     }
 
     reference
     at(const Vec2u& coords) noexcept
     {
-        return at(pixel_offset(coords, width(), NC));
+        return at(pixel_offset(coords, width(), 1));
     }
 
     const_reference
     at(const Vec2u& coords) const noexcept
     {
-        return at(pixel_offset(coords, width(), NC));
+        return at(pixel_offset(coords, width(), 1));
     }
 
     unsigned
