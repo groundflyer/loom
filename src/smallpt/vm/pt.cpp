@@ -295,6 +295,74 @@ using mp_stream = simd::hybrid_stream<K,
 template <typename K>
 using mp_context = mp::Context<K, mp_stream>;
 
+template <typename T>
+class remote_output_control
+{
+    T*          p_origin;
+    std::size_t m_count = 0;
+
+    class output_iterator : public std::output_iterator_tag
+    {
+        T*           p_origin;
+        std::size_t* p_offset;
+
+      public:
+        using value_type      = T;
+        using difference_type = std::ptrdiff_t;
+
+        output_iterator() noexcept = default;
+        output_iterator(T* origin, std::size_t* offset) noexcept :
+            p_origin(origin), p_offset(offset)
+        {
+        }
+
+        value_type&
+        operator*() noexcept
+        {
+            return *(p_origin + *p_offset);
+        }
+
+        output_iterator&
+        operator++() noexcept
+        {
+            ++*p_offset;
+            return *this;
+        }
+
+        output_iterator
+        operator++(int) noexcept
+        {
+            output_iterator ret(*this);
+            ++*p_offset;
+            return ret;
+        }
+    };
+
+  public:
+    remote_output_control() noexcept = default;
+    remote_output_control(T* data) noexcept : p_origin(data) {}
+
+    output_iterator
+    get_output_iterator() noexcept
+    {
+        return output_iterator(p_origin, &m_count);
+    }
+
+    std::size_t
+    get_count() const noexcept
+    {
+        return m_count;
+    }
+
+    auto
+    release() noexcept
+    {
+        std::size_t old_count = m_count;
+        m_count               = 0;
+        return std::views::counted(p_origin, old_count);
+    }
+};
+
 template <typename K, std::size_t ncores>
 static std::size_t
 mp_render(Image&            img,
@@ -311,15 +379,25 @@ mp_render(Image&            img,
 
     mp::Shop<type_sequence<K>, mp_context, ncores> shop(stream_size);
 
-    std::vector<output_type<K>> result_buffer;
-
-    result_buffer.reserve(img.size());
+    std::vector<output_type<K>> result_buffer(stream_size * ncores);
+    remote_output_control       roc(result_buffer.data());
 
     auto input_view = std::views::transform(img, InputEncoder<K>(img.res(), t));
 
-    std::size_t old_size = 0;
+    auto oc = std::tuple{roc.get_output_iterator()};
 
-    auto oc = mp::make_output_collection(result_buffer);
+    std::size_t ret = 0;
+
+    auto upd_img = [&]() noexcept
+    {
+        std::ranges::for_each(roc.release(),
+                              [&](const auto& o) noexcept
+                              {
+                                  const auto [r, g, b, rc, pp] = o;
+                                  ret += rc;
+                                  img[decode_pp(pp)] = RGBA{r, g, b, 1};
+                              });
+    };
 
     {
         auto ic = shop.bind_inputs(input_view);
@@ -331,27 +409,19 @@ mp_render(Image&            img,
 
         while(!mp::is_complete(ic))
         {
-            shop.exchange(ic, oc);
-            const std::size_t new_size = result_buffer.size();
-            progress.fetch_add(new_size - old_size, std::memory_order_relaxed);
-            old_size = new_size;
+            if(shop.exchange(ic, oc))
+            {
+                progress.fetch_add(roc.get_count(), std::memory_order_relaxed);
+                upd_img();
+            }
         }
         shop.set();
     }
     shop.finalize(oc);
 
+    upd_img();
+
     progress.store(img.size(), std::memory_order_relaxed);
-
-    std::ranges::sort(
-        result_buffer,
-        std::less<unsigned>{},
-        [width = img.width()](const auto& t) noexcept
-        { return pixel_offset(decode_pp(std::get<4>(t)), width, 4); });
-
-    std::size_t ret = 0;
-    std::ranges::copy(
-        std::views::transform(result_buffer, OutputPixelConverter<K>(ret)),
-        OutputAdapter<Image::iterator>(img.begin()));
 
     return ret;
 }
