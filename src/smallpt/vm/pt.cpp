@@ -22,6 +22,7 @@
 
 using namespace loom;
 using namespace vm;
+using namespace std::chrono_literals;
 
 static std::uint32_t
 encode_res(const Vec2u& res) noexcept
@@ -363,12 +364,16 @@ class remote_output_control
     }
 };
 
-template <typename K, std::size_t ncores>
+/// @param eg exchange granularity
+template <typename K,
+          std::size_t ncores,
+          typename D = std::chrono::milliseconds>
 static std::size_t
 mp_render(Image&            img,
           const float       t,
           const unsigned    stream_size,
-          std::atomic_uint& progress)
+          std::atomic_uint& progress,
+          const D           eg = D{1})
 {
     if(stream_size % simd::native_vector_extent_v<float> != 0)
         throw std::runtime_error(
@@ -414,6 +419,7 @@ mp_render(Image&            img,
                 progress.fetch_add(roc.get_count(), std::memory_order_relaxed);
                 upd_img();
             }
+            std::this_thread::sleep_for(eg);
         }
         shop.set();
     }
