@@ -1,6 +1,6 @@
 // -*- C++ -*-
-// viewport.hpp
-//
+/// @file viewport.hpp
+/// OpenGL viewport for images.
 
 #pragma once
 
@@ -14,6 +14,7 @@
 
 namespace loom
 {
+/// @brief Exception replacing OpenGL error codes.
 struct GLException
 {
     GLenum c;
@@ -37,6 +38,7 @@ struct GLException
     }
 };
 
+/// @brief Simple OpengGL 3.3 viewport for an image.
 template <typename ResizeReaction, typename KeyReaction, typename MouseReaction>
 class ImageViewport
 {
@@ -331,6 +333,7 @@ class ImageViewport
   public:
     FORBID_ALL(ImageViewport);
 
+    /// @brief Object interface to viewport.
     struct Handler
     {
         Handler() noexcept      = delete;
@@ -351,6 +354,7 @@ class ImageViewport
         }
         ~Handler() { ImageViewport::cleanup(); }
 
+        /// @brief Viewport resolution.
         std::pair<int, int>
         get_res() const noexcept
         {
@@ -383,6 +387,7 @@ class ImageViewport
             ImageViewport::draw();
         }
 
+        /// @throws GLException.
         void
         check_errors() const
         {
@@ -401,6 +406,7 @@ class ImageViewport
                   const char*);
 };
 
+/// @brief Factory function.
 template <typename ResizeReaction, typename KeyReaction, typename MouseReaction>
 ImageViewport<ResizeReaction, KeyReaction, MouseReaction>::Handler
 make_viewport(int            _resx,
