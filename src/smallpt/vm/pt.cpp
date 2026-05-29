@@ -290,7 +290,7 @@ template <typename K>
 using mp_stream = simd::hybrid_stream<K,
                                       false,
                                       simd::STATIC_MAJOR,
-                                      std::ratio<1, 2>,
+                                      std::ratio<1, 16>,
                                       std::ratio<1, 16>>;
 
 template <typename K>
@@ -367,9 +367,11 @@ class remote_output_control
 /// @param eg exchange granularity
 template <typename K,
           std::size_t ncores,
+          typename Viewport,
           typename D = std::chrono::milliseconds>
 static std::size_t
-mp_render(Image&            img,
+mp_render(Viewport&         viewport,
+          Image&            img,
           const float       t,
           const unsigned    stream_size,
           std::atomic_uint& progress,
@@ -419,6 +421,14 @@ mp_render(Image&            img,
                 progress.fetch_add(roc.get_count(), std::memory_order_relaxed);
                 upd_img();
             }
+
+            if(viewport.active())
+            {
+                viewport.reload_img(img.data(), img.width(), img.height());
+                viewport.draw();
+                glfwPollEvents();
+            }
+
             std::this_thread::sleep_for(eg);
         }
         shop.set();
@@ -426,6 +436,13 @@ mp_render(Image&            img,
     shop.finalize(oc);
 
     upd_img();
+
+    if(viewport.active())
+    {
+        viewport.reload_img(img.data(), img.width(), img.height());
+        viewport.draw();
+        glfwPollEvents();
+    }
 
     progress.store(img.size(), std::memory_order_relaxed);
 
@@ -462,6 +479,12 @@ main(int argc, char* argv[])
                     threshold,
                     ncores);
 
+        logger.debug("making viewport");
+        auto viewport = make_viewport(resx, resy, sink, sink, sink);
+        logger.debug("render is ready. Loading...");
+        viewport.load_img(img.data(), resx, resy);
+        logger.debug("loaded image");
+
         PADDED_VALUE(SharedCounters, scc);
 
         logger.debug("rendering...");
@@ -484,8 +507,12 @@ main(int argc, char* argv[])
         // const std::size_t rc = function_render<smallpt>(img, threshold);
         // const std::size_t rc =
         //     stream_render<smallpt>(img, threshold, 288, scc.progress);
-        const std::size_t rc =
-            mp_render<smallpt, ncores>(img, threshold, 288, scc.progress);
+        const std::size_t rc = mp_render<smallpt, ncores>(viewport,
+                                                          img,
+                                                          threshold,
+                                                          288,
+                                                          scc.progress,
+                                                          2ms);
 
         const auto e = timer.elapsed();
 
@@ -494,16 +521,11 @@ main(int argc, char* argv[])
         // log_stats(logger, e, scc.ray_count.load(std::memory_order_relaxed));
         log_stats(logger, e, rc);
 
-        logger.debug("making viewport");
-        auto viewport = make_viewport(resx, resy, sink, sink, sink);
-        logger.debug("render is ready. Loading...");
-        viewport.load_img(img.data(), resx, resy);
-        logger.debug("loaded image");
-
         while(viewport.active())
         {
             viewport.draw();
             glfwPollEvents();
+            std::this_thread::sleep_for(100ms);
         }
     }
     catch(const std::runtime_error& ex)

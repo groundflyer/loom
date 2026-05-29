@@ -8,6 +8,7 @@
 
 #include <common/argparse.hpp>
 #include <common/logging.hpp>
+#include <common/memory.hpp>
 #include <common/string.hpp>
 #include <common/threadpool.hpp>
 
@@ -15,7 +16,7 @@ using namespace std::literals;
 
 namespace loom
 {
-using Image = ScanlineImage<float, 4>;
+using Image = ScanlineImage<float, 4, CacheLineAlignedAllocator<float>>;
 
 struct SharedCounters
 {
@@ -57,7 +58,7 @@ parse_args(int argc, char* argv[]) noexcept
                                                read_number<float, true>),
             argparse::option<'r', "res", 2>("image resolution",
                                             {"width", "height"},
-                                            {1000, 1000},
+                                            {500, 500},
                                             read_number<int, true>),
             argparse::flag<'v', "verbose">("verbose logging")},
         {argc, argv});
