@@ -88,7 +88,7 @@ struct Context
     void
     try_step() noexcept
     {
-        if(!need_sort)
+        if(!(need_sort || stream.done()))
         {
             stream();
             need_sort = true;
