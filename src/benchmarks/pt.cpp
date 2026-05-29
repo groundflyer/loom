@@ -12,17 +12,17 @@
 using namespace loom;
 using namespace vm;
 
-using C128   = constants<CS(128), CS(0.1), CS(64)>;
-using kernel = pt_const<float, C128>;
+using C1     = constants<CS(48), CS(0.0001), CS(64)>;
+using kernel = pt_const<float, C1>;
 
 template <bool ts, simd::ReconvMethod rcnv, typename UTR = std::ratio<1, 16>>
-using PTEmbedded = RenderSIMDEmbedded<kernel, C128, ts, rcnv, UTR>;
+using PTEmbedded = RenderSIMDEmbedded<kernel, C1, ts, rcnv, UTR>;
 
 template <bool ts, simd::ReconvMethod rcnv, typename UTRt, typename UTRh>
-using PTFunction = RenderSIMDFunction<kernel, C128, ts, rcnv, UTRt, UTRh>;
+using PTFunction = RenderSIMDFunction<kernel, C1, ts, rcnv, UTRt, UTRh>;
 
 template <bool ts, simd::ReconvMethod rcnv, typename UTRt, typename UTRh>
-using PTStream = RenderSIMDStream<kernel, C128, ts, rcnv, UTRt, UTRh>;
+using PTStream = RenderSIMDStream<kernel, C1, ts, rcnv, UTRt, UTRh>;
 
 template <typename R>
 using mk_size =
@@ -33,7 +33,7 @@ using mk_size =
 constexpr unsigned stream_size25 = mk_size<std::ratio<2, 5>>::value;
 
 using FavStream =
-    PTStream<false, simd::STATIC_MAJOR, std::ratio<1, 2>, std::ratio<1, 16>>;
+    PTStream<false, simd::STATIC_MAJOR, std::ratio<1, 16>, std::ratio<1, 16>>;
 
 int
 main(int argc, char* argv[])
@@ -78,7 +78,6 @@ main(int argc, char* argv[])
         FavStream{512},
         FavStream{mk_size<std::ratio<1, 1>>::value},
         FavStream{mk_size<std::ratio<2, 1>>::value},
-        FavStream{mk_size<std::ratio<4, 1>>::value},
         FavStream{mk_size<std::ratio<1, 8>>::value},
         FavStream{mk_size<std::ratio<1, 10>>::value});
 
