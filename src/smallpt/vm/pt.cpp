@@ -414,6 +414,8 @@ mp_render(Viewport&         viewport,
         auto tp = shop.get_thread_pool();
         tp.affine(AFFINITY::PHYSICAL);
 
+        ElapsedTimer<> timer;
+
         while(!mp::is_complete(ic))
         {
             if(shop.exchange(ic, oc))
@@ -422,11 +424,12 @@ mp_render(Viewport&         viewport,
                 upd_img();
             }
 
-            if(viewport.active())
+            if(timer.has_expired(15ms) && viewport.active())
             {
                 viewport.reload_img(img.data(), img.width(), img.height());
                 viewport.draw();
                 glfwPollEvents();
+                timer.restart();
             }
 
             std::this_thread::sleep_for(eg);
