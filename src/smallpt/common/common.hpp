@@ -13,6 +13,7 @@
 #include <common/threadpool.hpp>
 
 using namespace std::literals;
+using namespace std::chrono_literals;
 
 namespace loom
 {
@@ -24,26 +25,41 @@ struct SharedCounters
     std::atomic_size_t ray_count{};
 };
 
-struct ProgressWatcher
+struct ProgressReporter
 {
-    Logger&           logger;
-    std::atomic_uint& progress;
-    std::size_t       num_pix;
+    Logger&     logger;
+    std::size_t num_pix;
+
+    void
+    operator()(std::size_t pix_done) const noexcept
+    {
+        logger.info(Logger::flush,
+                    "Rendering... {}%",
+                    static_cast<unsigned>(static_cast<double>(pix_done) /
+                                          static_cast<double>(num_pix) * 100));
+    }
 
     void
     operator()() const noexcept
     {
-        while(progress.load(std::memory_order_relaxed) < num_pix)
+        logger.info(Logger::flush, "Rendering... 100%\n");
+    }
+};
+
+struct ProgressWatcher
+{
+    ProgressReporter  reporter;
+    std::atomic_uint& progress;
+
+    void
+    operator()() const noexcept
+    {
+        while(progress.load(std::memory_order_relaxed) < reporter.num_pix)
         {
-            logger.info(Logger::flush,
-                        "Rendering... {}%",
-                        static_cast<unsigned>(static_cast<double>(progress.load(
-                                                  std::memory_order_relaxed)) /
-                                              static_cast<double>(num_pix) *
-                                              100));
+            reporter(progress.load(std::memory_order_relaxed));
             std::this_thread::sleep_for(500ms);
         }
-        logger.info(Logger::flush, "Rendering... 100%\n");
+        reporter();
     }
 };
 

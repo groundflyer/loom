@@ -41,7 +41,8 @@ main(int argc, char* argv[])
         PADDED_VALUE(SharedCounters, scc);
 
         std::thread watcher{
-            ProgressWatcher{logger, scc.progress, img.size()}
+            ProgressWatcher{ProgressReporter{logger, img.size()},
+                            scc.progress}
         };
 
         ElapsedTimer<> timer;

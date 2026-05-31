@@ -22,7 +22,6 @@
 
 using namespace loom;
 using namespace vm;
-using namespace std::chrono_literals;
 
 static std::uint32_t
 encode_res(const Vec2u& res) noexcept
@@ -220,82 +219,6 @@ function_render(Image& img, const float t)
     return ret;
 }
 
-template <typename K>
-static std::size_t
-stream_render(Image&            img,
-              const float       t,
-              const unsigned    stream_size,
-              std::atomic_uint& progress)
-{
-    if(stream_size % simd::native_vector_extent_v<float> != 0)
-        throw std::runtime_error(
-            "Stream size is not aligned to SIMD lane size");
-
-    if(img.size() < stream_size)
-        throw std::runtime_error("Image size is less than stream size");
-
-    simd::hybrid_stream<K,
-                        true,
-                        simd::STATIC_MAJOR,
-                        std::ratio<1, 2>,
-                        std::ratio<1, 16>>
-        s(stream_size);
-
-    std::vector<output_type<K>> result_buffer;
-    result_buffer.reserve(img.size());
-    auto        inserter = std::back_inserter(result_buffer);
-    std::size_t ret      = 0;
-
-    auto view = std::views::transform(img, InputEncoder<K>(img.res(), t));
-    auto it   = s.set_inputs(view);
-
-    progress.fetch_add(stream_size, std::memory_order_relaxed);
-
-    s();
-    s.sort();
-
-    while(it != std::ranges::end(view))
-    {
-        auto exs = s.exchange(ranges::subrange(it, std::ranges::end(view)));
-        const auto se = std::ranges::size(exs);
-        it += se;
-        progress.fetch_add(se, std::memory_order_relaxed);
-        std::ranges::copy(exs, inserter);
-        s();
-        s.sort();
-    }
-
-    while(!s.done())
-    {
-        s();
-        s.sort();
-    }
-
-    std::ranges::copy(s.get_output_zipped(), inserter);
-
-    std::ranges::sort(
-        result_buffer,
-        std::less<unsigned>{},
-        [width = img.width()](const auto& t) noexcept
-        { return pixel_offset(decode_pp(std::get<4>(t)), width, 4); });
-
-    std::ranges::copy(
-        std::views::transform(result_buffer, OutputPixelConverter<K>(ret)),
-        OutputAdapter<Image::iterator>(img.begin()));
-
-    return ret;
-}
-
-template <typename K>
-using mp_stream = simd::hybrid_stream<K,
-                                      false,
-                                      simd::STATIC_MAJOR,
-                                      std::ratio<1, 16>,
-                                      std::ratio<1, 16>>;
-
-template <typename K>
-using mp_context = mp::Context<K, mp_stream>;
-
 template <typename T>
 class remote_output_control
 {
@@ -364,18 +287,127 @@ class remote_output_control
     }
 };
 
+template <typename T>
+static std::size_t
+img_upd(Image& img, remote_output_control<T>& roc)
+{
+    std::size_t ret{};
+    std::ranges::for_each(roc.release(),
+                          [&](const auto& o) noexcept
+                          {
+                              const auto [r, g, b, rc, pp] = o;
+                              ret += rc;
+                              img[decode_pp(pp)] = RGBA{r, g, b, 1};
+                          });
+    return ret;
+}
+
+template <typename K, typename Viewport>
+static std::size_t
+stream_render(Logger&        logger,
+              Viewport&      viewport,
+              Image&         img,
+              const float    t,
+              const unsigned stream_size)
+{
+    if(stream_size % simd::native_vector_extent_v<float> != 0)
+        throw std::runtime_error(
+            "Stream size is not aligned to SIMD lane size");
+
+    if(img.size() < stream_size)
+        throw std::runtime_error("Image size is less than stream size");
+
+    simd::hybrid_stream<K,
+                        true,
+                        simd::STATIC_MAJOR,
+                        std::ratio<1, 16>,
+                        std::ratio<1, 16>>
+        s(stream_size);
+
+    std::vector<output_type<K>> result_buffer(stream_size);
+    remote_output_control       roc(result_buffer.data());
+
+    std::size_t ret{}, progress{};
+
+    ProgressReporter pr{logger, img.size()};
+
+    auto view = std::views::transform(img, InputEncoder<K>(img.res(), t));
+    auto it   = s.set_inputs(view);
+
+    s();
+    s.sort();
+
+    ElapsedTimer<> timer;
+
+    while(it != std::ranges::end(view))
+    {
+        auto exs = s.exchange(ranges::subrange(it, std::ranges::end(view)));
+        const auto se = std::ranges::size(exs);
+        it += se;
+
+        std::ranges::copy(exs, roc.get_output_iterator());
+
+        ret += img_upd(img, roc);
+
+        if(timer.has_expired(15ms) && viewport.active())
+        {
+            viewport.reload_img(img.data(), img.width(), img.height());
+            viewport.draw();
+            glfwPollEvents();
+            pr(progress);
+            timer.restart();
+        }
+
+        progress += se;
+
+        s();
+        s.sort();
+    }
+
+    while(!s.done())
+    {
+        s();
+        s.sort();
+    }
+
+    std::ranges::copy(s.get_output_zipped(), roc.get_output_iterator());
+
+    ret += img_upd(img, roc);
+
+    if(viewport.active())
+    {
+        viewport.reload_img(img.data(), img.width(), img.height());
+        viewport.draw();
+        glfwPollEvents();
+    }
+
+    pr();
+
+    return ret;
+}
+
+template <typename K>
+using mp_stream = simd::hybrid_stream<K,
+                                      false,
+                                      simd::STATIC_MAJOR,
+                                      std::ratio<1, 16>,
+                                      std::ratio<1, 16>>;
+
+template <typename K>
+using mp_context = mp::Context<K, mp_stream>;
+
 /// @param eg exchange granularity
 template <typename K,
           std::size_t ncores,
           typename Viewport,
           typename D = std::chrono::milliseconds>
 static std::size_t
-mp_render(Viewport&         viewport,
-          Image&            img,
-          const float       t,
-          const unsigned    stream_size,
-          std::atomic_uint& progress,
-          const D           eg = D{1})
+mp_render(Logger&        logger,
+          Viewport&      viewport,
+          Image&         img,
+          const float    t,
+          const unsigned stream_size,
+          const D        eg = D{1})
 {
     if(stream_size % simd::native_vector_extent_v<float> != 0)
         throw std::runtime_error(
@@ -393,23 +425,14 @@ mp_render(Viewport&         viewport,
 
     auto oc = std::tuple{roc.get_output_iterator()};
 
-    std::size_t ret = 0;
+    std::size_t ret{}, progress{};
 
-    auto upd_img = [&]() noexcept
-    {
-        std::ranges::for_each(roc.release(),
-                              [&](const auto& o) noexcept
-                              {
-                                  const auto [r, g, b, rc, pp] = o;
-                                  ret += rc;
-                                  img[decode_pp(pp)] = RGBA{r, g, b, 1};
-                              });
-    };
+    ProgressReporter pr{logger, img.size()};
 
     {
         auto ic = shop.bind_inputs(input_view);
 
-        progress.fetch_add(stream_size, std::memory_order_relaxed);
+        progress += stream_size;
 
         auto tp = shop.get_thread_pool();
         tp.affine(AFFINITY::PHYSICAL);
@@ -420,12 +443,13 @@ mp_render(Viewport&         viewport,
         {
             if(shop.exchange(ic, oc))
             {
-                progress.fetch_add(roc.get_count(), std::memory_order_relaxed);
-                upd_img();
+                progress += roc.get_count();
+                ret += img_upd(img, roc);
             }
 
             if(timer.has_expired(15ms) && viewport.active())
             {
+                pr(progress);
                 viewport.reload_img(img.data(), img.width(), img.height());
                 viewport.draw();
                 glfwPollEvents();
@@ -438,7 +462,7 @@ mp_render(Viewport&         viewport,
     }
     shop.finalize(oc);
 
-    upd_img();
+    ret += img_upd(img, roc);
 
     if(viewport.active())
     {
@@ -447,7 +471,7 @@ mp_render(Viewport&         viewport,
         glfwPollEvents();
     }
 
-    progress.store(img.size(), std::memory_order_relaxed);
+    pr();
 
     return ret;
 }
@@ -488,13 +512,9 @@ main(int argc, char* argv[])
         viewport.load_img(img.data(), resx, resy);
         logger.debug("loaded image");
 
-        PADDED_VALUE(SharedCounters, scc);
+        // PADDED_VALUE(SharedCounters, scc);
 
         logger.debug("rendering...");
-
-        std::thread watcher{
-            ProgressWatcher{logger, scc.progress, img.size()}
-        };
 
         ElapsedTimer<> timer;
 
@@ -508,18 +528,18 @@ main(int argc, char* argv[])
         //     RenderPixelBSE(img, threshold, scc.progress, scc.ray_count));
 
         // const std::size_t rc = function_render<smallpt>(img, threshold);
-        // const std::size_t rc =
-        //     stream_render<smallpt>(img, threshold, 288, scc.progress);
-        const std::size_t rc = mp_render<smallpt, ncores>(viewport,
-                                                          img,
-                                                          threshold,
-                                                          288,
-                                                          scc.progress,
-                                                          2ms);
+        const std::size_t rc =
+            stream_render<smallpt>(logger, viewport, img, threshold, 288);
+        // const std::size_t rc = mp_render<smallpt, ncores>(logger,
+        //                                                   viewport,
+        //                                                   img,
+        //                                                   threshold,
+        //                                                   288,
+        //                                                   2ms);
 
         const auto e = timer.elapsed();
 
-        watcher.join();
+        // watcher.join();
 
         // log_stats(logger, e, scc.ray_count.load(std::memory_order_relaxed));
         log_stats(logger, e, rc);
@@ -532,6 +552,11 @@ main(int argc, char* argv[])
         }
     }
     catch(const std::runtime_error& ex)
+    {
+        logger.critical("{}", ex.what());
+        return 1;
+    }
+    catch(const std::length_error& ex)
     {
         logger.critical("{}", ex.what());
         return 1;
