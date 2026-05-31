@@ -290,7 +290,7 @@ class ShopBase<Ks, Ctx, dynamic_size> : public Signal
 
     /// @brief Constructs loom::thread_pool of dynamic sizes with Worker.
     [[nodiscard]] thread_pool<dynamic_size>
-    get_thread_pool() noexcept
+    get_thread_pool()
     {
         return {std::views::transform(
             m_benches,

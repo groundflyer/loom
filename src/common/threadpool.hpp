@@ -398,7 +398,7 @@ class thread_pool<dynamic_size>
     FORBID_COPY(thread_pool);
 
     template <typename... Args, std::regular_invocable<Args...> Worker>
-    thread_pool(std::size_t n, Worker worker, Args... args) noexcept
+    thread_pool(std::size_t n, Worker worker, Args... args)
     {
         m_threads.reserve(n);
         for(std::size_t i = 0; i < n; ++i)
