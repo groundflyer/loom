@@ -56,7 +56,8 @@ masked_ray_count(const vm::simd::native_vector<std::uint32_t> vrc,
 #endif
 }
 
-template <typename K>
+using kernel = pt<float>;
+
 class OutputPixelConverter
 {
     std::size_t& r_rc;
@@ -65,7 +66,7 @@ class OutputPixelConverter
     OutputPixelConverter(std::size_t& rc) noexcept : r_rc(rc) {}
 
     RGBA<>
-    operator()(const vm::output_type<K>& o) const noexcept
+    operator()(const vm::output_type<kernel>& o) const noexcept
     {
         const auto [r, g, b, rc, _] = o;
         r_rc += rc;
@@ -73,7 +74,6 @@ class OutputPixelConverter
     }
 };
 
-template <typename K>
 class InputEncoder
 {
     std::uint32_t m_res;
@@ -86,7 +86,7 @@ class InputEncoder
     }
 
     template <typename Ip>
-    input_type<K>
+    input_type<kernel>
     operator()(const Ip ip) const noexcept
     {
         return {encode_pp(ip.first), m_res, m_t};
@@ -100,15 +100,9 @@ struct RenderPixelBase
     unsigned res;
     float    threshold;
 
-    std::atomic_uint&   progress;
-    std::atomic_size_t& ray_count;
-
-    RenderPixelBase(const Vec2u&        img_res,
-                    float               _threshold,
-                    std::atomic_uint&   _p,
-                    std::atomic_size_t& _rc) noexcept :
+    RenderPixelBase(const Vec2u& img_res, float _threshold) noexcept :
         w(img_res[0]), h(img_res[1]), res(encode_res(img_res)),
-        threshold(_threshold), progress(_p), ray_count(_rc)
+        threshold(_threshold)
     {
     }
 };
@@ -118,7 +112,7 @@ struct RenderPixelBSE : RenderPixelBase
     using RenderPixelBase::RenderPixelBase;
 
     template <typename Pixel>
-    void
+    std::pair<std::size_t, std::size_t>
     operator()(Pixel val) const noexcept
     {
         bse::function<pt<float>> f;
@@ -129,12 +123,10 @@ struct RenderPixelBSE : RenderPixelBase
 
         pix = RGBA{r, g, b, 1};
 
-        progress.fetch_add(1, std::memory_order_relaxed);
-        ray_count.fetch_add(rc, std::memory_order_relaxed);
+        return {1, rc};
     }
 };
 
-template <typename K>
 struct RenderPixelSIMDPredicated : RenderPixelBase
 {
     using RenderPixelBase::RenderPixelBase;
@@ -142,10 +134,10 @@ struct RenderPixelSIMDPredicated : RenderPixelBase
     static constexpr std::size_t N = simd::native_vector_extent_v<float>;
 
     template <typename Chunk>
-    void
+    std::pair<std::size_t, std::size_t>
     operator()(Chunk view) const noexcept
     {
-        simd::embedded_function<K> f;
+        simd::embedded_function<kernel> f;
 
         const simd::native_vector<std::uint32_t> vres = simd::broadcast<N>(res);
         const simd::native_vector<float>   vt = simd::broadcast<N>(threshold);
@@ -178,21 +170,115 @@ struct RenderPixelSIMDPredicated : RenderPixelBase
         for(std::size_t i = 0; i < vs; ++i)
             view[i].second = RGBA{vr[i], vg[i], vb[i], 1};
 
-        progress.fetch_add(vs, std::memory_order_relaxed);
-        ray_count.fetch_add(is_tail ? masked_ray_count(vrc, tail_size) :
-                                      __builtin_reduce_add(vrc),
-                            std::memory_order_relaxed);
+        return {vs,
+                is_tail ? masked_ray_count(vrc, tail_size) :
+                          __builtin_reduce_add(vrc)};
     }
 };
 
-template <typename K>
+template <typename Viewport>
 static std::size_t
-function_render(Image& img, const float t)
+predicated_render(Logger&     logger,
+                  Viewport&   viewport,
+                  Image&      img,
+                  const float threshold)
+{
+    ProgressReporter pr{logger, img.size()};
+
+    std::size_t progress{}, ray_count{};
+
+    ElapsedTimer<> timer;
+
+    std::ranges::for_each(
+        ranges::views::chunk(img, RenderPixelSIMDPredicated::N),
+        [&, res = img.res()](auto chunk) noexcept
+        {
+            const auto [p, rc] =
+                RenderPixelSIMDPredicated{res, threshold}(chunk);
+            progress += p;
+            ray_count += rc;
+
+            if(timer.has_expired(15ms) && viewport.active())
+            {
+                viewport.reload_img(img.data(), img.width(), img.height());
+                viewport.draw();
+                glfwPollEvents();
+                pr(progress);
+                timer.restart();
+            }
+        });
+
+    if(viewport.active())
+    {
+        viewport.reload_img(img.data(), img.width(), img.height());
+        viewport.draw();
+        glfwPollEvents();
+    }
+
+    pr();
+
+    return ray_count;
+}
+
+template <std::size_t ncores, typename Viewport>
+static std::size_t
+predicated_mp(Logger&     logger,
+              Viewport&   viewport,
+              Image&      img,
+              const float threshold)
+{
+    PADDED_VALUE(SharedCounters, scc);
+
+    std::thread control{
+        [&, &progress = scc.progress, &ray_count = scc.ray_count]()
+        {
+            parallel_for_each<ncores>(
+                ranges::views::chunk(img, RenderPixelSIMDPredicated::N),
+                [&, res = img.res()](auto chunk) noexcept
+                {
+                    const auto [p, rc] =
+                        RenderPixelSIMDPredicated{res, threshold}(chunk);
+                    progress.fetch_add(p, std::memory_order_relaxed);
+                    ray_count.fetch_add(rc, std::memory_order_relaxed);
+                });
+        }};
+
+    ProgressReporter pr{logger, img.size()};
+
+    while(scc.progress.load(std::memory_order_relaxed) < pr.num_pix)
+    {
+        if(viewport.active())
+        {
+            // that's data race, but who cares
+            viewport.reload_img(img.data(), img.width(), img.height());
+            viewport.draw();
+            glfwPollEvents();
+        }
+        pr(scc.progress.load(std::memory_order_relaxed));
+        std::this_thread::sleep_for(15ms);
+    }
+    pr();
+
+    control.join();
+
+    if(viewport.active())
+    {
+        viewport.reload_img(img.data(), img.width(), img.height());
+        viewport.draw();
+        glfwPollEvents();
+    }
+
+    return scc.ray_count.load(std::memory_order_relaxed);
+}
+
+#if 0
+static std::size_t
+full_range_render(Image& img, const float t)
 {
     if(img.size() % simd::native_vector_extent_v<float> != 0)
         throw std::runtime_error("Image size is not aligned to SIMD lane size");
 
-    simd::hybrid_function<K,
+    simd::hybrid_function<kernel,
                           true,
                           simd::STATIC_MAJOR,
                           std::ratio<1, 16>,
@@ -200,9 +286,9 @@ function_render(Image& img, const float t)
         f(img.size());
 
     const auto r = f.template operator()<true>(
-        std::views::transform(img, InputEncoder<K>(img.res(), t)));
+        std::views::transform(img, InputEncoder(img.res(), t)));
 
-    std::vector<output_type<K>> result_buffer;
+    std::vector<output_type<kernel>> result_buffer;
     result_buffer.reserve(img.size());
     std::ranges::copy(r, std::back_inserter(result_buffer));
     std::ranges::sort(
@@ -213,11 +299,12 @@ function_render(Image& img, const float t)
     std::size_t ret = 0;
 
     std::ranges::copy(
-        std::views::transform(result_buffer, OutputPixelConverter<K>(ret)),
+        std::views::transform(result_buffer, OutputPixelConverter(ret)),
         OutputAdapter<Image::iterator>(img.begin()));
 
     return ret;
 }
+#endif
 
 template <typename T>
 class remote_output_control
@@ -302,7 +389,7 @@ img_upd(Image& img, remote_output_control<T>& roc)
     return ret;
 }
 
-template <typename K, typename Viewport>
+template <typename Viewport>
 static std::size_t
 stream_render(Logger&        logger,
               Viewport&      viewport,
@@ -317,21 +404,21 @@ stream_render(Logger&        logger,
     if(img.size() < stream_size)
         throw std::runtime_error("Image size is less than stream size");
 
-    simd::hybrid_stream<K,
+    simd::hybrid_stream<kernel,
                         true,
                         simd::STATIC_MAJOR,
                         std::ratio<1, 16>,
                         std::ratio<1, 16>>
         s(stream_size);
 
-    std::vector<output_type<K>> result_buffer(stream_size);
-    remote_output_control       roc(result_buffer.data());
+    std::vector<output_type<kernel>> result_buffer(stream_size);
+    remote_output_control            roc(result_buffer.data());
 
     std::size_t ret{}, progress{};
 
     ProgressReporter pr{logger, img.size()};
 
-    auto view = std::views::transform(img, InputEncoder<K>(img.res(), t));
+    auto view = std::views::transform(img, InputEncoder(img.res(), t));
     auto it   = s.set_inputs(view);
 
     s();
@@ -397,12 +484,11 @@ template <typename K>
 using mp_context = mp::Context<K, mp_stream>;
 
 /// @param eg exchange granularity
-template <typename K,
-          std::size_t ncores,
+template <std::size_t ncores,
           typename Viewport,
           typename D = std::chrono::milliseconds>
 static std::size_t
-mp_render(Logger&        logger,
+stream_mp(Logger&        logger,
           Viewport&      viewport,
           Image&         img,
           const float    t,
@@ -416,12 +502,12 @@ mp_render(Logger&        logger,
     if(img.size() < stream_size)
         throw std::runtime_error("Image size is less than stream size");
 
-    mp::Shop<type_sequence<K>, mp_context, ncores> shop(stream_size);
+    mp::Shop<type_sequence<kernel>, mp_context, ncores> shop(stream_size);
 
-    std::vector<output_type<K>> result_buffer(stream_size * ncores);
-    remote_output_control       roc(result_buffer.data());
+    std::vector<output_type<kernel>> result_buffer(stream_size * ncores);
+    remote_output_control            roc(result_buffer.data());
 
-    auto input_view = std::views::transform(img, InputEncoder<K>(img.res(), t));
+    auto input_view = std::views::transform(img, InputEncoder(img.res(), t));
 
     auto oc = std::tuple{roc.get_output_iterator()};
 
@@ -476,9 +562,6 @@ mp_render(Logger&        logger,
     return ret;
 }
 
-using smallpt = pt<float>;
-// using smallpt_primary = primary<float>;
-
 int
 main(int argc, char* argv[])
 {
@@ -512,25 +595,18 @@ main(int argc, char* argv[])
         viewport.load_img(img.data(), resx, resy);
         logger.debug("loaded image");
 
-        // PADDED_VALUE(SharedCounters, scc);
-
         logger.debug("rendering...");
 
         ElapsedTimer<> timer;
 
-        // using f = RenderPixelSIMDPredicated<smallpt>;
-        // parallel_for_each<ncores>(
-        // std::ranges::for_each(ranges::views::chunk(img, f::N),
-        //                       f(res, threshold, scc.progress,
-        //                       scc.ray_count));
-        // parallel_render(
-        //     img,
-        //     RenderPixelBSE(img, threshold, scc.progress, scc.ray_count));
-
-        // const std::size_t rc = function_render<smallpt>(img, threshold);
+        // const std::size_t rc =
+        //     predicated_render(logger, viewport, img, threshold);
         const std::size_t rc =
-            stream_render<smallpt>(logger, viewport, img, threshold, 288);
-        // const std::size_t rc = mp_render<smallpt, ncores>(logger,
+            predicated_mp<ncores>(logger, viewport, img, threshold);
+        // const std::size_t rc = function_render(img, threshold);
+        // const std::size_t rc =
+        //     stream_render(logger, viewport, img, threshold, 288);
+        // const std::size_t rc = stream_mp<ncores>(logger,
         //                                                   viewport,
         //                                                   img,
         //                                                   threshold,
