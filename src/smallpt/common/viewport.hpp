@@ -88,37 +88,39 @@ class ImageViewport
     static inline MouseReaction  mouse_reaction;
 
     static void
-    resize_callback(GLFWwindow*, int width, int height) noexcept
+    resize_callback(GLFWwindow* window, int width, int height) noexcept
     {
         resx = width;
         resy = height;
         glViewport(0, 0, width, height);
-        resize_reaction(width, height);
+        resize_reaction(window, width, height);
     }
 
     static void
-    key_callback(GLFWwindow*,
-                 int key,
+    key_callback(GLFWwindow* window,
+                 int         key,
                  int /*scancode*/,
                  int action,
                  int mods) noexcept
     {
-        key_reaction(key, action, mods);
+        key_reaction(window, key, action, mods);
     }
 
     static void
-    mouse_button_callback(GLFWwindow*,
-                          int button,
-                          int action,
-                          int mods) noexcept
+    mouse_button_callback(GLFWwindow* window,
+                          int         button,
+                          int         action,
+                          int         mods) noexcept
     {
-        mouse_reaction(button, action == GLFW_PRESS, mods);
+        mouse_reaction(window, button, action, mods);
     }
 
     static void
-    cursor_position_callback(GLFWwindow*, double xpos, double ypos) noexcept
+    cursor_position_callback(GLFWwindow* window,
+                             double      xpos,
+                             double      ypos) noexcept
     {
-        mouse_reaction(xpos, ypos);
+        mouse_reaction(window, xpos, ypos);
     }
 
     static void
@@ -249,7 +251,7 @@ class ImageViewport
     static void
     load_img(const T* img_data, int width, int height)
     {
-        const constexpr auto type_flag =
+        constexpr auto type_flag =
             std::is_same_v<T, unsigned char> ?
                 GL_UNSIGNED_BYTE :
                 (std::is_same_v<T, float> ? GL_FLOAT : GL_UNSIGNED_INT);
@@ -272,7 +274,7 @@ class ImageViewport
     static void
     reload_img(const T* img_data, int width, int height)
     {
-        const constexpr auto type_flag =
+        constexpr auto type_flag =
             std::is_same_v<T, unsigned char> ?
                 GL_UNSIGNED_BYTE :
                 (std::is_same_v<T, float> ? GL_FLOAT : GL_UNSIGNED_INT);
@@ -297,10 +299,15 @@ class ImageViewport
     }
 
     static void
+    close() noexcept
+    {
+        glfwSetWindowShouldClose(window, true);
+    }
+
+    static void
     draw() noexcept
     {
-        if(glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
-            glfwSetWindowShouldClose(window, true);
+        if(glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) close();
 
         // glClearColor(0.2f, 0.3f, 0.5f, 1.0f);
         // glClear(GL_COLOR_BUFFER_BIT);
@@ -336,13 +343,7 @@ class ImageViewport
     /// @brief Object interface to viewport.
     struct Handler
     {
-        Handler() noexcept      = delete;
-        Handler(const Handler&) = delete;
-        Handler(Handler&&)      = delete;
-        Handler&
-        operator=(const Handler&) = delete;
-        Handler&
-        operator=(Handler&&) = delete;
+        FORBID_ALL(Handler);
 
         Handler(int            resx,
                 int            resy,
@@ -385,6 +386,12 @@ class ImageViewport
         draw() const noexcept
         {
             ImageViewport::draw();
+        }
+
+        void
+        close() const noexcept
+        {
+            ImageViewport::close();
         }
 
         /// @throws GLException.
