@@ -176,48 +176,144 @@ struct RenderPixelSIMDPredicated : RenderPixelBase
     }
 };
 
-template <typename Viewport>
-static std::size_t
-predicated_render(Logger&     logger,
-                  Viewport&   viewport,
-                  Image&      img,
-                  const float threshold)
+enum Method
 {
-    ProgressReporter pr{logger, img.size()};
+    PREDICATED,
+    STREAM
+};
+
+struct EventState
+{
+    Method method      = STREAM;
+    bool   mp          = true;
+    bool   req_restart = false;
+    bool   req_resize  = false;
+    bool   req_quit    = false;
+    Vec2u  new_size{500, 500};
+
+    EventState() noexcept = default;
+
+    FORBID_COPY(EventState);
+    FORBID_MOVE(EventState);
+
+    struct ResizeAction
+    {
+        bool*  req_restart;
+        bool*  req_resize;
+        Vec2u* new_size;
+
+        void
+        operator()(GLFWwindow*, int width, int height)
+        {
+            *req_restart = true;
+            *req_resize  = true;
+            *new_size    = Vec2u(width, height);
+        }
+    };
+
+    ResizeAction
+    make_res_action() noexcept
+    {
+        return {&req_restart, &req_resize, &new_size};
+    }
+
+    void
+    reset() noexcept
+    {
+        req_restart = false;
+        req_resize  = false;
+    }
+
+    bool
+    req_stop() const noexcept
+    {
+        return req_restart || req_quit;
+    }
+
+    void
+    resize(Image& img)
+    {
+        if(req_resize)
+        {
+            img.resize(new_size);
+            reset();
+        }
+    }
+};
+
+template <typename Viewport>
+struct ViewState
+{
+    Viewport& viewport;
+    Logger&   logger;
+    Image&    img;
+    Vec2u     old_res;
+
+    ViewState(Viewport& v, Logger& l, Image& i) noexcept :
+        viewport(v), logger(l), img(i), old_res(img.res())
+    {
+    }
+
+    FORBID_ALL(ViewState);
+
+    void
+    upate()
+    {
+        if(viewport.active())
+        {
+            logger.debug("reloading image res {}x{}",
+                         img.width(),
+                         img.height());
+            if(all(old_res == img.res()))
+                viewport.reload_img(img.data(), img.width(), img.height());
+            else
+            {
+                viewport.load_img(img.data(), img.width(), img.height());
+                old_res = img.res();
+            }
+            viewport.draw();
+            glfwPollEvents();
+        }
+    }
+};
+
+template <typename Viewport>
+static bool
+predicated_render(EventState&          estate,
+                  ViewState<Viewport>& vstate,
+                  const float          threshold)
+{
+    ProgressReporter pr{vstate.logger, vstate.img.size()};
 
     std::size_t progress{}, ray_count{};
 
     ElapsedTimer<> timer;
 
-    std::ranges::for_each(
-        ranges::views::chunk(img, RenderPixelSIMDPredicated::N),
-        [&, res = img.res()](auto chunk) noexcept
-        {
-            const auto [p, rc] =
-                RenderPixelSIMDPredicated{res, threshold}(chunk);
-            progress += p;
-            ray_count += rc;
+    return std::ranges::none_of(
+               ranges::views::chunk(vstate.img, RenderPixelSIMDPredicated::N),
+               [&](auto chunk)
+               {
+                   const auto [p, rc] =
+                       RenderPixelSIMDPredicated{vstate.img.res(),
+                                                 threshold}(chunk);
+                   progress += p;
+                   ray_count += rc;
 
-            if(timer.has_expired(15ms) && viewport.active())
-            {
-                viewport.reload_img(img.data(), img.width(), img.height());
-                viewport.draw();
-                glfwPollEvents();
-                pr(progress);
-                timer.restart();
-            }
-        });
+                   if(timer.has_expired(15ms))
+                   {
+                       vstate.upate();
+                       pr(progress);
+                       timer.restart();
+                   }
 
-    if(viewport.active())
+                   return estate.req_stop();
+               }) ||
+           [&]()
     {
-        viewport.reload_img(img.data(), img.width(), img.height());
-        viewport.draw();
-        glfwPollEvents();
-    }
-
-    pr();
-
-    return ray_count;
+        pr();
+        vstate.upate();
+        return estate.req_stop();
+    }();
 }
 
 template <std::size_t ncores, typename Viewport>
@@ -240,7 +336,8 @@ predicated_mp(Logger&     logger,
                         RenderPixelSIMDPredicated{res, threshold}(chunk);
                     progress.fetch_add(p, std::memory_order_relaxed);
                     ray_count.fetch_add(rc, std::memory_order_relaxed);
-                });
+                },
+                8);
         }};
 
     ProgressReporter pr{logger, img.size()};
@@ -590,41 +687,51 @@ main(int argc, char* argv[])
                     ncores);
 
         logger.debug("making viewport");
-        auto viewport = make_viewport(resx, resy, sink, sink, sink);
-        logger.debug("render is ready. Loading...");
+
+        EventState estate;
+
+        auto viewport =
+            make_viewport(resx, resy, estate.make_res_action(), sink, sink);
+
         viewport.load_img(img.data(), resx, resy);
-        logger.debug("loaded image");
 
-        logger.debug("rendering...");
+        ViewState vstate{viewport, logger, img};
 
-        ElapsedTimer<> timer;
+        logger.debug("vstate ready");
 
-        // const std::size_t rc =
-        //     predicated_render(logger, viewport, img, threshold);
-        const std::size_t rc =
-            predicated_mp<ncores>(logger, viewport, img, threshold);
-        // const std::size_t rc = function_render(img, threshold);
-        // const std::size_t rc =
-        //     stream_render(logger, viewport, img, threshold, 288);
-        // const std::size_t rc = stream_mp<ncores>(logger,
-        //                                                   viewport,
-        //                                                   img,
-        //                                                   threshold,
-        //                                                   288,
-        //                                                   2ms);
-
-        const auto e = timer.elapsed();
-
-        // watcher.join();
-
-        // log_stats(logger, e, scc.ray_count.load(std::memory_order_relaxed));
-        log_stats(logger, e, rc);
-
-        while(viewport.active())
+        while(!estate.req_quit)
         {
-            viewport.draw();
-            glfwPollEvents();
-            std::this_thread::sleep_for(100ms);
+            // ElapsedTimer<> timer;
+
+            logger.debug("rendering");
+            predicated_render(estate, vstate, threshold);
+            // const std::size_t rc =
+            //     predicated_mp<ncores>(logger, viewport, img, threshold);
+            // const std::size_t rc = function_render(img, threshold);
+            // const std::size_t rc =
+            //     stream_render(logger, viewport, img, threshold, 256);
+            // const std::size_t rc =
+            //     stream_mp<ncores>(logger, viewport, img, threshold, 256,
+            //     2ms);
+
+            // const auto e = timer.elapsed();
+
+            // watcher.join();
+
+            // log_stats(logger, e,
+            // scc.ray_count.load(std::memory_order_relaxed));
+            // log_stats(logger, e, rc);
+
+            while(!estate.req_stop() && viewport.active())
+            {
+                viewport.draw();
+                glfwPollEvents();
+                std::this_thread::sleep_for(100ms);
+            }
+
+            logger.debug("resizing image");
+            estate.resize(img);
+            logger.debug("new image size: {}x{}", img.width(), img.height());
         }
     }
     catch(const std::runtime_error& ex)
