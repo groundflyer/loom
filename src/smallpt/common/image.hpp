@@ -229,7 +229,7 @@ class ScanlineImage
     void
     deallocate() noexcept
     {
-        for(std::size_t i = 0; i < size(); ++i)
+        for(std::size_t i = 0; i < m_size; ++i)
             std::allocator_traits<Allocator>::destroy(m_alloc, p_data + i);
 
         std::allocator_traits<Allocator>::deallocate(m_alloc, p_data, m_size);
@@ -304,6 +304,18 @@ class ScanlineImage
         rhs.reinit();
 
         return *this;
+    }
+
+    void
+    resize(const Vec2u& new_res)
+    {
+        if(all(new_res != m_res))
+        {
+            deallocate();
+            m_res  = new_res;
+            m_size = full_size();
+            allocate();
+        }
     }
 
     ~ScanlineImage() { deallocate(); }
