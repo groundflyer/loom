@@ -151,6 +151,13 @@ class ImageViewport
         glfwSetMouseButtonCallback(window, mouse_button_callback);
         glfwSetCursorPosCallback(window, cursor_position_callback);
 
+        glfwSetWindowSizeLimits(window,
+                                640,
+                                480,
+                                GLFW_DONT_CARE,
+                                GLFW_DONT_CARE);
+        check_errors();
+
         glfwGetFramebufferSize(window, &resx, &resy);
         glViewport(0, 0, resx, resy);
 
