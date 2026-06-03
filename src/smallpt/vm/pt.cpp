@@ -191,6 +191,8 @@ struct EventState
     bool   req_quit    = false;
     Vec2u  new_size{500, 500};
 
+    static constexpr Vec2u min_size{128, 128};
+
     EventState() noexcept = default;
 
     FORBID_COPY(EventState);
@@ -235,7 +237,7 @@ struct EventState
     {
         if(req_resize)
         {
-            img.resize(new_size);
+            img.resize(max(new_size, min_size));
             reset();
         }
     }
