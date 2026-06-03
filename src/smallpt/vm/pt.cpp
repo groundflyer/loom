@@ -319,55 +319,65 @@ predicated_render(EventState&          estate,
 }
 
 template <std::size_t ncores, typename Viewport>
-static std::size_t
-predicated_mp(Logger&     logger,
-              Viewport&   viewport,
-              Image&      img,
-              const float threshold)
+static bool
+predicated_mp(EventState&          estate,
+              ViewState<Viewport>& vstate,
+              const float          threshold)
 {
-    PADDED_VALUE(SharedCounters, scc);
-
-    std::thread control{
-        [&, &progress = scc.progress, &ray_count = scc.ray_count]()
-        {
-            parallel_for_each<ncores>(
-                ranges::views::chunk(img, RenderPixelSIMDPredicated::N),
-                [&, res = img.res()](auto chunk) noexcept
-                {
-                    const auto [p, rc] =
-                        RenderPixelSIMDPredicated{res, threshold}(chunk);
-                    progress.fetch_add(p, std::memory_order_relaxed);
-                    ray_count.fetch_add(rc, std::memory_order_relaxed);
-                },
-                8);
-        }};
-
-    ProgressReporter pr{logger, img.size()};
-
-    while(scc.progress.load(std::memory_order_relaxed) < pr.num_pix)
+    struct Shared
     {
-        if(viewport.active())
+        std::atomic_size_t counter{};
+        std::atomic_size_t progress{};
+        std::atomic_flag   flag{};
+    };
+    PADDED_VALUE(Shared, scc);
+
+    auto r = ranges::views::chunk(vstate.img, RenderPixelSIMDPredicated::N);
+
+    thread_pool<ncores> tp(
+        [&,
+         &c        = scc.counter,
+         &s        = scc.flag,
+         &progress = scc.progress,
+         res       = vstate.img.res(),
+         is        = vstate.img.size(),
+         threshold]()
         {
-            // that's data race, but who cares
-            viewport.reload_img(img.data(), img.width(), img.height());
-            viewport.draw();
-            glfwPollEvents();
-        }
-        pr(scc.progress.load(std::memory_order_relaxed));
+            constexpr std::size_t cs = 16;
+
+            while(!s.test(std::memory_order_relaxed))
+            {
+                const std::size_t b =
+                    c.fetch_add(cs, std::memory_order_relaxed);
+
+                if(b >= is) return;
+
+                std::ranges::for_each(
+                    std::views::counted(std::ranges::begin(r) + b, cs),
+                    [res, threshold, &progress](auto view) noexcept
+                    {
+                        const auto [p, rc] =
+                            RenderPixelSIMDPredicated{res, threshold}(view);
+                        progress.fetch_add(p, std::memory_order_relaxed);
+                    });
+            }
+        });
+    tp.affine(AFFINITY::PHYSICAL);
+
+    while(!estate.req_stop() &&
+          scc.progress.load(std::memory_order_relaxed) < vstate.img.size())
+    {
+        vstate.upate();
         std::this_thread::sleep_for(15ms);
     }
-    pr();
 
-    control.join();
-
-    if(viewport.active())
+    if(estate.req_stop())
     {
-        viewport.reload_img(img.data(), img.width(), img.height());
-        viewport.draw();
-        glfwPollEvents();
+        scc.flag.test_and_set(std::memory_order_relaxed);
+        return false;
     }
 
-    return scc.ray_count.load(std::memory_order_relaxed);
+    return true;
 }
 
 #if 0
@@ -706,9 +716,8 @@ main(int argc, char* argv[])
             // ElapsedTimer<> timer;
 
             logger.debug("rendering");
-            predicated_render(estate, vstate, threshold);
-            // const std::size_t rc =
-            //     predicated_mp<ncores>(logger, viewport, img, threshold);
+            // predicated_render(estate, vstate, threshold);
+            predicated_mp<ncores>(estate, vstate, threshold);
             // const std::size_t rc = function_render(img, threshold);
             // const std::size_t rc =
             //     stream_render(logger, viewport, img, threshold, 256);
@@ -724,6 +733,7 @@ main(int argc, char* argv[])
             // scc.ray_count.load(std::memory_order_relaxed));
             // log_stats(logger, e, rc);
 
+            logger.debug("rendering done. show still image");
             while(!estate.req_stop() && viewport.active())
             {
                 viewport.draw();
