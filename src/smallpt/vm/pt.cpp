@@ -259,7 +259,7 @@ struct ViewState
     FORBID_ALL(ViewState);
 
     void
-    upate()
+    update()
     {
         if(viewport.active())
         {
@@ -303,7 +303,7 @@ predicated_render(EventState&          estate,
 
                    if(timer.has_expired(15ms))
                    {
-                       vstate.upate();
+                       vstate.update();
                        pr(progress);
                        timer.restart();
                    }
@@ -313,7 +313,7 @@ predicated_render(EventState&          estate,
            [&]()
     {
         pr();
-        vstate.upate();
+        vstate.update();
         return estate.req_stop();
     }();
 }
@@ -367,7 +367,7 @@ predicated_mp(EventState&          estate,
     while(!estate.req_stop() &&
           scc.progress.load(std::memory_order_relaxed) < vstate.img.size())
     {
-        vstate.upate();
+        vstate.update();
         std::this_thread::sleep_for(15ms);
     }
 
@@ -499,18 +499,17 @@ img_upd(Image& img, remote_output_control<T>& roc)
 }
 
 template <typename Viewport>
-static std::size_t
-stream_render(Logger&        logger,
-              Viewport&      viewport,
-              Image&         img,
-              const float    t,
-              const unsigned stream_size)
+static bool
+stream_render(EventState&          estate,
+              ViewState<Viewport>& vstate,
+              const float          threshold,
+              const unsigned       stream_size)
 {
     if(stream_size % simd::native_vector_extent_v<float> != 0)
         throw std::runtime_error(
             "Stream size is not aligned to SIMD lane size");
 
-    if(img.size() < stream_size)
+    if(vstate.img.size() < stream_size)
         throw std::runtime_error("Image size is less than stream size");
 
     simd::hybrid_stream<kernel,
@@ -523,19 +522,19 @@ stream_render(Logger&        logger,
     std::vector<output_type<kernel>> result_buffer(stream_size);
     remote_output_control            roc(result_buffer.data());
 
-    std::size_t ret{}, progress{};
+    std::size_t ray_count{}; //, progress{};
 
-    ProgressReporter pr{logger, img.size()};
-
-    auto view = std::views::transform(img, InputEncoder(img.res(), t));
-    auto it   = s.set_inputs(view);
+    auto view =
+        std::views::transform(vstate.img,
+                              InputEncoder(vstate.img.res(), threshold));
+    auto it = s.set_inputs(view);
 
     s();
     s.sort();
 
     ElapsedTimer<> timer;
 
-    while(it != std::ranges::end(view))
+    while(!estate.req_stop() && it != std::ranges::end(view))
     {
         auto exs = s.exchange(ranges::subrange(it, std::ranges::end(view)));
         const auto se = std::ranges::size(exs);
@@ -543,43 +542,37 @@ stream_render(Logger&        logger,
 
         std::ranges::copy(exs, roc.get_output_iterator());
 
-        ret += img_upd(img, roc);
+        ray_count += img_upd(vstate.img, roc);
 
-        if(timer.has_expired(15ms) && viewport.active())
+        if(timer.has_expired(15ms))
         {
-            viewport.reload_img(img.data(), img.width(), img.height());
-            viewport.draw();
-            glfwPollEvents();
-            pr(progress);
+            vstate.update();
             timer.restart();
         }
 
-        progress += se;
+        // progress += se;
 
         s();
         s.sort();
     }
 
-    while(!s.done())
+    if(estate.req_stop()) return false;
+
+    while(!estate.req_stop() && !s.done())
     {
         s();
         s.sort();
     }
+
+    if(estate.req_stop()) return false;
 
     std::ranges::copy(s.get_output_zipped(), roc.get_output_iterator());
 
-    ret += img_upd(img, roc);
+    ray_count += img_upd(vstate.img, roc);
 
-    if(viewport.active())
-    {
-        viewport.reload_img(img.data(), img.width(), img.height());
-        viewport.draw();
-        glfwPollEvents();
-    }
+    vstate.update();
 
-    pr();
-
-    return ret;
+    return true;
 }
 
 template <typename K>
@@ -717,10 +710,8 @@ main(int argc, char* argv[])
 
             logger.debug("rendering");
             // predicated_render(estate, vstate, threshold);
-            predicated_mp<ncores>(estate, vstate, threshold);
-            // const std::size_t rc = function_render(img, threshold);
-            // const std::size_t rc =
-            //     stream_render(logger, viewport, img, threshold, 256);
+            // predicated_mp<ncores>(estate, vstate, threshold);
+            stream_render(estate, vstate, threshold, 256);
             // const std::size_t rc =
             //     stream_mp<ncores>(logger, viewport, img, threshold, 256,
             //     2ms);
