@@ -176,20 +176,14 @@ struct RenderPixelSIMDPredicated : RenderPixelBase
     }
 };
 
-enum Method
-{
-    PREDICATED,
-    STREAM
-};
-
 struct EventState
 {
-    Method method      = STREAM;
-    bool   mp          = true;
-    bool   req_restart = false;
-    bool   req_resize  = false;
-    bool   req_quit    = false;
-    Vec2u  new_size{500, 500};
+    bool  run_stream  = true;
+    bool  run_mp      = true;
+    bool  req_restart = false;
+    bool  req_resize  = false;
+    bool  req_quit    = false;
+    Vec2u new_size{500, 500};
 
     static constexpr Vec2u min_size{128, 128};
 
@@ -205,7 +199,7 @@ struct EventState
         Vec2u* new_size;
 
         void
-        operator()(GLFWwindow*, int width, int height)
+        operator()(GLFWwindow*, int width, int height) noexcept
         {
             *req_restart = true;
             *req_resize  = true;
@@ -213,10 +207,53 @@ struct EventState
         }
     };
 
+    struct KeyAction
+    {
+        bool* run_stream;
+        bool* run_mp;
+        bool* req_restart;
+        bool* req_quit;
+
+        void
+        operator()(GLFWwindow* window, int button, int action, int) noexcept
+        {
+            if(action == GLFW_PRESS)
+            {
+                switch(button)
+                {
+                case GLFW_KEY_ESCAPE:
+                {
+                    *req_quit = true;
+                    glfwSetWindowShouldClose(window, true);
+                    return;
+                }
+                case GLFW_KEY_SPACE:
+                {
+                    *run_stream  = !*run_stream;
+                    *req_restart = true;
+                    return;
+                }
+                case GLFW_KEY_M:
+                {
+                    *run_mp      = !*run_mp;
+                    *req_restart = true;
+                    return;
+                }
+                }
+            }
+        }
+    };
+
     ResizeAction
-    make_res_action() noexcept
+    get_resize_action() noexcept
     {
         return {&req_restart, &req_resize, &new_size};
+    }
+
+    KeyAction
+    get_key_action() noexcept
+    {
+        return {&run_stream, &run_mp, &req_restart, &req_quit};
     }
 
     void
@@ -235,11 +272,7 @@ struct EventState
     void
     resize(Image& img)
     {
-        if(req_resize)
-        {
-            img.resize(max(new_size, min_size));
-            reset();
-        }
+        if(req_resize) { img.resize(max(new_size, min_size)); }
     }
 };
 
@@ -263,9 +296,6 @@ struct ViewState
     {
         if(viewport.active())
         {
-            logger.debug("reloading image res {}x{}",
-                         img.width(),
-                         img.height());
             if(all(old_res == img.res()))
                 viewport.reload_img(img.data(), img.width(), img.height());
             else
@@ -285,9 +315,9 @@ predicated_render(EventState&          estate,
                   ViewState<Viewport>& vstate,
                   const float          threshold)
 {
-    ProgressReporter pr{vstate.logger, vstate.img.size()};
+    // ProgressReporter pr{vstate.logger, vstate.img.size()};
 
-    std::size_t progress{}, ray_count{};
+    // std::size_t progress{}, ray_count{};
 
     ElapsedTimer<> timer;
 
@@ -295,16 +325,15 @@ predicated_render(EventState&          estate,
                ranges::views::chunk(vstate.img, RenderPixelSIMDPredicated::N),
                [&](auto chunk)
                {
-                   const auto [p, rc] =
-                       RenderPixelSIMDPredicated{vstate.img.res(),
-                                                 threshold}(chunk);
-                   progress += p;
-                   ray_count += rc;
+                   RenderPixelSIMDPredicated{vstate.img.res(),
+                                             threshold}(chunk);
+                   // progress += p;
+                   // ray_count += rc;
 
                    if(timer.has_expired(15ms))
                    {
                        vstate.update();
-                       pr(progress);
+                       // pr(progress);
                        timer.restart();
                    }
 
@@ -312,7 +341,7 @@ predicated_render(EventState&          estate,
                }) ||
            [&]()
     {
-        pr();
+        // pr();
         vstate.update();
         return estate.req_stop();
     }();
@@ -500,7 +529,7 @@ img_upd(Image& img, remote_output_control<T>& roc)
 
 template <typename Viewport>
 static bool
-stream_render(EventState&          estate,
+hybrid_render(EventState&          estate,
               ViewState<Viewport>& vstate,
               const float          threshold,
               const unsigned       stream_size)
@@ -590,7 +619,7 @@ template <std::size_t ncores,
           typename Viewport,
           typename D = std::chrono::milliseconds>
 static bool
-stream_mp(EventState&          estate,
+hybrid_mp(EventState&          estate,
           ViewState<Viewport>& vstate,
           const float          threshold,
           const unsigned       stream_size,
@@ -658,6 +687,12 @@ stream_mp(EventState&          estate,
     return true;
 }
 
+static void
+clear(Image& img) noexcept
+{
+    for(auto [_, pix]: img) pix = 0;
+}
+
 int
 main(int argc, char* argv[])
 {
@@ -679,18 +714,19 @@ main(int argc, char* argv[])
 
         const Vec2u res{resx, resy};
         Image       img(res);
-        logger.info("Image res: {}x{}; threshold: {}; number of threads: {}",
-                    resx,
-                    resy,
-                    threshold,
-                    ncores);
 
         logger.debug("making viewport");
 
+        logger.info("Hotkeys: ESC - close; SPACE - switch execution method; M "
+                    "- toggle multithreading");
+
         EventState estate;
 
-        auto viewport =
-            make_viewport(resx, resy, estate.make_res_action(), sink, sink);
+        auto viewport = make_viewport(resx,
+                                      resy,
+                                      estate.get_resize_action(),
+                                      estate.get_key_action(),
+                                      sink);
 
         viewport.load_img(img.data(), resx, resy);
 
@@ -702,19 +738,24 @@ main(int argc, char* argv[])
         {
             // ElapsedTimer<> timer;
 
-            logger.debug("rendering");
-            // predicated_render(estate, vstate, threshold);
-            // predicated_mp<ncores>(estate, vstate, threshold);
-            // stream_render(estate, vstate, threshold, 256);
-            stream_mp<ncores>(estate, vstate, threshold, 256, 2ms);
+            logger.debug("rendering stream?{}, mp?{}",
+                         estate.run_stream,
+                         estate.run_mp);
 
-            // const auto e = timer.elapsed();
-
-            // watcher.join();
-
-            // log_stats(logger, e,
-            // scc.ray_count.load(std::memory_order_relaxed));
-            // log_stats(logger, e, rc);
+            if(estate.run_stream)
+            {
+                if(estate.run_mp)
+                    hybrid_mp<ncores>(estate, vstate, threshold, 256, 2ms);
+                else
+                    hybrid_render(estate, vstate, threshold, 256);
+            }
+            else
+            {
+                if(estate.run_mp)
+                    predicated_mp<ncores>(estate, vstate, threshold);
+                else
+                    predicated_render(estate, vstate, threshold);
+            }
 
             logger.debug("rendering done. show still image");
             while(!estate.req_stop() && viewport.active())
@@ -727,7 +768,11 @@ main(int argc, char* argv[])
             logger.debug("resizing image");
             estate.resize(img);
             logger.debug("new image size: {}x{}", img.width(), img.height());
+            estate.reset();
+            clear(img);
         }
+
+        logger.info("Goodbye");
     }
     catch(const std::runtime_error& ex)
     {

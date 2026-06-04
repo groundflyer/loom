@@ -314,7 +314,7 @@ class ImageViewport
     static void
     draw() noexcept
     {
-        if(glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) close();
+        // if(glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) close();
 
         // glClearColor(0.2f, 0.3f, 0.5f, 1.0f);
         // glClear(GL_COLOR_BUFFER_BIT);
