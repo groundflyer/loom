@@ -522,7 +522,7 @@ stream_render(EventState&          estate,
     std::vector<output_type<kernel>> result_buffer(stream_size);
     remote_output_control            roc(result_buffer.data());
 
-    std::size_t ray_count{}; //, progress{};
+    // std::size_t ray_count{}; //, progress{};
 
     auto view =
         std::views::transform(vstate.img,
@@ -542,7 +542,7 @@ stream_render(EventState&          estate,
 
         std::ranges::copy(exs, roc.get_output_iterator());
 
-        ray_count += img_upd(vstate.img, roc);
+        img_upd(vstate.img, roc);
 
         if(timer.has_expired(15ms))
         {
@@ -568,7 +568,7 @@ stream_render(EventState&          estate,
 
     std::ranges::copy(s.get_output_zipped(), roc.get_output_iterator());
 
-    ray_count += img_upd(vstate.img, roc);
+    img_upd(vstate.img, roc);
 
     vstate.update();
 
@@ -589,19 +589,18 @@ using mp_context = mp::Context<K, mp_stream>;
 template <std::size_t ncores,
           typename Viewport,
           typename D = std::chrono::milliseconds>
-static std::size_t
-stream_mp(Logger&        logger,
-          Viewport&      viewport,
-          Image&         img,
-          const float    t,
-          const unsigned stream_size,
-          const D        eg = D{1})
+static bool
+stream_mp(EventState&          estate,
+          ViewState<Viewport>& vstate,
+          const float          threshold,
+          const unsigned       stream_size,
+          const D              eg = D{2})
 {
     if(stream_size % simd::native_vector_extent_v<float> != 0)
         throw std::runtime_error(
             "Stream size is not aligned to SIMD lane size");
 
-    if(img.size() < stream_size)
+    if(vstate.img.size() < stream_size)
         throw std::runtime_error("Image size is less than stream size");
 
     mp::Shop<type_sequence<kernel>, mp_context, ncores> shop(stream_size);
@@ -609,38 +608,37 @@ stream_mp(Logger&        logger,
     std::vector<output_type<kernel>> result_buffer(stream_size * ncores);
     remote_output_control            roc(result_buffer.data());
 
-    auto input_view = std::views::transform(img, InputEncoder(img.res(), t));
+    auto input_view =
+        std::views::transform(vstate.img,
+                              InputEncoder(vstate.img.res(), threshold));
 
     auto oc = std::tuple{roc.get_output_iterator()};
 
-    std::size_t ret{}, progress{};
+    // std::size_t ret{}, progress{};
 
-    ProgressReporter pr{logger, img.size()};
+    // ProgressReporter pr{logger, img.size()};
 
     {
         auto ic = shop.bind_inputs(input_view);
 
-        progress += stream_size;
+        // progress += stream_size;
 
         auto tp = shop.get_thread_pool();
         tp.affine(AFFINITY::PHYSICAL);
 
         ElapsedTimer<> timer;
 
-        while(!mp::is_complete(ic))
+        while(!estate.req_stop() && !mp::is_complete(ic))
         {
             if(shop.exchange(ic, oc))
             {
-                progress += roc.get_count();
-                ret += img_upd(img, roc);
+                // progress += roc.get_count();
+                img_upd(vstate.img, roc);
             }
 
-            if(timer.has_expired(15ms) && viewport.active())
+            if(timer.has_expired(15ms))
             {
-                pr(progress);
-                viewport.reload_img(img.data(), img.width(), img.height());
-                viewport.draw();
-                glfwPollEvents();
+                vstate.update();
                 timer.restart();
             }
 
@@ -648,20 +646,16 @@ stream_mp(Logger&        logger,
         }
         shop.set();
     }
+
+    if(estate.req_stop()) return false;
+
     shop.finalize(oc);
 
-    ret += img_upd(img, roc);
+    img_upd(vstate.img, roc);
 
-    if(viewport.active())
-    {
-        viewport.reload_img(img.data(), img.width(), img.height());
-        viewport.draw();
-        glfwPollEvents();
-    }
+    vstate.update();
 
-    pr();
-
-    return ret;
+    return true;
 }
 
 int
@@ -711,10 +705,8 @@ main(int argc, char* argv[])
             logger.debug("rendering");
             // predicated_render(estate, vstate, threshold);
             // predicated_mp<ncores>(estate, vstate, threshold);
-            stream_render(estate, vstate, threshold, 256);
-            // const std::size_t rc =
-            //     stream_mp<ncores>(logger, viewport, img, threshold, 256,
-            //     2ms);
+            // stream_render(estate, vstate, threshold, 256);
+            stream_mp<ncores>(estate, vstate, threshold, 256, 2ms);
 
             // const auto e = timer.elapsed();
 
