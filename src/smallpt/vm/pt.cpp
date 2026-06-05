@@ -704,8 +704,12 @@ main(int argc, char* argv[])
     {
         constexpr std::size_t ncores = NUM_CORES_L;
 
-        const auto [resx, resy] = parse_results.template get_opt<'r'>();
-        const float threshold   = parse_results.template get_opt<'t'>();
+        const auto [resx, resy]     = parse_results.template get_opt<'r'>();
+        const float       threshold = parse_results.template get_opt<'t'>();
+        const bool        keep_res  = parse_results.template get_opt<'k'>();
+        const std::size_t stream_size =
+            align_up(parse_results.template get_opt<'s'>(), 32ul);
+
         if(resx < 0 || resy < 0)
             throw std::runtime_error("Negative resolution");
 
@@ -714,6 +718,9 @@ main(int argc, char* argv[])
 
         const Vec2u res{resx, resy};
         Image       img(res);
+
+        if(stream_size * ncores >= img.size())
+            throw std::runtime_error("Stream size is too big");
 
         logger.debug("making viewport");
 
@@ -745,9 +752,13 @@ main(int argc, char* argv[])
             if(estate.run_stream)
             {
                 if(estate.run_mp)
-                    hybrid_mp<ncores>(estate, vstate, threshold, 256, 2ms);
+                    hybrid_mp<ncores>(estate,
+                                      vstate,
+                                      threshold,
+                                      stream_size,
+                                      2ms);
                 else
-                    hybrid_render(estate, vstate, threshold, 256);
+                    hybrid_render(estate, vstate, threshold, stream_size);
             }
             else
             {
@@ -765,14 +776,19 @@ main(int argc, char* argv[])
                 std::this_thread::sleep_for(100ms);
             }
 
-            logger.debug("resizing image");
-            estate.resize(img);
-            logger.debug("new image size: {}x{}", img.width(), img.height());
+            if(!keep_res)
+            {
+                logger.debug("resizing image");
+                estate.resize(img);
+                logger.debug("new image size: {}x{}",
+                             img.width(),
+                             img.height());
+            }
             estate.reset();
             clear(img);
         }
 
-        logger.info("Goodbye");
+        logger.debug("Goodbye");
     }
     catch(const std::runtime_error& ex)
     {
