@@ -23,7 +23,7 @@ class AlignedAllocator
     static constexpr std::size_t
     align_size(std::size_t n) noexcept
     {
-        return align_top(n, alignment);
+        return align_up(n, alignment);
     }
 
   public:

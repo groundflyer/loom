@@ -251,8 +251,8 @@ main(int argc, char* argv[])
     Track          track;
     RandomState    rs;
     const unsigned num_runs =
-        align_top(parse_numruns<10000>(argc, argv), 32u * 8u);
-    const unsigned stream_size = align_top(num_runs / 1000, 32u * 8u);
+        align_up(parse_numruns<10000>(argc, argv), 32u * 8u);
+    const unsigned stream_size = align_up(num_runs / 1000, 32u * 8u);
     fmt::print("Input size: {}\n", num_runs);
     fmt::print("Stream size: {}\n", stream_size);
 

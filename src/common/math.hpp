@@ -44,7 +44,7 @@ is_even(const T val) noexcept
 /// @p div.
 template <std::integral T>
 constexpr T
-align_top(const T n, const T div) noexcept
+align_up(const T n, const T div) noexcept
 {
     const T m = n % div;
     return m == 0 ? n : n + div - m;
@@ -54,7 +54,7 @@ align_top(const T n, const T div) noexcept
 /// @p div.
 template <std::integral T>
 constexpr T
-align_bottom(const T n, const T div) noexcept
+align_down(const T n, const T div) noexcept
 {
     const T m = n % div;
     return m == 0 ? n : n - m;

@@ -2810,7 +2810,7 @@ class ConcurrentStreamFacade :
     {
         const bool ret = nhalts >= step_size;
         m_pos =
-            ret ? align_top(facade::mem().size() - nhalts, step_size) : npos;
+            ret ? align_up(facade::mem().size() - nhalts, step_size) : npos;
         return ret;
     }
 

@@ -252,7 +252,7 @@ main(int argc, char* argv[])
 {
     simd::print_info();
     Track         track;
-    ParmTestMaker tm{align_top(parse_numruns(argc, argv), 32u)};
+    ParmTestMaker tm{align_up(parse_numruns(argc, argv), 32u)};
     RandomState   rs;
 
     test_suite_types(typelist::join<all_ints, all_uints>{},

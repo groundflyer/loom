@@ -112,7 +112,7 @@ struct SIMD
 int
 main(int argc, char* argv[])
 {
-    const std::size_t num_runs = align_top(500000000, 64);
+    const std::size_t num_runs = align_up(500000000, 64);
     std::uint32_t     d0, d1;
     SIMD::vector_type vd0, vd1;
 

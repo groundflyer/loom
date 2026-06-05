@@ -73,7 +73,7 @@ struct CountingSortTestSuite
         auto [_, pcgen] = make_pc_gen<index_t, num_blocks>(rs);
         auto sgen =
             [ugen = rs.make_gen<unsigned>(100u, 10000u)]() mutable noexcept
-        { return align_top(ugen(), 32u); };
+        { return align_up(ugen(), 32u); };
         auto valgen =
             rs.make_gen<T>(static_cast<T>(-100000), static_cast<T>(100000));
         auto chash = [](const memory& m) noexcept

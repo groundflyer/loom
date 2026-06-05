@@ -74,8 +74,14 @@ parse_args(int argc, char* argv[]) noexcept
                                                read_number<float, true>),
             argparse::option<'r', "res", 2>("image resolution",
                                             {"width", "height"},
-                                            {500, 500},
+                                            {400, 400},
                                             read_number<int, true>),
+            argparse::flag<'k', "keep-res">("keep image resolution"),
+            argparse::option<'s', "stream-size">(
+                "stream size",
+                "N",
+                512ul,
+                read_number<std::size_t, true>),
             argparse::flag<'v', "verbose">("verbose logging")},
         {argc, argv});
 }
