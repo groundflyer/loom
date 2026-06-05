@@ -4,7 +4,7 @@
 #include <common/math.hpp>
 #include <common/test.hpp>
 #include <vm/bse.hpp>
-#include <vm/modules/linal.hpp>
+#include <vm/lib/linal.hpp>
 
 using namespace loom;
 using namespace test;
