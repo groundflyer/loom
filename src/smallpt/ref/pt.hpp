@@ -508,10 +508,10 @@ struct Shading
 {
     using ret_t = std::pair<RGB<>, unsigned>;
 
-    static constexpr unsigned max_depth = 4;
-    static constexpr float    p_nee     = 0.5f;
-    static constexpr unsigned ctr_incr  = 39916801;
+    static constexpr float    p_nee    = 0.5f;
+    static constexpr unsigned ctr_incr = 39916801;
 
+    unsigned max_depth;
     Counter  c;
     unsigned depth;
     unsigned ray_count;
@@ -521,7 +521,8 @@ struct Shading
     Vec3f    i;
 
     static ret_t
-    radiance(const Ray<float>& ray,
+    radiance(const unsigned    max_depth,
+             const Ray<float>& ray,
              const Counter&    c,
              const unsigned    depth     = 0,
              unsigned          ray_count = 0) noexcept
@@ -546,6 +547,7 @@ struct Shading
 
         return visit_at(Gallery::mat_idxs[prim_id],
                         Shading{
+                            max_depth,
                             c,
                             depth,
                             ray_count,
@@ -592,7 +594,8 @@ struct Shading
 
         auto cc = bump_ctr(c, ctr_incr);
 
-        auto [L, rc] = radiance(bias_ray(p, d), cc, depth + 1, ray_count);
+        auto [L, rc] =
+            radiance(max_depth, bias_ray(p, d), cc, depth + 1, ray_count);
 
         cc = bump_ctr(cc, ctr_incr);
 
@@ -621,7 +624,8 @@ struct Shading
         const bool  into      = cos_theta > 0;
         const Vec3f nfn       = into ? n : -n;
 
-        return radiance(bias_ray(p, reflect(nfn, i, cos_theta)),
+        return radiance(max_depth,
+                        bias_ray(p, reflect(nfn, i, cos_theta)),
                         bump_ctr(c, ctr_incr),
                         depth + 1,
                         ray_count);
@@ -653,6 +657,7 @@ struct Shading
         auto refraction = [&]() noexcept -> ret_t
         {
             const auto [L, rc] = radiance(
+                max_depth,
                 bias_ray(
                     p,
                     normalize(i * eta - n * ((into ? 1 : -1) *
@@ -710,8 +715,9 @@ struct Shading
         const float alpha_n = anisorough_n(wm, n, t, b, dotWgWm, alpha);
         const float G1      = gaf(dotWgWm, alpha_n);
 
-        auto cc      = bump_ctr(c, ctr_incr);
-        auto [L, rc] = radiance(bias_ray(p, wo), cc, depth + 1, ray_count);
+        auto cc = bump_ctr(c, ctr_incr);
+        auto [L, rc] =
+            radiance(max_depth, bias_ray(p, wo), cc, depth + 1, ray_count);
         L *= G1;
 
         cc                = bump_ctr(cc, ctr_incr);
@@ -765,6 +771,7 @@ class RenderPixel
     const ToSampleSpace<float> m_sample_space;
     const float                m_pw; // pixel width
     const float                m_threshold;
+    const unsigned             m_max_depth;
 
     std::atomic_uint&   r_progress;
     std::atomic_size_t& r_ray_count;
@@ -772,11 +779,13 @@ class RenderPixel
   public:
     RenderPixel(const Vec2u&        res,
                 const float         threshold,
+                const unsigned      max_depth,
                 std::atomic_uint&   progress,
                 std::atomic_size_t& ray_count) noexcept :
         m_width(res[0]), m_sample_space(res),
         m_pw(m_sample_space.ratio / m_sample_space.res[0]),
-        m_threshold(threshold), r_progress(progress), r_ray_count(ray_count)
+        m_threshold(threshold), m_max_depth(max_depth), r_progress(progress),
+        r_ray_count(ray_count)
     {
     }
 
@@ -799,6 +808,7 @@ class RenderPixel
               std::sqrt(m2 / static_cast<float>(ns - 1)) / ns >= m_threshold)
         {
             const auto [v, rc] = Shading::radiance(
+                m_max_depth,
                 cam(jitter_sample_pos(m_pw,
                                       pp,
                                       sample_u(threefry2x32r32<key[0], key[1]>(

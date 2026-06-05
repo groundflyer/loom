@@ -78,10 +78,11 @@ class InputEncoder
 {
     std::uint32_t m_res;
     float         m_t;
+    unsigned      m_d;
 
   public:
-    InputEncoder(const Vec2u& res, const float t) noexcept :
-        m_res(encode_res(res)), m_t(t)
+    InputEncoder(const Vec2u& res, const float t, const unsigned d) noexcept :
+        m_res(encode_res(res)), m_t(t), m_d(d)
     {
     }
 
@@ -89,7 +90,7 @@ class InputEncoder
     input_type<kernel>
     operator()(const Ip ip) const noexcept
     {
-        return {encode_pp(ip.first), m_res, m_t};
+        return {encode_pp(ip.first), m_res, m_t, m_d};
     }
 };
 
@@ -99,10 +100,13 @@ struct RenderPixelBase
     unsigned h;
     unsigned res;
     float    threshold;
+    unsigned max_depth;
 
-    RenderPixelBase(const Vec2u& img_res, float _threshold) noexcept :
+    RenderPixelBase(const Vec2u& img_res,
+                    float        _threshold,
+                    unsigned     _max_depth) noexcept :
         w(img_res[0]), h(img_res[1]), res(encode_res(img_res)),
-        threshold(_threshold)
+        threshold(_threshold), max_depth(_max_depth)
     {
     }
 };
@@ -119,7 +123,8 @@ struct RenderPixelBSE : RenderPixelBase
 
         auto [pos, pix] = val;
 
-        const auto [r, g, b, rc, _] = f(encode_pp(pos), res, threshold);
+        const auto [r, g, b, rc, _] =
+            f(encode_pp(pos), res, threshold, max_depth);
 
         pix = RGBA{r, g, b, 1};
 
@@ -140,8 +145,9 @@ struct RenderPixelSIMDPredicated : RenderPixelBase
         simd::embedded_function<kernel> f;
 
         const simd::native_vector<std::uint32_t> vres = simd::broadcast<N>(res);
-        const simd::native_vector<float>   vt = simd::broadcast<N>(threshold);
-        simd::native_vector<std::uint32_t> vpp;
+        const simd::native_vector<float>    vt = simd::broadcast<N>(threshold);
+        const simd::native_vector<unsigned> vd = simd::broadcast<N>(max_depth);
+        simd::native_vector<std::uint32_t>  vpp;
 
         const std::size_t vs = std::ranges::size(view);
 
@@ -165,7 +171,7 @@ struct RenderPixelSIMDPredicated : RenderPixelBase
                 vpp[i] = encode_pp(view[i].first);
         }
 
-        const auto [vr, vg, vb, vrc, _] = f(vpp, vres, vt);
+        const auto [vr, vg, vb, vrc, _] = f(vpp, vres, vt, vd);
 
         for(std::size_t i = 0; i < vs; ++i)
             view[i].second = RGBA{vr[i], vg[i], vb[i], 1};
@@ -313,7 +319,8 @@ template <typename Viewport>
 static bool
 predicated_render(EventState&          estate,
                   ViewState<Viewport>& vstate,
-                  const float          threshold)
+                  const float          threshold,
+                  const unsigned       max_depth)
 {
     // ProgressReporter pr{vstate.logger, vstate.img.size()};
 
@@ -326,7 +333,8 @@ predicated_render(EventState&          estate,
                [&](auto chunk)
                {
                    RenderPixelSIMDPredicated{vstate.img.res(),
-                                             threshold}(chunk);
+                                             threshold,
+                                             max_depth}(chunk);
                    // progress += p;
                    // ray_count += rc;
 
@@ -351,7 +359,8 @@ template <std::size_t ncores, typename Viewport>
 static bool
 predicated_mp(EventState&          estate,
               ViewState<Viewport>& vstate,
-              const float          threshold)
+              const float          threshold,
+              const unsigned       max_depth)
 {
     struct Shared
     {
@@ -383,10 +392,12 @@ predicated_mp(EventState&          estate,
 
                 std::ranges::for_each(
                     std::views::counted(std::ranges::begin(r) + b, cs),
-                    [res, threshold, &progress](auto view) noexcept
+                    [res, threshold, max_depth, &progress](auto view) noexcept
                     {
                         const auto [p, rc] =
-                            RenderPixelSIMDPredicated{res, threshold}(view);
+                            RenderPixelSIMDPredicated{res,
+                                                      threshold,
+                                                      max_depth}(view);
                         progress.fetch_add(p, std::memory_order_relaxed);
                     });
             }
@@ -532,6 +543,7 @@ static bool
 hybrid_render(EventState&          estate,
               ViewState<Viewport>& vstate,
               const float          threshold,
+              const unsigned       max_depth,
               const unsigned       stream_size)
 {
     if(stream_size % simd::native_vector_extent_v<float> != 0)
@@ -553,9 +565,9 @@ hybrid_render(EventState&          estate,
 
     // std::size_t ray_count{}; //, progress{};
 
-    auto view =
-        std::views::transform(vstate.img,
-                              InputEncoder(vstate.img.res(), threshold));
+    auto view = std::views::transform(
+        vstate.img,
+        InputEncoder(vstate.img.res(), threshold, max_depth));
     auto it = s.set_inputs(view);
 
     s();
@@ -622,6 +634,7 @@ static bool
 hybrid_mp(EventState&          estate,
           ViewState<Viewport>& vstate,
           const float          threshold,
+          const unsigned       max_depth,
           const unsigned       stream_size,
           const D              eg = D{2})
 {
@@ -637,9 +650,9 @@ hybrid_mp(EventState&          estate,
     std::vector<output_type<kernel>> result_buffer(stream_size * ncores);
     remote_output_control            roc(result_buffer.data());
 
-    auto input_view =
-        std::views::transform(vstate.img,
-                              InputEncoder(vstate.img.res(), threshold));
+    auto input_view = std::views::transform(
+        vstate.img,
+        InputEncoder(vstate.img.res(), threshold, max_depth));
 
     auto oc = std::tuple{roc.get_output_iterator()};
 
@@ -707,6 +720,7 @@ main(int argc, char* argv[])
         const auto [resx, resy]     = parse_results.template get_opt<'r'>();
         const float       threshold = parse_results.template get_opt<'t'>();
         const bool        keep_res  = parse_results.template get_opt<'k'>();
+        const unsigned    max_depth = parse_results.template get_opt<'d'>();
         const std::size_t stream_size =
             align_up(parse_results.template get_opt<'s'>(), 32ul);
 
@@ -755,17 +769,22 @@ main(int argc, char* argv[])
                     hybrid_mp<ncores>(estate,
                                       vstate,
                                       threshold,
+                                      max_depth,
                                       stream_size,
                                       2ms);
                 else
-                    hybrid_render(estate, vstate, threshold, stream_size);
+                    hybrid_render(estate,
+                                  vstate,
+                                  threshold,
+                                  max_depth,
+                                  stream_size);
             }
             else
             {
                 if(estate.run_mp)
-                    predicated_mp<ncores>(estate, vstate, threshold);
+                    predicated_mp<ncores>(estate, vstate, threshold, max_depth);
                 else
-                    predicated_render(estate, vstate, threshold);
+                    predicated_render(estate, vstate, threshold, max_depth);
             }
 
             logger.debug("rendering done. show still image");

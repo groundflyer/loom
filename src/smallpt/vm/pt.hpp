@@ -422,9 +422,6 @@ struct scene
     using K1 = CS(0xba0beef);
     using K2 = CS(0x4a06042);   // C0 ^ C1
 
-    // bounce max depth
-    using MAXDEPTH = CS(3);
-
     // minimum pixel samples
     using MINSAMPLES = CS(64);
 
@@ -789,7 +786,7 @@ KERNEL_END(TVAR(L0), TVAR(L1), TVAR(L2), IVAR(rc));
 #else
 
 template <std::same_as<float> T>
-KERNEL(pt, IVAR(ppp), IVAR(tmp0), TVAR(threshold))
+KERNEL(pt, IVAR(ppp), IVAR(tmp0), TVAR(threshold), IVAR(maxdepth))
     IRSHFT(d0, ppp, 16),
     IBAND(d1, ppp, 0xffff),
     IRSHFT(tmp1, tmp0, 16),     // tmp1 <- w
@@ -850,7 +847,7 @@ KERNEL(pt, IVAR(ppp), IVAR(tmp0), TVAR(threshold))
     IEQ(tmp0, pid, 11),                // hit light?
     TCMOV_CS(CS(tmp1), CS(tmp0), scene::L_E, CS(1)),
     IEQ(tmp2, pid, 12),                                       // miss?
-    IORGE_CS(CS(tmp2), CS(tmp2), CS(depth), scene::MAXDEPTH), // ||depth>=maxdepth
+    IORGE_CS(CS(tmp2), CS(tmp2), CS(depth), CS(maxdepth)),    // ||depth>=maxdepth
     TCMOV(tmp1, tmp2, 0, tmp1),                               // miss||depth>=maxdepth?0:l|1
     INSERT_TMACRO(vec3_scalar_mul, CS(PL), CS(PL), CS(tmp1)), // contribute to path
     ILOR(tmp0, tmp0, tmp2),                                   // hit light||miss||depth>=maxdepth
@@ -1051,7 +1048,7 @@ KERNEL(pt_const, IVAR(ppp))
     IEQ(tmp0, pid, 11),                // hit light?
     TCMOV_CS(CS(tmp1), CS(tmp0), scene::L_E, CS(1)),
     IEQ(tmp2, pid, 12),                                       // miss?
-    IORGE_CS(CS(tmp2), CS(tmp2), CS(depth), scene::MAXDEPTH), // ||depth>=maxdepth
+    IORGE_CS(CS(tmp2), CS(tmp2), CS(depth), typename C::MAXDEPTH), // ||depth>=maxdepth
     TCMOV(tmp1, tmp2, 0, tmp1),                               // miss||depth>=maxdepth?0:l|1
     INSERT_TMACRO(vec3_scalar_mul, CS(PL), CS(PL), CS(tmp1)), // contribute to path
     ILOR(tmp0, tmp0, tmp2),                                   // hit light||miss||depth>=maxdepth
@@ -1155,7 +1152,7 @@ KERNEL(primary_const, IVAR(ppp))
     INSERT_TMACRO(vec3_scalar_div, CS(L), CS(L), typename C::NSAMPLES)
 KERNEL_END(TVAR(L0), TVAR(L1), TVAR(L2), IVAR(rc), IVAR(ppp));
 
-template <typename R, typename T, typename N, typename B = CS(1)>
+template <typename R, typename T, typename N, typename B = CS(1), typename D = CS(10)>
 struct constants
 {
     using WIDTH = R;
@@ -1163,5 +1160,6 @@ struct constants
     using THRESHOLD = T;
     using NSAMPLES = N;
     using BLUR = B;
+    using MAXDEPTH = D;
 };
 } // namespace loom::vm

@@ -25,8 +25,9 @@ main(int argc, char* argv[])
 
     try
     {
-        const auto [resx, resy] = parse_results.template get_opt<'r'>();
-        const float t           = parse_results.template get_opt<'t'>();
+        const auto [resx, resy]  = parse_results.template get_opt<'r'>();
+        const float    t         = parse_results.template get_opt<'t'>();
+        const unsigned max_depth = parse_results.template get_opt<'d'>();
 
         if(resx < 0 || resy < 0)
             throw std::runtime_error("Negative resolution");
@@ -47,7 +48,9 @@ main(int argc, char* argv[])
 
         ElapsedTimer<> timer;
 
-        parallel_render(img, RenderPixel(res, t, scc.progress, scc.ray_count));
+        parallel_render(
+            img,
+            RenderPixel(res, t, max_depth, scc.progress, scc.ray_count));
         const auto e = timer.elapsed();
         watcher.join();
 

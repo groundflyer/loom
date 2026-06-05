@@ -12,7 +12,7 @@
 using namespace loom;
 using namespace vm;
 
-using C1     = constants<CS(48), CS(0.0001), CS(64)>;
+using C1     = constants<CS(40), CS(0.001), CS(64), CS(1), CS(20)>;
 using kernel = pt_const<float, C1>;
 
 template <bool ts, simd::ReconvMethod rcnv, typename UTR = std::ratio<1, 16>>
@@ -78,8 +78,7 @@ main(int argc, char* argv[])
         FavStream{512},
         FavStream{mk_size<std::ratio<1, 1>>::value},
         FavStream{mk_size<std::ratio<2, 1>>::value},
-        FavStream{mk_size<std::ratio<1, 8>>::value},
-        FavStream{mk_size<std::ratio<1, 10>>::value});
+        FavStream{mk_size<std::ratio<1, 8>>::value});
 
     return 0;
 }
