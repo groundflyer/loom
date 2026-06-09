@@ -184,22 +184,24 @@ struct RenderPixelSIMDPredicated : RenderPixelBase
 
 struct EventState
 {
-    bool  run_stream  = true;
-    bool  run_mp      = true;
-    bool  req_restart = false;
-    bool  req_resize  = false;
-    bool  req_quit    = false;
-    Vec2u new_size{500, 500};
+    const bool keep_res;
+    bool       run_stream  = true;
+    bool       run_mp      = true;
+    bool       req_restart = false;
+    bool       req_resize  = false;
+    bool       req_quit    = false;
+    Vec2u      new_size{500, 500};
 
     static constexpr Vec2u min_size{128, 128};
 
-    EventState() noexcept = default;
+    EventState(const bool kr) noexcept : keep_res(kr) {};
 
     FORBID_COPY(EventState);
     FORBID_MOVE(EventState);
 
     struct ResizeAction
     {
+        bool   keep_res;
         bool*  req_restart;
         bool*  req_resize;
         Vec2u* new_size;
@@ -207,9 +209,12 @@ struct EventState
         void
         operator()(GLFWwindow*, int width, int height) noexcept
         {
-            *req_restart = true;
-            *req_resize  = true;
-            *new_size    = Vec2u(width, height);
+            if(!keep_res)
+            {
+                *req_restart = true;
+                *req_resize  = true;
+                *new_size    = Vec2u(width, height);
+            }
         }
     };
 
@@ -253,7 +258,7 @@ struct EventState
     ResizeAction
     get_resize_action() noexcept
     {
-        return {&req_restart, &req_resize, &new_size};
+        return {keep_res, &req_restart, &req_resize, &new_size};
     }
 
     KeyAction
@@ -741,7 +746,7 @@ main(int argc, char* argv[])
         logger.info("Hotkeys: ESC - close; SPACE - switch execution method; M "
                     "- toggle multithreading");
 
-        EventState estate;
+        EventState estate{keep_res};
 
         auto viewport = make_viewport(resx,
                                       resy,
@@ -795,14 +800,9 @@ main(int argc, char* argv[])
                 std::this_thread::sleep_for(100ms);
             }
 
-            if(!keep_res)
-            {
-                logger.debug("resizing image");
-                estate.resize(img);
-                logger.debug("new image size: {}x{}",
-                             img.width(),
-                             img.height());
-            }
+            estate.resize(img);
+            logger.debug("new image size: {}x{}", img.width(), img.height());
+
             estate.reset();
             clear(img);
         }
