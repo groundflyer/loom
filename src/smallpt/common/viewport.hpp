@@ -75,11 +75,11 @@ class ImageViewport
     };
 
     static inline GLFWwindow* window         = nullptr;
-    static inline unsigned    shader_program = -1u;
-    static inline unsigned    VBO            = -1u;
-    static inline unsigned    VAO            = -1u;
-    static inline unsigned    EBO            = -1u;
-    static inline unsigned    texture        = -1u;
+    static inline GLuint      shader_program = -1u;
+    static inline GLuint      VBO            = -1u;
+    static inline GLuint      VAO            = -1u;
+    static inline GLuint      EBO            = -1u;
+    static inline GLuint      texture        = -1u;
     static inline int         resx           = 640;
     static inline int         resy           = 480;
 
