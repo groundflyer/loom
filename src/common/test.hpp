@@ -905,7 +905,7 @@ struct transparent_id
 template <typename Cmp = std::equal_to<>>
 struct transparent_cmp
 {
-    static constexpr Cmp cmp{};
+    Cmp cmp{};
 
     template <typename T>
     bool
