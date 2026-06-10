@@ -47,6 +47,11 @@ TKERNEL3(const_mat_vec, v0, v1, v2)
     INSERT_TMACRO(vm::mat_vec3, CS(y), id_mat, CS(v))
 TKERNEL_END3(y0, y1, y2);
 
+template <std::floating_point T>
+TKERNEL3(vec3_norm_test, v0, v1, v2)
+    INSERT_TMACRO(vm::vec3_norm, CS(v), CS(l))
+TKERNEL_END3(v0, v1, v2);
+
 // clang-format on
 
 using Vec3f = Vector<float, 3, std::array>;
@@ -65,6 +70,7 @@ main(int argc, char* argv[])
     vm::bse::function<cross_test<float>>       bse_cross;
     vm::bse::function<mat_vec_dot_test<float>> bse_mat_vec_dot;
     vm::bse::function<const_mat_vec<float>>    bse_cmat;
+    vm::bse::function<vec3_norm_test<float>>   bse_vec3_norm;
 
     auto       gf   = rs.make_gen<float>(-1e6, 1e6);
     auto       gf3  = [&]() noexcept { return std::tuple{gf(), gf(), gf()}; };
@@ -120,6 +126,19 @@ main(int argc, char* argv[])
 
     track.check(NamedTest(tm.test(gf3, bse_cmat, std::equal_to<>{}),
                           "identity matrix multiplication"));
+
+    track.check(NamedFuzzyTest(tm.fuzzy_with_ref(
+                                   gf3,
+                                   bse_vec3_norm,
+                                   [](float v0, float v1, float v2) noexcept
+                                   {
+                                       const auto [r0, r1, r2] =
+                                           normalize(Vec3f{v0, v1, v2});
+                                       return std::tuple{r0, r1, r2};
+                                   },
+                                   test::uni_tuple_cmp{ulp_cmp{ulp}}),
+                               "vec3 normalize test",
+                               0.01));
 
     return track.ret_code();
 }
