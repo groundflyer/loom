@@ -1,6 +1,6 @@
 // -*- C++ -*-
 /// @file viewport.hpp
-/// OpenGL viewport for images.
+/// @brief OpenGL viewport for images.
 
 #pragma once
 
@@ -38,13 +38,63 @@ struct GLException
     }
 };
 
+/// @brief Check for OpenGL errors.
+/// @throw GLException if got an error.
+static void
+gl_check_errors()
+{
+    const GLenum glerror = glGetError();
+    if(glerror) { throw GLException{glerror}; }
+}
+
+#define CHECK_STATUS(CALL, ID, PNAME)                   \
+    int status;                                         \
+    CALL(ID, PNAME, &status);                           \
+    if(!status)                                         \
+    {                                                   \
+        char info_log[512];                             \
+        glGetShaderInfoLog(ID, 512, nullptr, info_log); \
+        glfwTerminate();                                \
+        throw std::runtime_error(info_log);             \
+    }
+
+/// @brief Check shader compilation status.
+/// @throw std::runtime_error if compilation fails.
+static void
+check_shader_status(GLuint shader, GLenum pname = GL_COMPILE_STATUS)
+{
+    CHECK_STATUS(glGetShaderiv, shader, pname)
+}
+
+/// @brief Check program compilation status.
+/// @throw std::runtime_error if linkage fails.
+static void
+check_program_status(GLuint program, GLenum pname = GL_LINK_STATUS)
+{
+    CHECK_STATUS(glGetProgramiv, program, pname)
+}
+
+#undef CHECK_STATUS
+
+/// @brief Create and compile shader.
+/// @throw std::runtime_error if shader compilation fails.
+static GLuint
+make_shader(const GLchar* src, GLenum shader_type)
+{
+    GLuint shader = glCreateShader(shader_type);
+    glShaderSource(shader, 1, &src, nullptr);
+    glCompileShader(shader);
+    check_shader_status(shader, GL_COMPILE_STATUS);
+    return shader;
+}
+
 /// @brief Simple OpengGL 3.3 viewport for an image.
 template <typename ResizeReaction, typename KeyReaction, typename MouseReaction>
 class ImageViewport
 {
     static inline int gl_initialized = false;
 
-    static const constexpr char* vertex_shader_src =
+    static constexpr GLchar vertex_shader_src[] =
         "#version 330 core\n"
         "layout (location = 0) in vec3 inP;"
         "layout (location = 1) in vec2 inUV;"
@@ -53,19 +103,19 @@ class ImageViewport
         "gl_Position = vec4(inP, 1.0);"
         "UV = inUV;}";
 
-    static const constexpr char* fragment_shader_src =
+    static constexpr GLchar fragment_shader_src[] =
         "#version 330 core\n"
         "out vec4 Cf;"
         "in vec2 UV;"
         "uniform sampler2D img;"
         "void main(){Cf = texture(img, UV);}";
 
-    static constexpr float vertex_data[] = {
+    static constexpr GLfloat vertex_data[] = {
         // positions    // texture coordinates
         -1.f, 1.f,  0, 0,   0,   1.f,  1.f,  0, 1.f, 0,
         1.f,  -1.f, 0, 1.f, 1.f, -1.f, -1.f, 0, 0,   1.f};
 
-    static constexpr unsigned indices[] = {
+    static constexpr GLuint indices[] = {
         0,
         1,
         2, // first triangle
@@ -156,48 +206,20 @@ class ImageViewport
                                 480,
                                 GLFW_DONT_CARE,
                                 GLFW_DONT_CARE);
-        check_errors();
+        gl_check_errors();
 
         glfwGetFramebufferSize(window, &resx, &resy);
         glViewport(0, 0, resx, resy);
 
-        int    shader_status;
-        GLuint vertex_shader = glCreateShader(GL_VERTEX_SHADER);
-        glShaderSource(vertex_shader, 1, &vertex_shader_src, nullptr);
-        glCompileShader(vertex_shader);
-        glGetShaderiv(vertex_shader, GL_COMPILE_STATUS, &shader_status);
-        if(!shader_status)
-        {
-            char info_log[512];
-            glGetShaderInfoLog(vertex_shader, 512, nullptr, info_log);
-            glfwTerminate();
-            throw std::runtime_error(info_log);
-        }
-
-        GLuint fragment_shader = glCreateShader(GL_FRAGMENT_SHADER);
-        glShaderSource(fragment_shader, 1, &fragment_shader_src, nullptr);
-        glCompileShader(fragment_shader);
-        glGetShaderiv(fragment_shader, GL_COMPILE_STATUS, &shader_status);
-        if(!shader_status)
-        {
-            char info_log[512];
-            glGetShaderInfoLog(fragment_shader, 512, nullptr, info_log);
-            glfwTerminate();
-            throw std::runtime_error(info_log);
-        }
+        GLuint vertex_shader = make_shader(vertex_shader_src, GL_VERTEX_SHADER);
+        GLuint fragment_shader =
+            make_shader(fragment_shader_src, GL_FRAGMENT_SHADER);
 
         shader_program = glCreateProgram();
         glAttachShader(shader_program, vertex_shader);
         glAttachShader(shader_program, fragment_shader);
         glLinkProgram(shader_program);
-        glGetProgramiv(shader_program, GL_LINK_STATUS, &shader_status);
-        if(!shader_status)
-        {
-            char info_log[512];
-            glGetProgramInfoLog(shader_program, 512, nullptr, info_log);
-            glfwTerminate();
-            throw std::runtime_error(info_log);
-        }
+        check_program_status(shader_program, GL_LINK_STATUS);
 
         glDeleteShader(vertex_shader);
         glDeleteShader(fragment_shader);
@@ -273,8 +295,7 @@ class ImageViewport
                      type_flag,
                      img_data);
 
-        auto glerror = glGetError();
-        if(glerror) { throw GLException{glerror}; }
+        gl_check_errors();
     }
 
     template <typename T>
@@ -295,8 +316,8 @@ class ImageViewport
                         GL_RGBA,
                         type_flag,
                         img_data);
-        auto glerror = glGetError();
-        if(glerror) { throw GLException{glerror}; }
+
+        gl_check_errors();
     }
 
     static bool
@@ -314,21 +335,9 @@ class ImageViewport
     static void
     draw() noexcept
     {
-        // if(glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) close();
-
-        // glClearColor(0.2f, 0.3f, 0.5f, 1.0f);
-        // glClear(GL_COLOR_BUFFER_BIT);
-
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
         glfwSwapBuffers(window);
-    }
-
-    static void
-    check_errors()
-    {
-        const GLenum glerror = glGetError();
-        if(glerror) { throw GLException{glerror}; }
     }
 
     static void
@@ -339,7 +348,6 @@ class ImageViewport
         glDeleteVertexArrays(1, &VAO);
         glDeleteBuffers(1, &VBO);
         glDeleteBuffers(1, &EBO);
-        // glDeleteBuffers(1, &PBO);
 
         glfwTerminate();
     }
@@ -399,13 +407,6 @@ class ImageViewport
         close() const noexcept
         {
             ImageViewport::close();
-        }
-
-        /// @throws GLException.
-        void
-        check_errors() const
-        {
-            ImageViewport::check_errors();
         }
     };
 
