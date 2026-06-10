@@ -155,8 +155,7 @@ using maybe_toa = detail::maybe_toa<Array, T>::type;
 
 /// @brief Associates a test with a name.
 template <typename Test, std::convertible_to<std::string_view> Name>
-    requires(std::predicate<Test> ||
-             is_strictly_invocable_rp_v<std::is_floating_point, Test>)
+    requires(std::predicate<Test>)
 struct NamedTest
 {
     /// @brief Predicate that doesn't accept parameters.
