@@ -8,11 +8,12 @@
 
 #include <GLFW/glfw3.h>
 
+#include <concepts>
 #include <stdexcept>
 #include <type_traits>
 #include <utility>
 
-namespace loom
+namespace loom::gl
 {
 /// @brief Exception replacing OpenGL error codes.
 struct GLException
@@ -76,66 +77,122 @@ check_program_status(GLuint program, GLenum pname = GL_LINK_STATUS)
 
 #undef CHECK_STATUS
 
-/// @brief Create and compile shader.
-/// @throw std::runtime_error if shader compilation fails.
-static GLuint
-make_shader(const GLchar* src, GLenum shader_type)
+/// @brief Shader wrapper.
+class Shader
 {
-    GLuint shader = glCreateShader(shader_type);
-    glShaderSource(shader, 1, &src, nullptr);
-    glCompileShader(shader);
-    check_shader_status(shader, GL_COMPILE_STATUS);
-    return shader;
-}
+    GLuint m_id;
 
-/// @brief Simple OpengGL 3.3 viewport for an image.
-template <typename ResizeReaction, typename KeyReaction, typename MouseReaction>
-class ImageViewport
+  public:
+    FORBID_DEFAULT(Shader);
+
+    Shader(const GLchar* src, GLenum shader_type)
+    {
+        m_id = glCreateShader(shader_type);
+        glShaderSource(m_id, 1, &src, nullptr);
+        glCompileShader(m_id);
+        check_shader_status(m_id, GL_COMPILE_STATUS);
+    }
+
+    GLuint
+    id() const noexcept
+    {
+        return m_id;
+    }
+
+    ~Shader() { glDeleteShader(m_id); }
+};
+
+/// @brief Shader program wrapper.
+class Program
 {
-    static inline int gl_initialized = false;
+    GLuint m_id;
 
-    static constexpr GLchar vertex_shader_src[] =
-        "#version 330 core\n"
-        "layout (location = 0) in vec3 inP;"
-        "layout (location = 1) in vec2 inUV;"
-        "out vec2 UV;"
-        "void main(){"
-        "gl_Position = vec4(inP, 1.0);"
-        "UV = inUV;}";
+  public:
+    FORBID_DEFAULT(Program);
 
-    static constexpr GLchar fragment_shader_src[] =
-        "#version 330 core\n"
-        "out vec4 Cf;"
-        "in vec2 UV;"
-        "uniform sampler2D img;"
-        "void main(){Cf = texture(img, UV);}";
+    template <std::same_as<Shader>... Shaders>
+    Program(Shaders&&... shaders)
+    {
+        m_id = glCreateProgram();
 
-    static constexpr GLfloat vertex_data[] = {
-        // positions    // texture coordinates
-        -1.f, 1.f,  0, 0,   0,   1.f,  1.f,  0, 1.f, 0,
-        1.f,  -1.f, 0, 1.f, 1.f, -1.f, -1.f, 0, 0,   1.f};
+        (..., glAttachShader(m_id, shaders.id()));
+        glLinkProgram(m_id);
+        check_program_status(m_id, GL_LINK_STATUS);
+    }
 
-    static constexpr GLuint indices[] = {
-        0,
-        1,
-        2, // first triangle
-        2,
-        3,
-        0 // second triangle
+    GLuint
+    id() const noexcept
+    {
+        return m_id;
+    }
+
+    void
+    use() const noexcept
+    {
+        glUseProgram(m_id);
+    }
+
+    ~Program() { glDeleteProgram(m_id); }
+};
+
+/// @brief Responsible for GLFW initialization and termination.
+class System
+{
+    struct Handle
+    {
+        FORBID_COPY(Handle);
+        FORBID_MOVE(Handle);
+
+        const char*
+        get_string(GLenum name) const noexcept
+        {
+            return reinterpret_cast<const char*>(glGetString(name));
+        }
+
+        void
+        poll() const noexcept
+        {
+            glfwPollEvents();
+        }
+
+        ~Handle() { glfwTerminate(); }
+
+      private:
+        Handle() noexcept {}
+
+        friend System;
     };
 
-    static inline GLFWwindow* window         = nullptr;
-    static inline GLuint      shader_program = -1u;
-    static inline GLuint      VBO            = -1u;
-    static inline GLuint      VAO            = -1u;
-    static inline GLuint      EBO            = -1u;
-    static inline GLuint      texture        = -1u;
-    static inline int         resx           = 640;
-    static inline int         resy           = 480;
+    static inline bool   initialized = false;
+    static inline Handle handle;
+
+  public:
+    FORBID_ALL(System);
+
+    using Handle = Handle;
+
+    [[nodiscard]] static const Handle&
+    init()
+    {
+        if(!initialized)
+            if(!(initialized = glfwInit()))
+                throw std::runtime_error("Failed to initialize GLFW");
+
+        return handle;
+    }
+};
+
+/// @brief GLFW and OpenGL window initialization.
+template <typename ResizeReaction, typename KeyReaction>
+class Window
+{
+    static inline GLFWwindow* window = nullptr;
 
     static inline ResizeReaction resize_reaction;
     static inline KeyReaction    key_reaction;
-    static inline MouseReaction  mouse_reaction;
+
+    static inline int resx;
+    static inline int resy;
 
     static void
     resize_callback(GLFWwindow* window, int width, int height) noexcept
@@ -157,28 +214,10 @@ class ImageViewport
     }
 
     static void
-    mouse_button_callback(GLFWwindow* window,
-                          int         button,
-                          int         action,
-                          int         mods) noexcept
-    {
-        mouse_reaction(window, button, action, mods);
-    }
-
-    static void
-    cursor_position_callback(GLFWwindow* window,
-                             double      xpos,
-                             double      ypos) noexcept
-    {
-        mouse_reaction(window, xpos, ypos);
-    }
-
-    static void
     init(int            _resx,
          int            _resy,
          ResizeReaction _resize_reaction,
-         KeyReaction    _key_reaction,
-         MouseReaction  _mouse_reaction)
+         KeyReaction    _key_reaction)
     {
         resx = _resx;
         resy = _resy;
@@ -192,14 +231,11 @@ class ImageViewport
         }
 
         resize_reaction = _resize_reaction;
-        mouse_reaction  = _mouse_reaction;
         key_reaction    = _key_reaction;
 
         glfwMakeContextCurrent(window);
         glfwSetFramebufferSizeCallback(window, resize_callback);
         glfwSetKeyCallback(window, key_callback);
-        glfwSetMouseButtonCallback(window, mouse_button_callback);
-        glfwSetCursorPosCallback(window, cursor_position_callback);
 
         glfwSetWindowSizeLimits(window,
                                 640,
@@ -210,32 +246,165 @@ class ImageViewport
 
         glfwGetFramebufferSize(window, &resx, &resy);
         glViewport(0, 0, resx, resy);
+    }
 
-        GLuint vertex_shader = make_shader(vertex_shader_src, GL_VERTEX_SHADER);
-        GLuint fragment_shader =
-            make_shader(fragment_shader_src, GL_FRAGMENT_SHADER);
+    static std::pair<int, int>
+    get_res() noexcept
+    {
+        return {resx, resy};
+    }
 
-        shader_program = glCreateProgram();
-        glAttachShader(shader_program, vertex_shader);
-        glAttachShader(shader_program, fragment_shader);
-        glLinkProgram(shader_program);
-        check_program_status(shader_program, GL_LINK_STATUS);
+    static bool
+    active() noexcept
+    {
+        return !glfwWindowShouldClose(window);
+    }
 
-        glDeleteShader(vertex_shader);
-        glDeleteShader(fragment_shader);
+    static void
+    close() noexcept
+    {
+        glfwSetWindowShouldClose(window, true);
+    }
 
-        glGenVertexArrays(1, &VAO);
-        glGenBuffers(1, &VBO);
-        glGenBuffers(1, &EBO);
+    static void
+    cleanup() noexcept
+    {
+        if(window) glfwDestroyWindow(window);
+    }
 
-        glBindVertexArray(VAO);
+    static void
+    swap_buffers() noexcept
+    {
+        glfwSwapBuffers(window);
+    }
 
-        glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    /// @brief Object interface to viewport.
+    struct Handle
+    {
+        FORBID_ALL(Handle);
+
+        Handle(int resx, int resy, ResizeReaction ra, KeyReaction ka)
+        {
+            init(resx, resy, ra, ka);
+        }
+        ~Handle() { cleanup(); }
+
+        /// @brief Viewport resolution.
+        std::pair<int, int>
+        get_res() const noexcept
+        {
+            return Window::get_res();
+        }
+
+        bool
+        active() const noexcept
+        {
+            return Window::active();
+        }
+
+        void
+        close() const noexcept
+        {
+            Window::close();
+        }
+
+        void
+        swap_buffers() const noexcept
+        {
+            Window::swap_buffers();
+        }
+    };
+
+  public:
+    FORBID_ALL(Window);
+
+    template <typename RR, typename KR>
+    friend Window<RR, KR>::Handle
+    create_window(const System::Handle&,
+                  int _resx,
+                  int _resy,
+                  RR  rr,
+                  KR  kr,
+                  const char*,
+                  const char*);
+};
+
+/// @brief Factory function for creating OpenGL windows.
+template <typename ResizeReaction, typename KeyReaction>
+Window<ResizeReaction, KeyReaction>::Handle
+create_window(const System::Handle&,
+              int            _resx,
+              int            _resy,
+              ResizeReaction rr,
+              KeyReaction    kr,
+              const char*    x11_class_name    = "Loom",
+              const char*    x11_instance_name = "Viewport")
+{
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    glfwWindowHintString(GLFW_X11_CLASS_NAME, x11_class_name);
+    glfwWindowHintString(GLFW_X11_INSTANCE_NAME, x11_instance_name);
+
+    return {_resx, _resy, rr, kr};
+}
+
+/// @brief Simple OpengGL viewport for displaying image.
+class ImageViewport
+{
+    static constexpr GLchar vertex_shader_src[] =
+        "#version 460 core\n"
+        "layout (location = 0) in vec3 inP;"
+        "layout (location = 1) in vec2 inUV;"
+        "out vec2 UV;"
+        "void main(){"
+        "gl_Position = vec4(inP, 1.0);"
+        "UV = inUV;}";
+
+    static constexpr GLchar fragment_shader_src[] =
+        "#version 460 core\n"
+        "out vec4 Cf;"
+        "in vec2 UV;"
+        "uniform sampler2D img;"
+        "void main(){Cf = texture(img, UV);}";
+
+    static constexpr GLfloat vertex_data[] = {
+        // positions    // texture coordinates
+        -1.f, 1.f,  0, 0,   0,   1.f,  1.f,  0, 1.f, 0,
+        1.f,  -1.f, 0, 1.f, 1.f, -1.f, -1.f, 0, 0,   1.f};
+
+    static constexpr GLuint indices[] = {
+        0,
+        1,
+        2, // first triangle
+        2,
+        3,
+        0 // second triangle
+    };
+
+    Program m_program;
+    GLuint  m_vbo;
+    GLuint  m_vao;
+    GLuint  m_ebo;
+    GLuint  m_textrue;
+
+  public:
+    ImageViewport() :
+        m_program(Shader(vertex_shader_src, GL_VERTEX_SHADER),
+                  Shader(fragment_shader_src, GL_FRAGMENT_SHADER))
+    {
+        glGenVertexArrays(1, &m_vao);
+        glGenBuffers(1, &m_vbo);
+        glGenBuffers(1, &m_ebo);
+
+        glBindVertexArray(m_vao);
+
+        glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
         glBufferData(GL_ARRAY_BUFFER,
                      sizeof(vertex_data),
                      vertex_data,
                      GL_STATIC_DRAW);
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_ebo);
         glBufferData(GL_ELEMENT_ARRAY_BUFFER,
                      sizeof(indices),
                      indices,
@@ -260,24 +429,17 @@ class ImageViewport
         glEnableVertexAttribArray(1);
 
         // texture
-        glGenTextures(1, &texture);
-        glBindTexture(GL_TEXTURE_2D, texture);
+        glGenTextures(1, &m_textrue);
+        // assume no other textures - bind the texture once
+        glBindTexture(GL_TEXTURE_2D, m_textrue);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-
-        glUseProgram(shader_program);
-    }
-
-    static std::pair<int, int>
-    get_res() noexcept
-    {
-        return {resx, resy};
     }
 
     template <typename T>
-    static void
+    void
     load_img(const T* img_data, int width, int height)
     {
         constexpr auto type_flag =
@@ -299,7 +461,7 @@ class ImageViewport
     }
 
     template <typename T>
-    static void
+    void
     reload_img(const T* img_data, int width, int height)
     {
         constexpr auto type_flag =
@@ -320,135 +482,18 @@ class ImageViewport
         gl_check_errors();
     }
 
-    static bool
-    active() noexcept
-    {
-        return !glfwWindowShouldClose(window);
-    }
-
-    static void
-    close() noexcept
-    {
-        glfwSetWindowShouldClose(window, true);
-    }
-
-    static void
+    void
     draw() noexcept
     {
+        m_program.use();
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-
-        glfwSwapBuffers(window);
     }
 
-    static void
-    cleanup() noexcept
+    ~ImageViewport()
     {
-        if(window) glfwDestroyWindow(window);
-
-        glDeleteVertexArrays(1, &VAO);
-        glDeleteBuffers(1, &VBO);
-        glDeleteBuffers(1, &EBO);
-
-        glfwTerminate();
+        glDeleteVertexArrays(1, &m_vao);
+        glDeleteBuffers(1, &m_vbo);
+        glDeleteBuffers(1, &m_ebo);
     }
-
-  public:
-    FORBID_ALL(ImageViewport);
-
-    /// @brief Object interface to viewport.
-    struct Handler
-    {
-        FORBID_ALL(Handler);
-
-        Handler(int            resx,
-                int            resy,
-                ResizeReaction ra,
-                KeyReaction    ka,
-                MouseReaction  ma)
-        {
-            ImageViewport::init(resx, resy, ra, ka, ma);
-        }
-        ~Handler() { ImageViewport::cleanup(); }
-
-        /// @brief Viewport resolution.
-        std::pair<int, int>
-        get_res() const noexcept
-        {
-            return ImageViewport::get_res();
-        }
-
-        template <typename T>
-        void
-        load_img(const T* img_data, int resx, int resy) const
-        {
-            ImageViewport::load_img(img_data, resx, resy);
-        }
-
-        template <typename T>
-        void
-        reload_img(const T* img_data, int resx, int resy) const
-        {
-            ImageViewport::reload_img(img_data, resx, resy);
-        }
-
-        bool
-        active() const noexcept
-        {
-            return ImageViewport::active();
-        }
-
-        void
-        draw() const noexcept
-        {
-            ImageViewport::draw();
-        }
-
-        void
-        close() const noexcept
-        {
-            ImageViewport::close();
-        }
-    };
-
-    template <typename RR, typename KR, typename MR>
-    friend ImageViewport<RR, KR, MR>::Handler
-    make_viewport(int _resx,
-                  int _resy,
-                  RR  rr,
-                  KR  kr,
-                  MR  mr,
-                  const char*,
-                  const char*);
 };
-
-/// @brief Factory function.
-template <typename ResizeReaction, typename KeyReaction, typename MouseReaction>
-ImageViewport<ResizeReaction, KeyReaction, MouseReaction>::Handler
-make_viewport(int            _resx,
-              int            _resy,
-              ResizeReaction rr,
-              KeyReaction    kr,
-              MouseReaction  mr,
-              const char*    x11_class_name    = "Loom",
-              const char*    x11_instance_name = "Viewport")
-{
-    if(!ImageViewport<ResizeReaction, KeyReaction, MouseReaction>::
-           gl_initialized)
-    {
-        ImageViewport<ResizeReaction, KeyReaction, MouseReaction>::
-            gl_initialized = glfwInit();
-        if(!ImageViewport<ResizeReaction, KeyReaction, MouseReaction>::
-               gl_initialized)
-            throw std::runtime_error("Failed to initialize GLFW");
-
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-        glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-        glfwWindowHintString(GLFW_X11_CLASS_NAME, x11_class_name);
-        glfwWindowHintString(GLFW_X11_INSTANCE_NAME, x11_instance_name);
-    }
-
-    return typename ImageViewport<ResizeReaction, KeyReaction, MouseReaction>::
-        Handler(_resx, _resy, rr, kr, mr);
-}
-} // namespace loom
+} // namespace loom::gl

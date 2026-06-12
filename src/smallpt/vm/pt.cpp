@@ -287,16 +287,22 @@ struct EventState
     }
 };
 
-template <typename Viewport>
+template <typename Window>
 struct ViewState
 {
-    Viewport& viewport;
-    Logger&   logger;
-    Image&    img;
-    Vec2u     old_res;
+    const gl::System::Handle& system;
+    Window&                   window;
+    gl::ImageViewport&        viewport;
+    Logger&                   logger;
+    Image&                    img;
+    Vec2u                     old_res;
 
-    ViewState(Viewport& v, Logger& l, Image& i) noexcept :
-        viewport(v), logger(l), img(i), old_res(img.res())
+    ViewState(const gl::System::Handle& h,
+              Window&                   w,
+              gl::ImageViewport&        v,
+              Logger&                   l,
+              Image&                    i) noexcept :
+        system(h), window(w), viewport(v), logger(l), img(i), old_res(img.res())
     {
     }
 
@@ -305,7 +311,7 @@ struct ViewState
     void
     update()
     {
-        if(viewport.active())
+        if(window.active())
         {
             if(all(old_res == img.res()))
                 viewport.reload_img(img.data(), img.width(), img.height());
@@ -315,7 +321,8 @@ struct ViewState
                 old_res = img.res();
             }
             viewport.draw();
-            glfwPollEvents();
+            window.swap_buffers();
+            system.poll();
         }
     }
 };
@@ -748,15 +755,26 @@ main(int argc, char* argv[])
 
         EventState estate{keep_res};
 
-        auto viewport = make_viewport(resx,
-                                      resy,
-                                      estate.get_resize_action(),
-                                      estate.get_key_action(),
-                                      sink);
+        logger.debug("initializing glfw");
+        const auto& h = gl::System::init();
+
+        logger.debug("making window");
+        auto window = gl::create_window(h,
+                                        resx,
+                                        resy,
+                                        estate.get_resize_action(),
+                                        estate.get_key_action());
+
+        logger.debug("making viewport");
+        auto viewport = gl::ImageViewport();
+
+        logger.debug("OpenGL version: {}; GLSL version: {}",
+                     h.get_string(GL_VERSION),
+                     h.get_string(GL_SHADING_LANGUAGE_VERSION));
 
         viewport.load_img(img.data(), resx, resy);
 
-        ViewState vstate{viewport, logger, img};
+        ViewState vstate{h, window, viewport, logger, img};
 
         logger.debug("vstate ready");
 
@@ -793,10 +811,11 @@ main(int argc, char* argv[])
             }
 
             logger.debug("rendering done. show still image");
-            while(!estate.req_stop() && viewport.active())
+            while(!estate.req_stop() && window.active())
             {
                 viewport.draw();
-                glfwPollEvents();
+                window.swap_buffers();
+                h.poll();
                 std::this_thread::sleep_for(100ms);
             }
 
@@ -819,7 +838,7 @@ main(int argc, char* argv[])
         logger.critical("{}", ex.what());
         return 1;
     }
-    catch(const GLException& ex)
+    catch(const gl::GLException& ex)
     {
         logger.critical("OpenGL error: {}", ex.what());
         return 1;
