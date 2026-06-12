@@ -309,7 +309,7 @@ struct ViewState
     FORBID_ALL(ViewState);
 
     void
-    update()
+    update(EventState& estate)
     {
         if(window.active())
         {
@@ -324,6 +324,8 @@ struct ViewState
             window.swap_buffers();
             system.poll();
         }
+        else
+            estate.req_quit = true;
     }
 };
 
@@ -352,7 +354,7 @@ predicated_render(EventState&          estate,
 
                    if(timer.has_expired(15ms))
                    {
-                       vstate.update();
+                       vstate.update(estate);
                        // pr(progress);
                        timer.restart();
                    }
@@ -362,7 +364,7 @@ predicated_render(EventState&          estate,
            [&]()
     {
         // pr();
-        vstate.update();
+        vstate.update(estate);
         return estate.req_stop();
     }();
 }
@@ -419,7 +421,7 @@ predicated_mp(EventState&          estate,
     while(!estate.req_stop() &&
           scc.progress.load(std::memory_order_relaxed) < vstate.img.size())
     {
-        vstate.update();
+        vstate.update(estate);
         std::this_thread::sleep_for(15ms);
     }
 
@@ -599,7 +601,7 @@ hybrid_render(EventState&          estate,
 
         if(timer.has_expired(15ms))
         {
-            vstate.update();
+            vstate.update(estate);
             timer.restart();
         }
 
@@ -623,7 +625,7 @@ hybrid_render(EventState&          estate,
 
     img_upd(vstate.img, roc);
 
-    vstate.update();
+    vstate.update(estate);
 
     return true;
 }
@@ -692,7 +694,7 @@ hybrid_mp(EventState&          estate,
 
             if(timer.has_expired(15ms))
             {
-                vstate.update();
+                vstate.update(estate);
                 timer.restart();
             }
 
@@ -707,7 +709,7 @@ hybrid_mp(EventState&          estate,
 
     img_upd(vstate.img, roc);
 
-    vstate.update();
+    vstate.update(estate);
 
     return true;
 }
