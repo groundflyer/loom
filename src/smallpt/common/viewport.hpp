@@ -217,12 +217,13 @@ class Window
     init(int            _resx,
          int            _resy,
          ResizeReaction _resize_reaction,
-         KeyReaction    _key_reaction)
+         KeyReaction    _key_reaction,
+         const char*    title = "Loom")
     {
         resx = _resx;
         resy = _resy;
 
-        window = glfwCreateWindow(resx, resy, "Loom", nullptr, nullptr);
+        window = glfwCreateWindow(resx, resy, title, nullptr, nullptr);
 
         if(!window)
         {
@@ -283,9 +284,13 @@ class Window
     {
         FORBID_ALL(Handle);
 
-        Handle(int resx, int resy, ResizeReaction ra, KeyReaction ka)
+        Handle(int            resx,
+               int            resy,
+               ResizeReaction ra,
+               KeyReaction    ka,
+               const char*    title)
         {
-            init(resx, resy, ra, ka);
+            init(resx, resy, ra, ka, title);
         }
         ~Handle() { cleanup(); }
 
@@ -326,6 +331,7 @@ class Window
                   RR  rr,
                   KR  kr,
                   const char*,
+                  const char*,
                   const char*);
 };
 
@@ -337,6 +343,7 @@ create_window(const System::Handle&,
               int            _resy,
               ResizeReaction rr,
               KeyReaction    kr,
+              const char*    title,
               const char*    x11_class_name    = "Loom",
               const char*    x11_instance_name = "Viewport")
 {
@@ -346,7 +353,7 @@ create_window(const System::Handle&,
     glfwWindowHintString(GLFW_X11_CLASS_NAME, x11_class_name);
     glfwWindowHintString(GLFW_X11_INSTANCE_NAME, x11_instance_name);
 
-    return {_resx, _resy, rr, kr};
+    return {_resx, _resy, rr, kr, title};
 }
 
 /// @brief Simple OpengGL viewport for displaying image.

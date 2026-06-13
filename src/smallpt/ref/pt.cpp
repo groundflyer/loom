@@ -38,7 +38,8 @@ main(int argc, char* argv[])
         const auto& h = gl::System::init();
 
         logger.debug("making window");
-        auto w = gl::create_window(h, resx, resy, sink, sink);
+        auto w =
+            gl::create_window(h, resx, resy, sink, sink, "Reference SmallPT");
 
         logger.debug("making viewport");
         auto viewport = gl::ImageViewport();

@@ -765,7 +765,8 @@ main(int argc, char* argv[])
                                         resx,
                                         resy,
                                         estate.get_resize_action(),
-                                        estate.get_key_action());
+                                        estate.get_key_action(),
+                                        "Loom SmallPT Demo");
 
         logger.debug("making viewport");
         auto viewport = gl::ImageViewport();
