@@ -5,13 +5,17 @@
 #pragma once
 
 #include <common/forbid.hpp>
+#include <common/linal.hpp>
 
 #include <GLFW/glfw3.h>
+
+#include <stb_easy_font.h>
 
 #include <concepts>
 #include <stdexcept>
 #include <type_traits>
 #include <utility>
+#include <vector>
 
 namespace loom::gl
 {
@@ -85,9 +89,9 @@ class Shader
   public:
     FORBID_DEFAULT(Shader);
 
-    Shader(const GLchar* src, GLenum shader_type)
+    Shader(const GLchar* src, GLenum shader_type) :
+        m_id(glCreateShader(shader_type))
     {
-        m_id = glCreateShader(shader_type);
         glShaderSource(m_id, 1, &src, nullptr);
         glCompileShader(m_id);
         check_shader_status(m_id, GL_COMPILE_STATUS);
@@ -111,10 +115,8 @@ class Program
     FORBID_DEFAULT(Program);
 
     template <std::same_as<Shader>... Shaders>
-    Program(Shaders&&... shaders)
+    Program(Shaders&&... shaders) : m_id(glCreateProgram())
     {
-        m_id = glCreateProgram();
-
         (..., glAttachShader(m_id, shaders.id()));
         glLinkProgram(m_id);
         check_program_status(m_id, GL_LINK_STATUS);
@@ -175,8 +177,11 @@ class System
     init()
     {
         if(!initialized)
-            if(!(initialized = glfwInit()))
+        {
+            initialized = glfwInit();
+            if(!initialized)
                 throw std::runtime_error("Failed to initialize GLFW");
+        }
 
         return handle;
     }
@@ -393,7 +398,7 @@ class ImageViewport
     GLuint  m_vbo;
     GLuint  m_vao;
     GLuint  m_ebo;
-    GLuint  m_textrue;
+    GLuint  m_texture;
 
   public:
     ImageViewport() :
@@ -436,13 +441,16 @@ class ImageViewport
         glEnableVertexAttribArray(1);
 
         // texture
-        glGenTextures(1, &m_textrue);
+        glGenTextures(1, &m_texture);
         // assume no other textures - bind the texture once
-        glBindTexture(GL_TEXTURE_2D, m_textrue);
+        glBindTexture(GL_TEXTURE_2D, m_texture);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+        glBindVertexArray(0);
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
     }
 
     template <typename T>
@@ -493,10 +501,171 @@ class ImageViewport
     draw() noexcept
     {
         m_program.use();
+        glBindVertexArray(m_vao);
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
     }
 
     ~ImageViewport()
+    {
+        glDeleteVertexArrays(1, &m_vao);
+        glDeleteBuffers(1, &m_vbo);
+        glDeleteBuffers(1, &m_ebo);
+        glDeleteTextures(1, &m_texture);
+    }
+};
+
+/// @brief Create a matrix for projecting two-dimensional coordinates onto
+/// screen.
+template <std::floating_point T>
+static Matrix<T, 4, 4, std::array>
+ortho(T left, T right, T bottom, T top) noexcept
+{
+    Matrix<T, 4, 4, std::array> ret = Matrix<T, 4, 4, std::array>::identity();
+
+    ret[0][0] = static_cast<T>(2) / (right - left);
+    ret[1][1] = static_cast<T>(2) / (top - bottom);
+    ret[2][2] = -1;
+    ret[3][0] = -(right + left) / (right - left);
+    ret[3][1] = -(top + bottom) / (top - bottom);
+    return ret;
+}
+
+/// @brief Simple on-screen-display.
+class OSD
+{
+    static constexpr char vertex_shader_src[] =
+        "#version 460 core\n"
+        "layout (location = 0) in vec2 pos;"
+        "uniform mat4 projection;"
+        "void main(){"
+        "gl_Position = projection * vec4(pos, 0.0, 1.0);}";
+    static constexpr char fragment_shader_src[] =
+        "#version 460 core\n"
+        "out vec4 Cf;"
+        "void main(){"
+        "Cf = vec4(0.0, 1.0, 0.0, 1.0);}";
+
+    char m_buffer[20000];
+    int  m_quads = 0;
+
+    GLuint m_vao;
+    GLuint m_vbo;
+    GLuint m_ebo;
+
+    Program m_program;
+
+    GLint m_proj_loc;
+
+    void
+    upload_projection(const Matrix<float, 4, 4, std::array>& proj) noexcept
+    {
+        glProgramUniformMatrix4fv(m_program.id(),
+                                  m_proj_loc,
+                                  1,
+                                  GL_FALSE,
+                                  proj.data().data());
+    }
+
+    void
+    update_vbo() noexcept
+    {
+        glBindVertexArray(m_vao);
+        glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
+
+        glVertexAttribPointer(0,
+                              3,
+                              GL_FLOAT,
+                              GL_FALSE,
+                              16,
+                              static_cast<void*>(0));
+        glEnableVertexAttribArray(0);
+
+        glBufferData(GL_ARRAY_BUFFER,
+                     m_quads * 4 * 16,
+                     m_buffer,
+                     GL_STATIC_DRAW);
+    }
+
+    void
+    update_ebo() noexcept
+    {
+        std::vector<std::uint32_t> indices;
+
+        indices.reserve(m_quads * 6);
+
+        for(int q = 0; q < m_quads; ++q)
+        {
+            const std::uint32_t v = q * 4;
+
+            indices.push_back(v);
+            indices.push_back(v + 1);
+            indices.push_back(v + 2);
+
+            indices.push_back(v);
+            indices.push_back(v + 2);
+            indices.push_back(v + 3);
+        }
+
+        glBindVertexArray(m_vao);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_ebo);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER,
+                     indices.size() * sizeof(std::uint32_t),
+                     indices.data(),
+                     GL_STATIC_DRAW);
+    }
+
+  public:
+    FORBID_DEFAULT(OSD);
+    FORBID_COPY(OSD);
+
+    OSD(const float x, const float y, const char* text, int width, int height) :
+        m_quads(stb_easy_font_print(x,
+                                    y,
+                                    const_cast<char*>(text),
+                                    nullptr,
+                                    m_buffer,
+                                    sizeof(m_buffer))),
+        m_program(Shader(vertex_shader_src, GL_VERTEX_SHADER),
+                  Shader(fragment_shader_src, GL_FRAGMENT_SHADER)),
+        m_proj_loc(glGetUniformLocation(m_program.id(), "projection"))
+    {
+        if(m_proj_loc == -1)
+            throw std::runtime_error("project location is wrong");
+
+        glGenVertexArrays(1, &m_vao);
+        glGenBuffers(1, &m_vbo);
+        glGenBuffers(1, &m_ebo);
+
+        update_vbo();
+        update_ebo();
+        upload_projection(ortho(0.f,
+                                static_cast<float>(width),
+                                static_cast<float>(height),
+                                0.f));
+
+        gl_check_errors();
+
+        glBindVertexArray(0);
+    }
+
+    void
+    resize(int width, int height) noexcept
+    {
+        upload_projection(ortho(0.f,
+                                static_cast<float>(width),
+                                static_cast<float>(height),
+                                0.f));
+    }
+
+    void
+    draw()
+    {
+        m_program.use();
+        glBindVertexArray(m_vao);
+        glDrawElements(GL_TRIANGLES, m_quads * 6, GL_UNSIGNED_INT, 0);
+    }
+
+    ~OSD()
     {
         glDeleteVertexArrays(1, &m_vao);
         glDeleteBuffers(1, &m_vbo);

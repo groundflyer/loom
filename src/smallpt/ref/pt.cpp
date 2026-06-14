@@ -41,12 +41,15 @@ main(int argc, char* argv[])
         auto w =
             gl::create_window(h, resx, resy, sink, sink, "Reference SmallPT");
 
-        logger.debug("making viewport");
-        auto viewport = gl::ImageViewport();
-
         logger.debug("OpenGL version: {}; GLSL version: {}",
                      h.get_string(GL_VERSION),
                      h.get_string(GL_SHADING_LANGUAGE_VERSION));
+
+        logger.debug("making viewport");
+        auto viewport = gl::ImageViewport();
+
+        logger.debug("making osd");
+        auto osd = gl::OSD(10.f, 20.f, "OSD", resx, resy);
 
         const Vec2u res{resx, resy};
         Image       img(res);
@@ -77,8 +80,10 @@ main(int argc, char* argv[])
         while(w.active())
         {
             viewport.draw();
+            osd.draw();
             w.swap_buffers();
             h.poll();
+            std::this_thread::sleep_for(100ms);
         }
     }
     catch(const std::runtime_error& ex)

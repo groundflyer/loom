@@ -293,6 +293,7 @@ struct ViewState
     const gl::System::Handle& system;
     Window&                   window;
     gl::ImageViewport&        viewport;
+    gl::OSD&                  osd;
     Logger&                   logger;
     Image&                    img;
     Vec2u                     old_res;
@@ -300,9 +301,11 @@ struct ViewState
     ViewState(const gl::System::Handle& h,
               Window&                   w,
               gl::ImageViewport&        v,
+              gl::OSD&                  o,
               Logger&                   l,
               Image&                    i) noexcept :
-        system(h), window(w), viewport(v), logger(l), img(i), old_res(img.res())
+        system(h), window(w), viewport(v), osd(o), logger(l), img(i),
+        old_res(img.res())
     {
     }
 
@@ -321,6 +324,7 @@ struct ViewState
                 old_res = img.res();
             }
             viewport.draw();
+            osd.draw();
             window.swap_buffers();
             system.poll();
         }
@@ -744,8 +748,7 @@ main(int argc, char* argv[])
         if(threshold < 0)
             throw std::runtime_error("Negative sampling threshold");
 
-        const Vec2u res{resx, resy};
-        Image       img(res);
+        Image img(Vec2u{resx, resy});
 
         if(stream_size * ncores >= img.size())
             throw std::runtime_error("Stream size is too big");
@@ -768,16 +771,27 @@ main(int argc, char* argv[])
                                         estate.get_key_action(),
                                         "Loom SmallPT Demo");
 
-        logger.debug("making viewport");
-        auto viewport = gl::ImageViewport();
-
         logger.debug("OpenGL version: {}; GLSL version: {}",
                      h.get_string(GL_VERSION),
                      h.get_string(GL_SHADING_LANGUAGE_VERSION));
 
+        logger.debug("making viewport");
+        auto viewport = gl::ImageViewport();
+
+        constexpr char osd_text[] =
+            "ESC: CLOSE\nSPACE: SWITCH METHOD\nM: SWITCH MULTITHREADING";
+
+        logger.debug("making osd");
+        auto osd = gl::OSD(
+            5.f,
+            resy - 5.f - stb_easy_font_height(const_cast<char*>(osd_text)),
+            osd_text,
+            resx,
+            resy);
+
         viewport.load_img(img.data(), resx, resy);
 
-        ViewState vstate{h, window, viewport, logger, img};
+        ViewState vstate{h, window, viewport, osd, logger, img};
 
         logger.debug("vstate ready");
 
@@ -817,6 +831,7 @@ main(int argc, char* argv[])
             while(!estate.req_stop() && window.active())
             {
                 viewport.draw();
+                osd.draw();
                 window.swap_buffers();
                 h.poll();
                 std::this_thread::sleep_for(100ms);
