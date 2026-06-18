@@ -1097,22 +1097,22 @@ constexpr inline bool of_same_size = detail::of_same_size<L>::value;
 
 /// @brief Invoke @p f with each class of @p L as template parameter.
 template <typename F, typename... Ts, typename... Args>
-constexpr void
+constexpr decltype(auto)
 for_each(type_sequence<Ts...> /* list */, F&& f, Args&&... args) noexcept(
     (... && noexcept(f.template operator()<Ts>(std::forward<Args>(args)...))))
 {
-    (..., f.template operator()<Ts>(std::forward<Args>(args)...));
+    return (..., f.template operator()<Ts>(std::forward<Args>(args)...));
 }
 
 /// @brief Same as typelist::for_each, except each argument of @p args passed
 /// separately to coresponding invocation of @p f.
 template <typename F, typename... Ts, typename... Args>
     requires(sizeof...(Ts) == sizeof...(Args))
-constexpr void
+constexpr decltype(auto)
 for_each_arg(type_sequence<Ts...> /* list */, F&& f, Args&&... args) noexcept(
     (... && noexcept(f.template operator()<Ts>(std::forward<Args>(args)))))
 {
-    (..., f.template operator()<Ts>(std::forward<Args>(args)));
+    return (..., f.template operator()<Ts>(std::forward<Args>(args)));
 }
 
 /// @brief Consecutively invoke @p f with each class of @p list as the first
@@ -1186,11 +1186,11 @@ maybe_collect_arg(type_sequence<Ts...> /*list*/,
 template <typename... Fs, typename... Args>
     requires(... && (std::is_nothrow_default_constructible_v<Fs> &&
                      std::is_invocable_v<Fs, Args...>))
-constexpr void
+constexpr decltype(auto)
 instantiate(type_sequence<Fs...> list, Args&&... args) noexcept(
     std::conjunction_v<std::is_nothrow_invocable<Fs, Args...>...>)
 {
-    for_each(list, detail::self_caller{}, std::forward<Args>(args)...);
+    return for_each(list, detail::self_caller{}, std::forward<Args>(args)...);
 }
 
 /// @brief Invoke @p f with elements of typelist::type_sequence as template
