@@ -696,6 +696,25 @@ visit_at_impl(const I   i,
         return std::invoke(std::forward<Default>(def));
 }
 
+template <std::unsigned_integral I,
+          I                      idx,
+          typename Visitor,
+          typename List,
+          typename... Args>
+constexpr decltype(auto)
+unsafe_visit_at_impl(const I i, Visitor&& visitor, List list, Args&&... args)
+{
+    if(idx == i)
+        return visitor.template operator()<typename at<idx, List>::type>(
+            std::forward<Args>(args)...);
+
+    if constexpr(idx < length<List>::value - 1)
+        return unsafe_visit_at_impl<I, idx + 1>(i,
+                                                std::forward<Visitor>(visitor),
+                                                list,
+                                                std::forward<Args>(args)...);
+}
+
 struct self_caller
 {
     template <typename T, typename... Args>
@@ -1219,6 +1238,7 @@ first_of_funcs(type_sequence<Fs...> list, Args&&... args) noexcept(
 }
 
 /// @brief Invoke @p visitor on the @p i'th element of @p L.
+/// Fallbacks to @p def if @p i doesn't fit into the range.
 ///
 /// @p visitor is incoked with an element of the @p L as a template
 /// parameter.
@@ -1242,6 +1262,18 @@ visit_at(const I i, Visitor&& visitor, L list, Default&& def, Args&&... args)
                                         list,
                                         std::forward<Default>(def),
                                         std::forward<Args>(args)...);
+}
+
+/// @brief Same as typelist::visit_at , but whithout fallback.
+/// @copydetails visit_at
+template <std::unsigned_integral I, typename Visitor, List L, typename... Args>
+constexpr decltype(auto)
+unsafe_visit_at(const I i, Visitor&& visitor, L list, Args&&... args)
+{
+    return detail::unsafe_visit_at_impl<I, 0u>(i,
+                                               std::forward<Visitor>(visitor),
+                                               list,
+                                               std::forward<Args>(args)...);
 }
 
 /// @brief Same as typelist::visit_at , but typelist @p L contains callables.

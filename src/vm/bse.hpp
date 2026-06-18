@@ -149,12 +149,11 @@ class specialized_dispatch
         const auto pc = eval(std::forward<_Memory>(mem));
 
         if constexpr(intlist::length<successors> >= 2)
-            typelist::visit_at(
+            typelist::unsafe_visit_at(
                 pc,
                 []<typename D>(_Memory&& mem) noexcept
                 { D{}(std::forward<_Memory>(mem)); },
                 compiled_successors{},
-                sink,
                 std::forward<_Memory>(mem));
         else if constexpr(intlist::length<successors> == 1)
             typelist::head<compiled_successors>{}(std::forward<_Memory>(mem));
