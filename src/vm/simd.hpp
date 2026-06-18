@@ -2519,17 +2519,17 @@ class greedy_groups :
     }
 };
 
-/// @brief Range over next possible block indices.
+/// @brief Range over basic block successors.
 template <Kernel K>
-class next_groups : public std::ranges::view_interface<next_groups<K>>
+class successor_groups : public std::ranges::view_interface<successor_groups<K>>
 {
-    using index_t  = K::index_t;
-    using dest_map = K::dest_map;
+    using index_t    = K::index_t;
+    using successors = K::successors;
 
     static constexpr index_t halt_pos = K::halt_pos;
 
     static std::uint64_t FORCE_INLINE
-    dest_set(const index_t pc) noexcept
+    successor_set(const index_t pc) noexcept
     {
         return typelist::visit_at(
             pc,
@@ -2544,7 +2544,7 @@ class next_groups : public std::ranges::view_interface<next_groups<K>>
                     static_cast<std::uint64_t>(0));
                 return ret;
             },
-            dest_map{},
+            successors{},
             constant(0ul));
     }
 
@@ -2553,8 +2553,10 @@ class next_groups : public std::ranges::view_interface<next_groups<K>>
   public:
     using iterator = set_iterator<index_t>;
 
-    next_groups() noexcept = default;
-    next_groups(const index_t pc) noexcept : m_set(dest_set(pc)) {}
+    successor_groups() noexcept = default;
+
+    /// @param pc current basic block.
+    successor_groups(const index_t pc) noexcept : m_set(successor_set(pc)) {}
 
     iterator FORCE_INLINE
     begin() const noexcept
@@ -3634,24 +3636,25 @@ class embedded_compiler
             }
             else if constexpr(rcnv == HYBRID_MAJOR)
             {
-                index_t  pc              = 0;
-                mask_t   mask            = full_mask();
-                unsigned pops            = N;
-                bool     use_next_groups = true;
+                index_t  pc                   = 0;
+                mask_t   mask                 = full_mask();
+                unsigned pops                 = N;
+                bool     use_successor_groups = true;
 
                 while(not_done())
                 {
                     exec(pc, mask);
 
-                    if(use_next_groups)
+                    if(use_successor_groups)
                         std::tie(pc, mask, pops) =
-                            major_group<K, N>(facade::pc(), next_groups<K>{pc});
+                            major_group<K, N>(facade::pc(),
+                                              successor_groups<K>{pc});
                     else
                         std::tie(pc, mask, pops) = major_group<K, N>(
                             facade::pc(),
                             greedy_groups<K, N, true>{facade::pc()});
 
-                    use_next_groups = pops >= threshold;
+                    use_successor_groups = pops >= threshold;
                 }
             }
             else if constexpr(rcnv == GREEDY_MAJOR)
@@ -3693,20 +3696,21 @@ class embedded_compiler
             }
             else if constexpr(rcnv == STATIC_FIRST)
             {
-                index_t       pc              = 0;
-                mask_t        mask            = full_mask();
-                unsigned      pops            = N;
-                std::uint64_t rem             = 0;
-                bool          use_next_groups = true;
+                index_t       pc                   = 0;
+                mask_t        mask                 = full_mask();
+                unsigned      pops                 = N;
+                std::uint64_t rem                  = 0;
+                bool          use_successor_groups = true;
 
                 while(not_done())
                 {
                     exec(pc, mask);
 
                     std::uint64_t nrem;
-                    if(use_next_groups)
+                    if(use_successor_groups)
                         std::tie(pc, mask, pops, nrem) =
-                            first_group<K, N>(facade::pc(), next_groups<K>{pc});
+                            first_group<K, N>(facade::pc(),
+                                              successor_groups<K>{pc});
                     else
                         std::tie(pc, mask, pops, nrem) =
                             first_group<K, N>(facade::pc(),
@@ -3715,24 +3719,24 @@ class embedded_compiler
                     rem &= ~(1ul << pc); // unset executed block
                     rem |= nrem;         // add remainders
 
-                    use_next_groups = pops > 0;
+                    use_successor_groups = pops > 0;
                 }
             }
             else if constexpr(rcnv == STATIC_MAJOR)
             {
-                index_t       pc              = 0;
-                mask_t        mask            = full_mask();
-                unsigned      pops            = N;
-                std::uint64_t rem             = 0;
-                bool          use_next_groups = true;
+                index_t       pc                   = 0;
+                mask_t        mask                 = full_mask();
+                unsigned      pops                 = N;
+                std::uint64_t rem                  = 0;
+                bool          use_successor_groups = true;
 
                 while(not_done())
                 {
                     exec(pc, mask);
 
-                    if(use_next_groups)
+                    if(use_successor_groups)
                     {
-                        auto ngs = next_groups<K>{pc};
+                        auto ngs = successor_groups<K>{pc};
                         rem |= ngs.data();
                         std::tie(pc, mask, pops) =
                             major_group<K, N>(facade::pc(), ngs);
@@ -3747,7 +3751,7 @@ class embedded_compiler
 
                     rem &= ~(1ul << pc); // unset executed block
 
-                    use_next_groups = pops > 0;
+                    use_successor_groups = pops > 0;
                 }
             }
 
@@ -3855,8 +3859,8 @@ class hybrid_compiler
                     requires(pv_extent<View> == N)
                 {
                     LocalStorage   storage(view);
-                    index_vector_t pcs             = storage.pc();
-                    bool           use_next_groups = true;
+                    index_vector_t pcs                  = storage.pc();
+                    bool           use_successor_groups = true;
 
                     auto [pc, mask, pops] =
                         major_group<K, N>(pcs, greedy_groups<K, N, true>{pcs});
@@ -3879,15 +3883,16 @@ class hybrid_compiler
 
                             pcs = storage.pc();
 
-                            if(use_next_groups)
+                            if(use_successor_groups)
                                 std::tie(pc, mask, pops) =
-                                    major_group<K, N>(pcs, next_groups<K>{pc});
+                                    major_group<K, N>(pcs,
+                                                      successor_groups<K>{pc});
                             else
                                 std::tie(pc, mask, pops) = major_group<K, N>(
                                     pcs,
                                     greedy_groups<K, N, true>{pcs});
 
-                            use_next_groups = pops >= hthreshold;
+                            use_successor_groups = pops >= hthreshold;
                         };
                     }
                     else if constexpr(rcnv == STATIC_MAJOR)
@@ -3899,9 +3904,9 @@ class hybrid_compiler
 
                             pcs = storage.pc();
 
-                            if(use_next_groups)
+                            if(use_successor_groups)
                             {
-                                auto ngs = next_groups<K>{pc};
+                                auto ngs = successor_groups<K>{pc};
                                 rem |= ngs.data();
                                 std::tie(pc, mask, pops) =
                                     major_group<K, N>(pcs, ngs);
@@ -3914,7 +3919,7 @@ class hybrid_compiler
                                     major_group<K, N>(pcs, sgs);
                             }
 
-                            use_next_groups = pops >= hthreshold;
+                            use_successor_groups = pops >= hthreshold;
                         };
                     }
                 });

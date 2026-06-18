@@ -402,16 +402,16 @@ using jmp_idxs = jump_helper<_ParmJump, LabelMap>::jump_idxs;
 template <typename _ParmJump, typename LabelMap>
 constexpr inline auto jmp_arr = jump_helper<_ParmJump, LabelMap>::table;
 
-/// @brief Create destination map for basic blocks.
+/// @brief Create successor table for basic blocks.
 template <typename Blocks, typename LabelMap>
-struct destination_map
+struct successors_table
 {
     using type = type_sequence<>;
 };
 
 template <typename Blocks, typename LabelMap>
     requires(typelist::length<Blocks> > 1)
-struct destination_map<Blocks, LabelMap>
+struct successors_table<Blocks, LabelMap>
 {
     template <typename Block>
     using f =
@@ -422,7 +422,7 @@ struct destination_map<Blocks, LabelMap>
 
 /// @brief Helper typedef.
 template <typename Blocks, typename LabelMap>
-using destination_map_t = destination_map<Blocks, LabelMap>::type;
+using successors_table_t = successors_table<Blocks, LabelMap>::type;
 
 template <typename _Variable>
 consteval std::optional<vartype<_Variable>>
@@ -895,7 +895,7 @@ struct macro_inv
     using args = type_sequence<Args...>;
 };
 
-/// @brief Kernel defenition structure.
+/// @brief Kernel definition structure.
 ///
 /// @tparam Name kernel name.
 /// @tparam InputVars input variables.
@@ -985,8 +985,8 @@ struct kernel_blank
         make_var,
         typelist::zip<typelist::map<select_first_t, reg_types>, reg_names>>;
 
-    /// @brief Destinanion map.
-    using dest_map = destination_map_t<blocks, labelmap>;
+    /// @brief Successors table.
+    using successors = successors_table_t<blocks, labelmap>;
 };
 
 template <typename K>
