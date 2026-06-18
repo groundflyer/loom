@@ -97,10 +97,17 @@ class MemoryFacade
     }
 
     template <typename Block>
-    constexpr void
+    constexpr decltype(auto)
+    step() noexcept
+    {
+        return Block{}(memory);
+    }
+
+    template <typename Block>
+    constexpr decltype(auto)
     step(Block block) noexcept
     {
-        block(memory);
+        return block(memory);
     }
 
     constexpr auto
@@ -111,13 +118,82 @@ class MemoryFacade
     }
 };
 
-template <typename K>
+template <std::unsigned_integral IndexType,
+          IndexType              halt_pos,
+          IndexType              block_idx,
+          typename Blocks,
+          typename Successors,
+          template <typename> typename Compiler>
+class specialized_dispatch
+{
+    using successors = typelist::at<block_idx, Successors>;
+    using block      = typelist::at<block_idx, Blocks>;
+
+    template <IndexType I>
+    using f = specialized_dispatch<IndexType,
+                                   halt_pos,
+                                   I,
+                                   Blocks,
+                                   Successors,
+                                   Compiler>;
+
+    using compiled_successors = intlist::map_t<f, successors>;
+
+    static constexpr Compiler<block> eval{};
+
+  public:
+    template <typename _Memory>
+    constexpr void
+    operator()(_Memory&& mem) const noexcept
+    {
+        const auto pc = eval(std::forward<_Memory>(mem));
+
+        if constexpr(intlist::length<successors> >= 2)
+            typelist::visit_at(
+                pc,
+                []<typename D>(_Memory&& mem) noexcept
+                { D{}(std::forward<_Memory>(mem)); },
+                compiled_successors{},
+                sink,
+                std::forward<_Memory>(mem));
+        else if constexpr(intlist::length<successors> == 1)
+            typelist::head<compiled_successors>{}(std::forward<_Memory>(mem));
+        else // zero successors;
+            return;
+    }
+};
+
+template <std::unsigned_integral IndexType,
+          IndexType              halt_pos,
+          typename Blocks,
+          typename Successors,
+          template <typename> typename Compiler>
+class specialized_dispatch<IndexType,
+                           halt_pos,
+                           halt_pos,
+                           Blocks,
+                           Successors,
+                           Compiler>
+{
+  public:
+    template <typename _Memory>
+    constexpr void
+    operator()(_Memory&& /* mem */) const noexcept
+    {
+    }
+};
+
+/// @brief Basic CFG evaluator.
+/// @tparam use_sd use specialized dispatch.
+template <typename K, bool use_sd = true>
 class basic_scalar_compiler
 {
     using labelmap = K::labelmap;
     using blocks   = K::blocks;
+    using index_t  = K::index_t;
+    using succs    = K::successors;
 
-    static constexpr auto halt_pos = K::halt_pos;
+    static constexpr index_t halt_pos = K::halt_pos;
 
     template <typename C>
     using compile_block = standard_compiler<C, labelmap>;
@@ -126,37 +202,41 @@ class basic_scalar_compiler
 
     using facade = MemoryFacade<K>;
 
-    class single_block_evaluator : facade
+    struct single_block_evaluator : private facade
     {
-        static constexpr typelist::head<compiled_blocks> block{};
-
-      public:
         template <typename... Args>
         constexpr auto
         operator()(const Args&... args) noexcept
         {
             facade::set_inputs(args...);
-            facade::step(block);
+            facade::template step<typelist::head<compiled_blocks>>();
             return facade::get_outputs();
         }
     };
 
-    class simple_evaluator : facade
+    struct simple_evaluator : private facade
     {
-        static constexpr typelist::to<compiled_blocks, std::tuple> blocks{};
-
-      public:
         template <typename... Args>
         constexpr auto
         operator()(const Args&... args) noexcept
         {
             facade::set_inputs(args...);
-            while(facade::pc() != halt_pos)
-                visit_at(
-                    facade::pc(),
-                    [&](auto block) constexpr noexcept { facade::step(block); },
-                    blocks,
-                    sink);
+
+            if constexpr(use_sd)
+                facade::template step<specialized_dispatch<index_t,
+                                                           halt_pos,
+                                                           0,
+                                                           blocks,
+                                                           succs,
+                                                           compile_block>>();
+            else
+                while(facade::pc() != halt_pos)
+                    typelist::visit_at(
+                        facade::pc(),
+                        [&]<typename Block>() constexpr noexcept
+                        { facade::template step<Block>(); },
+                        compiled_blocks{},
+                        sink);
 
             return facade::get_outputs();
         }
@@ -167,6 +247,8 @@ class basic_scalar_compiler
         conditional_t<K::singular, single_block_evaluator, simple_evaluator>;
 };
 
-template <typename K>
-using function = basic_scalar_compiler<K>::function;
+/// @brief Basic CFG evaluator.
+/// @tparam use_sd use specialized dispatch.
+template <typename K, bool use_sd = true>
+using function = basic_scalar_compiler<K, use_sd>::function;
 } // namespace loom::vm::bse

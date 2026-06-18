@@ -739,10 +739,11 @@ struct standard_eval<Jump<Target>, LabelMap>
     static constexpr auto value = typelist::lookup<Target, LabelMap>::value;
 
     template <typename _Memory>
-    constexpr void
+    constexpr get_index_t<LabelMap>
     operator()(_Memory&& mem) const noexcept
     {
         std::forward<_Memory>(mem).pc() = value;
+        return 0;
     }
 };
 
@@ -752,12 +753,15 @@ struct standard_eval<ParmJump<Var, Labels>, LabelMap>
 {
     static constexpr auto table = jmp_arr<ParmJump<Var, Labels>, LabelMap>;
 
+    using index_t = get_index_t<LabelMap>;
+
     template <typename _Memory>
-    constexpr void
+    constexpr index_t
     operator()(_Memory&& mem) const noexcept
     {
-        std::forward<_Memory>(mem).pc() =
-            table[std::forward<_Memory>(mem).template get<Var>()];
+        const index_t ret = std::forward<_Memory>(mem).template get<Var>();
+        std::forward<_Memory>(mem).pc() = table[ret];
+        return ret;
     }
 };
 
@@ -773,10 +777,11 @@ struct standard_compiler
     using instructions = typelist::map<eval, Block>;
 
     template <typename... Args>
-    constexpr void
+    constexpr decltype(auto)
     operator()(Args&&... args) const noexcept
     {
-        typelist::instantiate(instructions{}, std::forward<Args>(args)...);
+        return typelist::instantiate(instructions{},
+                                     std::forward<Args>(args)...);
     }
 };
 

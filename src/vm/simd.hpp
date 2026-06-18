@@ -3567,8 +3567,6 @@ class embedded_compiler
         using Kernel =
             standard_compiler<typelist::head<blocks>, labelmap, simd_eval>;
 
-        static constexpr Kernel block{};
-
       public:
         using program = K;
 
@@ -3577,7 +3575,7 @@ class embedded_compiler
         operator()(const Args... args) noexcept
         {
             facade::set_inputs(args...);
-            facade::step(block);
+            facade::template step<Kernel>();
             return facade::get_outputs();
         }
     };
