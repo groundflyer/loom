@@ -229,7 +229,7 @@ if(BUILD_TESTS)
     vm_simd.cpp
     vm_root_finding.cpp
     vm_mp.cpp
-    vm_embedded_simd.cpp
+    vm_simd_compact.cpp
     linal.cpp
     string.cpp
     tmp.cpp
@@ -252,7 +252,7 @@ if(BUILD_TESTS)
     test_vm_simd
     test_vm_root_finding
     test_vm_mp
-    test_vm_embedded_simd
+    test_vm_simd_compact
     test_vm_linal
     test_sort)
 
@@ -292,7 +292,7 @@ if(BUILD_TESTS)
   # target_compile_definitions(test_viewport PUBLIC ${GL_DEFS})
   # target_link_libraries(test_threadpool PUBLIC Threads::Threads)
 
-  # target_compile_options(test_vm_embedded_simd PUBLIC -save-temps)
+  # target_compile_options(test_vm_simd_compact PUBLIC -save-temps)
   # target_compile_options(test_vm PUBLIC -save-temps)
   # target_compile_options(test_vm PUBLIC -fverbose-asm)
   target_compile_options(test_vm PUBLIC $<$<CONFIG:RelWithDebInfo>:-fsanitize=address>)
