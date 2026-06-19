@@ -10,7 +10,7 @@
     template <bool               ts,                                          \
               simd::ReconvMethod rcnv,                                        \
               typename UTR = std::ratio<1, 16>>                               \
-    using PrimaryEmbedded = RenderSIMDEmbedded<kernel, C, ts, rcnv, UTR>;     \
+    using PrimaryCompact = RenderSIMDCompact<kernel, C, ts, rcnv, UTR>;       \
     template <bool ts, simd::ReconvMethod rcnv, typename UTRt, typename UTRh> \
     using PrimaryFunction =                                                   \
         RenderSIMDFunction<kernel, C, ts, rcnv, UTRt, UTRh>;                  \
@@ -49,9 +49,9 @@
             FavStream{mk_size<std::ratio<1, 2>>::value},                      \
             FavStream{mk_size<std::ratio<1, 10>>::value},                     \
             FavStream{mk_size<std::ratio<1, 1>>::value},                      \
-            PrimaryEmbedded<true, simd::HYBRID_MAJOR, std::ratio<1, 16>>{},   \
-            PrimaryEmbedded<false, simd::HYBRID_MAJOR, std::ratio<1, 16>>{},  \
-            PrimaryEmbedded<true, simd::STATIC_MAJOR, std::ratio<1, 16>>{},   \
-            PrimaryEmbedded<false, simd::STATIC_MAJOR, std::ratio<1, 16>>{}); \
+            PrimaryCompact<true, simd::HYBRID_MAJOR, std::ratio<1, 16>>{},    \
+            PrimaryCompact<false, simd::HYBRID_MAJOR, std::ratio<1, 16>>{},   \
+            PrimaryCompact<true, simd::STATIC_MAJOR, std::ratio<1, 16>>{},    \
+            PrimaryCompact<false, simd::STATIC_MAJOR, std::ratio<1, 16>>{});  \
         return 0;                                                             \
     }

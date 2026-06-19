@@ -3143,9 +3143,9 @@ class aligned_chunks :
     }
 };
 
-/// @brief Compiler for embedded masked block execution.
+/// @brief Compiler for compact masked block execution.
 template <typename Block, typename LabelMap, typename PCVar, fsize_t N, bool ts>
-class make_embedded_masked_block_compiler
+class make_compact_masked_block_compiler
 {
     using index_t = vartype<PCVar>;
 
@@ -3222,8 +3222,8 @@ class make_embedded_masked_block_compiler
 
 /// @brief Helper typedef.
 template <typename Block, typename LabelMap, typename PCVar, fsize_t N, bool ts>
-using embedded_masked_block_compiler =
-    make_embedded_masked_block_compiler<Block, LabelMap, PCVar, N, ts>::type;
+using compact_masked_block_compiler =
+    make_compact_masked_block_compiler<Block, LabelMap, PCVar, N, ts>::type;
 
 /// @brief Create default step visitor for memory facade.
 template <STITCH stitch>
@@ -3508,24 +3508,24 @@ class compiler
     };
 };
 
-/// @brief Determines how embedded_compiler executes threads.
+/// @brief Determines how compact_compiler executes threads.
 enum ReconvMethod
 {
     GREEDY_FAIR,  /*!< Every PC in gang gets gets its time */
     HYBRID_MAJOR, /*!< Only PCs having the majority are executed selecting
-                     between destination map and greedy search when utilization
+                     between successors and greedy search when utilization
                      hits threshold */
     GREEDY_MAJOR, /*!< Only PCs having the majority are executed selecting from
                     greedy search */
     HYBRID_FAIR,  /*!< Prefers greedy major grouping, when utilization hits
                     threshold, switch to fair */
-    STATIC_FIRST, /*!< Select first PC from destination map falling back to
+    STATIC_FIRST, /*!< Select first PC from successors falling back to
                      reminders set */
-    STATIC_MAJOR  /*!< Select PC based on the majority from destination map
+    STATIC_MAJOR  /*!< Select PC based on the majority from successors
                      falling  back to reminders set */
 };
 
-/// @brief Compiler for embedded SIMD execution.
+/// @brief Compiler for compact SIMD execution.
 /// @tparam ts allocate special temporal storage for currently
 /// executed basic block
 /// @tparam rcnv reconvergence method to use
@@ -3535,7 +3535,7 @@ template <Kernel       K,
           ReconvMethod rcnv = STATIC_MAJOR,
           typename UTR      = std::ratio<1, 2>>
     requires(typelist::of_same_size<typename K::reg_types> && val_utr_v<UTR>)
-class embedded_compiler
+class compact_compiler
 {
     using labelmap  = K::labelmap;
     using blocks    = K::blocks;
@@ -3584,7 +3584,7 @@ class embedded_compiler
     {
         template <typename Block>
         using compile_block =
-            embedded_masked_block_compiler<Block, labelmap, pc, N, ts>;
+            compact_masked_block_compiler<Block, labelmap, pc, N, ts>;
 
         using compiled_blocks = typelist::map<compile_block, blocks>;
 
@@ -3843,7 +3843,7 @@ class hybrid_compiler
 
         template <typename Block>
         using compile_block =
-            embedded_masked_block_compiler<Block, labelmap, pc, N, ts>;
+            compact_masked_block_compiler<Block, labelmap, pc, N, ts>;
 
         using compiled_blocks = typelist::map<compile_block, blocks>;
 
@@ -4002,10 +4002,10 @@ template <Kernel       K,
           typename UTRh     = std::ratio<1, 8>>
 using hybrid_stream = hybrid_compiler<K, ts, rcnv, UTRt, UTRh>::stream;
 
-/// @brief Alias for embedded invocation.
+/// @brief Alias for compact invocation.
 template <Kernel       K,
           bool         ts   = true,
           ReconvMethod rcnv = STATIC_MAJOR,
           typename UTR      = std::ratio<1, 8>>
-using embedded_function = embedded_compiler<K, ts, rcnv, UTR>::type;
+using compact_function = compact_compiler<K, ts, rcnv, UTR>::type;
 } // namespace loom::vm::simd

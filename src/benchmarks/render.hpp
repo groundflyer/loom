@@ -84,14 +84,14 @@ template <typename K,
           vm::simd::ReconvMethod rcnv,
           typename UTR   = std::ratio<1, 16>,
           typename Clock = std::chrono::steady_clock>
-struct RenderSIMDEmbedded
+struct RenderSIMDCompact
 {
     static constexpr std::size_t N = vm::simd::native_vector_extent_v<float>;
 
     std::string
     info() const noexcept
     {
-        return fmt::format("embedded|ts:{}|{}|UTR:{:.0f}%",
+        return fmt::format("compact|ts:{}|{}|UTR:{:.0f}%",
                            ts,
                            rcnv_string<rcnv>(),
                            ratio2percent<UTR>());
@@ -108,7 +108,7 @@ struct RenderSIMDEmbedded
             ranges::views::chunk(img, N),
             [](auto&& chunk) noexcept
             {
-                vm::simd::embedded_function<K, ts, rcnv, UTR> f;
+                vm::simd::compact_function<K, ts, rcnv, UTR> f;
 
                 vm::simd::native_vector<std::uint32_t> vpp;
 

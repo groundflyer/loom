@@ -142,7 +142,7 @@ struct RenderPixelSIMDPredicated : RenderPixelBase
     std::pair<std::size_t, std::size_t>
     operator()(Chunk view) const noexcept
     {
-        simd::embedded_function<kernel> f;
+        simd::compact_function<kernel> f;
 
         const simd::native_vector<std::uint32_t> vres = simd::broadcast<N>(res);
         const simd::native_vector<float>    vt = simd::broadcast<N>(threshold);

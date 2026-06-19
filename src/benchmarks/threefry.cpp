@@ -84,8 +84,7 @@ struct SIMD
     std::chrono::steady_clock::duration
     operator()() const noexcept
     {
-
-        vm::simd::embedded_function<kernel> f;
+        vm::simd::compact_function<kernel> f;
 
         vector_type vc0;
         vector_type vc1;

@@ -236,7 +236,7 @@ struct StandardTestSuite
             return ret;
         };
 
-        simd::embedded_function<k_t> test;
+        simd::compact_function<k_t> test;
         return track.check(
             NamedTest{tm.with_ref(gen, test, ref, cmp),
                       fmt::format("{}: {}[{}]", nameview, ti, N)});
@@ -290,7 +290,7 @@ struct RootFindingSuite
             return ret;
         };
 
-        simd::embedded_function<k_t> test;
+        simd::compact_function<k_t> test;
         return track.check(
             NamedFuzzyTest{tm.fuzzy_with_ref(gen, test, ref, cmp),
                            fmt::format("root finding: {}[{}]", ti, N),
@@ -324,7 +324,7 @@ struct InvariantTestSuite
             return ret;
         };
 
-        simd::embedded_function<k_t> test;
+        simd::compact_function<k_t> test;
         return track.check(
             NamedTest{tm.invariant(gen,
                                    test,

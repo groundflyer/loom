@@ -16,7 +16,7 @@ using C1     = constants<CS(40), CS(0.001), CS(64), CS(1), CS(20)>;
 using kernel = pt_const<float, C1>;
 
 template <bool ts, simd::ReconvMethod rcnv, typename UTR = std::ratio<1, 16>>
-using PTEmbedded = RenderSIMDEmbedded<kernel, C1, ts, rcnv, UTR>;
+using PTCompact = RenderSIMDCompact<kernel, C1, ts, rcnv, UTR>;
 
 template <bool ts, simd::ReconvMethod rcnv, typename UTRt, typename UTRh>
 using PTFunction = RenderSIMDFunction<kernel, C1, ts, rcnv, UTRt, UTRh>;
@@ -39,10 +39,10 @@ int
 main(int argc, char* argv[])
 {
     run({argc, argv},
-        PTEmbedded<true, simd::HYBRID_MAJOR, std::ratio<1, 16>>{},
-        PTEmbedded<false, simd::HYBRID_MAJOR, std::ratio<1, 16>>{},
-        PTEmbedded<true, simd::STATIC_MAJOR, std::ratio<1, 16>>{},
-        PTEmbedded<false, simd::STATIC_MAJOR, std::ratio<1, 16>>{},
+        PTCompact<true, simd::HYBRID_MAJOR, std::ratio<1, 16>>{},
+        PTCompact<false, simd::HYBRID_MAJOR, std::ratio<1, 16>>{},
+        PTCompact<true, simd::STATIC_MAJOR, std::ratio<1, 16>>{},
+        PTCompact<false, simd::STATIC_MAJOR, std::ratio<1, 16>>{},
         PTStream<false,
                  simd::HYBRID_MAJOR,
                  std::ratio<15, 16>,

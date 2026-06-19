@@ -146,7 +146,7 @@ class specialized_dispatch
     constexpr void
     operator()(_Memory&& mem) const noexcept
     {
-        const auto pc = eval(std::forward<_Memory>(mem));
+        const IndexType pc = eval(std::forward<_Memory>(mem));
 
         if constexpr(intlist::length<successors> >= 2)
             typelist::unsafe_visit_at(
