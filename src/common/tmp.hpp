@@ -1579,7 +1579,10 @@ struct nub<std::integer_sequence<Int, X, Xs...>>
 template <auto A, auto B, typename List>
 struct range_impl
 {
-    using type = range_impl<A + 1, B, typename nappend<List, 1, A>::type>::type;
+    using type = range_impl<
+        static_cast<decltype(A)>(A + 1),
+        B,
+        typename nappend<List, static_cast<decltype(A)>(1), A>::type>::type;
 };
 
 template <auto A, typename List>
