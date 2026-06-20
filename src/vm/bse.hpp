@@ -96,18 +96,18 @@ class MemoryFacade
             { return mem.template get<Var>(); });
     }
 
-    template <typename Block>
+    template <typename Block, typename... Args>
     constexpr decltype(auto)
-    step() noexcept
+    step(Args&&... args) noexcept
     {
-        return Block{}(memory);
+        return Block{}(memory, std::forward<Args>(args)...);
     }
 
-    template <typename Block>
+    template <typename Block, typename... Args>
     constexpr decltype(auto)
-    step(Block block) noexcept
+    step(Block block, Args&&... args) noexcept
     {
-        return block(memory);
+        return block(memory, std::forward<Args>(args)...);
     }
 
     constexpr auto
@@ -118,26 +118,31 @@ class MemoryFacade
     }
 };
 
-template <std::unsigned_integral IndexType,
-          IndexType              halt_pos,
-          IndexType              block_idx,
-          typename Blocks,
-          typename Successors,
+/// @brief Specialized dispatch implementation.
+/// @tparam K kernel
+/// @tparam index_t separate entry for K::index_t
+/// @tparam block_idx dispatched block index
+/// @tparam halt_pos separate entry for K::halt_pos
+/// @tparam Compiler compiler for basic block
+template <Kernel K,
+          typename index_t, // C++ doesn't allow specalization of dependent
+                            // template parameters, so we pass index_t,
+                            // block_idx and halt_pos separately
+          index_t block_idx,
+          index_t halt_pos,
           template <typename> typename Compiler>
 class specialized_dispatch
 {
-    using successors = typelist::at<block_idx, Successors>;
-    using block      = typelist::at<block_idx, Blocks>;
+    using blocks = K::blocks;
+    using succs  = K::successors;
 
-    template <IndexType I>
-    using f = specialized_dispatch<IndexType,
-                                   halt_pos,
-                                   I,
-                                   Blocks,
-                                   Successors,
-                                   Compiler>;
+    using block       = typelist::at<block_idx, blocks>;
+    using block_succs = typelist::at<block_idx, succs>;
 
-    using compiled_successors = intlist::map_t<f, successors>;
+    template <std::size_t I>
+    using f = specialized_dispatch<K, index_t, I, halt_pos, Compiler>;
+
+    using compiled_succs = intlist::map_t<f, block_succs>;
 
     static constexpr Compiler<block> eval{};
 
@@ -146,33 +151,27 @@ class specialized_dispatch
     constexpr void
     operator()(_Memory&& mem) const noexcept
     {
-        const IndexType pc = eval(std::forward<_Memory>(mem));
+        const index_t pc = eval(std::forward<_Memory>(mem));
 
-        if constexpr(intlist::length<successors> >= 2)
+        if constexpr(intlist::length<block_succs> >= 2)
             typelist::unsafe_visit_at(
                 pc,
                 []<typename D>(_Memory&& mem) noexcept
                 { D{}(std::forward<_Memory>(mem)); },
-                compiled_successors{},
+                compiled_succs{},
                 std::forward<_Memory>(mem));
-        else if constexpr(intlist::length<successors> == 1)
-            typelist::head<compiled_successors>{}(std::forward<_Memory>(mem));
+        else if constexpr(intlist::length<block_succs> == 1)
+            typelist::head<compiled_succs>{}(std::forward<_Memory>(mem));
         else // zero successors;
             return;
     }
 };
 
-template <std::unsigned_integral IndexType,
-          IndexType              halt_pos,
-          typename Blocks,
-          typename Successors,
+template <Kernel K,
+          typename index_t,
+          index_t halt_pos,
           template <typename> typename Compiler>
-class specialized_dispatch<IndexType,
-                           halt_pos,
-                           halt_pos,
-                           Blocks,
-                           Successors,
-                           Compiler>
+class specialized_dispatch<K, index_t, halt_pos, halt_pos, Compiler>
 {
   public:
     template <typename _Memory>
@@ -184,13 +183,12 @@ class specialized_dispatch<IndexType,
 
 /// @brief Basic CFG evaluator.
 /// @tparam use_sd use specialized dispatch.
-template <typename K, bool use_sd = true>
+template <Kernel K, bool use_sd = true>
 class basic_scalar_compiler
 {
     using labelmap = K::labelmap;
     using blocks   = K::blocks;
     using index_t  = K::index_t;
-    using succs    = K::successors;
 
     static constexpr index_t halt_pos = K::halt_pos;
 
@@ -222,11 +220,10 @@ class basic_scalar_compiler
             facade::set_inputs(args...);
 
             if constexpr(use_sd)
-                facade::template step<specialized_dispatch<index_t,
-                                                           halt_pos,
+                facade::template step<specialized_dispatch<K,
+                                                           index_t,
                                                            0,
-                                                           blocks,
-                                                           succs,
+                                                           halt_pos,
                                                            compile_block>>();
             else
                 while(facade::pc() != halt_pos)

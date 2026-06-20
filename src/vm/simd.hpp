@@ -1633,10 +1633,11 @@ class eval<Jump<Target>, LabelMap, N>
     using mask_t         = mask_type<index_t, N>;
     using io_wrangler    = mask_io_intrinsics_wrangler<index_t, N>;
     using blend_wrangler = blend_intrinsics_wrangler<index_t, N>;
+    using index_vector_t = packed_vector<index_t, N>;
 
     static constexpr index_t target = constant{}();
 
-    static packed_vector<index_t, N> FORCE_INLINE
+    static index_vector_t FORCE_INLINE
     get() noexcept
     {
         return broadcast<N>(target);
@@ -1644,17 +1645,19 @@ class eval<Jump<Target>, LabelMap, N>
 
   public:
     template <typename _Memory>
-    void FORCE_INLINE
+    index_vector_t FORCE_INLINE
     operator()(_Memory&& mem) const noexcept
     {
         if constexpr(pv_extent<std::remove_cvref_t<_Memory>> == N)
             store<N>(std::forward<_Memory>(mem).pc().data(), get());
         else
             std::forward<_Memory>(mem).pc() = get();
+
+        return broadcast<N>(static_cast<index_t>(0));
     }
 
     template <typename _Memory>
-    void FORCE_INLINE
+    index_vector_t FORCE_INLINE
     operator()(_Memory&& mem, const mask_t mask) const noexcept
     {
         if constexpr(pv_extent<std::remove_cvref_t<_Memory>> == N)
@@ -1666,6 +1669,8 @@ class eval<Jump<Target>, LabelMap, N>
                 blend_wrangler::blend(mask,
                                       std::forward<_Memory>(mem).pc(),
                                       get());
+
+        return broadcast<N>(static_cast<index_t>(0));
     }
 };
 
@@ -1924,12 +1929,13 @@ class eval<ParmJump<Var, Labels>, LabelMap, N>
     using mask_t         = mask_type<index_t, N>;
     using io_wrangler    = mask_io_intrinsics_wrangler<index_t, N>;
     using blend_wrangler = blend_intrinsics_wrangler<index_t, N>;
+    using index_vector_t = packed_vector<index_t, N>;
 
     static constexpr shuffler<idxs, N> op{};
 
   public:
     template <typename _Memory>
-    void FORCE_INLINE
+    index_vector_t FORCE_INLINE
     operator()(_Memory&& mem) const noexcept
     {
         if constexpr(pv_extent<std::remove_cvref_t<_Memory>> == N)
@@ -1937,15 +1943,21 @@ class eval<ParmJump<Var, Labels>, LabelMap, N>
             index_t* dst = std::forward<_Memory>(mem).pc().data();
             index_t* src =
                 std::forward<_Memory>(mem).template get<Var>().data();
-            store<N>(dst, op(load<N>(src)));
+            const index_vector_t ret = load<N>(src);
+            store<N>(dst, op(ret));
+            return ret;
         }
         else
-            std::forward<_Memory>(mem).pc() =
-                op(std::forward<_Memory>(mem).template get<Var>());
+        {
+            const index_vector_t ret =
+                std::forward<_Memory>(mem).template get<Var>();
+            std::forward<_Memory>(mem).pc() = op(ret);
+            return ret;
+        }
     }
 
     template <typename _Memory>
-    void FORCE_INLINE
+    index_vector_t FORCE_INLINE
     operator()(_Memory&& mem, const mask_t mask) const noexcept
     {
         if constexpr(pv_extent<std::remove_cvref_t<_Memory>> == N)
@@ -1953,13 +1965,20 @@ class eval<ParmJump<Var, Labels>, LabelMap, N>
             index_t* dst = std::forward<_Memory>(mem).pc().data();
             index_t* src =
                 std::forward<_Memory>(mem).template get<Var>().data();
-            io_wrangler::store(dst, mask, op(load<N>(src)));
+            const index_vector_t ret = load<N>(src);
+            io_wrangler::store(dst, mask, op(ret));
+            return ret;
         }
         else
-            std::forward<_Memory>(mem).pc() = blend_wrangler::blend(
-                mask,
-                std::forward<_Memory>(mem).pc(),
-                op(std::forward<_Memory>(mem).template get<Var>()));
+        {
+            const index_vector_t ret =
+                std::forward<_Memory>(mem).template get<Var>();
+            std::forward<_Memory>(mem).pc() =
+                blend_wrangler::blend(mask,
+                                      std::forward<_Memory>(mem).pc(),
+                                      op(ret));
+            return ret;
+        }
     }
 };
 
@@ -2431,6 +2450,8 @@ class set_iterator : public std::input_iterator_tag
     }
 };
 
+/// @brief Simple bitset range.
+/// @tparam index_t PC type.
 template <typename index_t>
 class simple_set : public std::ranges::view_interface<simple_set<index_t>>
 {
@@ -3205,17 +3226,18 @@ class make_compact_masked_block_compiler
         const mask_t mask;
 
         template <typename _MainStorage>
-        void FORCE_INLINE
+        packed_vector<index_t, N> FORCE_INLINE
         operator()(_MainStorage& main_storage) const noexcept
         {
             if constexpr(ts)
             {
                 TempStorage tmp_storage = alloc(main_storage);
-                kernel(tmp_storage);
+                auto        ret         = kernel(tmp_storage);
                 spill(main_storage, tmp_storage, mask);
+                return ret;
             }
             else
-                kernel(main_storage, mask);
+                return kernel(main_storage, mask);
         }
     };
 };
@@ -3525,15 +3547,143 @@ enum ReconvMethod
                      falling  back to reminders set */
 };
 
+/// @brief Specialized dispatch implementation for SIMD predicated execution.
+/// @copydetails vm::bse::specialized_dispatch
+template <Kernel K,
+          typename index_t,
+          index_t block_idx,
+          index_t halt_pos,
+          template <typename> typename Compiler>
+class specialized_dispatch
+{
+    using blocks = K::blocks;
+    using succs  = K::successors;
+
+    using block       = typelist::at<block_idx, blocks>;
+    using block_succs = typelist::at<block_idx, succs>;
+    using eval        = Compiler<block>;
+
+    static constexpr fsize_t N = native_vector_extent_v<index_t>;
+
+    static constexpr popcnt_helper<index_t, N> popcnt{};
+
+    using blend_wrangler = blend_intrinsics_wrangler<index_t, N>;
+    using index_vector_t = packed_vector<index_t, N>;
+
+    using cmp    = cmp_intrinsics_wrangler<index_t, N>;
+    using mask_t = mask_type<index_t, N>;
+
+    template <std::size_t I>
+    using f = specialized_dispatch<K, index_t, I, halt_pos, Compiler>;
+
+    using compiled_succs = intlist::map_t<f, block_succs>;
+
+    static constexpr auto table = intlist::stdarray<block_succs>;
+
+    static constexpr std::uint64_t
+    make_candidates() noexcept
+    {
+        std::uint64_t ret{};
+
+        for(unsigned i = 0; i < intlist::length<block_succs>; ++i)
+            ret |= 1ul << i;
+
+        return ret;
+    }
+
+    static constexpr std::uint64_t
+    make_reminders() noexcept
+    {
+        std::uint64_t ret{};
+
+        for(const index_t i: table)
+            ret |= static_cast<std::uint64_t>(1 * (i != halt_pos));
+
+        return ret;
+    }
+
+  public:
+    mask_t mask;
+
+    template <typename _Memory>
+    std::uint64_t
+    operator()(_Memory&& mem, std::uint64_t rem) const noexcept
+    {
+        const index_vector_t next_pcs =
+            blend_wrangler::blend(mask,
+                                  broadcast<N>(halt_pos),
+                                  eval{mask}(std::forward<_Memory>(mem)));
+
+        if constexpr(intlist::length<block_succs> == 1)
+        {
+            const mask_t next_mask =
+                cmp::eq(next_pcs, broadcast<N>(static_cast<index_t>(0)));
+            const unsigned next_pops = popcnt(next_mask);
+
+            if(next_pops)
+                return typelist::head<compiled_succs>{
+                    next_mask}(std::forward<_Memory>(mem), rem);
+        }
+        else if constexpr(intlist::length<block_succs> >= 2)
+        {
+            constexpr std::uint64_t candidates = make_candidates();
+
+            const auto [next_pc, next_mask, next_pops] =
+                major_group<K, N>(next_pcs, simple_set<index_t>(candidates));
+
+            rem |= make_reminders();
+
+            if(next_pops)
+            {
+                rem &= ~(1ul << table[next_pc]);
+                return typelist::visit_at(
+                    next_pc,
+                    [next_mask]<typename D>(_Memory&&     mem,
+                                            std::uint64_t rem) noexcept
+                    { return D{next_mask}(std::forward<_Memory>(mem), rem); },
+                    compiled_succs{},
+                    [rem]() noexcept { return rem; },
+                    std::forward<_Memory>(mem),
+                    rem);
+            }
+        }
+
+        return rem;
+    }
+};
+
+template <Kernel K,
+          typename index_t,
+          index_t halt_pos,
+          template <typename> typename Compiler>
+class specialized_dispatch<K, index_t, halt_pos, halt_pos, Compiler>
+{
+    static constexpr fsize_t N = native_vector_extent_v<index_t>;
+
+    using mask_t = mask_type<index_t, N>;
+
+  public:
+    mask_t mask;
+
+    template <typename _Memory>
+    std::uint64_t
+    operator()(_Memory&& /* mem */, std::uint64_t rem) const noexcept
+    {
+        return rem;
+    }
+};
+
 /// @brief Compiler for compact SIMD execution.
 /// @tparam ts allocate special temporal storage for currently
 /// executed basic block
+/// @tparam use_sd use specialized dispatch.
 /// @tparam rcnv reconvergence method to use
 /// @tparam UTR utilization threshold for HYBRID_MAJOR method
 template <Kernel       K,
           bool         ts,
-          ReconvMethod rcnv = STATIC_MAJOR,
-          typename UTR      = std::ratio<1, 2>>
+          bool         use_sd = true,
+          ReconvMethod rcnv   = STATIC_MAJOR,
+          typename UTR        = std::ratio<1, 16>>
     requires(typelist::of_same_size<typename K::reg_types> && val_utr_v<UTR>)
 class compact_compiler
 {
@@ -3543,6 +3693,7 @@ class compact_compiler
     using reg_types = K::reg_types;
     using pc        = K::pc;
     using index_t   = K::index_t;
+    using succs     = K::successors;
 
     static constexpr bool    singular = K::singular;
     static constexpr fsize_t N        = native_vector_extent_v<index_t>;
@@ -3586,7 +3737,15 @@ class compact_compiler
         using compile_block =
             compact_masked_block_compiler<Block, labelmap, pc, N, ts>;
 
+        template <index_t I>
+        using spec_block =
+            specialized_dispatch<K, index_t, I, K::halt_pos, compile_block>;
+
         using compiled_blocks = typelist::map<compile_block, blocks>;
+        using spec_blocks =
+            intlist::map_t<spec_block,
+                           intlist::range<static_cast<index_t>(0),
+                                          static_cast<index_t>(K::num_blocks)>>;
 
         using cmp    = cmp_intrinsics_wrangler<index_t, N>;
         using lrh    = logical_reduce_helper<index_t, N>;
@@ -3625,131 +3784,153 @@ class compact_compiler
         {
             facade::set_inputs(args...);
 
-            if constexpr(rcnv == GREEDY_FAIR)
+            if constexpr(use_sd)
             {
-                while(not_done())
-                    for(const index_t pc:
-                        greedy_groups<K, N, true>{facade::pc()})
-                        exec(pc, make_mask<N>(pc, facade::pc()));
-            }
-            else if constexpr(rcnv == HYBRID_MAJOR)
-            {
-                index_t  pc                   = 0;
-                mask_t   mask                 = full_mask();
-                unsigned pops                 = N;
-                bool     use_successor_groups = true;
+                std::uint64_t rem =
+                    facade::step(spec_block<0>{full_mask()}, 0ul);
 
                 while(not_done())
                 {
-                    exec(pc, mask);
+                    const auto [pc, mask, pops] =
+                        major_group<K, N>(facade::pc(),
+                                          simple_set<index_t>(rem));
 
-                    if(use_successor_groups)
-                        std::tie(pc, mask, pops) =
-                            major_group<K, N>(facade::pc(),
-                                              successor_groups<K>{pc});
-                    else
+                    rem = typelist::visit_at(
+                        pc,
+                        [&, mask, rem]<typename D>() noexcept
+                        { return facade::step(D{mask}, rem); },
+                        spec_blocks{},
+                        [rem]() noexcept { return rem; });
+                }
+            }
+            else
+            {
+                if constexpr(rcnv == GREEDY_FAIR)
+                {
+                    while(not_done())
+                        for(const index_t pc:
+                            greedy_groups<K, N, true>{facade::pc()})
+                            exec(pc, make_mask<N>(pc, facade::pc()));
+                }
+                else if constexpr(rcnv == HYBRID_MAJOR)
+                {
+                    index_t  pc                   = 0;
+                    mask_t   mask                 = full_mask();
+                    unsigned pops                 = N;
+                    bool     use_successor_groups = true;
+
+                    while(not_done())
+                    {
+                        exec(pc, mask);
+
+                        if(use_successor_groups)
+                            std::tie(pc, mask, pops) =
+                                major_group<K, N>(facade::pc(),
+                                                  successor_groups<K>{pc});
+                        else
+                            std::tie(pc, mask, pops) = major_group<K, N>(
+                                facade::pc(),
+                                greedy_groups<K, N, true>{facade::pc()});
+
+                        use_successor_groups = pops >= threshold;
+                    }
+                }
+                else if constexpr(rcnv == GREEDY_MAJOR)
+                {
+                    index_t  pc   = 0;
+                    mask_t   mask = full_mask();
+                    unsigned pops = N;
+
+                    while(not_done())
+                    {
+                        exec(pc, mask);
+
                         std::tie(pc, mask, pops) = major_group<K, N>(
                             facade::pc(),
                             greedy_groups<K, N, true>{facade::pc()});
-
-                    use_successor_groups = pops >= threshold;
+                    }
                 }
-            }
-            else if constexpr(rcnv == GREEDY_MAJOR)
-            {
-                index_t  pc   = 0;
-                mask_t   mask = full_mask();
-                unsigned pops = N;
-
-                while(not_done())
+                else if constexpr(rcnv == HYBRID_FAIR)
                 {
-                    exec(pc, mask);
+                    index_t                   pc       = 0;
+                    mask_t                    mask     = full_mask();
+                    unsigned                  pops     = N;
+                    bool                      do_major = true;
+                    greedy_groups<K, N, true> g;
 
-                    std::tie(pc, mask, pops) = major_group<K, N>(
-                        facade::pc(),
-                        greedy_groups<K, N, true>{facade::pc()});
+                    while(not_done())
+                    {
+                        if(do_major)
+                            exec(pc, mask);
+                        else
+                            for(const index_t gpc: g)
+                                exec(gpc, make_mask<N>(gpc, facade::pc()));
+
+                        g = greedy_groups<K, N, true>{facade::pc()};
+                        std::tie(pc, mask, pops) =
+                            major_group<K, N>(facade::pc(), g);
+                        do_major = pops >= threshold;
+                    }
                 }
-            }
-            else if constexpr(rcnv == HYBRID_FAIR)
-            {
-                index_t                   pc       = 0;
-                mask_t                    mask     = full_mask();
-                unsigned                  pops     = N;
-                bool                      do_major = true;
-                greedy_groups<K, N, true> g;
-
-                while(not_done())
+                else if constexpr(rcnv == STATIC_FIRST)
                 {
-                    if(do_major)
+                    index_t       pc                   = 0;
+                    mask_t        mask                 = full_mask();
+                    unsigned      pops                 = N;
+                    std::uint64_t rem                  = 0;
+                    bool          use_successor_groups = true;
+
+                    while(not_done())
+                    {
                         exec(pc, mask);
-                    else
-                        for(const index_t gpc: g)
-                            exec(gpc, make_mask<N>(gpc, facade::pc()));
 
-                    g = greedy_groups<K, N, true>{facade::pc()};
-                    std::tie(pc, mask, pops) =
-                        major_group<K, N>(facade::pc(), g);
-                    do_major = pops >= threshold;
-                }
-            }
-            else if constexpr(rcnv == STATIC_FIRST)
-            {
-                index_t       pc                   = 0;
-                mask_t        mask                 = full_mask();
-                unsigned      pops                 = N;
-                std::uint64_t rem                  = 0;
-                bool          use_successor_groups = true;
+                        std::uint64_t nrem;
+                        if(use_successor_groups)
+                            std::tie(pc, mask, pops, nrem) =
+                                first_group<K, N>(facade::pc(),
+                                                  successor_groups<K>{pc});
+                        else
+                            std::tie(pc, mask, pops, nrem) =
+                                first_group<K, N>(facade::pc(),
+                                                  simple_set<index_t>{rem});
 
-                while(not_done())
-                {
-                    exec(pc, mask);
+                        rem &= ~(1ul << pc); // unset executed block
+                        rem |= nrem;         // add remainders
 
-                    std::uint64_t nrem;
-                    if(use_successor_groups)
-                        std::tie(pc, mask, pops, nrem) =
-                            first_group<K, N>(facade::pc(),
-                                              successor_groups<K>{pc});
-                    else
-                        std::tie(pc, mask, pops, nrem) =
-                            first_group<K, N>(facade::pc(),
-                                              simple_set<index_t>{rem});
-
-                    rem &= ~(1ul << pc); // unset executed block
-                    rem |= nrem;         // add remainders
-
-                    use_successor_groups = pops > 0;
-                }
-            }
-            else if constexpr(rcnv == STATIC_MAJOR)
-            {
-                index_t       pc                   = 0;
-                mask_t        mask                 = full_mask();
-                unsigned      pops                 = N;
-                std::uint64_t rem                  = 0;
-                bool          use_successor_groups = true;
-
-                while(not_done())
-                {
-                    exec(pc, mask);
-
-                    if(use_successor_groups)
-                    {
-                        auto ngs = successor_groups<K>{pc};
-                        rem |= ngs.data();
-                        std::tie(pc, mask, pops) =
-                            major_group<K, N>(facade::pc(), ngs);
+                        use_successor_groups = pops > 0;
                     }
-                    else
+                }
+                else if constexpr(rcnv == STATIC_MAJOR)
+                {
+                    index_t       pc                   = 0;
+                    mask_t        mask                 = full_mask();
+                    unsigned      pops                 = N;
+                    std::uint64_t rem                  = 0;
+                    bool          use_successor_groups = true;
+
+                    while(not_done())
                     {
-                        auto sgs = simple_set<index_t>{rem};
-                        rem |= sgs.data();
-                        std::tie(pc, mask, pops) =
-                            major_group<K, N>(facade::pc(), sgs);
+                        exec(pc, mask);
+
+                        if(use_successor_groups)
+                        {
+                            auto ngs = successor_groups<K>{pc};
+                            rem |= ngs.data();
+                            std::tie(pc, mask, pops) =
+                                major_group<K, N>(facade::pc(), ngs);
+                        }
+                        else
+                        {
+                            auto sgs = simple_set<index_t>{rem};
+                            rem |= sgs.data();
+                            std::tie(pc, mask, pops) =
+                                major_group<K, N>(facade::pc(), sgs);
+                        }
+
+                        rem &= ~(1ul << pc); // unset executed block
+
+                        use_successor_groups = pops > 0;
                     }
-
-                    rem &= ~(1ul << pc); // unset executed block
-
-                    use_successor_groups = pops > 0;
                 }
             }
 
@@ -4004,8 +4185,9 @@ using hybrid_stream = hybrid_compiler<K, ts, rcnv, UTRt, UTRh>::stream;
 
 /// @brief Alias for compact invocation.
 template <Kernel       K,
-          bool         ts   = true,
-          ReconvMethod rcnv = STATIC_MAJOR,
-          typename UTR      = std::ratio<1, 8>>
-using compact_function = compact_compiler<K, ts, rcnv, UTR>::type;
+          bool         ts     = true,
+          bool         use_sd = true,
+          ReconvMethod rcnv   = STATIC_MAJOR,
+          typename UTR        = std::ratio<1, 16>>
+using compact_function = compact_compiler<K, ts, use_sd, rcnv, UTR>::type;
 } // namespace loom::vm::simd
