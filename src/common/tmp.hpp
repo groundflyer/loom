@@ -693,7 +693,8 @@ visit_at_impl(const I   i,
                                          std::forward<Default>(def),
                                          std::forward<Args>(args)...);
     else
-        return std::invoke(std::forward<Default>(def));
+        return std::invoke(std::forward<Default>(def),
+                           std::forward<Args>(args)...);
 }
 
 template <std::unsigned_integral I,
