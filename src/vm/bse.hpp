@@ -120,64 +120,58 @@ class MemoryFacade
 
 /// @brief Specialized dispatch implementation.
 /// @tparam K kernel
-/// @tparam index_t separate entry for K::index_t
-/// @tparam block_idx dispatched block index
-/// @tparam halt_pos separate entry for K::halt_pos
+/// @tparam block_idx basic block index to execute
 /// @tparam Compiler compiler for basic block
-template <Kernel K,
-          typename index_t, // C++ doesn't allow specalization of dependent
-                            // template parameters, so we pass index_t,
-                            // block_idx and halt_pos separately
-          index_t block_idx,
-          index_t halt_pos,
+template <Kernel              K,
+          typename K::index_t block_idx,
           template <typename> typename Compiler>
 class specialized_dispatch
 {
-    using blocks = K::blocks;
-    using succs  = K::successors;
+    using blocks  = K::blocks;
+    using succs   = K::successors;
+    using index_t = K::index_t;
 
-    using block       = typelist::at<block_idx, blocks>;
-    using block_succs = typelist::at<block_idx, succs>;
+    static constexpr index_t halt_pos = K::halt_pos;
 
-    template <std::size_t I>
-    using f = specialized_dispatch<K, index_t, I, halt_pos, Compiler>;
+    template <index_t I>
+    using f = specialized_dispatch<K, I, Compiler>;
 
-    using compiled_succs = intlist::map_t<f, block_succs>;
-
-    static constexpr Compiler<block> eval{};
+    using spec = sd_helper<K,
+                           typelist::at<block_idx, blocks>,
+                           typelist::at<block_idx, succs>,
+                           f,
+                           Compiler>;
 
   public:
     template <typename _Memory>
     constexpr void
     operator()(_Memory&& mem) const noexcept
     {
-        const index_t pc = eval(std::forward<_Memory>(mem));
+        if constexpr(block_idx != halt_pos)
+        {
+            using ccss = spec::ccss;
+            using eval = spec::eval;
 
-        if constexpr(intlist::length<block_succs> >= 2)
-            typelist::unsafe_visit_at(
-                pc,
-                []<typename D>(_Memory&& mem) noexcept
-                { D{}(std::forward<_Memory>(mem)); },
-                compiled_succs{},
-                std::forward<_Memory>(mem));
-        else if constexpr(intlist::length<block_succs> == 1)
-            typelist::head<compiled_succs>{}(std::forward<_Memory>(mem));
-        else // zero successors;
-            return;
-    }
-};
+            const index_t pc = eval{}(std::forward<_Memory>(mem));
 
-template <Kernel K,
-          typename index_t,
-          index_t halt_pos,
-          template <typename> typename Compiler>
-class specialized_dispatch<K, index_t, halt_pos, halt_pos, Compiler>
-{
-  public:
-    template <typename _Memory>
-    constexpr void
-    operator()(_Memory&& /* mem */) const noexcept
-    {
+            if constexpr(spec::l >= 2)
+                if constexpr(spec::l == 2)
+                {
+                    if(pc)
+                        return snd_t<ccss>{}(std::forward<_Memory>(mem));
+                    else
+                        return fst_t<ccss>{}(std::forward<_Memory>(mem));
+                }
+                else
+                    return typelist::unsafe_visit_at(
+                        pc,
+                        []<typename D>(_Memory&& mem) noexcept
+                        { D{}(std::forward<_Memory>(mem)); },
+                        ccss{},
+                        std::forward<_Memory>(mem));
+            else if constexpr(spec::l == 1)
+                return typelist::head<ccss>{}(std::forward<_Memory>(mem));
+        }
     }
 };
 
@@ -220,11 +214,8 @@ class basic_scalar_compiler
             facade::set_inputs(args...);
 
             if constexpr(use_sd)
-                facade::template step<specialized_dispatch<K,
-                                                           index_t,
-                                                           0,
-                                                           halt_pos,
-                                                           compile_block>>();
+                facade::template step<
+                    specialized_dispatch<K, 0, compile_block>>();
             else
                 while(facade::pc() != halt_pos)
                     typelist::visit_at(

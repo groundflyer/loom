@@ -1041,4 +1041,31 @@ fit_block_index(const typename K::index_t c) noexcept
 
     return c < num_blocks ? c : halt_pos;
 }
+
+/// @brief Specialized dispatch block helper.
+/// @tparam K kernel.
+/// @tparam Block basic block.
+/// @tparam BlockSuccessors successors of basic block @p Block.
+/// @tparam F alias meta-function to specialized dispatch class.
+/// @tparam Compiler compiler for basic block.
+template <Kernel K,
+          typename Block,
+          typename BlockSuccessors,
+          template <typename K::index_t> typename F,
+          template <typename> typename Compiler>
+struct sd_helper
+{
+    using ccss = intlist::map_t<F, BlockSuccessors>;
+    using eval = Compiler<Block>;
+
+    static constexpr std::size_t l = typelist::length<ccss>;
+};
+
+/// @brief HALT specialization.
+template <typename K,
+          template <typename K::index_t> typename F,
+          template <typename> typename Compiler>
+struct sd_helper<K, void, void, F, Compiler>
+{
+};
 } // namespace loom::vm
