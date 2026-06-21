@@ -329,7 +329,8 @@ struct list_mag :
 
 template <typelist::List Macros>
 inline constexpr unsigned max_mag = *std::ranges::max_element(
-    intlist::stdarray<typelist::map<list_mag, Macros>>);
+    intlist::stdarray<
+        typelist::to_integer_sequence<typelist::map<list_mag, Macros>>>);
 
 template <typename Macro>
 using macro_statements = Macro::statements;
@@ -634,10 +635,10 @@ struct label_length : std::integral_constant<unsigned, _Label::name::size()>
 
 // 4 is for "HALT"
 template <typename Labels>
-inline constexpr unsigned max_label_width =
-    std::max(*std::ranges::max_element(
-                 intlist::stdarray<typelist::map<label_length, Labels>>),
-             4u);
+inline constexpr unsigned max_label_width = std::max(
+    *std::ranges::max_element(intlist::stdarray<typelist::to_integer_sequence<
+                                  typelist::map<label_length, Labels>>>),
+    4u);
 
 template <typename S>
 void
