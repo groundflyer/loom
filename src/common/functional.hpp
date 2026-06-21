@@ -199,6 +199,16 @@ struct elem_fn
 
     COMPOSE_OP
 };
+
+struct copy_identity
+{
+    template <typename T>
+    constexpr T
+    operator()(T t) const noexcept
+    {
+        return t;
+    }
+};
 } // namespace fn
 
 /// @brief Builds an object of type @p T from provided arguments.
@@ -226,6 +236,9 @@ inline constexpr fn::elem_fn<1> second;
 /// object.
 template <std::size_t I>
 inline constexpr fn::elem_fn<I> elem;
+
+/// @brief Same as std::identity, but copies input parameter.
+inline constexpr fn::copy_identity copy_id;
 
 /// @brief Create a functional object that takes its two arguments in the
 /// reverse order of @p f.

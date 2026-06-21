@@ -1031,10 +1031,6 @@ int main(/*int argc, char* argv[]*/)
         return err;
     };
 
-    // GCC fails with std::identity
-    // that stupid labmda is the workaround
-    auto copy_id = [](auto v) noexcept { return v; };
-
     /// @test @p --keyword=value parsing results test.
     /// Generate correct keyword and correct value.
     /// Check if binding holds the value.
