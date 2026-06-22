@@ -15,8 +15,11 @@ using namespace vm;
 using C1     = constants<CS(40), CS(0.001), CS(64), CS(1), CS(20)>;
 using kernel = pt_const<float, C1>;
 
-template <bool ts, simd::ReconvMethod rcnv, typename UTR = std::ratio<1, 16>>
-using PTCompact = RenderSIMDCompact<kernel, C1, ts, rcnv, UTR>;
+template <bool               ts,
+          bool               sd,
+          simd::ReconvMethod rcnv,
+          typename UTR = std::ratio<1, 16>>
+using PTCompact = RenderSIMDCompact<kernel, C1, ts, sd, rcnv, UTR>;
 
 template <bool ts, simd::ReconvMethod rcnv, typename UTRt, typename UTRh>
 using PTFunction = RenderSIMDFunction<kernel, C1, ts, rcnv, UTRt, UTRh>;
@@ -39,10 +42,11 @@ int
 main(int argc, char* argv[])
 {
     run({argc, argv},
-        PTCompact<true, simd::HYBRID_MAJOR, std::ratio<1, 16>>{},
-        PTCompact<false, simd::HYBRID_MAJOR, std::ratio<1, 16>>{},
-        PTCompact<true, simd::STATIC_MAJOR, std::ratio<1, 16>>{},
-        PTCompact<false, simd::STATIC_MAJOR, std::ratio<1, 16>>{},
+        PTCompact<true, false, simd::HYBRID_MAJOR, std::ratio<1, 16>>{},
+        PTCompact<false, false, simd::HYBRID_MAJOR, std::ratio<1, 16>>{},
+        PTCompact<true, false, simd::STATIC_MAJOR, std::ratio<1, 16>>{},
+        PTCompact<false, false, simd::STATIC_MAJOR, std::ratio<1, 16>>{},
+        PTCompact<false, true, simd::STATIC_MAJOR, std::ratio<1, 16>>{},
         PTStream<false,
                  simd::HYBRID_MAJOR,
                  std::ratio<15, 16>,
