@@ -2832,8 +2832,7 @@ class ConcurrentStreamFacade :
     update_pos(const fsize_t nhalts) noexcept
     {
         const bool ret = nhalts >= step_size;
-        m_pos =
-            ret ? align_up(facade::mem().size() - nhalts, step_size) : npos;
+        m_pos = ret ? align_up(facade::mem().size() - nhalts, step_size) : npos;
         return ret;
     }
 
@@ -3549,19 +3548,25 @@ enum ReconvMethod
 
 /// @brief Specialized dispatch implementation for SIMD predicated execution.
 /// @copydetails vm::bse::specialized_dispatch
-template <Kernel K,
-          typename index_t,
-          index_t block_idx,
-          index_t halt_pos,
+template <Kernel              K,
+          typename K::index_t pc,
           template <typename> typename Compiler>
 class specialized_dispatch
 {
-    using blocks = K::blocks;
-    using succs  = K::successors;
+    using blocks  = K::blocks;
+    using succs   = K::successors;
+    using index_t = K::index_t;
 
-    using block       = typelist::at<block_idx, blocks>;
-    using block_succs = typelist::at<block_idx, succs>;
-    using eval        = Compiler<block>;
+    static constexpr index_t halt_pos = K::halt_pos;
+
+    template <index_t I>
+    using f = specialized_dispatch<K, I, Compiler>;
+
+    using spec = sd_helper<K,
+                           typelist::at<pc, blocks>,
+                           typelist::at<pc, succs>,
+                           f,
+                           Compiler>;
 
     static constexpr fsize_t N = native_vector_extent_v<index_t>;
 
@@ -3573,35 +3578,6 @@ class specialized_dispatch
     using cmp    = cmp_intrinsics_wrangler<index_t, N>;
     using mask_t = mask_type<index_t, N>;
 
-    template <std::size_t I>
-    using f = specialized_dispatch<K, index_t, I, halt_pos, Compiler>;
-
-    using compiled_succs = intlist::map_t<f, block_succs>;
-
-    static constexpr auto table = intlist::stdarray<block_succs>;
-
-    static constexpr std::uint64_t
-    make_candidates() noexcept
-    {
-        std::uint64_t ret{};
-
-        for(unsigned i = 0; i < intlist::length<block_succs>; ++i)
-            ret |= 1ul << i;
-
-        return ret;
-    }
-
-    static constexpr std::uint64_t
-    make_reminders() noexcept
-    {
-        std::uint64_t ret{};
-
-        for(const index_t i: table)
-            ret |= static_cast<std::uint64_t>(1 * (i != halt_pos));
-
-        return ret;
-    }
-
   public:
     mask_t mask;
 
@@ -3609,42 +3585,75 @@ class specialized_dispatch
     std::uint64_t
     operator()(_Memory&& mem, std::uint64_t rem) const noexcept
     {
-        const index_vector_t next_pcs =
-            blend_wrangler::blend(mask,
-                                  broadcast<N>(halt_pos),
-                                  eval{mask}(std::forward<_Memory>(mem)));
-
-        if constexpr(intlist::length<block_succs> == 1)
+        if constexpr(pc != halt_pos)
         {
-            const mask_t next_mask =
-                cmp::eq(next_pcs, broadcast<N>(static_cast<index_t>(0)));
-            const unsigned next_pops = popcnt(next_mask);
+            using bkss = spec::bkss;
+            using ccss = spec::ccss;
+            using eval = spec::eval;
 
-            if(next_pops)
-                return typelist::head<compiled_succs>{
-                    next_mask}(std::forward<_Memory>(mem), rem);
-        }
-        else if constexpr(intlist::length<block_succs> >= 2)
-        {
-            constexpr std::uint64_t candidates = make_candidates();
+            constexpr auto table = intlist::stdarray<bkss>;
 
-            const auto [next_pc, next_mask, next_pops] =
-                major_group<K, N>(next_pcs, simple_set<index_t>(candidates));
+            eval{mask}(std::forward<_Memory>(mem));
 
-            rem |= make_reminders();
+            rem &= ~(1ul << pc); // unset evaluated block
 
-            if(next_pops)
+            auto get_mask = [&](const index_t next_pc) noexcept
+            { return cmp::eq(broadcast<N>(next_pc), mem.pc()); };
+
+            if constexpr(spec::l == 1)
             {
-                rem &= ~(1ul << table[next_pc]);
-                return typelist::visit_at(
-                    next_pc,
-                    [next_mask]<typename D>(_Memory&&     mem,
-                                            std::uint64_t rem) noexcept
-                    { return D{next_mask}(std::forward<_Memory>(mem), rem); },
-                    compiled_succs{},
-                    [rem]() noexcept { return rem; },
-                    std::forward<_Memory>(mem),
-                    rem);
+                const index_t next_pc = table[0];
+
+                if(next_pc != halt_pos)
+                {
+                    const mask_t   next_mask = get_mask(next_pc);
+                    const unsigned next_pops = popcnt(next_mask);
+
+                    if(next_pops)
+                        return typelist::head<ccss>{
+                            next_mask}(std::forward<_Memory>(mem), rem);
+                }
+            }
+            else if constexpr(spec::l >= 2)
+            {
+                index_t  next_branch{};
+                mask_t   next_mask{};
+                unsigned next_pops{};
+
+                for(index_t i = 0; i < spec::l; ++i)
+                {
+                    const index_t next_pc = table[i];
+
+                    if(next_pc != halt_pos)
+                    {
+                        const mask_t   cmask = get_mask(next_pc);
+                        const unsigned cpops = popcnt(cmask);
+
+                        rem |= (1ul & (cpops > 0u)) << next_pc;
+
+                        if(cpops > next_pops)
+                        {
+                            next_branch = i;
+                            next_mask   = cmask;
+                            next_pops   = cpops;
+                        }
+                    }
+                }
+
+                if(next_pops)
+                    return typelist::visit_at(
+                        next_branch,
+                        [next_mask]<typename D>(_Memory&&     mem,
+                                                std::uint64_t rem) noexcept
+                        {
+                            return D{next_mask}(std::forward<_Memory>(mem),
+                                                rem);
+                        },
+                        ccss{},
+                        [](_Memory&&, std::uint64_t rem) noexcept
+                        { return rem; },
+                        std::forward<_Memory>(mem),
+                        rem);
             }
         }
 
@@ -3652,31 +3661,10 @@ class specialized_dispatch
     }
 };
 
-template <Kernel K,
-          typename index_t,
-          index_t halt_pos,
-          template <typename> typename Compiler>
-class specialized_dispatch<K, index_t, halt_pos, halt_pos, Compiler>
-{
-    static constexpr fsize_t N = native_vector_extent_v<index_t>;
-
-    using mask_t = mask_type<index_t, N>;
-
-  public:
-    mask_t mask;
-
-    template <typename _Memory>
-    std::uint64_t
-    operator()(_Memory&& /* mem */, std::uint64_t rem) const noexcept
-    {
-        return rem;
-    }
-};
-
 /// @brief Compiler for compact SIMD execution.
 /// @tparam ts allocate special temporal storage for currently
 /// executed basic block
-/// @tparam use_sd use specialized dispatch.
+/// @tparam use_sd use specialized dispatch
 /// @tparam rcnv reconvergence method to use
 /// @tparam UTR utilization threshold for HYBRID_MAJOR method
 template <Kernel       K,
@@ -3738,8 +3726,7 @@ class compact_compiler
             compact_masked_block_compiler<Block, labelmap, pc, N, ts>;
 
         template <index_t I>
-        using spec_block =
-            specialized_dispatch<K, index_t, I, K::halt_pos, compile_block>;
+        using spec_block = specialized_dispatch<K, I, compile_block>;
 
         using compiled_blocks = typelist::map<compile_block, blocks>;
         using spec_blocks =
@@ -3797,10 +3784,11 @@ class compact_compiler
 
                     rem = typelist::visit_at(
                         pc,
-                        [&, mask, rem]<typename D>() noexcept
+                        [&, mask]<typename D>(std::uint64_t rem) noexcept
                         { return facade::step(D{mask}, rem); },
                         spec_blocks{},
-                        [rem]() noexcept { return rem; });
+                        copy_id,
+                        rem);
                 }
             }
             else

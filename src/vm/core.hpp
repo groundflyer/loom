@@ -1055,6 +1055,7 @@ template <Kernel K,
           template <typename> typename Compiler>
 struct sd_helper
 {
+    using bkss = BlockSuccessors;
     using ccss = intlist::map_t<F, BlockSuccessors>;
     using eval = Compiler<Block>;
 
