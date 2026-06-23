@@ -8,11 +8,7 @@
 #include <vm/lib/random.hpp>
 #include <vm/simd.hpp>
 
-#include <fmt/ranges.h>
-
 #include <algorithm>
-#include <ranges>
-#include <vector>
 
 using namespace loom;
 
@@ -31,9 +27,6 @@ KERNEL(kernel, VAR(std::uint32_t, c0), VAR(std::uint32_t, c1))
 KERNEL_END(VAR(std::uint32_t, u0), VAR(std::uint32_t, u1), VAR(std::uint32_t, c0), VAR(std::uint32_t, c1));
 
 // clang-format on
-
-using container =
-    std::vector<std::uint32_t, vm::simd::SIMDAlignedAllocator<std::uint32_t>>;
 
 struct Ref
 {
