@@ -360,8 +360,8 @@ create_window(const System::Handle&,
               const char*    x11_class_name    = "Loom",
               const char*    x11_instance_name = "Viewport")
 {
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwWindowHintString(GLFW_X11_CLASS_NAME, x11_class_name);
     glfwWindowHintString(GLFW_X11_INSTANCE_NAME, x11_instance_name);
@@ -373,7 +373,7 @@ create_window(const System::Handle&,
 class ImageViewport
 {
     static constexpr GLchar vertex_shader_src[] =
-        "#version 460 core\n"
+        "#version 330 core\n"
         "layout (location = 0) in vec3 inP;"
         "layout (location = 1) in vec2 inUV;"
         "out vec2 UV;"
@@ -382,7 +382,7 @@ class ImageViewport
         "UV = inUV;}";
 
     static constexpr GLchar fragment_shader_src[] =
-        "#version 460 core\n"
+        "#version 330 core\n"
         "out vec4 Cf;"
         "in vec2 UV;"
         "uniform sampler2D img;"
@@ -542,13 +542,13 @@ ortho(T left, T right, T bottom, T top) noexcept
 class OSD
 {
     static constexpr char vertex_shader_src[] =
-        "#version 460 core\n"
+        "#version 330 core\n"
         "layout (location = 0) in vec2 pos;"
         "uniform mat4 projection;"
         "void main(){"
         "gl_Position = projection * vec4(pos, 0.0, 1.0);}";
     static constexpr char fragment_shader_src[] =
-        "#version 460 core\n"
+        "#version 330 core\n"
         "out vec4 Cf;"
         "void main(){"
         "Cf = vec4(0.0, 1.0, 0.0, 1.0);}";
@@ -567,11 +567,8 @@ class OSD
     void
     upload_projection(const Matrix<float, 4, 4, std::array>& proj) noexcept
     {
-        glProgramUniformMatrix4fv(m_program.id(),
-                                  m_proj_loc,
-                                  1,
-                                  GL_FALSE,
-                                  proj.data().data());
+        glUseProgram(m_program.id());
+        glUniformMatrix4fv(m_proj_loc, 1, GL_FALSE, proj.data().data());
     }
 
     void
