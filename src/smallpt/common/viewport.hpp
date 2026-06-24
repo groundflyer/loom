@@ -165,6 +165,12 @@ class System
         friend System;
     };
 
+    static void
+    error_callback(int /* error */, const char* desc)
+    {
+        throw std::runtime_error(desc);
+    }
+
     static inline bool   initialized = false;
     static inline Handle handle;
 
@@ -176,6 +182,8 @@ class System
     [[nodiscard]] static const Handle&
     init()
     {
+        glfwSetErrorCallback(error_callback);
+
         if(!initialized)
         {
             initialized = glfwInit();
