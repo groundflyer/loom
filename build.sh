@@ -51,6 +51,15 @@ enable_docs() {
     TARGETS+=(doc)
 }
 
+enable_demo() {
+    CMAKE_ARGS+=(-DBUILD_DEMO=ON)
+}
+
+enable_prof() {
+    CMAKE_ARGS+=(-DBUILD_PROF=ON)
+    TARGETS+=(prof)
+}
+
 enable_debug() {
     CMAKE_ARGS+=(-DCMAKE_BUILD_TYPE=RelWithDebInfo)
     BUILD_DIR+=_dbg
@@ -149,6 +158,9 @@ for key in $@; do
             ;;
     esac
 done
+
+enable_demo
+enable_prof
 
 set_cmake_args_from_envs
 

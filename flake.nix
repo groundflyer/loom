@@ -31,11 +31,16 @@
         graphviz
         doxygenClang
         texliveBasic
+        # profiling and debug
+        perf
+        libllvm
+        lldb
       ];
 
       shellHook = ''
       export CMAKE_EXPORT_COMPILE_COMMANDS=1
       export NIX_ENFORCE_NO_NATIVE=0
+      export ASAN_SYMBOLIZER_PATH=${pkgs.lib.getExe' pkgs.libllvm "llvm-symbolizer"}
       ulimit -s unlimited
       '';
     };

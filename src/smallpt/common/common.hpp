@@ -79,7 +79,7 @@ parse_args(int argc, char* argv[]) noexcept
             argparse::option<'r', "res", 2>("image resolution",
                                             {"width", "height"},
                                             {400, 400},
-                                            read_number<int, true>),
+                                            read_number<unsigned, true>),
             argparse::flag<'k', "keep-res">("keep image resolution"),
             argparse::option<'s', "stream-size">(
                 "stream size",
