@@ -6,6 +6,8 @@
 
 #include "core.hpp"
 
+#include <common/debug.hpp>
+
 namespace loom::vm::bse
 {
 template <typename RegTypes, typename RegNames, typename PCVar>
@@ -118,12 +120,24 @@ class MemoryFacade
     }
 };
 
+// FIXME: clang frontend rejects musttail attribute with
+// error: cannot compile this tail call skipping over cleanups yet
+// despite there are no cleanups in scope
+#if 0 // set to 1 when the error is gone
+#define MUSTTAIL [[clang::musttail]]
+#else
+#define MUSTTAIL
+#endif
+
+#define MK_CASE(IDX) \
+    case IDX: MUSTTAIL return typelist::at<IDX, ccss>::eval(mem)
+
 /// @brief Specialized dispatch implementation.
 /// @tparam K kernel
-/// @tparam block_idx basic block index to execute
+/// @tparam pc current PC
 /// @tparam Compiler compiler for basic block
 template <Kernel              K,
-          typename K::index_t block_idx,
+          typename K::index_t pc,
           template <typename> typename Compiler>
 class specialized_dispatch
 {
@@ -137,43 +151,87 @@ class specialized_dispatch
     using f = specialized_dispatch<K, I, Compiler>;
 
     using spec = sd_helper<K,
-                           typelist::at<block_idx, blocks>,
-                           typelist::at<block_idx, succs>,
+                           typelist::at<pc, blocks>,
+                           typelist::at<pc, succs>,
                            f,
                            Compiler>;
 
   public:
     template <typename _Memory>
-    constexpr void
-    operator()(_Memory&& mem) const noexcept
+    static void FORCE_INLINE // inlining for now (musttail is rejected)
+    eval(_Memory& mem) noexcept
     {
-        if constexpr(block_idx != halt_pos)
+        if constexpr(pc != halt_pos)
         {
             using ccss = spec::ccss;
-            using eval = spec::eval;
 
-            const index_t pc = eval{}(std::forward<_Memory>(mem));
+            const index_t next_pc = spec::eval_kernel(mem);
 
-            if constexpr(spec::l >= 2)
-                if constexpr(spec::l == 2)
-                {
-                    if(pc)
-                        return snd_t<ccss>{}(std::forward<_Memory>(mem));
-                    else
-                        return fst_t<ccss>{}(std::forward<_Memory>(mem));
-                }
-                else
-                    return typelist::unsafe_visit_at(
-                        pc,
-                        []<typename D>(_Memory&& mem) noexcept
-                        { D{}(std::forward<_Memory>(mem)); },
-                        ccss{},
-                        std::forward<_Memory>(mem));
-            else if constexpr(spec::l == 1)
-                return typelist::head<ccss>{}(std::forward<_Memory>(mem));
+            if constexpr(spec::l == 1) MUSTTAIL
+            return typelist::head<ccss>::eval(mem);
+            else if constexpr(spec::l == 2)
+            {
+                if(next_pc) MUSTTAIL
+                return snd_t<ccss>::eval(mem);
+                else MUSTTAIL return fst_t<ccss>::eval(mem);
+            }
+            else if constexpr(spec::l == 3) switch(next_pc)
+            {
+                MK_CASE(0);
+                MK_CASE(1);
+                MK_CASE(2);
+            }
+            else if constexpr(spec::l == 4) switch(next_pc)
+            {
+                MK_CASE(0);
+                MK_CASE(1);
+                MK_CASE(2);
+                MK_CASE(3);
+            }
+            else if constexpr(spec::l == 5) switch(next_pc)
+            {
+                MK_CASE(0);
+                MK_CASE(1);
+                MK_CASE(2);
+                MK_CASE(3);
+                MK_CASE(4);
+            }
+            else if constexpr(spec::l == 6) switch(next_pc)
+            {
+                MK_CASE(0);
+                MK_CASE(1);
+                MK_CASE(2);
+                MK_CASE(3);
+                MK_CASE(4);
+                MK_CASE(5);
+            }
+            else if constexpr(spec::l == 7) switch(next_pc)
+            {
+                MK_CASE(0);
+                MK_CASE(1);
+                MK_CASE(2);
+                MK_CASE(3);
+                MK_CASE(4);
+                MK_CASE(5);
+                MK_CASE(6);
+            }
+            else if constexpr(spec::l == 8) switch(next_pc)
+            {
+                MK_CASE(0);
+                MK_CASE(1);
+                MK_CASE(2);
+                MK_CASE(3);
+                MK_CASE(4);
+                MK_CASE(5);
+                MK_CASE(6);
+                MK_CASE(7);
+            }
+            else static_assert(false, "Add more cases");
         }
     }
 };
+
+#undef MK_CASE
 
 /// @brief Basic CFG evaluator.
 /// @tparam use_sd use specialized dispatch.
@@ -214,8 +272,9 @@ class basic_scalar_compiler
             facade::set_inputs(args...);
 
             if constexpr(use_sd)
-                facade::template step<
-                    specialized_dispatch<K, 0, compile_block>>();
+                facade::step(
+                    [](auto& mem) noexcept
+                    { specialized_dispatch<K, 0, compile_block>::eval(mem); });
             else
                 while(facade::pc() != halt_pos)
                     typelist::visit_at(

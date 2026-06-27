@@ -1,6 +1,6 @@
 // -*- C++ -*-
 /// @file debug.hpp
-/// @brief Helper macros for debugging and static analysis.
+/// @brief Helper macros for debugging and compiler-specific attributes.
 
 #pragma once
 
@@ -18,6 +18,8 @@
 #else
 #define _REINIT
 #endif
+
+#define FORCE_INLINE __attribute__((always_inline, nodebug))
 
 /// @brief Project's main namespace.
 namespace loom

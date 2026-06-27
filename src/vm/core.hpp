@@ -1055,11 +1055,20 @@ template <Kernel K,
           template <typename> typename Compiler>
 struct sd_helper
 {
-    using bkss = BlockSuccessors;
-    using ccss = intlist::map_t<F, BlockSuccessors>;
-    using eval = Compiler<Block>;
+    using bkss   = BlockSuccessors;
+    using ccss   = intlist::map_t<F, BlockSuccessors>;
+    using kernel = Compiler<Block>;
 
     static constexpr std::size_t l = typelist::length<ccss>;
+
+    static constexpr kernel k{};
+
+    template <typename... Args>
+    static decltype(auto)
+    eval_kernel(Args&&... args) noexcept
+    {
+        return k(std::forward<Args>(args)...);
+    }
 };
 
 /// @brief HALT specialization.

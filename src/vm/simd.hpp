@@ -24,8 +24,6 @@
 
 #include <immintrin.h>
 
-#define FORCE_INLINE __attribute__((always_inline, nodebug))
-
 /// @brief Virtual machine SIMD backend.
 namespace loom::vm::simd
 {
@@ -1645,19 +1643,17 @@ class eval<Jump<Target>, LabelMap, N>
 
   public:
     template <typename _Memory>
-    index_vector_t FORCE_INLINE
+    void FORCE_INLINE
     operator()(_Memory&& mem) const noexcept
     {
         if constexpr(pv_extent<std::remove_cvref_t<_Memory>> == N)
             store<N>(std::forward<_Memory>(mem).pc().data(), get());
         else
             std::forward<_Memory>(mem).pc() = get();
-
-        return broadcast<N>(static_cast<index_t>(0));
     }
 
     template <typename _Memory>
-    index_vector_t FORCE_INLINE
+    void FORCE_INLINE
     operator()(_Memory&& mem, const mask_t mask) const noexcept
     {
         if constexpr(pv_extent<std::remove_cvref_t<_Memory>> == N)
@@ -1669,8 +1665,6 @@ class eval<Jump<Target>, LabelMap, N>
                 blend_wrangler::blend(mask,
                                       std::forward<_Memory>(mem).pc(),
                                       get());
-
-        return broadcast<N>(static_cast<index_t>(0));
     }
 };
 
@@ -1935,7 +1929,7 @@ class eval<ParmJump<Var, Labels>, LabelMap, N>
 
   public:
     template <typename _Memory>
-    index_vector_t FORCE_INLINE
+    void FORCE_INLINE
     operator()(_Memory&& mem) const noexcept
     {
         if constexpr(pv_extent<std::remove_cvref_t<_Memory>> == N)
@@ -1945,19 +1939,17 @@ class eval<ParmJump<Var, Labels>, LabelMap, N>
                 std::forward<_Memory>(mem).template get<Var>().data();
             const index_vector_t ret = load<N>(src);
             store<N>(dst, op(ret));
-            return ret;
         }
         else
         {
             const index_vector_t ret =
                 std::forward<_Memory>(mem).template get<Var>();
             std::forward<_Memory>(mem).pc() = op(ret);
-            return ret;
         }
     }
 
     template <typename _Memory>
-    index_vector_t FORCE_INLINE
+    void FORCE_INLINE
     operator()(_Memory&& mem, const mask_t mask) const noexcept
     {
         if constexpr(pv_extent<std::remove_cvref_t<_Memory>> == N)
@@ -1967,7 +1959,6 @@ class eval<ParmJump<Var, Labels>, LabelMap, N>
                 std::forward<_Memory>(mem).template get<Var>().data();
             const index_vector_t ret = load<N>(src);
             io_wrangler::store(dst, mask, op(ret));
-            return ret;
         }
         else
         {
@@ -1977,7 +1968,6 @@ class eval<ParmJump<Var, Labels>, LabelMap, N>
                 blend_wrangler::blend(mask,
                                       std::forward<_Memory>(mem).pc(),
                                       op(ret));
-            return ret;
         }
     }
 };
@@ -2515,8 +2505,9 @@ class greedy_groups :
     {
         for(fsize_t i = 0; i < N; ++i)
             if constexpr(ignore_halt)
-                m_set |= static_cast<std::uint64_t>(1 * (pcs[i] != halt_pos))
-                         << pcs[i];
+            {
+                if(pcs[i] != halt_pos) m_set |= 1ul << pcs[i];
+            }
             else
                 m_set |= 1ul << fit_in_bins(pcs[i], num_blocks);
     }
@@ -3225,18 +3216,17 @@ class make_compact_masked_block_compiler
         const mask_t mask;
 
         template <typename _MainStorage>
-        packed_vector<index_t, N> FORCE_INLINE
+        void FORCE_INLINE
         operator()(_MainStorage& main_storage) const noexcept
         {
             if constexpr(ts)
             {
                 TempStorage tmp_storage = alloc(main_storage);
-                auto        ret         = kernel(tmp_storage);
+                kernel(tmp_storage);
                 spill(main_storage, tmp_storage, mask);
-                return ret;
             }
             else
-                return kernel(main_storage, mask);
+                kernel(main_storage, mask);
         }
     };
 };
@@ -3546,6 +3536,9 @@ enum ReconvMethod
                      falling  back to reminders set */
 };
 
+#define MK_CASE(IDX) \
+    case IDX: MUSTTAIL return typelist::at<IDX, ccss>::eval(mem, next_mask, rem)
+
 /// @brief Specialized dispatch implementation for SIMD predicated execution.
 /// @copydetails vm::bse::specialized_dispatch
 template <Kernel              K,
@@ -3579,21 +3572,19 @@ class specialized_dispatch
     using mask_t = mask_type<index_t, N>;
 
   public:
-    mask_t mask;
-
     template <typename _Memory>
-    std::uint64_t
-    operator()(_Memory&& mem, std::uint64_t rem) const noexcept
+    static std::uint64_t
+    eval(_Memory& mem, mask_t mask, std::uint64_t rem) noexcept
     {
         if constexpr(pc != halt_pos)
         {
-            using bkss = spec::bkss;
-            using ccss = spec::ccss;
-            using eval = spec::eval;
+            using bkss   = spec::bkss;
+            using ccss   = spec::ccss;
+            using kernel = spec::kernel;
 
             constexpr auto table = intlist::stdarray<bkss>;
 
-            eval{mask}(std::forward<_Memory>(mem));
+            kernel{mask}(mem);
 
             rem &= ~(1ul << pc); // unset evaluated block
 
@@ -3609,9 +3600,8 @@ class specialized_dispatch
                     const mask_t   next_mask = get_mask(next_pc);
                     const unsigned next_pops = popcnt(next_mask);
 
-                    if(next_pops)
-                        return typelist::head<ccss>{
-                            next_mask}(std::forward<_Memory>(mem), rem);
+                    if(next_pops) MUSTTAIL
+                    return typelist::head<ccss>::eval(mem, next_mask, rem);
                 }
             }
             else if constexpr(spec::l >= 2)
@@ -3641,25 +3631,93 @@ class specialized_dispatch
                 }
 
                 if(next_pops)
-                    return typelist::visit_at(
-                        next_branch,
-                        [next_mask]<typename D>(_Memory&&     mem,
-                                                std::uint64_t rem) noexcept
+                {
+                    if constexpr(spec::l == 2)
+                    {
+                        if(next_branch) MUSTTAIL
+                        return snd_t<ccss>::eval(mem, next_mask, rem);
+                        else MUSTTAIL return fst_t<ccss>::eval(mem,
+                                                               next_mask,
+                                                               rem);
+                    }
+                    else if constexpr(spec::l == 3)
+                        switch(next_branch)
                         {
-                            return D{next_mask}(std::forward<_Memory>(mem),
-                                                rem);
-                        },
-                        ccss{},
-                        [](_Memory&&, std::uint64_t rem) noexcept
-                        { return rem; },
-                        std::forward<_Memory>(mem),
-                        rem);
+                            MK_CASE(0);
+                            MK_CASE(1);
+                            MK_CASE(2);
+                        }
+                    else if constexpr(spec::l == 4)
+                        switch(next_branch)
+                        {
+                            MK_CASE(0);
+                            MK_CASE(1);
+                            MK_CASE(2);
+                            MK_CASE(3);
+                        }
+                    else if constexpr(spec::l == 5)
+                        switch(next_branch)
+                        {
+                            MK_CASE(0);
+                            MK_CASE(1);
+                            MK_CASE(2);
+                            MK_CASE(3);
+                            MK_CASE(4);
+                        }
+                    else if constexpr(spec::l == 6)
+                        switch(next_branch)
+                        {
+                            MK_CASE(0);
+                            MK_CASE(1);
+                            MK_CASE(2);
+                            MK_CASE(3);
+                            MK_CASE(4);
+                            MK_CASE(5);
+                        }
+                    else if constexpr(spec::l == 7)
+                        switch(next_branch)
+                        {
+                            MK_CASE(0);
+                            MK_CASE(1);
+                            MK_CASE(2);
+                            MK_CASE(3);
+                            MK_CASE(4);
+                            MK_CASE(5);
+                            MK_CASE(6);
+                        }
+                    else if constexpr(spec::l == 8)
+                        switch(next_branch)
+                        {
+                            MK_CASE(0);
+                            MK_CASE(1);
+                            MK_CASE(2);
+                            MK_CASE(3);
+                            MK_CASE(4);
+                            MK_CASE(5);
+                            MK_CASE(6);
+                            MK_CASE(7);
+                        }
+                    else
+                        static_assert(false, "Add more cases");
+                    // return typelist::visit_at(
+                    //     next_branch,
+                    //     [next_mask]<typename D>(_Memory&      mem,
+                    //                             std::uint64_t rem) noexcept
+                    //     { return D::eval(mem, next_mask, rem); },
+                    //     ccss{},
+                    //     [](_Memory&, std::uint64_t rem) noexcept
+                    //     { return rem; },
+                    //     mem,
+                    //     rem);
+                }
             }
         }
 
         return rem;
     }
 };
+
+#undef MK_CASE
 
 /// @brief Compiler for compact SIMD execution.
 /// @tparam ts allocate special temporal storage for currently
@@ -3669,7 +3727,7 @@ class specialized_dispatch
 /// @tparam UTR utilization threshold for HYBRID_MAJOR method
 template <Kernel       K,
           bool         ts,
-          bool         use_sd = true,
+          bool         use_sd = false,
           ReconvMethod rcnv   = STATIC_MAJOR,
           typename UTR        = std::ratio<1, 16>>
     requires(typelist::of_same_size<typename K::reg_types> && val_utr_v<UTR>)
@@ -3773,8 +3831,11 @@ class compact_compiler
 
             if constexpr(use_sd)
             {
-                std::uint64_t rem =
-                    facade::step(spec_block<0>{full_mask()}, 0ul);
+                std::uint64_t rem = facade::step(
+                    [](auto& mem, mask_t mask, std::uint64_t rem) noexcept
+                    { return spec_block<0>::eval(mem, mask, rem); },
+                    full_mask(),
+                    0ul);
 
                 while(not_done())
                 {
@@ -3785,7 +3846,15 @@ class compact_compiler
                     rem = typelist::visit_at(
                         pc,
                         [&, mask]<typename D>(std::uint64_t rem) noexcept
-                        { return facade::step(D{mask}, rem); },
+                        {
+                            return facade::step(
+                                [&](auto&         mem,
+                                    mask_t        mask,
+                                    std::uint64_t rem) noexcept
+                                { return D::eval(mem, mask, rem); },
+                                mask,
+                                rem);
+                        },
                         spec_blocks{},
                         copy_id,
                         rem);
@@ -4173,8 +4242,8 @@ using hybrid_stream = hybrid_compiler<K, ts, rcnv, UTRt, UTRh>::stream;
 
 /// @brief Alias for compact invocation.
 template <Kernel       K,
-          bool         ts     = true,
-          bool         use_sd = true,
+          bool         ts     = false,
+          bool         use_sd = false,
           ReconvMethod rcnv   = STATIC_MAJOR,
           typename UTR        = std::ratio<1, 16>>
 using compact_function = compact_compiler<K, ts, use_sd, rcnv, UTR>::type;
