@@ -39,7 +39,7 @@ encode_res(const Vec2u& res) noexcept
     return w << 16 | h;
 }
 
-static int FORCE_INLINE
+static inline int FORCE_INLINE
 masked_ray_count(const vm::simd::native_vector<std::uint32_t> vrc,
                  const std::size_t tail_size) noexcept
 {
@@ -65,7 +65,7 @@ masked_ray_count(const vm::simd::native_vector<std::uint32_t> vrc,
 #endif
 }
 
-using kernel = vm::pt<float>;
+using pt_float = vm::pt<float>;
 
 class OutputPixelConverter
 {
@@ -75,7 +75,7 @@ class OutputPixelConverter
     OutputPixelConverter(std::size_t& rc) noexcept : r_rc(rc) {}
 
     RGBA<>
-    operator()(const vm::output_type<kernel>& o) const noexcept
+    operator()(const vm::output_type<pt_float>& o) const noexcept
     {
         const auto [r, g, b, rc, _] = o;
         r_rc += rc;
@@ -96,7 +96,7 @@ class InputEncoder
     }
 
     template <typename Ip>
-    vm::input_type<kernel>
+    vm::input_type<pt_float>
     operator()(const Ip ip) const noexcept
     {
         return {encode_pp(ip.first), m_res, m_t, m_d};
@@ -128,7 +128,7 @@ struct RenderPixelBSE : RenderPixelBase
     std::pair<std::size_t, std::size_t>
     operator()(Pixel val) const noexcept
     {
-        vm::bse::function<kernel> f;
+        vm::bse::function<pt_float> f;
 
         auto [pos, pix] = val;
 
@@ -141,6 +141,11 @@ struct RenderPixelBSE : RenderPixelBase
     }
 };
 
+using vft = vm::simd::native_vector<float>;
+using vut = vm::simd::native_vector<std::uint32_t>;
+
+std::tuple<vft, vft, vft, vut, vut> simd_compact_pt(vut, vut, vft, vut);
+
 struct RenderPixelSIMDPredicated : RenderPixelBase
 {
     using RenderPixelBase::RenderPixelBase;
@@ -151,15 +156,14 @@ struct RenderPixelSIMDPredicated : RenderPixelBase
     std::pair<std::size_t, std::size_t>
     operator()(Chunk view) const noexcept
     {
-        vm::simd::compact_function<kernel> f;
+#ifndef __EXCEPTIONS
+        vm::simd::compact_function<pt_float, false, true> f;
+#endif
 
-        const vm::simd::native_vector<std::uint32_t> vres =
-            vm::simd::broadcast<N>(res);
-        const vm::simd::native_vector<float> vt =
-            vm::simd::broadcast<N>(threshold);
-        const vm::simd::native_vector<unsigned> vd =
-            vm::simd::broadcast<N>(max_depth);
-        vm::simd::native_vector<std::uint32_t> vpp;
+        const vut vres = vm::simd::broadcast<N>(res);
+        const vft vt   = vm::simd::broadcast<N>(threshold);
+        const vut vd   = vm::simd::broadcast<N>(max_depth);
+        vft       vpp;
 
         const std::size_t vs = std::ranges::size(view);
 
@@ -183,7 +187,11 @@ struct RenderPixelSIMDPredicated : RenderPixelBase
                 vpp[i] = encode_pp(view[i].first);
         }
 
+#ifndef __EXCEPTIONS
         const auto [vr, vg, vb, vrc, _] = f(vpp, vres, vt, vd);
+#else
+        const auto [vr, vg, vb, vrc, _] = simd_compact_pt(vpp, vres, vt, vd);
+#endif
 
         for(std::size_t i = 0; i < vs; ++i)
             view[i].second = RGBA{vr[i], vg[i], vb[i], 1};

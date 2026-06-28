@@ -46,7 +46,9 @@ class AlignedAllocator
     allocate(std::size_t n) const
     {
         void* p = std::aligned_alloc(alignment, align_size(sizeof(T) * n));
-        if(!p) throw std::bad_alloc();
+
+        if constexpr(allow_throws)
+            if(!p) throw std::bad_alloc();
 
         return static_cast<pointer>(p);
     }

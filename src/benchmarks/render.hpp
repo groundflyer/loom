@@ -81,7 +81,7 @@ struct RenderBSE
 template <typename K,
           typename C,
           bool                   ts,
-          bool                   sd,
+          bool                   tbd,
           vm::simd::ReconvMethod rcnv,
           typename UTR   = std::ratio<1, 16>,
           typename Clock = std::chrono::steady_clock>
@@ -92,12 +92,12 @@ struct RenderSIMDCompact
     std::string
     info() const noexcept
     {
-        if constexpr(sd)
-            return fmt::format("compact|ts:{}|sd:{}", ts, sd);
+        if constexpr(tbd)
+            return fmt::format("compact|ts:{}|tbd:{}", ts, tbd);
         else
-            return fmt::format("compact|ts:{}|sd:{}|{}|UTR:{:.0f}%",
+            return fmt::format("compact|ts:{}|tbd:{}|{}|UTR:{:.0f}%",
                                ts,
-                               sd,
+                               tbd,
                                rcnv_string<rcnv>(),
                                ratio2percent<UTR>());
     }
@@ -113,7 +113,7 @@ struct RenderSIMDCompact
             ranges::views::chunk(img, N),
             [](auto&& chunk) noexcept
             {
-                vm::simd::compact_function<K, ts, sd, rcnv, UTR> f;
+                vm::simd::compact_function<K, ts, tbd, rcnv, UTR> f;
 
                 vm::simd::native_vector<std::uint32_t> vpp;
 

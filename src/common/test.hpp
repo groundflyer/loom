@@ -876,15 +876,22 @@ struct RandomState
 
 template <unsigned def = 1000>
 unsigned
-parse_numruns(int argc, char* argv[]) noexcept
+parse_numruns(int argc, char* argv[])
 {
-    return argparse::parse(std::tuple{argparse::option<'n', "numruns">(
-                               "number of runs for parametric tests",
-                               "N",
-                               def,
-                               read_number<unsigned, true>)},
-                           {argc, argv})
-        .template get_opt<'n'>();
+    const auto ret =
+        argparse::parse(std::tuple{argparse::option<'n', "numruns">(
+                            "number of runs for parametric tests",
+                            "N",
+                            def,
+                            read_number<unsigned, allow_throws>)},
+                        {argc, argv})
+            .template get_opt<'n'>();
+
+#ifdef __EXCEPTIONS
+    return ret;
+#else
+    return ret.value();
+#endif
 }
 
 struct transparent_id

@@ -402,7 +402,7 @@ struct read_number_fn<T, throws>
     }
 };
 
-std::string_view
+static inline std::string_view
 rtrim(std::string_view s) noexcept
 {
     auto it = std::find_if(s.rbegin(),

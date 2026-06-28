@@ -39,4 +39,12 @@ struct forbidden_sink_fn
 
 /// @brief Always asserts if called.
 inline constexpr fn::forbidden_sink_fn forbidden_sink;
+
+#ifdef __EXCEPTIONS
+inline constexpr bool allow_throws = true;
+#define MUSTTAIL
+#else
+inline constexpr bool allow_throws = false;
+#define MUSTTAIL [[clang::musttail]]
+#endif
 } // namespace loom

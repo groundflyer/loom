@@ -174,12 +174,12 @@ struct ViewState
     }
 };
 
-template <typename Viewport>
+template <typename Window>
 static bool
-predicated_render(EventState&          estate,
-                  ViewState<Viewport>& vstate,
-                  const float          threshold,
-                  const unsigned       max_depth)
+predicated_render(EventState&        estate,
+                  ViewState<Window>& vstate,
+                  const float        threshold,
+                  const unsigned     max_depth)
 {
     // ProgressReporter pr{vstate.logger, vstate.img.size()};
 
@@ -214,12 +214,12 @@ predicated_render(EventState&          estate,
     }();
 }
 
-template <std::size_t ncores, typename Viewport>
+template <std::size_t ncores, typename Window>
 static bool
-predicated_mp(EventState&          estate,
-              ViewState<Viewport>& vstate,
-              const float          threshold,
-              const unsigned       max_depth)
+predicated_mp(EventState&        estate,
+              ViewState<Window>& vstate,
+              const float        threshold,
+              const unsigned     max_depth)
 {
     struct Shared
     {
@@ -286,7 +286,7 @@ full_range_render(Image& img, const float t)
     if(img.size() % simd::native_vector_extent_v<float> != 0)
         throw std::runtime_error("Image size is not aligned to SIMD lane size");
 
-    simd::hybrid_function<kernel,
+    simd::hybrid_function<pt_float,
                           true,
                           simd::STATIC_MAJOR,
                           std::ratio<1, 16>,
@@ -296,7 +296,7 @@ full_range_render(Image& img, const float t)
     const auto r = f.template operator()<true>(
         std::views::transform(img, InputEncoder(img.res(), t)));
 
-    std::vector<output_type<kernel>> result_buffer;
+    std::vector<output_type<pt_float>> result_buffer;
     result_buffer.reserve(img.size());
     std::ranges::copy(r, std::back_inserter(result_buffer));
     std::ranges::sort(
@@ -397,13 +397,13 @@ img_upd(Image& img, remote_output_control<T>& roc)
     return ret;
 }
 
-template <typename Viewport>
+template <typename Window>
 static bool
-hybrid_render(EventState&          estate,
-              ViewState<Viewport>& vstate,
-              const float          threshold,
-              const unsigned       max_depth,
-              const unsigned       stream_size)
+hybrid_render(EventState&        estate,
+              ViewState<Window>& vstate,
+              const float        threshold,
+              const unsigned     max_depth,
+              const unsigned     stream_size)
 {
     if(stream_size % simd::native_vector_extent_v<float> != 0)
         throw std::runtime_error(
@@ -412,15 +412,15 @@ hybrid_render(EventState&          estate,
     if(vstate.img.size() < stream_size)
         throw std::runtime_error("Image size is less than stream size");
 
-    simd::hybrid_stream<kernel,
+    simd::hybrid_stream<pt_float,
                         true,
                         simd::STATIC_MAJOR,
                         std::ratio<1, 16>,
                         std::ratio<1, 16>>
         s(stream_size);
 
-    std::vector<output_type<kernel>> result_buffer(stream_size);
-    remote_output_control            roc(result_buffer.data());
+    std::vector<output_type<pt_float>> result_buffer(stream_size);
+    remote_output_control              roc(result_buffer.data());
 
     // std::size_t ray_count{}; //, progress{};
 
@@ -487,15 +487,15 @@ using mp_context = mp::Context<K, mp_stream>;
 
 /// @param eg exchange granularity
 template <std::size_t ncores,
-          typename Viewport,
+          typename Window,
           typename D = std::chrono::milliseconds>
 static bool
-hybrid_mp(EventState&          estate,
-          ViewState<Viewport>& vstate,
-          const float          threshold,
-          const unsigned       max_depth,
-          const unsigned       stream_size,
-          const D              eg = D{2})
+hybrid_mp(EventState&        estate,
+          ViewState<Window>& vstate,
+          const float        threshold,
+          const unsigned     max_depth,
+          const unsigned     stream_size,
+          const D            eg = D{2})
 {
     if(stream_size % simd::native_vector_extent_v<float> != 0)
         throw std::runtime_error(
@@ -504,10 +504,10 @@ hybrid_mp(EventState&          estate,
     if(vstate.img.size() < stream_size)
         throw std::runtime_error("Image size is less than stream size");
 
-    mp::Shop<type_sequence<kernel>, mp_context, ncores> shop(stream_size);
+    mp::Shop<type_sequence<pt_float>, mp_context, ncores> shop(stream_size);
 
-    std::vector<output_type<kernel>> result_buffer(stream_size * ncores);
-    remote_output_control            roc(result_buffer.data());
+    std::vector<output_type<pt_float>> result_buffer(stream_size * ncores);
+    remote_output_control              roc(result_buffer.data());
 
     auto input_view = std::views::transform(
         vstate.img,

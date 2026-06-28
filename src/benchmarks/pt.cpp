@@ -47,6 +47,7 @@ main(int argc, char* argv[])
         PTCompact<true, false, simd::STATIC_MAJOR, std::ratio<1, 16>>{},
         PTCompact<false, false, simd::STATIC_MAJOR, std::ratio<1, 16>>{},
         PTCompact<false, true, simd::STATIC_MAJOR, std::ratio<1, 16>>{},
+        PTCompact<true, true, simd::STATIC_MAJOR, std::ratio<1, 16>>{},
         PTStream<false,
                  simd::HYBRID_MAJOR,
                  std::ratio<15, 16>,

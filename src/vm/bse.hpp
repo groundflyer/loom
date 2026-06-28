@@ -120,15 +120,6 @@ class MemoryFacade
     }
 };
 
-// FIXME: clang frontend rejects musttail attribute with
-// error: cannot compile this tail call skipping over cleanups yet
-// despite there are no cleanups in scope
-#if 0 // set to 1 when the error is gone
-#define MUSTTAIL [[clang::musttail]]
-#else
-#define MUSTTAIL
-#endif
-
 #define MK_CASE(IDX) \
     case IDX: MUSTTAIL return typelist::at<IDX, ccss>::eval(mem)
 
@@ -139,7 +130,8 @@ class MemoryFacade
 template <Kernel              K,
           typename K::index_t pc,
           template <typename> typename Compiler>
-class specialized_dispatch
+    requires(!allow_throws)
+class threaded_dispatch
 {
     using blocks  = K::blocks;
     using succs   = K::successors;
@@ -148,7 +140,7 @@ class specialized_dispatch
     static constexpr index_t halt_pos = K::halt_pos;
 
     template <index_t I>
-    using f = specialized_dispatch<K, I, Compiler>;
+    using f = threaded_dispatch<K, I, Compiler>;
 
     using spec = sd_helper<K,
                            typelist::at<pc, blocks>,
@@ -158,7 +150,7 @@ class specialized_dispatch
 
   public:
     template <typename _Memory>
-    static void FORCE_INLINE // inlining for now (musttail is rejected)
+    static void
     eval(_Memory& mem) noexcept
     {
         if constexpr(pc != halt_pos)
@@ -234,8 +226,8 @@ class specialized_dispatch
 #undef MK_CASE
 
 /// @brief Basic CFG evaluator.
-/// @tparam use_sd use specialized dispatch.
-template <Kernel K, bool use_sd = true>
+/// @tparam use_tbd use threaded block dispatch.
+template <Kernel K, bool use_tbd = true>
 class basic_scalar_compiler
 {
     using labelmap = K::labelmap;
@@ -271,10 +263,10 @@ class basic_scalar_compiler
         {
             facade::set_inputs(args...);
 
-            if constexpr(use_sd)
+            if constexpr(use_tbd)
                 facade::step(
                     [](auto& mem) noexcept
-                    { specialized_dispatch<K, 0, compile_block>::eval(mem); });
+                    { threaded_dispatch<K, 0, compile_block>::eval(mem); });
             else
                 while(facade::pc() != halt_pos)
                     typelist::visit_at(
@@ -294,7 +286,7 @@ class basic_scalar_compiler
 };
 
 /// @brief Basic CFG evaluator.
-/// @tparam use_sd use specialized dispatch.
-template <typename K, bool use_sd = true>
-using function = basic_scalar_compiler<K, use_sd>::function;
+/// @tparam use_tbd use threaded block dispatch.
+template <typename K, bool use_tbd = true>
+using function = basic_scalar_compiler<K, use_tbd>::function;
 } // namespace loom::vm::bse

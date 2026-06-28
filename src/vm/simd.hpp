@@ -61,7 +61,7 @@ struct info
 };
 
 /// @brief Print current x86-64 vector extension.
-void
+static inline void
 print_info() noexcept
 {
     fmt::print("Using x86-64 vector extensions: {}\n", info::value);
@@ -3539,12 +3539,13 @@ enum ReconvMethod
 #define MK_CASE(IDX) \
     case IDX: MUSTTAIL return typelist::at<IDX, ccss>::eval(mem, next_mask, rem)
 
-/// @brief Specialized dispatch implementation for SIMD predicated execution.
-/// @copydetails vm::bse::specialized_dispatch
+/// @brief threaded block dispatch implementation for SIMD predicated execution.
+/// @copydetails vm::bse::threaded_dispatch
 template <Kernel              K,
           typename K::index_t pc,
           template <typename> typename Compiler>
-class specialized_dispatch
+    requires(!allow_throws)
+class threaded_dispatch
 {
     using blocks  = K::blocks;
     using succs   = K::successors;
@@ -3553,7 +3554,7 @@ class specialized_dispatch
     static constexpr index_t halt_pos = K::halt_pos;
 
     template <index_t I>
-    using f = specialized_dispatch<K, I, Compiler>;
+    using f = threaded_dispatch<K, I, Compiler>;
 
     using spec = sd_helper<K,
                            typelist::at<pc, blocks>,
@@ -3722,14 +3723,14 @@ class specialized_dispatch
 /// @brief Compiler for compact SIMD execution.
 /// @tparam ts allocate special temporal storage for currently
 /// executed basic block
-/// @tparam use_sd use specialized dispatch
+/// @tparam use_tbd use threaded block dispatch
 /// @tparam rcnv reconvergence method to use
 /// @tparam UTR utilization threshold for HYBRID_MAJOR method
 template <Kernel       K,
           bool         ts,
-          bool         use_sd = false,
-          ReconvMethod rcnv   = STATIC_MAJOR,
-          typename UTR        = std::ratio<1, 16>>
+          bool         use_tbd = true,
+          ReconvMethod rcnv    = STATIC_MAJOR,
+          typename UTR         = std::ratio<1, 16>>
     requires(typelist::of_same_size<typename K::reg_types> && val_utr_v<UTR>)
 class compact_compiler
 {
@@ -3784,7 +3785,7 @@ class compact_compiler
             compact_masked_block_compiler<Block, labelmap, pc, N, ts>;
 
         template <index_t I>
-        using spec_block = specialized_dispatch<K, I, compile_block>;
+        using spec_block = threaded_dispatch<K, I, compile_block>;
 
         using compiled_blocks = typelist::map<compile_block, blocks>;
         using spec_blocks =
@@ -3829,7 +3830,7 @@ class compact_compiler
         {
             facade::set_inputs(args...);
 
-            if constexpr(use_sd)
+            if constexpr(use_tbd)
             {
                 std::uint64_t rem = facade::step(
                     [](auto& mem, mask_t mask, std::uint64_t rem) noexcept
@@ -4242,9 +4243,9 @@ using hybrid_stream = hybrid_compiler<K, ts, rcnv, UTRt, UTRh>::stream;
 
 /// @brief Alias for compact invocation.
 template <Kernel       K,
-          bool         ts     = false,
-          bool         use_sd = false,
-          ReconvMethod rcnv   = STATIC_MAJOR,
-          typename UTR        = std::ratio<1, 16>>
-using compact_function = compact_compiler<K, ts, use_sd, rcnv, UTR>::type;
+          bool         ts      = false,
+          bool         use_tbd = true,
+          ReconvMethod rcnv    = STATIC_MAJOR,
+          typename UTR         = std::ratio<1, 16>>
+using compact_function = compact_compiler<K, ts, use_tbd, rcnv, UTR>::type;
 } // namespace loom::vm::simd
