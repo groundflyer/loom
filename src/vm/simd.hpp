@@ -3281,7 +3281,7 @@ struct get_threshold :
 template <fsize_t N, typename UTR>
 constexpr inline fsize_t get_threshold_v = get_threshold<N, UTR>::value;
 
-/// @brief Validate utilization threshod.
+/// @brief Validate utilization threshold.
 template <typename UTR>
 struct val_utr :
     std::bool_constant<(UTR::num > 0 && UTR::den > 0 && UTR::num <= UTR::den)>
@@ -3536,11 +3536,16 @@ enum ReconvMethod
                      falling  back to reminders set */
 };
 
-#define MK_CASE(IDX) \
-    case IDX: MUSTTAIL return typelist::at<IDX, ccss>::eval(mem, next_mask, rem)
+#define MK_CASE(IDX)                                             \
+    case IDX:                                                    \
+        MUSTTAIL return typelist::at<IDX, ccss>::eval(mem,       \
+                                                      next_mask, \
+                                                      rem,       \
+                                                      threshold)
 
 /// @brief threaded block dispatch implementation for SIMD predicated execution.
 /// @copydetails vm::bse::threaded_dispatch
+/// @tparam UTR utilization threshold ratio
 template <Kernel              K,
           typename K::index_t pc,
           template <typename> typename Compiler>
@@ -3575,7 +3580,10 @@ class threaded_dispatch
   public:
     template <typename _Memory>
     static std::uint64_t
-    eval(_Memory& mem, mask_t mask, std::uint64_t rem) noexcept
+    eval(_Memory&      mem,
+         mask_t        mask,
+         std::uint64_t rem,
+         const fsize_t threshold = 0) noexcept
     {
         if constexpr(pc != halt_pos)
         {
@@ -3601,8 +3609,11 @@ class threaded_dispatch
                     const mask_t   next_mask = get_mask(next_pc);
                     const unsigned next_pops = popcnt(next_mask);
 
-                    if(next_pops) MUSTTAIL
-                    return typelist::head<ccss>::eval(mem, next_mask, rem);
+                    if(next_pops > threshold) MUSTTAIL
+                    return typelist::head<ccss>::eval(mem,
+                                                      next_mask,
+                                                      rem,
+                                                      threshold);
                 }
             }
             else if constexpr(spec::l >= 2)
@@ -3631,15 +3642,19 @@ class threaded_dispatch
                     }
                 }
 
-                if(next_pops)
+                if(next_pops > threshold)
                 {
                     if constexpr(spec::l == 2)
                     {
                         if(next_branch) MUSTTAIL
-                        return snd_t<ccss>::eval(mem, next_mask, rem);
+                        return snd_t<ccss>::eval(mem,
+                                                 next_mask,
+                                                 rem,
+                                                 threshold);
                         else MUSTTAIL return fst_t<ccss>::eval(mem,
                                                                next_mask,
-                                                               rem);
+                                                               rem,
+                                                               threshold);
                     }
                     else if constexpr(spec::l == 3)
                         switch(next_branch)
@@ -3989,12 +4004,19 @@ class compact_compiler
         std::conditional_t<singular, single_block_evaluator, evaluator>;
 };
 
-/// @brief Hybrid masked compiler.
+/// @brief Hybrid compiler.
+/// @tparam K kernel
+/// @tparam ts enable temporal storage
+/// @tparam use_tbd use threaded block dispatch
+/// @tparam rcnv reconvergence method
+/// @tparam UTRt main utilization threshold ratio
+/// @tparam UTRh utilization threshold ratio for hybrid and static reconvergence
 template <Kernel       K,
-          bool         ts   = false,
-          ReconvMethod rcnv = STATIC_MAJOR,
-          typename UTRt     = std::ratio<1, 2>,
-          typename UTRh     = UTRt>
+          bool         ts      = false,
+          bool         use_tbd = true,
+          ReconvMethod rcnv    = STATIC_MAJOR,
+          typename UTRt        = std::ratio<1, 16>,
+          typename UTRh        = UTRt>
     requires(!K::singular && typelist::of_same_size<typename K::reg_types> &&
              val_utr_v<UTRt> && val_utr_v<UTRh>)
 class hybrid_compiler
@@ -4072,6 +4094,9 @@ class hybrid_compiler
         using compile_block =
             compact_masked_block_compiler<Block, labelmap, pc, N, ts>;
 
+        template <index_t I>
+        using spec_block = threaded_dispatch<K, I, compile_block>;
+
         using compiled_blocks = typelist::map<compile_block, blocks>;
 
         void
@@ -4100,7 +4125,41 @@ class hybrid_compiler
                             sink);
                     };
 
-                    if constexpr(rcnv == HYBRID_MAJOR)
+                    if constexpr(use_tbd)
+                    {
+                        using spec_blocks = intlist::map_t<
+                            spec_block,
+                            intlist::range<static_cast<index_t>(0),
+                                           static_cast<index_t>(
+                                               K::num_blocks)>>;
+
+                        std::uint64_t rem{};
+
+                        while(pops > t)
+                        {
+                            rem = typelist::visit_at(
+                                pc,
+                                [&, mask, t]<typename D>(
+                                    std::uint64_t rem) noexcept
+                                { return D::eval(storage, mask, rem, t); },
+                                spec_blocks{},
+                                copy_id,
+                                rem);
+
+                            pcs = storage.pc();
+
+                            if(rem)
+                                std::tie(pc, mask, pops) =
+                                    major_group<K, N>(pcs,
+                                                      simple_set<index_t>(rem));
+
+                            if(!pops)
+                                std::tie(pc, mask, pops) = major_group<K, N>(
+                                    pcs,
+                                    greedy_groups<K, N, true>{pcs});
+                        }
+                    }
+                    else if constexpr(rcnv == HYBRID_MAJOR)
                     {
                         while(pops > t)
                         {
@@ -4215,19 +4274,22 @@ using stream = compiler<K, stitch, sort_method, concurrent, UTR>::stream;
 
 /// @brief Alias for hybrid function-like invocation.
 template <Kernel       K,
-          bool         ts   = false,
-          ReconvMethod rcnv = STATIC_MAJOR,
-          typename UTRt     = std::ratio<1, 2>,
-          typename UTRh     = std::ratio<1, 8>>
-using hybrid_function = hybrid_compiler<K, ts, rcnv, UTRt, UTRh>::function;
+          bool         ts      = false,
+          bool         use_tbd = true,
+          ReconvMethod rcnv    = STATIC_MAJOR,
+          typename UTRt        = std::ratio<1, 8>,
+          typename UTRh        = std::ratio<1, 8>>
+using hybrid_function =
+    hybrid_compiler<K, ts, use_tbd, rcnv, UTRt, UTRh>::function;
 
 /// @brief Alias for hybrid streaming invocation.
 template <Kernel       K,
-          bool         ts   = false,
-          ReconvMethod rcnv = STATIC_MAJOR,
-          typename UTRt     = std::ratio<1, 2>,
-          typename UTRh     = std::ratio<1, 8>>
-using hybrid_stream = hybrid_compiler<K, ts, rcnv, UTRt, UTRh>::stream;
+          bool         ts      = false,
+          bool         use_tbd = true,
+          ReconvMethod rcnv    = STATIC_MAJOR,
+          typename UTRt        = std::ratio<1, 8>,
+          typename UTRh        = std::ratio<1, 8>>
+using hybrid_stream = hybrid_compiler<K, ts, use_tbd, rcnv, UTRt, UTRh>::stream;
 
 /// @brief Alias for compact invocation.
 template <Kernel       K,
