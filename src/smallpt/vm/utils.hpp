@@ -163,7 +163,7 @@ struct RenderPixelSIMDPredicated : RenderPixelBase
         const vut vres = vm::simd::broadcast<N>(res);
         const vft vt   = vm::simd::broadcast<N>(threshold);
         const vut vd   = vm::simd::broadcast<N>(max_depth);
-        vft       vpp;
+        vut       vpp;
 
         const std::size_t vs = std::ranges::size(view);
 
@@ -173,10 +173,7 @@ struct RenderPixelSIMDPredicated : RenderPixelBase
         if(is_tail)
         {
             for(std::size_t i = 0; i < vs; ++i)
-            {
-                const auto [pos, _] = view[i];
-                vpp[i]              = encode_pp(pos);
-            }
+                vpp[i] = encode_pp(view[i].first);
 
             // guarantee tail elems to complete with the first element
             for(std::size_t i = tail_size; i < N; ++i) vpp[i] = vpp[0];
