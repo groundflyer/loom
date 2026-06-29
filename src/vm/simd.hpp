@@ -3700,16 +3700,6 @@ class threaded_dispatch
                         }
                     else
                         static_assert(false, "Add more cases");
-                    // return typelist::visit_at(
-                    //     next_branch,
-                    //     [next_mask]<typename D>(_Memory&      mem,
-                    //                             std::uint64_t rem) noexcept
-                    //     { return D::eval(mem, next_mask, rem); },
-                    //     ccss{},
-                    //     [](_Memory&, std::uint64_t rem) noexcept
-                    //     { return rem; },
-                    //     mem,
-                    //     rem);
                 }
             }
         }
@@ -3788,10 +3778,6 @@ class compact_compiler
         using spec_block = threaded_dispatch<K, I, compile_block>;
 
         using compiled_blocks = typelist::map<compile_block, blocks>;
-        using spec_blocks =
-            intlist::map_t<spec_block,
-                           intlist::range<static_cast<index_t>(0),
-                                          static_cast<index_t>(K::num_blocks)>>;
 
         using cmp    = cmp_intrinsics_wrangler<index_t, N>;
         using lrh    = logical_reduce_helper<index_t, N>;
@@ -3832,6 +3818,11 @@ class compact_compiler
 
             if constexpr(use_tbd)
             {
+                using spec_blocks = intlist::map_t<
+                    spec_block,
+                    intlist::range<static_cast<index_t>(0),
+                                   static_cast<index_t>(K::num_blocks)>>;
+
                 std::uint64_t rem = facade::step(
                     [](auto& mem, mask_t mask, std::uint64_t rem) noexcept
                     { return spec_block<0>::eval(mem, mask, rem); },
@@ -3861,134 +3852,131 @@ class compact_compiler
                         rem);
                 }
             }
-            else
+            else if constexpr(rcnv == GREEDY_FAIR)
             {
-                if constexpr(rcnv == GREEDY_FAIR)
+                while(not_done())
+                    for(const index_t pc:
+                        greedy_groups<K, N, true>{facade::pc()})
+                        exec(pc, make_mask<N>(pc, facade::pc()));
+            }
+            else if constexpr(rcnv == HYBRID_MAJOR)
+            {
+                index_t  pc                   = 0;
+                mask_t   mask                 = full_mask();
+                unsigned pops                 = N;
+                bool     use_successor_groups = true;
+
+                while(not_done())
                 {
-                    while(not_done())
-                        for(const index_t pc:
-                            greedy_groups<K, N, true>{facade::pc()})
-                            exec(pc, make_mask<N>(pc, facade::pc()));
-                }
-                else if constexpr(rcnv == HYBRID_MAJOR)
-                {
-                    index_t  pc                   = 0;
-                    mask_t   mask                 = full_mask();
-                    unsigned pops                 = N;
-                    bool     use_successor_groups = true;
+                    exec(pc, mask);
 
-                    while(not_done())
-                    {
-                        exec(pc, mask);
-
-                        if(use_successor_groups)
-                            std::tie(pc, mask, pops) =
-                                major_group<K, N>(facade::pc(),
-                                                  successor_groups<K>{pc});
-                        else
-                            std::tie(pc, mask, pops) = major_group<K, N>(
-                                facade::pc(),
-                                greedy_groups<K, N, true>{facade::pc()});
-
-                        use_successor_groups = pops >= threshold;
-                    }
-                }
-                else if constexpr(rcnv == GREEDY_MAJOR)
-                {
-                    index_t  pc   = 0;
-                    mask_t   mask = full_mask();
-                    unsigned pops = N;
-
-                    while(not_done())
-                    {
-                        exec(pc, mask);
-
+                    if(use_successor_groups)
+                        std::tie(pc, mask, pops) =
+                            major_group<K, N>(facade::pc(),
+                                              successor_groups<K>{pc});
+                    else
                         std::tie(pc, mask, pops) = major_group<K, N>(
                             facade::pc(),
                             greedy_groups<K, N, true>{facade::pc()});
-                    }
+
+                    use_successor_groups = pops >= threshold;
                 }
-                else if constexpr(rcnv == HYBRID_FAIR)
+            }
+            else if constexpr(rcnv == GREEDY_MAJOR)
+            {
+                index_t  pc   = 0;
+                mask_t   mask = full_mask();
+                unsigned pops = N;
+
+                while(not_done())
                 {
-                    index_t                   pc       = 0;
-                    mask_t                    mask     = full_mask();
-                    unsigned                  pops     = N;
-                    bool                      do_major = true;
-                    greedy_groups<K, N, true> g;
+                    exec(pc, mask);
 
-                    while(not_done())
+                    std::tie(pc, mask, pops) = major_group<K, N>(
+                        facade::pc(),
+                        greedy_groups<K, N, true>{facade::pc()});
+                }
+            }
+            else if constexpr(rcnv == HYBRID_FAIR)
+            {
+                index_t                   pc       = 0;
+                mask_t                    mask     = full_mask();
+                unsigned                  pops     = N;
+                bool                      do_major = true;
+                greedy_groups<K, N, true> g;
+
+                while(not_done())
+                {
+                    if(do_major)
+                        exec(pc, mask);
+                    else
+                        for(const index_t gpc: g)
+                            exec(gpc, make_mask<N>(gpc, facade::pc()));
+
+                    g = greedy_groups<K, N, true>{facade::pc()};
+                    std::tie(pc, mask, pops) =
+                        major_group<K, N>(facade::pc(), g);
+                    do_major = pops >= threshold;
+                }
+            }
+            else if constexpr(rcnv == STATIC_FIRST)
+            {
+                index_t       pc                   = 0;
+                mask_t        mask                 = full_mask();
+                unsigned      pops                 = N;
+                std::uint64_t rem                  = 0;
+                bool          use_successor_groups = true;
+
+                while(not_done())
+                {
+                    exec(pc, mask);
+
+                    std::uint64_t nrem;
+                    if(use_successor_groups)
+                        std::tie(pc, mask, pops, nrem) =
+                            first_group<K, N>(facade::pc(),
+                                              successor_groups<K>{pc});
+                    else
+                        std::tie(pc, mask, pops, nrem) =
+                            first_group<K, N>(facade::pc(),
+                                              simple_set<index_t>{rem});
+
+                    rem &= ~(1ul << pc); // unset executed block
+                    rem |= nrem;         // add remainders
+
+                    use_successor_groups = pops > 0;
+                }
+            }
+            else if constexpr(rcnv == STATIC_MAJOR)
+            {
+                index_t       pc                   = 0;
+                mask_t        mask                 = full_mask();
+                unsigned      pops                 = N;
+                std::uint64_t rem                  = 0;
+                bool          use_successor_groups = true;
+
+                while(not_done())
+                {
+                    exec(pc, mask);
+
+                    if(use_successor_groups)
                     {
-                        if(do_major)
-                            exec(pc, mask);
-                        else
-                            for(const index_t gpc: g)
-                                exec(gpc, make_mask<N>(gpc, facade::pc()));
-
-                        g = greedy_groups<K, N, true>{facade::pc()};
+                        auto ngs = successor_groups<K>{pc};
+                        rem |= ngs.data();
                         std::tie(pc, mask, pops) =
-                            major_group<K, N>(facade::pc(), g);
-                        do_major = pops >= threshold;
+                            major_group<K, N>(facade::pc(), ngs);
                     }
-                }
-                else if constexpr(rcnv == STATIC_FIRST)
-                {
-                    index_t       pc                   = 0;
-                    mask_t        mask                 = full_mask();
-                    unsigned      pops                 = N;
-                    std::uint64_t rem                  = 0;
-                    bool          use_successor_groups = true;
-
-                    while(not_done())
+                    else
                     {
-                        exec(pc, mask);
-
-                        std::uint64_t nrem;
-                        if(use_successor_groups)
-                            std::tie(pc, mask, pops, nrem) =
-                                first_group<K, N>(facade::pc(),
-                                                  successor_groups<K>{pc});
-                        else
-                            std::tie(pc, mask, pops, nrem) =
-                                first_group<K, N>(facade::pc(),
-                                                  simple_set<index_t>{rem});
-
-                        rem &= ~(1ul << pc); // unset executed block
-                        rem |= nrem;         // add remainders
-
-                        use_successor_groups = pops > 0;
+                        auto sgs = simple_set<index_t>{rem};
+                        rem |= sgs.data();
+                        std::tie(pc, mask, pops) =
+                            major_group<K, N>(facade::pc(), sgs);
                     }
-                }
-                else if constexpr(rcnv == STATIC_MAJOR)
-                {
-                    index_t       pc                   = 0;
-                    mask_t        mask                 = full_mask();
-                    unsigned      pops                 = N;
-                    std::uint64_t rem                  = 0;
-                    bool          use_successor_groups = true;
 
-                    while(not_done())
-                    {
-                        exec(pc, mask);
+                    rem &= ~(1ul << pc); // unset executed block
 
-                        if(use_successor_groups)
-                        {
-                            auto ngs = successor_groups<K>{pc};
-                            rem |= ngs.data();
-                            std::tie(pc, mask, pops) =
-                                major_group<K, N>(facade::pc(), ngs);
-                        }
-                        else
-                        {
-                            auto sgs = simple_set<index_t>{rem};
-                            rem |= sgs.data();
-                            std::tie(pc, mask, pops) =
-                                major_group<K, N>(facade::pc(), sgs);
-                        }
-
-                        rem &= ~(1ul << pc); // unset executed block
-
-                        use_successor_groups = pops > 0;
-                    }
+                    use_successor_groups = pops > 0;
                 }
             }
 
