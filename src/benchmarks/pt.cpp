@@ -21,11 +21,19 @@ template <bool               ts,
           typename UTR = std::ratio<1, 16>>
 using PTCompact = RenderSIMDCompact<kernel, C1, ts, sd, rcnv, UTR>;
 
-template <bool ts, simd::ReconvMethod rcnv, typename UTRt, typename UTRh>
-using PTFunction = RenderSIMDFunction<kernel, C1, ts, rcnv, UTRt, UTRh>;
+template <bool               ts,
+          bool               tbd,
+          simd::ReconvMethod rcnv,
+          typename UTRt,
+          typename UTRh>
+using PTFunction = RenderSIMDFunction<kernel, C1, ts, tbd, rcnv, UTRt, UTRh>;
 
-template <bool ts, simd::ReconvMethod rcnv, typename UTRt, typename UTRh>
-using PTStream = RenderSIMDStream<kernel, C1, ts, rcnv, UTRt, UTRh>;
+template <bool               ts,
+          bool               tbd,
+          simd::ReconvMethod rcnv,
+          typename UTRt,
+          typename UTRh>
+using PTStream = RenderSIMDStream<kernel, C1, ts, tbd, rcnv, UTRt, UTRh>;
 
 template <typename R>
 using mk_size =
@@ -35,8 +43,11 @@ using mk_size =
 
 constexpr unsigned stream_size25 = mk_size<std::ratio<2, 5>>::value;
 
-using FavStream =
-    PTStream<false, simd::STATIC_MAJOR, std::ratio<1, 16>, std::ratio<1, 16>>;
+using FavStream = PTStream<false,
+                           true,
+                           simd::STATIC_MAJOR,
+                           std::ratio<1, 16>,
+                           std::ratio<1, 16>>;
 
 int
 main(int argc, char* argv[])
@@ -49,32 +60,47 @@ main(int argc, char* argv[])
         PTCompact<false, true, simd::STATIC_MAJOR, std::ratio<1, 16>>{},
         PTCompact<true, true, simd::STATIC_MAJOR, std::ratio<1, 16>>{},
         PTStream<false,
+                 false,
                  simd::HYBRID_MAJOR,
                  std::ratio<15, 16>,
                  std::ratio<1, 16>>{stream_size25},
         PTStream<false,
+                 false,
                  simd::STATIC_MAJOR,
                  std::ratio<15, 16>,
                  std::ratio<1, 16>>{stream_size25},
         PTStream<false,
+                 false,
                  simd::HYBRID_MAJOR,
                  std::ratio<1, 2>,
                  std::ratio<1, 16>>{stream_size25},
         PTStream<false,
+                 false,
                  simd::STATIC_MAJOR,
                  std::ratio<1, 16>,
                  std::ratio<1, 16>>{stream_size25},
         PTFunction<false,
+                   true,
                    simd::STATIC_MAJOR,
                    std::ratio<1, 16>,
                    std::ratio<1, 16>>{},
         PTFunction<false,
+                   false,
+                   simd::STATIC_MAJOR,
+                   std::ratio<1, 16>,
+                   std::ratio<1, 16>>{},
+        PTFunction<false,
+                   false,
                    simd::HYBRID_MAJOR,
                    std::ratio<1, 16>,
                    std::ratio<1, 16>>{},
-        PTStream<true, simd::STATIC_MAJOR, std::ratio<1, 2>, std::ratio<1, 16>>{
-            stream_size25},
         PTStream<true,
+                 false,
+                 simd::STATIC_MAJOR,
+                 std::ratio<1, 16>,
+                 std::ratio<1, 16>>{stream_size25},
+        PTStream<true,
+                 true,
                  simd::STATIC_MAJOR,
                  std::ratio<1, 16>,
                  std::ratio<1, 16>>{stream_size25},

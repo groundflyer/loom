@@ -153,6 +153,7 @@ struct RenderSIMDCompact
 template <typename K,
           typename C,
           bool                   ts,
+          bool                   tbd,
           vm::simd::ReconvMethod rcnv,
           typename UTRt,
           typename UTRh,
@@ -163,17 +164,25 @@ struct RenderSIMDFunction
     static auto
     get_func(const unsigned size) noexcept
     {
-        return vm::simd::hybrid_function<K, ts, rcnv, UTRt, UTRh>(size);
+        return vm::simd::hybrid_function<K, ts, tbd, rcnv, UTRt, UTRh>(size);
     }
 
     std::string
     info() const noexcept
     {
-        return fmt::format("full-range|ts:{}|{}|UTRt:{:.0f}%|UTRh:{:.0f}%",
-                           ts,
-                           rcnv_string<rcnv>(),
-                           ratio2percent<UTRt>(),
-                           ratio2percent<UTRh>());
+        if constexpr(tbd)
+            return fmt::format("full-range|ts:{}|tbd:{}|UTRt:{:.0f}%",
+                               ts,
+                               tbd,
+                               ratio2percent<UTRt>());
+        else
+            return fmt::format(
+                "full-range|ts:{}|tbd:{}|{}|UTRt:{:.0f}%|UTRh:{:.0f}%",
+                ts,
+                tbd,
+                rcnv_string<rcnv>(),
+                ratio2percent<UTRt>(),
+                ratio2percent<UTRh>());
     }
 
     Clock::duration
@@ -212,6 +221,7 @@ struct RenderSIMDFunction
 template <typename K,
           typename C,
           bool                   ts,
+          bool                   tbd,
           vm::simd::ReconvMethod rcnv,
           typename UTRt,
           typename UTRh,
@@ -224,18 +234,28 @@ struct RenderSIMDStream
     auto
     get_stream() const noexcept
     {
-        return vm::simd::hybrid_stream<K, ts, rcnv, UTRt, UTRh>(stream_size);
+        return vm::simd::hybrid_stream<K, ts, tbd, rcnv, UTRt, UTRh>(
+            stream_size);
     }
 
     std::string
     info() const noexcept
     {
-        return fmt::format("stream|ts:{}|{}|size:{}|UTRt:{:.0f}%|UTRh:{:.0f}%",
-                           ts,
-                           rcnv_string<rcnv>(),
-                           stream_size,
-                           ratio2percent<UTRt>(),
-                           ratio2percent<UTRh>());
+        if constexpr(tbd)
+            return fmt::format("stream|ts:{}|tbd:{}|size:{}|UTRt:{:.0f}%",
+                               ts,
+                               tbd,
+                               stream_size,
+                               ratio2percent<UTRt>());
+        else
+            return fmt::format(
+                "stream|ts:{}|tbd:{}|{}|size:{}|UTRt:{:.0f}%|UTRh:{:.0f}%",
+                ts,
+                tbd,
+                rcnv_string<rcnv>(),
+                stream_size,
+                ratio2percent<UTRt>(),
+                ratio2percent<UTRh>());
     }
 
     Clock::duration
