@@ -2506,7 +2506,10 @@ class greedy_groups :
         for(fsize_t i = 0; i < N; ++i)
             if constexpr(ignore_halt)
             {
-                if(pcs[i] != halt_pos) m_set |= 1ul << pcs[i];
+                const index_t       pc    = pcs[i];
+                const std::uint64_t val   = pc != halt_pos;
+                const std::uint64_t shift = pc * val;
+                m_set |= val << shift;
             }
             else
                 m_set |= 1ul << fit_in_bins(pcs[i], num_blocks);
@@ -4102,13 +4105,15 @@ class hybrid_compiler
         void
         operator()(memory_view view) const noexcept
         {
+            const fsize_t s = view.size();
+
             std::ranges::for_each(
                 aligned_chunks<memory, N, K::halt_pos>(view),
-                [t = gthreshold * (view.size() > sthreshold)]<typename View>(
-                    View view) noexcept
-                    requires(pv_extent<View> == N)
+                [t = gthreshold * (s > sthreshold) *
+                     (s > N)]<typename Chunk>(Chunk chunk) noexcept
+                    requires(pv_extent<Chunk> == N)
                 {
-                    LocalStorage   storage(view);
+                    LocalStorage   storage(chunk);
                     index_vector_t pcs                  = storage.pc();
                     bool           use_successor_groups = true;
 
@@ -4146,7 +4151,9 @@ class hybrid_compiler
                                 copy_id,
                                 rem);
 
-                            pcs = storage.pc();
+                            pcs  = storage.pc();
+                            pops = 0;
+                            mask = mask_t{};
 
                             if(rem)
                                 std::tie(pc, mask, pops) =
@@ -4296,6 +4303,6 @@ template <Kernel       K,
           bool         ts      = false,
           bool         use_tbd = true,
           ReconvMethod rcnv    = STATIC_MAJOR,
-          typename UTR         = std::ratio<1, 16>>
+          typename UTR         = std::ratio<1, 8>>
 using compact_function = compact_compiler<K, ts, use_tbd, rcnv, UTR>::type;
 } // namespace loom::vm::simd
