@@ -11,11 +11,7 @@
 
 #include <stb_easy_font.h>
 
-#include <concepts>
-#include <stdexcept>
-#include <type_traits>
 #include <utility>
-#include <vector>
 
 namespace loom::gl
 {
@@ -25,61 +21,21 @@ struct GLException
     GLenum c;
 
     const char*
-    what() const noexcept
-    {
-        switch(c)
-        {
-        case(GL_NO_ERROR): return "no error";
-        case(GL_INVALID_ENUM): return "invalid enum";
-        case(GL_INVALID_VALUE): return "invalid value";
-        case(GL_INVALID_OPERATION): return "invalid operation";
-        case(GL_INVALID_FRAMEBUFFER_OPERATION):
-            return "invalid framebuffer operation";
-        case(GL_OUT_OF_MEMORY): return "out of memory";
-        case(GL_STACK_UNDERFLOW): return "stack underflow";
-        case(GL_STACK_OVERFLOW): return "stack overflow";
-        }
-        return "";
-    }
+    what() const noexcept;
 };
 
-/// @brief Check for OpenGL errors.
-/// @throw GLException if got an error.
-static void
-gl_check_errors()
-{
-    const GLenum glerror = glGetError();
-    if(glerror) { throw GLException{glerror}; }
-}
-
-#define CHECK_STATUS(CALL, ID, PNAME)                   \
-    int status;                                         \
-    CALL(ID, PNAME, &status);                           \
-    if(!status)                                         \
-    {                                                   \
-        char info_log[512];                             \
-        glGetShaderInfoLog(ID, 512, nullptr, info_log); \
-        glfwTerminate();                                \
-        throw std::runtime_error(info_log);             \
-    }
+void
+gl_check_errors();
 
 /// @brief Check shader compilation status.
 /// @throw std::runtime_error if compilation fails.
-static void
-check_shader_status(GLuint shader, GLenum pname = GL_COMPILE_STATUS)
-{
-    CHECK_STATUS(glGetShaderiv, shader, pname)
-}
+void
+check_shader_status(GLuint shader, GLenum pname = GL_COMPILE_STATUS);
 
 /// @brief Check program compilation status.
 /// @throw std::runtime_error if linkage fails.
-static void
-check_program_status(GLuint program, GLenum pname = GL_LINK_STATUS)
-{
-    CHECK_STATUS(glGetProgramiv, program, pname)
-}
-
-#undef CHECK_STATUS
+void
+check_program_status(GLuint program, GLenum pname = GL_LINK_STATUS);
 
 /// @brief Shader wrapper.
 class Shader
@@ -89,13 +45,7 @@ class Shader
   public:
     FORBID_DEFAULT(Shader);
 
-    Shader(const GLchar* src, GLenum shader_type) :
-        m_id(glCreateShader(shader_type))
-    {
-        glShaderSource(m_id, 1, &src, nullptr);
-        glCompileShader(m_id);
-        check_shader_status(m_id, GL_COMPILE_STATUS);
-    }
+    Shader(const GLchar* src, GLenum shader_type);
 
     GLuint
     id() const noexcept
@@ -103,7 +53,7 @@ class Shader
         return m_id;
     }
 
-    ~Shader() { glDeleteShader(m_id); }
+    ~Shader();
 };
 
 /// @brief Shader program wrapper.
@@ -114,13 +64,7 @@ class Program
   public:
     FORBID_DEFAULT(Program);
 
-    template <std::same_as<Shader>... Shaders>
-    Program(Shaders&&... shaders) : m_id(glCreateProgram())
-    {
-        (..., glAttachShader(m_id, shaders.id()));
-        glLinkProgram(m_id);
-        check_program_status(m_id, GL_LINK_STATUS);
-    }
+    Program(Shader a, Shader b);
 
     GLuint
     id() const noexcept
@@ -129,12 +73,9 @@ class Program
     }
 
     void
-    use() const noexcept
-    {
-        glUseProgram(m_id);
-    }
+    use() const noexcept;
 
-    ~Program() { glDeleteProgram(m_id); }
+    ~Program();
 };
 
 /// @brief Responsible for GLFW initialization and termination.
@@ -146,18 +87,12 @@ class System
         FORBID_MOVE(Handle);
 
         const char*
-        get_string(GLenum name) const noexcept
-        {
-            return reinterpret_cast<const char*>(glGetString(name));
-        }
+        get_string(GLenum name) const noexcept;
 
         void
-        poll() const noexcept
-        {
-            glfwPollEvents();
-        }
+        poll() const noexcept;
 
-        ~Handle() { glfwTerminate(); }
+        ~Handle();
 
       private:
         Handle() noexcept {}
@@ -166,10 +101,7 @@ class System
     };
 
     static void
-    error_callback(int /* error */, const char* desc)
-    {
-        throw std::runtime_error(desc);
-    }
+    error_callback(int /* error */, const char* desc);
 
     static inline bool   initialized = false;
     static inline Handle handle;
@@ -180,194 +112,39 @@ class System
     using Handle = Handle;
 
     [[nodiscard]] static const Handle&
-    init()
-    {
-        glfwSetErrorCallback(error_callback);
-
-        if(!initialized)
-        {
-            initialized = glfwInit();
-            if(!initialized)
-                throw std::runtime_error("Failed to initialize GLFW");
-        }
-
-        return handle;
-    }
+    init();
 };
+
+void
+post_size(int width, int height) noexcept;
 
 /// @brief GLFW and OpenGL window initialization.
-template <typename ResizeReaction, typename KeyReaction>
-class Window
+struct Window
 {
-    static inline GLFWwindow* window = nullptr;
+    GLFWwindow* window = nullptr;
 
-    static inline ResizeReaction resize_reaction;
-    static inline KeyReaction    key_reaction;
+    FORBID_COPY(Window);
 
-    static inline int resx;
-    static inline int resy;
+    Window(int                    _resx,
+           int                    _resy,
+           GLFWframebuffersizefun resize_callback,
+           GLFWkeyfun             key_callback,
+           const char*            title = "Loom");
 
-    static void
-    resize_callback(GLFWwindow* window, int width, int height) noexcept
-    {
-        resx = width;
-        resy = height;
-        glViewport(0, 0, width, height);
-        resize_reaction(window, width, height);
-    }
+    std::pair<int, int>
+    get_res() noexcept;
 
-    static void
-    key_callback(GLFWwindow* window,
-                 int         key,
-                 int /*scancode*/,
-                 int action,
-                 int mods) noexcept
-    {
-        key_reaction(window, key, action, mods);
-    }
+    bool
+    active() noexcept;
 
-    static void
-    init(int            _resx,
-         int            _resy,
-         ResizeReaction _resize_reaction,
-         KeyReaction    _key_reaction,
-         const char*    title = "Loom")
-    {
-        resx = _resx;
-        resy = _resy;
+    void
+    close() noexcept;
 
-        window = glfwCreateWindow(resx, resy, title, nullptr, nullptr);
+    void
+    swap_buffers() noexcept;
 
-        if(!window)
-        {
-            glfwTerminate();
-            throw std::runtime_error("Failed to create window");
-        }
-
-        resize_reaction = _resize_reaction;
-        key_reaction    = _key_reaction;
-
-        glfwMakeContextCurrent(window);
-        glfwSetFramebufferSizeCallback(window, resize_callback);
-        glfwSetKeyCallback(window, key_callback);
-
-        glfwSetWindowSizeLimits(window,
-                                640,
-                                480,
-                                GLFW_DONT_CARE,
-                                GLFW_DONT_CARE);
-        gl_check_errors();
-
-        glfwGetFramebufferSize(window, &resx, &resy);
-        glViewport(0, 0, resx, resy);
-    }
-
-    static std::pair<int, int>
-    get_res() noexcept
-    {
-        return {resx, resy};
-    }
-
-    static bool
-    active() noexcept
-    {
-        return !glfwWindowShouldClose(window);
-    }
-
-    static void
-    close() noexcept
-    {
-        glfwSetWindowShouldClose(window, true);
-    }
-
-    static void
-    cleanup() noexcept
-    {
-        if(window) glfwDestroyWindow(window);
-    }
-
-    static void
-    swap_buffers() noexcept
-    {
-        glfwSwapBuffers(window);
-    }
-
-    /// @brief Object interface to viewport.
-    struct Handle
-    {
-        FORBID_ALL(Handle);
-
-        Handle(int            resx,
-               int            resy,
-               ResizeReaction ra,
-               KeyReaction    ka,
-               const char*    title)
-        {
-            init(resx, resy, ra, ka, title);
-        }
-        ~Handle() { cleanup(); }
-
-        /// @brief Viewport resolution.
-        std::pair<int, int>
-        get_res() const noexcept
-        {
-            return Window::get_res();
-        }
-
-        bool
-        active() const noexcept
-        {
-            return Window::active();
-        }
-
-        void
-        close() const noexcept
-        {
-            Window::close();
-        }
-
-        void
-        swap_buffers() const noexcept
-        {
-            Window::swap_buffers();
-        }
-    };
-
-  public:
-    FORBID_ALL(Window);
-
-    template <typename RR, typename KR>
-    friend Window<RR, KR>::Handle
-    create_window(const System::Handle&,
-                  int _resx,
-                  int _resy,
-                  RR  rr,
-                  KR  kr,
-                  const char*,
-                  const char*,
-                  const char*);
+    ~Window();
 };
-
-/// @brief Factory function for creating OpenGL windows.
-template <typename ResizeReaction, typename KeyReaction>
-Window<ResizeReaction, KeyReaction>::Handle
-create_window(const System::Handle&,
-              int            _resx,
-              int            _resy,
-              ResizeReaction rr,
-              KeyReaction    kr,
-              const char*    title,
-              const char*    x11_class_name    = "Loom",
-              const char*    x11_instance_name = "Viewport")
-{
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    glfwWindowHintString(GLFW_X11_CLASS_NAME, x11_class_name);
-    glfwWindowHintString(GLFW_X11_INSTANCE_NAME, x11_instance_name);
-
-    return {_resx, _resy, rr, kr, title};
-}
 
 /// @brief Simple OpengGL viewport for displaying image.
 class ImageViewport
@@ -409,134 +186,19 @@ class ImageViewport
     GLuint  m_texture;
 
   public:
-    ImageViewport() :
-        m_program(Shader(vertex_shader_src, GL_VERTEX_SHADER),
-                  Shader(fragment_shader_src, GL_FRAGMENT_SHADER))
-    {
-        glGenVertexArrays(1, &m_vao);
-        glGenBuffers(1, &m_vbo);
-        glGenBuffers(1, &m_ebo);
-
-        glBindVertexArray(m_vao);
-
-        glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
-        glBufferData(GL_ARRAY_BUFFER,
-                     sizeof(vertex_data),
-                     vertex_data,
-                     GL_STATIC_DRAW);
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_ebo);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER,
-                     sizeof(indices),
-                     indices,
-                     GL_STATIC_DRAW);
-
-        // position
-        glVertexAttribPointer(0,
-                              3,
-                              GL_FLOAT,
-                              GL_FALSE,
-                              5 * sizeof(float),
-                              static_cast<void*>(0));
-        glEnableVertexAttribArray(0);
-
-        // uv
-        glVertexAttribPointer(1,
-                              2,
-                              GL_FLOAT,
-                              GL_FALSE,
-                              5 * sizeof(float),
-                              reinterpret_cast<void*>(3 * sizeof(float)));
-        glEnableVertexAttribArray(1);
-
-        // texture
-        glGenTextures(1, &m_texture);
-        // assume no other textures - bind the texture once
-        glBindTexture(GL_TEXTURE_2D, m_texture);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-
-        glBindVertexArray(0);
-        glBindBuffer(GL_ARRAY_BUFFER, 0);
-    }
-
-    template <typename T>
-    void
-    load_img(const T* img_data, int width, int height)
-    {
-        constexpr auto type_flag =
-            std::is_same_v<T, unsigned char> ?
-                GL_UNSIGNED_BYTE :
-                (std::is_same_v<T, float> ? GL_FLOAT : GL_UNSIGNED_INT);
-
-        glTexImage2D(GL_TEXTURE_2D,
-                     0,
-                     GL_RGBA,
-                     width,
-                     height,
-                     0,
-                     GL_RGBA,
-                     type_flag,
-                     img_data);
-
-        gl_check_errors();
-    }
-
-    template <typename T>
-    void
-    reload_img(const T* img_data, int width, int height)
-    {
-        constexpr auto type_flag =
-            std::is_same_v<T, unsigned char> ?
-                GL_UNSIGNED_BYTE :
-                (std::is_same_v<T, float> ? GL_FLOAT : GL_UNSIGNED_INT);
-
-        glTexSubImage2D(GL_TEXTURE_2D,
-                        0,
-                        0,
-                        0,
-                        width,
-                        height,
-                        GL_RGBA,
-                        type_flag,
-                        img_data);
-
-        gl_check_errors();
-    }
+    ImageViewport();
 
     void
-    draw() noexcept
-    {
-        m_program.use();
-        glBindVertexArray(m_vao);
-        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-    }
+    load_img(const float* img_data, int width, int height);
 
-    ~ImageViewport()
-    {
-        glDeleteVertexArrays(1, &m_vao);
-        glDeleteBuffers(1, &m_vbo);
-        glDeleteBuffers(1, &m_ebo);
-        glDeleteTextures(1, &m_texture);
-    }
+    void
+    reload_img(const float* img_data, int width, int height);
+
+    void
+    draw() noexcept;
+
+    ~ImageViewport();
 };
-
-/// @brief Create a matrix for projecting two-dimensional coordinates onto
-/// screen.
-template <std::floating_point T>
-static Matrix<T, 4, 4, std::array>
-ortho(T left, T right, T bottom, T top) noexcept
-{
-    Matrix<T, 4, 4, std::array> ret = Matrix<T, 4, 4, std::array>::identity();
-
-    ret[0][0] = static_cast<T>(2) / (right - left);
-    ret[1][1] = static_cast<T>(2) / (top - bottom);
-    ret[2][2] = -1;
-    ret[3][0] = -(right + left) / (right - left);
-    ret[3][1] = -(top + bottom) / (top - bottom);
-    return ret;
-}
 
 /// @brief Simple on-screen-display.
 class OSD
@@ -565,116 +227,26 @@ class OSD
     GLint m_proj_loc;
 
     void
-    upload_projection(const Matrix<float, 4, 4, std::array>& proj) noexcept
-    {
-        glUseProgram(m_program.id());
-        glUniformMatrix4fv(m_proj_loc, 1, GL_FALSE, proj.data().data());
-    }
+    upload_projection(const Matrix<float, 4, 4, std::array>& proj) noexcept;
 
     void
-    update_vbo() noexcept
-    {
-        glBindVertexArray(m_vao);
-        glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
-
-        glVertexAttribPointer(0,
-                              3,
-                              GL_FLOAT,
-                              GL_FALSE,
-                              16,
-                              static_cast<void*>(0));
-        glEnableVertexAttribArray(0);
-
-        glBufferData(GL_ARRAY_BUFFER,
-                     m_quads * 4 * 16,
-                     m_buffer,
-                     GL_STATIC_DRAW);
-    }
+    update_vbo() noexcept;
 
     void
-    update_ebo() noexcept
-    {
-        std::vector<std::uint32_t> indices;
-
-        indices.reserve(m_quads * 6);
-
-        for(int q = 0; q < m_quads; ++q)
-        {
-            const std::uint32_t v = q * 4;
-
-            indices.push_back(v);
-            indices.push_back(v + 1);
-            indices.push_back(v + 2);
-
-            indices.push_back(v);
-            indices.push_back(v + 2);
-            indices.push_back(v + 3);
-        }
-
-        glBindVertexArray(m_vao);
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_ebo);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER,
-                     indices.size() * sizeof(std::uint32_t),
-                     indices.data(),
-                     GL_STATIC_DRAW);
-    }
+    update_ebo() noexcept;
 
   public:
     FORBID_DEFAULT(OSD);
     FORBID_COPY(OSD);
 
-    OSD(const float x, const float y, const char* text, int width, int height) :
-        m_quads(stb_easy_font_print(x,
-                                    y,
-                                    const_cast<char*>(text),
-                                    nullptr,
-                                    m_buffer,
-                                    sizeof(m_buffer))),
-        m_program(Shader(vertex_shader_src, GL_VERTEX_SHADER),
-                  Shader(fragment_shader_src, GL_FRAGMENT_SHADER)),
-        m_proj_loc(glGetUniformLocation(m_program.id(), "projection"))
-    {
-        if(m_proj_loc == -1)
-            throw std::runtime_error("project location is wrong");
-
-        glGenVertexArrays(1, &m_vao);
-        glGenBuffers(1, &m_vbo);
-        glGenBuffers(1, &m_ebo);
-
-        update_vbo();
-        update_ebo();
-        upload_projection(ortho(0.f,
-                                static_cast<float>(width),
-                                static_cast<float>(height),
-                                0.f));
-
-        gl_check_errors();
-
-        glBindVertexArray(0);
-    }
+    OSD(const float x, const float y, const char* text, int width, int height);
 
     void
-    resize(int width, int height) noexcept
-    {
-        upload_projection(ortho(0.f,
-                                static_cast<float>(width),
-                                static_cast<float>(height),
-                                0.f));
-    }
+    resize(int width, int height) noexcept;
 
     void
-    draw()
-    {
-        m_program.use();
-        glBindVertexArray(m_vao);
-        glDrawElements(GL_TRIANGLES, m_quads * 6, GL_UNSIGNED_INT, 0);
-    }
+    draw() noexcept;
 
-    ~OSD()
-    {
-        glDeleteVertexArrays(1, &m_vao);
-        glDeleteBuffers(1, &m_vbo);
-        glDeleteBuffers(1, &m_ebo);
-    }
+    ~OSD();
 };
 } // namespace loom::gl

@@ -65,7 +65,7 @@ struct keyword_index<Keyword, std::tuple<Options...>> :
 };
 
 template <std::size_t Idx, typename FirstOption, typename... RestOptions>
-std::size_t
+static std::size_t
 tokenize_impl(const char key) noexcept
 {
     if(key == FirstOption::key) return Idx;
@@ -77,7 +77,7 @@ tokenize_impl(const char key) noexcept
 }
 
 template <std::size_t Idx, typename FirstOption, typename... RestOptions>
-std::size_t
+static std::size_t
 tokenize_impl(const std::string_view keyword) noexcept
 {
     if(keyword == FirstOption::keyword) return Idx;
@@ -899,7 +899,7 @@ positional_list(const std::string_view doc,
 
 /// @brief Get a corresponding option index with a key @p key.
 template <typename Key, typename... Options>
-std::size_t
+static std::size_t
 tokenize(const Key key, const std::tuple<Options...>) noexcept
 {
     return detail::tokenize_impl<0ul, Options...>(key);
@@ -1019,7 +1019,7 @@ ParseResults(const PosBindings&)
 
 /// @brief Set @p token'th value.
 template <typename... Bindings, typename Value>
-void
+static void
 bind_value(std::tuple<Bindings...>& bindings,
            const std::size_t        token,
            Value                    value) noexcept
@@ -1035,7 +1035,7 @@ bind_value(std::tuple<Bindings...>& bindings,
 
 /// @brief Get number of expected values for a given token.
 template <typename Options>
-std::size_t
+static std::size_t
 get_nvals(const std::size_t token, const Options& opts) noexcept
 {
     return visit_at(
@@ -1130,7 +1130,7 @@ using ErrorState = std::optional<std::variant<FewArgumentsException,
 
 /// @brief Binds list values.
 template <bool do_opt, typename Opt, typename Pos>
-ArgsIterator
+static ArgsIterator
 bind_list(ArgsIterator iter,
           State<Opt>&  opt_state,
           State<Pos>&  pos_state,
@@ -1239,7 +1239,7 @@ struct KeywordValueMatcher
 };
 
 template <typename Opt, typename Pos>
-ArgsIterator
+static ArgsIterator
 consume_values(State<Opt>&  opt_state,
                State<Pos>&  pos_state,
                ErrorState&  error,
@@ -1459,7 +1459,7 @@ struct PositionalsMatcher
 };
 
 template <typename Opt, typename Pos>
-bool
+static bool
 descend(ArgsIterator& iter,
         State<Opt>&   opt_state,
         State<Pos>&   pos_state,
@@ -1485,7 +1485,7 @@ descend(ArgsIterator& iter,
 
 /// @brief Attempt to put a newline if the desired line width reached.
 /// @return current column.
-std::size_t
+static std::size_t
 try_newline(const std::size_t line_width,
             const std::size_t margin,
             std::size_t       column,
@@ -1503,7 +1503,7 @@ try_newline(const std::size_t line_width,
 /// @brief Prints @p var in angle brackets.
 /// @return current column.
 template <typename O>
-std::size_t
+static std::size_t
 print_var(const O&,
           const std::string_view var,
           std::size_t            column,
@@ -1527,7 +1527,7 @@ print_var(const O&,
 /// @brief Print one or more variables in angle brackets.
 /// @return current column.
 template <bool t, typename O, typename LB>
-std::size_t
+static std::size_t
 print_vars(const O&    option,
            LB&&        line_breaker,
            std::size_t column,
@@ -1550,7 +1550,7 @@ print_vars(const O&    option,
 
 /// @brief Prints formatted help message to @p file.
 template <typename... Options, typename... Positionals>
-void
+static void
 show_help(std::string_view                  program_name,
           const std::tuple<Options...>&     options,
           const std::tuple<Positionals...>& positionals,
@@ -1751,7 +1751,7 @@ show_help(std::string_view                  program_name,
 }
 
 /// @brief Beautify program name from argv[0].
-std::string_view
+static std::string_view
 make_program_name(std::string_view argv0) noexcept
 {
     const std::size_t slash_pos{argv0.rfind('/')};
@@ -1828,7 +1828,7 @@ class StandardErrorHandler
 
 /// @brief Parse command line arguments.
 template <typename... Options, typename... Positionals, typename ErrorHandler>
-auto
+static auto
 parse(const std::tuple<Options...>&     options,
       const std::tuple<Positionals...>& positionals,
       ArgsRange                         args,
@@ -1889,7 +1889,7 @@ parse(const std::tuple<Options...>&     options,
 
 /// @brief Shortcut with default error handler.
 template <typename... Options, typename... Positionals>
-auto
+static auto
 parse(const std::tuple<Options...>&     options,
       const std::tuple<Positionals...>& positionals,
       ArgsRange                         args) noexcept
@@ -1905,7 +1905,7 @@ parse(const std::tuple<Options...>&     options,
 
 /// @brief Shortcut with no positionals.
 template <typename... Options>
-auto
+static auto
 parse(const std::tuple<Options...>& options, ArgsRange args) noexcept
 {
     return parse(options, std::tuple{}, args);

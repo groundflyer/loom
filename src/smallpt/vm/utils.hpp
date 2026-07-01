@@ -144,8 +144,6 @@ struct RenderPixelBSE : RenderPixelBase
 using vft = vm::simd::native_vector<float>;
 using vut = vm::simd::native_vector<std::uint32_t>;
 
-std::tuple<vft, vft, vft, vut, vut> simd_compact_pt(vut, vut, vft, vut);
-
 struct RenderPixelSIMDPredicated : RenderPixelBase
 {
     using RenderPixelBase::RenderPixelBase;
@@ -156,9 +154,7 @@ struct RenderPixelSIMDPredicated : RenderPixelBase
     std::pair<std::size_t, std::size_t>
     operator()(Chunk view) const noexcept
     {
-#ifndef __EXCEPTIONS
         vm::simd::compact_function<pt_float, false, true> f;
-#endif
 
         const vut vres = vm::simd::broadcast<N>(res);
         const vft vt   = vm::simd::broadcast<N>(threshold);
@@ -184,11 +180,7 @@ struct RenderPixelSIMDPredicated : RenderPixelBase
                 vpp[i] = encode_pp(view[i].first);
         }
 
-#ifndef __EXCEPTIONS
         const auto [vr, vg, vb, vrc, _] = f(vpp, vres, vt, vd);
-#else
-        const auto [vr, vg, vb, vrc, _] = simd_compact_pt(vpp, vres, vt, vd);
-#endif
 
         for(std::size_t i = 0; i < vs; ++i)
             view[i].second = RGBA{vr[i], vg[i], vb[i], 1};
