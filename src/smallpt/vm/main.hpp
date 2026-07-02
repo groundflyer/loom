@@ -114,7 +114,6 @@ struct EventState
         {
             const Vec2u final_size = max(new_size, min_size);
             img.resize(final_size);
-            gl::post_size(final_size[0], final_size[1]);
         }
     }
 };

@@ -27,6 +27,7 @@ static void
 resize_callback(GLFWwindow* window, int width, int height) noexcept
 {
     resize_action(window, width, height);
+    gl::post_size(width, height);
 }
 
 static void
