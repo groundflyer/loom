@@ -28,13 +28,14 @@ struct EventState
 
     struct ResizeAction
     {
-        bool   keep_res;
-        bool*  req_restart;
-        bool*  req_resize;
-        Vec2u* new_size;
+        bool     keep_res;
+        bool*    req_restart;
+        bool*    req_resize;
+        Vec2u*   new_size;
+        gl::OSD* osd;
 
         void
-        operator()(GLFWwindow*, int width, int height) noexcept
+        operator()(GLFWwindow* /*window*/, int width, int height) noexcept
         {
             if(!keep_res)
             {
@@ -42,6 +43,7 @@ struct EventState
                 *req_resize  = true;
                 *new_size    = Vec2u(width, height);
             }
+            osd->resize(width, height);
         }
     };
 
@@ -83,9 +85,9 @@ struct EventState
     };
 
     ResizeAction
-    get_resize_action() noexcept
+    get_resize_action(gl::OSD* osd) noexcept
     {
-        return {keep_res, &req_restart, &req_resize, &new_size};
+        return {keep_res, &req_restart, &req_resize, &new_size, osd};
     }
 
     KeyAction

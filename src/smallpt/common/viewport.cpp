@@ -8,6 +8,8 @@
 #include <type_traits>
 #include <vector>
 
+#include <stb_easy_font.h>
+
 namespace loom::gl
 {
 const char*

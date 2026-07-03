@@ -72,8 +72,6 @@ main(int argc, char* argv[])
                     "- toggle multithreading");
 
         EventState estate{keep_res};
-        resize_action = estate.get_resize_action();
-        key_action    = estate.get_key_action();
 
         logger.debug("initializing glfw");
         const auto& h = gl::System::init();
@@ -96,12 +94,10 @@ main(int argc, char* argv[])
             "ESC: close\nSPACE: switch method\nM: switch multithreading";
 
         logger.debug("making osd");
-        gl::OSD osd(5.f,
-                    resy - 5.f -
-                        stb_easy_font_height(const_cast<char*>(osd_text)),
-                    osd_text,
-                    resx,
-                    resy);
+        gl::OSD osd(5.f, 5.f, osd_text, resx, resy);
+
+        resize_action = estate.get_resize_action(&osd);
+        key_action    = estate.get_key_action();
 
         viewport.load_img(img.data(), resx, resy);
 
