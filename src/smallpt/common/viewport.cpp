@@ -310,7 +310,7 @@ OSD::upload_projection(const Matrix<float, 4, 4, std::array>& proj) noexcept
 }
 
 void
-OSD::update_vbo() noexcept
+OSD::update_vbo(const char* buffer) noexcept
 {
     glBindVertexArray(m_vao);
     glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
@@ -318,7 +318,7 @@ OSD::update_vbo() noexcept
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 16, static_cast<void*>(0));
     glEnableVertexAttribArray(0);
 
-    glBufferData(GL_ARRAY_BUFFER, m_quads * 4 * 16, m_buffer, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, m_quads * 4 * 16, buffer, GL_STATIC_DRAW);
 }
 
 void
@@ -354,14 +354,8 @@ OSD::OSD(const float x,
          const char* text,
          int         width,
          int         height) :
-    m_quads(stb_easy_font_print(x,
-                                y,
-                                const_cast<char*>(text),
-                                nullptr,
-                                m_buffer,
-                                sizeof(m_buffer))),
-    m_program(Shader(vertex_shader_src, GL_VERTEX_SHADER),
-              Shader(fragment_shader_src, GL_FRAGMENT_SHADER)),
+    m_x(x), m_y(y), m_program(Shader(vertex_shader_src, GL_VERTEX_SHADER),
+                              Shader(fragment_shader_src, GL_FRAGMENT_SHADER)),
     m_proj_loc(glGetUniformLocation(m_program.id(), "projection"))
 {
     if(m_proj_loc == -1) throw std::runtime_error("project location is wrong");
@@ -370,14 +364,31 @@ OSD::OSD(const float x,
     glGenBuffers(1, &m_vbo);
     glGenBuffers(1, &m_ebo);
 
-    update_vbo();
-    update_ebo();
     upload_projection(
         ortho(0.f, static_cast<float>(width), static_cast<float>(height), 0.f));
+
+    update_text(text);
 
     gl_check_errors();
 
     glBindVertexArray(0);
+}
+
+void
+OSD::update_text(const char* text) noexcept
+{
+    constexpr std::size_t buffer_size = 20000;
+
+    std::vector<char> buffer(buffer_size);
+    m_quads = stb_easy_font_print(m_x,
+                                  m_y,
+                                  const_cast<char*>(text),
+                                  nullptr,
+                                  buffer.data(),
+                                  buffer_size);
+
+    update_vbo(buffer.data());
+    update_ebo();
 }
 
 void

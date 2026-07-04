@@ -213,8 +213,10 @@ class OSD
         "void main(){"
         "Cf = vec4(1.0, 1.0, 1.0, 1.0);}";
 
-    char m_buffer[20000];
-    int  m_quads = 0;
+    // char m_buffer[20000];
+    float m_x;
+    float m_y;
+    int   m_quads = 0;
 
     GLuint m_vao;
     GLuint m_vbo;
@@ -228,7 +230,7 @@ class OSD
     upload_projection(const Matrix<float, 4, 4, std::array>& proj) noexcept;
 
     void
-    update_vbo() noexcept;
+    update_vbo(const char*) noexcept;
 
     void
     update_ebo() noexcept;
@@ -238,6 +240,9 @@ class OSD
     FORBID_COPY(OSD);
 
     OSD(const float x, const float y, const char* text, int width, int height);
+
+    void
+    update_text(const char* text) noexcept;
 
     void
     resize(int width, int height) noexcept;
