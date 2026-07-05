@@ -53,7 +53,7 @@ main(int argc, char* argv[])
 
         const auto [resx, resy]     = parse_results.template get_opt<'r'>();
         const float       threshold = parse_results.template get_opt<'t'>();
-        const bool        keep_res  = parse_results.template get_opt<'k'>();
+        const bool        lock_res  = parse_results.template get_opt<'l'>();
         const unsigned    max_depth = parse_results.template get_opt<'d'>();
         const std::size_t stream_size =
             align_up(parse_results.template get_opt<'s'>(), 32ul);
@@ -68,10 +68,7 @@ main(int argc, char* argv[])
 
         logger.debug("making viewport");
 
-        logger.info("Hotkeys: ESC - close; SPACE - switch execution method; M "
-                    "- toggle multithreading");
-
-        EventState estate{keep_res};
+        EventState estate{lock_res};
 
         logger.debug("initializing glfw");
         const auto& h = gl::System::init();
@@ -90,11 +87,8 @@ main(int argc, char* argv[])
         logger.debug("making viewport");
         gl::ImageViewport viewport{};
 
-        constexpr char osd_text[] =
-            "ESC: close\nSPACE: switch method\nM: switch multithreading";
-
         logger.debug("making osd");
-        gl::OSD osd(5.f, 5.f, osd_text, resx, resy);
+        gl::OSD osd(5.f, 5.f, osd_help, resx, resy);
 
         resize_action = estate.get_resize_action(&osd);
         key_action    = estate.get_key_action();
@@ -114,6 +108,7 @@ main(int argc, char* argv[])
 
         while(!estate.req_quit)
         {
+            vstate.update_stats(estate);
             // ElapsedTimer<> timer;
 
             logger.debug("rendering stream?{}, mp?{}",

@@ -6,29 +6,36 @@
 
 #include <smallpt/common/common.hpp>
 #include <smallpt/common/viewport.hpp>
+#include <vm/simd.hpp>
+
+#include <fmt/format.h>
 
 namespace loom
 {
+inline constexpr char osd_help[] =
+    "ESC: close\n1: switch method\n2: switch multithreading\n3: lock/unlock "
+    "image resolution";
+
 struct EventState
 {
-    const bool keep_res;
-    bool       run_stream  = true;
-    bool       run_mp      = true;
-    bool       req_restart = false;
-    bool       req_resize  = false;
-    bool       req_quit    = false;
-    Vec2u      new_size{500, 500};
+    bool  lock_res;
+    bool  run_stream  = true;
+    bool  run_mp      = true;
+    bool  req_restart = false;
+    bool  req_resize  = false;
+    bool  req_quit    = false;
+    Vec2u new_size{500, 500};
 
     static constexpr Vec2u min_size{128, 128};
 
-    EventState(const bool kr) noexcept : keep_res(kr) {};
+    EventState(const bool kr) noexcept : lock_res(kr) {};
 
     FORBID_COPY(EventState);
     FORBID_MOVE(EventState);
 
     struct ResizeAction
     {
-        bool     keep_res;
+        bool*    lock_res;
         bool*    req_restart;
         bool*    req_resize;
         Vec2u*   new_size;
@@ -37,7 +44,7 @@ struct EventState
         void
         operator()(GLFWwindow* /*window*/, int width, int height) noexcept
         {
-            if(!keep_res)
+            if(!*lock_res)
             {
                 *req_restart = true;
                 *req_resize  = true;
@@ -53,6 +60,7 @@ struct EventState
         bool* run_mp;
         bool* req_restart;
         bool* req_quit;
+        bool* lock_res;
 
         void
         operator()(GLFWwindow* window, int button, int action, int) noexcept
@@ -67,16 +75,21 @@ struct EventState
                     glfwSetWindowShouldClose(window, true);
                     return;
                 }
-                case GLFW_KEY_SPACE:
+                case GLFW_KEY_1:
                 {
                     *run_stream  = !*run_stream;
                     *req_restart = true;
                     return;
                 }
-                case GLFW_KEY_M:
+                case GLFW_KEY_2:
                 {
                     *run_mp      = !*run_mp;
                     *req_restart = true;
+                    return;
+                }
+                case GLFW_KEY_3:
+                {
+                    *lock_res = !*lock_res;
                     return;
                 }
                 }
@@ -87,13 +100,13 @@ struct EventState
     ResizeAction
     get_resize_action(gl::OSD* osd) noexcept
     {
-        return {keep_res, &req_restart, &req_resize, &new_size, osd};
+        return {&lock_res, &req_restart, &req_resize, &new_size, osd};
     }
 
     KeyAction
     get_key_action() noexcept
     {
-        return {&run_stream, &run_mp, &req_restart, &req_quit};
+        return {&run_stream, &run_mp, &req_restart, &req_quit, &lock_res};
     }
 
     void
@@ -162,6 +175,23 @@ struct ViewState
         }
         else
             estate.req_quit = true;
+    }
+
+    void
+    update_stats(const EventState& estate)
+    {
+        const std::string new_text =
+            fmt::format("Hotkeys:\n{}\nStatistics:\nSIMD: {}\nImage res: {}x{} "
+                        "({})\nMethod: "
+                        "{}\nMultithreading: {}",
+                        osd_help,
+                        vm::simd::info::value,
+                        img.width(),
+                        img.height(),
+                        estate.lock_res ? "locked" : "window",
+                        estate.run_stream ? "hybrid" : "predicated",
+                        estate.run_mp ? "on" : "off");
+        osd.update_text(new_text.data());
     }
 };
 

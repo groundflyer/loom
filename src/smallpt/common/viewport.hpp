@@ -211,7 +211,7 @@ class OSD
         "#version 330 core\n"
         "out vec4 Cf;"
         "void main(){"
-        "Cf = vec4(1.0, 1.0, 1.0, 1.0);}";
+        "Cf = vec4(0.0, 1.0, 0.0, 1.0);}";
 
     // char m_buffer[20000];
     float m_x;
