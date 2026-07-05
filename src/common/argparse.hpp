@@ -64,6 +64,26 @@ struct keyword_index<Keyword, std::tuple<Options...>> :
 {
 };
 
+template <char Key, typename Options>
+struct has_key;
+
+template <char Key, typename... Options>
+struct has_key<Key, std::tuple<Options...>> :
+    std::bool_constant<intlist::elem<Key, char_sequence<Options::key...>>>
+{
+};
+
+template <typename Keyword, typename>
+struct has_keyword;
+
+template <typename Keyword, typename... Options>
+struct has_keyword<Keyword, std::tuple<Options...>> :
+    std::bool_constant<
+        typelist::elem<Keyword,
+                       type_sequence<typename Options::keyword_type...>>>
+{
+};
+
 template <std::size_t Idx, typename FirstOption, typename... RestOptions>
 static std::size_t
 tokenize_impl(const char key) noexcept
@@ -921,6 +941,7 @@ class ParseResults
     }
 
     template <char Key>
+        requires(detail::has_key<Key, Options>::value)
     decltype(auto)
     get_opt() const
         noexcept(std::is_nothrow_invocable_v<
@@ -930,6 +951,7 @@ class ParseResults
     }
 
     template <StringLiteral s>
+        requires(detail::has_keyword<sl2cs<s>, Options>::value)
     decltype(auto)
     get_opt() const
         noexcept(std::is_nothrow_invocable_v<
@@ -963,6 +985,7 @@ class ParseResults<std::tuple<OptBindings...>, std::tuple<>, Options>
     }
 
     template <char Key>
+        requires(detail::has_key<Key, Options>::value)
     decltype(auto)
     get_opt() const
         noexcept(std::is_nothrow_invocable_v<
@@ -972,6 +995,7 @@ class ParseResults<std::tuple<OptBindings...>, std::tuple<>, Options>
     }
 
     template <StringLiteral s>
+        requires(detail::has_keyword<sl2cs<s>, Options>::value)
     decltype(auto)
     get_opt() const
         noexcept(std::is_nothrow_invocable_v<
