@@ -1179,6 +1179,22 @@ bind_list(ArgsIterator iter,
     return ret;
 }
 
+/// @brief If reached signals an error.
+/// Put at the end of options-only arg parser.
+struct UnexpectedMatcher
+{
+    template <typename Opt, typename Pos>
+    bool
+    operator()(ArgsIterator& iter,
+               State<Opt>& /* opt_state */,
+               State<Pos>& /* pos_state */,
+               ErrorState& error) const noexcept
+    {
+        error = UnexpectedValue{*iter};
+        return true;
+    }
+};
+
 /// @brief Matches "--".
 /// The purpose of this matcher is to terminate a sequence.
 struct TerminatorMatcher
@@ -1871,19 +1887,22 @@ parse(const std::tuple<Options...>&     options,
                             type_sequence<typename Options::keyword_type...>>>,
         "Keys must be unique");
 
-    using all_matchers = type_sequence<TerminatorMatcher,
-                                       HelpMatcher,
-                                       KeywordValueMatcher,
-                                       KeyCharSeqMatcher,
-                                       KeyMatcher,
-                                       PositionalsMatcher>;
-
     using active_matchers = std::conditional_t<
         num_opts == 0,
         type_sequence<TerminatorMatcher, HelpMatcher, PositionalsMatcher>,
         std::conditional_t<num_poss == 0,
-                           typelist::purge<PositionalsMatcher, all_matchers>,
-                           all_matchers>>;
+                           type_sequence<TerminatorMatcher,
+                                         HelpMatcher,
+                                         KeywordValueMatcher,
+                                         KeyCharSeqMatcher,
+                                         KeyMatcher,
+                                         UnexpectedMatcher>,
+                           type_sequence<TerminatorMatcher,
+                                         HelpMatcher,
+                                         KeywordValueMatcher,
+                                         KeyCharSeqMatcher,
+                                         KeyMatcher,
+                                         PositionalsMatcher>>>;
 
     constexpr active_matchers ms{};
 
