@@ -57,6 +57,8 @@ main(int argc, char* argv[])
         const unsigned    max_depth = parse_results.template get_opt<'d'>();
         const std::size_t stream_size =
             align_up(parse_results.template get_opt<'s'>(), 32ul);
+        const std::chrono::milliseconds ep{
+            parse_results.template get_opt<'p'>()};
 
         if(threshold < 0)
             throw std::runtime_error("Negative sampling threshold");
@@ -65,6 +67,8 @@ main(int argc, char* argv[])
 
         if(stream_size * ncores >= img.size())
             throw std::runtime_error("Stream size is too big");
+
+        logger.debug("exchange period: {}ms", ep.count());
 
         logger.debug("making viewport");
 
@@ -95,7 +99,8 @@ main(int argc, char* argv[])
 
         viewport.load_img(img.data(), resx, resy);
 
-        ViewState vstate{h, window, viewport, osd, logger, img};
+        ViewState
+            vstate{h, window, viewport, osd, logger, img, threshold, max_depth};
 
         logger.debug("vstate ready");
 
@@ -108,8 +113,12 @@ main(int argc, char* argv[])
 
         while(!estate.req_quit)
         {
-            vstate.update_stats(estate);
-            // ElapsedTimer<> timer;
+            vstate.update_stats(estate, stream_size);
+            vstate.update_osd(
+                0,
+                0,
+                std::chrono::duration_cast<std::chrono::steady_clock::duration>(
+                    1ms));
 
             logger.debug("rendering stream?{}, mp?{}",
                          estate.run_stream,
@@ -123,7 +132,7 @@ main(int argc, char* argv[])
                               threshold,
                               max_depth,
                               stream_size,
-                              2ms);
+                              ep);
                 else
                     hybrid_render(estate,
                                   vstate,

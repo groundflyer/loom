@@ -12,7 +12,8 @@
 
 namespace loom
 {
-inline constexpr std::size_t ncores = NUM_CORES_L;
+inline constexpr std::size_t               ncores = NUM_CORES_L;
+inline constexpr std::chrono::milliseconds timeframe{20};
 
 bool
 predicated_render(EventState&    estate,
@@ -22,28 +23,29 @@ predicated_render(EventState&    estate,
 {
     ElapsedTimer<> timer;
 
+    std::size_t progress{};
+
     return std::ranges::none_of(
                ranges::views::chunk(vstate.img, RenderPixelSIMDPredicated::N),
                [&](auto chunk)
                {
-                   RenderPixelSIMDPredicated{vstate.img.res(),
-                                             threshold,
-                                             max_depth}(chunk);
-                   // progress += p;
-                   // ray_count += rc;
+                   const auto [p, rc] =
+                       RenderPixelSIMDPredicated{vstate.img.res(),
+                                                 threshold,
+                                                 max_depth}(chunk);
+                   progress += p;
 
-                   if(timer.has_expired(15ms))
+                   if(timer.has_expired(timeframe))
                    {
                        vstate.update(estate);
-                       // pr(progress);
-                       timer.restart();
+                       vstate.update_stats(estate);
+                       vstate.update_osd(progress, rc, timer.restart());
                    }
 
                    return estate.req_stop();
                }) ||
            [&]()
     {
-        // pr();
         vstate.update(estate);
         return estate.req_stop();
     }();
@@ -59,6 +61,7 @@ predicated_mp(EventState&    estate,
     {
         std::atomic_size_t counter{};
         std::atomic_size_t progress{};
+        std::atomic_size_t ray_count{};
         std::atomic_flag   flag{};
     };
 
@@ -68,11 +71,12 @@ predicated_mp(EventState&    estate,
 
     thread_pool<ncores> tp(
         [&,
-         &c        = scc.counter,
-         &s        = scc.flag,
-         &progress = scc.progress,
-         res       = vstate.img.res(),
-         is        = vstate.img.size(),
+         &c         = scc.counter,
+         &s         = scc.flag,
+         &progress  = scc.progress,
+         &ray_count = scc.ray_count,
+         res        = vstate.img.res(),
+         is         = vstate.img.size(),
          threshold]()
         {
             constexpr std::size_t cs = 16;
@@ -86,24 +90,32 @@ predicated_mp(EventState&    estate,
 
                 std::ranges::for_each(
                     std::views::counted(std::ranges::begin(r) + b, cs),
-                    [res, threshold, max_depth, &progress](auto view) noexcept
+                    [res, threshold, max_depth, &progress, &ray_count](
+                        auto view) noexcept
                     {
                         const auto [p, rc] =
                             RenderPixelSIMDPredicated{res,
                                                       threshold,
                                                       max_depth}(view);
                         progress.fetch_add(p, std::memory_order_relaxed);
+                        ray_count.fetch_add(rc, std::memory_order_relaxed);
                     });
             }
         });
 
     tp.affine(AFFINITY::PHYSICAL);
 
+    ElapsedTimer<> timer;
+
     while(!estate.req_stop() &&
           scc.progress.load(std::memory_order_relaxed) < vstate.img.size())
     {
         vstate.update(estate);
-        std::this_thread::sleep_for(15ms);
+        vstate.update_stats(estate);
+        vstate.update_osd(scc.progress.load(std::memory_order_relaxed),
+                          scc.ray_count.exchange(0, std::memory_order_relaxed),
+                          timer.restart());
+        std::this_thread::sleep_for(timeframe);
     }
 
     if(estate.req_stop())
@@ -111,6 +123,10 @@ predicated_mp(EventState&    estate,
         scc.flag.test_and_set(std::memory_order_relaxed);
         return false;
     }
+
+    vstate.update_osd(vstate.img.size(),
+                      scc.ray_count.exchange(0, std::memory_order_relaxed),
+                      timer.elapsed());
 
     return true;
 }
@@ -249,7 +265,7 @@ hybrid_render(EventState&    estate,
     std::vector<vm::output_type<pt_float>> result_buffer(stream_size);
     remote_output_control                  roc(result_buffer.data());
 
-    // std::size_t ray_count{}; //, progress{};
+    std::size_t progress{};
 
     auto view = std::views::transform(
         vstate.img,
@@ -266,18 +282,18 @@ hybrid_render(EventState&    estate,
         auto exs = s.exchange(ranges::subrange(it, std::ranges::end(view)));
         const auto se = std::ranges::size(exs);
         it += se;
+        progress += se;
 
         std::ranges::copy(exs, roc.get_output_iterator());
 
-        img_upd(vstate.img, roc);
+        const std::size_t ray_count = img_upd(vstate.img, roc);
 
-        if(timer.has_expired(15ms))
+        if(timer.has_expired(timeframe))
         {
             vstate.update(estate);
-            timer.restart();
+            vstate.update_stats(estate, stream_size);
+            vstate.update_osd(progress, ray_count, timer.restart());
         }
-
-        // progress += se;
 
         s();
         s.sort();
@@ -295,9 +311,11 @@ hybrid_render(EventState&    estate,
 
     std::ranges::copy(s.get_output_zipped(), roc.get_output_iterator());
 
-    img_upd(vstate.img, roc);
+    const std::size_t ray_count = img_upd(vstate.img, roc);
 
     vstate.update(estate);
+    vstate.update_stats(estate, stream_size);
+    vstate.update_osd(vstate.img.size(), ray_count, timer.elapsed());
 
     return true;
 }
@@ -333,32 +351,33 @@ hybrid_mp(EventState&                     estate,
 
     auto oc = std::tuple{roc.get_output_iterator()};
 
-    // std::size_t ret{}, progress{};
-
-    // ProgressReporter pr{logger, img.size()};
+    std::size_t    progress{};
+    ElapsedTimer<> timer;
 
     {
         auto ic = shop.bind_inputs(input_view);
 
-        // progress += stream_size;
+        progress += stream_size;
 
         auto tp = shop.get_thread_pool();
         tp.affine(AFFINITY::PHYSICAL);
 
-        ElapsedTimer<> timer;
+        std::size_t ray_count{};
 
         while(!estate.req_stop() && !vm::mp::is_complete(ic))
         {
             if(shop.exchange(ic, oc))
             {
-                // progress += roc.get_count();
-                img_upd(vstate.img, roc);
+                progress += roc.get_count();
+                ray_count += img_upd(vstate.img, roc);
             }
 
-            if(timer.has_expired(15ms))
+            if(timer.has_expired(timeframe))
             {
                 vstate.update(estate);
-                timer.restart();
+                vstate.update_stats(estate, stream_size);
+                vstate.update_osd(progress, ray_count, timer.restart());
+                ray_count = 0;
             }
 
             std::this_thread::sleep_for(eg);
@@ -370,9 +389,11 @@ hybrid_mp(EventState&                     estate,
 
     shop.finalize(oc);
 
-    img_upd(vstate.img, roc);
+    const std::size_t ray_count = img_upd(vstate.img, roc);
 
     vstate.update(estate);
+    vstate.update_stats(estate, stream_size);
+    vstate.update_osd(vstate.img.size(), ray_count, timer.elapsed());
 
     return true;
 }

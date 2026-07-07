@@ -86,6 +86,12 @@ parse_args(int argc, char* argv[]) noexcept
                 "N",
                 512ul,
                 read_number<std::size_t, true>),
+            argparse::option<'p', "exchange-period">(
+                "exchange period in milliseconds for multithreaded hybrid "
+                "method. Default: 2",
+                "T",
+                2,
+                read_number<unsigned, true>),
             argparse::flag<'v', "verbose">("verbose logging")},
         {argc, argv});
 }

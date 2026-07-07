@@ -19,11 +19,12 @@ inline constexpr char osd_help[] =
 struct EventState
 {
     bool  lock_res;
-    bool  run_stream  = true;
-    bool  run_mp      = true;
-    bool  req_restart = false;
-    bool  req_resize  = false;
-    bool  req_quit    = false;
+    bool  run_stream    = true;
+    bool  run_mp        = true;
+    bool  req_restart   = false;
+    bool  req_resize    = false;
+    bool  req_quit      = false;
+    bool  req_stats_upd = true;
     Vec2u new_size{500, 500};
 
     static constexpr Vec2u min_size{128, 128};
@@ -56,11 +57,12 @@ struct EventState
 
     struct KeyAction
     {
+        bool* lock_res;
         bool* run_stream;
         bool* run_mp;
         bool* req_restart;
         bool* req_quit;
-        bool* lock_res;
+        bool* req_stats_upd;
 
         void
         operator()(GLFWwindow* window, int button, int action, int) noexcept
@@ -77,19 +79,22 @@ struct EventState
                 }
                 case GLFW_KEY_1:
                 {
-                    *run_stream  = !*run_stream;
-                    *req_restart = true;
+                    *run_stream    = !*run_stream;
+                    *req_restart   = true;
+                    *req_stats_upd = true;
                     return;
                 }
                 case GLFW_KEY_2:
                 {
-                    *run_mp      = !*run_mp;
-                    *req_restart = true;
+                    *run_mp        = !*run_mp;
+                    *req_restart   = true;
+                    *req_stats_upd = true;
                     return;
                 }
                 case GLFW_KEY_3:
                 {
-                    *lock_res = !*lock_res;
+                    *lock_res      = !*lock_res;
+                    *req_stats_upd = true;
                     return;
                 }
                 }
@@ -106,14 +111,20 @@ struct EventState
     KeyAction
     get_key_action() noexcept
     {
-        return {&run_stream, &run_mp, &req_restart, &req_quit, &lock_res};
+        return {&lock_res,
+                &run_stream,
+                &run_mp,
+                &req_restart,
+                &req_quit,
+                &req_stats_upd};
     }
 
     void
     reset() noexcept
     {
-        req_restart = false;
-        req_resize  = false;
+        req_restart   = false;
+        req_resize    = false;
+        req_stats_upd = true;
     }
 
     bool
@@ -142,15 +153,23 @@ struct ViewState
     Logger&                   logger;
     Image&                    img;
     Vec2u                     old_res;
+    float                     threshold;
+    unsigned                  max_depth;
+    const char*               res_mode;
+    const char*               method;
+    const char*               mp;
+    std::string               ss;
 
     ViewState(const gl::System::Handle& h,
               gl::Window&               w,
               gl::ImageViewport&        v,
               gl::OSD&                  o,
               Logger&                   l,
-              Image&                    i) noexcept :
+              Image&                    i,
+              float                     t,
+              unsigned                  d) noexcept :
         system(h), window(w), viewport(v), osd(o), logger(l), img(i),
-        old_res(img.res())
+        old_res(img.res()), threshold(t), max_depth(d)
     {
     }
 
@@ -178,19 +197,55 @@ struct ViewState
     }
 
     void
-    update_stats(const EventState& estate)
+    update_stats(EventState& estate, const std::size_t stream_size = 0)
     {
-        const std::string new_text =
-            fmt::format("Hotkeys:\n{}\nStatistics:\nSIMD: {}\nImage res: {}x{} "
-                        "({})\nMethod: "
-                        "{}\nMultithreading: {}",
-                        osd_help,
-                        vm::simd::info::value,
-                        img.width(),
-                        img.height(),
-                        estate.lock_res ? "locked" : "window",
-                        estate.run_stream ? "hybrid" : "predicated",
-                        estate.run_mp ? "on" : "off");
+        if(estate.req_stats_upd)
+        {
+            res_mode = estate.lock_res ? "locked" : "window";
+            mp       = estate.run_mp ? "on" : "off";
+            method   = estate.run_stream ? "hybrid" : "predicated";
+            ss       = estate.run_stream ?
+                           fmt::format("Stream size: {}\n", stream_size) :
+                           "";
+
+            estate.req_stats_upd = false;
+        }
+    }
+
+    void
+    update_osd(const std::size_t                          pix_done,
+               const std::size_t                          ray_count,
+               const std::chrono::steady_clock::duration& dur)
+    {
+        const std::string new_text = fmt::format(
+            "HOTKEYS\n{}\n\n"
+            "INFO\n"
+            "SIMD: {}\n"
+            "Image res: {}x{} ({})\n"
+            "Method: {}\n"
+            "{}"
+            "Multithreading: {}\n"
+            "Adaptive sampling threshold: {}\n"
+            "Max bounce depth: {}\n\n"
+            "STATS\n"
+            "Progress: {:>3}%\n"
+            "Traversal rate: {:0>3.0f} MRay/s",
+            osd_help,
+            vm::simd::info::value,
+            img.width(),
+            img.height(),
+            res_mode,
+            method,
+            ss,
+            mp,
+            threshold,
+            max_depth,
+            static_cast<unsigned>(static_cast<double>(pix_done) /
+                                  static_cast<double>(img.size()) * 100),
+            static_cast<double>(ray_count / 100ul) /
+                static_cast<double>(
+                    std::chrono::duration_cast<std::chrono::milliseconds>(dur)
+                        .count()));
         osd.update_text(new_text.data());
     }
 };
