@@ -159,6 +159,7 @@ struct ViewState
     const char*               method;
     const char*               mp;
     std::string               ss;
+    std::string               nt;
 
     ViewState(const gl::System::Handle& h,
               gl::Window&               w,
@@ -207,6 +208,9 @@ struct ViewState
             ss       = estate.run_stream ?
                            fmt::format("Stream size: {}\n", stream_size) :
                            "";
+            nt       = estate.run_mp ?
+                           fmt::format("Number of threads: {}\n", NUM_CORES_L) :
+                           "";
 
             estate.req_stats_upd = false;
         }
@@ -225,6 +229,7 @@ struct ViewState
             "Method: {}\n"
             "{}"
             "Multithreading: {}\n"
+            "{}"
             "Adaptive sampling threshold: {}\n"
             "Max bounce depth: {}\n\n"
             "STATS\n"
@@ -238,6 +243,7 @@ struct ViewState
             method,
             ss,
             mp,
+            nt,
             threshold,
             max_depth,
             static_cast<unsigned>(static_cast<double>(pix_done) /
