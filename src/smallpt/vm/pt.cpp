@@ -40,6 +40,13 @@ key_callback(GLFWwindow* window,
     key_action(window, key, action, mods);
 }
 
+static bool
+val_stream_size(const std::size_t stream_size,
+                const std::size_t img_size) noexcept
+{
+    return stream_size * NUM_CORES_L < img_size && stream_size > 64;
+}
+
 int
 main(int argc, char* argv[])
 {
@@ -51,11 +58,11 @@ main(int argc, char* argv[])
     {
         constexpr std::size_t ncores = NUM_CORES_L;
 
-        const auto [resx, resy]     = parse_results.template get_opt<'r'>();
-        const float       threshold = parse_results.template get_opt<'t'>();
-        const bool        lock_res  = parse_results.template get_opt<'l'>();
-        const unsigned    max_depth = parse_results.template get_opt<'d'>();
-        const std::size_t stream_size =
+        const auto [resx, resy] = parse_results.template get_opt<'r'>();
+        const bool  lock_res    = parse_results.template get_opt<'l'>();
+        float       threshold   = parse_results.template get_opt<'t'>();
+        unsigned    max_depth   = parse_results.template get_opt<'d'>();
+        std::size_t stream_size =
             align_up(parse_results.template get_opt<'s'>(), 32ul);
         const std::chrono::milliseconds ep{
             parse_results.template get_opt<'p'>()};
@@ -63,9 +70,13 @@ main(int argc, char* argv[])
         if(threshold < 0)
             throw std::runtime_error("Negative sampling threshold");
 
+        if(stream_size % simd::native_vector_extent_v<float> != 0)
+            throw std::runtime_error(
+                "Stream size is not aligned to SIMD lane size");
+
         Image img(Vec2u{resx, resy});
 
-        if(stream_size * ncores >= img.size())
+        if(!val_stream_size(stream_size, img.size()))
             throw std::runtime_error("Stream size is too big");
 
         logger.debug("exchange period: {}ms", ep.count());
@@ -103,13 +114,6 @@ main(int argc, char* argv[])
             vstate{h, window, viewport, osd, logger, img, threshold, max_depth};
 
         logger.debug("vstate ready");
-
-        if(stream_size % simd::native_vector_extent_v<float> != 0)
-            throw std::runtime_error(
-                "Stream size is not aligned to SIMD lane size");
-
-        if(vstate.img.size() < stream_size)
-            throw std::runtime_error("Image size is less than stream size");
 
         while(!estate.req_quit)
         {
@@ -160,6 +164,43 @@ main(int argc, char* argv[])
 
             estate.resize(img);
             logger.debug("new image size: {}x{}", img.width(), img.height());
+
+            switch(estate.th_action)
+            {
+            case EventState::INCREASE: threshold *= 10.f; break;
+            case EventState::DECREASE:
+                threshold = std::max(threshold / 10.f, 0.0001f);
+                break;
+            case EventState::NONE: break;
+            }
+
+            switch(estate.md_action)
+            {
+            case EventState::INCREASE: max_depth++; break;
+            case EventState::DECREASE:
+                max_depth = max_depth == 1u ? 1u : max_depth - 1u;
+            case EventState::NONE: break;
+            }
+
+            switch(estate.ss_action)
+            {
+            case EventState::INCREASE:
+            {
+                const std::size_t cand = stream_size * 2;
+                if(val_stream_size(cand, img.size())) stream_size = cand;
+                break;
+            }
+            case EventState::DECREASE:
+            {
+                const std::size_t cand = stream_size / 2;
+                if(val_stream_size(cand, img.size())) stream_size = cand;
+                break;
+            }
+            case EventState::NONE: break;
+            }
+
+            vstate.threshold = threshold;
+            vstate.max_depth = max_depth;
 
             estate.reset();
             clear(img);

@@ -74,7 +74,7 @@ parse_args(int argc, char* argv[]) noexcept
                                                read_number<float, true>),
             argparse::option<'d', "depth">("maximum bounce depth",
                                            "D",
-                                           5u,
+                                           20u,
                                            read_number<unsigned, true>),
             argparse::option<'r', "res", 2>("image resolution",
                                             {"width", "height"},

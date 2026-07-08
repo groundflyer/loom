@@ -13,19 +13,34 @@
 namespace loom
 {
 inline constexpr char osd_help[] =
-    "ESC: close\n1: switch method\n2: switch multithreading\n3: lock/unlock "
-    "image resolution";
+    "ESC: close\n"
+    "SPACE: switch method\n"
+    "T: switch multithreading\n"
+    "L: lock/unlock image resolution\n"
+    "Q/W: decrease/increase (x10) adaptive sampling threshold\n"
+    "A/S: decrease/increase max depth\n"
+    "Z/X: decrease/increase (x2) stream size";
 
 struct EventState
 {
-    bool  lock_res;
-    bool  run_stream    = true;
-    bool  run_mp        = true;
-    bool  req_restart   = false;
-    bool  req_resize    = false;
-    bool  req_quit      = false;
-    bool  req_stats_upd = true;
-    Vec2u new_size{500, 500};
+    enum ACTION
+    {
+        NONE,
+        INCREASE,
+        DECREASE
+    };
+
+    bool   lock_res;
+    bool   run_stream    = true;
+    bool   run_mp        = true;
+    bool   req_restart   = false;
+    bool   req_resize    = false;
+    bool   req_quit      = false;
+    bool   req_stats_upd = true;
+    ACTION th_action     = NONE;
+    ACTION md_action     = NONE;
+    ACTION ss_action     = NONE;
+    Vec2u  new_size{500, 500};
 
     static constexpr Vec2u min_size{128, 128};
 
@@ -57,12 +72,15 @@ struct EventState
 
     struct KeyAction
     {
-        bool* lock_res;
-        bool* run_stream;
-        bool* run_mp;
-        bool* req_restart;
-        bool* req_quit;
-        bool* req_stats_upd;
+        bool*   lock_res;
+        bool*   run_stream;
+        bool*   run_mp;
+        bool*   req_restart;
+        bool*   req_quit;
+        bool*   req_stats_upd;
+        ACTION* th_action;
+        ACTION* md_action;
+        ACTION* ss_action;
 
         void
         operator()(GLFWwindow* window, int button, int action, int) noexcept
@@ -77,24 +95,72 @@ struct EventState
                     glfwSetWindowShouldClose(window, true);
                     return;
                 }
-                case GLFW_KEY_1:
+                case GLFW_KEY_SPACE:
                 {
                     *run_stream    = !*run_stream;
                     *req_restart   = true;
                     *req_stats_upd = true;
                     return;
                 }
-                case GLFW_KEY_2:
+                case GLFW_KEY_T:
                 {
                     *run_mp        = !*run_mp;
                     *req_restart   = true;
                     *req_stats_upd = true;
                     return;
                 }
-                case GLFW_KEY_3:
+                case GLFW_KEY_L:
                 {
                     *lock_res      = !*lock_res;
                     *req_stats_upd = true;
+                    return;
+                }
+                case GLFW_KEY_Q:
+                {
+                    *th_action     = DECREASE;
+                    *req_restart   = true;
+                    *req_stats_upd = true;
+                    return;
+                }
+                case GLFW_KEY_W:
+                {
+                    *th_action     = INCREASE;
+                    *req_restart   = true;
+                    *req_stats_upd = true;
+                    return;
+                }
+                case GLFW_KEY_A:
+                {
+                    *md_action     = DECREASE;
+                    *req_restart   = true;
+                    *req_stats_upd = true;
+                    return;
+                }
+                case GLFW_KEY_S:
+                {
+                    *md_action     = INCREASE;
+                    *req_restart   = true;
+                    *req_stats_upd = true;
+                    return;
+                }
+                case GLFW_KEY_Z:
+                {
+                    if(*run_stream)
+                    {
+                        *ss_action     = DECREASE;
+                        *req_restart   = true;
+                        *req_stats_upd = true;
+                    }
+                    return;
+                }
+                case GLFW_KEY_X:
+                {
+                    if(*run_stream)
+                    {
+                        *ss_action     = INCREASE;
+                        *req_restart   = true;
+                        *req_stats_upd = true;
+                    }
                     return;
                 }
                 }
@@ -111,12 +177,17 @@ struct EventState
     KeyAction
     get_key_action() noexcept
     {
-        return {&lock_res,
-                &run_stream,
-                &run_mp,
-                &req_restart,
-                &req_quit,
-                &req_stats_upd};
+        return {
+            &lock_res,
+            &run_stream,
+            &run_mp,
+            &req_restart,
+            &req_quit,
+            &req_stats_upd,
+            &th_action,
+            &md_action,
+            &ss_action,
+        };
     }
 
     void
@@ -125,6 +196,9 @@ struct EventState
         req_restart   = false;
         req_resize    = false;
         req_stats_upd = true;
+        th_action     = NONE;
+        md_action     = NONE;
+        ss_action     = NONE;
     }
 
     bool
@@ -230,7 +304,7 @@ struct ViewState
             "{}"
             "Multithreading: {}\n"
             "{}"
-            "Adaptive sampling threshold: {}\n"
+            "Adaptive sampling threshold: {:>6}\n"
             "Max bounce depth: {}\n\n"
             "STATS\n"
             "Progress: {:>3}%\n"
