@@ -132,11 +132,7 @@ main(int argc, char* argv[])
         while(!estate.req_quit)
         {
             vstate.update_stats(estate, stream_size);
-            vstate.update_osd(
-                0,
-                0,
-                std::chrono::duration_cast<std::chrono::steady_clock::duration>(
-                    1ms));
+            vstate.update_osd(img.size(), 0, 0);
 
             logger.debug("rendering stream?{}, mp?{}",
                          estate.run_stream,

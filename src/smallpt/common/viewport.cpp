@@ -377,7 +377,7 @@ OSD::OSD(const float x,
 void
 OSD::update_text(const char* text) noexcept
 {
-    constexpr std::size_t buffer_size = 110000;
+    constexpr std::size_t buffer_size = 120000;
 
     std::vector<char> buffer(buffer_size);
     m_quads = stb_easy_font_print(m_x,

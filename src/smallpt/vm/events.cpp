@@ -280,9 +280,9 @@ ViewState::update_stats(EventState& estate, const std::size_t stream_size)
 }
 
 void
-ViewState::update_osd(const std::size_t                          pix_done,
-                      const std::size_t                          ray_count,
-                      const std::chrono::steady_clock::duration& dur)
+ViewState::update_osd(const std::size_t pix_done,
+                      const float       tr,
+                      const float       avg_tr)
 {
     const std::string new_text = fmt::format(
         "CONTROL\n{}\n\n"
@@ -298,7 +298,8 @@ ViewState::update_osd(const std::size_t                          pix_done,
         "Max bounce depth: {}\n\n"
         "STATS\n"
         "Progress: {:>3}%\n"
-        "Traversal rate: {:0>3.0f} MRay/s",
+        "Traversal rate:     {:0>3.0f} MRay/s\n"
+        "Avg Traversal rate: {:0>3.0f} MRay/s",
         osd_help,
         vm::simd::info::value,
         img.width(),
@@ -313,10 +314,8 @@ ViewState::update_osd(const std::size_t                          pix_done,
         max_depth,
         static_cast<unsigned>(static_cast<double>(pix_done) /
                               static_cast<double>(img.size()) * 100),
-        static_cast<double>(ray_count / 100ul) /
-            static_cast<double>(
-                std::chrono::duration_cast<std::chrono::milliseconds>(dur)
-                    .count()));
+        tr,
+        avg_tr);
     osd.update_text(new_text.data());
 }
 } // namespace loom

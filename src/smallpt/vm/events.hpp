@@ -117,9 +117,7 @@ struct ViewState
     update_stats(EventState& estate, const std::size_t stream_size = 0);
 
     void
-    update_osd(const std::size_t                          pix_done,
-               const std::size_t                          ray_count,
-               const std::chrono::steady_clock::duration& dur);
+    update_osd(const std::size_t pix_done, const float tr, const float avg_tr);
 };
 
 bool
