@@ -88,10 +88,14 @@ class InputEncoder
     std::uint32_t m_res;
     float         m_t;
     unsigned      m_d;
+    float         m_b;
 
   public:
-    InputEncoder(const Vec2u& res, const float t, const unsigned d) noexcept :
-        m_res(encode_res(res)), m_t(t), m_d(d)
+    InputEncoder(const Vec2u&   res,
+                 const float    t,
+                 const unsigned d,
+                 const float    b) noexcept :
+        m_res(encode_res(res)), m_t(t), m_d(d), m_b(b)
     {
     }
 
@@ -99,7 +103,7 @@ class InputEncoder
     vm::input_type<pt_float>
     operator()(const Ip ip) const noexcept
     {
-        return {encode_pp(ip.first), m_res, m_t, m_d};
+        return {encode_pp(ip.first), m_res, m_t, m_d, m_b};
     }
 };
 
@@ -110,12 +114,14 @@ struct RenderPixelBase
     unsigned res;
     float    threshold;
     unsigned max_depth;
+    float    blur;
 
     RenderPixelBase(const Vec2u& img_res,
                     float        _threshold,
-                    unsigned     _max_depth) noexcept :
+                    unsigned     _max_depth,
+                    float        _blur) noexcept :
         w(img_res[0]), h(img_res[1]), res(encode_res(img_res)),
-        threshold(_threshold), max_depth(_max_depth)
+        threshold(_threshold), max_depth(_max_depth), blur(_blur)
     {
     }
 };
@@ -133,7 +139,7 @@ struct RenderPixelBSE : RenderPixelBase
         auto [pos, pix] = val;
 
         const auto [r, g, b, rc, _] =
-            f(encode_pp(pos), res, threshold, max_depth);
+            f(encode_pp(pos), res, threshold, max_depth, blur);
 
         pix = RGBA{r, g, b, 1};
 
@@ -159,6 +165,7 @@ struct RenderPixelSIMDPredicated : RenderPixelBase
         const vut vres = vm::simd::broadcast<N>(res);
         const vft vt   = vm::simd::broadcast<N>(threshold);
         const vut vd   = vm::simd::broadcast<N>(max_depth);
+        const vft vbl  = vm::simd::broadcast<N>(blur);
         vut       vpp;
 
         const std::size_t vs = std::ranges::size(view);
@@ -180,7 +187,7 @@ struct RenderPixelSIMDPredicated : RenderPixelBase
                 vpp[i] = encode_pp(view[i].first);
         }
 
-        const auto [vr, vg, vb, vrc, _] = f(vpp, vres, vt, vd);
+        const auto [vr, vg, vb, vrc, _] = f(vpp, vres, vt, vd, vbl);
 
         for(std::size_t i = 0; i < vs; ++i)
             view[i].second = RGBA{vr[i], vg[i], vb[i], 1};

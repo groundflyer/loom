@@ -16,8 +16,9 @@ inline constexpr char osd_help[] =
     "SPACE: switch method\n"
     "T: switch multithreading\n"
     "L: lock/unlock image resolution\n"
+    "1/2: decrease/increase (x2) blur\n"
     "Q/W: decrease/increase (x10) adaptive sampling threshold\n"
-    "A/S: decrease/increase max depth\n"
+    "A/S: decrease/increase (5) max depth\n"
     "Z/X: decrease/increase (x2) stream size";
 
 struct EventState
@@ -27,6 +28,7 @@ struct EventState
     std::size_t stream_size;
     float       threshold;
     unsigned    max_depth;
+    float       blur;
     bool        lock_res;
     bool        run_stream    = true;
     bool        run_mp        = true;
@@ -39,6 +41,7 @@ struct EventState
                std::size_t ss,
                float       t,
                unsigned    md,
+               float       b,
                bool        lr) noexcept;
 
     FORBID_COPY(EventState);
@@ -88,6 +91,7 @@ struct ViewState
     Vec2u                     old_res;
     float                     threshold;
     unsigned                  max_depth;
+    float                     blur;
     const char*               res_mode;
     const char*               method;
     const char*               mp;
@@ -101,7 +105,8 @@ struct ViewState
               Logger&                   l,
               Image&                    i,
               float                     t,
-              unsigned                  d) noexcept;
+              unsigned                  d,
+              float                     b) noexcept;
 
     FORBID_ALL(ViewState);
 
@@ -118,29 +123,16 @@ struct ViewState
 };
 
 bool
-predicated_render(EventState&    estate,
-                  ViewState&     vstate,
-                  const float    threshold,
-                  const unsigned max_depth);
+predicated_render(EventState& estate, ViewState& vstate);
 
 bool
-predicated_mp(EventState&    estate,
-              ViewState&     vstate,
-              const float    threshold,
-              const unsigned max_depth);
+predicated_mp(EventState& estate, ViewState& vstate);
 
 bool
-hybrid_render(EventState&    estate,
-              ViewState&     vstate,
-              const float    threshold,
-              const unsigned max_depth,
-              const unsigned stream_size);
+hybrid_render(EventState& estate, ViewState& vstate);
 
 bool
 hybrid_mp(EventState&                     estate,
           ViewState&                      vstate,
-          const float                     threshold,
-          const unsigned                  max_depth,
-          const unsigned                  stream_size,
           const std::chrono::milliseconds eg);
 } // namespace loom

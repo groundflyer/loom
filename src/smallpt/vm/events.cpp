@@ -11,6 +11,8 @@ namespace loom
 inline constexpr Vec2u    min_res{128, 128};
 inline constexpr float    min_threshold = 0.0001f;
 inline constexpr float    max_threshold = 0.01f;
+inline constexpr float    min_blur      = 1.f;
+inline constexpr float    max_blur      = 20.f;
 inline constexpr unsigned min_md        = 2;
 inline constexpr unsigned max_md        = 40;
 inline constexpr unsigned md_step       = 5;
@@ -19,8 +21,10 @@ EventState::EventState(std::size_t is,
                        std::size_t ss,
                        float       t,
                        unsigned    md,
+                       float       b,
                        bool        lr) noexcept :
-    img_size(is), stream_size(ss), threshold(t), max_depth(md), lock_res(lr)
+    img_size(is), stream_size(ss), threshold(t), max_depth(md), blur(b),
+    lock_res(lr)
 {
 }
 
@@ -150,6 +154,38 @@ EventState::KeyAction::operator()(GLFWwindow* window,
             }
             return;
         }
+        case GLFW_KEY_1:
+        {
+            const float cand = estate->blur * 0.5f;
+
+            if(estate->blur != min_blur)
+            {
+                if(cand > min_blur)
+                    estate->blur = cand;
+                else
+                    estate->blur = min_blur;
+
+                estate->req_restart   = true;
+                estate->req_stats_upd = true;
+            }
+            return;
+        }
+        case GLFW_KEY_2:
+        {
+            const float cand = estate->blur * 2.f;
+            if(estate->blur != max_blur)
+            {
+                if(cand < max_blur)
+                    estate->blur = cand;
+                else
+                    estate->blur = max_blur;
+
+                estate->req_restart   = true;
+                estate->req_stats_upd = true;
+            }
+
+            return;
+        }
         }
     }
 }
@@ -197,9 +233,10 @@ ViewState::ViewState(const gl::System::Handle& h,
                      Logger&                   l,
                      Image&                    i,
                      float                     t,
-                     unsigned                  d) noexcept :
+                     unsigned                  d,
+                     float                     b) noexcept :
     system(h), window(w), viewport(v), osd(o), logger(l), img(i),
-    old_res(img.res()), threshold(t), max_depth(d)
+    old_res(img.res()), threshold(t), max_depth(d), blur(b)
 {
 }
 
@@ -248,7 +285,7 @@ ViewState::update_osd(const std::size_t                          pix_done,
                       const std::chrono::steady_clock::duration& dur)
 {
     const std::string new_text = fmt::format(
-        "HOTKEYS\n{}\n\n"
+        "CONTROL\n{}\n\n"
         "INFO\n"
         "SIMD: {}\n"
         "Image res: {}x{} ({})\n"
@@ -256,6 +293,7 @@ ViewState::update_osd(const std::size_t                          pix_done,
         "{}"
         "Multithreading: {}\n"
         "{}"
+        "Blur: {:1>.00f}\n"
         "Adaptive sampling threshold: {:6>.04f}\n"
         "Max bounce depth: {}\n\n"
         "STATS\n"
@@ -270,6 +308,7 @@ ViewState::update_osd(const std::size_t                          pix_done,
         ss,
         mp,
         nt,
+        blur,
         threshold,
         max_depth,
         static_cast<unsigned>(static_cast<double>(pix_done) /

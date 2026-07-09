@@ -786,7 +786,7 @@ KERNEL_END(TVAR(L0), TVAR(L1), TVAR(L2), IVAR(rc));
 #else
 
 template <std::same_as<float> T>
-KERNEL(pt, IVAR(ppp), IVAR(tmp0), TVAR(threshold), IVAR(maxdepth))
+KERNEL(pt, IVAR(ppp), IVAR(tmp0), TVAR(threshold), IVAR(maxdepth), TVAR(vr0))
     IRSHFT(d0, ppp, 16),
     IBAND(d1, ppp, 0xffff),
     IRSHFT(tmp1, tmp0, 16),     // tmp1 <- w
@@ -801,6 +801,7 @@ KERNEL(pt, IVAR(ppp), IVAR(tmp0), TVAR(threshold), IVAR(maxdepth))
     MOV(TVAR(pp1), IVAR(d1)),
     TDIV(tmp0, tmp1, tmp2),     // tmp0 <- ratio
     TDIV(pw, tmp0, tmp1),       // pw <- pixel width
+    TMUL(pw, pw, vr0),
     TMOV(mean, 0),
     TMOV(m2, 0),
     INSERT_TMACRO(to_sample_space, CS(pp0), CS(pp1), CS(tmp1), CS(tmp2), CS(tmp0)),
@@ -1002,7 +1003,7 @@ KERNEL(pt_const, IVAR(ppp))
     MOV(TVAR(pp1), IVAR(d1)),
     TDIV(tmp0, tmp1, tmp2),     // tmp0 <- ratio
     TDIV(pw, tmp0, tmp1),       // pw <- pixel width
-    TMUL(pw, pw, typename C::BLUR),
+    TMUL_CS(CS(pw), CS(pw), typename C::BLUR),
     TMOV(mean, 0),
     TMOV(m2, 0),
     INSERT_TMACRO(to_sample_space, CS(pp0), CS(pp1), CS(tmp1), CS(tmp2), CS(tmp0)),

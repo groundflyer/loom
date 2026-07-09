@@ -56,11 +56,12 @@ main(int argc, char* argv[])
 
     try
     {
-        const auto [resx, resy] = parse_results.template get_opt<'r'>();
-        const bool  lock_res    = parse_results.template get_opt<'l'>();
-        float       threshold   = parse_results.template get_opt<'t'>();
-        unsigned    max_depth   = parse_results.template get_opt<'d'>();
-        std::size_t stream_size =
+        const auto [resx, resy]  = parse_results.template get_opt<'r'>();
+        const bool     lock_res  = parse_results.template get_opt<'l'>();
+        const float    threshold = parse_results.template get_opt<'t'>();
+        const unsigned max_depth = parse_results.template get_opt<'d'>();
+        const float    blur      = parse_results.template get_opt<'b'>();
+        std::size_t    stream_size =
             align_up(parse_results.template get_opt<'s'>(), 32ul);
         const std::chrono::milliseconds ep{
             parse_results.template get_opt<'p'>()};
@@ -71,6 +72,9 @@ main(int argc, char* argv[])
         if(stream_size % simd::native_vector_extent_v<float> != 0)
             throw std::runtime_error(
                 "Stream size is not aligned to SIMD lane size");
+
+        if(blur < 1.f || blur > 20.f)
+            throw std::runtime_error("Blur B have to be in range [1, 20]");
 
         Image img(Vec2u{resx, resy});
 
@@ -85,6 +89,7 @@ main(int argc, char* argv[])
                           stream_size,
                           threshold,
                           max_depth,
+                          blur,
                           lock_res};
 
         logger.debug("initializing glfw");
@@ -112,8 +117,15 @@ main(int argc, char* argv[])
 
         viewport.load_img(img.data(), resx, resy);
 
-        ViewState
-            vstate{h, window, viewport, osd, logger, img, threshold, max_depth};
+        ViewState vstate{h,
+                         window,
+                         viewport,
+                         osd,
+                         logger,
+                         img,
+                         threshold,
+                         max_depth,
+                         blur};
 
         logger.debug("vstate ready");
 
@@ -133,25 +145,16 @@ main(int argc, char* argv[])
             if(estate.run_stream)
             {
                 if(estate.run_mp)
-                    hybrid_mp(estate,
-                              vstate,
-                              threshold,
-                              max_depth,
-                              stream_size,
-                              ep);
+                    hybrid_mp(estate, vstate, ep);
                 else
-                    hybrid_render(estate,
-                                  vstate,
-                                  threshold,
-                                  max_depth,
-                                  stream_size);
+                    hybrid_render(estate, vstate);
             }
             else
             {
                 if(estate.run_mp)
-                    predicated_mp(estate, vstate, threshold, max_depth);
+                    predicated_mp(estate, vstate);
                 else
-                    predicated_render(estate, vstate, threshold, max_depth);
+                    predicated_render(estate, vstate);
             }
 
             logger.debug("rendering done. show still image");
@@ -167,13 +170,14 @@ main(int argc, char* argv[])
             estate.resize(img);
             logger.debug("new image size: {}x{}", img.width(), img.height());
 
-            stream_size = estate.stream_size;
-            threshold = vstate.threshold = estate.threshold;
-            max_depth = vstate.max_depth = estate.max_depth;
+            vstate.threshold = estate.threshold;
+            vstate.max_depth = estate.max_depth;
+            vstate.blur      = estate.blur;
 
             logger.debug("stream size: {}", stream_size);
             logger.debug("threshold: {}", threshold);
             logger.debug("max depth: {}", max_depth);
+            logger.debug("blur: {}", blur);
 
             estate.reset();
             clear(img);

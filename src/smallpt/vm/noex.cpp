@@ -17,10 +17,7 @@ inline constexpr std::chrono::milliseconds img_timeframe{20};
 inline constexpr std::chrono::milliseconds osd_timeframe{500};
 
 bool
-predicated_render(EventState&    estate,
-                  ViewState&     vstate,
-                  const float    threshold,
-                  const unsigned max_depth)
+predicated_render(EventState& estate, ViewState& vstate)
 {
     ElapsedTimer<> img_timer, osd_timer;
 
@@ -32,8 +29,9 @@ predicated_render(EventState&    estate,
                {
                    const auto [p, rc] =
                        RenderPixelSIMDPredicated{vstate.img.res(),
-                                                 threshold,
-                                                 max_depth}(chunk);
+                                                 estate.threshold,
+                                                 estate.max_depth,
+                                                 estate.blur}(chunk);
                    progress += p;
                    ray_count += rc;
 
@@ -62,10 +60,7 @@ predicated_render(EventState&    estate,
 }
 
 bool
-predicated_mp(EventState&    estate,
-              ViewState&     vstate,
-              const float    threshold,
-              const unsigned max_depth)
+predicated_mp(EventState& estate, ViewState& vstate)
 {
     struct Shared
     {
@@ -86,8 +81,7 @@ predicated_mp(EventState&    estate,
          &progress  = scc.progress,
          &ray_count = scc.ray_count,
          res        = vstate.img.res(),
-         is         = vstate.img.size(),
-         threshold]()
+         is         = vstate.img.size()]()
         {
             constexpr std::size_t cs = 16;
 
@@ -100,13 +94,18 @@ predicated_mp(EventState&    estate,
 
                 std::ranges::for_each(
                     std::views::counted(std::ranges::begin(r) + b, cs),
-                    [res, threshold, max_depth, &progress, &ray_count](
-                        auto view) noexcept
+                    [res,
+                     threshold = estate.threshold,
+                     max_depth = estate.max_depth,
+                     blur      = estate.blur,
+                     &progress,
+                     &ray_count](auto view) noexcept
                     {
                         const auto [p, rc] =
                             RenderPixelSIMDPredicated{res,
                                                       threshold,
-                                                      max_depth}(view);
+                                                      max_depth,
+                                                      blur}(view);
                         progress.fetch_add(p, std::memory_order_relaxed);
                         ray_count.fetch_add(rc, std::memory_order_relaxed);
                     });
@@ -146,39 +145,6 @@ predicated_mp(EventState&    estate,
 
     return true;
 }
-
-#if 0
-static std::size_t
-full_range_render(Image& img, const float t)
-{
-    vm::simd::hybrid_function<pt_float,
-                          true,
-                              true,
-                          simd::STATIC_MAJOR,
-                          std::ratio<1, 16>,
-                          std::ratio<1, 16>>
-        f(img.size());
-
-    const auto r = f.template operator()<true>(
-        std::views::transform(img, InputEncoder(img.res(), t)));
-
-    std::vector<vm::output_type<pt_float>> result_buffer;
-    result_buffer.reserve(img.size());
-    std::ranges::copy(r, std::back_inserter(result_buffer));
-    std::ranges::sort(
-        result_buffer,
-        std::less<unsigned>{},
-        [width = img.width()](const auto& t) noexcept
-        { return pixel_offset(decode_pp(std::get<4>(t)), width, 4); });
-    std::size_t ret = 0;
-
-    std::ranges::copy(
-        std::views::transform(result_buffer, OutputPixelConverter(ret)),
-        OutputAdapter<Image::iterator>(img.begin()));
-
-    return ret;
-}
-#endif
 
 template <typename T>
 class remote_output_control
@@ -264,12 +230,13 @@ img_upd(Image& img, remote_output_control<T>& roc)
 }
 
 bool
-hybrid_render(EventState&    estate,
-              ViewState&     vstate,
-              const float    threshold,
-              const unsigned max_depth,
-              const unsigned stream_size)
+hybrid_render(EventState& estate, ViewState& vstate)
 {
+    const float       threshold   = estate.threshold;
+    const unsigned    max_depth   = estate.max_depth;
+    const float       blur        = estate.blur;
+    const std::size_t stream_size = estate.stream_size;
+
     vm::simd::hybrid_stream<pt_float,
                             true,
                             true,
@@ -285,7 +252,7 @@ hybrid_render(EventState&    estate,
 
     auto view = std::views::transform(
         vstate.img,
-        InputEncoder(vstate.img.res(), threshold, max_depth));
+        InputEncoder(vstate.img.res(), threshold, max_depth, blur));
     auto it = s.set_inputs(view);
 
     s();
@@ -359,11 +326,13 @@ using mp_context = vm::mp::Context<K, mp_stream>;
 bool
 hybrid_mp(EventState&                     estate,
           ViewState&                      vstate,
-          const float                     threshold,
-          const unsigned                  max_depth,
-          const unsigned                  stream_size,
           const std::chrono::milliseconds eg)
 {
+    const float       threshold   = estate.threshold;
+    const unsigned    max_depth   = estate.max_depth;
+    const float       blur        = estate.blur;
+    const std::size_t stream_size = estate.stream_size;
+
     vm::mp::Shop<type_sequence<pt_float>, mp_context, ncores> shop(stream_size);
 
     std::vector<vm::output_type<pt_float>> result_buffer(stream_size * ncores);
@@ -371,7 +340,7 @@ hybrid_mp(EventState&                     estate,
 
     auto input_view = std::views::transform(
         vstate.img,
-        InputEncoder(vstate.img.res(), threshold, max_depth));
+        InputEncoder(vstate.img.res(), threshold, max_depth, blur));
 
     auto oc = std::tuple{roc.get_output_iterator()};
 
