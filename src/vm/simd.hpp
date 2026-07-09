@@ -15,8 +15,6 @@
 #include <common/tmp.hpp>
 #include <common/tuple.hpp>
 
-#include <fmt/core.h>
-
 #include <algorithm>
 #include <bitset>
 #include <cstdlib>
@@ -59,13 +57,6 @@ struct info
     static constexpr char value[] = "sse4.2 or older";
 #endif
 };
-
-/// @brief Print current x86-64 vector extension.
-static inline void
-print_info() noexcept
-{
-    fmt::print("Using x86-64 vector extensions: {}\n", info::value);
-}
 
 /// @brief Test if provided type is bve::ProxyView and provide its size.
 template <typename T>

@@ -337,7 +337,7 @@ struct InvariantTestSuite
 int
 main(int argc, char* argv[])
 {
-    simd::print_info();
+    fmt::print("Using x86-64 vector extensions: {}\n", simd::info::value);
     Track         track;
     ParmTestMaker tm{parse_numruns(argc, argv)};
     RandomState   rs;

@@ -250,10 +250,11 @@ struct StandardTestSuite
 int
 main(int argc, char* argv[])
 {
-    simd::print_info();
     Track         track;
     ParmTestMaker tm{align_up(parse_numruns(argc, argv), 32u)};
     RandomState   rs;
+
+    fmt::print("Using x86-64 vector extensions: {}\n", simd::info::value);
 
     test_suite_types(typelist::join<all_ints, all_uints>{},
                      StandardTestSuite<increment, GM_Incr, ::fn::val_inc_fn>{},

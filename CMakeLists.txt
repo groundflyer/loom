@@ -159,7 +159,7 @@ pkg_check_modules(HWLOC REQUIRED IMPORTED_TARGET hwloc)
 # External includes
 include_directories(ext/include)
 # Disable static_math warnings
-add_compile_options(-Wno-deprecated-literal-operator -Wno-nan-infinity-disabled)
+add_compile_options(-Wno-deprecated-literal-operator -Wno-nan-infinity-disabled -Wno-unused-function)
 
 # docs
 if(BUILD_DOC)

@@ -240,7 +240,7 @@ test_simd_all(Args&&... args) noexcept
 int
 main(int argc, char* argv[])
 {
-    simd::print_info();
+    fmt::print("Using x86-64 vector extensions: {}\n", simd::info::value);
     CPUTopology top;
 #if FMT_VERSION < 110000
     fmt::print("CPU topology: {}\n", top);

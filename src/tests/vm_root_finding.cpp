@@ -203,7 +203,7 @@ struct test_suite
 int
 main(int argc, char* argv[])
 {
-    simd::print_info();
+    fmt::print("Using x86-64 vector extensions: {}\n", simd::info::value);
     Track         track;
     ParmTestMaker tm{align_up(parse_numruns<10000>(argc, argv), 64u)};
     RandomState   rs;
