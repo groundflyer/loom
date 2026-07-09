@@ -412,7 +412,7 @@ if (BUILD_DEMO)
   target_compile_options(pt_vm_noex PRIVATE -fno-exceptions -ftemplate-depth=2048 -fbracket-depth=512 -ftemplate-backtrace-limit=1)
   target_compile_definitions(pt_vm_noex PRIVATE -DNUM_CORES_L=${NUM_CORES_L} -DNUM_CORES_P=${NUM_CORES_P})
 
-  add_executable(pt_vm src/smallpt/vm/pt.cpp)
+  add_executable(pt_vm src/smallpt/vm/pt.cpp src/smallpt/vm/events.cpp)
   target_link_libraries(pt_vm PUBLIC viewport pt_vm_noex Threads::Threads PkgConfig::HWLOC)
   if (USE_SYSTEM_FMT AND (NOT FmtLibcxx))
     target_link_libraries(pt_vm PUBLIC fmt::fmt-header-only)
