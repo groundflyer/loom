@@ -23,48 +23,50 @@ inline constexpr char osd_help[] =
 
 struct EventState
 {
-    enum ACTION
-    {
-        NONE,
-        INCREASE,
-        DECREASE
-    };
+    Vec2u       new_res;
+    std::size_t img_size;
+    std::size_t stream_size;
+    float       threshold;
+    unsigned    max_depth;
+    bool        lock_res;
+    bool        run_stream    = true;
+    bool        run_mp        = true;
+    bool        req_restart   = false;
+    bool        req_resize    = false;
+    bool        req_quit      = false;
+    bool        req_stats_upd = true;
 
-    bool   lock_res;
-    bool   run_stream    = true;
-    bool   run_mp        = true;
-    bool   req_restart   = false;
-    bool   req_resize    = false;
-    bool   req_quit      = false;
-    bool   req_stats_upd = true;
-    ACTION th_action     = NONE;
-    ACTION md_action     = NONE;
-    ACTION ss_action     = NONE;
-    Vec2u  new_size{500, 500};
+    static constexpr Vec2u    min_res{128, 128};
+    static constexpr float    min_threshold = 0.0001f;
+    static constexpr float    max_threshold = 0.01f;
+    static constexpr unsigned min_md        = 2;
+    static constexpr unsigned max_md        = 40;
+    static constexpr unsigned md_step       = 5;
 
-    static constexpr Vec2u min_size{128, 128};
-
-    EventState(const bool kr) noexcept : lock_res(kr) {};
+    EventState(std::size_t is,
+               std::size_t ss,
+               float       t,
+               unsigned    md,
+               bool        lr) noexcept :
+        img_size(is), stream_size(ss), threshold(t), max_depth(md),
+        lock_res(lr) {};
 
     FORBID_COPY(EventState);
     FORBID_MOVE(EventState);
 
     struct ResizeAction
     {
-        bool*    lock_res;
-        bool*    req_restart;
-        bool*    req_resize;
-        Vec2u*   new_size;
-        gl::OSD* osd;
+        EventState* estate;
+        gl::OSD*    osd;
 
         void
         operator()(GLFWwindow* /*window*/, int width, int height) noexcept
         {
-            if(!*lock_res)
+            if(!estate->lock_res)
             {
-                *req_restart = true;
-                *req_resize  = true;
-                *new_size    = Vec2u(width, height);
+                estate->req_restart = true;
+                estate->req_resize  = true;
+                estate->new_res     = Vec2u(width, height);
             }
             osd->resize(width, height);
         }
@@ -72,15 +74,7 @@ struct EventState
 
     struct KeyAction
     {
-        bool*   lock_res;
-        bool*   run_stream;
-        bool*   run_mp;
-        bool*   req_restart;
-        bool*   req_quit;
-        bool*   req_stats_upd;
-        ACTION* th_action;
-        ACTION* md_action;
-        ACTION* ss_action;
+        EventState* estate;
 
         void
         operator()(GLFWwindow* window, int button, int action, int) noexcept
@@ -91,75 +85,105 @@ struct EventState
                 {
                 case GLFW_KEY_ESCAPE:
                 {
-                    *req_quit = true;
+                    estate->req_quit = true;
                     glfwSetWindowShouldClose(window, true);
                     return;
                 }
                 case GLFW_KEY_SPACE:
                 {
-                    *run_stream    = !*run_stream;
-                    *req_restart   = true;
-                    *req_stats_upd = true;
+                    estate->run_stream    = !estate->run_stream;
+                    estate->req_restart   = true;
+                    estate->req_stats_upd = true;
                     return;
                 }
                 case GLFW_KEY_T:
                 {
-                    *run_mp        = !*run_mp;
-                    *req_restart   = true;
-                    *req_stats_upd = true;
+                    estate->run_mp        = !estate->run_mp;
+                    estate->req_restart   = true;
+                    estate->req_stats_upd = true;
                     return;
                 }
                 case GLFW_KEY_L:
                 {
-                    *lock_res      = !*lock_res;
-                    *req_stats_upd = true;
+                    estate->lock_res      = !estate->lock_res;
+                    estate->req_stats_upd = true;
                     return;
                 }
                 case GLFW_KEY_Q:
                 {
-                    *th_action     = DECREASE;
-                    *req_restart   = true;
-                    *req_stats_upd = true;
+                    const float cand = estate->threshold / 10.f;
+                    if(estate->threshold != min_threshold)
+                    {
+                        if(cand > min_threshold)
+                            estate->threshold = cand;
+                        else
+                            estate->threshold = min_threshold;
+
+                        estate->req_restart   = true;
+                        estate->req_stats_upd = true;
+                    }
                     return;
                 }
                 case GLFW_KEY_W:
                 {
-                    *th_action     = INCREASE;
-                    *req_restart   = true;
-                    *req_stats_upd = true;
+                    const float cand = estate->threshold * 10.f;
+                    if(estate->threshold != max_threshold)
+                    {
+                        if(cand < max_threshold)
+                            estate->threshold = cand;
+                        else
+                            estate->threshold = max_threshold;
+
+                        estate->req_restart   = true;
+                        estate->req_stats_upd = true;
+                    }
+
                     return;
                 }
                 case GLFW_KEY_A:
                 {
-                    *md_action     = DECREASE;
-                    *req_restart   = true;
-                    *req_stats_upd = true;
+                    const unsigned md = estate->max_depth;
+
+                    if(md > min_md)
+                    {
+                        estate->max_depth =
+                            md > md_step ? md - md_step : min_md;
+                        estate->req_restart   = true;
+                        estate->req_stats_upd = true;
+                    }
                     return;
                 }
                 case GLFW_KEY_S:
                 {
-                    *md_action     = INCREASE;
-                    *req_restart   = true;
-                    *req_stats_upd = true;
+                    const unsigned md = estate->max_depth;
+
+                    if(md < max_md)
+                    {
+                        estate->max_depth     = std::min(md + md_step, max_md);
+                        estate->req_restart   = true;
+                        estate->req_stats_upd = true;
+                    }
                     return;
                 }
                 case GLFW_KEY_Z:
                 {
-                    if(*run_stream)
+                    if(estate->run_stream && estate->stream_size > 64ul)
                     {
-                        *ss_action     = DECREASE;
-                        *req_restart   = true;
-                        *req_stats_upd = true;
+                        estate->stream_size /= 2ul;
+                        estate->req_restart   = true;
+                        estate->req_stats_upd = true;
                     }
                     return;
                 }
                 case GLFW_KEY_X:
                 {
-                    if(*run_stream)
+                    const std::size_t cand = estate->stream_size * 2ul;
+                    if(estate->run_stream &&
+                       cand * NUM_CORES_L < estate->img_size)
                     {
-                        *ss_action     = INCREASE;
-                        *req_restart   = true;
-                        *req_stats_upd = true;
+                        estate->stream_size   = cand;
+                        estate->req_restart   = true;
+                        estate->req_stats_upd = true;
                     }
                     return;
                 }
@@ -171,23 +195,13 @@ struct EventState
     ResizeAction
     get_resize_action(gl::OSD* osd) noexcept
     {
-        return {&lock_res, &req_restart, &req_resize, &new_size, osd};
+        return {this, osd};
     }
 
     KeyAction
     get_key_action() noexcept
     {
-        return {
-            &lock_res,
-            &run_stream,
-            &run_mp,
-            &req_restart,
-            &req_quit,
-            &req_stats_upd,
-            &th_action,
-            &md_action,
-            &ss_action,
-        };
+        return {this};
     }
 
     void
@@ -196,9 +210,6 @@ struct EventState
         req_restart   = false;
         req_resize    = false;
         req_stats_upd = true;
-        th_action     = NONE;
-        md_action     = NONE;
-        ss_action     = NONE;
     }
 
     bool
@@ -212,8 +223,8 @@ struct EventState
     {
         if(req_resize)
         {
-            const Vec2u final_size = max(new_size, min_size);
-            img.resize(final_size);
+            img.resize(max(new_res, min_res));
+            img_size = img.size();
         }
     }
 };
@@ -304,7 +315,7 @@ struct ViewState
             "{}"
             "Multithreading: {}\n"
             "{}"
-            "Adaptive sampling threshold: {:>6}\n"
+            "Adaptive sampling threshold: {:6>.04f}\n"
             "Max bounce depth: {}\n\n"
             "STATS\n"
             "Progress: {:>3}%\n"

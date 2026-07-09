@@ -1002,6 +1002,7 @@ KERNEL(pt_const, IVAR(ppp))
     MOV(TVAR(pp1), IVAR(d1)),
     TDIV(tmp0, tmp1, tmp2),     // tmp0 <- ratio
     TDIV(pw, tmp0, tmp1),       // pw <- pixel width
+    TMUL(pw, pw, typename C::BLUR),
     TMOV(mean, 0),
     TMOV(m2, 0),
     INSERT_TMACRO(to_sample_space, CS(pp0), CS(pp1), CS(tmp1), CS(tmp2), CS(tmp0)),

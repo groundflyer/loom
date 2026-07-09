@@ -56,8 +56,6 @@ main(int argc, char* argv[])
 
     try
     {
-        constexpr std::size_t ncores = NUM_CORES_L;
-
         const auto [resx, resy] = parse_results.template get_opt<'r'>();
         const bool  lock_res    = parse_results.template get_opt<'l'>();
         float       threshold   = parse_results.template get_opt<'t'>();
@@ -83,7 +81,11 @@ main(int argc, char* argv[])
 
         logger.debug("making viewport");
 
-        EventState estate{lock_res};
+        EventState estate{img.size(),
+                          stream_size,
+                          threshold,
+                          max_depth,
+                          lock_res};
 
         logger.debug("initializing glfw");
         const auto& h = gl::System::init();
@@ -165,42 +167,13 @@ main(int argc, char* argv[])
             estate.resize(img);
             logger.debug("new image size: {}x{}", img.width(), img.height());
 
-            switch(estate.th_action)
-            {
-            case EventState::INCREASE: threshold *= 10.f; break;
-            case EventState::DECREASE:
-                threshold = std::max(threshold / 10.f, 0.0001f);
-                break;
-            case EventState::NONE: break;
-            }
+            stream_size = estate.stream_size;
+            threshold = vstate.threshold = estate.threshold;
+            max_depth = vstate.max_depth = estate.max_depth;
 
-            switch(estate.md_action)
-            {
-            case EventState::INCREASE: max_depth++; break;
-            case EventState::DECREASE:
-                max_depth = max_depth == 1u ? 1u : max_depth - 1u;
-            case EventState::NONE: break;
-            }
-
-            switch(estate.ss_action)
-            {
-            case EventState::INCREASE:
-            {
-                const std::size_t cand = stream_size * 2;
-                if(val_stream_size(cand, img.size())) stream_size = cand;
-                break;
-            }
-            case EventState::DECREASE:
-            {
-                const std::size_t cand = stream_size / 2;
-                if(val_stream_size(cand, img.size())) stream_size = cand;
-                break;
-            }
-            case EventState::NONE: break;
-            }
-
-            vstate.threshold = threshold;
-            vstate.max_depth = max_depth;
+            logger.debug("stream size: {}", stream_size);
+            logger.debug("threshold: {}", threshold);
+            logger.debug("max depth: {}", max_depth);
 
             estate.reset();
             clear(img);
