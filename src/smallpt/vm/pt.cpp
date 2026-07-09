@@ -4,7 +4,7 @@
 #error "This program requires at least AVX"
 #endif
 
-#include "main.hpp"
+#include "events.hpp"
 
 #include <vm/simd.hpp>
 
