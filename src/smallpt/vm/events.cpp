@@ -300,8 +300,8 @@ ViewState::update_osd(const std::size_t pix_done,
         "Max bounce depth: {}\n\n"
         "STATS\n"
         "Progress: {:>3}%\n"
-        "Traversal rate:     {:0>3.0f} MRay/s\n"
-        "Avg Traversal rate: {:0>3.0f} MRay/s",
+        "Traversal rate:     {:>5.02f} MRay/s\n"
+        "Avg Traversal rate: {:>5.02f} MRay/s",
         osd_help,
         vm::simd::info::value,
         img.width(),

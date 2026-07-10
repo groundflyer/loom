@@ -372,10 +372,11 @@ struct read_number_fn<T, throws>
         auto pr =
             fast_float::from_chars(s.data(), s.data() + s.size(), ret, base);
 
-        if(pr.ec == std::errc{})
-            return ret;
+        if(pr.ec == std::errc{}) return ret;
+#ifdef __EXCEPTIONS
         else if constexpr(throws)
             throw ReadException{pr.ec, s};
+#endif
         else
             return std::nullopt;
     }
@@ -393,10 +394,11 @@ struct read_number_fn<T, throws>
         auto pr =
             fast_float::from_chars(s.data(), s.data() + s.size(), ret, fmt);
 
-        if(pr.ec == std::errc{})
-            return ret;
+        if(pr.ec == std::errc{}) return ret;
+#ifdef __EXCEPTIONS
         else if constexpr(throws)
             throw ReadException{pr.ec, s};
+#endif
         else
             return std::nullopt;
     }

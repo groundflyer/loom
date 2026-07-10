@@ -47,8 +47,10 @@ class AlignedAllocator
     {
         void* p = std::aligned_alloc(alignment, align_size(sizeof(T) * n));
 
+#ifdef __EXCEPTIONS
         if constexpr(allow_throws)
             if(!p) throw std::bad_alloc();
+#endif
 
         return static_cast<pointer>(p);
     }
