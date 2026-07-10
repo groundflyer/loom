@@ -81,7 +81,7 @@ parse_args(int argc, char* argv[]) noexcept
                                           1.f,
                                           read_number<float, true>),
             argparse::option<'r', "res", 2>("image resolution",
-                                            {"width", "height"},
+                                            {"W", "H"},
                                             {400, 400},
                                             read_number<unsigned, true>),
             argparse::flag<'l', "lock-res">("lock image resolution"),
