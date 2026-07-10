@@ -83,8 +83,6 @@ main(int argc, char* argv[])
 
         logger.debug("exchange period: {}ms", ep.count());
 
-        logger.debug("making viewport");
-
         EventState estate{img.size(),
                           stream_size,
                           threshold,
@@ -131,7 +129,7 @@ main(int argc, char* argv[])
 
         while(!estate.req_quit)
         {
-            vstate.update_stats(estate, stream_size);
+            vstate.update_stats(estate);
             vstate.update_osd(img.size(), 0, 0);
 
             logger.debug("rendering stream?{}, mp?{}",
@@ -153,6 +151,8 @@ main(int argc, char* argv[])
                     predicated_render(estate, vstate);
             }
 
+            logger.debug("final reload");
+            viewport.reload_img(img.data(), resx, resy);
             logger.debug("rendering done. show still image");
             while(!estate.req_stop() && window.active())
             {
@@ -170,10 +170,10 @@ main(int argc, char* argv[])
             vstate.max_depth = estate.max_depth;
             vstate.blur      = estate.blur;
 
-            logger.debug("stream size: {}", stream_size);
-            logger.debug("threshold: {}", threshold);
-            logger.debug("max depth: {}", max_depth);
-            logger.debug("blur: {}", blur);
+            logger.debug("stream size: {}", estate.stream_size);
+            logger.debug("threshold: {}", estate.threshold);
+            logger.debug("max depth: {}", estate.max_depth);
+            logger.debug("blur: {}", estate.blur);
 
             estate.reset();
             clear(img);

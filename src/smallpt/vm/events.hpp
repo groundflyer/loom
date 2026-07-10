@@ -114,7 +114,7 @@ struct ViewState
     update(EventState& estate);
 
     void
-    update_stats(EventState& estate, const std::size_t stream_size = 0);
+    update_stats(EventState& estate);
 
     void
     update_osd(const std::size_t pix_done, const float tr, const float avg_tr);

@@ -13,7 +13,7 @@
 namespace loom
 {
 inline constexpr std::size_t               ncores = NUM_CORES_L;
-inline constexpr std::chrono::milliseconds img_timeframe{20};
+inline constexpr std::chrono::milliseconds img_timeframe{100};
 inline constexpr std::chrono::milliseconds osd_timeframe{500};
 
 template <typename Dur>
@@ -159,6 +159,7 @@ predicated_mp(EventState& estate, ViewState& vstate)
         const std::size_t rc =
             scc.ray_count.exchange(0, std::memory_order_relaxed);
         all_rc += rc;
+        vstate.update(estate);
         vstate.update_osd(vstate.img.size(),
                           ray_traversal_rate(rc, osd_timer.elapsed()),
                           ray_traversal_rate(all_rc, avg_timer.elapsed()));
@@ -300,7 +301,7 @@ hybrid_render(EventState& estate, ViewState& vstate)
 
         if(osd_timer.has_expired(osd_timeframe))
         {
-            vstate.update_stats(estate, stream_size);
+            vstate.update_stats(estate);
             all_rc += tmp_rc;
             vstate.update_osd(progress,
                               ray_traversal_rate(tmp_rc, osd_timer.restart()),
@@ -329,7 +330,7 @@ hybrid_render(EventState& estate, ViewState& vstate)
     tmp_rc = img_upd(vstate.img, roc);
 
     vstate.update(estate);
-    vstate.update_stats(estate, stream_size);
+    vstate.update_stats(estate);
     all_rc += tmp_rc;
     vstate.update_osd(vstate.img.size(),
                       ray_traversal_rate(tmp_rc, osd_timer.elapsed()),
@@ -401,7 +402,7 @@ hybrid_mp(EventState&                     estate,
 
             if(osd_timer.has_expired(osd_timeframe))
             {
-                vstate.update_stats(estate, stream_size);
+                vstate.update_stats(estate);
                 all_rc += tmp_rc;
                 vstate.update_osd(
                     progress,
@@ -422,7 +423,7 @@ hybrid_mp(EventState&                     estate,
     const std::size_t tmp_rc = img_upd(vstate.img, roc);
 
     vstate.update(estate);
-    vstate.update_stats(estate, stream_size);
+    vstate.update_stats(estate);
     all_rc += tmp_rc;
     vstate.update_osd(vstate.img.size(),
                       ray_traversal_rate(tmp_rc, osd_timer.elapsed()),

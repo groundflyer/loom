@@ -147,41 +147,12 @@ struct Window
 /// @brief Simple OpengGL viewport for displaying image.
 class ImageViewport
 {
-    static constexpr GLchar vertex_shader_src[] =
-        "#version 330 core\n"
-        "layout (location = 0) in vec3 inP;"
-        "layout (location = 1) in vec2 inUV;"
-        "out vec2 UV;"
-        "void main(){"
-        "gl_Position = vec4(inP, 1.0);"
-        "UV = inUV;}";
-
-    static constexpr GLchar fragment_shader_src[] =
-        "#version 330 core\n"
-        "out vec4 Cf;"
-        "in vec2 UV;"
-        "uniform sampler2D img;"
-        "void main(){Cf = texture(img, UV);}";
-
-    static constexpr GLfloat vertex_data[] = {
-        // positions    // texture coordinates
-        -1.f, 1.f,  0, 0,   0,   1.f,  1.f,  0, 1.f, 0,
-        1.f,  -1.f, 0, 1.f, 1.f, -1.f, -1.f, 0, 0,   1.f};
-
-    static constexpr GLuint indices[] = {
-        0,
-        1,
-        2, // first triangle
-        2,
-        3,
-        0 // second triangle
-    };
-
     Program m_program;
     GLuint  m_vbo;
     GLuint  m_vao;
     GLuint  m_ebo;
-    GLuint  m_texture;
+    GLuint  m_textures[2];
+    bool    m_tex_p = false;
 
   public:
     ImageViewport();
@@ -201,19 +172,6 @@ class ImageViewport
 /// @brief Simple on-screen-display.
 class OSD
 {
-    static constexpr char vertex_shader_src[] =
-        "#version 330 core\n"
-        "layout (location = 0) in vec2 pos;"
-        "uniform mat4 projection;"
-        "void main(){"
-        "gl_Position = projection * vec4(pos, 0.0, 1.0);}";
-    static constexpr char fragment_shader_src[] =
-        "#version 330 core\n"
-        "out vec4 Cf;"
-        "void main(){"
-        "Cf = vec4(0.0, 1.0, 0.0, 1.0);}";
-
-    // char m_buffer[20000];
     float m_x;
     float m_y;
     int   m_quads = 0;

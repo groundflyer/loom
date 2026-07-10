@@ -262,18 +262,19 @@ ViewState::update(EventState& estate)
 }
 
 void
-ViewState::update_stats(EventState& estate, const std::size_t stream_size)
+ViewState::update_stats(EventState& estate)
 {
     if(estate.req_stats_upd)
     {
         res_mode = estate.lock_res ? "locked" : "window";
         mp       = estate.run_mp ? "on" : "off";
         method   = estate.run_stream ? "hybrid" : "predicated";
-        ss = estate.run_stream ? fmt::format("Stream size: {}\n", stream_size) :
-                                 "";
-        nt = estate.run_mp ?
-                 fmt::format("Number of threads: {}\n", NUM_CORES_L) :
-                 "";
+        ss       = estate.run_stream ?
+                       fmt::format("Stream size: {}\n", estate.stream_size) :
+                       "";
+        nt       = estate.run_mp ?
+                       fmt::format("Number of threads: {}\n", NUM_CORES_L) :
+                       "";
 
         estate.req_stats_upd = false;
     }

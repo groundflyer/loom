@@ -44,7 +44,6 @@ gl_check_errors()
     {                                                   \
         char info_log[512];                             \
         glGetShaderInfoLog(ID, 512, nullptr, info_log); \
-        glfwTerminate();                                \
         throw std::runtime_error(info_log);             \
     }
 
@@ -186,10 +185,44 @@ Window::~Window()
     if(window) glfwDestroyWindow(window);
 }
 
+inline constexpr GLchar iv_vertex_shader_src[] =
+    "#version 330 core\n"
+    "layout (location = 0) in vec3 inP;"
+    "layout (location = 1) in vec2 inUV;"
+    "out vec2 UV;"
+    "void main(){"
+    "gl_Position = vec4(inP, 1.0);"
+    "UV = inUV;}";
+
+inline constexpr GLchar iv_fragment_shader_src[] =
+    "#version 330 core\n"
+    "out vec4 Cf;\n"
+    "in vec2 UV;\n"
+    "uniform sampler2D img0;\n"
+    "uniform sampler2D img1;\n"
+    "void main(){"
+    "vec4 c0 = texture(img0, UV);\n"
+    "vec4 c1 = texture(img1, UV);\n"
+    "Cf = c0 != c1 ? vec4(1, 0, 1, 1) : c0;}";
+
 ImageViewport::ImageViewport() :
-    m_program(Shader(vertex_shader_src, GL_VERTEX_SHADER),
-              Shader(fragment_shader_src, GL_FRAGMENT_SHADER))
+    m_program(Shader(iv_vertex_shader_src, GL_VERTEX_SHADER),
+              Shader(iv_fragment_shader_src, GL_FRAGMENT_SHADER))
 {
+    constexpr GLfloat vertex_data[] = {// positions    // texture coordinates
+                                       -1.f, 1.f,  0,    0,   0,    1.f, 1.f,
+                                       0,    1.f,  0,    1.f, -1.f, 0,   1.f,
+                                       1.f,  -1.f, -1.f, 0,   0,    1.f};
+
+    constexpr GLuint indices[] = {
+        0,
+        1,
+        2, // first triangle
+        2,
+        3,
+        0 // second triangle
+    };
+
     glGenVertexArrays(1, &m_vao);
     glGenBuffers(1, &m_vbo);
     glGenBuffers(1, &m_ebo);
@@ -225,10 +258,22 @@ ImageViewport::ImageViewport() :
                           reinterpret_cast<void*>(3 * sizeof(float)));
     glEnableVertexAttribArray(1);
 
-    // texture
-    glGenTextures(1, &m_texture);
-    // assume no other textures - bind the texture once
-    glBindTexture(GL_TEXTURE_2D, m_texture);
+    // textures
+    glGenTextures(2, m_textures);
+
+    m_program.use();
+    glUniform1i(glGetUniformLocation(m_program.id(), "img0"), 0);
+    glUniform1i(glGetUniformLocation(m_program.id(), "img1"), 1);
+
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, m_textures[0]);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, m_textures[1]);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
@@ -241,15 +286,19 @@ ImageViewport::ImageViewport() :
 void
 ImageViewport::load_img(const float* img_data, int width, int height)
 {
-    glTexImage2D(GL_TEXTURE_2D,
-                 0,
-                 GL_RGBA,
-                 width,
-                 height,
-                 0,
-                 GL_RGBA,
-                 GL_FLOAT,
-                 img_data);
+    for(GLuint tex_id: m_textures)
+    {
+        glBindTexture(GL_TEXTURE_2D, tex_id);
+        glTexImage2D(GL_TEXTURE_2D,
+                     0,
+                     GL_RGBA,
+                     width,
+                     height,
+                     0,
+                     GL_RGBA,
+                     GL_FLOAT,
+                     img_data);
+    }
 
     gl_check_errors();
 }
@@ -257,6 +306,7 @@ ImageViewport::load_img(const float* img_data, int width, int height)
 void
 ImageViewport::reload_img(const float* img_data, int width, int height)
 {
+    glBindTexture(GL_TEXTURE_2D, m_textures[m_tex_p]);
     glTexSubImage2D(GL_TEXTURE_2D,
                     0,
                     0,
@@ -266,6 +316,8 @@ ImageViewport::reload_img(const float* img_data, int width, int height)
                     GL_RGBA,
                     GL_FLOAT,
                     img_data);
+
+    m_tex_p = !m_tex_p;
 
     gl_check_errors();
 }
@@ -283,7 +335,7 @@ ImageViewport::~ImageViewport()
     glDeleteVertexArrays(1, &m_vao);
     glDeleteBuffers(1, &m_vbo);
     glDeleteBuffers(1, &m_ebo);
-    glDeleteTextures(1, &m_texture);
+    glDeleteTextures(2, m_textures);
 }
 
 /// @brief Create a matrix for projecting two-dimensional coordinates onto
@@ -349,13 +401,26 @@ OSD::update_ebo() noexcept
                  GL_STATIC_DRAW);
 }
 
+inline constexpr char osd_vertex_shader_src[] =
+    "#version 330 core\n"
+    "layout (location = 0) in vec2 pos;"
+    "uniform mat4 projection;"
+    "void main(){"
+    "gl_Position = projection * vec4(pos, 0.0, 1.0);}";
+inline constexpr char osd_fragment_shader_src[] =
+    "#version 330 core\n"
+    "out vec4 Cf;"
+    "void main(){"
+    "Cf = vec4(0.0, 1.0, 0.0, 1.0);}";
+
 OSD::OSD(const float x,
          const float y,
          const char* text,
          int         width,
          int         height) :
-    m_x(x), m_y(y), m_program(Shader(vertex_shader_src, GL_VERTEX_SHADER),
-                              Shader(fragment_shader_src, GL_FRAGMENT_SHADER)),
+    m_x(x), m_y(y),
+    m_program(Shader(osd_vertex_shader_src, GL_VERTEX_SHADER),
+              Shader(osd_fragment_shader_src, GL_FRAGMENT_SHADER)),
     m_proj_loc(glGetUniformLocation(m_program.id(), "projection"))
 {
     if(m_proj_loc == -1) throw std::runtime_error("project location is wrong");
