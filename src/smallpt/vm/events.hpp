@@ -97,6 +97,7 @@ struct ViewState
     const char*               mp;
     std::string               ss;
     std::string               nt;
+    std::chrono::milliseconds tf;
 
     ViewState(const gl::System::Handle& h,
               gl::Window&               w,
@@ -106,7 +107,8 @@ struct ViewState
               Image&                    i,
               float                     t,
               unsigned                  d,
-              float                     b) noexcept;
+              float                     b,
+              std::chrono::milliseconds f) noexcept;
 
     FORBID_ALL(ViewState);
 

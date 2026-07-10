@@ -50,14 +50,50 @@ val_stream_size(const std::size_t stream_size,
 int
 main(int argc, char* argv[])
 {
-    auto   parse_results = parse_args(argc, argv);
+    auto parse_results = argparse::parse(
+        std::tuple{
+            argparse::option<'t', "threshold">("adaptive sampling threshold",
+                                               "T",
+                                               0.0001f,
+                                               read_number<float, true>),
+            argparse::option<'d', "depth">("maximum bounce depth",
+                                           "D",
+                                           20u,
+                                           read_number<unsigned, true>),
+            argparse::option<'b', "blur">("blur factor",
+                                          "B",
+                                          1.f,
+                                          read_number<float, true>),
+            argparse::option<'r', "res", 2>("image resolution",
+                                            {"W", "H"},
+                                            {400, 400},
+                                            read_number<unsigned, true>),
+            argparse::flag<'u', "unlock-res">("unlock image resolution", true),
+            argparse::option<'s', "stream-size">(
+                "stream size",
+                "N",
+                512ul,
+                read_number<std::size_t, true>),
+            argparse::option<'p', "exchange-period">(
+                "exchange period in milliseconds for multithreaded hybrid "
+                "method. Default: 2",
+                "T",
+                2,
+                read_number<unsigned, true>),
+            argparse::option<'f', "fps">("target fps. Default: 10",
+                                         "F",
+                                         10u,
+                                         read_number<unsigned, true>),
+            argparse::flag<'v', "verbose">("verbose logging")},
+        {argc, argv});
+
     Logger logger(parse_results.template get_opt<'v'>() ? Logger::DEBUG :
                                                           Logger::INFO);
 
     try
     {
         const auto [resx, resy]  = parse_results.template get_opt<'r'>();
-        const bool     lock_res  = parse_results.template get_opt<'l'>();
+        const bool     lock_res  = parse_results.template get_opt<'u'>();
         const float    threshold = parse_results.template get_opt<'t'>();
         const unsigned max_depth = parse_results.template get_opt<'d'>();
         const float    blur      = parse_results.template get_opt<'b'>();
@@ -65,6 +101,8 @@ main(int argc, char* argv[])
             align_up(parse_results.template get_opt<'s'>(), 32ul);
         const std::chrono::milliseconds ep{
             parse_results.template get_opt<'p'>()};
+        const std::chrono::milliseconds tf{
+            1000u / parse_results.template get_opt<'f'>()};
 
         if(threshold < 0)
             throw std::runtime_error("Negative sampling threshold");
@@ -123,9 +161,12 @@ main(int argc, char* argv[])
                          img,
                          threshold,
                          max_depth,
-                         blur};
+                         blur,
+                         tf};
 
         logger.debug("vstate ready");
+
+        logger.debug("image update timeframe: {}", vstate.tf.count());
 
         while(!estate.req_quit)
         {

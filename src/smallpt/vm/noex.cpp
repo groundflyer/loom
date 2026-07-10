@@ -13,7 +13,6 @@
 namespace loom
 {
 inline constexpr std::size_t               ncores = NUM_CORES_L;
-inline constexpr std::chrono::milliseconds img_timeframe{100};
 inline constexpr std::chrono::milliseconds osd_timeframe{500};
 
 template <typename Dur>
@@ -45,7 +44,7 @@ predicated_render(EventState& estate, ViewState& vstate)
                    progress += p;
                    tmp_rc += rc;
 
-                   if(img_timer.has_expired(img_timeframe))
+                   if(img_timer.has_expired(vstate.tf))
                    {
                        vstate.update(estate);
                        img_timer.restart();
@@ -146,7 +145,7 @@ predicated_mp(EventState& estate, ViewState& vstate)
                               ray_traversal_rate(all_rc, avg_timer.elapsed()));
         }
 
-        std::this_thread::sleep_for(img_timeframe);
+        std::this_thread::sleep_for(vstate.tf);
     }
 
     if(estate.req_stop())
@@ -293,7 +292,7 @@ hybrid_render(EventState& estate, ViewState& vstate)
 
         tmp_rc += img_upd(vstate.img, roc);
 
-        if(img_timer.has_expired(img_timeframe))
+        if(img_timer.has_expired(vstate.tf))
         {
             vstate.update(estate);
             img_timer.restart();
@@ -394,7 +393,7 @@ hybrid_mp(EventState&                     estate,
                 tmp_rc += img_upd(vstate.img, roc);
             }
 
-            if(img_timer.has_expired(img_timeframe))
+            if(img_timer.has_expired(vstate.tf))
             {
                 vstate.update(estate);
                 img_timer.restart();

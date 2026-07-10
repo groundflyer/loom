@@ -234,9 +234,10 @@ ViewState::ViewState(const gl::System::Handle& h,
                      Image&                    i,
                      float                     t,
                      unsigned                  d,
-                     float                     b) noexcept :
+                     float                     b,
+                     std::chrono::milliseconds f) noexcept :
     system(h), window(w), viewport(v), osd(o), logger(l), img(i),
-    old_res(img.res()), threshold(t), max_depth(d), blur(b)
+    old_res(img.res()), threshold(t), max_depth(d), blur(b), tf(f)
 {
 }
 

@@ -63,43 +63,6 @@ struct ProgressWatcher
     }
 };
 
-static auto
-parse_args(int argc, char* argv[]) noexcept
-{
-    return argparse::parse(
-        std::tuple{
-            argparse::option<'t', "threshold">("adaptive sampling threshold",
-                                               "T",
-                                               0.0001f,
-                                               read_number<float, true>),
-            argparse::option<'d', "depth">("maximum bounce depth",
-                                           "D",
-                                           20u,
-                                           read_number<unsigned, true>),
-            argparse::option<'b', "blur">("blur factor",
-                                          "B",
-                                          1.f,
-                                          read_number<float, true>),
-            argparse::option<'r', "res", 2>("image resolution",
-                                            {"W", "H"},
-                                            {400, 400},
-                                            read_number<unsigned, true>),
-            argparse::flag<'l', "lock-res">("lock image resolution"),
-            argparse::option<'s', "stream-size">(
-                "stream size",
-                "N",
-                512ul,
-                read_number<std::size_t, true>),
-            argparse::option<'p', "exchange-period">(
-                "exchange period in milliseconds for multithreaded hybrid "
-                "method. Default: 2",
-                "T",
-                2,
-                read_number<unsigned, true>),
-            argparse::flag<'v', "verbose">("verbose logging")},
-        {argc, argv});
-}
-
 template <typename... Args>
 static void
 parallel_render(Image& img, Args&&... args) noexcept
