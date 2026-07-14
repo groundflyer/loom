@@ -411,7 +411,7 @@ inline constexpr char osd_fragment_shader_src[] =
     "#version 330 core\n"
     "out vec4 Cf;"
     "void main(){"
-    "Cf = vec4(0.0, 1.0, 0.0, 1.0);}";
+    "Cf = vec4(1.0, 0.0, 1.0, 1.0);}";
 
 OSD::OSD(const float x,
          const float y,

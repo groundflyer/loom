@@ -79,7 +79,7 @@ reference_mp(EventState& estate, ViewState& vstate) noexcept
          res        = vstate.img.res(),
          is         = vstate.img.size()]()
         {
-            constexpr std::size_t cs = 8;
+            constexpr std::size_t cs = 32;
 
             while(!s.test(std::memory_order_relaxed))
             {
