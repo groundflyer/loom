@@ -1,5 +1,5 @@
-#include "events.hpp"
 #include "utils.hpp"
+#include "vm.hpp"
 
 #include <common/timer.hpp>
 #include <vm/mp.hpp>
@@ -12,21 +12,8 @@
 
 namespace loom
 {
-inline constexpr std::size_t               ncores = NUM_CORES_L;
-inline constexpr std::chrono::milliseconds osd_timeframe{500};
-
-template <typename Dur>
-static float
-ray_traversal_rate(const std::size_t ray_count, const Dur dur)
-{
-    return static_cast<double>(ray_count / 100ul) /
-           static_cast<double>(
-               std::chrono::duration_cast<std::chrono::milliseconds>(dur)
-                   .count());
-}
-
 bool
-predicated_render(EventState& estate, ViewState& vstate)
+predicated(EventState& estate, ViewState& vstate)
 {
     ElapsedTimer<> img_timer, osd_timer, avg_timer;
 
@@ -251,7 +238,7 @@ img_upd(Image& img, remote_output_control<T>& roc)
 }
 
 bool
-hybrid_render(EventState& estate, ViewState& vstate)
+hybrid(EventState& estate, ViewState& vstate)
 {
     const float       threshold   = estate.threshold;
     const unsigned    max_depth   = estate.max_depth;

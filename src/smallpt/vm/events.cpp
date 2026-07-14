@@ -60,7 +60,7 @@ EventState::KeyAction::operator()(GLFWwindow* window,
         }
         case GLFW_KEY_SPACE:
         {
-            estate->run_stream    = !estate->run_stream;
+            estate->method = static_cast<METHOD>((estate->method + 1u) % 2u);
             estate->req_restart   = true;
             estate->req_stats_upd = true;
             return;
@@ -135,7 +135,7 @@ EventState::KeyAction::operator()(GLFWwindow* window,
         }
         case GLFW_KEY_Z:
         {
-            if(estate->run_stream && estate->stream_size > 64ul)
+            if(estate->method == HYBRID && estate->stream_size > 64ul)
             {
                 estate->stream_size /= 2ul;
                 estate->req_restart   = true;
@@ -146,7 +146,8 @@ EventState::KeyAction::operator()(GLFWwindow* window,
         case GLFW_KEY_X:
         {
             const std::size_t cand = estate->stream_size * 2ul;
-            if(estate->run_stream && cand * NUM_CORES_L < estate->img_size)
+            if(estate->method == HYBRID &&
+               cand * NUM_CORES_L < estate->img_size)
             {
                 estate->stream_size   = cand;
                 estate->req_restart   = true;
@@ -262,6 +263,19 @@ ViewState::update(EventState& estate)
         estate.req_quit = true;
 }
 
+const char*
+method_string(METHOD m)
+{
+    switch(m)
+    {
+    case REFERENCE: return "reference";
+    case PREDICATED: return "predicated";
+    case HYBRID: return "hybrid";
+    }
+
+    return "error";
+}
+
 void
 ViewState::update_stats(EventState& estate)
 {
@@ -269,8 +283,8 @@ ViewState::update_stats(EventState& estate)
     {
         res_mode = estate.lock_res ? "locked" : "window";
         mp       = estate.run_mp ? "on" : "off";
-        method   = estate.run_stream ? "hybrid" : "predicated";
-        ss       = estate.run_stream ?
+        method   = method_string(estate.method);
+        ss       = estate.method == HYBRID ?
                        fmt::format("Stream size: {}\n", estate.stream_size) :
                        "";
         nt       = estate.run_mp ?

@@ -773,24 +773,19 @@ class RenderPixel
     const float                m_threshold;
     const unsigned             m_max_depth;
 
-    std::atomic_uint&   r_progress;
-    std::atomic_size_t& r_ray_count;
-
   public:
-    RenderPixel(const Vec2u&        res,
-                const float         threshold,
-                const unsigned      max_depth,
-                std::atomic_uint&   progress,
-                std::atomic_size_t& ray_count) noexcept :
+    RenderPixel(const Vec2u&   res,
+                const float    threshold,
+                const unsigned max_depth,
+                const float    blur) noexcept :
         m_width(res[0]), m_sample_space(res),
-        m_pw(m_sample_space.ratio / m_sample_space.res[0]),
-        m_threshold(threshold), m_max_depth(max_depth), r_progress(progress),
-        r_ray_count(ray_count)
+        m_pw(blur * m_sample_space.ratio / m_sample_space.res[0]),
+        m_threshold(threshold), m_max_depth(max_depth)
     {
     }
 
     template <typename Pixel>
-    void
+    std::size_t
     operator()(Pixel val) const noexcept
     {
         auto [pos, pix]          = val;
@@ -827,8 +822,7 @@ class RenderPixel
 
         pix = RGBA{r / static_cast<float>(ns), 1};
 
-        r_progress.fetch_add(1, std::memory_order_relaxed);
-        r_ray_count.fetch_add(prc, std::memory_order_relaxed);
+        return prc;
     }
 };
 } // namespace loom

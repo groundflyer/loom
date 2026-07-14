@@ -5,7 +5,9 @@
 #endif
 
 #include "events.hpp"
+#include "vm.hpp"
 
+#include <smallpt/ref/ref.hpp>
 #include <vm/simd.hpp>
 
 #include <common/logging.hpp>
@@ -173,23 +175,23 @@ main(int argc, char* argv[])
             vstate.update_stats(estate);
             vstate.update_osd(img.size(), 0, 0);
 
-            logger.debug("rendering stream?{}, mp?{}",
-                         estate.run_stream,
-                         estate.run_mp);
-
-            if(estate.run_stream)
+            if(estate.run_mp)
             {
-                if(estate.run_mp)
-                    hybrid_mp(estate, vstate, ep);
-                else
-                    hybrid_render(estate, vstate);
+                switch(estate.method)
+                {
+                case REFERENCE: reference_mp(estate, vstate); break;
+                case PREDICATED: predicated_mp(estate, vstate); break;
+                case HYBRID: hybrid_mp(estate, vstate, ep);
+                }
             }
             else
             {
-                if(estate.run_mp)
-                    predicated_mp(estate, vstate);
-                else
-                    predicated_render(estate, vstate);
+                switch(estate.method)
+                {
+                case REFERENCE: reference(estate, vstate); break;
+                case PREDICATED: predicated(estate, vstate); break;
+                case HYBRID: hybrid(estate, vstate);
+                }
             }
 
             logger.debug("final reload");

@@ -11,6 +11,9 @@
 
 namespace loom
 {
+inline constexpr std::size_t               ncores = NUM_CORES_L;
+inline constexpr std::chrono::milliseconds osd_timeframe{500};
+
 inline constexpr char osd_help[] =
     "ESC: close\n"
     "SPACE: switch method\n"
@@ -21,6 +24,13 @@ inline constexpr char osd_help[] =
     "A/S: decrease/increase (5) max depth\n"
     "Z/X: decrease/increase (x2) stream size";
 
+enum METHOD : unsigned
+{
+    REFERENCE,
+    PREDICATED,
+    HYBRID
+};
+
 struct EventState
 {
     Vec2u       new_res;
@@ -30,7 +40,7 @@ struct EventState
     unsigned    max_depth;
     float       blur;
     bool        lock_res;
-    bool        run_stream    = true;
+    METHOD      method        = HYBRID;
     bool        run_mp        = true;
     bool        req_restart   = false;
     bool        req_resize    = false;
@@ -122,17 +132,13 @@ struct ViewState
     update_osd(const std::size_t pix_done, const float tr, const float avg_tr);
 };
 
-bool
-predicated_render(EventState& estate, ViewState& vstate);
-
-bool
-predicated_mp(EventState& estate, ViewState& vstate);
-
-bool
-hybrid_render(EventState& estate, ViewState& vstate);
-
-bool
-hybrid_mp(EventState&                     estate,
-          ViewState&                      vstate,
-          const std::chrono::milliseconds eg);
+template <typename Dur>
+static float
+ray_traversal_rate(const std::size_t ray_count, const Dur dur) noexcept
+{
+    return static_cast<double>(ray_count / 100ul) /
+           static_cast<double>(
+               std::chrono::duration_cast<std::chrono::milliseconds>(dur)
+                   .count());
+}
 } // namespace loom
