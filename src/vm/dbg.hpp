@@ -37,6 +37,14 @@
 namespace loom::vm::dbg
 {
 template <typename T>
+struct shorten : std::false_type
+{
+};
+
+template <typename T>
+struct comp_type;
+
+template <typename T>
 struct prettify;
 
 template <typename T, typename N>
@@ -70,24 +78,42 @@ struct prettify<Label<Name>>
 template <typename Op, typename Dst, typename... Args>
 struct prettify<Compute<Op, Dst, Args...>>
 {
+    using t = Compute<Op, Dst, Args...>;
+
     std::string
     operator()(bool ts, unsigned width) const noexcept
     {
-        return fmt::format("{} {}, {}",
-                           prettify<Op>{}(ts, width),
-                           prettify<Dst>{}(ts, width),
-                           prettify<type_sequence<Args...>>{}(ts, width));
+        if constexpr(shorten<t>::value)
+        {
+            if(ts)
+                return fmt::format(
+                    "{} @{} {} {}",
+                    prettify<Op>{}(false, width),
+                    TypeInfo<typename comp_type<t>::type>::chars,
+                    prettify<Dst>{}(false, width),
+                    prettify<type_sequence<Args...>>{}(false, width));
+            else
+                return fmt::format(
+                    "{} {} {}",
+                    prettify<Op>{}(ts, width),
+                    prettify<Dst>{}(ts, width),
+                    prettify<type_sequence<Args...>>{}(ts, width));
+        }
+        else
+            return fmt::format("{} {} {}",
+                               prettify<Op>{}(ts, width),
+                               prettify<Dst>{}(ts, width),
+                               prettify<type_sequence<Args...>>{}(ts, width));
     }
 };
 
 template <typename Target>
 struct prettify<Jump<Target>>
 {
-    template <typename... Ts>
     std::string
-    operator()(Ts... args) const noexcept
+    operator()(bool, unsigned) const noexcept
     {
-        return fmt::format("jmp {}", prettify<Target>{}(args...));
+        return fmt::format("jmp {}", prettify<Target>{}(false, 0));
     }
 };
 
@@ -95,13 +121,12 @@ template <typename Var, typename Labels>
 struct prettify<ParmJump<Var, Labels>>
 {
     std::string
-    operator()(bool ts, unsigned) const noexcept
+    operator()(bool, unsigned) const noexcept
     {
-        return fmt::format("jmp {}, {}",
-                           prettify<Var>{}(ts, 0),
+        return fmt::format("jmp {} {}",
+                           prettify<Var>{}(false, 0),
                            prettify<typelist::enumerate<Labels>>{}(
-                               ts,
-
+                               false,
                                magnitude(typelist::length<Labels>) + 1));
     }
 };
@@ -125,7 +150,7 @@ struct prettify<type_sequence<Ts...>>
     {
         return fmt::format(
             "{}",
-            fmt::join(std::tuple{prettify<Ts>{}(args...)...}, ", "));
+            fmt::join(std::tuple{prettify<Ts>{}(args...)...}, " "));
     }
 };
 
@@ -170,6 +195,17 @@ struct prettify<ops::cmov>
     }
 };
 
+template <typename Dst, typename C, typename A, typename B>
+struct shorten<Compute<ops::cmov, Dst, C, A, B>> : std::true_type
+{
+};
+
+template <typename Dst, typename C, typename A, typename B>
+struct comp_type<Compute<ops::cmov, Dst, C, A, B>> :
+    std::type_identity<vartype<Dst>>
+{
+};
+
 template <>
 struct prettify<std::identity>
 {
@@ -181,6 +217,17 @@ struct prettify<std::identity>
     {
         return value;
     }
+};
+
+template <typename A, typename B>
+struct shorten<Compute<std::identity, A, B>> :
+    std::bool_constant<std::is_same_v<vartype<A>, vartype<B>>>
+{
+};
+
+template <typename A, typename B>
+struct comp_type<Compute<std::identity, A, B>> : std::type_identity<vartype<A>>
+{
 };
 
 template <>
@@ -196,30 +243,59 @@ struct prettify<ops::fma>
     }
 };
 
-#define MK_STD_PRETTIFY(OP, NAME)                        \
-    template <typename T>                                \
-    struct prettify<std::OP<T>>                          \
-    {                                                    \
-        static constexpr std::string_view value = #NAME; \
-        template <typename... Ts>                        \
-        std::string_view                                 \
-        operator()(Ts...) const noexcept                 \
-        {                                                \
-            return value;                                \
-        }                                                \
+template <typename... Operands>
+struct shorten<Compute<ops::fma, Operands...>> : std::true_type
+{
+};
+
+template <typename Dst, typename... Operands>
+struct comp_type<Compute<ops::fma, Dst, Operands...>> :
+    std::type_identity<vartype<Dst>>
+{
+};
+
+#define MK_STD_PRETTIFY(OP, NAME)                                     \
+    template <typename T>                                             \
+    struct prettify<std::OP<T>>                                       \
+    {                                                                 \
+        static constexpr std::string_view value = #NAME;              \
+        template <typename... Ts>                                     \
+        std::string_view                                              \
+        operator()(Ts...) const noexcept                              \
+        {                                                             \
+            return value;                                             \
+        }                                                             \
+    };                                                                \
+    template <typename T, typename... Operands>                       \
+    struct shorten<Compute<std::OP<T>, Operands...>> : std::true_type \
+    {                                                                 \
+    };                                                                \
+    template <typename T, typename Dst, typename... Operands>         \
+    struct comp_type<Compute<std::OP<T>, Dst, Operands...>> :         \
+        std::type_identity<vartype<Dst>>                              \
+    {                                                                 \
     };
 
-#define MK_OPS_PRETTIFY(OP)                            \
-    template <typename... _>                           \
-    struct prettify<ops::OP<_...>>                     \
-    {                                                  \
-        static constexpr std::string_view value = #OP; \
-        template <typename... Ts>                      \
-        std::string_view                               \
-        operator()(Ts...) const noexcept               \
-        {                                              \
-            return value;                              \
-        }                                              \
+#define MK_OPS_PRETTIFY(OP)                                              \
+    template <typename... _>                                             \
+    struct prettify<ops::OP<_...>>                                       \
+    {                                                                    \
+        static constexpr std::string_view value = #OP;                   \
+        template <typename... Ts>                                        \
+        std::string_view                                                 \
+        operator()(Ts...) const noexcept                                 \
+        {                                                                \
+            return value;                                                \
+        }                                                                \
+    };                                                                   \
+    template <typename... Operands, typename... _>                       \
+    struct shorten<Compute<ops::OP<_...>, Operands...>> : std::true_type \
+    {                                                                    \
+    };                                                                   \
+    template <typename Dst, typename... Operands, typename... _>         \
+    struct comp_type<Compute<ops::OP<_...>, Dst, Operands...>> :         \
+        std::type_identity<vartype<Dst>>                                 \
+    {                                                                    \
     };
 
 MK_STD_PRETTIFY(plus, add)
@@ -363,7 +439,7 @@ pretty_print_kernel(const bool ts = false,
     const std::string outputs = prettify<output_vars>{}(ts, 0);
 
     fmt::print("Input variables: {}\n", inputs);
-    fmt::print("Output variables: {}\n", outputs);
+    fmt::print("Output variables: {}\n\n", outputs);
 
     if(bs)
         typelist::for_each(typelist::zip<labels, blocks>{},
@@ -403,9 +479,9 @@ pretty_print_kernel(const bool ts = false,
                 print_instructions<mstatements, 2, w>(ts, ln);
 
                 if(ln)
-                    fmt::print("{:{}d} %endmacro\n", l + 2u, w);
+                    fmt::print("{:{}d} %endmacro\n\n", l + 2u, w);
                 else
-                    fmt::print("%endmacro\n");
+                    fmt::print("%endmacro\n\n");
             });
 
         if(ln)
