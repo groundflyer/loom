@@ -254,6 +254,84 @@ struct comp_type<Compute<ops::fma, Dst, Operands...>> :
 {
 };
 
+template <typename Dst, typename C, typename T, typename I, typename L>
+struct prettify<Compute<ops::sct<T, I, L>, Dst, C>>
+{
+    std::string
+    operator()(bool ts, unsigned) const noexcept
+    {
+        if(ts)
+            return fmt::format("sct @{} {} {}",
+                               TypeInfo<T>::chars,
+                               prettify<Dst>{}(false, 0),
+                               prettify<C>{}(false, 0),
+                               ops::sct<T, I, L>::values);
+        else
+            return fmt::format("sct {} {}",
+                               prettify<Dst>{}(false, 0),
+                               prettify<C>{}(false, 0),
+                               ops::sct<T, I, L>::values);
+    }
+};
+
+template <typename T, typename I, typename... Operands>
+struct shorten<Compute<ops::slt<T, I>, Operands...>> : std::true_type
+{
+};
+
+template <typename T, typename I, typename Dst, typename... Operands>
+struct comp_type<Compute<ops::slt<T, I>, Dst, Operands...>> :
+    std::type_identity<vartype<Dst>>
+{
+};
+
+template <typename T, typename I>
+struct prettify<ops::slt<T, I>>
+{
+    static constexpr std::string_view value = "slt";
+
+    template <typename... Ts>
+    std::string_view
+    operator()(Ts...) const noexcept
+    {
+        return value;
+    }
+};
+
+template <typename T,
+          std::integral I,
+          template <typename> typename Acc,
+          template <typename> typename Cmp,
+          typename... Operands>
+struct shorten<Compute<ops::pacc<T, I, Acc, Cmp>, Operands...>> : std::true_type
+{
+};
+
+template <typename T,
+          std::integral I,
+          template <typename> typename Acc,
+          template <typename> typename Cmp,
+          typename... Operands>
+struct comp_type<Compute<ops::pacc<T, I, Acc, Cmp>, Operands...>> :
+    std::type_identity<T>
+{
+};
+
+template <typename T,
+          std::integral I,
+          template <typename> typename Acc,
+          template <typename> typename Cmp>
+struct prettify<ops::pacc<T, I, Acc, Cmp>>
+{
+    std::string
+    operator()(bool ts, unsigned w) const noexcept
+    {
+        return fmt::format("{}{}",
+                           prettify<Acc<I>>{}(ts, w),
+                           prettify<Cmp<T>>{}(ts, w));
+    }
+};
+
 #define MK_STD_PRETTIFY(OP, NAME)                                     \
     template <typename T>                                             \
     struct prettify<std::OP<T>>                                       \
@@ -298,6 +376,7 @@ struct comp_type<Compute<ops::fma, Dst, Operands...>> :
     {                                                                    \
     };
 
+// clang-format off
 MK_STD_PRETTIFY(plus, add)
 MK_STD_PRETTIFY(minus, sub)
 MK_STD_PRETTIFY(multiplies, mul)
@@ -330,6 +409,7 @@ MK_OPS_PRETTIFY(trunc)
 MK_OPS_PRETTIFY(copysign)
 MK_OPS_PRETTIFY(sin)
 MK_OPS_PRETTIFY(cos)
+// clang-format on
 
 #undef MK_STD_PRETTIFY
 #undef MK_OPS_PRETTIFY
