@@ -22,12 +22,12 @@ rcnv_string() noexcept
 {
     switch(rcnv)
     {
-    case(vm::simd::GREEDY_FAIR): return "greedy-fair";
+    case(vm::simd::WARP_FAIR): return "warp-fair";
     case(vm::simd::HYBRID_MAJOR): return "hybrid-major";
-    case(vm::simd::GREEDY_MAJOR): return "greedy-major";
+    case(vm::simd::WARP_MAJOR): return "warp-major";
     case(vm::simd::HYBRID_FAIR): return "hybrid-fair";
-    case(vm::simd::STATIC_FIRST): return "static-first";
-    case(vm::simd::STATIC_MAJOR): return "static-major";
+    case(vm::simd::SUCCESSOR_FIRST): return "successor-first";
+    case(vm::simd::SUCCESSOR_MAJOR): return "successor-major";
     }
 }
 

@@ -246,9 +246,9 @@ hybrid(EventState& estate, ViewState& vstate)
     const std::size_t stream_size = estate.stream_size;
 
     vm::simd::hybrid_stream<pt_float,
+                            false,
                             true,
-                            true,
-                            vm::simd::STATIC_MAJOR,
+                            vm::simd::SUCCESSOR_MAJOR,
                             std::ratio<1, 16>,
                             std::ratio<1, 16>>
         s(stream_size);
@@ -329,7 +329,7 @@ template <typename K>
 using mp_stream = vm::simd::hybrid_stream<K,
                                           false,
                                           true,
-                                          vm::simd::STATIC_MAJOR,
+                                          vm::simd::SUCCESSOR_MAJOR,
                                           std::ratio<1, 16>,
                                           std::ratio<1, 16>>;
 

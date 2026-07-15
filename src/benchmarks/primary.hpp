@@ -28,7 +28,7 @@
         RenderSIMDStream<kernel, C, ts, sd, rcnv, UTRt, UTRh>;              \
     using FavStream = PrimaryStream<false,                                  \
                                     true,                                   \
-                                    simd::STATIC_MAJOR,                     \
+                                    simd::SUCCESSOR_MAJOR,                  \
                                     std::ratio<1, 16>,                      \
                                     std::ratio<1, 16>>;                     \
     template <typename R>                                                   \
@@ -53,7 +53,7 @@
             FavStream{stream_size25},                                       \
             PrimaryStream<false,                                            \
                           false,                                            \
-                          simd::STATIC_MAJOR,                               \
+                          simd::SUCCESSOR_MAJOR,                            \
                           std::ratio<1, 16>,                                \
                           std::ratio<1, 16>>{stream_size25},                \
             FavStream{mk_size<std::ratio<1, 2>>::value},                    \
@@ -61,11 +61,11 @@
             FavStream{mk_size<std::ratio<1, 1>>::value},                    \
             PrimaryCompact<true,                                            \
                            true,                                            \
-                           simd::STATIC_MAJOR,                              \
+                           simd::SUCCESSOR_MAJOR,                           \
                            std::ratio<1, 16>>{},                            \
             PrimaryCompact<false,                                           \
                            true,                                            \
-                           simd::STATIC_MAJOR,                              \
+                           simd::SUCCESSOR_MAJOR,                           \
                            std::ratio<1, 16>>{},                            \
             PrimaryCompact<true,                                            \
                            false,                                           \
@@ -77,11 +77,11 @@
                            std::ratio<1, 16>>{},                            \
             PrimaryCompact<true,                                            \
                            false,                                           \
-                           simd::STATIC_MAJOR,                              \
+                           simd::SUCCESSOR_MAJOR,                           \
                            std::ratio<1, 16>>{},                            \
             PrimaryCompact<false,                                           \
                            false,                                           \
-                           simd::STATIC_MAJOR,                              \
+                           simd::SUCCESSOR_MAJOR,                           \
                            std::ratio<1, 16>>{});                           \
         return 0;                                                           \
     }

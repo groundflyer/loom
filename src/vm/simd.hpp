@@ -3516,25 +3516,25 @@ class compiler
 /// @brief Determines how compact_compiler executes threads.
 enum ReconvMethod
 {
-    GREEDY_FAIR,  /*!< Every PC in gang gets gets its time */
+    WARP_FAIR,    /*!< Every PC in gang gets gets its time */
     HYBRID_MAJOR, /*!< Only PCs having the majority are executed selecting
                      between successors and greedy search when utilization
                      hits threshold */
-    GREEDY_MAJOR, /*!< Only PCs having the majority are executed selecting from
-                    greedy search */
+    WARP_MAJOR,   /*!< Only PCs having the majority are executed selecting from
+                      greedy search */
     HYBRID_FAIR,  /*!< Prefers greedy major grouping, when utilization hits
                     threshold, switch to fair */
-    STATIC_FIRST, /*!< Select first PC from successors falling back to
-                     reminders set */
-    STATIC_MAJOR  /*!< Select PC based on the majority from successors
-                     falling  back to reminders set */
+    SUCCESSOR_FIRST, /*!< Select first PC from successors falling back to
+                     pending set */
+    SUCCESSOR_MAJOR  /*!< Select PC based on the majority from successors
+                     falling  back to pending set */
 };
 
 #define MK_CASE(IDX)                                             \
     case IDX:                                                    \
         MUSTTAIL return typelist::at<IDX, ccss>::eval(mem,       \
                                                       next_mask, \
-                                                      rem,       \
+                                                      pending,   \
                                                       threshold)
 
 /// @brief threaded block dispatch implementation for SIMD predicated execution.
@@ -3576,7 +3576,7 @@ class threaded_dispatch
     static std::uint64_t
     eval(_Memory&      mem,
          mask_t        mask,
-         std::uint64_t rem,
+         std::uint64_t pending,
          const fsize_t threshold = 0) noexcept
     {
         if constexpr(pc != halt_pos)
@@ -3589,7 +3589,7 @@ class threaded_dispatch
 
             kernel{mask}(mem);
 
-            rem &= ~(1ul << pc); // unset evaluated block
+            pending &= ~(1ul << pc); // unset evaluated block
 
             auto get_mask = [&](const index_t next_pc) noexcept
             { return cmp::eq(broadcast<N>(next_pc), mem.pc()); };
@@ -3606,7 +3606,7 @@ class threaded_dispatch
                     if(next_pops > threshold) MUSTTAIL
                     return typelist::head<ccss>::eval(mem,
                                                       next_mask,
-                                                      rem,
+                                                      pending,
                                                       threshold);
                 }
             }
@@ -3625,7 +3625,7 @@ class threaded_dispatch
                         const mask_t   cmask = get_mask(next_pc);
                         const unsigned cpops = popcnt(cmask);
 
-                        rem |= (1ul & (cpops > 0u)) << next_pc;
+                        pending |= (1ul & (cpops > 0u)) << next_pc;
 
                         if(cpops > next_pops)
                         {
@@ -3643,11 +3643,11 @@ class threaded_dispatch
                         if(next_branch) MUSTTAIL
                         return snd_t<ccss>::eval(mem,
                                                  next_mask,
-                                                 rem,
+                                                 pending,
                                                  threshold);
                         else MUSTTAIL return fst_t<ccss>::eval(mem,
                                                                next_mask,
-                                                               rem,
+                                                               pending,
                                                                threshold);
                     }
                     else if constexpr(spec::l == 3)
@@ -3713,7 +3713,7 @@ class threaded_dispatch
             }
         }
 
-        return rem;
+        return pending;
     }
 };
 
@@ -3728,7 +3728,7 @@ class threaded_dispatch
 template <Kernel       K,
           bool         ts,
           bool         use_tbd = true,
-          ReconvMethod rcnv    = STATIC_MAJOR,
+          ReconvMethod rcnv    = SUCCESSOR_MAJOR,
           typename UTR         = std::ratio<1, 16>>
     requires(typelist::of_same_size<typename K::reg_types> && val_utr_v<UTR>)
 class compact_compiler
@@ -3832,9 +3832,9 @@ class compact_compiler
                     intlist::range<static_cast<index_t>(0),
                                    static_cast<index_t>(K::num_blocks)>>;
 
-                std::uint64_t rem = facade::step(
-                    [](auto& mem, mask_t mask, std::uint64_t rem) noexcept
-                    { return spec_block<0>::eval(mem, mask, rem); },
+                std::uint64_t pending = facade::step(
+                    [](auto& mem, mask_t mask, std::uint64_t pending) noexcept
+                    { return spec_block<0>::eval(mem, mask, pending); },
                     full_mask(),
                     0ul);
 
@@ -3842,26 +3842,26 @@ class compact_compiler
                 {
                     const auto [pc, mask, pops] =
                         major_group<K, N>(facade::pc(),
-                                          simple_set<index_t>(rem));
+                                          simple_set<index_t>(pending));
 
-                    rem = typelist::visit_at(
+                    pending = typelist::visit_at(
                         pc,
-                        [&, mask]<typename D>(std::uint64_t rem) noexcept
+                        [&, mask]<typename D>(std::uint64_t pending) noexcept
                         {
                             return facade::step(
                                 [&](auto&         mem,
                                     mask_t        mask,
-                                    std::uint64_t rem) noexcept
-                                { return D::eval(mem, mask, rem); },
+                                    std::uint64_t pending) noexcept
+                                { return D::eval(mem, mask, pending); },
                                 mask,
-                                rem);
+                                pending);
                         },
                         spec_blocks{},
                         copy_id,
-                        rem);
+                        pending);
                 }
             }
-            else if constexpr(rcnv == GREEDY_FAIR)
+            else if constexpr(rcnv == WARP_FAIR)
             {
                 while(not_done())
                     for(const index_t pc:
@@ -3891,7 +3891,7 @@ class compact_compiler
                     use_successor_groups = pops >= threshold;
                 }
             }
-            else if constexpr(rcnv == GREEDY_MAJOR)
+            else if constexpr(rcnv == WARP_MAJOR)
             {
                 index_t  pc   = 0;
                 mask_t   mask = full_mask();
@@ -3928,40 +3928,40 @@ class compact_compiler
                     do_major = pops >= threshold;
                 }
             }
-            else if constexpr(rcnv == STATIC_FIRST)
+            else if constexpr(rcnv == SUCCESSOR_FIRST)
             {
                 index_t       pc                   = 0;
                 mask_t        mask                 = full_mask();
                 unsigned      pops                 = N;
-                std::uint64_t rem                  = 0;
+                std::uint64_t pending              = 0;
                 bool          use_successor_groups = true;
 
                 while(not_done())
                 {
                     exec(pc, mask);
 
-                    std::uint64_t nrem;
+                    std::uint64_t npending;
                     if(use_successor_groups)
-                        std::tie(pc, mask, pops, nrem) =
+                        std::tie(pc, mask, pops, npending) =
                             first_group<K, N>(facade::pc(),
                                               successor_groups<K>{pc});
                     else
-                        std::tie(pc, mask, pops, nrem) =
+                        std::tie(pc, mask, pops, npending) =
                             first_group<K, N>(facade::pc(),
-                                              simple_set<index_t>{rem});
+                                              simple_set<index_t>{pending});
 
-                    rem &= ~(1ul << pc); // unset executed block
-                    rem |= nrem;         // add remainders
+                    pending &= ~(1ul << pc); // unset executed block
+                    pending |= npending;     // add remainders
 
                     use_successor_groups = pops > 0;
                 }
             }
-            else if constexpr(rcnv == STATIC_MAJOR)
+            else if constexpr(rcnv == SUCCESSOR_MAJOR)
             {
                 index_t       pc                   = 0;
                 mask_t        mask                 = full_mask();
                 unsigned      pops                 = N;
-                std::uint64_t rem                  = 0;
+                std::uint64_t pending              = 0;
                 bool          use_successor_groups = true;
 
                 while(not_done())
@@ -3971,19 +3971,19 @@ class compact_compiler
                     if(use_successor_groups)
                     {
                         auto ngs = successor_groups<K>{pc};
-                        rem |= ngs.data();
+                        pending |= ngs.data();
                         std::tie(pc, mask, pops) =
                             major_group<K, N>(facade::pc(), ngs);
                     }
                     else
                     {
-                        auto sgs = simple_set<index_t>{rem};
-                        rem |= sgs.data();
+                        auto sgs = simple_set<index_t>{pending};
+                        pending |= sgs.data();
                         std::tie(pc, mask, pops) =
                             major_group<K, N>(facade::pc(), sgs);
                     }
 
-                    rem &= ~(1ul << pc); // unset executed block
+                    pending &= ~(1ul << pc); // unset executed block
 
                     use_successor_groups = pops > 0;
                 }
@@ -4008,7 +4008,7 @@ class compact_compiler
 template <Kernel       K,
           bool         ts      = false,
           bool         use_tbd = true,
-          ReconvMethod rcnv    = STATIC_MAJOR,
+          ReconvMethod rcnv    = SUCCESSOR_MAJOR,
           typename UTRt        = std::ratio<1, 16>,
           typename UTRh        = UTRt>
     requires(!K::singular && typelist::of_same_size<typename K::reg_types> &&
@@ -4129,27 +4129,27 @@ class hybrid_compiler
                                            static_cast<index_t>(
                                                K::num_blocks)>>;
 
-                        std::uint64_t rem{};
+                        std::uint64_t pending{};
 
                         while(pops > t)
                         {
-                            rem = typelist::visit_at(
+                            pending = typelist::visit_at(
                                 pc,
                                 [&, mask, t]<typename D>(
-                                    std::uint64_t rem) noexcept
-                                { return D::eval(storage, mask, rem, t); },
+                                    std::uint64_t pending) noexcept
+                                { return D::eval(storage, mask, pending, t); },
                                 spec_blocks{},
                                 copy_id,
-                                rem);
+                                pending);
 
                             pcs  = storage.pc();
                             pops = 0;
                             mask = mask_t{};
 
-                            if(rem)
-                                std::tie(pc, mask, pops) =
-                                    major_group<K, N>(pcs,
-                                                      simple_set<index_t>(rem));
+                            if(pending)
+                                std::tie(pc, mask, pops) = major_group<K, N>(
+                                    pcs,
+                                    simple_set<index_t>(pending));
 
                             if(!pops)
                                 std::tie(pc, mask, pops) = major_group<K, N>(
@@ -4177,9 +4177,9 @@ class hybrid_compiler
                             use_successor_groups = pops >= hthreshold;
                         };
                     }
-                    else if constexpr(rcnv == STATIC_MAJOR)
+                    else if constexpr(rcnv == SUCCESSOR_MAJOR)
                     {
-                        std::uint64_t rem{};
+                        std::uint64_t pending{};
                         while(pops > t)
                         {
                             exec();
@@ -4189,14 +4189,14 @@ class hybrid_compiler
                             if(use_successor_groups)
                             {
                                 auto ngs = successor_groups<K>{pc};
-                                rem |= ngs.data();
+                                pending |= ngs.data();
                                 std::tie(pc, mask, pops) =
                                     major_group<K, N>(pcs, ngs);
                             }
                             else
                             {
-                                auto sgs = simple_set<index_t>{rem};
-                                rem |= sgs.data();
+                                auto sgs = simple_set<index_t>{pending};
+                                pending |= sgs.data();
                                 std::tie(pc, mask, pops) =
                                     major_group<K, N>(pcs, sgs);
                             }
@@ -4274,7 +4274,7 @@ using stream = compiler<K, stitch, sort_method, concurrent, UTR>::stream;
 template <Kernel       K,
           bool         ts      = false,
           bool         use_tbd = true,
-          ReconvMethod rcnv    = STATIC_MAJOR,
+          ReconvMethod rcnv    = SUCCESSOR_MAJOR,
           typename UTRt        = std::ratio<1, 8>,
           typename UTRh        = std::ratio<1, 8>>
 using hybrid_function =
@@ -4284,7 +4284,7 @@ using hybrid_function =
 template <Kernel       K,
           bool         ts      = false,
           bool         use_tbd = true,
-          ReconvMethod rcnv    = STATIC_MAJOR,
+          ReconvMethod rcnv    = SUCCESSOR_MAJOR,
           typename UTRt        = std::ratio<1, 8>,
           typename UTRh        = std::ratio<1, 8>>
 using hybrid_stream = hybrid_compiler<K, ts, use_tbd, rcnv, UTRt, UTRh>::stream;
@@ -4293,7 +4293,7 @@ using hybrid_stream = hybrid_compiler<K, ts, use_tbd, rcnv, UTRt, UTRh>::stream;
 template <Kernel       K,
           bool         ts      = false,
           bool         use_tbd = true,
-          ReconvMethod rcnv    = STATIC_MAJOR,
+          ReconvMethod rcnv    = SUCCESSOR_MAJOR,
           typename UTR         = std::ratio<1, 8>>
 using compact_function = compact_compiler<K, ts, use_tbd, rcnv, UTR>::type;
 } // namespace loom::vm::simd
