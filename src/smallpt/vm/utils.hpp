@@ -160,7 +160,11 @@ struct RenderPixelSIMDPredicated : RenderPixelBase
     std::pair<std::size_t, std::size_t>
     operator()(Chunk view) const noexcept
     {
+#ifdef USE_CLD
+        vm::simd::compact_function<pt_float, false, false> f;
+#else
         vm::simd::compact_function<pt_float, false, true> f;
+#endif
 
         const vut vres = vm::simd::broadcast<N>(res);
         const vft vt   = vm::simd::broadcast<N>(threshold);

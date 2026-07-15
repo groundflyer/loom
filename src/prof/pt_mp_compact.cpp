@@ -16,7 +16,7 @@ int main(/*int argc, char* argv[]*/)
     parallel_for_each(
         ranges::views::chunk(img, RenderPixelSIMDPredicated::N),
         [&](auto chunk) noexcept
-        { RenderPixelSIMDPredicated{img.res(), 0.1, 20}(chunk); });
+        { RenderPixelSIMDPredicated{img.res(), 0.1, 20, 10}(chunk); });
 
     return 0;
 }
