@@ -862,6 +862,20 @@ struct same_size_union<Union<Ts...>> :
 };
 
 template <typename T>
+struct register_size : std::integral_constant<std::size_t, sizeof(T)>
+{
+};
+
+template <typename... Ts>
+struct register_size<Union<Ts...>> :
+    std::integral_constant<std::size_t, std::max({sizeof(Ts)...})>
+{
+};
+
+template <typename T>
+using register_size_t = register_size<T>::type;
+
+template <typename T>
 struct select_first : std::type_identity<T>
 {
 };
@@ -992,6 +1006,11 @@ struct kernel_blank
 
     /// @brief Successors table.
     using successors = successors_table_t<blocks, labelmap>;
+
+    /// @brief Size of program's state.
+    static constexpr std::size_t state_size =
+        intlist::sum<typelist::to_integer_sequence<
+            typelist::map<register_size_t, reg_types>>>;
 };
 
 template <typename K>
