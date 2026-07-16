@@ -1591,6 +1591,42 @@ struct range_impl<A, A, List>
 {
     using type = List;
 };
+
+template <typename List>
+struct sum;
+
+template <typename Int, Int... Vals>
+struct sum<std::integer_sequence<Int, Vals...>> :
+    std::integral_constant<Int, (... + Vals)>
+{
+};
+
+template <typename List>
+struct product;
+
+template <typename Int, Int... Vals>
+struct product<std::integer_sequence<Int, Vals...>> :
+    std::integral_constant<Int, (... * Vals)>
+{
+};
+
+template <typename List>
+struct all;
+
+template <typename Int, Int... Vals>
+struct all<std::integer_sequence<Int, Vals...>> :
+    std::bool_constant<(... && Vals)>
+{
+};
+
+template <typename List>
+struct any;
+
+template <typename Int, Int... Vals>
+struct any<std::integer_sequence<Int, Vals...>> :
+    std::bool_constant<(... || Vals)>
+{
+};
 } // namespace detail
 
 /// @defgroup Intlist Intlist
@@ -1715,6 +1751,22 @@ inline constexpr bool empty = length<L> == 0;
 /// @brief Remove duplicate elements from @p L.
 template <List L>
 using nub = detail::nub<L>::type;
+
+/// @brief Sum of all elements.
+template <List L>
+inline constexpr auto sum = detail::sum<L>::value;
+
+/// @brief Product of all elements.
+template <List L>
+inline constexpr auto product = detail::product<L>::value;
+
+/// @brief Check if all elements are not equal to zero.
+template <List L>
+inline constexpr bool all = detail::all<L>::value;
+
+/// @brief Check if at least one element is not equal to zero.
+template <List L>
+inline constexpr bool any = detail::any<L>::value;
 
 template <std::size_t N, std::size_t I>
 struct lehmer_code_impl
@@ -1849,7 +1901,7 @@ struct enumerate
 /// @tparam I index type.
 /// @tparam S start number.
 ///
-/// Type of the index member is std::integer_constant<Index, value>.
+/// Type of the index member is std::integral_constant<Index, value>.
 template <List L, std::integral I = std::size_t, I S = 0>
 using enumerate = detail::enumerate<L, I, S>::type;
 
