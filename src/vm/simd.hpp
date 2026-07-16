@@ -3620,19 +3620,18 @@ class threaded_dispatch
                 {
                     const index_t next_pc = table[i];
 
-                    if(next_pc != halt_pos)
+                    const mask_t   cmask    = get_mask(next_pc);
+                    const unsigned cpops    = popcnt(cmask);
+                    const bool     not_halt = next_pc != halt_pos;
+
+                    pending |= (1ul & (cpops > 0u) & not_halt)
+                               << (next_pc * not_halt);
+
+                    if(cpops > next_pops)
                     {
-                        const mask_t   cmask = get_mask(next_pc);
-                        const unsigned cpops = popcnt(cmask);
-
-                        pending |= (1ul & (cpops > 0u)) << next_pc;
-
-                        if(cpops > next_pops)
-                        {
-                            next_branch = i;
-                            next_mask   = cmask;
-                            next_pops   = cpops;
-                        }
+                        next_branch = i;
+                        next_mask   = cmask;
+                        next_pops   = cpops;
                     }
                 }
 
