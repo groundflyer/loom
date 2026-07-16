@@ -15,7 +15,11 @@ int
 main(int argc, char* argv[])
 {
     return inspect<fib_test<uint64_t>>(
-        option<"input">("input values", "n", 80, read_number<uint64_t, true>),
         argc,
-        argv);
+        argv,
+        std::tuple{option<"input">("input values",
+                                   "n",
+                                   80,
+                                   read_number<uint64_t, true>)},
+        [](const auto& pr) { return pr.template get_opt<"input">(); });
 }

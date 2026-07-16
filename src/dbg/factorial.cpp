@@ -15,7 +15,11 @@ int
 main(int argc, char* argv[])
 {
     return inspect<fac_test<uint64_t>>(
-        option<"input">("input values", "a", 5, read_number<uint64_t, true>),
         argc,
-        argv);
+        argv,
+        std::tuple{option<"input">("input values",
+                                   "a",
+                                   5,
+                                   read_number<uint64_t, true>)},
+        [](const auto& pr) { return pr.template get_opt<"input">(); });
 }

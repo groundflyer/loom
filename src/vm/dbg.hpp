@@ -1055,37 +1055,52 @@ class debug_compiler
         std::conditional_t<interactive, interactive_inspector, fast_inspector>;
 };
 
-template <Kernel K, typelist::List Macros = type_sequence<>, typename InputOpt>
+/// @brief Kernel inspection main function.
+/// @tparam K kernel to inspect
+/// @tparam list of macros specification
+/// @param argc pass here argc from main()
+/// @param argv pass here argv from main()
+/// @param inopts tuple of argparse options to provide input for kernel @p K
+/// @param inget function that takes parse results and returns value or tuple of
+/// input values
+template <Kernel         K,
+          typelist::List Macros = type_sequence<>,
+          typename InputOpts,
+          typename InputGet>
+    requires(is_tuple_v<InputOpts>)
 int
-inspect(InputOpt inopt, int argc, char* argv[]) noexcept
+inspect(int              argc,
+        char*            argv[],
+        const InputOpts& inopts,
+        InputGet         inget) noexcept
 {
     // ignore PC
     constexpr auto vars = typelist::tail<typename K::variables>{};
 
     const auto pr = argparse::parse(
-        std::tuple{
-            inopt,
-            argparse::flag<'I', "info">("print program info"),
-            argparse::flag<'p', "print">("print program and exit"),
-            argparse::flag<'T', "type-annotations">("show type annotations"),
-            argparse::flag<'b', "blocks">("separate blocks"),
-            argparse::flag<'m', "macros">("expand macros"),
-            argparse::flag<'l', "line-numbers">("add line numbers"),
-            argparse::flag<'i', "interactive">("run interactive"),
-            argparse::option<'w', "column-width">("column width. Default is 20",
-                                                  "N",
-                                                  20u,
-                                                  read_number<unsigned, true>),
-            argparse::option<'s', "max-steps">(
-                "maximum number of steps. Default is 100",
-                "N",
-                100u,
-                read_number<unsigned, true>),
-            argparse::option_list<'t', "track">("variables to track", "vars")},
+        std::tuple_cat(
+            inopts,
+            std::tuple{argparse::flag<'I', "info">("print program info"),
+                       argparse::flag<'p', "print">("print program and exit"),
+                       argparse::flag<'T', "type-annotations">(
+                           "show type annotations"),
+                       argparse::flag<'b', "blocks">("separate blocks"),
+                       argparse::flag<'m', "macros">("expand macros"),
+                       argparse::flag<'l', "line-numbers">("add line numbers"),
+                       argparse::flag<'i', "interactive">("run interactive"),
+                       argparse::option<'w', "column-width">(
+                           "column width. Default is 20",
+                           "N",
+                           20u,
+                           read_number<unsigned, true>),
+                       argparse::option<'s', "max-steps">(
+                           "maximum number of steps. Default is 100",
+                           "N",
+                           100u,
+                           read_number<unsigned, true>),
+                       argparse::option_list<'t', "track">("variables to track",
+                                                           "vars")}),
         {argc, argv});
-
-    unsigned cw = 20;
-    unsigned ms = 100;
 
     const bool ts = pr.template get_opt<'T'>();
     const bool bs = pr.template get_opt<'b'>();
@@ -1093,20 +1108,6 @@ inspect(InputOpt inopt, int argc, char* argv[]) noexcept
     const bool ln = pr.template get_opt<'l'>();
     const bool pi = pr.template get_opt<'I'>();
     const bool pp = pr.template get_opt<'p'>();
-
-    decltype(pr.template get_opt<"input">()) fi;
-
-    try
-    {
-        cw = pr.template get_opt<'w'>();
-        ms = pr.template get_opt<'s'>();
-        fi = pr.template get_opt<"input">();
-    }
-    catch(const ReadException& ex)
-    {
-        print_errc(ex.ec, ex.sv, stderr);
-        return 1;
-    }
 
     if(pi)
     {
@@ -1129,19 +1130,23 @@ inspect(InputOpt inopt, int argc, char* argv[]) noexcept
         return 0;
     }
 
-    if(pr.template get_opt<'i'>())
+    try
     {
-        auto mask       = interactive_get_mask(vars);
-        auto inputs     = interactive_get_inputs(K{});
-        using Inspector = debug_compiler<K, true>::inspector;
-        Inspector insp{cw, ts, mask};
-        invopply(insp, inputs);
-    }
-    else
-    {
-        using Inspector = debug_compiler<K, false>::inspector;
-        try
+        const unsigned cw = pr.template get_opt<'w'>();
+        const unsigned ms = pr.template get_opt<'s'>();
+
+        if(pr.template get_opt<'i'>())
         {
+            auto mask       = interactive_get_mask(vars);
+            auto inputs     = interactive_get_inputs(K{});
+            using Inspector = debug_compiler<K, true>::inspector;
+            Inspector insp{cw, ts, mask};
+            invopply(insp, inputs);
+        }
+        else
+        {
+            using Inspector = debug_compiler<K, false>::inspector;
+
             auto mask = read_var_mask(vars, pr.template get_opt<'t'>());
             if(!mask.any())
             {
@@ -1149,16 +1154,21 @@ inspect(InputOpt inopt, int argc, char* argv[]) noexcept
                 mask.reset(0);
             }
             Inspector insp{ms, cw, ts, mask};
-            invopply(insp, fi);
+            invopply(insp, inget(pr));
         }
-        catch(const UnknownVar& ex)
-        {
-            fmt::print(stderr, "Unknown variable: {}\n", ex.value);
-            fmt::print(stderr,
-                       "Use variable number or name. Available variables:\n");
-            print_variables(vars, stderr);
-            return 2;
-        }
+    }
+    catch(const UnknownVar& ex)
+    {
+        fmt::print(stderr, "Unknown variable: {}\n", ex.value);
+        fmt::print(stderr,
+                   "Use variable number or name. Available variables:\n");
+        print_variables(vars, stderr);
+        return 2;
+    }
+    catch(const ReadException& ex)
+    {
+        print_errc(ex.ec, ex.sv, stderr);
+        return 1;
     }
 
     return 0;

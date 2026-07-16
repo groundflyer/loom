@@ -23,10 +23,11 @@ main(int argc, char* argv[])
                                  PRETTIFY_MACRO(double, root_condition),
                                  PRETTIFY_MACRO(double, find_bounds),
                                  PRETTIFY_MACRO(double, median)>>(
-        option<"input", 4>("input values",
-                           {"a", "b", "c", "d"},
-                           {1., 2., 3., 4.},
-                           read_number<double, true>),
         argc,
-        argv);
+        argv,
+        std::tuple{option<"input", 4>("input values",
+                                      {"a", "b", "c", "d"},
+                                      {1., 2., 3., 4.},
+                                      read_number<double, true>)},
+        [](const auto& pr) { return pr.template get_opt<"input">(); });
 }
