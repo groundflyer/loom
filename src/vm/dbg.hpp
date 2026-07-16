@@ -1065,7 +1065,7 @@ inspect(InputOpt inopt, int argc, char* argv[]) noexcept
     const auto pr = argparse::parse(
         std::tuple{
             inopt,
-            argparse::flag<'I', "info">("print program info and exit"),
+            argparse::flag<'I', "info">("print program info"),
             argparse::flag<'p', "print">("print program and exit"),
             argparse::flag<'T', "type-annotations">("show type annotations"),
             argparse::flag<'b', "blocks">("separate blocks"),
@@ -1091,6 +1091,8 @@ inspect(InputOpt inopt, int argc, char* argv[]) noexcept
     const bool bs = pr.template get_opt<'b'>();
     const bool em = pr.template get_opt<'m'>();
     const bool ln = pr.template get_opt<'l'>();
+    const bool pi = pr.template get_opt<'I'>();
+    const bool pp = pr.template get_opt<'p'>();
 
     decltype(pr.template get_opt<"input">()) fi;
 
@@ -1106,13 +1108,22 @@ inspect(InputOpt inopt, int argc, char* argv[]) noexcept
         return 1;
     }
 
-    if(pr.template get_opt<'I'>())
+    if(pi)
     {
-        fmt::print("Number of basic blocks: {}\n", K::num_blocks);
-        return 0;
+        fmt::print("Basic blocks: {:>4}\n"
+                   "Instructions: {:>4}\n"
+                   "Registers:    {:>4}\n"
+                   "Variables:    {:>4}\n"
+                   "State size:   {:>4} bytes\n\n",
+                   K::num_blocks,
+                   typelist::length<typename K::stated_comps>,
+                   typelist::length<typename K::reg_names>,
+                   typelist::length<typename K::variables>,
+                   K::state_size);
+        if(!pp) return 0;
     }
 
-    if(pr.template get_opt<'p'>())
+    if(pp)
     {
         pretty_print_kernel<K, Macros>(ts, bs, em, ln);
         return 0;
