@@ -315,17 +315,26 @@ if(BUILD_DEBUGGERS)
   message(STATUS "Building debuggers")
   add_custom_target(dbgs)
   set(DBGS_SRC_DIR src/dbg)
-  set(dbg_srcs root_finding.cpp fibonacci.cpp factorial.cpp)
+  set(dbg_srcs root_finding.cpp fibonacci.cpp factorial.cpp smallpt.cpp)
 
   foreach(src ${dbg_srcs})
     string(REPLACE ".cpp" "" name ${src})
     string(PREPEND name "dbg_")
 
     add_executable(${name} ${DBGS_SRC_DIR}/${src})
-    target_link_libraries(${name} PUBLIC fmt::fmt FastFloat::fast_float)
+
+    if (USE_SYSTEM_FMT AND (NOT FmtLibcxx))
+      target_link_libraries(${name} PUBLIC fmt::fmt-header-only)
+    else()
+      target_link_libraries(${name} PUBLIC fmt::fmt)
+    endif()
+
+    target_link_libraries(${name} PUBLIC FastFloat::fast_float)
 
     add_dependencies(dbgs ${name})
   endforeach()
+
+  target_compile_options(dbg_smallpt PRIVATE -ftemplate-depth=2048 -fbracket-depth=1024 -ftemplate-backtrace-limit=1)
 endif()
 
 if(BUILD_BENCHMARKS)
