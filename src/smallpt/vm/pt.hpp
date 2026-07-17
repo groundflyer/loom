@@ -29,7 +29,6 @@ using EPSILON = CS(0.0001);
 /// @param vtmp vec[3] storage for temporal vectors
 /// @param tmp storage for temporal values
 
-template <std::floating_point T>
 TMACRO9(isect_disk, hit, t, o, d, p, n, r, vtmp, tmp)
     INSERT_TMACRO(vec_vec3_sub, vtmp, p, o),
     INSERT_TMACRO(vec3_dot, t, vtmp, n),
@@ -58,7 +57,6 @@ MACRO_END;
 ///
 /// Values bound to @p a, @p b, @p c are invalidated.
 
-template <std::floating_point T>
 TMACRO7(solve_quadratic, s, x, a, b, c, tmp1, tmp2)
     TABS_CS(s, a),              // s <- abs(a)
     TGT_CS(s, s, EPSILON),      // s <- a !~ 0
@@ -110,7 +108,6 @@ MACRO_END;
 /// @param[in] r sphere radius
 /// @param (v)tmp1-2 storage for temporary values
 
-template <std::floating_point T>
 TMACRO10(prep_isect_sphere, a, b, c, o, d, p, r, tmp1, tmp2, vtmp1)
     INSERT_TMACRO(vec_vec3_sub, vtmp1, o, p),               // vtmp1 <- pc
     TMUL_CS(tmp1, r, r),                                    // tmp1 <- r*r
@@ -128,7 +125,6 @@ MACRO_END;
 // cyl_fin
 
 // r is constant
-template <std::floating_point T>
 TMACRO10(cyl_prep_abc, a, b, c, ox, oy, oz, dx, dy, dz, r)
     TMUL_CS(a, dz, dz),
     TFMA_CS(a, dx, dx, a),
@@ -141,7 +137,6 @@ TMACRO10(cyl_prep_abc, a, b, c, ox, oy, oz, dx, dy, dz, r)
 MACRO_END;
 
 // h is constant
-template <std::floating_point T>
 TMACRO6(cyl_fin, hit, t, oy, dy, y, h)
     TFMA_CS(y, dy, t, oy),
     TANDGE_CS(hit, hit, y, CS(0)),
@@ -203,7 +198,6 @@ MACRO_END;
 /// @param alpha storage for temporary values
 /// @param beta storage for temporary values
 
-template <std::floating_point T>
 TMACRO14(isect_quad, hit, t, o, d, v00, v01, v11, v10,
          vtmp1, vtmp2, vtmp3, D, alpha, beta)
     INSERT_TMACRO(vec_vec3_sub, vtmp1, v10, v00),           // vtmp1 <- e01
@@ -445,7 +439,6 @@ TMACRO5(sample_light_disk, dst, u0, u1, tmp, vtmp)
 MACRO_END;
 
 // d is d[3], but we set only x and y, z = -1
-template <std::floating_point T>
 TMACRO2(gen_ray_dir, d0, d1)
     TMUL_CS(d0, d0, scene::CAM_TAN_FOV_HALF),
     TMUL_CS(d1, d1, scene::CAM_TAN_FOV_HALF),
@@ -457,7 +450,6 @@ MACRO_END;
 
 // rp - return position
 
-template <std::floating_point T>
 TMACRO(traverse_scene)
     TMOV(t, 1e6),               // t <- 1e6
     IMOV(pid, 12),        // pid <- miss
@@ -564,7 +556,6 @@ MACRO_END;
 // t[3] <- tangent
 
 // set colors and normal
-template <std::floating_point T>
 TMACRO(set_materials)
 // 0 - white floor
 // 1 - red wall
@@ -634,13 +625,11 @@ TMACRO(set_materials)
     LABEL(set_materials_end)
 MACRO_END;
 
-template <std::floating_point T>
 TMACRO1(bias_ray, vtmp0)
     INSERT_TMACRO(vec3_scalar_mul, vtmp0, CS(d), CS(0.001)),
     INSERT_TMACRO(vec_vec3_add, CS(o), CS(o), vtmp0)
 MACRO_END;
 
-template <std::floating_point T>
 TMACRO2(luminance, dst, rgb)
     INSERT_TMACRO(vec3_dot, dst, rgb, scene::LUM)
 MACRO_END;
@@ -899,7 +888,6 @@ KERNEL_END(TVAR(L0), TVAR(L1), TVAR(L2), IVAR(rc), IVAR(ppp));
 
 #endif
 
-template <std::floating_point T>
 TMACRO(set_colors)
 // 0 - grey floor
 // 1 - red wall
