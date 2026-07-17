@@ -154,7 +154,6 @@ MACRO_END;
 /// @param tmp1-2 storage for temporary values
 /// @param vtmp vec[3] storage for temporary vectors
 
-template <std::floating_point T>
 TMACRO10(isect_triangle, hit, t, o, d, vert0, vert1, vert2, tmp1, tmp2, vtmp)
     INSERT_TMACRO(vec_vec3_sub, vert1, vert1, vert0),            // vert1 <- edge1
     INSERT_TMACRO(vec_vec3_sub, vert2, vert2, vert0),            // vert2 <- edge2
