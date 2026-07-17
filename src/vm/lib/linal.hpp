@@ -435,15 +435,9 @@ TMACRO2(vec3_length, dst, v)
 MACRO_END;
 
 TMACRO2(vec3_norm, v, l)
-#if 0
-// doesn't work in ray_dir_test and other complex cases. WHY?
     INSERT_TMACRO(vec3_length2, l, v),
-    TRSQRT(l, l),
+    TRSQRT_CS(l, l),
     INSERT_TMACRO(vec3_scalar_mul, v, v, l)
-#else
-    INSERT_TMACRO(vec3_length, l, v),
-    INSERT_TMACRO(vec3_scalar_div, v, v, l)
-#endif
 MACRO_END;
 
 // a invalidated
