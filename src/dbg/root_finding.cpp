@@ -19,10 +19,10 @@ int
 main(int argc, char* argv[])
 {
     return inspect<cubic_fz_p<double>,
-                   type_sequence<PRETTIFY_MACRO(double, eval),
-                                 PRETTIFY_MACRO(double, root_condition),
-                                 PRETTIFY_MACRO(double, find_bounds),
-                                 PRETTIFY_MACRO(double, median)>>(
+                   type_sequence<PRETTIFY_TMACRO(double, eval),
+                                 PRETTIFY_TMACRO(double, root_condition),
+                                 PRETTIFY_TMACRO(double, find_bounds),
+                                 PRETTIFY_TMACRO(double, median)>>(
         argc,
         argv,
         std::tuple{option<"input", 4>("input values",

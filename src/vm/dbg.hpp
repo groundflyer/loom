@@ -254,6 +254,30 @@ struct comp_type<Compute<ops::fma, Dst, Operands...>> :
 {
 };
 
+template <>
+struct prettify<ops::fms>
+{
+    static constexpr std::string_view value = "fma";
+
+    template <typename... Ts>
+    std::string_view
+    operator()(Ts...) const noexcept
+    {
+        return value;
+    }
+};
+
+template <typename... Operands>
+struct shorten<Compute<ops::fms, Operands...>> : std::true_type
+{
+};
+
+template <typename Dst, typename... Operands>
+struct comp_type<Compute<ops::fms, Dst, Operands...>> :
+    std::type_identity<vartype<Dst>>
+{
+};
+
 template <typename Dst, typename C, typename T, typename I, typename L>
 struct prettify<Compute<ops::sct<T, I, L>, Dst, C>>
 {
@@ -261,13 +285,13 @@ struct prettify<Compute<ops::sct<T, I, L>, Dst, C>>
     operator()(bool ts, unsigned) const noexcept
     {
         if(ts)
-            return fmt::format("sct @{} {} {}",
+            return fmt::format("sct @{} {} {} {}",
                                TypeInfo<T>::chars,
                                prettify<Dst>{}(false, 0),
                                prettify<C>{}(false, 0),
                                ops::sct<T, I, L>::values);
         else
-            return fmt::format("sct {} {}",
+            return fmt::format("sct {} {} {}",
                                prettify<Dst>{}(false, 0),
                                prettify<C>{}(false, 0),
                                ops::sct<T, I, L>::values);
@@ -409,15 +433,26 @@ MK_OPS_PRETTIFY(trunc)
 MK_OPS_PRETTIFY(copysign)
 MK_OPS_PRETTIFY(sin)
 MK_OPS_PRETTIFY(cos)
+MK_OPS_PRETTIFY(sqrt)
+MK_OPS_PRETTIFY(rsqrt)
 // clang-format on
 
 #undef MK_STD_PRETTIFY
 #undef MK_OPS_PRETTIFY
 
+template <typename MacroDecl, template <typename...> typename MacroDef>
+struct pretty_macro
+{
+    static constexpr std::string_view nameview = MacroDecl::nameview;
+
+    using parameters = MacroDecl::parameters;
+    using statements = typelist::to<parameters, MacroDef>::type;
+};
+
 template <typename T,
           typename MacroDecl,
           template <typename...> typename MacroDef>
-struct pretty_macro
+struct pretty_tmacro
 {
     static constexpr std::string_view nameview = MacroDecl::nameview;
 
@@ -426,10 +461,15 @@ struct pretty_macro
         typelist::to<typelist::cons<T, parameters>, MacroDef>::type;
 };
 
-#define PRETTIFY_MACRO_PREFIX(PREFIX, T, MACRO_NAME) \
-    pretty_macro<T, PREFIX##MACRO_NAME, MACRO_NAME>
-#define PRETTIFY_MACRO(T, MACRO_NAME) \
-    PRETTIFY_MACRO_PREFIX(MACRO_DECL_PREFIX, T, MACRO_NAME)
+#define PRETTIFY_MACRO_PREFIX(PREFIX, MACRO_NAME) \
+    pretty_macro<PREFIX##MACRO_NAME, MACRO_NAME>
+#define PRETTIFY_MACRO(MACRO_NAME) \
+    PRETTIFY_MACRO_PREFIX(__macro_decl_, MACRO_NAME)
+
+#define PRETTIFY_TMACRO_PREFIX(PREFIX, T, MACRO_NAME) \
+    pretty_tmacro<T, PREFIX##MACRO_NAME, MACRO_NAME>
+#define PRETTIFY_TMACRO(T, MACRO_NAME) \
+    PRETTIFY_TMACRO_PREFIX(__macro_decl_, T, MACRO_NAME)
 
 /// @brief Pretty print list of instructions.
 /// @param ts add type signatures.
