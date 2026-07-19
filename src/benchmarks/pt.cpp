@@ -1,7 +1,7 @@
 // -*- C++ -*-
 // smallpt.cpp
-#if !(defined(__AVX512F__) || defined(__AVX2__) || defined(__AVX__))
-#error "This program requires at least AVX"
+#if !(defined(__AVX512F__) || defined(__AVX2__))
+#error "This program requires at least AVX2"
 #endif
 
 #include "bm.hpp"
@@ -12,28 +12,35 @@
 using namespace loom;
 using namespace vm;
 
-using C1     = constants<CS(40), CS(0.001), CS(64), CS(1), CS(20)>;
-using kernel = pt_const<float, C1>;
+#ifdef BLUR_VER
+using B = CS(10);
+#else
+using B = CS(1);
+#endif
+
+using C = constants<CS(40), CS(0.0005), CS(64), B, CS(20)>;
+
+using kernel = pt_const<float, C>;
 
 template <bool               ts,
           bool               sd,
           simd::ReconvMethod rcnv,
           typename UTR = std::ratio<1, 16>>
-using PTCompact = RenderSIMDCompact<kernel, C1, ts, sd, rcnv, UTR>;
+using PTCompact = RenderSIMDCompact<kernel, C, ts, sd, rcnv, UTR>;
 
 template <bool               ts,
           bool               tbd,
           simd::ReconvMethod rcnv,
           typename UTRt,
           typename UTRh>
-using PTFunction = RenderSIMDFunction<kernel, C1, ts, tbd, rcnv, UTRt, UTRh>;
+using PTFunction = RenderSIMDFunction<kernel, C, ts, tbd, rcnv, UTRt, UTRh>;
 
 template <bool               ts,
           bool               tbd,
           simd::ReconvMethod rcnv,
           typename UTRt,
           typename UTRh>
-using PTStream = RenderSIMDStream<kernel, C1, ts, tbd, rcnv, UTRt, UTRh>;
+using PTStream = RenderSIMDStream<kernel, C, ts, tbd, rcnv, UTRt, UTRh>;
 
 template <typename R>
 using mk_size =
@@ -43,7 +50,7 @@ using mk_size =
 
 constexpr unsigned stream_size25 = mk_size<std::ratio<2, 5>>::value;
 
-using FavStream = PTStream<false,
+using FavStream = PTStream<true,
                            true,
                            simd::SUCCESSOR_MAJOR,
                            std::ratio<1, 16>,
@@ -53,20 +60,32 @@ int
 main(int argc, char* argv[])
 {
     run({argc, argv},
-        PTCompact<true, false, simd::HYBRID_MAJOR, std::ratio<1, 16>>{},
-        PTCompact<false, false, simd::HYBRID_MAJOR, std::ratio<1, 16>>{},
+        PTCompact<true, true, simd::SUCCESSOR_MAJOR, std::ratio<1, 16>>{},
+        PTStream<true,
+                 true,
+                 simd::SUCCESSOR_MAJOR,
+                 std::ratio<1, 16>,
+        std::ratio<1, 16>>{stream_size25},
+        PTFunction<true,
+                   true,
+                   simd::SUCCESSOR_MAJOR,
+                   std::ratio<1, 16>,
+                   std::ratio<1, 16>>{}
+#ifdef BENCH_ALL
+        ,
+        FavStream{256},
+        FavStream{512},
+        FavStream{mk_size<std::ratio<1, 1>>::value},
+        FavStream{mk_size<std::ratio<2, 1>>::value},
+        FavStream{mk_size<std::ratio<1, 8>>::value},
+        PTCompact<false, true, simd::SUCCESSOR_MAJOR, std::ratio<1, 16>>{},
         PTCompact<true, false, simd::SUCCESSOR_MAJOR, std::ratio<1, 16>>{},
         PTCompact<false, false, simd::SUCCESSOR_MAJOR, std::ratio<1, 16>>{},
-        PTCompact<false, true, simd::SUCCESSOR_MAJOR, std::ratio<1, 16>>{},
-        PTCompact<true, true, simd::SUCCESSOR_MAJOR, std::ratio<1, 16>>{},
+        PTCompact<true, false, simd::HYBRID_MAJOR, std::ratio<1, 16>>{},
+        PTCompact<false, false, simd::HYBRID_MAJOR, std::ratio<1, 16>>{},
         PTStream<false,
                  false,
                  simd::HYBRID_MAJOR,
-                 std::ratio<15, 16>,
-                 std::ratio<1, 16>>{stream_size25},
-        PTStream<false,
-                 false,
-                 simd::SUCCESSOR_MAJOR,
                  std::ratio<15, 16>,
                  std::ratio<1, 16>>{stream_size25},
         PTStream<false,
@@ -80,6 +99,11 @@ main(int argc, char* argv[])
                  std::ratio<1, 16>,
                  std::ratio<1, 16>>{stream_size25},
         PTFunction<false,
+                   false,
+                   simd::HYBRID_MAJOR,
+                   std::ratio<1, 16>,
+                   std::ratio<1, 16>>{},
+        PTFunction<false,
                    true,
                    simd::SUCCESSOR_MAJOR,
                    std::ratio<1, 16>,
@@ -89,27 +113,13 @@ main(int argc, char* argv[])
                    simd::SUCCESSOR_MAJOR,
                    std::ratio<1, 16>,
                    std::ratio<1, 16>>{},
-        PTFunction<false,
-                   false,
-                   simd::HYBRID_MAJOR,
-                   std::ratio<1, 16>,
-                   std::ratio<1, 16>>{},
         PTStream<true,
                  false,
                  simd::SUCCESSOR_MAJOR,
                  std::ratio<1, 16>,
-                 std::ratio<1, 16>>{stream_size25},
-        PTStream<true,
-                 true,
-                 simd::SUCCESSOR_MAJOR,
-                 std::ratio<1, 16>,
-                 std::ratio<1, 16>>{stream_size25},
-        FavStream{stream_size25},
-        FavStream{256},
-        FavStream{512},
-        FavStream{mk_size<std::ratio<1, 1>>::value},
-        FavStream{mk_size<std::ratio<2, 1>>::value},
-        FavStream{mk_size<std::ratio<1, 8>>::value});
+                 std::ratio<1, 16>>{stream_size25}
+#endif
+    );
 
     return 0;
 }

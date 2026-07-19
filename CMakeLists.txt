@@ -22,7 +22,8 @@ message(STATUS "Build Type: ${CMAKE_BUILD_TYPE}")
 # Options
 option(BUILD_TESTS "Build tests" OFF)
 option(BUILD_BENCHMARKS "Build benchmarks" OFF)
-option(BUILD_FM_BENCHMARKS "Build benchmarks with fast-math" OFF)
+option(BUILD_FM_BENCHMARKS "Additionaly build fast-math versions of benchmarks" OFF)
+option(BUILD_ALL_BENCHMARKS "Enable optional benchmarks. Requires at least 32Gb RAM" OFF)
 option(BUILD_DEBUGGERS "Build debuggers" OFF)
 option(BUILD_DEMO "Build SmallPT demo" OFF)
 option(BUILD_PROF "Build profiling executables" OFF)
@@ -219,6 +220,14 @@ if(BUILD_DOC)
   endif()
 endif()
 
+macro(target_link_fmt target)
+    if (USE_SYSTEM_FMT AND (NOT FmtLibcxx))
+      target_link_libraries(${target} PRIVATE fmt::fmt-header-only)
+    else()
+      target_link_libraries(${target} PRIVATE fmt::fmt)
+    endif()
+endmacro()
+
 # Tests
 if(BUILD_TESTS)
   message(STATUS "Building tests")
@@ -248,18 +257,6 @@ if(BUILD_TESTS)
     vm_linal.cpp
   )
 
-  # header-only fmt in case if system fmt is not linked to libc++
-  set(fmt_ho
-    test_string
-    test_linal
-    test_vm
-    test_vm_simd
-    test_vm_root_finding
-    test_vm_mp
-    test_vm_simd_compact
-    test_vm_linal
-    test_sort)
-
   set(TESTS_SRC_DIR src/tests)
 
   add_custom_target(tests)
@@ -270,11 +267,7 @@ if(BUILD_TESTS)
 
     add_executable(${name} ${TESTS_SRC_DIR}/${src})
     add_test(NAME ${name} COMMAND ${name})
-    if (USE_SYSTEM_FMT AND (NOT FmtLibcxx) AND (name IN_LIST fmt_ho))
-      target_link_libraries(${name} PRIVATE fmt::fmt-header-only)
-    else()
-      target_link_libraries(${name} PRIVATE fmt::fmt)
-    endif()
+    target_link_fmt(${name})
     target_link_libraries(${name} PUBLIC FastFloat::fast_float)
     add_dependencies(tests ${name})
   endforeach()
@@ -322,15 +315,8 @@ if(BUILD_DEBUGGERS)
     string(PREPEND name "dbg_")
 
     add_executable(${name} ${DBGS_SRC_DIR}/${src})
-
-    if (USE_SYSTEM_FMT AND (NOT FmtLibcxx))
-      target_link_libraries(${name} PUBLIC fmt::fmt-header-only)
-    else()
-      target_link_libraries(${name} PUBLIC fmt::fmt)
-    endif()
-
+    target_link_fmt(${name})
     target_link_libraries(${name} PUBLIC FastFloat::fast_float)
-
     add_dependencies(dbgs ${name})
   endforeach()
 
@@ -355,49 +341,66 @@ if(BUILD_BENCHMARKS)
 
   set(BM_SRC_DIR src/benchmarks)
 
-  set(bm_srcs pt.cpp primary.cpp primary2.cpp threefry.cpp)
+  set(bm_srcs pt.cpp primary.cpp threefry.cpp)
+  set(blur_srcs pt.cpp primary.cpp)
 
   add_custom_target(benchmarks)
+
+  if(BUILD_ALL_BENCHMARKS)
+    message(STATUS "Building optional benchmarks")
+  endif()
+
+  if(BUILD_FM_BENCHMARKS)
+    message(STATUS "Building fast-math benchmarks")
+  endif()
+
+  macro(set_bm_target_flags target def opt)
+    target_compile_definitions(${target} PRIVATE -DREPO_HASH="${REPO_HASH}" ${def})
+    target_compile_options(${target} PRIVATE -ftemplate-depth=2048 -fbracket-depth=512 -ftemplate-backtrace-limit=1 -fno-exceptions ${opt})
+    if(BUILD_ALL_BENCHMARKS)
+      target_compile_definitions(${target} PRIVATE -DBENCH_ALL)
+    endif()
+  endmacro()
 
   foreach(src ${bm_srcs})
     string(REPLACE ".cpp" "" name ${src})
     string(PREPEND name "bm_")
 
     add_executable(${name} ${BM_SRC_DIR}/${src})
-    if (BUILD_FM_BENCHMARKS)
-      add_executable(${name}_fm ${BM_SRC_DIR}/${src})
-    endif()
-
-    if (USE_SYSTEM_FMT AND (NOT FmtLibcxx))
-      target_link_libraries(${name} PRIVATE fmt::fmt-header-only)
-      if (BUILD_FM_BENCHMARKS)
-        target_link_libraries(${name}_fm PRIVATE fmt::fmt-header-only)
-      endif()
-    else()
-      target_link_libraries(${name} PRIVATE fmt::fmt)
-      if (BUILD_FM_BENCHMARKS)
-        target_link_libraries(${name}_fm PRIVATE fmt::fmt)
-      endif()
-    endif()
-
-    target_compile_definitions(${name} PRIVATE -DREPO_HASH="${REPO_HASH}")
-    target_compile_options(${name} PUBLIC -ftemplate-depth=2048 -fbracket-depth=512 -ftemplate-backtrace-limit=1 -fno-exceptions)
+    set_bm_target_flags(${name} "" "")
+    target_link_fmt(${name})
     add_dependencies(benchmarks ${name})
 
-    if (BUILD_FM_BENCHMARKS)
-      target_compile_definitions(${name}_fm PRIVATE -DREPO_HASH="${REPO_HASH}")
-      target_compile_options(${name}_fm PRIVATE $<$<CONFIG:Release>:-ffast-math>)
-      target_compile_options(${name}_fm PUBLIC -ftemplate-depth=2048 -fbracket-depth=512 -ftemplate-backtrace-limit=1)
-      add_dependencies(benchmarks ${name}_fm)
+    if(BUILD_FM_BENCHMARKS)
+      set(fname ${name}_fm)
+      add_executable(${fname} ${BM_SRC_DIR}/${src})
+      set_bm_target_flags(${fname} "" -ffast-math)
+      target_link_fmt(${fname})
+      add_dependencies(benchmarks ${fname})
     endif()
   endforeach()
 
-  # target_compile_options(bm_pt PUBLIC -save-temps)
-  target_compile_options(bm_primary PUBLIC $<$<CONFIG:RelWithDebInfo>:-fsanitize=address>)
-  target_link_options(bm_primary PUBLIC $<$<CONFIG:RelWithDebInfo>:-fsanitize=address>)
+  foreach(src ${blur_srcs})
+    string(REPLACE ".cpp" "" name ${src})
+    string(PREPEND name "bm_")
+    string(APPEND name "_blur")
+
+    add_executable(${name} ${BM_SRC_DIR}/${src})
+    set_bm_target_flags(${name} -DBLUR_VER "")
+    target_link_fmt(${name})
+    add_dependencies(benchmarks ${name})
+
+    if (BUILD_FM_BENCHMARKS)
+      set(fname ${name}_fm)
+      add_executable(${fname} ${BM_SRC_DIR}/${src})
+      set_bm_target_flags(${fname} -DBLUR_VER -ffast-math)
+      target_link_fmt(${fname})
+      add_dependencies(benchmarks ${fname})
+    endif()
+  endforeach()
 endif()
 
-if (BUILD_DEMO)
+if(BUILD_DEMO)
   message(STATUS "Building demo")
 
   add_library(viewport src/smallpt/common/viewport.cpp)
@@ -415,11 +418,7 @@ if (BUILD_DEMO)
 
   add_executable(smallpt src/smallpt/vm/pt.cpp src/smallpt/vm/events.cpp)
   target_link_libraries(smallpt PUBLIC viewport pt_vm pt_ref Threads::Threads PkgConfig::HWLOC)
-  if (USE_SYSTEM_FMT AND (NOT FmtLibcxx))
-    target_link_libraries(smallpt PUBLIC fmt::fmt-header-only)
-  else()
-    target_link_libraries(smallpt PUBLIC fmt::fmt)
-  endif()
+  target_link_fmt(smallpt)
   target_compile_definitions(smallpt PUBLIC -DNUM_CORES_L=${NUM_CORES_L} -DNUM_CORES_P=${NUM_CORES_P})
   target_compile_options(smallpt PUBLIC -ftemplate-depth=2048 -fbracket-depth=512 -ftemplate-backtrace-limit=1)
 endif()
@@ -434,13 +433,8 @@ if(BUILD_PROF)
   add_executable(prof_pt_compact_tbd ${PROF_SRC_DIR}/pt_compact.cpp)
   add_executable(prof_pt_compact_cld ${PROF_SRC_DIR}/pt_compact.cpp)
 
-  if (USE_SYSTEM_FMT AND (NOT FmtLibcxx))
-    target_link_libraries(prof_pt_compact_tbd PRIVATE fmt::fmt-header-only)
-    target_link_libraries(prof_pt_compact_cld PRIVATE fmt::fmt-header-only)
-  else()
-    target_link_libraries(prof_pt_compact_tbd PRIVATE fmt::fmt)
-    target_link_libraries(prof_pt_compact_cld PRIVATE fmt::fmt)
-  endif()
+  target_link_fmt(prof_pt_compact_tbd)
+  target_link_fmt(prof_pt_compact_cld)
 
   target_compile_options(prof_pt_compact_tbd PUBLIC -ftemplate-depth=2048 -fbracket-depth=512 -ftemplate-backtrace-limit=1 -fno-exceptions)
   target_compile_options(prof_pt_compact_cld PUBLIC -ftemplate-depth=2048 -fbracket-depth=512 -ftemplate-backtrace-limit=1 -fno-exceptions)
