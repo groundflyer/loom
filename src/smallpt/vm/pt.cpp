@@ -1,9 +1,5 @@
 // -*- C++ -*-
 // pt.cpp
-#if !(defined(__AVX512F__) || defined(__AVX2__) || defined(__AVX__))
-#error "This program requires at least AVX"
-#endif
-
 #include "events.hpp"
 #include "vm.hpp"
 

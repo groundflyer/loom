@@ -29,7 +29,6 @@ option(BUILD_DEMO "Build SmallPT demo" OFF)
 option(BUILD_PROF "Build profiling executables" OFF)
 option(BUILD_DOC "Build documentation" OFF)
 option(ENABLE_IPO "Enable interprocedural optimization" OFF)
-option(SIMD_NARROW_AVX_INT "Use 128 bit integer vectors on AVX instead of 256" OFF)
 option(USE_LIBCXX "Link to libc++ when compiling with Clang" ON)
 option(USE_CUDA "Enable CUDA support" OFF)
 option(USE_SYSTEM_RANGEV3 "Use system range-v3 library" ON)
@@ -38,10 +37,6 @@ option(USE_SYSTEM_GLFW "Use system glfw3" ON)
 option(USE_SYSTEM_FAST_FLOAT "Use system fast_float" ON)
 set(TARGET_CPU "native" CACHE STRING "Target CPU")
 set(CUDA_BLOCK_SIZE 256 CACHE STRING "Number of threads in a block")
-
-if(SIMD_NARROW_AVX_INT)
-  add_definitions(-DNARROW_AVX_INT)
-endif()
 
 # Check for required compiler features
 include(CxxFeatures)

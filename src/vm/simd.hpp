@@ -34,14 +34,10 @@ constexpr inline fsize_t dynamic_extent = bve::dynamic_extent;
 #if defined(__AVX512F__)
 /// @brief SIMD vector size in bytes.
 constexpr inline fsize_t simd_width = 64; // 512
-/// @brief SIMD vector alignment.
-constexpr inline fsize_t simd_align = 64;
-#elif defined(__AVX2__) || defined(__AVX__)
+#elif defined(__AVX2__) || (defined(__AVX__) && defined(ALLOW_WIDE_AVX))
 constexpr inline fsize_t simd_width = 32; // 256
-constexpr inline fsize_t simd_align = 32;
 #else
 constexpr inline fsize_t simd_width = 16; // 128
-constexpr inline fsize_t simd_align = 16;
 #endif
 
 /// @brief Current x86-64 vector extension infostring.
@@ -76,24 +72,13 @@ struct proxy_view_extent<bve::ProxyView<Data, Helper, PCVar, N>>
 template <typename _ProxyView>
 constexpr inline fsize_t pv_extent = proxy_view_extent<_ProxyView>::value;
 
-/// @brief Same as simd_align, but takes into account -DNARROW_AVX_INT.
-template <typename T>
-struct get_native_vector_align
-{
-#if defined(__AVX__) && defined(NARROW_AVX_INT)
-    static constexpr fsize_t value = std::is_integral_v<T> ? 16 : simd_align;
-#else
-    static constexpr fsize_t value = simd_align;
-#endif
-};
-
 /// @brief Create aligned SIMD packed vector type that consist of @p N elements
 /// of type @p T.
 template <typename T, fsize_t N>
 struct make_packed_vector
 {
-    typedef T type __attribute__((vector_size(N * sizeof(T)),
-                                  aligned(get_native_vector_align<T>::value)));
+    typedef T type
+        __attribute__((vector_size(N * sizeof(T)), aligned(simd_width)));
 };
 
 /// @brief Helper alias.
@@ -101,18 +86,10 @@ template <typename T, fsize_t N>
 using packed_vector = make_packed_vector<T, N>::type;
 
 /// @brief Compute extent of the widest native SIMD vector for type @p T.
-/// Takes into account -DNARROW_AVX_INT definition.
 template <typename T>
-struct native_vector_extent
+struct native_vector_extent :
+    std::integral_constant<fsize_t, simd_width / sizeof(T)>
 {
-  private:
-#if defined(__AVX__) && defined(NARROW_AVX_INT)
-    static constexpr fsize_t _width = std::is_integral_v<T> ? 16 : simd_width;
-#else
-    static constexpr fsize_t _width = simd_width;
-#endif
-  public:
-    static constexpr fsize_t value = _width / sizeof(T);
 };
 
 /// @brief Get native widest SIMD vector extent for instruction @p I.
@@ -3358,8 +3335,7 @@ using select_visitor = visitor_selector<stitch>::template type<Args...>;
 
 /// @brief Allocates memory aligned to native SIMD vector size.
 template <typename T>
-using SIMDAlignedAllocator =
-    AlignedAllocator<T, get_native_vector_align<T>::value>;
+using SIMDAlignedAllocator = AlignedAllocator<T, simd_width>;
 
 /// @brief Basic SIMD backend.
 /// @tparam K program to compile.

@@ -1,5 +1,9 @@
-#include "utils.hpp"
+#if !(defined(__AVX512F__) || defined(__AVX2__))
+#error "This program requires at least AVX2"
+#endif
+
 #include "vm.hpp"
+#include "utils.hpp"
 
 #include <common/timer.hpp>
 #include <vm/mp.hpp>
