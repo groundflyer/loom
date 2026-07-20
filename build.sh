@@ -89,10 +89,6 @@ run_tests() {
     fi
 }
 
-set_cmake_args_from_envs() {
-    CMAKE_ARGS+=(-DSIMD_NARROW_AVX_INT=${SIMD_NARROW_AVX_INT:-OFF})
-}
-
 run_benchmarks() {
     if [ $BENCHMARK = true ]; then
         user_id=`git config --get user.email | sha256sum | cut -c1-10`
@@ -162,7 +158,7 @@ done
 enable_demo
 enable_prof
 
-set_cmake_args_from_envs
+ulimit -s unlimited
 
 mkdir -p ${BUILD_DIR}
 pushd ${BUILD_DIR}
