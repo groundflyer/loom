@@ -35,10 +35,17 @@ template <typename... BMs>
 static void
 run(argparse::ArgsRange args, BMs&&... bms) noexcept
 {
+    constexpr std::size_t def_num_runs = 10;
+
     auto parse_results = argparse::parse(
         std::tuple{
             argparse::flag<'v', "verbose">("verbose logging"),
-            argparse::option<'l', "log">("path to benchmark logs", "FILE", "")},
+            argparse::option<'l', "log">("path to benchmark logs", "FILE", ""),
+            argparse::option<'n', "num-runs">(
+                "number of runs for each benchmark",
+                "N",
+                def_num_runs,
+                read_number<std::size_t, false>)},
         args);
     Logger logger(parse_results.template get_opt<'v'>() ? Logger::DEBUG :
                                                           Logger::INFO);
@@ -58,10 +65,20 @@ run(argparse::ArgsRange args, BMs&&... bms) noexcept
             logger.info("Logging results into {}", path);
     }
 
+    const std::optional<std::size_t> onr =
+        parse_results.template get_opt<'n'>();
+
+    if(!onr)
+        logger.warning("Failed to parse num-runs. Falling to default {}",
+                       def_num_runs);
+
+    const std::size_t num_runs = onr.value_or(def_num_runs);
+
     logger.info("CPU: {}; SIMD: {}", get_cpu_model(), vm::simd::info::value);
     logger.info("clang-{}; fast-math: {}", rtrim(__clang_version__), fast_math);
+    logger.info("Running each benchmark {} times", num_runs);
 
-    print_results(run_benchmarks(logger, file, bms...));
+    print_results(run_benchmarks(logger, file, num_runs, bms...));
 
     if(file) std::fclose(file);
 }

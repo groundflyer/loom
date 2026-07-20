@@ -84,45 +84,55 @@ constexpr inline bool fast_math = false;
 
 template <typename Dur = std::chrono::steady_clock::duration, typename... Bms>
 static std::array<bm_result<Dur>, sizeof...(Bms)>
-run_benchmarks(Logger& logger, std::FILE* file, Bms... bms)
+run_benchmarks(Logger&     logger,
+               std::FILE*  file,
+               std::size_t num_runs,
+               Bms... bms)
 {
     auto decorate = [&](auto&& bm)
     {
         const std::string i{bm.info()};
-        logger.info("Benchmarking {}...", i);
-        const Dur dur = bm();
+        Dur               avg{};
+        for(std::size_t j = 0; j < num_runs; ++j)
+        {
+            logger.info("Benchmarking {} [{}/{}]...", i, j + 1ul, num_runs);
+            const Dur dur = bm();
+            avg += dur;
 #if FMT_VERSION < 110000
-        const auto durs = to_format(dur);
-        logger.info("Result {:.3f}s", durs);
-        if(file)
-            fmt::print(file,
-                       "{:%FT%TZ},{},clang-{},fast-math:{},{},{},{},{:.3f}\n",
-                       std::chrono::floor<std::chrono::seconds>(
-                           std::chrono::system_clock::now()),
-                       REPO_HASH,
-                       rtrim(__clang_version__),
-                       fast_math,
-                       get_cpu_model(),
-                       vm::simd::info::value,
-                       i,
-                       durs);
+            const auto durs = to_format(dur);
+            logger.info("Result {:.3f}s", durs);
+            if(file)
+                fmt::print(
+                    file,
+                    "{:%FT%TZ},{},clang-{},fast-math:{},{},{},{},{:.3f}\n",
+                    std::chrono::floor<std::chrono::seconds>(
+                        std::chrono::system_clock::now()),
+                    REPO_HASH,
+                    rtrim(__clang_version__),
+                    fast_math,
+                    get_cpu_model(),
+                    vm::simd::info::value,
+                    i,
+                    durs);
 #else
-        logger.info("Result {:.3%S}s", dur);
-        if(file)
-            fmt::println(file,
-                         "{:%FT%TZ},{},clang-{},fast-math:{},{},{},{},{:.3%S}",
-                         std::chrono::floor<std::chrono::seconds>(
-                             std::chrono::system_clock::now()),
-                         REPO_HASH,
-                         rtrim(__clang_version__),
-                         fast_math,
-                         get_cpu_model(),
-                         vm::simd::info::value,
-                         i,
-                         dur);
+            logger.info("Result {:.3%S}s", dur);
+            if(file)
+                fmt::println(
+                    file,
+                    "{:%FT%TZ},{},clang-{},fast-math:{},{},{},{},{:.3%S}",
+                    std::chrono::floor<std::chrono::seconds>(
+                        std::chrono::system_clock::now()),
+                    REPO_HASH,
+                    rtrim(__clang_version__),
+                    fast_math,
+                    get_cpu_model(),
+                    vm::simd::info::value,
+                    i,
+                    dur);
 #endif
+        }
 
-        return bm_result<Dur>{std::move(i), dur};
+        return bm_result<Dur>{std::move(i), avg / num_runs};
     };
 
     return {decorate(bms)...};
