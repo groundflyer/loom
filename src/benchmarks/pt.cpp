@@ -12,13 +12,11 @@
 using namespace loom;
 using namespace vm;
 
-#ifdef BLUR_VER
-using B = CS(10);
-#else
-using B = CS(1);
-#endif
-
-using C = constants<CS(40), CS(0.0005), CS(64), B, CS(20)>;
+using C = constants<CS(40),
+                    sl2cs<THRESHOLD_VALUE>,
+                    CS(64),
+                    sl2cs<BLUR_VALUE>,
+                    sl2cs<DEPTH_VALUE>>;
 
 using kernel = pt_const<float, C>;
 
@@ -65,7 +63,7 @@ main(int argc, char* argv[])
                  true,
                  simd::SUCCESSOR_MAJOR,
                  std::ratio<1, 16>,
-        std::ratio<1, 16>>{stream_size25},
+                 std::ratio<1, 16>>{stream_size25},
         PTFunction<true,
                    true,
                    simd::SUCCESSOR_MAJOR,

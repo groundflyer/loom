@@ -14,13 +14,7 @@
 using namespace loom;
 using namespace vm;
 
-#ifdef BLUR_VER
-using B = CS(10);
-#else
-using B = CS(1);
-#endif
-
-using C = constants<CS(256), CS(0.1), CS(64), B>;
+using C = constants<CS(256), CS(0.1), CS(64), sl2cs<BLUR_VALUE>>;
 
 using kernel = primary_const<float, C>;
 
@@ -37,7 +31,8 @@ template <bool               ts,
           simd::ReconvMethod rcnv,
           typename UTRt,
           typename UTRh>
-using PrimaryFunction = RenderSIMDFunction<kernel, C, ts, tbd, rcnv, UTRt, UTRh>;
+using PrimaryFunction =
+    RenderSIMDFunction<kernel, C, ts, tbd, rcnv, UTRt, UTRh>;
 
 template <bool               ts,
           bool               tbd,
@@ -46,11 +41,11 @@ template <bool               ts,
           typename UTRh>
 using PrimaryStream = RenderSIMDStream<kernel, C, ts, tbd, rcnv, UTRt, UTRh>;
 
-using FavStream     = PrimaryStream<false,
-                                    true,
-                                    simd::SUCCESSOR_MAJOR,
-                                    std::ratio<1, 16>,
-                                    std::ratio<1, 16>>;
+using FavStream = PrimaryStream<false,
+                                true,
+                                simd::SUCCESSOR_MAJOR,
+                                std::ratio<1, 16>,
+                                std::ratio<1, 16>>;
 
 template <typename R>
 using mk_size =
@@ -70,7 +65,11 @@ main(int argc, char* argv[])
                       simd::SUCCESSOR_MAJOR,
                       std::ratio<1, 16>,
                       std::ratio<1, 16>>{stream_size25},
-        PrimaryFunction<true, true, simd::SUCCESSOR_MAJOR, std::ratio<1, 16>, std::ratio<1, 16>>{}
+        PrimaryFunction<true,
+                        true,
+                        simd::SUCCESSOR_MAJOR,
+                        std::ratio<1, 16>,
+                        std::ratio<1, 16>>{}
 #ifdef BENCH_ALL
         ,
         PrimaryStream<false,
