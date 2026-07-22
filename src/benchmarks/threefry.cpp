@@ -30,9 +30,9 @@ KERNEL_END(VAR(std::uint32_t, u0), VAR(std::uint32_t, u1), VAR(std::uint32_t, c0
 
 struct Ref
 {
-    std::size_t    size;
-    std::uint32_t& dest0;
-    std::uint32_t& dest1;
+    std::size_t             size;
+    volatile std::uint32_t& dest0;
+    volatile std::uint32_t& dest1;
 
     std::string
     info() const noexcept
@@ -64,9 +64,9 @@ struct SIMD
         vm::simd::native_vector_extent_v<std::uint32_t>;
     using vector_type = vm::simd::native_vector<std::uint32_t>;
 
-    std::size_t  size;
-    vector_type& dest0;
-    vector_type& dest1;
+    std::size_t           size;
+    volatile vector_type& dest0;
+    volatile vector_type& dest1;
 
     std::string
     info() const noexcept
@@ -104,9 +104,9 @@ struct SIMD
 int
 main(int argc, char* argv[])
 {
-    const std::size_t num_runs = align_up(500000000, 64);
-    std::uint32_t     d0, d1;
-    SIMD::vector_type vd0, vd1;
+    const std::size_t          num_runs = align_up(500000000, 64);
+    volatile std::uint32_t     d0, d1;
+    volatile SIMD::vector_type vd0, vd1;
 
     run({argc, argv}, Ref{num_runs, d0, d1}, SIMD{num_runs, vd0, vd1});
     return 0;
