@@ -6,6 +6,7 @@
 
 #include <array>
 #include <cstdint>
+#include <random>
 
 namespace loom
 {
@@ -94,4 +95,54 @@ inline constexpr fn::threefry2x32r32<k0, k1> threefry2x32r32{};
 MK_NIEBLOID(rotl32)
 MK_NIEBLOID(gen_canonical)
 MK_NIEBLOID(bump_ctr)
+
+namespace detail
+{
+template <typename T>
+struct random_dist;
+
+template <>
+struct random_dist<bool>
+{
+    using type = std::bernoulli_distribution;
+};
+
+template <std::integral T>
+struct random_dist<T>
+{
+    using type = std::uniform_int_distribution<T>;
+};
+
+template <std::floating_point T>
+struct random_dist<T>
+{
+    using type = std::uniform_real_distribution<T>;
+};
+} // namespace detail
+
+template <typename T>
+using random_dist = detail::random_dist<T>::type;
+
+/// @brief Helper class to make standard random number generators.
+struct RandomState
+{
+    std::default_random_engine g;
+
+    RandomState() noexcept : g(std::random_device()()) {}
+
+    /// @brief Make RNG.
+    /// @tparam T type of produced number.
+    ///
+    template <typename T, typename... Args>
+    auto
+    make_gen(Args&&... args) noexcept
+    {
+        if constexpr(std::is_floating_point_v<T> && !sizeof...(Args))
+            return [&]() noexcept { return std::generate_canonical<T, 10>(g); };
+        else
+            return [&,
+                    d = random_dist<T>(std::forward<Args>(
+                        args)...)]() mutable noexcept { return d(g); };
+    }
+};
 } // namespace loom

@@ -7,6 +7,7 @@
 
 #include "argparse.hpp"
 #include "functional.hpp"
+#include "random.hpp"
 #include "string.hpp"
 #include "tuple.hpp"
 
@@ -20,7 +21,6 @@
 
 #include <concepts>
 #include <functional>
-#include <random>
 #include <ranges>
 #include <string_view>
 #include <utility>
@@ -97,27 +97,6 @@ struct total_counter_helper<unique_tuple<Ts...>> :
         std::size_t,
         (... + total_counter_helper<std::remove_cvref_t<Ts>>::value)>
 {
-};
-
-template <typename T>
-struct random_dist;
-
-template <>
-struct random_dist<bool>
-{
-    using type = std::bernoulli_distribution;
-};
-
-template <std::integral T>
-struct random_dist<T>
-{
-    using type = std::uniform_int_distribution<T>;
-};
-
-template <std::floating_point T>
-struct random_dist<T>
-{
-    using type = std::uniform_real_distribution<T>;
 };
 
 template <template <typename> typename Array, typename T>
@@ -339,10 +318,9 @@ class Track
             std::index_sequence<Is...>,
             Tests&&... tests) noexcept
     {
-        return (... && run_print_count<Is == sizeof...(Is) - 1>(
-                           std::forward<Tests>(tests),
-                           counter,
-                           Is));
+        return (... && run_print_count < Is ==
+                           sizeof...(Is) - 1 >
+                               (std::forward<Tests>(tests), counter, Is));
     }
 
     /// @brief Print conclusion.
@@ -849,28 +827,6 @@ struct ParmTestMaker
                                                        std::forward<V>(v)),
                                   num_runs);
         };
-    }
-};
-
-template <typename T>
-using random_dist = detail::random_dist<T>::type;
-
-struct RandomState
-{
-    std::default_random_engine g;
-
-    RandomState() noexcept : g(std::random_device()()) {}
-
-    template <typename T, typename... Args>
-    auto
-    make_gen(Args&&... args) noexcept
-    {
-        if constexpr(std::is_floating_point_v<T> && !sizeof...(Args))
-            return [&]() noexcept { return std::generate_canonical<T, 10>(g); };
-        else
-            return [&,
-                    d = random_dist<T>(std::forward<Args>(
-                        args)...)]() mutable noexcept { return d(g); };
     }
 };
 

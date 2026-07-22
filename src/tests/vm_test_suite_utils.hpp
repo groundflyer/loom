@@ -18,7 +18,7 @@ test_suite_types(Types               types,
                  Suite               suite,
                  test::Track&        track,
                  test::ParmTestMaker tm,
-                 test::RandomState&  rs) noexcept
+                 RandomState&        rs) noexcept
 {
     typelist::for_each(types, suite, track, tm, rs);
 }
@@ -29,14 +29,14 @@ test_suites_types(Types               types,
                   Suites              suites,
                   test::Track&        track,
                   test::ParmTestMaker tm,
-                  test::RandomState&  rs) noexcept
+                  RandomState&        rs) noexcept
 {
     typelist::for_each(
         suites,
         []<typename Suite>(Types               types,
                            test::Track&        track,
                            test::ParmTestMaker tm,
-                           test::RandomState&  rs) noexcept
+                           RandomState&        rs) noexcept
         { test_suite_types(types, Suite{}, track, tm, rs); },
         types,
         track,

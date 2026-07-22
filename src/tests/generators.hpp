@@ -14,7 +14,7 @@ template <std::integral T, T min, T max>
 struct GMIntRange
 {
     auto
-    operator()(loom::test::RandomState& rs) const noexcept
+    operator()(loom::RandomState& rs) const noexcept
     {
         return rs.make_gen<T>(min, max);
     }
@@ -24,7 +24,7 @@ template <std::floating_point T>
 struct GMCanon
 {
     auto
-    operator()(loom::test::RandomState& rs) const noexcept
+    operator()(loom::RandomState& rs) const noexcept
     {
         return rs.make_gen<T>();
     }
@@ -37,7 +37,7 @@ struct GMFloat
     static constexpr T h = 1e6;
 
     auto
-    operator()(loom::test::RandomState& rs) const noexcept
+    operator()(loom::RandomState& rs) const noexcept
     {
         return rs.make_gen<T>(l, h);
     }
@@ -50,7 +50,7 @@ struct GMFloatPositive
     static constexpr T h = 1e6;
 
     auto
-    operator()(loom::test::RandomState& rs) const noexcept
+    operator()(loom::RandomState& rs) const noexcept
     {
         return rs.make_gen<T>(l, h);
     }
@@ -63,7 +63,7 @@ struct GMTrig
     static constexpr T r = loom::Pi<T>;
 
     auto
-    operator()(loom::test::RandomState& rs) const noexcept
+    operator()(loom::RandomState& rs) const noexcept
     {
         return rs.make_gen<T>(l, r);
     }
@@ -111,7 +111,7 @@ template <std::floating_point T>
 struct GM_J4
 {
     auto
-    operator()(loom::test::RandomState& rs) const noexcept
+    operator()(loom::RandomState& rs) const noexcept
     {
         return [g_u3    = gm_u3<loom::uint_of_size_t<sizeof(T)>>(rs),
                 g_canon = gm_canon<T>(rs)]() mutable noexcept
@@ -125,7 +125,7 @@ struct GM_Bool
     using U = loom::uint_of_size_t<sizeof(T)>;
 
     auto
-    operator()(loom::test::RandomState& rs) const noexcept
+    operator()(loom::RandomState& rs) const noexcept
     {
         return rs.make_gen<bool>(0.5);
     }
@@ -137,7 +137,7 @@ struct GM_Bool_Bin
     using U = loom::uint_of_size_t<sizeof(T)>;
 
     auto
-    operator()(loom::test::RandomState& rs) const noexcept
+    operator()(loom::RandomState& rs) const noexcept
     {
         return [g = rs.make_gen<bool>(0.5)]() mutable noexcept
         { return std::tuple{g(), g()}; };
@@ -150,7 +150,7 @@ struct GM_Bit_Bin
     using U = loom::uint_of_size_t<sizeof(T)>;
 
     auto
-    operator()(loom::test::RandomState& rs) const noexcept
+    operator()(loom::RandomState& rs) const noexcept
     {
         return [g_0u = gm_0u<U>(rs)]() mutable noexcept
         { return std::tuple{g_0u(), g_0u()}; };
@@ -161,7 +161,7 @@ template <std::unsigned_integral T>
 struct GM_Shift
 {
     auto
-    operator()(loom::test::RandomState& rs) const noexcept
+    operator()(loom::RandomState& rs) const noexcept
     {
         return [g = gm_2_10<T>(rs)]() mutable noexcept
         { return std::tuple{g(), g()}; };
@@ -172,7 +172,7 @@ template <std::floating_point T>
 struct GM_F2
 {
     auto
-    operator()(loom::test::RandomState& rs) const noexcept
+    operator()(loom::RandomState& rs) const noexcept
     {
         return [g_f = gm_float<T>(rs)]() mutable noexcept
         { return std::pair{g_f(), g_f()}; };
@@ -183,7 +183,7 @@ template <std::floating_point T>
 struct GM_F3
 {
     auto
-    operator()(loom::test::RandomState& rs) const noexcept
+    operator()(loom::RandomState& rs) const noexcept
     {
         return [g_f = gm_float<T>(rs)]() mutable noexcept
         { return std::tuple{g_f(), g_f(), g_f()}; };
