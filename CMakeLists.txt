@@ -336,7 +336,7 @@ if(BUILD_BENCHMARKS)
 
   set(BM_SRC_DIR src/benchmarks)
 
-  set(bm_srcs threefry.cpp)
+  set(bm_srcs threefry.cpp root_finding.cpp)
 
   add_custom_target(benchmarks)
 
@@ -373,6 +373,9 @@ if(BUILD_BENCHMARKS)
       add_dependencies(benchmarks ${fname})
     endif()
   endforeach()
+
+  target_compile_options(bm_root_finding PUBLIC $<$<CONFIG:RelWithDebInfo>:-fsanitize=undefined>)
+  target_link_options(bm_root_finding PUBLIC $<$<CONFIG:RelWithDebInfo>:-fsanitize=undefined>)
 
   set(b_values 1 5 20)
   set(t_values 0.001 0.0005 0.0001)
