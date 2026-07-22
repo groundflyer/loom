@@ -1,6 +1,6 @@
 // -*- C++ -*-
-// typeinfo.hpp
-//
+/// @file typeinfo.hpp
+/// @brief Simple primitive type reflection.
 
 #pragma once
 
@@ -8,6 +8,7 @@
 
 namespace loom
 {
+/// @brief Has static constexpr member chars with type name.
 template <typename T>
 struct TypeInfo;
 
