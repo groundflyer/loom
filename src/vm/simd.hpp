@@ -34,7 +34,7 @@ constexpr inline fsize_t dynamic_extent = bve::dynamic_extent;
 #if defined(__AVX512F__)
 /// @brief SIMD vector size in bytes.
 constexpr inline fsize_t simd_width = 64; // 512
-#elif defined(__AVX2__) || (defined(__AVX__) && defined(ALLOW_WIDE_AVX))
+#elif defined(__AVX2__) || defined(__AVX__)
 constexpr inline fsize_t simd_width = 32; // 256
 #else
 constexpr inline fsize_t simd_width = 16; // 128
