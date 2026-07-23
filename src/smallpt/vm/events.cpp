@@ -60,7 +60,7 @@ EventState::KeyAction::operator()(GLFWwindow* window,
         }
         case GLFW_KEY_SPACE:
         {
-            estate->method = static_cast<METHOD>((estate->method + 1u) % 2u);
+            estate->method = static_cast<METHOD>((estate->method + 1u) % 3u);
             estate->req_restart   = true;
             estate->req_stats_upd = true;
             return;
