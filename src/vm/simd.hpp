@@ -4048,10 +4048,10 @@ class hybrid_compiler
 
     struct visitor
     {
+        static constexpr fsize_t C          = cache_line_capacity_v<index_t>;
         static constexpr fsize_t gthreshold = get_threshold_v<N, UTRt>;
         static constexpr fsize_t sthreshold =
-            get_threshold_v<cache_line_capacity_v<index_t> * K::num_blocks,
-                            UTRt>;
+            get_threshold_v<C * K::num_blocks, UTRt>;
         static constexpr fsize_t hthreshold = get_threshold_v<N, UTRh>;
 
         static constexpr popcnt_helper<index_t, N> popcnt{};
@@ -4076,7 +4076,7 @@ class hybrid_compiler
             std::ranges::for_each(
                 aligned_chunks<memory, N, K::halt_pos>(view),
                 [t = gthreshold * (s > sthreshold) *
-                     (s > N)]<typename Chunk>(Chunk chunk) noexcept
+                     (s > C)]<typename Chunk>(Chunk chunk) noexcept
                     requires(pv_extent<Chunk> == N)
                 {
                     LocalStorage   storage(chunk);
