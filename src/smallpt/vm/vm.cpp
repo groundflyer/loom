@@ -1,5 +1,5 @@
-#if !(defined(__AVX512F__) || defined(__AVX2__))
-#error "This program requires at least AVX2"
+#if !(defined(__AVX512F__) || defined(__AVX2__) || defined(__AVX__))
+#error "This program requires at least AVX"
 #endif
 
 #include "vm.hpp"
