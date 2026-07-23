@@ -66,13 +66,6 @@ to_format(const Dur& dur) noexcept
 }
 #endif
 
-template <typename R>
-static constexpr double
-ratio2percent() noexcept
-{
-    return static_cast<double>(R::num) / static_cast<double>(R::den) * 100;
-}
-
 template <typename Dur = std::chrono::steady_clock::duration>
 using bm_result = std::pair<std::string, Dur>;
 

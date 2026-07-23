@@ -30,8 +30,8 @@ struct Base
     AV<T>& c;
     AV<T>& d;
 
-    T*                         dst1;
-    uint_of_size_t<sizeof(T)>* dst2;
+    volatile T*                         dst1;
+    volatile uint_of_size_t<sizeof(T)>* dst2;
 };
 
 template <std::floating_point T>
@@ -111,9 +111,9 @@ struct SIMDStream : Base<T>
     std::string
     info() const noexcept
     {
-        return fmt::format("stream|ts:{}|UTR:{:.0f}%|{}|{}|{}",
+        return fmt::format("stream|ts:{}|UTR:{:.0f}%|size:{}|{}|{}",
                            ts,
-                           ratio2percent<UTR>(),
+                           ratio2percent<T, UTR>(),
                            stream_size,
                            TypeInfo<T>::chars,
                            base::a.size());
@@ -174,7 +174,7 @@ struct SIMDFullRange : Base<T>
     {
         return fmt::format("full-range|ts:{}|UTR:{:.0f}%|{}|{}",
                            ts,
-                           ratio2percent<UTR>(),
+                           ratio2percent<T, UTR>(),
                            TypeInfo<T>::chars,
                            base::a.size());
     }
@@ -226,10 +226,11 @@ run_root_finding(const PR& pr, const std::size_t sample_size, RandomState& rs)
         d[i] = g_f();
     }
 
-    T* dst1 = static_cast<T*>(
+    volatile T* dst1 = static_cast<T*>(
         __builtin_alloca_with_align(N * sizeof(T), simd::simd_width * 8));
-    uint_of_size_t<sizeof(T)>* dst2 = static_cast<uint_of_size_t<sizeof(T)>*>(
-        __builtin_alloca_with_align(N * sizeof(T), simd::simd_width * 8));
+    volatile uint_of_size_t<sizeof(T)>* dst2 =
+        static_cast<uint_of_size_t<sizeof(T)>*>(
+            __builtin_alloca_with_align(N * sizeof(T), simd::simd_width * 8));
 
     using utr1 = std::ratio<1, 16>;
     using utr2 = std::ratio<1, 2>;

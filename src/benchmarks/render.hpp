@@ -99,7 +99,7 @@ struct RenderSIMDCompact
                                ts,
                                tbd,
                                rcnv_string<rcnv>(),
-                               ratio2percent<UTR>());
+                               ratio2percent<float, UTR>());
     }
 
     Clock::duration
@@ -174,15 +174,15 @@ struct RenderSIMDFunction
             return fmt::format("full-range|ts:{}|tbd:{}|UTRt:{:.0f}%",
                                ts,
                                tbd,
-                               ratio2percent<UTRt>());
+                               ratio2percent<float, UTRt>());
         else
             return fmt::format(
                 "full-range|ts:{}|tbd:{}|{}|UTRt:{:.0f}%|UTRh:{:.0f}%",
                 ts,
                 tbd,
                 rcnv_string<rcnv>(),
-                ratio2percent<UTRt>(),
-                ratio2percent<UTRh>());
+                ratio2percent<float, UTRt>(),
+                ratio2percent<float, UTRh>());
     }
 
     Clock::duration
@@ -246,7 +246,7 @@ struct RenderSIMDStream
                                ts,
                                tbd,
                                stream_size,
-                               ratio2percent<UTRt>());
+                               ratio2percent<float, UTRt>());
         else
             return fmt::format(
                 "stream|ts:{}|tbd:{}|{}|size:{}|UTRt:{:.0f}%|UTRh:{:.0f}%",
@@ -254,8 +254,8 @@ struct RenderSIMDStream
                 tbd,
                 rcnv_string<rcnv>(),
                 stream_size,
-                ratio2percent<UTRt>(),
-                ratio2percent<UTRh>());
+                ratio2percent<float, UTRt>(),
+                ratio2percent<float, UTRh>());
     }
 
     Clock::duration

@@ -32,10 +32,10 @@ rcnv_string() noexcept
 }
 
 inline constexpr std::size_t def_num_runs    = 10;
-inline constexpr std::size_t def_sample_size = 500000000;
+inline constexpr std::size_t def_sample_size = 1000000;
 
 inline constexpr auto sample_size_opt =
-    argparse::option<'s', "sample-size">("sample size. Default: 500000000",
+    argparse::option<'s', "sample-size">("sample size. Default: 1000000",
                                          "N",
                                          def_sample_size,
                                          read_number<std::size_t, false>);
@@ -93,5 +93,14 @@ run(const PR& parse_results, BMs&&... bms) noexcept
     print_results(run_benchmarks(logger, file, num_runs, bms...));
 
     if(file) std::fclose(file);
+}
+
+template <typename T, typename R>
+static constexpr double
+ratio2percent() noexcept
+{
+    constexpr std::size_t N = vm::simd::native_vector_extent_v<T>;
+    return static_cast<double>(vm::simd::get_threshold_v<N, R>) /
+           static_cast<double>(N) * 100;
 }
 } // namespace loom
