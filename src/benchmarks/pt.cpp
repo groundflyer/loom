@@ -57,7 +57,7 @@ using FavStream = PTStream<true,
 int
 main(int argc, char* argv[])
 {
-    run({argc, argv},
+    run(argparse::parse(make_opts(), {argc, argv}),
         PTCompact<true, true, simd::SUCCESSOR_MAJOR, std::ratio<1, 16>>{},
         PTStream<true,
                  true,

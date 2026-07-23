@@ -58,7 +58,7 @@ constexpr unsigned stream_size25 = mk_size<std::ratio<1, 6>>::value;
 int
 main(int argc, char* argv[])
 {
-    run({argc, argv},
+    run(argparse::parse(make_opts(), {argc, argv}),
         PrimaryCompact<true, true, simd::SUCCESSOR_MAJOR, std::ratio<1, 16>>{},
         PrimaryStream<true,
                       true,

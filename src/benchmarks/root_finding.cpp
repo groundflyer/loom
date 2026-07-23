@@ -202,11 +202,9 @@ struct SIMDFullRange : Base<T>
     }
 };
 
-template <std::floating_point T>
+template <std::floating_point T, typename PR>
 void
-run_root_finding(argparse::ArgsRange&& args,
-                 const std::size_t     sample_size,
-                 RandomState&          rs)
+run_root_finding(const PR& pr, const std::size_t sample_size, RandomState& rs)
 {
     using cnsts                  = constants<T>;
     constexpr T           lbound = cnsts::lbound;
@@ -236,7 +234,7 @@ run_root_finding(argparse::ArgsRange&& args,
     using utr1 = std::ratio<1, 16>;
     using utr2 = std::ratio<1, 2>;
 
-    run(std::move(args),
+    run(pr,
         Ref<T>{
             a,
             b,
@@ -267,11 +265,15 @@ run_root_finding(argparse::ArgsRange&& args,
 int
 main(int argc, char* argv[])
 {
-    const std::size_t sample_size = align_up(5000000, 64);
-    RandomState       rs;
+    const auto parse_results =
+        argparse::parse(make_opts(sample_size_opt), {argc, argv});
+    const std::size_t sample_size = align_up(
+        parse_results.template get_opt<'s'>().value_or(def_sample_size),
+        64ul);
+    RandomState rs;
 
-    run_root_finding<double>({argc, argv}, sample_size, rs);
-    run_root_finding<float>({argc, argv}, sample_size, rs);
+    run_root_finding<double>(parse_results, sample_size, rs);
+    run_root_finding<float>(parse_results, sample_size, rs);
 
     return 0;
 }

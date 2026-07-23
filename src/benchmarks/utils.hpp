@@ -31,22 +31,34 @@ rcnv_string() noexcept
     }
 }
 
-template <typename... BMs>
-static void
-run(argparse::ArgsRange args, BMs&&... bms) noexcept
-{
-    constexpr std::size_t def_num_runs = 10;
+inline constexpr std::size_t def_num_runs    = 10;
+inline constexpr std::size_t def_sample_size = 500000000;
 
-    auto parse_results = argparse::parse(
-        std::tuple{
-            argparse::flag<'v', "verbose">("verbose logging"),
-            argparse::option<'l', "log">("path to benchmark logs", "FILE", ""),
-            argparse::option<'n', "num-runs">(
-                "number of runs for each benchmark",
-                "N",
-                def_num_runs,
-                read_number<std::size_t, false>)},
-        args);
+inline constexpr auto sample_size_opt =
+    argparse::option<'s', "sample-size">("sample size. Default: 500000000",
+                                         "N",
+                                         def_sample_size,
+                                         read_number<std::size_t, false>);
+
+template <typename... Opts>
+auto
+make_opts(Opts... opts) noexcept
+{
+    return std::tuple{
+        argparse::flag<'v', "verbose">("verbose logging"),
+        argparse::option<'l', "log">("path to benchmark logs", "FILE", ""),
+        argparse::option<'n', "num-runs">(
+            "number of runs for each benchmark. Default: 10",
+            "N",
+            def_num_runs,
+            read_number<std::size_t, false>),
+        opts...};
+}
+
+template <typename PR, typename... BMs>
+static void
+run(const PR& parse_results, BMs&&... bms) noexcept
+{
     Logger logger(parse_results.template get_opt<'v'>() ? Logger::DEBUG :
                                                           Logger::INFO);
 
