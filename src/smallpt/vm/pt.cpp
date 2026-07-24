@@ -175,18 +175,18 @@ main(int argc, char* argv[])
             {
                 switch(estate.method)
                 {
-                case REFERENCE: reference_mp(estate, vstate); break;
+                case HYBRID: hybrid_mp(estate, vstate, ep); break;
                 case PREDICATED: predicated_mp(estate, vstate); break;
-                case HYBRID: hybrid_mp(estate, vstate, ep);
+                case REFERENCE: reference_mp(estate, vstate); break;
                 }
             }
             else
             {
                 switch(estate.method)
                 {
-                case REFERENCE: reference(estate, vstate); break;
+                case HYBRID: hybrid(estate, vstate); break;
                 case PREDICATED: predicated(estate, vstate); break;
-                case HYBRID: hybrid(estate, vstate);
+                case REFERENCE: reference(estate, vstate); break;
                 }
             }
 

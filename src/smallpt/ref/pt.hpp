@@ -785,7 +785,7 @@ class RenderPixel
     }
 
     template <typename Pixel>
-    std::size_t
+    std::pair<std::size_t, std::size_t>
     operator()(Pixel val) const noexcept
     {
         auto [pos, pix]          = val;
@@ -822,7 +822,7 @@ class RenderPixel
 
         pix = RGBA{r / static_cast<float>(ns), 1};
 
-        return prc;
+        return {1, prc};
     }
 };
 } // namespace loom

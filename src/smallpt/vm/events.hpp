@@ -26,9 +26,9 @@ inline constexpr char osd_help[] =
 
 enum METHOD : unsigned
 {
-    REFERENCE,
+    HYBRID,
     PREDICATED,
-    HYBRID
+    REFERENCE
 };
 
 struct EventState
