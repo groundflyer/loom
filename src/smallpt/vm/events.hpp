@@ -28,6 +28,7 @@ enum METHOD : unsigned
 {
     HYBRID,
     PREDICATED,
+    BSE,
     REFERENCE
 };
 

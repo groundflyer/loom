@@ -177,6 +177,7 @@ main(int argc, char* argv[])
                 {
                 case HYBRID: hybrid_mp(estate, vstate, ep); break;
                 case PREDICATED: predicated_mp(estate, vstate); break;
+                case BSE: bse_scanline_mp(estate, vstate); break;
                 case REFERENCE: reference_mp(estate, vstate); break;
                 }
             }
@@ -186,6 +187,7 @@ main(int argc, char* argv[])
                 {
                 case HYBRID: hybrid(estate, vstate); break;
                 case PREDICATED: predicated(estate, vstate); break;
+                case BSE: bse_scanline(estate, vstate); break;
                 case REFERENCE: reference(estate, vstate); break;
                 }
             }

@@ -39,6 +39,18 @@ predicated_mp(EventState& estate, ViewState& vstate)
     return scanline_mp<RenderPixelSIMDPredicated>(estate, vstate, chunkify);
 }
 
+bool
+bse_scanline(EventState& estate, ViewState& vstate)
+{
+    return scanline<RenderPixelBSE>(estate, vstate);
+}
+
+bool
+bse_scanline_mp(EventState& estate, ViewState& vstate)
+{
+    return scanline_mp<RenderPixelBSE>(estate, vstate);
+}
+
 template <typename T>
 class remote_output_control
 {

@@ -15,6 +15,12 @@ bool
 predicated_mp(EventState& estate, ViewState& vstate);
 
 bool
+bse_scanline(EventState& estate, ViewState& vstate);
+
+bool
+bse_scanline_mp(EventState& estate, ViewState& vstate);
+
+bool
 hybrid(EventState& estate, ViewState& vstate);
 
 bool

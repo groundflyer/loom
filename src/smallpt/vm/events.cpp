@@ -60,7 +60,7 @@ EventState::KeyAction::operator()(GLFWwindow* window,
         }
         case GLFW_KEY_SPACE:
         {
-            estate->method = static_cast<METHOD>((estate->method + 1u) % 3u);
+            estate->method = static_cast<METHOD>((estate->method + 1u) % 4u);
             estate->req_restart   = true;
             estate->req_stats_upd = true;
             return;
@@ -268,9 +268,10 @@ method_string(METHOD m)
 {
     switch(m)
     {
-    case REFERENCE: return "reference";
-    case PREDICATED: return "predicated";
     case HYBRID: return "hybrid";
+    case PREDICATED: return "predicated";
+    case BSE: return "scalar";
+    case REFERENCE: return "reference";
     }
 
     return "error";
