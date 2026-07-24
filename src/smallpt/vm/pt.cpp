@@ -191,7 +191,7 @@ main(int argc, char* argv[])
             }
 
             logger.debug("final reload");
-            viewport.reload_img(img.data(), resx, resy);
+            viewport.reload_img(img.data(), img.width(), img.height());
             logger.debug("rendering done. show still image");
             while(!estate.req_stop() && window.active())
             {
