@@ -7,6 +7,7 @@
 #include <common/timer.hpp>
 #include <common/typeinfo.hpp>
 #include <tests/root_finding.hpp>
+#include <vm/bse.hpp>
 #include <vm/simd.hpp>
 
 #include <range/v3/view/subrange.hpp>
@@ -55,6 +56,34 @@ struct Ref : Base<T>
         for(std::size_t i = 0; i < base::a.size(); ++i)
             std::tie(*base::dst1, *base::dst2) =
                 val_cubic_fz(base::a[i], base::b[i], base::c[i], base::d[i]);
+
+        return timer.elapsed();
+    }
+};
+
+template <std::floating_point T>
+struct BSE : Base<T>
+{
+    using base  = Base<T>;
+    using cnsts = constants<T>;
+    using errt  = cnsts::errt;
+
+    std::string
+    info() const noexcept
+    {
+        return fmt::format("bse|{}|{}", TypeInfo<T>::chars, base::a.size());
+    }
+
+    std::chrono::steady_clock::duration
+    operator()() const noexcept
+    {
+        vm::bse::function<bisection<T, errt>> f;
+
+        ElapsedTimer<> timer;
+
+        for(std::size_t i = 0; i < base::a.size(); ++i)
+            std::tie(*base::dst1, *base::dst2) =
+                f(base::a[i], base::b[i], base::c[i], base::d[i]);
 
         return timer.elapsed();
     }
@@ -244,6 +273,7 @@ run_root_finding(const PR& pr, const std::size_t sample_size, RandomState& rs)
             dst1,
             dst2
     },
+        BSE<T>{a, b, c, d, dst1, dst2},
         SIMDCompact<T>{a, b, c, d, dst1, dst2},
         SIMDStream<T, false, utr1>{{a, b, c, d, dst1, dst2}, 64},
         SIMDStream<T, true, utr1>{{a, b, c, d, dst1, dst2}, 64},
