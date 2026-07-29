@@ -4,6 +4,7 @@
 #include "utils.hpp"
 
 #include <tests/root_finding.hpp>
+#include <tests/vm_test_suite_utils.hpp>
 
 using namespace loom;
 using namespace vm;
@@ -44,7 +45,7 @@ main(int argc, char* argv[])
     log_info(logger, num_runs);
 
     bm_suite_types(
-        type_sequence<float, double>{},
+        all_floats{},
         StandardBenchmarkSuite<RFKernel, RFGenMaker, ::fn::val_cubic_fz_fn>{},
         sample_size,
         rs,

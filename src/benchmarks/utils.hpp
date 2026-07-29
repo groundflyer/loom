@@ -166,7 +166,7 @@ struct StandardBenchmarkSuite
         decltype(auto)
         operator()(MT&& mt) const noexcept
         {
-            std::forward<MT>(mt);
+            return std::forward<MT>(mt);
         }
 
         template <typename... Vs>
