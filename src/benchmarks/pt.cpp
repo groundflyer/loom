@@ -57,7 +57,12 @@ using FavStream = PTStream<true,
 int
 main(int argc, char* argv[])
 {
-    run(argparse::parse(make_opts(), {argc, argv}),
+    const auto pr     = argparse::parse(make_opts(), {argc, argv});
+    Logger     logger = get_logger(pr);
+
+    run(logger,
+        get_file(logger, pr),
+        get_num_runs(logger, pr),
         PTCompact<true, true, simd::SUCCESSOR_MAJOR, std::ratio<1, 16>>{},
         PTStream<true,
                  true,

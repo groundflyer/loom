@@ -131,6 +131,8 @@ run_benchmarks(Logger&     logger,
     return {decorate(bms)...};
 }
 
+namespace fn
+{
 template <typename Dur, std::size_t N>
 static void
 print_results(std::array<bm_result<Dur>, N>&& results) noexcept
@@ -172,4 +174,6 @@ print_results(std::array<bm_result<Dur>, N>&& results) noexcept
                        100);
 #endif
 }
+} // namespace fn
+MK_NIEBLOID(print_results)
 } // namespace loom

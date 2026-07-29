@@ -104,16 +104,18 @@ struct SIMD
 int
 main(int argc, char* argv[])
 {
+    const auto parse_results =
+        argparse::parse(make_opts(sample_size_opt), {argc, argv});
+    Logger            logger      = get_logger(parse_results);
+    const std::size_t sample_size = get_sample_size(logger, parse_results);
+
     volatile std::uint32_t     d0, d1;
     volatile SIMD::vector_type vd0, vd1;
 
-    const auto parse_results =
-        argparse::parse(make_opts(sample_size_opt), {argc, argv});
-
-    const std::size_t sample_size = align_up(
-        parse_results.template get_opt<'s'>().value_or(def_sample_size),
-        64ul);
-
-    run(parse_results, Ref{sample_size, d0, d1}, SIMD{sample_size, vd0, vd1});
+    run(logger,
+        get_file(logger, parse_results),
+        get_num_runs(logger, parse_results),
+        Ref{sample_size, d0, d1},
+        SIMD{sample_size, vd0, vd1});
     return 0;
 }
