@@ -262,7 +262,7 @@ for_each_impl(
 {
     (...,
      std::invoke(std::forward<F>(f),
-                 std::get<I>(tuple),
+                 std::get<I>(std::forward<Tuple>(tuple)),
                  std::forward<Args>(args)...));
 }
 
@@ -273,7 +273,8 @@ multi_invoke(F&& f, Ts&&... tuples) noexcept(
         F,
         std::tuple_element_t<I, std::remove_cvref_t<Ts>>...>)
 {
-    return std::invoke(std::forward<F>(f), std::get<I>(tuples)...);
+    return std::invoke(std::forward<F>(f),
+                       std::get<I>(std::forward<Ts>(tuples))...);
 }
 
 template <typename F, typename... Ts, std::size_t... I>
@@ -844,6 +845,22 @@ invomap(F&& f, ValOrTuple&& mt)
                                       std::forward<F>(f));
     else
         return std::invoke(std::forward<F>(f), std::forward<ValOrTuple>(mt));
+}
+
+/// @brief Either invoke @p f with each element of tuple @p mt or invoke @p f
+/// with @p mt itself.
+template <typename F, typename ValOrTuple, typename... Args>
+constexpr void
+invoeach(F&& f, ValOrTuple&& mt, Args&&... args)
+{
+    if constexpr(is_tuple_v<std::remove_cvref_t<ValOrTuple>>)
+        for_each(std::forward<ValOrTuple>(mt),
+                 std::forward<F>(f),
+                 std::forward<Args>(args)...);
+    else
+        std::invoke(std::forward<F>(f),
+                    std::forward<ValOrTuple>(mt),
+                    std::forward<Args>(args)...);
 }
 
 /// @brief Convert std::array to tuple.
