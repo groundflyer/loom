@@ -449,6 +449,36 @@ struct is_mappable<F, unique_tuple<Ts...>, Args...> :
 {
 };
 
+template <typename F, typename T, typename... Args>
+struct is_foreachable : std::false_type
+{
+};
+
+template <typename F, typename T1, typename T2, typename... Args>
+struct is_foreachable<F, std::pair<T1, T2>, Args...> :
+    std::bool_constant<std::is_invocable_v<F, T1, Args...> &&
+                       std::is_invocable_v<F, T2, Args...>>
+{
+};
+
+template <typename F, typename... Ts, typename... Args>
+struct is_foreachable<F, std::tuple<Ts...>, Args...> :
+    std::bool_constant<std::conjunction_v<std::is_invocable<F, Ts, Args...>...>>
+{
+};
+
+template <typename F, std::size_t N, typename T, typename... Args>
+struct is_foreachable<F, std::array<T, N>, Args...> :
+    std::bool_constant<std::is_invocable_v<F, T, Args...>>
+{
+};
+
+template <typename F, typename... Ts, typename... Args>
+struct is_foreachable<F, unique_tuple<Ts...>, Args...> :
+    std::bool_constant<std::conjunction_v<std::is_invocable<F, Ts, Args...>...>>
+{
+};
+
 template <typename T>
 struct use_std_apply : std::false_type
 {
@@ -510,6 +540,10 @@ inline constexpr bool is_nothrow_invopplicable_r_v =
 
 template <typename F, typename T, typename... Args>
 inline constexpr bool is_mappable_v = detail::is_mappable<F, T, Args...>::value;
+
+template <typename F, typename T, typename... Args>
+inline constexpr bool is_foreachable_v =
+    detail::is_foreachable<F, T, Args...>::value;
 
 /// @brief If @p T is tuple checks whether we can use std::apply(F, T) or at
 /// least F(T).
@@ -853,7 +887,7 @@ template <typename F, typename ValOrTuple, typename... Args>
 constexpr void
 invoeach(F&& f, ValOrTuple&& mt, Args&&... args)
 {
-    if constexpr(is_tuple_v<std::remove_cvref_t<ValOrTuple>>)
+    if constexpr(is_foreachable_v<F, std::remove_cvref_t<ValOrTuple>, Args...>)
         for_each(std::forward<ValOrTuple>(mt),
                  std::forward<F>(f),
                  std::forward<Args>(args)...);
