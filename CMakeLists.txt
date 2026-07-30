@@ -336,7 +336,7 @@ if(BUILD_BENCHMARKS)
 
   set(BM_SRC_DIR src/benchmarks)
 
-  set(bm_srcs threefry.cpp root_finding_bisection.cpp factorial.cpp)
+  set(bm_srcs threefry.cpp root_finding_bisection.cpp factorial.cpp fibonacci.cpp)
 
   add_custom_target(benchmarks)
 
