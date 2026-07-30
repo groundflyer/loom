@@ -4051,7 +4051,7 @@ class hybrid_compiler
         static constexpr fsize_t C          = cache_line_capacity_v<index_t>;
         static constexpr fsize_t gthreshold = get_threshold_v<N, UTRt>;
         static constexpr fsize_t sthreshold =
-            get_threshold_v<C * K::num_blocks, UTRt>;
+            align_up(get_threshold_v<C * K::num_blocks, UTRt>, C);
         static constexpr fsize_t hthreshold = get_threshold_v<N, UTRh>;
 
         static constexpr popcnt_helper<index_t, N> popcnt{};
