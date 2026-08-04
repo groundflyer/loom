@@ -551,6 +551,20 @@ TMACRO(traverse_scene)
     LABEL(traverse_room_end)
 MACRO_END;
 
+TMACRO5(schlick, dst, cd, eta, tmp0, tmp1)
+    TSUB_CS(dst, CS(1), eta),
+    TADD_CS(tmp0, CS(1), eta),
+    TDIV_CS(dst, dst, tmp0),    // dst <- (1 - eta)/(1 + eta)
+    TMUL_CS(dst, dst, dst),     // dst <- r0^2
+    TSUB_CS(tmp0, CS(1), cd),
+    TMUL_CS(tmp1, tmp0, tmp0),  // ^2
+    TMUL_CS(tmp1, tmp1, tmp1),  // ^4
+    TMUL_CS(tmp0, tmp1, tmp0),  // ^5
+    TSUB_CS(tmp1, CS(1), dst),  // 1 - r0
+    TMUL_CS(tmp0, tmp0, tmp1),
+    TADD_CS(dst, dst, tmp0)
+MACRO_END;
+
 // n[3] <- normal
 // t[3] <- tangent
 

@@ -128,6 +128,11 @@ TKERNEL2(sample_light_test, u0, u1)
     INSERT_TMACRO(vm::sample_light_disk, CS(dst), CS(u0), CS(u1), CS(tmp0), CS(vtmp0))
 TKERNEL_END3(dst0, dst1, dst2);
 
+template <std::floating_point T>
+TKERNEL2(schlick_test, cd, eta)
+    INSERT_TMACRO(vm::schlick, CS(r), CS(cd), CS(eta), CS(tmp0), CS(tmp1))
+TKERNEL_END1(r);
+
 // clang-format on
 
 using Vec3f = Vector<float, 3, std::array>;
@@ -223,8 +228,10 @@ main(int argc, char* argv[])
     auto gf11    = rs.make_gen<float>(-1, 1);
     auto g_canon = rs.make_gen<float>();
     auto gb      = rs.make_gen<bool>(0.5);
+    auto gf1_10  = rs.make_gen<float>(1, 10);
     auto gv2s    = [&]() noexcept { return Vec2f(generate<2>(g_canon)); };
     auto gv3     = [&]() noexcept { return Vec3f(generate<3>(gf)); };
+    auto geta    = [&]() noexcept { return gf1_10() / 1.f; };
 
     const auto cmp_tuple_arr = [](const auto& a, const auto& b) noexcept
     { return std::get<0>(a) == b[0] && std::get<1>(a) == b[1]; };
@@ -253,6 +260,7 @@ main(int argc, char* argv[])
     vm::bse::function<ray_dir_test<float>>        bse_ray_dir_test;
     vm::bse::function<onb_test<float>>            bse_onb;
     vm::bse::function<sample_light_test<float>>   bse_sample_light;
+    vm::bse::function<schlick_test<float>>        bse_schlick;
 
     track.dep_check(
         NamedTest(
@@ -454,6 +462,15 @@ main(int argc, char* argv[])
                           },
                           test::uni_tuple_cmp{ulp_cmp{ulp}}),
         "cam ray dir",
+        0.01));
+
+    track.check(NamedFuzzyTest(
+        tm.fuzzy_with_ref([&]() noexcept { return std::tuple{gf11(), geta()}; },
+                          bse_schlick,
+                          [](const auto cd, const auto eta) noexcept
+                          { return schlick(cd, eta); },
+                          ulp_cmp{ulp}),
+        "schlick",
         0.01));
 
     return track.ret_code();
