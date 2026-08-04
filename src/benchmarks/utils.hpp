@@ -511,8 +511,7 @@ template <typelist::List Types, typename Suite, typename... Args>
 void
 bm_suite_types(Types types, Suite suite, Args&&... args) noexcept
 {
-    invoeach(
-        print_results,
-        typelist::maybe_collect(types, suite, std::forward<Args>(args)...));
+    for_each(typelist::map2tuple(types, suite, std::forward<Args>(args)...),
+             print_results);
 }
 } // namespace loom

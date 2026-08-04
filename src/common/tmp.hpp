@@ -1136,8 +1136,8 @@ for_each_arg(type_sequence<Ts...> /* list */, F&& f, Args&&... args) noexcept(
 }
 
 /// @brief Consecutively invoke @p f with each class of @p list as the first
-/// template parameter and @p args as function parameters. If theare more than
-/// one entries in @p list, collect results into an instance of @p Tuple.
+/// template parameter and @p args as function parameters and put results into
+/// an instance of @p Tuple.
 ///
 /// It's similar to std::transform or loom::map_tuple, except the input is a
 /// list of types, so it can be seen as transformation of virtual entities
@@ -1148,21 +1148,35 @@ for_each_arg(type_sequence<Ts...> /* list */, F&& f, Args&&... args) noexcept(
 /// auto v_n = f<T_n>(args...);
 /// @endcode
 ///
-/// @return @p Tuple of resulting
+/// @return @p Tuple of resulting values.
 /// @tparam Tuple class template to hold resulting values.
 template <template <typename...> typename Tuple = std::tuple,
           typename F,
           typename... Ts,
           typename... Args>
 constexpr decltype(auto)
-maybe_collect(type_sequence<Ts...> /*list*/, F&& f, Args&&... args) noexcept(
+map2tuple(type_sequence<Ts...> /*list*/, F&& f, Args&&... args) noexcept(
+    (... && noexcept(f.template operator()<Ts>(std::forward<Args>(args)...))))
+{
+    return Tuple<std::remove_cvref_t<decltype(f.template operator()<Ts>(
+        std::forward<Args>(args)...))>...> {
+        f.template operator()<Ts>(std::forward<Args>(args)...)...
+    };
+}
+
+/// @brief Same as map2tuple but if @p list consists of one element, returns the unwrapped value.
+template <template <typename...> typename Tuple = std::tuple,
+          typename F,
+          typename... Ts,
+          typename... Args>
+constexpr decltype(auto)
+maybe_collect(type_sequence<Ts...> list, F&& f, Args&&... args) noexcept(
     (... && noexcept(f.template operator()<Ts>(std::forward<Args>(args)...))))
 {
     if constexpr(sizeof...(Ts) > 1)
-        return Tuple<std::remove_cvref_t<decltype(f.template operator()<Ts>(
-            std::forward<Args>(args)...))>...> {
-            f.template operator()<Ts>(std::forward<Args>(args)...)...
-        };
+        return map2tuple<Tuple>(list,
+                                std::forward<F>(f),
+                                std::forward<Args>(args)...);
     else
         return f.template operator()<Ts...>(std::forward<Args>(args)...);
 }
