@@ -565,6 +565,12 @@ TMACRO5(schlick, dst, cd, eta, tmp0, tmp1)
     TADD_CS(dst, dst, tmp0)
 MACRO_END;
 
+TMACRO4(reflect, dst, n, i, ct)
+    INSERT_TMACRO(vec3_scalar_mul, dst, n, CS(2)),
+    INSERT_TMACRO(vec3_scalar_mul, dst, dst, ct),
+    INSERT_TMACRO(vec_vec3_add, dst, dst, i)
+MACRO_END;
+
 // n[3] <- normal
 // t[3] <- tangent
 

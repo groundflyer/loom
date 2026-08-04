@@ -133,6 +133,11 @@ TKERNEL2(schlick_test, cd, eta)
     INSERT_TMACRO(vm::schlick, CS(r), CS(cd), CS(eta), CS(tmp0), CS(tmp1))
 TKERNEL_END1(r);
 
+template <std::floating_point T>
+TKERNEL7(reflect_test, n0, n1, n2, i0, i1, i2, ct)
+    INSERT_TMACRO(vm::reflect, CS(r), CS(n), CS(i), CS(ct))
+TKERNEL_END3(r0, r1, r2);
+
 // clang-format on
 
 using Vec3f = Vector<float, 3, std::array>;
@@ -261,6 +266,7 @@ main(int argc, char* argv[])
     vm::bse::function<onb_test<float>>            bse_onb;
     vm::bse::function<sample_light_test<float>>   bse_sample_light;
     vm::bse::function<schlick_test<float>>        bse_schlick;
+    vm::bse::function<reflect_test<float>>        bse_reflect;
 
     track.dep_check(
         NamedTest(
@@ -451,16 +457,15 @@ main(int argc, char* argv[])
         0.01));
 
     track.check(NamedFuzzyTest(
-        tm.fuzzy_with_ref([&]() noexcept { return std::tuple{gf11(), gf11()}; },
-                          bse_ray_dir_test,
-                          [](const float ndc0, const float ndc1) noexcept
-                          {
-                              const auto cam = cornell_box<float>::camera();
-                              const auto [d0, d1, d2] =
-                                  cam(Vec2f{ndc0, ndc1}).dir;
-                              return std::tuple{d0, d1, d2};
-                          },
-                          test::uni_tuple_cmp{ulp_cmp{ulp}}),
+        tm.fuzzy_with_ref(
+            [&]() noexcept { return std::tuple{gf11(), gf11()}; },
+            bse_ray_dir_test,
+            [](const float ndc0, const float ndc1) noexcept
+            {
+                return to_tuple(
+                    cornell_box<float>::camera()(Vec2f{ndc0, ndc1}).dir);
+            },
+            test::uni_tuple_cmp{ulp_cmp{ulp}}),
         "cam ray dir",
         0.01));
 
@@ -471,6 +476,18 @@ main(int argc, char* argv[])
                           { return schlick(cd, eta); },
                           ulp_cmp{ulp}),
         "schlick",
+        0.01));
+
+    track.check(NamedFuzzyTest(
+        tm.fuzzy_with_ref(
+            [&]() noexcept
+            { return std::tuple{normalize(gv3()), normalize(gv3()), gf11()}; },
+            [&](const Vec3f& n, const Vec3f& i, const float ct) noexcept
+            { return bse_reflect(n[0], n[1], n[2], i[0], i[1], i[2], ct); },
+            [](const auto&... args) noexcept
+            { return to_tuple(reflect(args...)); },
+            test::uni_tuple_cmp{ulp_cmp{ulp}}),
+        "reflect",
         0.01));
 
     return track.ret_code();
