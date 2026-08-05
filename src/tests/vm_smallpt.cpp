@@ -134,7 +134,9 @@ TKERNEL2(schlick_test, cd, eta)
 TKERNEL_END1(r);
 
 template <std::floating_point T>
-TKERNEL7(reflect_test, n0, n1, n2, i0, i1, i2, ct)
+TKERNEL6(reflect_test, n0, n1, n2, i0, i1, i2)
+    INSERT_TMACRO(vm::vec3_negate, CS(wi), CS(i)),
+    INSERT_TMACRO(vm::vec3_dot, CS(ct), CS(n), CS(wi)),
     INSERT_TMACRO(vm::reflect, CS(r), CS(n), CS(i), CS(ct))
 TKERNEL_END3(r0, r1, r2);
 
@@ -481,11 +483,11 @@ main(int argc, char* argv[])
     track.check(NamedFuzzyTest(
         tm.fuzzy_with_ref(
             [&]() noexcept
-            { return std::tuple{normalize(gv3()), normalize(gv3()), gf11()}; },
-            [&](const Vec3f& n, const Vec3f& i, const float ct) noexcept
-            { return bse_reflect(n[0], n[1], n[2], i[0], i[1], i[2], ct); },
-            [](const auto&... args) noexcept
-            { return to_tuple(reflect(args...)); },
+            { return std::tuple{normalize(gv3()), normalize(gv3())}; },
+            [&](const Vec3f& n, const Vec3f& i) noexcept
+            { return bse_reflect(n[0], n[1], n[2], i[0], i[1], i[2]); },
+            [](const Vec3f& n, const Vec3f& i) noexcept
+            { return to_tuple(reflect(n, i, dot(n, -i))); },
             test::uni_tuple_cmp{ulp_cmp{ulp}}),
         "reflect",
         0.01));
