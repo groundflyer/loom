@@ -54,7 +54,11 @@ main(int argc, char* argv[])
                                  PRETTIFY_TMACRO(float, traverse_scene),
                                  PRETTIFY_TMACRO(float, set_materials),
                                  PRETTIFY_TMACRO(float, bias_ray),
-                                 PRETTIFY_TMACRO(float, luminance)>>(
+                                 PRETTIFY_TMACRO(float, luminance),
+                                 PRETTIFY_TMACRO(float, schlick),
+                                 PRETTIFY_TMACRO(float, reflect),
+                                 PRETTIFY_TMACRO(float, compute_eta),
+                                 PRETTIFY_TMACRO(float, reflectance)>>(
         argc,
         argv,
         std::tuple{option<"enc-pp">("encoded pixel position",
