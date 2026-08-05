@@ -420,6 +420,9 @@ struct scene
 
     // luminance
     using LUM = type_sequence<CS(0.2126), CS(0.7152), CS(0.0722)>;
+
+    // back window index of refraction
+    using WINDOW_IOR = CS(1.56);
 };
 
 TMACRO5(sample_light_disk, dst, u0, u1, tmp, vtmp)
@@ -551,12 +554,12 @@ TMACRO(traverse_scene)
     LABEL(traverse_room_end)
 MACRO_END;
 
-TMACRO5(schlick, dst, cd, eta, tmp0, tmp1)
+TMACRO5(schlick, dst, ct, eta, tmp0, tmp1)
     TSUB_CS(dst, CS(1), eta),
     TADD_CS(tmp0, CS(1), eta),
     TDIV_CS(dst, dst, tmp0),    // dst <- (1 - eta)/(1 + eta)
     TMUL_CS(dst, dst, dst),     // dst <- r0^2
-    TSUB_CS(tmp0, CS(1), cd),
+    TSUB_CS(tmp0, CS(1), ct),
     TMUL_CS(tmp1, tmp0, tmp0),  // ^2
     TMUL_CS(tmp1, tmp1, tmp1),  // ^4
     TMUL_CS(tmp0, tmp1, tmp0),  // ^5
@@ -569,6 +572,16 @@ TMACRO4(reflect, dst, n, i, ct)
     INSERT_TMACRO(vec3_scalar_mul, dst, n, CS(2)),
     INSERT_TMACRO(vec3_scalar_mul, dst, dst, ct),
     INSERT_TMACRO(vec_vec3_add, dst, dst, i)
+MACRO_END;
+
+TMACRO3(compute_eta, dst, ior, enter)
+    TDIV_CS(dst, CS(1), ior),
+    TCMOV_CS(dst, enter, dst, ior)
+MACRO_END;
+
+TMACRO5(reflectance, dst, ct, eta, tmp0, tmp1)
+    TABS_CS(ct, ct),
+    INSERT_TMACRO(schlick, dst, ct, eta, tmp0, tmp1)
 MACRO_END;
 
 // n[3] <- normal
@@ -669,6 +682,8 @@ MACRO_END;
 // save up on variables by encoding pixel position and resolution into single uint32 value:
 // d2 <- pixel position 16/16 x/y
 // tmp0 <- resolution 16/16 w/h
+
+// d = i
 template <std::same_as<float> T>
 KERNEL(pt, IVAR(ppp), IVAR(tmp0), TVAR(threshold), IVAR(maxdepth), TVAR(vr00))
     IRSHFT(d0, ppp, 16),
@@ -702,7 +717,7 @@ KERNEL(pt, IVAR(ppp), IVAR(tmp0), TVAR(threshold), IVAR(maxdepth), TVAR(vr00))
     INSERT_MACRO(threefry2x32r32, CS(u0), CS(u1), scene::K0, scene::K1, scene::K2, CS(tmp0), CS(tmp1)),
     INSERT_MACRO(bump_ctr, CS(c0), CS(c1), CS(39916801), CS(tmp0), CS(tmp1), CS(tmp2)),
     INSERT_TMACRO(sample_u, CS(u0), CS(u1)),
-    IPJMP3(rpt, sample_pixel, traverse_scene, lambert_indirect),
+    IPJMP4(rpt, sample_pixel, traverse_scene, lambert_indirect, window),
 // sample pixel
     LABEL(sample_pixel),
     TMOV_CS(CS(o0), scene::CAM_Px),
@@ -732,7 +747,7 @@ KERNEL(pt, IVAR(ppp), IVAR(tmp0), TVAR(threshold), IVAR(maxdepth), TVAR(vr00))
     IEQ(tmp0, pid, 11),                // hit light?
     TCMOV_CS(CS(tmp1), CS(tmp0), scene::L_E, CS(1)),
     IEQ(tmp2, pid, 12),                                       // miss?
-    IORGE_CS(CS(tmp2), CS(tmp2), CS(depth), CS(maxdepth)),    // ||depth>=maxdepth
+    IORGE(tmp2, tmp2, depth, maxdepth),                       // ||depth>=maxdepth
     TCMOV(tmp1, tmp2, 0, tmp1),                               // miss||depth>=maxdepth?0:l|1
     INSERT_TMACRO(vec3_scalar_mul, CS(PL), CS(PL), CS(tmp1)), // contribute to path
     ILOR(tmp0, tmp0, tmp2),                                   // hit light||miss||depth>=maxdepth
@@ -742,7 +757,8 @@ KERNEL(pt, IVAR(ppp), IVAR(tmp0), TVAR(threshold), IVAR(maxdepth), TVAR(vr00))
     INSERT_TMACRO(vec3_scalar_mul, CS(vr0), CS(d), CS(t)),
     INSERT_TMACRO(vec_vec3_add, CS(o), CS(o), CS(vr0)), // compute new position
     INSERT_TMACRO(set_materials),
-    IMOV(rpt, 2),
+    IEQ(tmp0, pid, 4),          // window?
+    ICMOV(rpt, tmp0, 3, 2),
     JMP(roll),
 // indirect diffuse
     LABEL(lambert_indirect),
@@ -755,6 +771,26 @@ KERNEL(pt, IVAR(ppp), IVAR(tmp0), TVAR(threshold), IVAR(maxdepth), TVAR(vr00))
     IMOV(rpt, 0),
     IADD(depth, depth, 1),
     JMP(traverse_scene),
+// window
+    LABEL(window),
+    INSERT_TMACRO(vec3_negate, CS(vr0), CS(d)),        // vr0 <- wi
+    INSERT_TMACRO(vec3_dot, CS(tmp0), CS(n), CS(vr0)), // tmp0 <- cos_theta
+    TGT(tmp1, tmp0, 0),                                // tmp1 <- into
+    INSERT_TMACRO(compute_eta, CS(vr10), scene::WINDOW_IOR, CS(tmp1)), // vr10 <- eta
+    INSERT_TMACRO(reflectance, CS(vr11), CS(tmp0), CS(vr10), CS(vr11), CS(vr12)), // vr11 <- f
+    TMOV(vr20, d0),
+    TMOV(vr21, d1),
+    TMOV(vr22, d2),
+    INSERT_TMACRO(reflect, CS(d), CS(n), CS(vr2), CS(tmp0)),
+    TLT(vr11, u0, vr11),
+    TORLT(vr11, vr11, u1, 0.4),
+    IMIN(vr12, vr11, 1),
+    IADD(depth, depth, vr12),
+    IMOV(rpt, 0),
+    TCMOV(PL0, vr11, PL0, 0),
+    TCMOV(PL1, vr11, PL1, 0),
+    TCMOV(PL2, vr11, PL2, 0),
+    IPJMP2(vr11, fin_sample, traverse_scene),
 // fin sample
     LABEL(fin_sample),
     INSERT_TMACRO(vec_vec3_add, CS(L), CS(L), CS(PL)), // contribute sample
