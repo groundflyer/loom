@@ -669,132 +669,8 @@ MACRO_END;
 // save up on variables by encoding pixel position and resolution into single uint32 value:
 // d2 <- pixel position 16/16 x/y
 // tmp0 <- resolution 16/16 w/h
-#if 0
-
 template <std::same_as<float> T>
-KERNEL(pt, IVAR(d2), IVAR(tmp0), IVAR(ns))
-    IRSHFT(d0, d2, 16),
-    IBAND(d1, d2, 0xffff),
-    IRSHFT(tmp1, tmp0, 16),     // tmp1 <- w
-    IBAND(tmp2, tmp0, 0xffff),  // tmp2 <- h
-    IMOV(c0, d0),
-    IMUL(c0, c0, tmp1),
-    IADD(c0, c0, d1),
-    IMOV(c1, 0),
-    MOV(TVAR(tmp1), IVAR(tmp1)),
-    MOV(TVAR(tmp2), IVAR(tmp2)),
-    MOV(TVAR(pp0), IVAR(d0)),
-    MOV(TVAR(pp1), IVAR(d1)),
-    TDIV(tmp0, tmp1, tmp2),     // tmp0 <- ratio
-    TDIV(pw, tmp0, tmp1),       // pw <- pixel width
-    INSERT_TMACRO(to_sample_space, CS(pp0), CS(pp1), CS(tmp1), CS(tmp2), CS(tmp0)),
-    TMOV(L0, 0),                // pixel contribution
-    TMOV(L1, 0),
-    TMOV(L2, 0),
-    IMOV(rc, 0),                // ray count
-    IMOV(rpt, 0),
-    IMOV(sc, 0),                // sample count
-// roll
-    LABEL(roll),
-    IMOV(u0, c0),
-    IMOV(u1, c1),
-    INSERT_MACRO(threefry2x32r32, CS(u0), CS(u1), scene::K0, scene::K1, scene::K2, CS(tmp0), CS(tmp1)),
-    INSERT_MACRO(bump_ctr, CS(c0), CS(c1), CS(1), CS(tmp0), CS(tmp1), CS(tmp2)),
-    INSERT_TMACRO(sample_u, CS(u0), CS(u1)),
-    IPJMP4(rpt, sample_pixel, traverse_scene, direct_lighting, lambert_indirect),
-// sample pixel
-    LABEL(sample_pixel),
-    TMOV_CS(CS(o0), scene::CAM_Px), // reset ray origin
-    TMOV_CS(CS(o1), scene::CAM_Py),
-    TMOV_CS(CS(o2), scene::CAM_Pz),
-    TMOV(PL0, 1),               // path product
-    TMOV(PL1, 1),
-    TMOV(PL2, 1),
-    TMOV(d0, pp0),
-    TMOV(d1, pp1),
-    TMOV(clr0, 0),
-    TMOV(clr1, 0),
-    TMOV(clr2, 0),
-    IMOV(depth, 0),
-    IADD(sc, sc, 1),
-    INSERT_TMACRO(jitter_sample_pos, CS(pw), CS(d), CS(u), CS(tmp0)),
-    INSERT_TMACRO(gen_ray_dir, CS(d0), CS(d1)),
-    TMOV_CS(CS(d2), scene::CAM_Dz),
-    INSERT_TMACRO(vm::vec3_norm, CS(d), CS(tmp0)),
-    IGE(tmp0, sc, ns),
-    IPJMP2(tmp0, traverse_scene, fin_pixel),
-// traverse
-    LABEL(traverse_scene),
-    INSERT_TMACRO(bias_ray, CS(vr0)),
-    INSERT_TMACRO(traverse_scene),
-    IADD(rc, rc, 1),
-    IPJMP3(rpt, post_traversal, direct_lighting_pdf, lambert_indirect),
-// post traverse
-    LABEL(post_traversal),
-    IEQ(tmp0, pid, 11),                // hit light?
-    TCMOV_CS(CS(tmp1), CS(tmp0), scene::L_E, CS(0)),
-    INSERT_TMACRO(vec3_scalar_mul, CS(PL), CS(PL), CS(tmp1)), // final path factor
-    IOREQ(tmp0, tmp0, pid, 12),                // tmp0 <- miss?
-    IORGE_CS(CS(tmp0), CS(tmp0), CS(depth), scene::MAXDEPTH),
-    IMOV(rpt, 0),
-    IPJMP2(tmp0, set_materials, roll), // miss ? new sample
-// set materials
-    LABEL(set_materials),
-    INSERT_TMACRO(vec3_scalar_mul, CS(vr0), CS(d), CS(t)),
-    INSERT_TMACRO(vec_vec3_add, CS(o), CS(o), CS(vr0)), // compute new position
-    INSERT_TMACRO(set_materials),
-    IMOV(rpt, 2),
-    JMP(roll),
-// direct lighting
-    LABEL(direct_lighting),
-    TMOV(pdf_l, 0),
-    INSERT_TMACRO(sample_light_disk, CS(d), CS(u0), CS(u1), CS(tmp0), CS(vr2)),
-    INSERT_TMACRO(vec_vec3_sub, CS(d), CS(d), CS(o)),
-    INSERT_TMACRO(vec3_norm, CS(d), CS(tmp0)),
-    INSERT_TMACRO(vec3_dot, CS(tmp0), CS(d), CS(n)),
-    TGT(tmp0, tmp0, 0),  // tmp0 <- cos(theta)>0
-    ICMOV(rpt, tmp0, 1, 3),               // return to compute pdf after traverse, or skip to lambert indirect after roll
-    IPJMP2(tmp0, roll, traverse_scene),
-// direct lighting pdf
-    LABEL(direct_lighting_pdf),
-    INSERT_TMACRO(vec_vec3_sub, CS(vr2), scene::L_P, CS(o)),
-    INSERT_TMACRO(vec3_length2, CS(pdf_l), CS(vr2)), // pdf_l <- l
-    INSERT_TMACRO(vec3_dot, CS(tmp0), scene::L_N, CS(d)),
-    TABS(tmp0, tmp0),
-    TMUL_CS(CS(tmp0), CS(tmp0), scene::L_A),
-    TDIV(pdf_l, pdf_l, tmp0),
-    IEQ(tmp2, pid, 11),
-// finish computing pdf
-    INSERT_TMACRO(vec3_dot, CS(tmp0), CS(d), CS(n)),
-    TMAX(tmp0, tmp0, 0),
-    TMUL_CS(CS(tmp0), CS(tmp0), scene::L_E),
-    TDIV(tmp0, tmp0, pdf_l),
-    TCMOV(tmp0, tmp2, tmp0, 0),
-    // INSERT_TMACRO(vec3_scalar_mul, CS(vr0), CS(clr), CS(tmp0)),
-    INSERT_TMACRO(vec3_scalar_add, CS(PL), CS(PL), CS(tmp0)), // direct light contribution color
-    IMOV(rpt, 3),                                       // return to lambert_indirect
-    JMP(roll),
-// indirect diffuse
-    LABEL(lambert_indirect),
-    INSERT_TMACRO(onb, CS(vr00), CS(vr01), CS(vr02), CS(t0), CS(t1), CS(t2), CS(n0), CS(n1), CS(n2)),
-    INSERT_TMACRO(vec3_norm, CS(vr0), CS(tmp0)),
-    INSERT_TMACRO(vec3_norm, CS(t), CS(tmp0)),
-    INSERT_TMACRO(sample_hemisphere, CS(d), CS(n), CS(vr0), CS(t), CS(u0), CS(u1), CS(tmp0), CS(tmp1)),
-    INSERT_TMACRO(vec3_norm, CS(d), CS(tmp0)),
-    INSERT_TMACRO(vec_vec3_mul, CS(PL), CS(PL), CS(clr)),
-    IMOV(rpt, 0),
-    IADD(depth, depth, 1),
-    JMP(traverse_scene),
-    LABEL(fin_pixel),
-    MOV(TVAR(sc), IVAR(sc)),
-    INSERT_TMACRO(vec_vec3_add, CS(L), CS(L), CS(PL)),
-    INSERT_TMACRO(vec3_scalar_div, CS(L), CS(L), CS(sc))
-KERNEL_END(TVAR(L0), TVAR(L1), TVAR(L2), IVAR(rc));
-
-#else
-
-template <std::same_as<float> T>
-KERNEL(pt, IVAR(ppp), IVAR(tmp0), TVAR(threshold), IVAR(maxdepth), TVAR(vr0))
+KERNEL(pt, IVAR(ppp), IVAR(tmp0), TVAR(threshold), IVAR(maxdepth), TVAR(vr00))
     IRSHFT(d0, ppp, 16),
     IBAND(d1, ppp, 0xffff),
     IRSHFT(tmp1, tmp0, 16),     // tmp1 <- w
@@ -809,7 +685,7 @@ KERNEL(pt, IVAR(ppp), IVAR(tmp0), TVAR(threshold), IVAR(maxdepth), TVAR(vr0))
     MOV(TVAR(pp1), IVAR(d1)),
     TDIV(tmp0, tmp1, tmp2),     // tmp0 <- ratio
     TDIV(pw, tmp0, tmp1),       // pw <- pixel width
-    TMUL(pw, pw, vr0),
+    TMUL(pw, pw, vr00),
     TMOV(mean, 0),
     TMOV(m2, 0),
     INSERT_TMACRO(to_sample_space, CS(pp0), CS(pp1), CS(tmp1), CS(tmp2), CS(tmp0)),
@@ -904,8 +780,6 @@ KERNEL(pt, IVAR(ppp), IVAR(tmp0), TVAR(threshold), IVAR(maxdepth), TVAR(vr0))
     MOV(TVAR(ns), IVAR(ns)),
     INSERT_TMACRO(vec3_scalar_div, CS(L), CS(L), CS(ns))
 KERNEL_END(TVAR(L0), TVAR(L1), TVAR(L2), IVAR(rc), IVAR(ppp));
-
-#endif
 
 TMACRO(set_colors)
 // 0 - grey floor
