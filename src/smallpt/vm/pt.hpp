@@ -671,8 +671,10 @@ MACRO_END;
 // roll:
 // 0: sample_pixel
 // 1: traverse_scene
-// 2: direct_lighting
-// 3: lambert_indirect
+// 2: test_direct_lighting
+// 3: direct_lighting
+// 4: lambert_indirect
+// 5: window
 //
 // traverse_scene:
 // 0: post_traversal
@@ -717,7 +719,7 @@ KERNEL(pt, IVAR(ppp), IVAR(tmp0), TVAR(threshold), IVAR(maxdepth), TVAR(vr00))
     INSERT_MACRO(threefry2x32r32, CS(u0), CS(u1), scene::K0, scene::K1, scene::K2, CS(tmp0), CS(tmp1)),
     INSERT_MACRO(bump_ctr, CS(c0), CS(c1), CS(39916801), CS(tmp0), CS(tmp1), CS(tmp2)),
     INSERT_TMACRO(sample_u, CS(u0), CS(u1)),
-    IPJMP4(rpt, sample_pixel, traverse_scene, lambert_indirect, window),
+    IPJMP6(rpt, sample_pixel, traverse_scene, test_direct_lighting, direct_lighting, lambert_indirect, window),
 // sample pixel
     LABEL(sample_pixel),
     TMOV_CS(CS(o0), scene::CAM_Px),
@@ -742,8 +744,10 @@ KERNEL(pt, IVAR(ppp), IVAR(tmp0), TVAR(threshold), IVAR(maxdepth), TVAR(vr00))
     INSERT_TMACRO(bias_ray, CS(vr0)),
     INSERT_TMACRO(traverse_scene),
     IADD(rc, rc, 1),
+    IPJMP3(rpt, post_traversal, direct_lighting_pdf, lambert_indirect),
 // post traverse
     LABEL(post_traversal),
+    IADD(depth, depth, 1),
     IEQ(tmp0, pid, 11),                // hit light?
     TCMOV_CS(CS(tmp1), CS(tmp0), scene::L_E, CS(1)),
     IEQ(tmp2, pid, 12),                                       // miss?
@@ -758,7 +762,40 @@ KERNEL(pt, IVAR(ppp), IVAR(tmp0), TVAR(threshold), IVAR(maxdepth), TVAR(vr00))
     INSERT_TMACRO(vec_vec3_add, CS(o), CS(o), CS(vr0)), // compute new position
     INSERT_TMACRO(set_materials),
     IEQ(tmp0, pid, 4),          // window?
-    ICMOV(rpt, tmp0, 3, 2),
+    ICMOV(rpt, tmp0, 5, 2),     // return to window or test_direct_lighting
+    JMP(roll),
+    LABEL(test_direct_lighting),
+    TLT(tmp0, u0, 0.5),
+    ICMOV(rpt, tmp0, 3, 4),     // return to direct_ligting or skip to indirect
+    JMP(roll),
+// direct lighting
+    LABEL(direct_lighting),
+    TMOV(pdf_l, 0),
+    INSERT_TMACRO(sample_light_disk, CS(d), CS(u0), CS(u1), CS(tmp0), CS(vr2)),
+    INSERT_TMACRO(vec_vec3_sub, CS(d), CS(d), CS(o)),
+    INSERT_TMACRO(vec3_norm, CS(d), CS(tmp0)),
+    INSERT_TMACRO(vec3_dot, CS(tmp0), CS(d), CS(n)),
+    TGT(tmp0, tmp0, 0),  // tmp0 <- cos(theta)>0
+    ICMOV(rpt, tmp0, 1, 4),               // return to compute pdf after traverse, or skip to lambert indirect after roll
+    IPJMP2(tmp0, roll, traverse_scene),
+// direct lighting pdf
+    LABEL(direct_lighting_pdf),
+    INSERT_TMACRO(vec_vec3_sub, CS(vr2), scene::L_P, CS(o)),
+    INSERT_TMACRO(vec3_length2, CS(pdf_l), CS(vr2)), // pdf_l <- l
+    INSERT_TMACRO(vec3_dot, CS(tmp0), scene::L_N, CS(d)),
+    TABS(tmp0, tmp0),
+    TMUL_CS(CS(tmp0), CS(tmp0), scene::L_A),
+    TDIV(pdf_l, pdf_l, tmp0),
+    IEQ(tmp2, pid, 11),
+// finish computing pdf
+    INSERT_TMACRO(vec3_dot, CS(tmp0), CS(d), CS(n)),
+    TMAX(tmp0, tmp0, 0),
+    TMUL_CS(CS(tmp0), CS(tmp0), scene::L_E),
+    TDIV(tmp0, tmp0, pdf_l),
+    TMUL(tmp0, tmp0, 2),
+    TCMOV(tmp0, tmp2, tmp0, 0),
+    INSERT_TMACRO(vec3_scalar_add, CS(PL), CS(PL), CS(tmp0)), // direct light contribution color
+    IMOV(rpt, 4),                                       // return to lambert_indirect
     JMP(roll),
 // indirect diffuse
     LABEL(lambert_indirect),
@@ -769,7 +806,6 @@ KERNEL(pt, IVAR(ppp), IVAR(tmp0), TVAR(threshold), IVAR(maxdepth), TVAR(vr00))
     INSERT_TMACRO(vec3_norm, CS(d), CS(tmp0)),
     INSERT_TMACRO(vec_vec3_mul, CS(PL), CS(PL), CS(clr)),
     IMOV(rpt, 0),
-    IADD(depth, depth, 1),
     JMP(traverse_scene),
 // window
     LABEL(window),
@@ -785,7 +821,6 @@ KERNEL(pt, IVAR(ppp), IVAR(tmp0), TVAR(threshold), IVAR(maxdepth), TVAR(vr00))
     TLT(vr11, u0, vr11),
     TORLT(vr11, vr11, u1, 0.4),
     IMIN(vr12, vr11, 1),
-    IADD(depth, depth, vr12),
     IMOV(rpt, 0),
     TCMOV(PL0, vr11, PL0, 0),
     TCMOV(PL1, vr11, PL1, 0),
