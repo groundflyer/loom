@@ -752,8 +752,8 @@ KERNEL(pt, IVAR(ppp), IVAR(tmp0), TVAR(threshold), IVAR(maxdepth), TVAR(vr00))
     IEQ(tmp0, pid, 11),                // hit light?
     TCMOV_CS(CS(tmp1), CS(tmp0), scene::L_E, CS(1)),
     IEQ(tmp2, pid, 12),                                       // miss?
-    IORGE(tmp2, tmp2, depth, maxdepth),                       // ||depth>=maxdepth
-    TCMOV(tmp1, tmp2, 0, tmp1),                               // miss||depth>=maxdepth?0:l|1
+    IORGT(tmp2, tmp2, depth, maxdepth),                       // ||depth>maxdepth
+    TCMOV(tmp1, tmp2, 0, tmp1),                               // miss||depth>maxdepth?0:l|1
     INSERT_TMACRO(vec3_scalar_mul, CS(PL), CS(PL), CS(tmp1)), // contribute to path
     ILOR(tmp0, tmp0, tmp2),                                   // hit light||miss||depth>=maxdepth
     IADD(depth, depth, 1),
