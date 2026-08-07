@@ -53,7 +53,8 @@ struct EventState
                float       t,
                unsigned    md,
                float       b,
-               bool        lr) noexcept;
+               bool        lr,
+               METHOD      m) noexcept;
 
     FORBID_COPY(EventState);
     FORBID_MOVE(EventState);

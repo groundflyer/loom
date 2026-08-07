@@ -45,11 +45,29 @@ val_stream_size(const std::size_t stream_size,
     return stream_size * NUM_CORES_L < img_size && stream_size > 64;
 }
 
+struct UnknownMethod
+{
+    std::string_view sv;
+};
+
 int
 main(int argc, char* argv[])
 {
     auto parse_results = argparse::parse(
         std::tuple{
+            argparse::option<'m', "method">(
+                "compute method, available options: hybrid, predicated, "
+                "scalar, reference",
+                "M",
+                HYBRID,
+                [](std::string_view sv) -> METHOD
+                {
+                    if(sv == "hybrid") return HYBRID;
+                    if(sv == "predicated") return PREDICATED;
+                    if(sv == "scalar") return BSE;
+                    if(sv == "reference") return REFERENCE;
+                    throw UnknownMethod{sv};
+                }),
             argparse::option<'t', "threshold">("adaptive sampling threshold",
                                                "T",
                                                0.0001f,
@@ -124,7 +142,8 @@ main(int argc, char* argv[])
                           threshold,
                           max_depth,
                           blur,
-                          lock_res};
+                          lock_res,
+                          parse_results.template get_opt<'m'>()};
 
         logger.debug("initializing glfw");
         const auto& h = gl::System::init();
@@ -240,6 +259,11 @@ main(int argc, char* argv[])
     catch(const ReadException& ex)
     {
         logger.critical("Failed to parse number {}", ex.sv);
+        return 1;
+    }
+    catch(const UnknownMethod& ex)
+    {
+        logger.critical("Unknown method: {}", ex.sv);
         return 1;
     }
     return 0;
