@@ -549,7 +549,7 @@ struct Shading
                         Shading{
                             max_depth,
                             c,
-                            depth,
+                            depth + 1,
                             ray_count,
                             p,
                             n,
@@ -627,7 +627,7 @@ struct Shading
         return radiance(max_depth,
                         bias_ray(p, reflect(nfn, i, cos_theta)),
                         bump_ctr(c, ctr_incr),
-                        depth + 1,
+                        depth,
                         ray_count);
     }
 
@@ -663,7 +663,7 @@ struct Shading
                     normalize(i * eta - n * ((into ? 1 : -1) *
                                              (ddn * eta + std::sqrt(cos2t))))),
                 bump_ctr(c, ctr_incr),
-                depth + 1);
+                depth);
             return {L / (eta * eta), rc};
         };
 
@@ -717,7 +717,7 @@ struct Shading
 
         auto cc = bump_ctr(c, ctr_incr);
         auto [L, rc] =
-            radiance(max_depth, bias_ray(p, wo), cc, depth + 1, ray_count);
+            radiance(max_depth, bias_ray(p, wo), cc, depth, ray_count);
         L *= G1;
 
         cc                = bump_ctr(cc, ctr_incr);

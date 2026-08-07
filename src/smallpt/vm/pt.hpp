@@ -410,6 +410,8 @@ struct scene
     using L_R = CS(0.35);       // radius
     using L_A = CS(0.3848451000647496); // light area
 
+    using L_PNEE = CS(0.5);     // NEE probability
+
     // threefry keys
     using K0 = CS(0xf00dead);
     using K1 = CS(0xba0beef);
@@ -677,7 +679,7 @@ MACRO_END;
 // 5: window
 //
 // traverse_scene:
-// 0: post_traversal
+// 0: radiance
 // 1: direct_lighting_pdf
 // 2: lambert_indirect
 
@@ -744,10 +746,9 @@ KERNEL(pt, IVAR(ppp), IVAR(tmp0), TVAR(threshold), IVAR(maxdepth), TVAR(vr00))
     INSERT_TMACRO(bias_ray, CS(vr0)),
     INSERT_TMACRO(traverse_scene),
     IADD(rc, rc, 1),
-    IPJMP3(rpt, post_traversal, direct_lighting_pdf, lambert_indirect),
-// post traverse
-    LABEL(post_traversal),
-    IADD(depth, depth, 1),
+    IPJMP3(rpt, radiance, direct_lighting_pdf, lambert_indirect),
+// radiance
+    LABEL(radiance),
     IEQ(tmp0, pid, 11),                // hit light?
     TCMOV_CS(CS(tmp1), CS(tmp0), scene::L_E, CS(1)),
     IEQ(tmp2, pid, 12),                                       // miss?
@@ -755,6 +756,7 @@ KERNEL(pt, IVAR(ppp), IVAR(tmp0), TVAR(threshold), IVAR(maxdepth), TVAR(vr00))
     TCMOV(tmp1, tmp2, 0, tmp1),                               // miss||depth>=maxdepth?0:l|1
     INSERT_TMACRO(vec3_scalar_mul, CS(PL), CS(PL), CS(tmp1)), // contribute to path
     ILOR(tmp0, tmp0, tmp2),                                   // hit light||miss||depth>=maxdepth
+    IADD(depth, depth, 1),
     IPJMP2(tmp0, set_materials, fin_sample), // contribute sample otherwise proceed
 // set materials
     LABEL(set_materials),
@@ -765,7 +767,7 @@ KERNEL(pt, IVAR(ppp), IVAR(tmp0), TVAR(threshold), IVAR(maxdepth), TVAR(vr00))
     ICMOV(rpt, tmp0, 5, 2),     // return to window or test_direct_lighting
     JMP(roll),
     LABEL(test_direct_lighting),
-    TLT(tmp0, u0, 0.5),
+    TLT_CS(CS(tmp0), CS(u0), scene::L_PNEE),
     ICMOV(rpt, tmp0, 3, 4),     // return to direct_ligting or skip to indirect
     JMP(roll),
 // direct lighting
@@ -792,7 +794,7 @@ KERNEL(pt, IVAR(ppp), IVAR(tmp0), TVAR(threshold), IVAR(maxdepth), TVAR(vr00))
     TMAX(tmp0, tmp0, 0),
     TMUL_CS(CS(tmp0), CS(tmp0), scene::L_E),
     TDIV(tmp0, tmp0, pdf_l),
-    TMUL(tmp0, tmp0, 2),
+    TDIV_CS(CS(tmp0), CS(tmp0), scene::L_PNEE),
     TCMOV(tmp0, tmp2, tmp0, 0),
     INSERT_TMACRO(vec3_scalar_add, CS(PL), CS(PL), CS(tmp0)), // direct light contribution color
     IMOV(rpt, 4),                                       // return to lambert_indirect
@@ -997,8 +999,8 @@ KERNEL(pt_const, IVAR(ppp))
     INSERT_TMACRO(bias_ray, CS(vr0)),
     INSERT_TMACRO(traverse_scene),
     IADD(rc, rc, 1),
-// post traverse
-    LABEL(post_traversal),
+// radiance
+    LABEL(radiance),
     IEQ(tmp0, pid, 11),                // hit light?
     TCMOV_CS(CS(tmp1), CS(tmp0), scene::L_E, CS(1)),
     IEQ(tmp2, pid, 12),                                       // miss?
