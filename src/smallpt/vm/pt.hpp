@@ -730,6 +730,9 @@ KERNEL(pt, IVAR(ppp), IVAR(tmp0), TVAR(threshold), IVAR(maxdepth), TVAR(vr00))
     TMOV(PL0, 1),               // path product
     TMOV(PL1, 1),
     TMOV(PL2, 1),
+    TMOV(SL0, 0),               // path sum
+    TMOV(SL1, 0),
+    TMOV(SL2, 0),
     TMOV(d0, pp0),
     TMOV(d1, pp1),
     TMOV(clr0, 0),
@@ -746,15 +749,19 @@ KERNEL(pt, IVAR(ppp), IVAR(tmp0), TVAR(threshold), IVAR(maxdepth), TVAR(vr00))
     INSERT_TMACRO(bias_ray, CS(vr0)),
     INSERT_TMACRO(traverse_scene),
     IADD(rc, rc, 1),
+    TMOV(vr00, 0),
+    TMOV(vr01, 0),
+    TMOV(vr02, 0),
     IPJMP3(rpt, radiance, direct_lighting_pdf, lambert_indirect),
 // radiance
     LABEL(radiance),
     IEQ(tmp0, pid, 11),                // hit light?
-    TCMOV_CS(CS(tmp1), CS(tmp0), scene::L_E, CS(1)),
+    TCMOV_CS(CS(tmp1), CS(tmp0), scene::L_E, CS(0)),
     IEQ(tmp2, pid, 12),                                       // miss?
-    IORGT(tmp2, tmp2, depth, maxdepth),                       // ||depth>maxdepth
-    TCMOV(tmp1, tmp2, 0, tmp1),                               // miss||depth>maxdepth?0:l|1
-    INSERT_TMACRO(vec3_scalar_mul, CS(PL), CS(PL), CS(tmp1)), // contribute to path
+    IORGE(tmp2, tmp2, depth, maxdepth),                       // ||depth>maxdepth
+    TCMOV(tmp1, tmp2, 0, tmp1),                               // miss||depth>maxdepth?0:l
+    INSERT_TMACRO(vec3_scalar_mul, CS(vr0), CS(PL), CS(tmp1)),
+    INSERT_TMACRO(vec_vec3_add, CS(SL), CS(SL), CS(vr0)),     // contribute to path
     ILOR(tmp0, tmp0, tmp2),                                   // hit light||miss||depth>=maxdepth
     IADD(depth, depth, 1),
     IPJMP2(tmp0, set_materials, fin_sample), // contribute sample otherwise proceed
@@ -768,6 +775,9 @@ KERNEL(pt, IVAR(ppp), IVAR(tmp0), TVAR(threshold), IVAR(maxdepth), TVAR(vr00))
     JMP(roll),
     LABEL(test_direct_lighting),
     TLT_CS(CS(tmp0), CS(u0), scene::L_PNEE),
+    TMOV(vr00, 0),
+    TMOV(vr01, 0),
+    TMOV(vr02, 0),
     ICMOV(rpt, tmp0, 3, 4),     // return to direct_ligting or skip to indirect
     JMP(roll),
 // direct lighting
@@ -788,25 +798,27 @@ KERNEL(pt, IVAR(ppp), IVAR(tmp0), TVAR(threshold), IVAR(maxdepth), TVAR(vr00))
     TABS(tmp0, tmp0),
     TMUL_CS(CS(tmp0), CS(tmp0), scene::L_A),
     TDIV(pdf_l, pdf_l, tmp0),
-    IEQ(tmp2, pid, 11),
 // finish computing pdf
     INSERT_TMACRO(vec3_dot, CS(tmp0), CS(d), CS(n)),
     TMAX(tmp0, tmp0, 0),
     TMUL_CS(CS(tmp0), CS(tmp0), scene::L_E),
     TDIV(tmp0, tmp0, pdf_l),
     TDIV_CS(CS(tmp0), CS(tmp0), scene::L_PNEE),
+    IEQ(tmp2, pid, 11),
     TCMOV(tmp0, tmp2, tmp0, 0),
-    INSERT_TMACRO(vec3_scalar_add, CS(PL), CS(PL), CS(tmp0)), // direct light contribution color
+    INSERT_TMACRO(vec3_scalar_mul, CS(vr0), CS(clr), CS(tmp0)), // vr0 <- direct lighting
+    INSERT_TMACRO(vec_vec3_mul, CS(vr0), CS(PL), CS(vr0)),
+    INSERT_TMACRO(vec_vec3_add, CS(SL), CS(SL), CS(vr0)), // contribute to sample path
     IMOV(rpt, 4),                                       // return to lambert_indirect
     JMP(roll),
 // indirect diffuse
     LABEL(lambert_indirect),
+    INSERT_TMACRO(vec_vec3_mul, CS(PL), CS(PL), CS(clr)),
     INSERT_TMACRO(onb, CS(vr00), CS(vr01), CS(vr02), CS(t0), CS(t1), CS(t2), CS(n0), CS(n1), CS(n2)),
     INSERT_TMACRO(vec3_norm, CS(vr0), CS(tmp0)),
     INSERT_TMACRO(vec3_norm, CS(t), CS(tmp0)),
     INSERT_TMACRO(sample_hemisphere, CS(d), CS(n), CS(vr0), CS(t), CS(u0), CS(u1), CS(tmp0), CS(tmp1)),
     INSERT_TMACRO(vec3_norm, CS(d), CS(tmp0)),
-    INSERT_TMACRO(vec_vec3_mul, CS(PL), CS(PL), CS(clr)),
     IMOV(rpt, 0),
     JMP(traverse_scene),
 // window
@@ -824,15 +836,15 @@ KERNEL(pt, IVAR(ppp), IVAR(tmp0), TVAR(threshold), IVAR(maxdepth), TVAR(vr00))
     TORLT(vr11, vr11, u1, 0.4),
     IMIN(vr12, vr11, 1),
     IMOV(rpt, 0),
-    TCMOV(PL0, vr11, PL0, 0),
-    TCMOV(PL1, vr11, PL1, 0),
-    TCMOV(PL2, vr11, PL2, 0),
+    TCMOV(SL0, vr11, SL0, 0),
+    TCMOV(SL1, vr11, SL1, 0),
+    TCMOV(SL2, vr11, SL2, 0),
     IPJMP2(vr11, fin_sample, traverse_scene),
 // fin sample
     LABEL(fin_sample),
-    INSERT_TMACRO(vec_vec3_add, CS(L), CS(L), CS(PL)), // contribute sample
+    INSERT_TMACRO(vec_vec3_add, CS(L), CS(L), CS(SL)), // contribute sample
     MOV(TVAR(tmp2), IVAR(ns)),                         // tmp2 <- ns
-    INSERT_TMACRO(luminance, CS(tmp0), CS(PL)),        // computing variance
+    INSERT_TMACRO(luminance, CS(tmp0), CS(SL)),        // computing variance
     TMIN(tmp0, tmp0, 1),                               // tmp0 <- x
     TSUB(tmp1, tmp0, mean),                            // tmp1 <- delta
     TDIV(vr00, tmp1, tmp2),                            // vr00 <- delta/ns
