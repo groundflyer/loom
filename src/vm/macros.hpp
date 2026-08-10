@@ -823,6 +823,25 @@
     , LABEL(L5)                                                \
     , LABEL(L6)                                                \
     >>
+#define PJMP7(JVAR, L1, L2, L3, L4, L5, L6, L7)                \
+    loom::vm::ParmJump < JVAR, loom::type_sequence < LABEL(L1) \
+    , LABEL(L2)                                                \
+    , LABEL(L3)                                                \
+    , LABEL(L4)                                                \
+    , LABEL(L5)                                                \
+    , LABEL(L6)                                                \
+    , LABEL(L7)                                                \
+    >>
+#define PJMP8(JVAR, L1, L2, L3, L4, L5, L6, L7, L8)            \
+    loom::vm::ParmJump < JVAR, loom::type_sequence < LABEL(L1) \
+    , LABEL(L2)                                                \
+    , LABEL(L3)                                                \
+    , LABEL(L4)                                                \
+    , LABEL(L5)                                                \
+    , LABEL(L6)                                                \
+    , LABEL(L7)                                                \
+    , LABEL(L8)                                                \
+    >>
 
 #define PJMP2_CS(JTYPE, JNAME, L1, L2) \
     PJMP2(VAR_CS(JTYPE, JNAME), LABEL(L1), LABEL(L2))
@@ -845,6 +864,25 @@
           LABEL(L4),                                   \
           LABEL(L5),                                   \
           LABEL(L6))
+#define PJMP7_CS(JTYPE, JNAME, L1, L2, L3, L4, L5, L6, L7) \
+    PJMP4(VAR_CS(JTYPE, JNAME),                            \
+          LABEL(L1),                                       \
+          LABEL(L2),                                       \
+          LABEL(L3),                                       \
+          LABEL(L4),                                       \
+          LABEL(L5),                                       \
+          LABEL(L6),                                       \
+          LABEL(L7))
+#define PJMP8_CS(JTYPE, JNAME, L1, L2, L3, L4, L5, L6, L7, L8) \
+    PJMP4(VAR_CS(JTYPE, JNAME),                                \
+          LABEL(L1),                                           \
+          LABEL(L2),                                           \
+          LABEL(L3),                                           \
+          LABEL(L4),                                           \
+          LABEL(L5),                                           \
+          LABEL(L6),                                           \
+          LABEL(L7),                                           \
+          LABEL(L8))
 
 #define IPJMPN(JNAME, ...)    PJMPN(IVAR(JNAME), __VA_ARGS__)
 #define IPJMP2(JNAME, ...)    PJMP2(IVAR(JNAME), __VA_ARGS__)
@@ -852,6 +890,8 @@
 #define IPJMP4(JNAME, ...)    PJMP4(IVAR(JNAME), __VA_ARGS__)
 #define IPJMP5(JNAME, ...)    PJMP5(IVAR(JNAME), __VA_ARGS__)
 #define IPJMP6(JNAME, ...)    PJMP6(IVAR(JNAME), __VA_ARGS__)
+#define IPJMP7(JNAME, ...)    PJMP7(IVAR(JNAME), __VA_ARGS__)
+#define IPJMP8(JNAME, ...)    PJMP8(IVAR(JNAME), __VA_ARGS__)
 
 #define IPJMPN_CS(JNAME, ...) PJMP(IVAR_CS(JNAME), __VA_ARGS__)
 #define IPJMP2_CS(JNAME, ...) PJMP2(IVAR_CS(JNAME), __VA_ARGS__)
@@ -859,6 +899,8 @@
 #define IPJMP4_CS(JNAME, ...) PJMP4(IVAR_CS(JNAME), __VA_ARGS__)
 #define IPJMP5_CS(JNAME, ...) PJMP5(IVAR_CS(JNAME), __VA_ARGS__)
 #define IPJMP6_CS(JNAME, ...) PJMP6(IVAR_CS(JNAME), __VA_ARGS__)
+#define IPJMP7_CS(JNAME, ...) PJMP7(IVAR_CS(JNAME), __VA_ARGS__)
+#define IPJMP8_CS(JNAME, ...) PJMP8(IVAR_CS(JNAME), __VA_ARGS__)
 
 #define BINOP_CS(OP, TYPE, DST, A, B) \
     loom::vm::                        \
