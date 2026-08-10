@@ -425,6 +425,9 @@ struct scene
 
     // back window index of refraction
     using WINDOW_IOR = CS(1.56);
+
+    // plastic tetrahedron index of refraction
+    using PLASTIC_IOR = CS(2.5);
 };
 
 TMACRO5(sample_light_disk, dst, u0, u1, tmp, vtmp)
@@ -668,6 +671,14 @@ TMACRO2(luminance, dst, rgb)
     INSERT_TMACRO(vec3_dot, dst, rgb, scene::LUM)
 MACRO_END;
 
+TMACRO8(comp_f, dst, wi, ct, into, eta, ior, tmp0, tmp1)
+    INSERT_TMACRO(vec3_negate, wi, CS(d)),
+    INSERT_TMACRO(vec3_dot, ct, CS(n), wi),
+    TGT_CS(into, ct, CS(0)),
+    INSERT_TMACRO(compute_eta, eta, ior, into),
+    INSERT_TMACRO(reflectance, dst, ct, eta, tmp0, tmp1)
+MACRO_END;
+
 // rpt - return pointer
 //
 // roll:
@@ -677,6 +688,7 @@ MACRO_END;
 // 3: direct_lighting
 // 4: lambert_indirect
 // 5: window
+// 6: tetrahedron
 //
 // traverse_scene:
 // 0: radiance
@@ -721,7 +733,7 @@ KERNEL(pt, IVAR(ppp), IVAR(tmp0), TVAR(threshold), IVAR(maxdepth), TVAR(vr00))
     INSERT_MACRO(threefry2x32r32, CS(u0), CS(u1), scene::K0, scene::K1, scene::K2, CS(tmp0), CS(tmp1)),
     INSERT_MACRO(bump_ctr, CS(c0), CS(c1), CS(39916801), CS(tmp0), CS(tmp1), CS(tmp2)),
     INSERT_TMACRO(sample_u, CS(u0), CS(u1)),
-    IPJMP6(rpt, sample_pixel, traverse_scene, test_direct_lighting, direct_lighting, lambert_indirect, window),
+    IPJMP7(rpt, sample_pixel, traverse_scene, test_direct_lighting, direct_lighting, lambert_indirect, window, tth_begin),
 // sample pixel
     LABEL(sample_pixel),
     TMOV_CS(CS(o0), scene::CAM_Px),
@@ -770,9 +782,14 @@ KERNEL(pt, IVAR(ppp), IVAR(tmp0), TVAR(threshold), IVAR(maxdepth), TVAR(vr00))
     INSERT_TMACRO(vec3_scalar_mul, CS(vr0), CS(d), CS(t)),
     INSERT_TMACRO(vec_vec3_add, CS(o), CS(o), CS(vr0)), // compute new position
     INSERT_TMACRO(set_materials),
-    IEQ(tmp0, pid, 4),          // window?
-    ICMOV(rpt, tmp0, 5, 2),     // return to window or test_direct_lighting
+    IMOV(rpt, 2),               // default material
+    ILT(tmp0, pid, 4),          // walls?
+    ISUB(tmp1, pid, 4),
+    IMIN(tmp1, tmp1, 6),
+    ISCT7(tmp2, tmp1, 5, 6, 6, 6, 2, 2, 2), // select material
+    ICMOV(rpt, tmp0, 2, tmp2),
     JMP(roll),
+// test direct lighting
     LABEL(test_direct_lighting),
     TLT_CS(CS(tmp0), CS(u0), scene::L_PNEE),
     TMOV(vr00, 0),
@@ -823,16 +840,12 @@ KERNEL(pt, IVAR(ppp), IVAR(tmp0), TVAR(threshold), IVAR(maxdepth), TVAR(vr00))
     JMP(traverse_scene),
 // window
     LABEL(window),
-    INSERT_TMACRO(vec3_negate, CS(vr0), CS(d)),        // vr0 <- wi
-    INSERT_TMACRO(vec3_dot, CS(tmp0), CS(n), CS(vr0)), // tmp0 <- cos_theta
-    TGT(tmp1, tmp0, 0),                                // tmp1 <- into
-    INSERT_TMACRO(compute_eta, CS(vr10), scene::WINDOW_IOR, CS(tmp1)), // vr10 <- eta
-    INSERT_TMACRO(reflectance, CS(vr11), CS(tmp0), CS(vr10), CS(vr11), CS(vr12)), // vr11 <- f
+    INSERT_TMACRO(comp_f, CS(vr30), CS(vr0), CS(tmp0), CS(tmp1), CS(vr10), scene::WINDOW_IOR, CS(vr40), CS(vr41)),
     TMOV(vr20, d0),
     TMOV(vr21, d1),
     TMOV(vr22, d2),
     INSERT_TMACRO(reflect, CS(d), CS(n), CS(vr2), CS(tmp0)),
-    TLT(vr11, u0, vr11),
+    TLT(vr11, u0, vr30),
     TORLT(vr11, vr11, u1, 0.4),
     IMIN(vr12, vr11, 1),
     IMOV(rpt, 0),
@@ -840,6 +853,16 @@ KERNEL(pt, IVAR(ppp), IVAR(tmp0), TVAR(threshold), IVAR(maxdepth), TVAR(vr00))
     TCMOV(SL1, vr11, SL1, 0),
     TCMOV(SL2, vr11, SL2, 0),
     IPJMP2(vr11, fin_sample, traverse_scene),
+// tetrahedron shading begin
+    LABEL(tth_begin),
+    INSERT_TMACRO(comp_f, CS(vr30), CS(vr0), CS(tmp0), CS(tmp1), CS(vr10), scene::PLASTIC_IOR, CS(vr40), CS(vr41)),
+    TLT(tmp1, u0, vr30),
+    TMOV(vr20, d0),
+    TMOV(vr21, d1),
+    TMOV(vr22, d2),
+    INSERT_TMACRO(reflect, CS(d), CS(n), CS(vr2), CS(tmp0)),
+    ICMOV(rpt, tmp1, 0, 2),     // do radiance after traverse, or diffuse after roll
+    IPJMP2(tmp1, roll, traverse_scene),
 // fin sample
     LABEL(fin_sample),
     INSERT_TMACRO(vec_vec3_add, CS(L), CS(L), CS(SL)), // contribute sample
