@@ -348,6 +348,16 @@ reflect(const Vec3f& n, const Vec3f& i, const float cos_theta) noexcept
     return i + n * cos_theta * 2.f;
 }
 
+static Vec3f
+refract(const Vec3f& nfn,
+        const Vec3f& i,
+        const float  eta,
+        const float  ddn,
+        const float  cos2t) noexcept
+{
+    return normalize(i * eta - nfn * std::fma(ddn, eta, std::sqrt(cos2t)));
+}
+
 /// @brief Distribution based on Trowbridge-Reitz @cite Trowbridge:75.
 /// @param dotWmWg dot product of normal and microfacet.
 /// @param alpha surface roughness.
@@ -656,14 +666,11 @@ struct Shading
 
         auto refraction = [&]() noexcept -> ret_t
         {
-            const auto [L, rc] = radiance(
-                max_depth,
-                bias_ray(
-                    p,
-                    normalize(i * eta - n * ((into ? 1 : -1) *
-                                             (ddn * eta + std::sqrt(cos2t))))),
-                bump_ctr(c, ctr_incr),
-                depth);
+            const auto [L, rc] =
+                radiance(max_depth,
+                         bias_ray(p, refract(nfn, i, eta, ddn, cos2t)),
+                         bump_ctr(c, ctr_incr),
+                         depth);
             return {L / (eta * eta), rc};
         };
 

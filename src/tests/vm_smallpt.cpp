@@ -140,6 +140,23 @@ TKERNEL6(reflect_test, n0, n1, n2, i0, i1, i2)
     INSERT_TMACRO(vm::reflect, CS(r), CS(n), CS(i), CS(ct))
 TKERNEL_END3(r0, r1, r2);
 
+template <std::floating_point T>
+TKERNEL6(refract_test, n0, n1, n2, d0, d1, d2)
+    INSERT_TMACRO(vm::comp_f, CS(f), CS(wi), CS(ct), CS(into), CS(eta), CS(1.5), CS(tmp0), CS(tmp1)),
+    INSERT_TMACRO(vm::vec3_negate, CS(ng), CS(n)),
+    TCMOV(n0, into, n0, ng0),
+    TCMOV(n1, into, n1, ng1),
+    TCMOV(n2, into, n2, ng2),
+    INSERT_TMACRO(vm::vec3_dot, CS(ddn), CS(d), CS(n)),
+    TMUL(tmp0, ddn, ddn),
+    TSUB(tmp0, 1, tmp0),
+    TMUL(tmp0, eta, tmp0),
+    TMUL(tmp0, eta, tmp0),
+    TSUB(cos2t, 1, tmp0),
+    TABS(cos2t, cos2t),
+    INSERT_TMACRO(vm::refract, CS(d), CS(eta), CS(ddn), CS(cos2t), CS(tmp0), CS(vtmp))
+TKERNEL_END3(d0, d1, d2);
+
 // clang-format on
 
 using Vec3f = Vector<float, 3, std::array>;
@@ -269,6 +286,7 @@ main(int argc, char* argv[])
     vm::bse::function<sample_light_test<float>>   bse_sample_light;
     vm::bse::function<schlick_test<float>>        bse_schlick;
     vm::bse::function<reflect_test<float>>        bse_reflect;
+    vm::bse::function<refract_test<float>>        bse_refract;
 
     track.dep_check(
         NamedTest(
@@ -490,6 +508,27 @@ main(int argc, char* argv[])
             { return to_tuple(reflect(n, i, dot(n, -i))); },
             test::uni_tuple_cmp{ulp_cmp{ulp}}),
         "reflect",
+        0.01));
+
+    track.check(NamedFuzzyTest(
+        tm.fuzzy_with_ref(
+            [&]() noexcept
+            { return std::tuple{normalize(gv3()), normalize(gv3())}; },
+            [&](const Vec3f& n, const Vec3f& i) noexcept
+            { return bse_refract(n[0], n[1], n[2], i[0], i[1], i[2]); },
+            [](const Vec3f& n, const Vec3f& i) noexcept
+            {
+                const float cos_theta = dot(n, -i);
+                const bool  into      = cos_theta > 0;
+                const Vec3f nfn       = into ? n : -n;
+                const float eta       = compute_eta(1.5f, into);
+                const float ddn       = dot(i, nfn);
+                const float cos2t     = 1 - eta * eta * (1 - ddn * ddn);
+
+                return to_tuple(refract(nfn, i, eta, ddn, std::abs(cos2t)));
+            },
+            test::uni_tuple_cmp{ulp_cmp{ulp}}),
+        "refract",
         0.01));
 
     return track.ret_code();

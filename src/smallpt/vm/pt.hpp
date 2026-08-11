@@ -428,6 +428,9 @@ struct scene
 
     // plastic tetrahedron index of refraction
     using PLASTIC_IOR = CS(2.5);
+
+    // glass sphere index of refraction
+    using GLASS_IOR = CS(1.5);
 };
 
 TMACRO5(sample_light_disk, dst, u0, u1, tmp, vtmp)
@@ -679,6 +682,15 @@ TMACRO8(comp_f, dst, wi, ct, into, eta, ior, tmp0, tmp1)
     INSERT_TMACRO(reflectance, dst, ct, eta, tmp0, tmp1)
 MACRO_END;
 
+TMACRO6(refract, dst, eta, ddn, cos2t, tmp, vtmp)
+    TSQRT_CS(tmp, cos2t),
+    TFMA_CS(ddn, ddn, eta, tmp),
+    INSERT_TMACRO(vec3_scalar_mul, vtmp, CS(n), ddn),
+    INSERT_TMACRO(vec3_scalar_mul, dst, dst, eta),
+    INSERT_TMACRO(vec_vec3_sub, dst, dst, vtmp),
+    INSERT_TMACRO(vec3_norm, dst, tmp)
+MACRO_END;
+
 // rpt - return pointer
 //
 // roll:
@@ -733,7 +745,7 @@ KERNEL(pt, IVAR(ppp), IVAR(tmp0), TVAR(threshold), IVAR(maxdepth), TVAR(vr00))
     INSERT_MACRO(threefry2x32r32, CS(u0), CS(u1), scene::K0, scene::K1, scene::K2, CS(tmp0), CS(tmp1)),
     INSERT_MACRO(bump_ctr, CS(c0), CS(c1), CS(39916801), CS(tmp0), CS(tmp1), CS(tmp2)),
     INSERT_TMACRO(sample_u, CS(u0), CS(u1)),
-    IPJMP7(rpt, sample_pixel, traverse_scene, test_direct_lighting, direct_lighting, lambert_indirect, window, tth_begin),
+    IPJMP8(rpt, sample_pixel, traverse_scene, test_direct_lighting, direct_lighting, lambert_indirect, window, tth_begin, glass),
 // sample pixel
     LABEL(sample_pixel),
     TMOV_CS(CS(o0), scene::CAM_Px),
@@ -786,7 +798,7 @@ KERNEL(pt, IVAR(ppp), IVAR(tmp0), TVAR(threshold), IVAR(maxdepth), TVAR(vr00))
     ILT(tmp0, pid, 4),          // walls?
     ISUB(tmp1, pid, 4),
     IMIN(tmp1, tmp1, 6),
-    ISCT7(tmp2, tmp1, 5, 6, 6, 6, 2, 2, 2), // select material
+    ISCT7(tmp2, tmp1, 5, 6, 6, 6, 7, 2, 2), // select material
     ICMOV(rpt, tmp0, 2, tmp2),
     JMP(roll),
 // test direct lighting
@@ -863,6 +875,37 @@ KERNEL(pt, IVAR(ppp), IVAR(tmp0), TVAR(threshold), IVAR(maxdepth), TVAR(vr00))
     INSERT_TMACRO(reflect, CS(d), CS(n), CS(vr2), CS(tmp0)),
     ICMOV(rpt, tmp1, 0, 2),     // do radiance after traverse, or diffuse after roll
     IPJMP2(tmp1, roll, traverse_scene),
+// glass
+    LABEL(glass),
+//                        f         wi       ct        into      eta
+    INSERT_TMACRO(comp_f, CS(vr30), CS(vr0), CS(tmp0), CS(tmp1), CS(vr10), scene::GLASS_IOR, CS(vr40), CS(vr41)),
+    INSERT_TMACRO(vec3_negate, CS(vr5), CS(n)),
+    TCMOV(n0, tmp1, n0, vr50), // n <- nfn
+    TCMOV(n1, tmp1, n1, vr51),
+    TCMOV(n2, tmp1, n2, vr52),
+    INSERT_TMACRO(vec3_dot, CS(tmp2), CS(d), CS(n)), // tmp2 <- ddn
+    TMUL(tmp1, tmp2, tmp2),
+    TSUB(tmp1, 1, tmp1),
+    TMUL(tmp1, vr10, tmp1),
+    TMUL(tmp1, vr10, tmp1),
+    TSUB(tmp1, 1, tmp1),        // tmp1 <- cos2t
+    TMOV(vr20, d0),
+    TMOV(vr21, d1),
+    TMOV(vr22, d2),
+    INSERT_TMACRO(refract, CS(d), CS(vr10), CS(tmp2), CS(tmp1), CS(vr50), CS(vr4)),
+    INSERT_TMACRO(reflect, CS(vr5), CS(n), CS(vr2), CS(tmp0)),
+    TLT(tmp0, tmp1, 0),         // tmp0 <- cos2t<0 total internal reflection
+    TORLT(tmp0, tmp0, u0, vr30),      // tmp0||u0<f ? reflect
+    TMUL(vr10, vr10, vr10),           // eta*eta
+    INSERT_TMACRO(vec3_scalar_div, CS(clr), CS(PL), CS(vr10)), // clr <- refraction throughput
+    TCMOV(d0, tmp0, vr50, d0),
+    TCMOV(d1, tmp0, vr51, d1),
+    TCMOV(d2, tmp0, vr52, d2),
+    TCMOV(PL0, tmp0, PL0, clr0),
+    TCMOV(PL1, tmp0, PL1, clr1),
+    TCMOV(PL2, tmp0, PL2, clr2),
+    IMOV(rpt, 0),
+    JMP(traverse_scene),
 // fin sample
     LABEL(fin_sample),
     INSERT_TMACRO(vec_vec3_add, CS(L), CS(L), CS(SL)), // contribute sample
