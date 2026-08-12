@@ -157,6 +157,11 @@ TKERNEL6(refract_test, n0, n1, n2, d0, d1, d2)
     INSERT_TMACRO(vm::refract, CS(d), CS(eta), CS(ddn), CS(cos2t), CS(tmp0), CS(vtmp))
 TKERNEL_END3(d0, d1, d2);
 
+template <std::floating_point T>
+TKERNEL2(gtr_test, dotWmWg, alpha)
+    INSERT_TMACRO(vm::gtr, CS(r), CS(dotWmWg), CS(alpha))
+TKERNEL_END1(r);
+
 // clang-format on
 
 using Vec3f = Vector<float, 3, std::array>;
@@ -287,6 +292,7 @@ main(int argc, char* argv[])
     vm::bse::function<schlick_test<float>>        bse_schlick;
     vm::bse::function<reflect_test<float>>        bse_reflect;
     vm::bse::function<refract_test<float>>        bse_refract;
+    vm::bse::function<gtr_test<float>>            bse_gtr;
 
     track.dep_check(
         NamedTest(
@@ -529,6 +535,16 @@ main(int argc, char* argv[])
             },
             test::uni_tuple_cmp{ulp_cmp{ulp}}),
         "refract",
+        0.01));
+
+    track.check(NamedFuzzyTest(
+        tm.fuzzy_with_ref([&]() noexcept
+                          { return std::tuple{g_canon(), g_canon()}; },
+                          bse_gtr,
+                          [](const float dotWmWg, const float alpha) noexcept
+                          { return gtr(dotWmWg, alpha); },
+                          ulp_cmp{ulp}),
+        "GTR",
         0.01));
 
     return track.ret_code();

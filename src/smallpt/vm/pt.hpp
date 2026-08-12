@@ -691,6 +691,14 @@ TMACRO6(refract, dst, eta, ddn, cos2t, tmp, vtmp)
     INSERT_TMACRO(vec3_norm, dst, tmp)
 MACRO_END;
 
+TMACRO3(gtr, dst, dotWmWg, alpha)
+    TMUL_CS(dst, dotWmWg, dotWmWg),
+    TDIV_CS(dst, CS(1), dst),
+    TSUB_CS(dst, dst, CS(1)),
+    TADD_CS(dst, dst, alpha),
+    TDIV_CS(dst, alpha, dst)
+MACRO_END;
+
 // rpt - return pointer
 //
 // roll:
