@@ -537,7 +537,7 @@ struct Shading
              const unsigned    depth     = 0,
              unsigned          ray_count = 0) noexcept
     {
-        if(depth > max_depth) return {{}, ray_count};
+        if(depth >= max_depth) return {{}, ray_count};
 
         const auto [prim_id, isect] = std::apply(Hider{ray}, Scene::geometry);
         ray_count++;
@@ -605,7 +605,7 @@ struct Shading
         auto cc = bump_ctr(c, ctr_incr);
 
         auto [L, rc] =
-            radiance(max_depth, bias_ray(p, d), cc, depth + 1, ray_count);
+            radiance(max_depth, bias_ray(p, d), cc, depth, ray_count);
 
         cc = bump_ctr(cc, ctr_incr);
 
