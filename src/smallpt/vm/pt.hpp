@@ -751,9 +751,9 @@ KERNEL(pt, IVAR(ppp), IVAR(tmp0), TVAR(threshold), IVAR(maxdepth), TVAR(vr00))
     TMOV_CS(CS(o0), scene::CAM_Px),
     TMOV_CS(CS(o1), scene::CAM_Py),
     TMOV_CS(CS(o2), scene::CAM_Pz),
-    TMOV(PL0, 1),               // path product
-    TMOV(PL1, 1),
-    TMOV(PL2, 1),
+    TMOV(TP0, 1),               // path product
+    TMOV(TP1, 1),
+    TMOV(TP2, 1),
     TMOV(SL0, 0),               // path sum
     TMOV(SL1, 0),
     TMOV(SL2, 0),
@@ -784,7 +784,7 @@ KERNEL(pt, IVAR(ppp), IVAR(tmp0), TVAR(threshold), IVAR(maxdepth), TVAR(vr00))
     IEQ(tmp2, pid, 12),                                       // miss?
     IORGE(tmp2, tmp2, depth, maxdepth),                       // ||depth>maxdepth
     TCMOV(tmp1, tmp2, 0, tmp1),                               // miss||depth>maxdepth?0:l
-    INSERT_TMACRO(vec3_scalar_mul, CS(vr0), CS(PL), CS(tmp1)),
+    INSERT_TMACRO(vec3_scalar_mul, CS(vr0), CS(TP), CS(tmp1)),
     INSERT_TMACRO(vec_vec3_add, CS(SL), CS(SL), CS(vr0)),     // contribute to path
     ILOR(tmp0, tmp0, tmp2),                                   // hit light||miss||depth>=maxdepth
     IADD(depth, depth, 1),
@@ -836,13 +836,13 @@ KERNEL(pt, IVAR(ppp), IVAR(tmp0), TVAR(threshold), IVAR(maxdepth), TVAR(vr00))
     IEQ(tmp2, pid, 11),
     TCMOV(tmp0, tmp2, tmp0, 0),
     INSERT_TMACRO(vec3_scalar_mul, CS(vr0), CS(clr), CS(tmp0)), // vr0 <- direct lighting
-    INSERT_TMACRO(vec_vec3_mul, CS(vr0), CS(PL), CS(vr0)),
+    INSERT_TMACRO(vec_vec3_mul, CS(vr0), CS(TP), CS(vr0)),
     INSERT_TMACRO(vec_vec3_add, CS(SL), CS(SL), CS(vr0)), // contribute to sample path
     IMOV(rpt, 4),                                       // return to lambert_indirect
     JMP(roll),
 // indirect diffuse
     LABEL(lambert_indirect),
-    INSERT_TMACRO(vec_vec3_mul, CS(PL), CS(PL), CS(clr)),
+    INSERT_TMACRO(vec_vec3_mul, CS(TP), CS(TP), CS(clr)),
     INSERT_TMACRO(onb, CS(vr00), CS(vr01), CS(vr02), CS(t0), CS(t1), CS(t2), CS(n0), CS(n1), CS(n2)),
     INSERT_TMACRO(vec3_norm, CS(vr0), CS(tmp0)),
     INSERT_TMACRO(vec3_norm, CS(t), CS(tmp0)),
@@ -897,13 +897,13 @@ KERNEL(pt, IVAR(ppp), IVAR(tmp0), TVAR(threshold), IVAR(maxdepth), TVAR(vr00))
     TLT(tmp0, tmp1, 0),         // tmp0 <- cos2t<0 total internal reflection
     TORLT(tmp0, tmp0, u0, vr30),      // tmp0||u0<f ? reflect
     TMUL(vr10, vr10, vr10),           // eta*eta
-    INSERT_TMACRO(vec3_scalar_div, CS(clr), CS(PL), CS(vr10)), // clr <- refraction throughput
+    INSERT_TMACRO(vec3_scalar_div, CS(clr), CS(TP), CS(vr10)), // clr <- refraction throughput
     TCMOV(d0, tmp0, vr50, d0),
     TCMOV(d1, tmp0, vr51, d1),
     TCMOV(d2, tmp0, vr52, d2),
-    TCMOV(PL0, tmp0, PL0, clr0),
-    TCMOV(PL1, tmp0, PL1, clr1),
-    TCMOV(PL2, tmp0, PL2, clr2),
+    TCMOV(TP0, tmp0, TP0, clr0),
+    TCMOV(TP1, tmp0, TP1, clr1),
+    TCMOV(TP2, tmp0, TP2, clr2),
     IMOV(rpt, 0),
     JMP(traverse_scene),
 // fin sample
