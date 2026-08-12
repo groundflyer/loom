@@ -699,6 +699,17 @@ TMACRO3(gtr, dst, dotWmWg, alpha)
     TDIV_CS(dst, alpha, dst)
 MACRO_END;
 
+TMACRO3(gaf, dst, ct, alpha)
+    TMUL_CS(dst, ct, ct),
+    TDIV_CS(dst, CS(1), dst),
+    TSUB_CS(dst, dst, CS(1)),
+    TMUL_CS(dst, dst, alpha),
+    TFMA_CS(dst, dst, alpha, CS(1)),
+    TSQRT_CS(dst, dst),
+    TADD_CS(dst, dst, CS(1)),
+    TDIV_CS(dst, CS(2), dst)
+MACRO_END;
+
 // rpt - return pointer
 //
 // roll:

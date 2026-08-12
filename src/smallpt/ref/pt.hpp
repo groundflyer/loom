@@ -378,8 +378,9 @@ gtr(const float dotWmWg, const float alpha) noexcept
 static float
 gaf(const float cos_theta, const float alpha) noexcept
 {
-    return 2 / (1 + std::sqrt(1 + alpha * alpha *
-                                      (1 / (cos_theta * cos_theta) - 1)));
+    return 2 / (1 + std::sqrt(std::fma(alpha * alpha,
+                                       (1 / (cos_theta * cos_theta) - 1),
+                                       1)));
 }
 
 /// @brief Microfacet slope generation.
