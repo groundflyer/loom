@@ -315,7 +315,7 @@ if(BUILD_DEBUGGERS)
     add_dependencies(dbgs ${name})
   endforeach()
 
-  target_compile_options(dbg_smallpt PRIVATE -ftemplate-depth=2048 -fbracket-depth=1024 -ftemplate-backtrace-limit=1)
+  target_compile_options(dbg_smallpt PRIVATE -ftemplate-depth=2048 -fbracket-depth=1280 -ftemplate-backtrace-limit=1)
 endif()
 
 if(BUILD_BENCHMARKS)
