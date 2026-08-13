@@ -710,6 +710,73 @@ TMACRO3(gaf, dst, ct, alpha)
     TDIV_CS(dst, CS(2), dst)
 MACRO_END;
 
+TMACRO12(get_slope, dst0, dst1, ct, u0, u1, tmp0, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6)
+    TSUB_CS(tmp1, CS(1), u0),
+    TDIV_CS(tmp1, u0, tmp1),
+    TSQRT_CS(tmp1, tmp1),       // tmp1 <- r
+    TSUB_CS(tmp2, CS(1), u1),
+    TMUL_CS(tmp2, PI2_CS, tmp2), // tmp2 <- phi
+    TCOS_CS(dst0, tmp2),
+    TMUL_CS(dst0, dst0, tmp1),
+    TSIN_CS(dst1, tmp2),
+    TMUL_CS(dst1, dst1, tmp1),
+    TGT_CS(tmp0, ct, CS(0.9999)),
+    IPJMP2_CS(tmp0, get_slope_mid, get_slope_end),
+    LABEL(get_slope_mid),
+    TMUL_CS(ct, ct, ct),        // ct <- cos_theta2
+    TSUB_CS(tmp0, CS(1), ct),
+    TDIV_CS(tmp0, tmp0, ct),    // tmp0 <- B2
+    TSQRT_CS(tmp1, tmp0),       // tmp1 <- B
+    TDIV_CS(tmp2, CS(1), tmp1), // tmp2 <- a
+    TMUL_CS(tmp2, tmp2, tmp2),
+    TDIV_CS(tmp2, CS(1), tmp2),
+    TADD_CS(tmp2, CS(1), tmp2),
+    TSQRT_CS(tmp2, tmp2),
+    TADD_CS(tmp2, CS(1), tmp2),
+    TDIV_CS(tmp2, CS(2), tmp2), // tmp2 <- G1
+    TDIV_CS(tmp2, u0, tmp2),
+    TFMS_CS(tmp2, tmp2, CS(2), CS(1)),
+    TMUL_CS(tmp3, tmp2, tmp2),  // tmp3 <- A2
+    TSUB_CS(tmp4, tmp3, CS(1)), // tmp4 <- denom
+    TCOPYSIGN_CS(tmp5, CS(1e-6), tmp4),
+    TABS_CS(tmp6, tmp4),
+    TLT_CS(tmp6, tmp6, CS(1e-6)),
+    TCMOV_CS(tmp4, tmp6, tmp5, tmp4),
+    TDIV_CS(tmp4, CS(1), tmp4), // tmp4 <- tmp
+    TSUB_CS(tmp3, tmp3, tmp0),
+    TMUL_CS(tmp3, tmp3, tmp4),
+    TMUL_CS(tmp0, tmp0, tmp4),
+    TFMS_CS(tmp0, tmp0, tmp4, tmp3),
+    TSQRT_CS(tmp0, tmp0),       // tmp0 <- D
+    TMUL_CS(tmp4, tmp1, tmp4),  // tmp4 <- Btmp
+    TSUB_CS(dst0, tmp4, tmp0),  // dst0 <- slopex1
+    TADD_CS(dst1, tmp4, tmp0),  // dst1 <- slopex2
+    TLT_CS(tmp2, tmp2, CS(0)),  // tmp2 <- A<0
+    TDIV_CS(tmp1, CS(1), tmp1), // tmp1 <- 1/B
+    TORGT_CS(tmp2, tmp2, dst1, tmp1), // tmp2 <- A < 0 || slopex2 > 1/B
+    TCMOV_CS(dst0, tmp2, dst0, dst1), // dst0 <- retx
+    TGT_CS(tmp1, u1, CS(0.5)),        // tmp1 <- sy > 0.5
+    TSUB_CS(tmp0, u1, CS(0.5)),
+    TMUL_CS(tmp0, tmp0, CS(2)), // tmp0 <- sy (sy > .5)
+    TSUB_CS(u1, CS(0.5), u1),
+    TMUL_CS(u1, u1, CS(2)),     // u1 <- sy (else)
+    TCMOV_CS(u1, tmp1, tmp0, u1),      // u1 <- sy
+    TCMOV_CS(u0, tmp1, CS(1), CS(-1)), // u0 <- S
+    TFMA_CS(tmp0, u1, CS(0.093073), CS(0.309420)),
+    TFMA_CS(tmp0, tmp0, u1, CS(-1)),
+    TFMA_CS(tmp0, tmp0, u1, CS(0.597999)),
+    TFMA_CS(tmp1, u1, CS(0.27385), CS(-0.73369)),
+    TFMA_CS(tmp1, tmp1, u1, CS(0.46341)),
+    TMUL_CS(tmp1, tmp1, u1),
+    TDIV_CS(tmp1, tmp1, tmp0),  // tmp1 <- z
+    TMUL_CS(dst1, dst0, dst0),
+    TADD_CS(dst1, dst1, CS(1)),
+    TSQRT_CS(dst1, dst1),
+    TMUL_CS(dst1, dst1, tmp1),
+    TMUL_CS(dst1, dst1, u0),
+    LABEL(get_slope_end)
+MACRO_END;
+
 // rpt - return pointer
 //
 // roll:

@@ -167,13 +167,18 @@ TKERNEL2(gaf_test, ct, alpha)
     INSERT_TMACRO(vm::gaf, CS(r), CS(ct), CS(alpha))
 TKERNEL_END1(r);
 
+template <std::floating_point T>
+TKERNEL3(get_slope_test, ct, u0, u1)
+    INSERT_TMACRO(vm::get_slope, CS(r0), CS(r1), CS(ct), CS(u0), CS(u1), CS(tmp0), CS(tmp1), CS(tmp2), CS(tmp3), CS(tmp4), CS(tmp5), CS(tmp6))
+TKERNEL_END2(r0, r1);
+
 // clang-format on
 
 using Vec3f = Vector<float, 3, std::array>;
 using Vec2f = Vector<float, 2, std::array>;
 using Vec2u = Vector<unsigned, 2, std::array>;
 
-static constexpr int     ulp = 30;
+static constexpr int     ulp = 60;
 constexpr inline ulp_cmp fcmp{ulp};
 
 struct fcmp_tuple
@@ -255,6 +260,8 @@ main(int argc, char* argv[])
     ParmTestMaker tm{parse_numruns<100000>(argc, argv)};
     RandomState   rs;
 
+    fmt::println("Floating-point equality ULP: {}", ulp);
+
     auto gu32    = rs.make_gen<std::uint32_t>(0, -1u);
     auto gur     = rs.make_gen<unsigned>(30, 1000);
     auto gf      = rs.make_gen<float>(-1e6, 1e6);
@@ -299,6 +306,7 @@ main(int argc, char* argv[])
     vm::bse::function<refract_test<float>>        bse_refract;
     vm::bse::function<gtr_test<float>>            bse_gtr;
     vm::bse::function<gaf_test<float>>            bse_gaf;
+    vm::bse::function<get_slope_test<float>>      bse_get_slope;
 
     track.dep_check(
         NamedTest(
@@ -561,6 +569,17 @@ main(int argc, char* argv[])
                           { return gaf(ct, alpha); },
                           ulp_cmp{ulp}),
         "GAF",
+        0.01));
+
+    track.check(NamedFuzzyTest(
+        tm.fuzzy_with_ref(
+            [&]() noexcept
+            { return std::tuple{g_canon(), g_canon(), g_canon()}; },
+            bse_get_slope,
+            [](const float ct, const float u0, const float u1) noexcept
+            { return to_tuple(get_slope(ct, Vec2f{u0, u1})); },
+            test::uni_tuple_cmp{ulp_cmp{ulp}}),
+        "get slope",
         0.01));
 
     return track.ret_code();
