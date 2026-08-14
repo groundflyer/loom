@@ -269,7 +269,7 @@ main(int argc, char* argv[])
     ParmTestMaker tm{parse_numruns<100000>(argc, argv)};
     RandomState   rs;
 
-    fmt::println("Floating-point equality ULP: {}", ulp);
+    fmt::print("Floating-point equality ULP: {}\n", ulp);
 
     auto gu32    = rs.make_gen<std::uint32_t>(0, -1u);
     auto gur     = rs.make_gen<unsigned>(30, 1000);
