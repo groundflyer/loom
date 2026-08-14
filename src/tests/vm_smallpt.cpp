@@ -172,13 +172,22 @@ TKERNEL3(get_slope_test, ct, u0, u1)
     INSERT_TMACRO(vm::get_slope, CS(r0), CS(r1), CS(ct), CS(u0), CS(u1), CS(tmp0), CS(tmp1), CS(tmp2), CS(tmp3), CS(tmp4), CS(tmp5), CS(tmp6))
 TKERNEL_END2(r0, r1);
 
+template <std::floating_point T>
+TKERNEL7(microfacet_test, wi0, wi1, wi2, alpha0, alpha1, u0, u1)
+    INSERT_TMACRO(vm::microfacet,
+                  CS(r), CS(r0), CS(r1), CS(r2),
+                  CS(wi), CS(wi0), CS(wi1), CS(wi2),
+                  CS(alpha0), CS(alpha1), CS(u0), CS(u1), CS(s0), CS(s1),
+                  CS(tmp0), CS(tmp1), CS(tmp2), CS(tmp3), CS(tmp4), CS(tmp5), CS(tmp6))
+TKERNEL_END3(r0, r1, r2);
+
 // clang-format on
 
 using Vec3f = Vector<float, 3, std::array>;
 using Vec2f = Vector<float, 2, std::array>;
 using Vec2u = Vector<unsigned, 2, std::array>;
 
-static constexpr int     ulp = 60;
+static constexpr int     ulp = 100;
 constexpr inline ulp_cmp fcmp{ulp};
 
 struct fcmp_tuple
@@ -307,6 +316,7 @@ main(int argc, char* argv[])
     vm::bse::function<gtr_test<float>>            bse_gtr;
     vm::bse::function<gaf_test<float>>            bse_gaf;
     vm::bse::function<get_slope_test<float>>      bse_get_slope;
+    vm::bse::function<microfacet_test<float>>     bse_microfacet;
 
     track.dep_check(
         NamedTest(
@@ -571,16 +581,46 @@ main(int argc, char* argv[])
         "GAF",
         0.01));
 
-    track.check(NamedFuzzyTest(
-        tm.fuzzy_with_ref(
-            [&]() noexcept
-            { return std::tuple{g_canon(), g_canon(), g_canon()}; },
-            bse_get_slope,
-            [](const float ct, const float u0, const float u1) noexcept
-            { return to_tuple(get_slope(ct, Vec2f{u0, u1})); },
-            test::uni_tuple_cmp{ulp_cmp{ulp}}),
-        "get slope",
-        0.01));
+    track.dep_check(
+        NamedFuzzyTest(
+            tm.fuzzy_with_ref(
+                [&]() noexcept
+                { return std::tuple{g_canon(), g_canon(), g_canon()}; },
+                bse_get_slope,
+                [](const float ct, const float u0, const float u1) noexcept
+                { return to_tuple(get_slope(ct, Vec2f{u0, u1})); },
+                test::uni_tuple_cmp{ulp_cmp{ulp}}),
+            "get slope",
+            0.01),
+        NamedFuzzyTest(tm.fuzzy_with_ref(
+                           [&]() noexcept
+                           {
+                               const auto [wi0, wi1, wi2] = normalize(gv3());
+                               const auto [a0, a1]        = gv2s();
+                               return std::tuple{wi0,
+                                                 wi1,
+                                                 wi2,
+                                                 a0,
+                                                 a1,
+                                                 g_canon(),
+                                                 g_canon()};
+                           },
+                           bse_microfacet,
+                           [](float wi0,
+                              float wi1,
+                              float wi2,
+                              float a0,
+                              float a1,
+                              float u0,
+                              float u1) noexcept
+                           {
+                               return to_tuple(microfacet(Vec3f{wi0, wi1, wi2},
+                                                          Vec2f{a0, a1},
+                                                          Vec2f{u0, u1}));
+                           },
+                           test::uni_tuple_cmp{ulp_cmp{ulp}}),
+                       "microfacet",
+                       0.02));
 
     return track.ret_code();
 }

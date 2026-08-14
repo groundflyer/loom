@@ -777,6 +777,37 @@ TMACRO12(get_slope, dst0, dst1, ct, u0, u1, tmp0, tmp1, tmp2, tmp3, tmp4, tmp5, 
     LABEL(get_slope_end)
 MACRO_END;
 
+TMACRO21(microfacet,
+         dst,  dst0, dst1, dst2,
+         wi, wi0, wi1, wi2,
+         alpha0, alpha1,
+         u0, u1, s0, s1,
+         tmp0, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6)
+    TMUL_CS(wi0, wi0, alpha0),
+    TMUL_CS(wi1, wi1, alpha1),
+    INSERT_TMACRO(vec3_norm, wi, tmp0),
+    INSERT_TMACRO(get_slope, s0, s1, wi2, u0, u1, tmp0, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6),
+    TMUL_CS(tmp1, wi1, wi1),
+    TFMA_CS(tmp0, wi0, wi0, tmp1),
+    TSQRT_CS(tmp0, tmp0),       // tmp0 <- lensq
+    TGT_CS(tmp1, tmp0, CS(1e-12)), // tmp1 <- tb
+    TDIV_CS(tmp2, wi0, tmp0),
+    TDIV_CS(tmp3, wi1, tmp0),
+    TCMOV_CS(tmp2, tmp1, tmp2, CS(1)), // tmp2 <- cosphi
+    TCMOV_CS(tmp3, tmp1, tmp3, CS(0)), // tmp3 <- sinphi
+    TMUL_CS(dst0, tmp2, s0),
+    TFMA_CS(dst0, tmp3, s1, dst0),
+    TMUL_CS(dst0, dst0, alpha0),
+    TNEG_CS(tmp3, tmp3),
+    TMUL_CS(dst1, tmp3, s0),
+    TFMA_CS(dst1, tmp2, s1, dst1),
+    TMUL_CS(dst1, dst1, alpha1),
+    TMOV_CS(dst2, CS(1)),
+    TNEG_CS(dst0, dst0),
+    TNEG_CS(dst1, dst1),
+    INSERT_TMACRO(vec3_norm, dst, tmp0)
+MACRO_END;
+
 // rpt - return pointer
 //
 // roll:
