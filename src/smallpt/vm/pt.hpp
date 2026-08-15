@@ -808,6 +808,18 @@ TMACRO21(microfacet,
     INSERT_TMACRO(vec3_norm, dst, tmp0)
 MACRO_END;
 
+TMACRO7(anisorough_i, dst, wi, tu, tv, alpha0, alpha1, tmp0)
+    INSERT_TMACRO(vec3_dot, dst, wi, tu),  // dst <- cs
+    INSERT_TMACRO(vec3_dot, tmp0, wi, tv), // tmp0 <- sn
+    TMUL_CS(tmp0, tmp0, tmp0),
+    TMUL_CS(tmp0, tmp0, alpha1),
+    TMUL_CS(tmp0, tmp0, alpha1),
+    TMUL_CS(dst, dst, dst),
+    TMUL_CS(dst, dst, alpha0),
+    TFMA_CS(dst, dst, alpha0, tmp0),
+    TSQRT_CS(dst, dst)
+MACRO_END;
+
 // rpt - return pointer
 //
 // roll:

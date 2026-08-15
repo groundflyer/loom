@@ -181,6 +181,11 @@ TKERNEL7(microfacet_test, wi0, wi1, wi2, alpha0, alpha1, u0, u1)
                   CS(tmp0), CS(tmp1), CS(tmp2), CS(tmp3), CS(tmp4), CS(tmp5), CS(tmp6))
 TKERNEL_END3(r0, r1, r2);
 
+template <std::floating_point T>
+TKERNEL11(anisorough_i_test, wi0, wi1, wi2, tu0, tu1, tu2, tv0, tv1, tv2, alpha0, alpha1)
+    INSERT_TMACRO(vm::anisorough_i, CS(r), CS(wi), CS(tu), CS(tv), CS(alpha0), CS(alpha1), CS(tmp))
+TKERNEL_END1(r);
+
 // clang-format on
 
 using Vec3f = Vector<float, 3, std::array>;
@@ -317,6 +322,7 @@ main(int argc, char* argv[])
     vm::bse::function<gaf_test<float>>            bse_gaf;
     vm::bse::function<get_slope_test<float>>      bse_get_slope;
     vm::bse::function<microfacet_test<float>>     bse_microfacet;
+    vm::bse::function<anisorough_i_test<float>>   bse_anisorough_i;
 
     track.dep_check(
         NamedTest(
@@ -595,15 +601,12 @@ main(int argc, char* argv[])
         NamedFuzzyTest(tm.fuzzy_with_ref(
                            [&]() noexcept
                            {
-                               const auto [wi0, wi1, wi2] = normalize(gv3());
-                               const auto [a0, a1]        = gv2s();
-                               return std::tuple{wi0,
-                                                 wi1,
-                                                 wi2,
-                                                 a0,
-                                                 a1,
-                                                 g_canon(),
-                                                 g_canon()};
+                               const auto wi = to_tuple(normalize(gv3()));
+                               const auto a  = to_tuple(gv2s());
+                               return std::tuple_cat(
+                                   wi,
+                                   a,
+                                   std::tuple{g_canon(), g_canon()});
                            },
                            bse_microfacet,
                            [](float wi0,
@@ -621,6 +624,39 @@ main(int argc, char* argv[])
                            test::uni_tuple_cmp{ulp_cmp{ulp}}),
                        "microfacet",
                        0.02));
+
+    track.check(NamedFuzzyTest(
+        tm.fuzzy_with_ref(
+            [&]() noexcept
+            {
+                const auto wi = to_tuple(normalize(gv3()));
+                const auto a  = to_tuple(gv2s());
+                const Vec3 n  = normalize(gv3());
+                const Vec3 tu = cross(n, normalize(gv3()));
+                const Vec3 tv = cross(n, tu);
+                return std::tuple_cat(wi, to_tuple(tu), to_tuple(tv), a);
+            },
+            bse_anisorough_i,
+            [](float wi0,
+               float wi1,
+               float wi2,
+               float tu0,
+               float tu1,
+               float tu2,
+               float tv0,
+               float tv1,
+               float tv2,
+               float a0,
+               float a1) noexcept
+            {
+                return anisorough_i(Vec3f{wi0, wi1, wi2},
+                                    Vec3f{tu0, tu1, tu2},
+                                    Vec3f{tv0, tv1, tv2},
+                                    Vec2f(a0, a1));
+            },
+            ulp_cmp{ulp}),
+        "anisorough_i",
+        0.01));
 
     return track.ret_code();
 }
