@@ -820,6 +820,20 @@ TMACRO7(anisorough_i, dst, wi, tu, tv, alpha0, alpha1, tmp0)
     TSQRT_CS(dst, dst)
 MACRO_END;
 
+TMACRO10(anisorough_n, dst, wm, wg, tu, tv, dotWmWg, alpha0, alpha1, tmp0, vtmp)
+    INSERT_TMACRO(vec3_scalar_mul, vtmp, wg, dotWmWg),
+    INSERT_TMACRO(vec_vec3_sub, vtmp, wm, vtmp),
+    INSERT_TMACRO(vec3_norm, vtmp, tmp0), // vtmp <- ph
+    INSERT_TMACRO(vec3_dot, dst, vtmp, tu),  // cu <- dst
+    INSERT_TMACRO(vec3_dot, tmp0, vtmp, tv), // cv <- tmp0
+    TMUL_CS(tmp0, tmp0, tmp0),
+    TDIV_CS(tmp0, tmp0, alpha1),
+    TMUL_CS(dst, dst, dst),
+    TDIV_CS(dst, dst, alpha0),
+    TADD_CS(dst, dst, tmp0),
+    TDIV_CS(dst, CS(1), dst)
+MACRO_END;
+
 // rpt - return pointer
 //
 // roll:

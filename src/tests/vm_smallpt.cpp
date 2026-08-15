@@ -186,6 +186,12 @@ TKERNEL11(anisorough_i_test, wi0, wi1, wi2, tu0, tu1, tu2, tv0, tv1, tv2, alpha0
     INSERT_TMACRO(vm::anisorough_i, CS(r), CS(wi), CS(tu), CS(tv), CS(alpha0), CS(alpha1), CS(tmp))
 TKERNEL_END1(r);
 
+template <std::floating_point T>
+TKERNEL14(anisorough_n_test, wm0, wm1, wm2, n0, n1, n2, tu0, tu1, tu2, tv0, tv1, tv2, alpha0, alpha1)
+    INSERT_TMACRO(vm::vec3_dot, CS(dotWmWg), CS(wm), CS(n)),
+    INSERT_TMACRO(vm::anisorough_n, CS(r), CS(wm), CS(n), CS(tu), CS(tv), CS(dotWmWg), CS(alpha0), CS(alpha1), CS(tmp), CS(vtmp))
+TKERNEL_END1(r);
+
 // clang-format on
 
 using Vec3f = Vector<float, 3, std::array>;
@@ -323,6 +329,7 @@ main(int argc, char* argv[])
     vm::bse::function<get_slope_test<float>>      bse_get_slope;
     vm::bse::function<microfacet_test<float>>     bse_microfacet;
     vm::bse::function<anisorough_i_test<float>>   bse_anisorough_i;
+    vm::bse::function<anisorough_n_test<float>>   bse_anisorough_n;
 
     track.dep_check(
         NamedTest(
@@ -625,38 +632,86 @@ main(int argc, char* argv[])
                        "microfacet",
                        0.02));
 
-    track.check(NamedFuzzyTest(
-        tm.fuzzy_with_ref(
-            [&]() noexcept
-            {
-                const auto wi = to_tuple(normalize(gv3()));
-                const auto a  = to_tuple(gv2s());
-                const Vec3 n  = normalize(gv3());
-                const Vec3 tu = cross(n, normalize(gv3()));
-                const Vec3 tv = cross(n, tu);
-                return std::tuple_cat(wi, to_tuple(tu), to_tuple(tv), a);
-            },
-            bse_anisorough_i,
-            [](float wi0,
-               float wi1,
-               float wi2,
-               float tu0,
-               float tu1,
-               float tu2,
-               float tv0,
-               float tv1,
-               float tv2,
-               float a0,
-               float a1) noexcept
-            {
-                return anisorough_i(Vec3f{wi0, wi1, wi2},
-                                    Vec3f{tu0, tu1, tu2},
-                                    Vec3f{tv0, tv1, tv2},
-                                    Vec2f(a0, a1));
-            },
-            ulp_cmp{ulp}),
-        "anisorough_i",
-        0.01));
+    track.check(NamedFuzzyTest(tm.fuzzy_with_ref(
+                                   [&]() noexcept
+                                   {
+                                       const auto wi =
+                                           to_tuple(normalize(gv3()));
+                                       const Vec3 n = normalize(gv3());
+                                       const Vec3 tu =
+                                           cross(n, normalize(gv3()));
+                                       const Vec3 tv = cross(n, tu);
+                                       return std::tuple_cat(wi,
+                                                             to_tuple(tu),
+                                                             to_tuple(tv),
+                                                             to_tuple(gv2s()));
+                                   },
+                                   bse_anisorough_i,
+                                   [](float wi0,
+                                      float wi1,
+                                      float wi2,
+                                      float tu0,
+                                      float tu1,
+                                      float tu2,
+                                      float tv0,
+                                      float tv1,
+                                      float tv2,
+                                      float a0,
+                                      float a1) noexcept
+                                   {
+                                       return anisorough_i(Vec3f{wi0, wi1, wi2},
+                                                           Vec3f{tu0, tu1, tu2},
+                                                           Vec3f{tv0, tv1, tv2},
+                                                           Vec2f(a0, a1));
+                                   },
+                                   ulp_cmp{ulp}),
+                               "anisorough_i",
+                               0.01));
+
+    track.check(NamedFuzzyTest(tm.fuzzy_with_ref(
+                                   [&]() noexcept
+                                   {
+                                       const Vec3f wi = normalize(gv3());
+                                       Vec3        n  = normalize(gv3());
+                                       if(dot(n, wi) < 0) n = -n;
+                                       const Vec3 wm = normalize(wi + n);
+                                       const Vec3 tu =
+                                           cross(n, normalize(gv3()));
+                                       const Vec3 tv = cross(n, tu);
+                                       return std::tuple_cat(to_tuple(wm),
+                                                             to_tuple(n),
+                                                             to_tuple(tu),
+                                                             to_tuple(tv),
+                                                             to_tuple(gv2s()));
+                                   },
+                                   bse_anisorough_n,
+                                   [](float wm0,
+                                      float wm1,
+                                      float wm2,
+                                      float n0,
+                                      float n1,
+                                      float n2,
+                                      float tu0,
+                                      float tu1,
+                                      float tu2,
+                                      float tv0,
+                                      float tv1,
+                                      float tv2,
+                                      float a0,
+                                      float a1) noexcept
+                                   {
+                                       const Vec3f wm{wm0, wm1, wm2};
+                                       const Vec3f wg{n0, n1, n2};
+                                       return anisorough_n(wm,
+                                                           wg,
+                                                           Vec3f{tu0, tu1, tu2},
+                                                           Vec3f{tv0, tv1, tv2},
+                                                           dot(wm, wg),
+                                                           Vec2f(a0, a1));
+                                   },
+                                   ulp_cmp{ulp}),
+                               "anisorough_n",
+                               0.01));
 
     return track.ret_code();
 }
