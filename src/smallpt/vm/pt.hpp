@@ -431,6 +431,10 @@ struct scene
 
     // glass sphere index of refraction
     using GLASS_IOR = CS(1.5);
+
+    // metall cylinder constants
+    using METAL_ALPHA0 = CS(0.3);
+    using METAL_ALPHA1 = CS(0.05);
 };
 
 TMACRO5(sample_light_disk, dst, u0, u1, tmp, vtmp)
@@ -643,12 +647,12 @@ TMACRO(set_materials)
     TSCTN_CS(CS(n2), CS(pid), CS(0), CS(0), CS(0), CS(0), CS(1), scene::TH0_Nz, scene::TH1_Nz, scene::TH2_Nz),
     JMP(set_materials_end),
     LABEL(set_disk_normal),
-    TMOV(n0, 0),
-    TMOV(n2, 0),
     IEQ(tmp0, pid, 10),         // tmp0 <- cap?
     INSERT_TMACRO(vec_vec3_sub, CS(vr2), CS(o), scene::CL_CP), // compute tangent speculatively
     INSERT_TMACRO(vec3_norm, CS(vr2), CS(tmp1)),               // normalize tangent
+    TMOV(n0, 0),
     TCMOV(n1, tmp0, 1, -1),
+    TMOV(n2, 0),
     TCMOV(t0, tmp0, vr20, t0),
     TCMOV(t1, tmp0, vr21, t1),
     TCMOV(t2, tmp0, vr22, t2),
@@ -888,13 +892,14 @@ KERNEL(pt, IVAR(ppp), IVAR(tmp0), TVAR(threshold), IVAR(maxdepth), TVAR(vr00))
     INSERT_MACRO(threefry2x32r32, CS(u0), CS(u1), scene::K0, scene::K1, scene::K2, CS(tmp0), CS(tmp1)),
     INSERT_MACRO(bump_ctr, CS(c0), CS(c1), CS(39916801), CS(tmp0), CS(tmp1), CS(tmp2)),
     INSERT_TMACRO(sample_u, CS(u0), CS(u1)),
-    IPJMP8(rpt, sample_pixel, traverse_scene, test_direct_lighting, direct_lighting, lambert_indirect, window, tth_begin, glass),
+//              0             1               2                             3                        4                 5       6          7      8
+    IPJMP9(rpt, sample_pixel, traverse_scene, test_diffuse_direct_lighting, diffuse_direct_lighting, lambert_indirect, window, tth_begin, glass, indirect_metal),
 // sample pixel
     LABEL(sample_pixel),
     TMOV_CS(CS(o0), scene::CAM_Px),
     TMOV_CS(CS(o1), scene::CAM_Py),
     TMOV_CS(CS(o2), scene::CAM_Pz),
-    TMOV(TP0, 1),               // path product
+    TMOV(TP0, 1),               // path throughput
     TMOV(TP1, 1),
     TMOV(TP2, 1),
     TMOV(SL0, 0),               // path sum
@@ -919,7 +924,7 @@ KERNEL(pt, IVAR(ppp), IVAR(tmp0), TVAR(threshold), IVAR(maxdepth), TVAR(vr00))
     TMOV(vr00, 0),
     TMOV(vr01, 0),
     TMOV(vr02, 0),
-    IPJMP3(rpt, radiance, direct_lighting_pdf, lambert_indirect),
+    IPJMP3(rpt, radiance, diffuse_direct_lighting_pdf, lambert_indirect),
 // radiance
     LABEL(radiance),
     IEQ(tmp0, pid, 11),                // hit light?
@@ -941,11 +946,11 @@ KERNEL(pt, IVAR(ppp), IVAR(tmp0), TVAR(threshold), IVAR(maxdepth), TVAR(vr00))
     ILT(tmp0, pid, 4),          // walls?
     ISUB(tmp1, pid, 4),
     IMIN(tmp1, tmp1, 6),
-    ISCT7(tmp2, tmp1, 5, 6, 6, 6, 7, 2, 2), // select material
+    ISCT7(tmp2, tmp1, 5, 6, 6, 6, 7, 8, 8), // select material
     ICMOV(rpt, tmp0, 2, tmp2),
     JMP(roll),
 // test direct lighting
-    LABEL(test_direct_lighting),
+    LABEL(test_diffuse_direct_lighting),
     TLT_CS(CS(tmp0), CS(u0), scene::L_PNEE),
     TMOV(vr00, 0),
     TMOV(vr01, 0),
@@ -953,7 +958,7 @@ KERNEL(pt, IVAR(ppp), IVAR(tmp0), TVAR(threshold), IVAR(maxdepth), TVAR(vr00))
     ICMOV(rpt, tmp0, 3, 4),     // return to direct_ligting or skip to indirect
     JMP(roll),
 // direct lighting
-    LABEL(direct_lighting),
+    LABEL(diffuse_direct_lighting),
     TMOV(pdf_l, 0),
     INSERT_TMACRO(sample_light_disk, CS(d), CS(u0), CS(u1), CS(tmp0), CS(vr2)),
     INSERT_TMACRO(vec_vec3_sub, CS(d), CS(d), CS(o)),
@@ -963,7 +968,7 @@ KERNEL(pt, IVAR(ppp), IVAR(tmp0), TVAR(threshold), IVAR(maxdepth), TVAR(vr00))
     ICMOV(rpt, tmp0, 1, 4),               // return to compute pdf after traverse, or skip to lambert indirect after roll
     IPJMP2(tmp0, roll, traverse_scene),
 // direct lighting pdf
-    LABEL(direct_lighting_pdf),
+    LABEL(diffuse_direct_lighting_pdf),
     INSERT_TMACRO(vec_vec3_sub, CS(vr2), scene::L_P, CS(o)),
     INSERT_TMACRO(vec3_length2, CS(pdf_l), CS(vr2)), // pdf_l <- l
     INSERT_TMACRO(vec3_dot, CS(tmp0), scene::L_N, CS(d)),
@@ -1049,6 +1054,40 @@ KERNEL(pt, IVAR(ppp), IVAR(tmp0), TVAR(threshold), IVAR(maxdepth), TVAR(vr00))
     TCMOV(TP2, tmp0, TP2, clr2),
     IMOV(rpt, 0),
     JMP(traverse_scene),
+// indirect metal
+    LABEL(indirect_metal),
+    INSERT_TMACRO(vec3_negate, CS(vr0), CS(d)), // vr0 <- wi
+    INSERT_TMACRO(vec3_cross, CS(vr1), CS(n), CS(t), CS(tmp0)), // vr1 <- b
+    INSERT_TMACRO(microfacet,
+                  CS(vr2), CS(vr20), CS(vr21), CS(vr22), // vr2 <- wm
+                  CS(vr0), CS(vr00), CS(vr01), CS(vr02),
+                  scene::METAL_ALPHA0, scene::METAL_ALPHA1,
+                  CS(u0), CS(u1), CS(tmp0), CS(tmp1),
+                  CS(tmp2), CS(vr30), CS(vr31), CS(vr32), CS(vr40), CS(vr41), CS(vr42)),
+    INSERT_TMACRO(vec3_scalar_mul, CS(vr3), CS(t), CS(vr20)),
+    INSERT_TMACRO(vec3_scalar_mul, CS(vr4), CS(vr1), CS(vr21)),
+    INSERT_TMACRO(vec3_scalar_mul, CS(vr5), CS(n), CS(vr22)),
+    INSERT_TMACRO(vec_vec3_add, CS(vr2), CS(vr3), CS(vr4)),
+    INSERT_TMACRO(vec_vec3_add, CS(vr2), CS(vr2), CS(vr5)),
+    INSERT_TMACRO(vec3_norm, CS(vr2), CS(tmp0)),
+    INSERT_TMACRO(vec3_dot, CS(tmp0), CS(vr2), CS(vr0)),       // tmp0 <- dot(wm, wi)
+    TMOV(vr30, d0),
+    TMOV(vr31, d1),
+    TMOV(vr32, d2),
+    INSERT_TMACRO(reflect, CS(d), CS(vr2), CS(vr3), CS(tmp0)), // d <- wo
+    INSERT_TMACRO(vec3_dot, CS(tmp1), CS(n), CS(d)),         // tmp1 <- dotWgWo
+    INSERT_TMACRO(vec3_dot, CS(tmp0), CS(n), CS(vr2)),         // tmp0 <- dotWgWm
+    TLT(tmp2, tmp1, 0),                                        // tmp2 <- dotWgWo < 0
+    INSERT_TMACRO(anisorough_n, CS(vr40), CS(vr2),             // vr40 <- alpha_n
+                  CS(n), CS(t), CS(vr1), CS(tmp0), scene::METAL_ALPHA0, scene::METAL_ALPHA1, CS(vr41), CS(vr5)),
+    INSERT_TMACRO(gaf, CS(vr41), CS(tmp0), CS(vr40)), // vr41 <- G1
+    INSERT_TMACRO(vec_vec3_mul, CS(vr5), CS(TP), CS(clr)),
+    // INSERT_TMACRO(vec3_scalar_mul, CS(vr5), CS(vr5), CS(vr41)),
+    TCMOV(TP0, tmp2, 0, vr50),
+    TCMOV(TP1, tmp2, 0, vr51),
+    TCMOV(TP2, tmp2, 0, vr52),
+    IMOV(rpt, 0),
+    IPJMP2(tmp2, traverse_scene, fin_sample),
 // fin sample
     LABEL(fin_sample),
     INSERT_TMACRO(vec_vec3_add, CS(L), CS(L), CS(SL)), // contribute sample
