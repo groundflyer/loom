@@ -3682,6 +3682,19 @@ class threaded_dispatch
                             MK_CASE(6);
                             MK_CASE(7);
                         }
+                    else if constexpr(spec::l == 9)
+                        switch(next_branch)
+                        {
+                            MK_CASE(0);
+                            MK_CASE(1);
+                            MK_CASE(2);
+                            MK_CASE(3);
+                            MK_CASE(4);
+                            MK_CASE(5);
+                            MK_CASE(6);
+                            MK_CASE(7);
+                            MK_CASE(8);
+                        }
                     else
                         static_assert(false, "Add more cases");
                 }
