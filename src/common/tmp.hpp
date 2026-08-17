@@ -1137,8 +1137,7 @@ for_each_arg(type_sequence<Ts...> /* list */, F&& f, Args&&... args) noexcept(
 
 /// @brief Consecutively invoke @p f with each class of @p list as the first
 /// template parameter and @p args as function parameters and put results into
-/// an instance of @p Tuple.
-///
+/// an instance of @p Ret.
 /// It's similar to std::transform or loom::map_tuple, except the input is a
 /// list of types, so it can be seen as transformation of virtual entities
 /// (types) to actual values.
@@ -1147,6 +1146,15 @@ for_each_arg(type_sequence<Ts...> /* list */, F&& f, Args&&... args) noexcept(
 /// @code
 /// auto v_n = f<T_n>(args...);
 /// @endcode
+template <typename Ret, typename F, typename... Ts, typename... Args>
+constexpr Ret
+materialize_with(type_sequence<Ts...> /*list*/, F&& f, Args&&... args) noexcept(
+    (... && noexcept(f.template operator()<Ts>(std::forward<Args>(args)...))))
+{
+    return { f.template operator()<Ts>(std::forward<Args>(args)...)... };
+}
+
+/// @brief Same as materialize_with, but infer actual tuple type.
 ///
 /// @return @p Tuple of resulting values.
 /// @tparam Tuple class template to hold resulting values.
@@ -1155,8 +1163,12 @@ template <template <typename...> typename Tuple = std::tuple,
           typename... Ts,
           typename... Args>
 constexpr decltype(auto)
-map2tuple(type_sequence<Ts...> /*list*/, F&& f, Args&&... args) noexcept(
-    (... && noexcept(f.template operator()<Ts>(std::forward<Args>(args)...))))
+materialize_to_tuple(
+    type_sequence<Ts...> /*list*/,
+    F&& f,
+    Args&&... args) noexcept((... &&
+                              noexcept(f.template operator()<Ts>(
+                                  std::forward<Args>(args)...))))
 {
     return Tuple<std::remove_cvref_t<decltype(f.template operator()<Ts>(
         std::forward<Args>(args)...))>...> {
@@ -1164,7 +1176,8 @@ map2tuple(type_sequence<Ts...> /*list*/, F&& f, Args&&... args) noexcept(
     };
 }
 
-/// @brief Same as map2tuple but if @p list consists of one element, returns the unwrapped value.
+/// @brief Same as materialize_to_tuple but if @p list consists of one element,
+/// returns the unwrapped value.
 template <template <typename...> typename Tuple = std::tuple,
           typename F,
           typename... Ts,
@@ -1174,9 +1187,9 @@ maybe_collect(type_sequence<Ts...> list, F&& f, Args&&... args) noexcept(
     (... && noexcept(f.template operator()<Ts>(std::forward<Args>(args)...))))
 {
     if constexpr(sizeof...(Ts) > 1)
-        return map2tuple<Tuple>(list,
-                                std::forward<F>(f),
-                                std::forward<Args>(args)...);
+        return materialize_to_tuple<Tuple>(list,
+                                           std::forward<F>(f),
+                                           std::forward<Args>(args)...);
     else
         return f.template operator()<Ts...>(std::forward<Args>(args)...);
 }

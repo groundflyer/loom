@@ -918,6 +918,21 @@ print_state(K, const _Mem& mem, const std::bitset<N>& mask, unsigned cw)
     fmt::print("\r\n");
 }
 
+template <std::size_t N, typename Registers>
+std::array<std::string, N>
+registers_list(Registers regs) noexcept
+{
+    std::array<std::string, N> ret =
+        typelist::materialize_with<std::array<std::string, N>>(
+            regs,
+            []<typename S>() noexcept { return std::string(prettify<S>{}()); });
+    std::ranges::sort(
+        ret,
+        [](const std::string& a, const std::string& b) noexcept
+        { return !(b == vm::_pc_char) && (a == vm::_pc_char || a < b); });
+    return ret;
+}
+
 constexpr char
 mod_ctrl(char c) noexcept
 {
@@ -1151,16 +1166,21 @@ inspect(int              argc,
 
     if(pi)
     {
+        using reg_names                = K::reg_names;
+        constexpr std::size_t num_regs = typelist::length<reg_names>;
+
         fmt::print("Basic blocks: {:>4}\n"
                    "Instructions: {:>4}\n"
                    "Registers:    {:>4}\n"
                    "Variables:    {:>4}\n"
-                   "State size:   {:>4} bytes\n\n",
+                   "State size:   {:>4} bytes\n\n"
+                   "Registers list: {}\n\n",
                    K::num_blocks,
                    typelist::length<typename K::stated_comps>,
-                   typelist::length<typename K::reg_names>,
+                   num_regs,
                    typelist::length<typename K::variables>,
-                   K::state_size);
+                   K::state_size,
+                   fmt::join(registers_list<num_regs>(reg_names{}), " "));
         if(!pp) return 0;
     }
 
