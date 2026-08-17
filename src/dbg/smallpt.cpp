@@ -57,8 +57,16 @@ main(int argc, char* argv[])
                                  PRETTIFY_TMACRO(float, luminance),
                                  PRETTIFY_TMACRO(float, schlick),
                                  PRETTIFY_TMACRO(float, reflect),
+                                 PRETTIFY_TMACRO(float, refract),
                                  PRETTIFY_TMACRO(float, compute_eta),
-                                 PRETTIFY_TMACRO(float, reflectance)>>(
+                                 PRETTIFY_TMACRO(float, reflectance),
+                                 PRETTIFY_TMACRO(float, comp_f),
+                                 PRETTIFY_TMACRO(float, gtr),
+                                 PRETTIFY_TMACRO(float, gaf),
+                                 PRETTIFY_TMACRO(float, get_slope),
+                                 PRETTIFY_TMACRO(float, microfacet),
+                                 PRETTIFY_TMACRO(float, anisorough_i),
+                                 PRETTIFY_TMACRO(float, anisorough_n)>>(
         argc,
         argv,
         std::tuple{option<"enc-pp">("encoded pixel position",
