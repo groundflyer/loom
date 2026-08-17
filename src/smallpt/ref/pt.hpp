@@ -225,7 +225,7 @@ class cornell_box
             static constexpr Rgb  color{0, 0.212, 0.553};
         };
 
-        struct Metall
+        struct Metal
         {
             static constexpr Vec2r alpha{0.3, 0.05};
             static constexpr Rgb   color{1, 0.786, 0.427};
@@ -242,7 +242,7 @@ class cornell_box
             Lambert{Rgb{0.2, 1, 0.4}}, // 2
             Plastic{},                 // 3
             Glass{},                   // 4
-            Metall{},                  // 5
+            Metal{},                   // 5
             Emission{},                // 6
             Window{}                   // 7
         };
@@ -704,10 +704,10 @@ struct Shading
     }
 
     ret_t
-    operator()(const Gallery::Metall&) const noexcept
+    operator()(const Gallery::Metal&) const noexcept
     {
         const Vec3f wi    = -i;
-        const Vec2f alpha = Gallery::Metall::alpha;
+        const Vec2f alpha = Gallery::Metal::alpha;
         const Vec3f b     = cross(n, t);
 
         const auto [wmx, wmy, wmz] =
@@ -748,7 +748,7 @@ struct Shading
             }
         }
 
-        return {Gallery::Metall::color * L, rc};
+        return {Gallery::Metal::color * L, rc};
     }
 
     ret_t
