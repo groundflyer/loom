@@ -4,14 +4,11 @@
 
 #pragma once
 
-#if !defined(NDEBUG) || defined(DEBUG)
 #include <cassert>
-#define ASSERT(CONDITION, MESSAGE) assert((CONDITION) && MESSAGE)
-#else
-#define ASSERT(CONDITION, MESSAGE)
-#endif
 
-#define CHECK_INDEX(idx, range) ASSERT(idx < range, "Index out of range.")
+#define ASSERT(CONDITION, MESSAGE) assert((CONDITION) && MESSAGE)
+
+#define CHECK_INDEX(idx, range)    ASSERT(idx < range, "Index out of range.")
 
 #ifdef __clang__
 #define _REINIT [[clang::reinitializes]]
