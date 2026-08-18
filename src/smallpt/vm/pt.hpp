@@ -707,7 +707,7 @@ TMACRO3(gaf, dst, ct, alpha)
     TMUL_CS(dst, ct, ct),
     TDIV_CS(dst, CS(1), dst),
     TSUB_CS(dst, dst, CS(1)),
-    TMUL_CS(dst, dst, alpha),
+    TMUL_CS(alpha, alpha, alpha),
     TFMA_CS(dst, dst, alpha, CS(1)),
     TSQRT_CS(dst, dst),
     TADD_CS(dst, dst, CS(1)),
@@ -729,7 +729,8 @@ TMACRO12(get_slope, dst0, dst1, ct, u0, u1, tmp0, tmp1, tmp2, tmp3, tmp4, tmp5, 
     LABEL(get_slope_mid),
     TMUL_CS(ct, ct, ct),        // ct <- cos_theta2
     TSUB_CS(tmp0, CS(1), ct),
-    TDIV_CS(tmp0, tmp0, ct),    // tmp0 <- B2
+    TMAX_CS(tmp2, ct, CS(1e-6)),
+    TDIV_CS(tmp0, tmp0, tmp2),    // tmp0 <- B2
     TSQRT_CS(tmp1, tmp0),       // tmp1 <- B
     TDIV_CS(tmp2, CS(1), tmp1), // tmp2 <- a
     TMUL_CS(tmp2, tmp2, tmp2),
@@ -1057,19 +1058,20 @@ KERNEL(pt, IVAR(ppp), IVAR(tmp0), TVAR(threshold), IVAR(maxdepth), TVAR(vr00))
 // indirect metal
     LABEL(indirect_metal),
     INSERT_TMACRO(vec3_negate, CS(vr0), CS(d)), // vr0 <- wi
-    INSERT_TMACRO(vec3_cross, CS(vr1), CS(n), CS(t), CS(tmp0)), // vr1 <- b
     INSERT_TMACRO(microfacet,
                   CS(vr2), CS(vr20), CS(vr21), CS(vr22), // vr2 <- wm
                   CS(vr0), CS(vr00), CS(vr01), CS(vr02),
                   scene::METAL_ALPHA0, scene::METAL_ALPHA1,
                   CS(u0), CS(u1), CS(tmp0), CS(tmp1),
                   CS(tmp2), CS(vr30), CS(vr31), CS(vr32), CS(vr40), CS(vr41), CS(vr42)),
+    INSERT_TMACRO(vec3_cross, CS(vr1), CS(n), CS(t), CS(tmp0)), // vr1 <- b
     INSERT_TMACRO(vec3_scalar_mul, CS(vr3), CS(t), CS(vr20)),
     INSERT_TMACRO(vec3_scalar_mul, CS(vr4), CS(vr1), CS(vr21)),
     INSERT_TMACRO(vec3_scalar_mul, CS(vr5), CS(n), CS(vr22)),
     INSERT_TMACRO(vec_vec3_add, CS(vr2), CS(vr3), CS(vr4)),
     INSERT_TMACRO(vec_vec3_add, CS(vr2), CS(vr2), CS(vr5)),
-    INSERT_TMACRO(vec3_norm, CS(vr2), CS(tmp0)),
+    INSERT_TMACRO(vec3_norm, CS(vr2), CS(tmp0)), // vr2 <- wm
+    INSERT_TMACRO(vec3_negate, CS(vr0), CS(d)), // vr0 <- wi
     INSERT_TMACRO(vec3_dot, CS(tmp0), CS(vr2), CS(vr0)),       // tmp0 <- dot(wm, wi)
     TMOV(vr30, d0),
     TMOV(vr31, d1),
@@ -1077,12 +1079,13 @@ KERNEL(pt, IVAR(ppp), IVAR(tmp0), TVAR(threshold), IVAR(maxdepth), TVAR(vr00))
     INSERT_TMACRO(reflect, CS(d), CS(vr2), CS(vr3), CS(tmp0)), // d <- wo
     INSERT_TMACRO(vec3_dot, CS(tmp1), CS(n), CS(d)),         // tmp1 <- dotWgWo
     INSERT_TMACRO(vec3_dot, CS(tmp0), CS(n), CS(vr2)),         // tmp0 <- dotWgWm
-    TLT(tmp2, tmp1, 0),                                        // tmp2 <- dotWgWo < 0
     INSERT_TMACRO(anisorough_n, CS(vr40), CS(vr2),             // vr40 <- alpha_n
                   CS(n), CS(t), CS(vr1), CS(tmp0), scene::METAL_ALPHA0, scene::METAL_ALPHA1, CS(vr41), CS(vr5)),
-    INSERT_TMACRO(gaf, CS(vr41), CS(tmp0), CS(vr40)), // vr41 <- G1
     INSERT_TMACRO(vec_vec3_mul, CS(vr5), CS(TP), CS(clr)),
-    // INSERT_TMACRO(vec3_scalar_mul, CS(vr5), CS(vr5), CS(vr41)),
+    INSERT_TMACRO(gaf, CS(vr41), CS(tmp0), CS(vr40)), // vr41 <- G1
+    TMAX(vr41, vr41, 1e-6),
+    INSERT_TMACRO(vec3_scalar_mul, CS(vr5), CS(vr5), CS(vr41)),
+    TLT(tmp2, tmp1, 0),                                        // tmp2 <- dotWgWo < 0
     TCMOV(TP0, tmp2, 0, vr50),
     TCMOV(TP1, tmp2, 0, vr51),
     TCMOV(TP2, tmp2, 0, vr52),

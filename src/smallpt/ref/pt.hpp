@@ -399,7 +399,7 @@ get_slope(const float cos_theta, const Vec2f u) noexcept
     }
 
     const float cos_theta2 = cos_theta * cos_theta;
-    const float B2         = (1 - cos_theta2) / cos_theta2;
+    const float B2         = (1 - cos_theta2) / std::max(cos_theta2, 1e-6f);
     const float B          = std::sqrt(B2);
     const float a          = 1 / B;
     const float G1         = 2 / (1 + std::sqrt(1 + 1 / (a * a)));
