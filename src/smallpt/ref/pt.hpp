@@ -736,9 +736,9 @@ struct Shading
             rc += drc;
             if(dr)
             {
-                const auto [p_l, ctl, l] = dr.value();
-                const Vec3f wm           = normalize(wi + l);
-                const float dotWgWm      = dot(n, wm);
+                const auto [p_l, _, l] = dr.value();
+                const Vec3f wm         = normalize(wi + l);
+                const float dotWgWm    = dot(n, wm);
                 const float alpha_n = anisorough_n(wm, n, t, b, dotWgWm, alpha);
                 const float alpha_i = anisorough_i(wi, n, t, alpha);
                 const float f       = gtr(dotWgWm, alpha_n);
