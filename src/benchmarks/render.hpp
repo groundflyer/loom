@@ -9,8 +9,8 @@
 #include <common/timer.hpp>
 #include <smallpt/common/common.hpp>
 #include <smallpt/common/typedefs.hpp>
+#include <smallpt/vm/enc.hpp>
 #include <smallpt/vm/pt.hpp>
-#include <smallpt/vm/utils.hpp>
 #include <vm/bse.hpp>
 #include <vm/simd.hpp>
 
