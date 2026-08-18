@@ -960,7 +960,7 @@ KERNEL(pt, IVAR(ppp), IVAR(tmp0), TVAR(threshold), IVAR(maxdepth), TVAR(vr00))
     JMP(roll),
 // direct lighting
     LABEL(diffuse_direct_lighting),
-    TMOV(pdf_l, 0),
+    TMOV(tmp1, 0),
     INSERT_TMACRO(sample_light_disk, CS(d), CS(u0), CS(u1), CS(tmp0), CS(vr2)),
     INSERT_TMACRO(vec_vec3_sub, CS(d), CS(d), CS(o)),
     INSERT_TMACRO(vec3_norm, CS(d), CS(tmp0)),
@@ -971,16 +971,16 @@ KERNEL(pt, IVAR(ppp), IVAR(tmp0), TVAR(threshold), IVAR(maxdepth), TVAR(vr00))
 // direct lighting pdf
     LABEL(diffuse_direct_lighting_pdf),
     INSERT_TMACRO(vec_vec3_sub, CS(vr2), scene::L_P, CS(o)),
-    INSERT_TMACRO(vec3_length2, CS(pdf_l), CS(vr2)), // pdf_l <- l
+    INSERT_TMACRO(vec3_length2, CS(tmp1), CS(vr2)), // tmp1 <- l
     INSERT_TMACRO(vec3_dot, CS(tmp0), scene::L_N, CS(d)),
     TABS(tmp0, tmp0),
     TMUL_CS(CS(tmp0), CS(tmp0), scene::L_A),
-    TDIV(pdf_l, pdf_l, tmp0),
+    TDIV(tmp1, tmp1, tmp0),
 // finish computing pdf
     INSERT_TMACRO(vec3_dot, CS(tmp0), CS(d), CS(n)),
     TMAX(tmp0, tmp0, 0),
     TMUL_CS(CS(tmp0), CS(tmp0), scene::L_E),
-    TDIV(tmp0, tmp0, pdf_l),
+    TDIV(tmp0, tmp0, tmp1),
     TDIV_CS(CS(tmp0), CS(tmp0), scene::L_PNEE),
     IEQ(tmp2, pid, 11),
     TCMOV(tmp0, tmp2, tmp0, 0),
