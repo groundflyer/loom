@@ -1145,6 +1145,8 @@
 #define TMOV_CS(a, b)           MOV(TVAR_CS(a), TVAR_CS(b))
 #define IMOV_CS(a, b)           MOV(IVAR_CS(a), IVAR_CS(b))
 
+#define ASSERT_FP(a)            loom::vm::Compute<ops::assert_fp, a, a>
+
 #define LABEL_CS(NAME)          loom::vm::Label<NAME>
 #define LABEL(NAME)             LABEL_CS(CS(NAME))
 #define PREFIX_LABEL_CS(_P, _L) LABEL_CS(CS_JOIN(_P, _L))

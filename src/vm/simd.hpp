@@ -874,6 +874,12 @@ struct remap_comp<N, std::identity, Dst, Src>
     };
 };
 
+template <fsize_t N, typename T1, typename T2>
+struct remap_comp<N, ops::assert_fp, T1, T2> :
+    remap_comp<N, std::identity, T1, T2>
+{
+};
+
 template <fsize_t N, typename T, typename I>
 struct remap_comp<N, ops::cmov, T, I, T, T>
 {

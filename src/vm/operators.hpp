@@ -237,6 +237,28 @@ class pacc
     }
 };
 
+struct assert_fp
+{
+    template <std::floating_point T>
+    T
+    operator()(T v) const noexcept
+    {
+        if(std::isnan(v))
+        {
+            std::fprintf(stderr, "isnan\n");
+            std::abort();
+        }
+
+        if(!std::isfinite(v))
+        {
+            std::fprintf(stderr, "infinity\n");
+            std::abort();
+        }
+
+        return v;
+    }
+};
+
 /// @brief Macro template for binary operators available in STL.
 #define MK_STD_BINOP(NAME)                              \
     template <typename T>                               \
