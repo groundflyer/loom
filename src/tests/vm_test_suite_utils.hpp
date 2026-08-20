@@ -117,7 +117,7 @@ struct mock_kernel
 
     static constexpr std::size_t num_blocks = _num_blocks;
     static constexpr index_t     halt_pos   = static_cast<index_t>(-1);
-    static constexpr bool        singular   = false;
+    static constexpr bool        is_straightline   = false;
 };
 
 template <unsigned _num_blocks, typename vars>

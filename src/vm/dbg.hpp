@@ -991,7 +991,7 @@ class RawTerminalReader
 };
 
 template <Kernel K, bool interactive>
-    requires(!K::singular)
+    requires(!K::is_straightline)
 class debug_compiler
 {
     using labelmap  = K::labelmap;

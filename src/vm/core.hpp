@@ -976,10 +976,11 @@ struct kernel_blank
         type_pair<HaltLabel, std::integral_constant<index_t, halt_pos>>,
         typelist::enumerate<labels, index_t>>;
 
-    static constexpr bool singular = num_blocks == 1;
+    static constexpr bool is_straightline = num_blocks == 1;
 
-    using variables = std::
-        conditional_t<singular, stated_vars, typelist::cons<pc, stated_vars>>;
+    using variables = std::conditional_t<is_straightline,
+                                         stated_vars,
+                                         typelist::cons<pc, stated_vars>>;
     static_assert(typelist::all<same_size_union, variables>);
 
     /// @brief Names of registers.
@@ -991,9 +992,9 @@ struct kernel_blank
     /// loom::Union used to hold values of the register.
     using reg_types = infer_reg_types_t<variables, reg_names>;
 
-    // don't check jumps for singular program.
+    // don't check jumps for straight-line program.
     using blocks =
-        std::conditional_t<singular,
+        std::conditional_t<is_straightline,
                            blocks_statements,
                            ensure_last_jumps_t<blocks_statements, labels>>;
 

@@ -3363,7 +3363,7 @@ class compiler
     using reg_types = K::reg_types;
     using pc        = K::pc;
 
-    static constexpr bool singular = K::singular;
+    static constexpr bool is_straightline = K::is_straightline;
     static constexpr auto halt_pos = K::halt_pos;
 
     template <typename Block>
@@ -3381,7 +3381,7 @@ class compiler
     using memory_view = memory::view_type;
 
     static constexpr SORT final_sort_method =
-        singular ? bve_INTROSORT : sort_method;
+        is_straightline ? bve_INTROSORT : sort_method;
     using sorter = select_sorter<final_sort_method>::template type<K, memory>;
 
     using stream_facade = std::conditional_t<
@@ -3477,11 +3477,11 @@ class compiler
 
   public:
     using function =
-        std::conditional_t<K::singular, single_block_evaluator, evaluator>;
+        std::conditional_t<K::is_straightline, single_block_evaluator, evaluator>;
 
     class stream : public stream_facade
     {
-        static_assert(!K::singular);
+        static_assert(!K::is_straightline);
 
       public:
         using program = K;
@@ -3735,7 +3735,7 @@ class compact_compiler
     using index_t   = K::index_t;
     using succs     = K::successors;
 
-    static constexpr bool    singular = K::singular;
+    static constexpr bool    is_straightline = K::is_straightline;
     static constexpr fsize_t N        = native_vector_extent_v<index_t>;
     static constexpr packed_vector<index_t, N> halt_pos =
         broadcast<N>(K::halt_pos);
@@ -3989,7 +3989,7 @@ class compact_compiler
 
   public:
     using type =
-        std::conditional_t<singular, single_block_evaluator, evaluator>;
+        std::conditional_t<is_straightline, single_block_evaluator, evaluator>;
 };
 
 /// @brief Hybrid compiler.
@@ -4005,7 +4005,7 @@ template <Kernel       K,
           ReconvMethod rcnv    = SUCCESSOR_MAJOR,
           typename UTRt        = std::ratio<1, 16>,
           typename UTRh        = UTRt>
-    requires(!K::singular && typelist::of_same_size<typename K::reg_types> &&
+    requires(!K::is_straightline && typelist::of_same_size<typename K::reg_types> &&
              val_utr_v<UTRt> && val_utr_v<UTRh>)
 class hybrid_compiler
 {
@@ -4261,7 +4261,7 @@ template <Kernel K,
           SORT   sort_method = COUNTING_SORT,
           bool   concurrent  = false,
           typename UTR       = std::ratio<1, 2>>
-    requires(!K::singular)
+    requires(!K::is_straightline)
 using stream = compiler<K, stitch, sort_method, concurrent, UTR>::stream;
 
 /// @brief Alias for hybrid function-like invocation.

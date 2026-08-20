@@ -1024,7 +1024,7 @@ class MemoryFacade
     using memory = bve::
         Memory<reg_types, reg_names, pc_var, SimpleVector, DeviceAllocator>;
 
-    static constexpr bool singular = K::singular;
+    static constexpr bool is_straightline = K::is_straightline;
 
     template <typename T>
     using hv_t = SimpleVector<T, HostAllocator<T>>;
@@ -1170,7 +1170,7 @@ class MemoryFacade
     void
     reset() noexcept
     {
-        if constexpr(!singular)
+        if constexpr(!is_straightline)
         {
             index_t*       pcs = mem.pc().data();
             const unsigned n   = mem.size();
@@ -1190,7 +1190,7 @@ class MemoryFacade
     void
     sort() noexcept
     {
-        if constexpr(!singular) cuda::sort(vars{}, mem);
+        if constexpr(!is_straightline) cuda::sort(vars{}, mem);
     }
 };
 
@@ -1446,11 +1446,11 @@ class cuda_evaluator
 
   public:
     using function =
-        std::conditional_t<K::singular, single_block_evaluator, evaluator>;
+        std::conditional_t<K::is_straightline, single_block_evaluator, evaluator>;
 
     class stream : public stream_facade
     {
-        static_assert(!K::singular);
+        static_assert(!K::is_straightline);
 
         visitor step;
 
@@ -1565,6 +1565,6 @@ template <Kernel K>
 using function = cuda_evaluator<K>::function;
 
 template <Kernel K>
-    requires(!K::singular)
+    requires(!K::is_straightline)
 using stream = cuda_evaluator<K>::stream;
 } // namespace loom::vm::cuda

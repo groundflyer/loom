@@ -901,7 +901,7 @@ counting_sort(_Memory& in, _Memory& out) noexcept
 template <Kernel K, typename _Memory>
 class SimpleSorter
 {
-    static constexpr bool singular = K::singular;
+    static constexpr bool is_straightline = K::is_straightline;
 
     _Memory m_mem;
 
@@ -924,7 +924,7 @@ class SimpleSorter
     void
     sort() noexcept
     {
-        if constexpr(!singular) introsort(m_mem.begin(), m_mem.end());
+        if constexpr(!is_straightline) introsort(m_mem.begin(), m_mem.end());
     }
 };
 
@@ -1073,7 +1073,7 @@ class MemoryFacade : public Sorter
             std::forward<Args>(args)...);
 
         // reset
-        if constexpr(!K::singular) row.pc() = 0;
+        if constexpr(!K::is_straightline) row.pc() = 0;
     }
 
     template <typename _ProxyRow>
@@ -1166,13 +1166,13 @@ class MemoryFacade : public Sorter
     void
     reset() noexcept
     {
-        if constexpr(!K::singular) std::ranges::fill(Sorter::mem().pc(), 0);
+        if constexpr(!K::is_straightline) std::ranges::fill(Sorter::mem().pc(), 0);
     }
 
     auto
     done() noexcept
     {
-        if constexpr(!K::singular)
+        if constexpr(!K::is_straightline)
             return Sorter::mem().pc().front() == halt_pos;
     }
 
@@ -1338,7 +1338,7 @@ class basic_vector_compiler
     using vars      = K::variables;
     using index_t   = K::index_t;
 
-    static constexpr bool    singular = K::singular;
+    static constexpr bool    is_straightline = K::is_straightline;
     static constexpr index_t halt_pos = K::halt_pos;
 
     template <typename C>
@@ -1349,7 +1349,7 @@ class basic_vector_compiler
     using memory = Memory<reg_types, reg_names, pc>;
 
     static constexpr SORT final_sort_method =
-        singular ? INTROSORT : sort_method;
+        is_straightline ? INTROSORT : sort_method;
     using sorter = select_sorter<final_sort_method>::template type<K, memory>;
 
     using memory_facade = MemoryFacade<K, std::vector, std::allocator, sorter>;
@@ -1463,11 +1463,11 @@ class basic_vector_compiler
 
   public:
     using function =
-        std::conditional_t<K::singular, single_block_evaluator, evaluator>;
+        std::conditional_t<K::is_straightline, single_block_evaluator, evaluator>;
 
     class stream : public stream_facade
     {
-        static_assert(!K::singular);
+        static_assert(!K::is_straightline);
 
       public:
         using program = K;
@@ -1485,6 +1485,6 @@ template <Kernel K, SORT sort_method>
 using function = basic_vector_compiler<K, sort_method>::function;
 
 template <Kernel K, SORT sort_method>
-    requires(!K::singular)
+    requires(!K::is_straightline)
 using stream = basic_vector_compiler<K, sort_method>::stream;
 } // namespace loom::vm::bve

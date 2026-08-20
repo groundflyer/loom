@@ -71,8 +71,8 @@ class MemoryFacade
     void
     reset() noexcept
     {
-        // no-op when singular
-        if constexpr(!K::singular) memory.pc() = reset_val;
+        // no-op when is_straightline
+        if constexpr(!K::is_straightline) memory.pc() = reset_val;
     }
 
   public:
@@ -115,8 +115,8 @@ class MemoryFacade
     constexpr auto
     pc() const noexcept
     {
-        // no-op when singular
-        if constexpr(!K::singular) return memory.pc();
+        // no-op when is_straightline
+        if constexpr(!K::is_straightline) return memory.pc();
     }
 };
 
@@ -294,7 +294,7 @@ class basic_scalar_compiler
 
   public:
     using function = std::
-        conditional_t<K::singular, single_block_evaluator, simple_evaluator>;
+        conditional_t<K::is_straightline, single_block_evaluator, simple_evaluator>;
 };
 
 /// @brief Basic CFG evaluator.
