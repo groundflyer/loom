@@ -893,8 +893,8 @@ KERNEL(pt, IVAR(ppp), IVAR(tmp0), TVAR(threshold), IVAR(maxdepth), TVAR(vr00))
     INSERT_MACRO(threefry2x32r32, CS(u0), CS(u1), scene::K0, scene::K1, scene::K2, CS(tmp0), CS(tmp1)),
     INSERT_MACRO(bump_ctr, CS(c0), CS(c1), CS(39916801), CS(tmp0), CS(tmp1), CS(tmp2)),
     INSERT_TMACRO(sample_u, CS(u0), CS(u1)),
-//              0             1               2                             3                        4                 5       6          7      8
-    IPJMP9(rpt, sample_pixel, traverse_scene, test_diffuse_direct_lighting, diffuse_direct_lighting, lambert_indirect, window, tth_begin, glass, indirect_metal),
+//              0             1            2       3          4      5               6       7
+    IPJMP8(rpt, sample_pixel, test_direct, window, tth_begin, glass, indirect_metal, direct, lambert_indirect),
 // sample pixel
     LABEL(sample_pixel),
     TMOV_CS(CS(o0), scene::CAM_Px),
@@ -925,7 +925,7 @@ KERNEL(pt, IVAR(ppp), IVAR(tmp0), TVAR(threshold), IVAR(maxdepth), TVAR(vr00))
     TMOV(vr00, 0),
     TMOV(vr01, 0),
     TMOV(vr02, 0),
-    IPJMP3(rpt, radiance, diffuse_direct_lighting_pdf, lambert_indirect),
+    IPJMP3(rpt, radiance, direct_pdf, lambert_indirect),
 // radiance
     LABEL(radiance),
     IEQ(tmp0, pid, 11),                // hit light?
@@ -943,40 +943,48 @@ KERNEL(pt, IVAR(ppp), IVAR(tmp0), TVAR(threshold), IVAR(maxdepth), TVAR(vr00))
     INSERT_TMACRO(vec3_scalar_mul, CS(vr0), CS(d), CS(t)),
     INSERT_TMACRO(vec_vec3_add, CS(o), CS(o), CS(vr0)), // compute new position
     INSERT_TMACRO(set_materials),
-    IMOV(rpt, 2),               // default material
+    IMOV(rpt, 1),               // default material
     ILT(tmp0, pid, 4),          // walls?
-    ISUB(tmp1, pid, 4),
+    ISUB(tmp1, pid, 4),         // tmp1 <- pid - 4
     IMIN(tmp1, tmp1, 6),
-    ISCT7(tmp2, tmp1, 5, 6, 6, 6, 7, 8, 8), // select material
-    ICMOV(rpt, tmp0, 2, tmp2),
+// pid rpt
+// 0   1    walls diffuse
+// 1   1
+// 2   1
+// 3   1
+// 4   2    window back wall
+// 5   3    blue plastic tetrahedron
+// 6   3
+// 7   3
+// 8   4    glass sphere
+// 9   5    metall cylinder
+// 10  5    metall cylinder cap
+    ISCT7(tmp2, tmp1, 2, 3, 3, 3, 4, 5, 5), // select material
+    ICMOV(rpt, tmp0, rpt, tmp2),
     JMP(roll),
 // test direct lighting
-    LABEL(test_diffuse_direct_lighting),
+    LABEL(test_direct),
     TLT_CS(CS(tmp0), CS(u0), scene::L_PNEE),
-    TMOV(vr00, 0),
-    TMOV(vr01, 0),
-    TMOV(vr02, 0),
-    ICMOV(rpt, tmp0, 3, 4),     // return to direct_ligting or skip to indirect
+    ICMOV(rpt, tmp0, 6, 7),     // return to direct_ligting or skip to indirect
     JMP(roll),
 // direct lighting
-    LABEL(diffuse_direct_lighting),
+    LABEL(direct),
     TMOV(tmp1, 0),
     INSERT_TMACRO(sample_light_disk, CS(d), CS(u0), CS(u1), CS(tmp0), CS(vr2)),
     INSERT_TMACRO(vec_vec3_sub, CS(d), CS(d), CS(o)),
     INSERT_TMACRO(vec3_norm, CS(d), CS(tmp0)),
     INSERT_TMACRO(vec3_dot, CS(tmp0), CS(d), CS(n)),
     TGT(tmp0, tmp0, 0),  // tmp0 <- cos(theta)>0
-    ICMOV(rpt, tmp0, 1, 4),               // return to compute pdf after traverse, or skip to lambert indirect after roll
+    ICMOV(rpt, tmp0, 1, 7),               // return to compute pdf after traverse, or skip to lambert indirect after roll
     IPJMP2(tmp0, roll, traverse_scene),
 // direct lighting pdf
-    LABEL(diffuse_direct_lighting_pdf),
+    LABEL(direct_pdf),
     INSERT_TMACRO(vec_vec3_sub, CS(vr2), scene::L_P, CS(o)),
     INSERT_TMACRO(vec3_length2, CS(tmp1), CS(vr2)), // tmp1 <- l
     INSERT_TMACRO(vec3_dot, CS(tmp0), scene::L_N, CS(d)),
     TABS(tmp0, tmp0),
     TMUL_CS(CS(tmp0), CS(tmp0), scene::L_A),
     TDIV(tmp1, tmp1, tmp0),
-// finish computing pdf
     INSERT_TMACRO(vec3_dot, CS(tmp0), CS(d), CS(n)),
     TMAX(tmp0, tmp0, 0),
     TMUL_CS(CS(tmp0), CS(tmp0), scene::L_E),
@@ -987,18 +995,8 @@ KERNEL(pt, IVAR(ppp), IVAR(tmp0), TVAR(threshold), IVAR(maxdepth), TVAR(vr00))
     INSERT_TMACRO(vec3_scalar_mul, CS(vr0), CS(clr), CS(tmp0)), // vr0 <- direct lighting
     INSERT_TMACRO(vec_vec3_mul, CS(vr0), CS(TP), CS(vr0)),
     INSERT_TMACRO(vec_vec3_add, CS(SL), CS(SL), CS(vr0)), // contribute to sample path
-    IMOV(rpt, 4),                                       // return to lambert_indirect
+    IMOV(rpt, 7),                                       // return to lambert_indirect
     JMP(roll),
-// indirect diffuse
-    LABEL(lambert_indirect),
-    INSERT_TMACRO(vec_vec3_mul, CS(TP), CS(TP), CS(clr)),
-    INSERT_TMACRO(onb, CS(vr00), CS(vr01), CS(vr02), CS(t0), CS(t1), CS(t2), CS(n0), CS(n1), CS(n2)),
-    INSERT_TMACRO(vec3_norm, CS(vr0), CS(tmp0)),
-    INSERT_TMACRO(vec3_norm, CS(t), CS(tmp0)),
-    INSERT_TMACRO(sample_hemisphere, CS(d), CS(n), CS(vr0), CS(t), CS(u0), CS(u1), CS(tmp0), CS(tmp1)),
-    INSERT_TMACRO(vec3_norm, CS(d), CS(tmp0)),
-    IMOV(rpt, 0),
-    JMP(traverse_scene),
 // window
     LABEL(window),
     INSERT_TMACRO(comp_f, CS(vr30), CS(vr0), CS(tmp0), CS(tmp1), CS(vr10), scene::WINDOW_IOR, CS(vr40), CS(vr41)),
@@ -1014,6 +1012,16 @@ KERNEL(pt, IVAR(ppp), IVAR(tmp0), TVAR(threshold), IVAR(maxdepth), TVAR(vr00))
     TCMOV(SL1, vr11, SL1, 0),
     TCMOV(SL2, vr11, SL2, 0),
     IPJMP2(vr11, fin_sample, traverse_scene),
+// indirect diffuse
+    LABEL(lambert_indirect),
+    INSERT_TMACRO(vec_vec3_mul, CS(TP), CS(TP), CS(clr)),
+    INSERT_TMACRO(onb, CS(vr00), CS(vr01), CS(vr02), CS(t0), CS(t1), CS(t2), CS(n0), CS(n1), CS(n2)),
+    INSERT_TMACRO(vec3_norm, CS(vr0), CS(tmp0)),
+    INSERT_TMACRO(vec3_norm, CS(t), CS(tmp0)),
+    INSERT_TMACRO(sample_hemisphere, CS(d), CS(n), CS(vr0), CS(t), CS(u0), CS(u1), CS(tmp0), CS(tmp1)),
+    INSERT_TMACRO(vec3_norm, CS(d), CS(tmp0)),
+    IMOV(rpt, 0),
+    JMP(traverse_scene),
 // tetrahedron shading begin
     LABEL(tth_begin),
     INSERT_TMACRO(comp_f, CS(vr30), CS(vr0), CS(tmp0), CS(tmp1), CS(vr10), scene::PLASTIC_IOR, CS(vr40), CS(vr41)),
@@ -1022,7 +1030,7 @@ KERNEL(pt, IVAR(ppp), IVAR(tmp0), TVAR(threshold), IVAR(maxdepth), TVAR(vr00))
     TMOV(vr21, d1),
     TMOV(vr22, d2),
     INSERT_TMACRO(reflect, CS(d), CS(n), CS(vr2), CS(tmp0)),
-    ICMOV(rpt, tmp1, 0, 2),     // do radiance after traverse, or diffuse after roll
+    ICMOV(rpt, tmp1, 0, 1),     // do radiance after traverse, or diffuse after roll
     IPJMP2(tmp1, roll, traverse_scene),
 // glass
     LABEL(glass),
