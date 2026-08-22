@@ -742,9 +742,10 @@ struct Shading
                 const float alpha_n = anisorough_n(wm, n, t, b, dotWgWm, alpha);
                 const float alpha_i = anisorough_i(wi, n, t, alpha);
                 const float f       = gtr(dotWgWm, alpha_n);
+                const float dotWgWi = dot(n, wi);
                 L += Scene::Gallery::Emission::value * f *
-                     gaf(dot(n, wi), alpha_i) * gaf(dotWgWm, alpha_n) /
-                     (4 * dot(wi, n) * p_nee);
+                     gaf(dotWgWi, alpha_i) * gaf(dotWgWm, alpha_n) /
+                     (4 * dotWgWi * p_nee * p_l);
             }
         }
 
