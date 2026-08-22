@@ -839,27 +839,11 @@ TMACRO10(anisorough_n, dst, wm, wg, tu, tv, dotWmWg, alpha0, alpha1, tmp0, vtmp)
     TDIV_CS(dst, CS(1), dst)
 MACRO_END;
 
-// rpt - return pointer
-//
-// roll:
-// 0: sample_pixel
-// 1: traverse_scene
-// 2: test_direct_lighting
-// 3: direct_lighting
-// 4: lambert_indirect
-// 5: window
-// 6: tetrahedron
-//
-// traverse_scene:
-// 0: radiance
-// 1: direct_lighting_pdf
-// 2: lambert_indirect
-
 // save up on variables by encoding pixel position and resolution into single uint32 value:
-// d2 <- pixel position 16/16 x/y
+// ppp <- pixel position 16/16 x/y
 // tmp0 <- resolution 16/16 w/h
-
-// d = i
+// vr00 <- blur
+// d - ray direction
 template <std::same_as<float> T>
 KERNEL(pt, IVAR(ppp), IVAR(tmp0), TVAR(threshold), IVAR(maxdepth), TVAR(vr00))
     IRSHFT(d0, ppp, 16),
@@ -893,8 +877,8 @@ KERNEL(pt, IVAR(ppp), IVAR(tmp0), TVAR(threshold), IVAR(maxdepth), TVAR(vr00))
     INSERT_MACRO(threefry2x32r32, CS(u0), CS(u1), scene::K0, scene::K1, scene::K2, CS(tmp0), CS(tmp1)),
     INSERT_MACRO(bump_ctr, CS(c0), CS(c1), CS(39916801), CS(tmp0), CS(tmp1), CS(tmp2)),
     INSERT_TMACRO(sample_u, CS(u0), CS(u1)),
-//              0             1            2       3          4      5               6       7
-    IPJMP8(rpt, sample_pixel, test_direct, window, tth_begin, glass, indirect_metal, direct, lambert_indirect),
+//              0             1            2       3          4      5       6                 7             8
+    IPJMP9(rpt, sample_pixel, test_direct, window, tth_begin, glass, direct, lambert_indirect, direct_metal, indirect_metal),
 // sample pixel
     LABEL(sample_pixel),
     TMOV_CS(CS(o0), scene::CAM_Px),
@@ -925,7 +909,7 @@ KERNEL(pt, IVAR(ppp), IVAR(tmp0), TVAR(threshold), IVAR(maxdepth), TVAR(vr00))
     TMOV(vr00, 0),
     TMOV(vr01, 0),
     TMOV(vr02, 0),
-    IPJMP3(rpt, radiance, direct_pdf, lambert_indirect),
+    IPJMP2(rpt, radiance, direct_pdf),
 // radiance
     LABEL(radiance),
     IEQ(tmp0, pid, 11),                // hit light?
@@ -957,25 +941,28 @@ KERNEL(pt, IVAR(ppp), IVAR(tmp0), TVAR(threshold), IVAR(maxdepth), TVAR(vr00))
 // 6   3
 // 7   3
 // 8   4    glass sphere
-// 9   5    metall cylinder
-// 10  5    metall cylinder cap
-    ISCT7(tmp2, tmp1, 2, 3, 3, 3, 4, 5, 5), // select material
+// 9   1 metal   cylinder
+// 10  1 metal   cylinder cap
+    ISCT7(tmp2, tmp1, 2, 3, 3, 3, 4, 1, 1), // select material
+    IGT(metal, pid, 8),          // metal ? (separate register to survive scene traverse)
     ICMOV(rpt, tmp0, rpt, tmp2),
     JMP(roll),
 // test direct lighting
     LABEL(test_direct),
     TLT_CS(CS(tmp0), CS(u0), scene::L_PNEE),
-    ICMOV(rpt, tmp0, 6, 7),     // return to direct_ligting or skip to indirect
+    ICMOV(tmp1, metal, 8, 6),    // indirect metal or indirect lambert
+    ICMOV(rpt, tmp0, 5, tmp1),     // return to direct_lighting or skip to indirect
     JMP(roll),
 // direct lighting
     LABEL(direct),
-    TMOV(tmp1, 0),
+    INSERT_TMACRO(vec3_negate, CS(wi), CS(d)), // save wi to separate register to survive scene traverse
     INSERT_TMACRO(sample_light_disk, CS(d), CS(u0), CS(u1), CS(tmp0), CS(vr2)),
     INSERT_TMACRO(vec_vec3_sub, CS(d), CS(d), CS(o)),
     INSERT_TMACRO(vec3_norm, CS(d), CS(tmp0)),
     INSERT_TMACRO(vec3_dot, CS(tmp0), CS(d), CS(n)),
     TGT(tmp0, tmp0, 0),  // tmp0 <- cos(theta)>0
-    ICMOV(rpt, tmp0, 1, 7),               // return to compute pdf after traverse, or skip to lambert indirect after roll
+    ICMOV(tmp1, metal, 8, 6),    // indirect metal or indirect lambert
+    ICMOV(rpt, tmp0, 1, tmp1),               // return to compute pdf after traverse, or skip to lambert/metal indirect after roll
     IPJMP2(tmp0, roll, traverse_scene),
 // direct lighting pdf
     LABEL(direct_pdf),
@@ -984,18 +971,45 @@ KERNEL(pt, IVAR(ppp), IVAR(tmp0), TVAR(threshold), IVAR(maxdepth), TVAR(vr00))
     INSERT_TMACRO(vec3_dot, CS(tmp0), scene::L_N, CS(d)),
     TABS(tmp0, tmp0),
     TMUL_CS(CS(tmp0), CS(tmp0), scene::L_A),
-    TDIV(tmp1, tmp1, tmp0),
+    TDIV(tmp1, tmp1, tmp0),     // tmp1 <- pdf
     INSERT_TMACRO(vec3_dot, CS(tmp0), CS(d), CS(n)),
     TMAX(tmp0, tmp0, 0),
     TMUL_CS(CS(tmp0), CS(tmp0), scene::L_E),
     TDIV(tmp0, tmp0, tmp1),
     TDIV_CS(CS(tmp0), CS(tmp0), scene::L_PNEE),
     IEQ(tmp2, pid, 11),
+    TCMOV(tmp0, metal, 0, tmp0), // don't contribute here if metal
     TCMOV(tmp0, tmp2, tmp0, 0),
     INSERT_TMACRO(vec3_scalar_mul, CS(vr0), CS(clr), CS(tmp0)), // vr0 <- direct lighting
     INSERT_TMACRO(vec_vec3_mul, CS(vr0), CS(TP), CS(vr0)),
     INSERT_TMACRO(vec_vec3_add, CS(SL), CS(SL), CS(vr0)), // contribute to sample path
-    IMOV(rpt, 7),                                       // return to lambert_indirect
+    IMOV(rpt, 6),                                         // indirect lambert after roll
+    IPJMP2(metal, roll, direct_metal),                    // straight to direct metal
+// direct metal
+    LABEL(direct_metal),
+    INSERT_TMACRO(vec_vec3_add, CS(vr0), CS(wi), CS(d)), // vr0 <- wm
+    INSERT_TMACRO(vec3_norm, CS(vr0), CS(tmp0)),
+    INSERT_TMACRO(vec3_cross, CS(vr1), CS(n), CS(t), CS(tmp0)), // vr1 <- b
+    INSERT_TMACRO(vec3_dot, CS(tmp0), CS(n), CS(vr0)), // tmp0 <- dotWgWm
+    INSERT_TMACRO(anisorough_n, CS(vr40), CS(vr0), CS(n), CS(t), CS(vr1), CS(tmp0), scene::METAL_ALPHA0, scene::METAL_ALPHA1, CS(vr41), CS(vr3)),
+    INSERT_TMACRO(gtr, CS(vr21), CS(tmp0), CS(vr40)), // vr21 <- f
+    TMUL_CS(CS(vr20), CS(vr21), scene::L_E),
+    INSERT_TMACRO(gaf, CS(vr21), CS(tmp0), CS(vr40)),
+    TMUL(vr20, vr20, vr21),     // vr20 <- nom
+    INSERT_TMACRO(anisorough_i, CS(vr41), CS(wi), CS(t), CS(vr1), scene::METAL_ALPHA0, scene::METAL_ALPHA1, CS(vr00)),
+    INSERT_TMACRO(vec3_dot, CS(tmp0), CS(n), CS(wi)), // tmp0 <- dotWgWi
+    INSERT_TMACRO(gaf, CS(vr21), CS(tmp0), CS(vr41)),
+    TMUL(vr20, vr20, vr21),
+    TMUL(tmp0, tmp0, 4),
+    TMUL(tmp0, tmp0, tmp1),
+    TMUL_CS(CS(tmp0), CS(tmp0), scene::L_PNEE), // tmp0 <- denom
+    TMAX(tmp0, tmp0, 1e-2),
+    TDIV(vr20, vr20, tmp0),
+    TCMOV(vr20, tmp2, vr20, 0),                                 // don't contribute if light wasn't hit
+    INSERT_TMACRO(vec3_scalar_mul, CS(vr0), CS(clr), CS(vr20)), // vr0 <- direct lighting
+    INSERT_TMACRO(vec_vec3_mul, CS(vr0), CS(TP), CS(vr0)),
+    INSERT_TMACRO(vec_vec3_add, CS(SL), CS(SL), CS(vr0)), // contribute to sample path
+    IMOV(rpt, 8),                                         // to indirect metal
     JMP(roll),
 // window
     LABEL(window),
@@ -1065,6 +1079,7 @@ KERNEL(pt, IVAR(ppp), IVAR(tmp0), TVAR(threshold), IVAR(maxdepth), TVAR(vr00))
     JMP(traverse_scene),
 // indirect metal
     LABEL(indirect_metal),
+    INSERT_TMACRO(vec_vec3_mul, CS(TP), CS(TP), CS(clr)),
     INSERT_TMACRO(vec3_negate, CS(vr0), CS(d)), // vr0 <- wi
     INSERT_TMACRO(microfacet,
                   CS(vr2), CS(vr20), CS(vr21), CS(vr22), // vr2 <- wm
@@ -1089,14 +1104,13 @@ KERNEL(pt, IVAR(ppp), IVAR(tmp0), TVAR(threshold), IVAR(maxdepth), TVAR(vr00))
     INSERT_TMACRO(vec3_dot, CS(tmp0), CS(n), CS(vr2)),         // tmp0 <- dotWgWm
     INSERT_TMACRO(anisorough_n, CS(vr40), CS(vr2),             // vr40 <- alpha_n
                   CS(n), CS(t), CS(vr1), CS(tmp0), scene::METAL_ALPHA0, scene::METAL_ALPHA1, CS(vr41), CS(vr5)),
-    INSERT_TMACRO(vec_vec3_mul, CS(vr5), CS(TP), CS(clr)),
     INSERT_TMACRO(gaf, CS(vr41), CS(tmp0), CS(vr40)), // vr41 <- G1
-    TMAX(vr41, vr41, 1e-6),
-    INSERT_TMACRO(vec3_scalar_mul, CS(vr5), CS(vr5), CS(vr41)),
+    // TMAX(vr41, vr41, 1e-6),
+    INSERT_TMACRO(vec3_scalar_mul, CS(TP), CS(TP), CS(vr41)),
     TLT(tmp2, tmp1, 0),                                        // tmp2 <- dotWgWo < 0
-    TCMOV(TP0, tmp2, 0, vr50),
-    TCMOV(TP1, tmp2, 0, vr51),
-    TCMOV(TP2, tmp2, 0, vr52),
+    // TCMOV(TP0, tmp2, 0, TP0),
+    // TCMOV(TP1, tmp2, 0, TP1),
+    // TCMOV(TP2, tmp2, 0, TP2),
     IMOV(rpt, 0),
     IPJMP2(tmp2, traverse_scene, fin_sample),
 // fin sample
