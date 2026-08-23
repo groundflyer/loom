@@ -1009,6 +1009,7 @@ KERNEL(pt, IVAR(ppp), IVAR(tmp0), TVAR(threshold), IVAR(maxdepth), TVAR(vr00))
     INSERT_TMACRO(vec3_scalar_mul, CS(vr0), CS(clr), CS(vr20)), // vr0 <- direct lighting
     INSERT_TMACRO(vec_vec3_mul, CS(vr0), CS(TP), CS(vr0)),
     INSERT_TMACRO(vec_vec3_add, CS(SL), CS(SL), CS(vr0)), // contribute to sample path
+    INSERT_TMACRO(vec3_negate, CS(d), CS(wi)),            // copy d back
     IMOV(rpt, 8),                                         // to indirect metal
     JMP(roll),
 // window
@@ -1105,12 +1106,12 @@ KERNEL(pt, IVAR(ppp), IVAR(tmp0), TVAR(threshold), IVAR(maxdepth), TVAR(vr00))
     INSERT_TMACRO(anisorough_n, CS(vr40), CS(vr2),             // vr40 <- alpha_n
                   CS(n), CS(t), CS(vr1), CS(tmp0), scene::METAL_ALPHA0, scene::METAL_ALPHA1, CS(vr41), CS(vr5)),
     INSERT_TMACRO(gaf, CS(vr41), CS(tmp0), CS(vr40)), // vr41 <- G1
-    // TMAX(vr41, vr41, 1e-6),
+    TMAX(vr41, vr41, 1e-3),
     INSERT_TMACRO(vec3_scalar_mul, CS(TP), CS(TP), CS(vr41)),
     TLT(tmp2, tmp1, 0),                                        // tmp2 <- dotWgWo < 0
-    // TCMOV(TP0, tmp2, 0, TP0),
-    // TCMOV(TP1, tmp2, 0, TP1),
-    // TCMOV(TP2, tmp2, 0, TP2),
+    TCMOV(TP0, tmp2, 0, TP0),
+    TCMOV(TP1, tmp2, 0, TP1),
+    TCMOV(TP2, tmp2, 0, TP2),
     IMOV(rpt, 0),
     IPJMP2(tmp2, traverse_scene, fin_sample),
 // fin sample
