@@ -877,8 +877,18 @@ KERNEL(pt, IVAR(ppp), IVAR(tmp0), TVAR(threshold), IVAR(maxdepth), TVAR(vr00))
     INSERT_MACRO(threefry2x32r32, CS(u0), CS(u1), scene::K0, scene::K1, scene::K2, CS(tmp0), CS(tmp1)),
     INSERT_MACRO(bump_ctr, CS(c0), CS(c1), CS(39916801), CS(tmp0), CS(tmp1), CS(tmp2)),
     INSERT_TMACRO(sample_u, CS(u0), CS(u1)),
+#ifdef __AVX512F__
 //              0             1            2       3          4      5       6                 7             8
     IPJMP9(rpt, sample_pixel, test_direct, window, tth_begin, glass, direct, lambert_indirect, direct_metal, indirect_metal),
+#else
+    IMIN(tmp0, rpt, 4),
+//               0             1            2       3
+    IPJMP5(tmp0, sample_pixel, test_direct, window, tth_begin, roll_split),
+    LABEL(roll_split),
+    ISUB(rpt, rpt, 4),
+//              4      5       6                 7             8
+    IPJMP5(rpt, glass, direct, lambert_indirect, direct_metal, indirect_metal),
+#endif
 // sample pixel
     LABEL(sample_pixel),
     TMOV_CS(CS(o0), scene::CAM_Px),
