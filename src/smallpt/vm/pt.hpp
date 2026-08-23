@@ -1005,6 +1005,7 @@ KERNEL(pt, IVAR(ppp), IVAR(tmp0), TVAR(threshold), IVAR(maxdepth), TVAR(vr00))
     TMUL_CS(CS(tmp0), CS(tmp0), scene::L_PNEE), // tmp0 <- denom
     TMAX(tmp0, tmp0, 1e-2),
     TDIV(vr20, vr20, tmp0),
+    TMIN_CS(CS(vr20), CS(vr20), scene::L_E),
     TCMOV(vr20, tmp2, vr20, 0),                                 // don't contribute if light wasn't hit
     INSERT_TMACRO(vec3_scalar_mul, CS(vr0), CS(clr), CS(vr20)), // vr0 <- direct lighting
     INSERT_TMACRO(vec_vec3_mul, CS(vr0), CS(TP), CS(vr0)),
