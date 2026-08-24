@@ -18,7 +18,7 @@ using C = constants<CS(40),
                     sl2cs<BLUR_VALUE>,
                     sl2cs<DEPTH_VALUE>>;
 
-using kernel = pt_const<float, C>;
+using kernel = PT_KERNEL<float, C>;
 
 template <bool               ts,
           bool               sd,
