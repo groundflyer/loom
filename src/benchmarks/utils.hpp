@@ -263,7 +263,7 @@ struct StandardBenchmarkSuite
         std::string
         info() const noexcept
         {
-            return fmt::format("bse|{}|{}",
+            return fmt::format("scalar|{}|{}",
                                TypeInfo<T>::chars,
                                base::sample_size);
         }
@@ -290,7 +290,7 @@ struct StandardBenchmarkSuite
         std::string
         info() const noexcept
         {
-            return fmt::format("compact|{}|{}",
+            return fmt::format("predicated|{}|{}",
                                TypeInfo<T>::chars,
                                base::sample_size);
         }
@@ -338,7 +338,7 @@ struct StandardBenchmarkSuite
         std::string
         info() const noexcept
         {
-            return fmt::format("full-range|ts:{}|UTR:{:.0f}%|{}|{}",
+            return fmt::format("hybrid-full-range|ts:{}|UTR:{:.0f}%|{}|{}",
                                ts,
                                ratio2percent<T, UTR>(),
                                TypeInfo<T>::chars,
@@ -386,7 +386,7 @@ struct StandardBenchmarkSuite
         std::string
         info() const noexcept
         {
-            return fmt::format("stream|ts:{}|UTR:{:.0f}%|size:{}|{}|{}",
+            return fmt::format("hybrid-stream|ts:{}|UTR:{:.0f}%|size:{}|{}|{}",
                                ts,
                                ratio2percent<T, UTR>(),
                                stream_size,

@@ -45,13 +45,16 @@ get_img() noexcept
     return Image(Vec2u(w, h));
 }
 
-template <typename K, typename C, typename Clock = std::chrono::steady_clock>
+template <typename K,
+          typename C,
+          bool tbd,
+          typename Clock = std::chrono::steady_clock>
 struct RenderBSE
 {
-    std::string_view
+    std::string
     info() const noexcept
     {
-        return "BSE";
+        return fmt::format("scalar|tbd:{}", tbd);
     }
 
     Clock::duration
@@ -93,9 +96,9 @@ struct RenderSIMDCompact
     info() const noexcept
     {
         if constexpr(tbd)
-            return fmt::format("compact|ts:{}|tbd:{}", ts, tbd);
+            return fmt::format("predicated|ts:{}|tbd:{}", ts, tbd);
         else
-            return fmt::format("compact|ts:{}|tbd:{}|{}|UTR:{:.0f}%",
+            return fmt::format("predicated|ts:{}|tbd:{}|{}|UTR:{:.0f}%",
                                ts,
                                tbd,
                                rcnv_string<rcnv>(),
@@ -171,13 +174,13 @@ struct RenderSIMDFunction
     info() const noexcept
     {
         if constexpr(tbd)
-            return fmt::format("full-range|ts:{}|tbd:{}|UTRt:{:.0f}%",
+            return fmt::format("hybrid-full-range|ts:{}|tbd:{}|UTRt:{:.0f}%",
                                ts,
                                tbd,
                                ratio2percent<float, UTRt>());
         else
             return fmt::format(
-                "full-range|ts:{}|tbd:{}|{}|UTRt:{:.0f}%|UTRh:{:.0f}%",
+                "hybrid-full-range|ts:{}|tbd:{}|{}|UTRt:{:.0f}%|UTRh:{:.0f}%",
                 ts,
                 tbd,
                 rcnv_string<rcnv>(),
@@ -242,20 +245,21 @@ struct RenderSIMDStream
     info() const noexcept
     {
         if constexpr(tbd)
-            return fmt::format("stream|ts:{}|tbd:{}|size:{}|UTRt:{:.0f}%",
-                               ts,
-                               tbd,
-                               stream_size,
-                               ratio2percent<float, UTRt>());
-        else
             return fmt::format(
-                "stream|ts:{}|tbd:{}|{}|size:{}|UTRt:{:.0f}%|UTRh:{:.0f}%",
+                "hybrid-stream|ts:{}|tbd:{}|size:{}|UTRt:{:.0f}%",
                 ts,
                 tbd,
-                rcnv_string<rcnv>(),
                 stream_size,
-                ratio2percent<float, UTRt>(),
-                ratio2percent<float, UTRh>());
+                ratio2percent<float, UTRt>());
+        else
+            return fmt::format("hybrid-stream|ts:{}|tbd:{}|{}|size:{}|UTRt:{:."
+                               "0f}%|UTRh:{:.0f}%",
+                               ts,
+                               tbd,
+                               rcnv_string<rcnv>(),
+                               stream_size,
+                               ratio2percent<float, UTRt>(),
+                               ratio2percent<float, UTRh>());
     }
 
     Clock::duration

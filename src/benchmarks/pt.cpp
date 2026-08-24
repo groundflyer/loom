@@ -20,11 +20,14 @@ using C = constants<CS(40),
 
 using kernel = PT_KERNEL<float, C>;
 
+template <bool tbd>
+using PTScalar = RenderBSE<kernel, C, tbd>;
+
 template <bool               ts,
-          bool               sd,
+          bool               tbd,
           simd::ReconvMethod rcnv,
           typename UTR = std::ratio<1, 16>>
-using PTCompact = RenderSIMDCompact<kernel, C, ts, sd, rcnv, UTR>;
+using PTCompact = RenderSIMDCompact<kernel, C, ts, tbd, rcnv, UTR>;
 
 template <bool               ts,
           bool               tbd,
@@ -73,7 +76,8 @@ main(int argc, char* argv[])
                    true,
                    simd::SUCCESSOR_MAJOR,
                    std::ratio<1, 16>,
-                   std::ratio<1, 16>>{}
+                   std::ratio<1, 16>>{},
+        PTScalar<true>{}
 #ifdef BENCH_ALL
         ,
         FavStream{256},
@@ -120,7 +124,8 @@ main(int argc, char* argv[])
                  false,
                  simd::SUCCESSOR_MAJOR,
                  std::ratio<1, 16>,
-                 std::ratio<1, 16>>{stream_size25}
+                 std::ratio<1, 16>>{stream_size25},
+        PTScalar<false>{}
 #endif
     );
 

@@ -20,6 +20,9 @@ using kernel = primary_const<float, C>;
 
 constexpr unsigned num_blocks = kernel::num_blocks;
 
+template <bool tbd>
+using PTScalar = RenderBSE<kernel, C, tbd>;
+
 template <bool               ts,
           bool               tbd,
           simd::ReconvMethod rcnv,
@@ -74,7 +77,8 @@ main(int argc, char* argv[])
                         true,
                         simd::SUCCESSOR_MAJOR,
                         std::ratio<1, 16>,
-                        std::ratio<1, 16>>{}
+                        std::ratio<1, 16>>{},
+        PTScalar<true>{}
 #ifdef BENCH_ALL
         ,
         PrimaryStream<false,
@@ -95,7 +99,11 @@ main(int argc, char* argv[])
         PrimaryCompact<true, false, simd::HYBRID_MAJOR, std::ratio<1, 16>>{},
         PrimaryCompact<false, false, simd::HYBRID_MAJOR, std::ratio<1, 16>>{},
         PrimaryCompact<true, false, simd::SUCCESSOR_MAJOR, std::ratio<1, 16>>{},
-        PrimaryCompact<false, false, simd::SUCCESSOR_MAJOR, std::ratio<1, 16>>{}
+        PrimaryCompact<false,
+                       false,
+                       simd::SUCCESSOR_MAJOR,
+                       std::ratio<1, 16>>{},
+        PTScalar<false>{}
 #endif
     );
     return 0;
