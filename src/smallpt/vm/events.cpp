@@ -79,7 +79,7 @@ EventState::KeyAction::operator()(GLFWwindow* window,
             estate->req_stats_upd = true;
             return;
         }
-        case GLFW_KEY_Q:
+        case GLFW_KEY_A:
         {
             const float cand = estate->threshold / 10.f;
             if(estate->threshold != min_threshold)
@@ -94,7 +94,7 @@ EventState::KeyAction::operator()(GLFWwindow* window,
             }
             return;
         }
-        case GLFW_KEY_W:
+        case GLFW_KEY_S:
         {
             const float cand = estate->threshold * 10.f;
             if(estate->threshold != max_threshold)
@@ -110,7 +110,7 @@ EventState::KeyAction::operator()(GLFWwindow* window,
 
             return;
         }
-        case GLFW_KEY_A:
+        case GLFW_KEY_Q:
         {
             const unsigned md = estate->max_depth;
 
@@ -122,7 +122,7 @@ EventState::KeyAction::operator()(GLFWwindow* window,
             }
             return;
         }
-        case GLFW_KEY_S:
+        case GLFW_KEY_W:
         {
             const unsigned md = estate->max_depth;
 
@@ -298,9 +298,10 @@ ViewState::update_stats(EventState& estate)
 }
 
 void
-ViewState::update_osd(const std::size_t pix_done,
-                      const float       tr,
-                      const float       avg_tr)
+ViewState::update_osd(const std::size_t           pix_done,
+                      const float                 tr,
+                      const float                 avg_tr,
+                      const std::chrono::seconds& t)
 {
     const std::string new_text = fmt::format(
         "CONTROL\n{}\n\n"
@@ -317,7 +318,8 @@ ViewState::update_osd(const std::size_t pix_done,
         "STATS\n"
         "Progress: {:>3}%\n"
         "Traversal rate:     {:>5.02f} MRay/s\n"
-        "Avg Traversal rate: {:>5.02f} MRay/s",
+        "Avg Traversal rate: {:>5.02f} MRay/s\n"
+        "Render time:        {:%M:%S}",
         osd_help,
         vm::simd::info::value,
         img.width(),
@@ -333,7 +335,8 @@ ViewState::update_osd(const std::size_t pix_done,
         static_cast<unsigned>(static_cast<double>(pix_done) /
                               static_cast<double>(img.size()) * 100),
         tr,
-        avg_tr);
+        avg_tr,
+        t);
     osd.update_text(new_text.data());
 }
 } // namespace loom

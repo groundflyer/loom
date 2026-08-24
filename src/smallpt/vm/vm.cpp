@@ -186,9 +186,12 @@ hybrid(EventState& estate, ViewState& vstate)
         {
             vstate.update_stats(estate);
             all_rc += tmp_rc;
-            vstate.update_osd(progress,
-                              ray_traversal_rate(tmp_rc, osd_timer.restart()),
-                              ray_traversal_rate(all_rc, avg_timer.elapsed()));
+            const auto at = avg_timer.elapsed();
+            vstate.update_osd(
+                progress,
+                ray_traversal_rate(tmp_rc, osd_timer.restart()),
+                ray_traversal_rate(all_rc, at),
+                std::chrono::duration_cast<std::chrono::seconds>(at));
             tmp_rc = 0;
         }
 
@@ -215,9 +218,11 @@ hybrid(EventState& estate, ViewState& vstate)
     vstate.update(estate);
     vstate.update_stats(estate);
     all_rc += tmp_rc;
+    const auto at = avg_timer.elapsed();
     vstate.update_osd(vstate.img.size(),
                       ray_traversal_rate(tmp_rc, osd_timer.elapsed()),
-                      ray_traversal_rate(all_rc, avg_timer.elapsed()));
+                      ray_traversal_rate(all_rc, at),
+                      std::chrono::duration_cast<std::chrono::seconds>(at));
 
     return true;
 }
@@ -287,10 +292,12 @@ hybrid_mp(EventState&                     estate,
             {
                 vstate.update_stats(estate);
                 all_rc += tmp_rc;
+                const auto at = avg_timer.elapsed();
                 vstate.update_osd(
                     progress,
                     ray_traversal_rate(tmp_rc, osd_timer.restart()),
-                    ray_traversal_rate(all_rc, avg_timer.elapsed()));
+                    ray_traversal_rate(all_rc, at),
+                    std::chrono::duration_cast<std::chrono::seconds>(at));
                 tmp_rc = 0;
             }
 
@@ -308,9 +315,11 @@ hybrid_mp(EventState&                     estate,
     vstate.update(estate);
     vstate.update_stats(estate);
     all_rc += tmp_rc;
+    const auto at = avg_timer.elapsed();
     vstate.update_osd(vstate.img.size(),
                       ray_traversal_rate(tmp_rc, osd_timer.elapsed()),
-                      ray_traversal_rate(all_rc, avg_timer.elapsed()));
+                      ray_traversal_rate(all_rc, at),
+                      std::chrono::duration_cast<std::chrono::seconds>(at));
 
     return true;
 }

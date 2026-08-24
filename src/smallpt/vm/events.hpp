@@ -20,8 +20,8 @@ inline constexpr char osd_help[] =
     "T: switch multithreading\n"
     "L: lock/unlock image resolution\n"
     "1/2: decrease/increase (x2) blur\n"
-    "Q/W: decrease/increase (x10) adaptive sampling threshold\n"
-    "A/S: decrease/increase (5) max depth\n"
+    "Q/W: decrease/increase (5) max depth\n"
+    "A/S: decrease/increase (x10) adaptive sampling threshold\n"
     "Z/X: decrease/increase (x2) stream size";
 
 enum METHOD : unsigned
@@ -131,7 +131,10 @@ struct ViewState
     update_stats(EventState& estate);
 
     void
-    update_osd(const std::size_t pix_done, const float tr, const float avg_tr);
+    update_osd(const std::size_t           pix_done,
+               const float                 tr,
+               const float                 avg_tr,
+               const std::chrono::seconds& t = {});
 };
 
 template <typename Dur>

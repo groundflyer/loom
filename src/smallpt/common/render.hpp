@@ -44,10 +44,13 @@ scanline(EventState& estate,
                    {
                        vstate.update_stats(estate);
                        all_rc += tmp_rc;
+                       const auto at = avg_timer.elapsed();
                        vstate.update_osd(
                            progress,
                            ray_traversal_rate(tmp_rc, osd_timer.restart()),
-                           ray_traversal_rate(all_rc, avg_timer.elapsed()));
+                           ray_traversal_rate(all_rc, at),
+                           std::chrono::duration_cast<std::chrono::seconds>(
+                               at));
                        tmp_rc = 0;
                    }
 
@@ -56,9 +59,11 @@ scanline(EventState& estate,
            [&]()
     {
         vstate.update(estate);
+        const auto at = avg_timer.elapsed();
         vstate.update_osd(vstate.img.size(),
                           ray_traversal_rate(tmp_rc, osd_timer.elapsed()),
-                          ray_traversal_rate(all_rc, avg_timer.elapsed()));
+                          ray_traversal_rate(all_rc, at),
+                          std::chrono::duration_cast<std::chrono::seconds>(at));
         return estate.req_stop();
     }();
 }
@@ -133,9 +138,12 @@ scanline_mp(EventState& estate,
                 scc.ray_count.exchange(0, std::memory_order_relaxed);
             all_rc += rc;
             vstate.update_stats(estate);
-            vstate.update_osd(scc.progress.load(std::memory_order_relaxed),
-                              ray_traversal_rate(rc, osd_timer.restart()),
-                              ray_traversal_rate(all_rc, avg_timer.elapsed()));
+            const auto at = avg_timer.elapsed();
+            vstate.update_osd(
+                scc.progress.load(std::memory_order_relaxed),
+                ray_traversal_rate(rc, osd_timer.restart()),
+                ray_traversal_rate(all_rc, at),
+                std::chrono::duration_cast<std::chrono::seconds>(at));
         }
 
         std::this_thread::sleep_for(vstate.tf);
@@ -152,9 +160,11 @@ scanline_mp(EventState& estate,
             scc.ray_count.exchange(0, std::memory_order_relaxed);
         all_rc += rc;
         vstate.update(estate);
+        const auto at = avg_timer.elapsed();
         vstate.update_osd(vstate.img.size(),
                           ray_traversal_rate(rc, osd_timer.elapsed()),
-                          ray_traversal_rate(all_rc, avg_timer.elapsed()));
+                          ray_traversal_rate(all_rc, at),
+                          std::chrono::duration_cast<std::chrono::seconds>(at));
     }
 
     return true;
