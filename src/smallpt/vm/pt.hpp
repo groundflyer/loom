@@ -383,13 +383,13 @@ struct scene
     // cylinder
     using CL_Px = CS(0.5);
     using CL_Py = CS(-1);
-    using CL_Pz = CS(-0.35);
+    using CL_Pz = CS(-0.3);
 
     using CL_P = type_sequence<CL_Px, CL_Py, CL_Pz>;
 
     using CL_R = CS(0.25);
-    using CL_H = CS(0.8);
-    using CL_C = CS(-0.2);      // cap y
+    using CL_H = CS(0.65);
+    using CL_C = CS(-0.35);      // cap y = CL_Py + CL_H
 
     using CL_CP = type_sequence<CL_Px, CL_C, CL_Pz>; // cap position
 
@@ -626,8 +626,8 @@ TMACRO(set_materials)
     IEQ(tmp0, pid, 9),          // cylinder?
     IOREQ(tmp0, tmp0, pid, 10), // or cap?
     TCMOV(clr0, tmp0, 1, clr0),
-    TCMOV(clr1, tmp0, 0.786, clr1),
-    TCMOV(clr2, tmp0, 0.427, clr2),
+    TCMOV(clr1, tmp0, 0.827, clr1),
+    TCMOV(clr2, tmp0, 0.537, clr2),
 // set normals and tangents
     TMOV(t0, 0),              // default tangent (0, 1, 0)
     TMOV(t1, 1),
