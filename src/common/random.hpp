@@ -128,7 +128,10 @@ struct RandomState
 {
     std::default_random_engine g;
 
-    RandomState() noexcept : g(std::random_device()()) {}
+    template <typename T = unsigned>
+    RandomState(const T seed = T{}) noexcept : g(seed)
+    {
+    }
 
     /// @brief Make RNG.
     /// @tparam T type of produced number.
