@@ -1771,7 +1771,7 @@ inline constexpr auto stdarray = detail::stdarray<L>::value;
 template <List L>
 inline constexpr bool has_duplicates = detail::has_duplicates<L>::value;
 
-/// @brief Check if @L is empty.
+/// @brief Check if @p L is empty.
 template <List L>
 inline constexpr bool empty = length<L> == 0;
 
