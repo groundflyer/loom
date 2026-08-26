@@ -1,6 +1,11 @@
 cmake_minimum_required(VERSION 3.16)
 
 set(desc "Proof-of-concept virtual machine for SPMD execution")
+
+# Using clang++
+set(CMAKE_CXX_COMPILER "clang++" CACHE STRING "C++ compiler" FORCE)
+set(CMAKE_C_COMPILER "clang" CACHE STRING "C compiler" FORCE)
+
 project(Loom
   VERSION 1.0.0
   DESCRIPTION ${desc}
@@ -27,10 +32,6 @@ set(CUDA_BLOCK_SIZE 256 CACHE STRING "Number of threads in a block")
 
 # compilation
 if(BUILD_TESTS OR BUILD_BENCHMARKS OR BUILD_DEBUGGERS OR BUILD_DEMO OR BUILD_PROF)
-  # Using clang++
-  set(CMAKE_CXX_COMPILER "clang++" CACHE STRING "C++ compiler" FORCE)
-  set(CMAKE_C_COMPILER "clang" CACHE STRING "C compiler" FORCE)
-
   # Compiler with C++20 support is required
   set(CMAKE_CXX_STANDARD 20)
   set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -289,8 +290,6 @@ int main(){std::cout << fmt::format(\"{}\",0);}" FmtLibcxx)
 
     set(bm_srcs threefry.cpp root_finding_bisection.cpp factorial.cpp fibonacci.cpp)
 
-    add_custom_target(benchmarks)
-
     if(BUILD_ALL_BENCHMARKS)
       message(STATUS "Building optional benchmarks")
     endif()
@@ -314,7 +313,6 @@ int main(){std::cout << fmt::format(\"{}\",0);}" FmtLibcxx)
       add_executable(${name} ${BM_SRC_DIR}/${src})
       set_bm_target_flags(${name} "")
       target_link_fmt(${name})
-      add_dependencies(benchmarks ${name})
       install(TARGETS ${name})
 
       if(BUILD_FM_BENCHMARKS)
@@ -322,10 +320,12 @@ int main(){std::cout << fmt::format(\"{}\",0);}" FmtLibcxx)
         add_executable(${fname} ${BM_SRC_DIR}/${src})
         set_bm_target_flags(${fname} -ffast-math)
         target_link_fmt(${fname})
-        add_dependencies(benchmarks ${fname})
         install(TARGETS ${fname})
       endif()
     endforeach()
+
+    add_custom_target(simd_bms DEPENDS bm_threefry)
+    add_custom_target(light_bms DEPENDS bm_root_finding_bisection bm_factorial bm_fibonacci simd_bms)
 
     set(b_values 1 5 20)
     set(t_values 0.001 0.0005 0.0001)
@@ -335,13 +335,15 @@ int main(){std::cout << fmt::format(\"{}\",0);}" FmtLibcxx)
     set(pt_src ${BM_SRC_DIR}/pt.cpp)
     set(primary_src ${BM_SRC_DIR}/primary.cpp)
 
+    add_custom_target(heavy_bms)
+
     foreach(bval ${b_values})
       set(primary_name "bm_primary_b${bval}")
       add_executable(${primary_name} ${primary_src})
       target_compile_definitions(${primary_name} PRIVATE -DBLUR_VALUE="${bval}")
       set_bm_target_flags(${primary_name} "")
       target_link_fmt(${primary_name})
-      add_dependencies(benchmarks ${primary_name})
+      add_dependencies(heavy_bms ${primary_name})
       install(TARGETS ${primary_name})
 
       if(BUILD_FM_BENCHMARKS)
@@ -349,7 +351,7 @@ int main(){std::cout << fmt::format(\"{}\",0);}" FmtLibcxx)
         add_executable(${fname} ${primary_src})
         set_bm_target_flags(${fname} -ffast-math)
         target_link_fmt(${fname})
-        add_dependencies(benchmarks ${fname})
+        add_dependencies(heavy_bms ${fname})
         install(TARGETS ${fname})
       endif()
 
@@ -362,7 +364,7 @@ int main(){std::cout << fmt::format(\"{}\",0);}" FmtLibcxx)
             target_compile_definitions(${pt_name} PRIVATE -DPT_KERNEL=${ptk} -DTHRESHOLD_VALUE="${tval}" -DBLUR_VALUE="${bval}" -DDEPTH_VALUE="${dval}")
             set_bm_target_flags(${pt_name} "")
             target_link_fmt(${pt_name})
-            add_dependencies(benchmarks ${pt_name})
+            add_dependencies(heavy_bms ${pt_name})
             install(TARGETS ${pt_name})
 
             if(BUILD_FM_BENCHMARKS)
@@ -370,13 +372,15 @@ int main(){std::cout << fmt::format(\"{}\",0);}" FmtLibcxx)
               add_executable(${fname} ${pt_src})
               set_bm_target_flags(${fname} -ffast-math)
               target_link_fmt(${fname})
-              add_dependencies(benchmarks ${fname})
+              add_dependencies(heavy_bms ${fname})
               install(TARGETS ${fname})
             endif()
           endforeach()
         endforeach()
       endforeach()
     endforeach()
+
+    add_custom_target(benchmarks DEPENDS light_bms heavy_bms)
   endif()
 
   if(BUILD_DEMO)

@@ -32,12 +32,12 @@
       ];
 
       execDeps = with pkgs; [
-          llvm.libcxxClang
-          fmtLibcxx
-          glfw
-          fast-float
-          range-v3
-          hwloc
+        llvm.libcxxClang
+        fmtLibcxx
+        glfw
+        fast-float
+        range-v3
+        hwloc
       ];
 
       pver = "1.0.0";
@@ -64,7 +64,7 @@
           version = pver;
           src = self;
 
-          nativeBuildInputs = docsDeps ++ buildDeps;
+          nativeBuildInputs = docsDeps ++ buildDeps ++ [ pkgs.clang ];
 
           cmakeFlags = [ "-DBUILD_DOC=ON" ];
 
@@ -98,13 +98,41 @@
           export NIX_ENFORCE_NO_NATIVE=0
           ulimit -s unlimited
           '';
+        };
 
-          # doCheck = true;
-          # checkPhase = ''
-          # runHook preCheck
-          # ctest --output-on-failure
-          # runHook postCheck
-          # '';
+        benchmarks = pkgs.stdenv.mkDerivation {
+          pname = "loom";
+          version = pver;
+          src = self;
+
+          nativeBuildInputs = buildDeps;
+          buildInputs = execDeps;
+
+          cmakeFlags = [
+            "-DBUILD_TESTS=ON"
+            "-DBUILD_BENCHMARKS=ON"
+            "-DBUILD_DEMO=OFF"
+          ];
+
+          preBuild = ''
+          export NIX_ENFORCE_NO_NATIVE=0
+          ulimit -s unlimited
+          '';
+
+          buildPhase = ''
+          runHook preBuild
+          cmake --build . -t tests -j "$NIX_BUILD_CORES"
+          cmake --build . -t light_bms -j "$NIX_BUILD_CORES"
+          cmake --build . -t heavy_bms -j 1
+          runHook postBuild
+          '';
+
+          doCheck = true;
+          checkPhase = ''
+          runHook preCheck
+          ctest --output-on-failure
+          runHook postCheck
+          '';
         };
       };
     };
