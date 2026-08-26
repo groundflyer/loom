@@ -149,7 +149,7 @@ int main(){std::cout << fmt::format(\"{}\",0);}" FmtLibcxx)
   else()
     message(STATUS "Fetching range-v3...")
     FetchContent_MakeAvailable(range-v3)
-    include_directories(${Range-v3_SOURCE_DIR}/include)
+    include_directories(SYSTEM ${Range-v3_SOURCE_DIR}/include)
   endif()
 
   # fast_float
