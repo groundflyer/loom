@@ -42,20 +42,41 @@
 
       pver = "1.0.0";
     in {
-      devShells.${system}.default = pkgs.mkShell {
-        packages = with pkgs; [
-          # profiling and debug
-          perf
-          libllvm
-          lldb
-        ] ++ execDeps ++ docsDeps ++ buildDeps;
+      devShells.${system} = {
+        default = pkgs.mkShell {
+          packages = with pkgs; [
+            # profiling and debug
+            perf
+            libllvm
+            lldb
+          ] ++ execDeps ++ docsDeps ++ buildDeps;
 
-        shellHook = ''
-        export CMAKE_EXPORT_COMPILE_COMMANDS=1
-        export NIX_ENFORCE_NO_NATIVE=0
-        export ASAN_SYMBOLIZER_PATH=${pkgs.lib.getExe' pkgs.libllvm "llvm-symbolizer"}
-        ulimit -s unlimited
-        '';
+          shellHook = ''
+          export CMAKE_EXPORT_COMPILE_COMMANDS=1
+          export NIX_ENFORCE_NO_NATIVE=0
+          export ASAN_SYMBOLIZER_PATH=${pkgs.lib.getExe' pkgs.libllvm "llvm-symbolizer"}
+          ulimit -s unlimited
+          '';
+        };
+
+        clean = pkgs.mkShell {
+          packages = with pkgs; [
+            libGL
+            libx11
+            libxrandr
+            libxinerama
+            libxi
+            libxext
+            libxcursor
+            libxxf86vm
+          ] ++ buildDeps;
+
+          shellHook = ''
+          export CMAKE_EXPORT_COMPILE_COMMANDS=1
+          export NIX_ENFORCE_NO_NATIVE=0
+          ulimit -s unlimited
+          '';
+        };
       };
 
       packages.${system} = {

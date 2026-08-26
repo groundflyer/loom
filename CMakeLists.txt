@@ -18,15 +18,16 @@ option(BUILD_BENCHMARKS "Build benchmarks" OFF)
 option(BUILD_FM_BENCHMARKS "Additionaly build fast-math versions of benchmarks" OFF)
 option(BUILD_ALL_BENCHMARKS "Enable optional benchmarks. Requires at least 32Gb RAM" OFF)
 option(BUILD_DEBUGGERS "Build debuggers" OFF)
-option(BUILD_DEMO "Build SmallPT demo" OFF)
+option(BUILD_DEMO "Build SmallPT demo" ON)
 option(BUILD_PROF "Build profiling executables" OFF)
-option(BUILD_DOC "Build documentation" OFF)
+option(BUILD_DOCS "Build documentation" OFF)
 option(ENABLE_IPO "Enable interprocedural optimization" OFF)
 option(USE_CUDA "Enable CUDA support" OFF)
 option(USE_SYSTEM_RANGEV3 "Use system range-v3 library" ON)
 option(USE_SYSTEM_FMT "Use system libfmt" ON)
 option(USE_SYSTEM_GLFW "Use system glfw3" ON)
 option(USE_SYSTEM_FAST_FLOAT "Use system fast_float" ON)
+option(USE_SYSTEM_HWLOC "Use system hwloc" ON)
 set(TARGET_CPU "native" CACHE STRING "Target CPU")
 set(CUDA_BLOCK_SIZE 256 CACHE STRING "Number of threads in a block")
 
@@ -100,6 +101,11 @@ if(BUILD_TESTS OR BUILD_BENCHMARKS OR BUILD_DEBUGGERS OR BUILD_DEMO OR BUILD_PRO
       endif()
     else()
       message(STATUS "Fetching glfw3...")
+      set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
+      set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+      set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+      set(GLFW_BUILD_WAYLAND OFF CACHE BOOL "" FORCE)
+      set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
       FetchContent_MakeAvailable(glfw)
     endif()
     set(GL_LIBS OpenGL::GL glfw)
@@ -158,8 +164,47 @@ int main(){std::cout << fmt::format(\"{}\",0);}" FmtLibcxx)
   endif()
 
   # hwloc
-  find_package(PkgConfig REQUIRED QUIET)
-  pkg_check_modules(HWLOC REQUIRED IMPORTED_TARGET hwloc)
+  if(USE_SYSTEM_HWLOC)
+    find_package(PkgConfig REQUIRED QUIET)
+    pkg_check_modules(HWLOC REQUIRED IMPORTED_TARGET hwloc)
+    set(HWLOC_TARGET PkgConfig::HWLOC)
+  else()
+    include(ExternalProject)
+    cmake_policy(SET CMP0169 OLD)
+
+    message(STATUS "Fetching hwloc...")
+
+    FetchContent_Populate(hwloc)
+    ExternalProject_Add(hwloc
+      BUILD_IN_SOURCE ON
+      SOURCE_DIR ${hwloc_SOURCE_DIR}
+      CONFIGURE_COMMAND
+      ./configure
+      --prefix=<INSTALL_DIR>
+      --enable-static=yes
+      --enable-shared=no
+      --disable-readme
+      --disable-cairo
+      --disable-opencl
+      --disable-cuda
+      --disable-nvml
+      --disable-rsmi
+      --disable-levelzero
+      --disable-gl
+      --disable-libudev
+      BUILD_COMMAND make
+      INSTALL_COMMAND make install
+    )
+
+    file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/hwloc-prefix/include")
+    add_library(loom::HWLOC STATIC IMPORTED GLOBAL)
+    set_target_properties(loom::HWLOC PROPERTIES
+      IMPORTED_LOCATION "${CMAKE_CURRENT_BINARY_DIR}/hwloc-prefix/lib/libhwloc.a"
+      INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_CURRENT_BINARY_DIR}/hwloc-prefix/include"
+    )
+    add_dependencies(loom::HWLOC hwloc)
+    set(HWLOC_TARGET loom::HWLOC)
+  endif()
 
   # External includes
   include_directories(ext/include)
@@ -218,7 +263,7 @@ int main(){std::cout << fmt::format(\"{}\",0);}" FmtLibcxx)
       add_dependencies(tests ${name})
     endforeach()
 
-    target_link_libraries(test_vm_mp PUBLIC Threads::Threads PkgConfig::HWLOC)
+    target_link_libraries(test_vm_mp PUBLIC Threads::Threads ${HWLOC_TARGET})
 
     if(USE_CUDA)
       add_executable(test_vm_cuda ${TESTS_SRC_DIR}/vm.cu)
@@ -394,13 +439,18 @@ int main(){std::cout << fmt::format(\"{}\",0);}" FmtLibcxx)
     add_library(pt_ref src/smallpt/ref/ref.cpp)
     target_compile_options(pt_ref PRIVATE -ffast-math -fno-exceptions)
     target_compile_definitions(pt_ref PRIVATE -DNUM_CORES_L=${NUM_CORES_L} -DNUM_CORES_P=${NUM_CORES_P})
+    target_include_directories(pt_ref PUBLIC ${OPENGL_INCLUDE_DIR})
+    target_link_libraries(pt_ref PUBLIC FastFloat::fast_float ${HWLOC_TARGET} ${GL_LIBS})
+    target_link_fmt(pt_ref)
 
     add_library(pt_vm src/smallpt/vm/vm.cpp)
     target_compile_options(pt_vm PRIVATE -fno-exceptions -ftemplate-depth=2048 -fbracket-depth=512 -ftemplate-backtrace-limit=1)
     target_compile_definitions(pt_vm PRIVATE -DNUM_CORES_L=${NUM_CORES_L} -DNUM_CORES_P=${NUM_CORES_P})
+    target_link_libraries(pt_vm PUBLIC FastFloat::fast_float ${HWLOC_TARGET} ${GL_LIBS})
+    target_link_fmt(pt_vm)
 
     add_executable(loom_pt_demo src/smallpt/vm/pt.cpp src/smallpt/vm/events.cpp)
-    target_link_libraries(loom_pt_demo PUBLIC viewport pt_vm pt_ref Threads::Threads PkgConfig::HWLOC)
+    target_link_libraries(loom_pt_demo PUBLIC viewport pt_vm pt_ref Threads::Threads ${HWLOC_TARGET})
     target_link_fmt(loom_pt_demo)
     target_compile_definitions(loom_pt_demo PUBLIC -DNUM_CORES_L=${NUM_CORES_L} -DNUM_CORES_P=${NUM_CORES_P})
     target_compile_options(loom_pt_demo PUBLIC -ftemplate-depth=2048 -fbracket-depth=512 -ftemplate-backtrace-limit=1)
@@ -429,7 +479,7 @@ int main(){std::cout << fmt::format(\"{}\",0);}" FmtLibcxx)
 endif()
 
 # docs
-if(BUILD_DOC)
+if(BUILD_DOCS)
   find_package(Doxygen REQUIRED dot)
   if(DOXYGEN_FOUND)
     message(STATUS "Building documentation")
@@ -452,7 +502,6 @@ if(BUILD_DOC)
     set(DOXYGEN_GROUP_GRAPHS YES)
     set(DOXYGEN_CALL_GRAPH YES)
     set(DOXYGEN_CALLER_GRAPH YES)
-
     set(DOXYGEN_EXTRACT_STATIC YES)
     set(DOXYGEN_EXTRACT_LOCAL_CLASSES YES)
     set(DOXYGEN_HTML_DYNAMIC_MENUS YES)
@@ -477,7 +526,7 @@ if(BUILD_DOC)
       ${BIB_DIR}/LD04ERQIT_citation.bib
       ${BIB_DIR}/acm_2063384.2063405.bib
       ${BIB_DIR}/josa-65-5-531.bib)
-    doxygen_add_docs(doc ${_SRC_DIR} ${DOC_DIR} ALL
+    doxygen_add_docs(docs ${_SRC_DIR} ${DOC_DIR} ALL
       COMMENT "Generating documentation with Doxygen"
       WORKING_DIRECTORY ${_SRC_DIR})
     file(COPY ${DOC_DIR}/tex-chtml.js DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/html/mathjax)

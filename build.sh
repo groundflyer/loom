@@ -47,8 +47,8 @@ enable_debugger() {
 }
 
 enable_docs() {
-    CMAKE_ARGS+=(-DBUILD_DOC=ON)
-    TARGETS+=(doc)
+    CMAKE_ARGS+=(-DBUILD_DOCS=ON)
+    TARGETS+=(docs)
 }
 
 enable_demo() {
