@@ -11,7 +11,6 @@
 
 namespace loom
 {
-inline constexpr std::size_t               ncores = NUM_CORES_L;
 inline constexpr std::chrono::milliseconds osd_timeframe{500};
 
 inline constexpr char osd_help[] =

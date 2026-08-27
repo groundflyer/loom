@@ -148,7 +148,7 @@ EventState::KeyAction::operator()(GLFWwindow* window,
         {
             const std::size_t cand = estate->stream_size * 2ul;
             if(estate->method == HYBRID &&
-               cand * NUM_CORES_L < estate->img_size)
+               cand * std::thread::hardware_concurrency() < estate->img_size)
             {
                 estate->stream_size   = cand;
                 estate->req_restart   = true;
@@ -289,9 +289,9 @@ ViewState::update_stats(EventState& estate)
         ss       = estate.method == HYBRID ?
                        fmt::format("Stream size: {}\n", estate.stream_size) :
                        "";
-        nt       = estate.run_mp ?
-                       fmt::format("Number of threads: {}\n", NUM_CORES_L) :
-                       "";
+        nt       = estate.run_mp ? fmt::format("Number of threads: {}\n",
+                                         std::thread::hardware_concurrency()) :
+                                   "";
 
         estate.req_stats_upd = false;
     }

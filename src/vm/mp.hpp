@@ -42,12 +42,6 @@ is_complete_impl(std::index_sequence<Idxs...>,
 }
 } // namespace detail
 
-#ifdef NUM_THREADS
-constexpr inline std::size_t num_workers = NUM_THREADS;
-#else
-constexpr inline std::size_t num_workers = dynamic_size;
-#endif
-
 /// @brief Kernel execution context. Manages concurrent exchange and kernel
 /// execution.
 /// @tparam K kernel to manage.
@@ -305,7 +299,7 @@ class ShopBase<Ks, Ctx, dynamic_size> : public Signal
 /// @tparam N number of workers.
 template <typelist::List Ks,
           template <typename> typename Ctx,
-          std::size_t N = num_workers>
+          std::size_t N = dynamic_size>
 class Shop : public ShopBase<Ks, Ctx, N>
 {
     using base = ShopBase<Ks, Ctx, N>;

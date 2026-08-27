@@ -83,11 +83,6 @@ if(BUILD_TESTS OR BUILD_BENCHMARKS OR BUILD_DEBUGGERS OR BUILD_DEMO OR BUILD_PRO
   set(THREADS_PREFER_PTHREAD_FLAG 1)
   find_package(Threads REQUIRED)
 
-  cmake_host_system_information(RESULT NUM_CORES_P QUERY NUMBER_OF_PHYSICAL_CORES)
-  cmake_host_system_information(RESULT NUM_CORES_L QUERY NUMBER_OF_LOGICAL_CORES)
-  message(STATUS "Host physical cores count: " ${NUM_CORES_P})
-  message(STATUS "Host logical cores count: " ${NUM_CORES_L})
-
   if(BUILD_DEMO)
     # OpenGL
     set(OpenGL_GL_PREFERENCE LEGACY)
@@ -437,7 +432,6 @@ int main(){std::cout << fmt::format(\"{}\",0);}" FmtLibcxx)
 
     add_library(pt_ref src/smallpt/ref/ref.cpp)
     target_compile_options(pt_ref PRIVATE -ffast-math -fno-exceptions)
-    target_compile_definitions(pt_ref PRIVATE -DNUM_CORES_L=${NUM_CORES_L} -DNUM_CORES_P=${NUM_CORES_P})
     target_include_directories(pt_ref PUBLIC ${OPENGL_INCLUDE_DIR})
     target_link_libraries(pt_ref PUBLIC FastFloat::fast_float ${HWLOC_TARGET} ${GL_LIBS} ${FMT_TARGET})
 
@@ -448,7 +442,6 @@ int main(){std::cout << fmt::format(\"{}\",0);}" FmtLibcxx)
 
     add_executable(loom_pt_demo src/smallpt/vm/pt.cpp src/smallpt/vm/events.cpp)
     target_link_libraries(loom_pt_demo PUBLIC viewport pt_vm pt_ref Threads::Threads ${HWLOC_TARGET} ${FMT_TARGET})
-    target_compile_definitions(loom_pt_demo PUBLIC -DNUM_CORES_L=${NUM_CORES_L} -DNUM_CORES_P=${NUM_CORES_P})
     target_compile_options(loom_pt_demo PUBLIC -ftemplate-depth=2048 -fbracket-depth=512 -ftemplate-backtrace-limit=1)
     install(TARGETS loom_pt_demo)
   endif()

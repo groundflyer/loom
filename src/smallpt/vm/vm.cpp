@@ -249,9 +249,12 @@ hybrid_mp(EventState&                     estate,
     const float       blur        = estate.blur;
     const std::size_t stream_size = estate.stream_size;
 
-    vm::mp::Shop<type_sequence<pt_float>, mp_context, ncores> shop(stream_size);
+    const unsigned num_workers = std::thread::hardware_concurrency();
+    vm::mp::Shop<type_sequence<pt_float>, mp_context> shop(num_workers,
+                                                           stream_size);
 
-    std::vector<vm::output_type<pt_float>> result_buffer(stream_size * ncores);
+    std::vector<vm::output_type<pt_float>> result_buffer(stream_size *
+                                                         num_workers);
     remote_output_control                  roc(result_buffer.data());
 
     auto input_view = std::views::transform(

@@ -42,7 +42,8 @@ static bool
 val_stream_size(const std::size_t stream_size,
                 const std::size_t img_size) noexcept
 {
-    return stream_size * NUM_CORES_L < img_size && stream_size > 64;
+    return stream_size * std::thread::hardware_concurrency() < img_size &&
+           stream_size > 64;
 }
 
 struct UnknownMethod

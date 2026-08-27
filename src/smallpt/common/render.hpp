@@ -86,7 +86,8 @@ scanline_mp(EventState& estate,
 
     decltype(auto) r = imgproj(vstate.img);
 
-    thread_pool<ncores> tp(
+    thread_pool<dynamic_size> tp(
+        std::thread::hardware_concurrency(),
         [&,
          &c         = scc.counter,
          &s         = scc.flag,
