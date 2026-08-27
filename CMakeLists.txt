@@ -67,7 +67,7 @@ if(BUILD_TESTS OR BUILD_BENCHMARKS OR BUILD_DEBUGGERS OR BUILD_DEMO OR BUILD_PRO
   # Link-time optimization
   if(CMAKE_BUILD_TYPE STREQUAL "Release")
     include(CheckIPOSupported)
-    check_ipo_supported(RESULT HAS_IPO OUTPUT IPO_ERROR LANGUAGES CXX)
+    check_ipo_supported(RESULT HAS_IPO OUTPUT IPO_ERROR LANGUAGES CXX C)
     if(HAS_IPO)
       if(ENABLE_IPO)
         message(STATUS "Interprocedural optimization enabled")
@@ -126,9 +126,15 @@ if(BUILD_TESTS OR BUILD_BENCHMARKS OR BUILD_DEBUGGERS OR BUILD_DEMO OR BUILD_PRO
 #include <iostream>
 #include <fmt/core.h>
 int main(){std::cout << fmt::format(\"{}\",0);}" FmtLibcxx)
+    if(FmtLibcxx)
+      set(FMT_TARGET fmt::fmt)
+    else()
+      set(FMT_TARGET fmt::fmt-header-only)
+    endif()
   else()
     message(STATUS "Fetching fmt...")
     FetchContent_MakeAvailable(libfmt)
+    set(FMT_TARGET fmt::fmt-header-only)
   endif()
 
   # CUDA
@@ -148,6 +154,8 @@ int main(){std::cout << fmt::format(\"{}\",0);}" FmtLibcxx)
     find_package(range-v3 REQUIRED)
   else()
     message(STATUS "Fetching range-v3...")
+    set(RANGES_BUILD_CALENDAR_EXAMPLE OFF CACHE BOOL "" FORCE)
+    set(RANGES_DEBUG_INFO OFF CACHE BOOL "" FORCE)
     FetchContent_MakeAvailable(range-v3)
     include_directories(SYSTEM ${Range-v3_SOURCE_DIR}/include)
   endif()
@@ -175,6 +183,10 @@ int main(){std::cout << fmt::format(\"{}\",0);}" FmtLibcxx)
     message(STATUS "Fetching hwloc...")
 
     FetchContent_Populate(hwloc)
+
+    set(HWLOC_INCLUDE "${CMAKE_CURRENT_BINARY_DIR}/hwloc-prefix/include")
+    set(HWLOC_LIBRARY "${CMAKE_CURRENT_BINARY_DIR}/hwloc-prefix/lib/libhwloc.a")
+
     ExternalProject_Add(hwloc
       BUILD_IN_SOURCE ON
       SOURCE_DIR ${hwloc_SOURCE_DIR}
@@ -192,15 +204,16 @@ int main(){std::cout << fmt::format(\"{}\",0);}" FmtLibcxx)
       --disable-levelzero
       --disable-gl
       --disable-libudev
-      BUILD_COMMAND make
-      INSTALL_COMMAND make install
+      BUILD_COMMAND ${CMAKE_MAKE_PROGRAM}
+      INSTALL_COMMAND ${CMAKE_MAKE_PROGRAM} install
+      BUILD_BYPRODUCTS ${HWLOC_INCLUDE} ${HWLOC_LIBRARY}
     )
 
-    file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/hwloc-prefix/include")
+    file(MAKE_DIRECTORY ${HWLOC_INCLUDE})
     add_library(loom::HWLOC STATIC IMPORTED GLOBAL)
     set_target_properties(loom::HWLOC PROPERTIES
-      IMPORTED_LOCATION "${CMAKE_CURRENT_BINARY_DIR}/hwloc-prefix/lib/libhwloc.a"
-      INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_CURRENT_BINARY_DIR}/hwloc-prefix/include"
+      IMPORTED_LOCATION ${HWLOC_LIBRARY}
+      INTERFACE_INCLUDE_DIRECTORIES ${HWLOC_INCLUDE}
     )
     add_dependencies(loom::HWLOC hwloc)
     set(HWLOC_TARGET loom::HWLOC)
@@ -210,14 +223,6 @@ int main(){std::cout << fmt::format(\"{}\",0);}" FmtLibcxx)
   include_directories(ext/include)
   # Disable static_math warnings
   add_compile_options(-Wno-deprecated-literal-operator -Wno-nan-infinity-disabled -Wno-unused-function)
-
-  macro(target_link_fmt target)
-    if (USE_SYSTEM_FMT AND (NOT FmtLibcxx))
-      target_link_libraries(${target} PRIVATE fmt::fmt-header-only)
-    else()
-      target_link_libraries(${target} PRIVATE fmt::fmt)
-    endif()
-  endmacro()
 
   # Tests
   if(BUILD_TESTS)
@@ -258,12 +263,12 @@ int main(){std::cout << fmt::format(\"{}\",0);}" FmtLibcxx)
 
       add_executable(${name} ${TESTS_SRC_DIR}/${src})
       add_test(NAME ${name} COMMAND ${name})
-      target_link_fmt(${name})
-      target_link_libraries(${name} PUBLIC FastFloat::fast_float)
+      target_link_libraries(${name} PUBLIC FastFloat::fast_float ${FMT_TARGET})
       add_dependencies(tests ${name})
     endforeach()
 
     target_link_libraries(test_vm_mp PUBLIC Threads::Threads ${HWLOC_TARGET})
+    target_link_libraries(test_threadpool PUBLIC Threads::Threads ${HWLOC_TARGET})
 
     if(USE_CUDA)
       add_executable(test_vm_cuda ${TESTS_SRC_DIR}/vm.cu)
@@ -306,8 +311,7 @@ int main(){std::cout << fmt::format(\"{}\",0);}" FmtLibcxx)
       string(PREPEND name "dbg_")
 
       add_executable(${name} ${DBGS_SRC_DIR}/${src})
-      target_link_fmt(${name})
-      target_link_libraries(${name} PUBLIC FastFloat::fast_float)
+      target_link_libraries(${name} PUBLIC FastFloat::fast_float ${FMT_TARGET})
       add_dependencies(dbgs ${name})
       install(TARGETS ${name})
     endforeach()
@@ -346,6 +350,7 @@ int main(){std::cout << fmt::format(\"{}\",0);}" FmtLibcxx)
     macro(set_bm_target_flags target opt)
       target_compile_definitions(${target} PRIVATE -DREPO_HASH="${REPO_HASH}")
       target_compile_options(${target} PRIVATE -ftemplate-depth=2048 -fbracket-depth=512 -ftemplate-backtrace-limit=1 -fno-exceptions ${opt})
+      target_link_libraries(${target} PRIVATE ${FMT_TARGET} FastFloat::fast_float)
       if(BUILD_ALL_BENCHMARKS)
         target_compile_definitions(${target} PRIVATE -DBENCH_ALL)
       endif()
@@ -357,14 +362,12 @@ int main(){std::cout << fmt::format(\"{}\",0);}" FmtLibcxx)
 
       add_executable(${name} ${BM_SRC_DIR}/${src})
       set_bm_target_flags(${name} "")
-      target_link_fmt(${name})
       install(TARGETS ${name})
 
       if(BUILD_FM_BENCHMARKS)
         set(fname ${name}_fm)
         add_executable(${fname} ${BM_SRC_DIR}/${src})
         set_bm_target_flags(${fname} -ffast-math)
-        target_link_fmt(${fname})
         install(TARGETS ${fname})
       endif()
     endforeach()
@@ -387,7 +390,6 @@ int main(){std::cout << fmt::format(\"{}\",0);}" FmtLibcxx)
       add_executable(${primary_name} ${primary_src})
       target_compile_definitions(${primary_name} PRIVATE -DBLUR_VALUE="${bval}")
       set_bm_target_flags(${primary_name} "")
-      target_link_fmt(${primary_name})
       add_dependencies(heavy_bms ${primary_name})
       install(TARGETS ${primary_name})
 
@@ -395,7 +397,6 @@ int main(){std::cout << fmt::format(\"{}\",0);}" FmtLibcxx)
         set(fname ${pimary_name}_fm)
         add_executable(${fname} ${primary_src})
         set_bm_target_flags(${fname} -ffast-math)
-        target_link_fmt(${fname})
         add_dependencies(heavy_bms ${fname})
         install(TARGETS ${fname})
       endif()
@@ -408,7 +409,6 @@ int main(){std::cout << fmt::format(\"{}\",0);}" FmtLibcxx)
             add_executable(${pt_name} ${pt_src})
             target_compile_definitions(${pt_name} PRIVATE -DPT_KERNEL=${ptk} -DTHRESHOLD_VALUE="${tval}" -DBLUR_VALUE="${bval}" -DDEPTH_VALUE="${dval}")
             set_bm_target_flags(${pt_name} "")
-            target_link_fmt(${pt_name})
             add_dependencies(heavy_bms ${pt_name})
             install(TARGETS ${pt_name})
 
@@ -416,7 +416,6 @@ int main(){std::cout << fmt::format(\"{}\",0);}" FmtLibcxx)
               set(fname ${pt_name}_fm)
               add_executable(${fname} ${pt_src})
               set_bm_target_flags(${fname} -ffast-math)
-              target_link_fmt(${fname})
               add_dependencies(heavy_bms ${fname})
               install(TARGETS ${fname})
             endif()
@@ -440,18 +439,15 @@ int main(){std::cout << fmt::format(\"{}\",0);}" FmtLibcxx)
     target_compile_options(pt_ref PRIVATE -ffast-math -fno-exceptions)
     target_compile_definitions(pt_ref PRIVATE -DNUM_CORES_L=${NUM_CORES_L} -DNUM_CORES_P=${NUM_CORES_P})
     target_include_directories(pt_ref PUBLIC ${OPENGL_INCLUDE_DIR})
-    target_link_libraries(pt_ref PUBLIC FastFloat::fast_float ${HWLOC_TARGET} ${GL_LIBS})
-    target_link_fmt(pt_ref)
+    target_link_libraries(pt_ref PUBLIC FastFloat::fast_float ${HWLOC_TARGET} ${GL_LIBS} ${FMT_TARGET})
 
     add_library(pt_vm src/smallpt/vm/vm.cpp)
     target_compile_options(pt_vm PRIVATE -fno-exceptions -ftemplate-depth=2048 -fbracket-depth=512 -ftemplate-backtrace-limit=1)
     target_compile_definitions(pt_vm PRIVATE -DNUM_CORES_L=${NUM_CORES_L} -DNUM_CORES_P=${NUM_CORES_P})
-    target_link_libraries(pt_vm PUBLIC FastFloat::fast_float ${HWLOC_TARGET} ${GL_LIBS})
-    target_link_fmt(pt_vm)
+    target_link_libraries(pt_vm PUBLIC FastFloat::fast_float ${HWLOC_TARGET} ${GL_LIBS} ${FMT_TARGET})
 
     add_executable(loom_pt_demo src/smallpt/vm/pt.cpp src/smallpt/vm/events.cpp)
-    target_link_libraries(loom_pt_demo PUBLIC viewport pt_vm pt_ref Threads::Threads ${HWLOC_TARGET})
-    target_link_fmt(loom_pt_demo)
+    target_link_libraries(loom_pt_demo PUBLIC viewport pt_vm pt_ref Threads::Threads ${HWLOC_TARGET} ${FMT_TARGET})
     target_compile_definitions(loom_pt_demo PUBLIC -DNUM_CORES_L=${NUM_CORES_L} -DNUM_CORES_P=${NUM_CORES_P})
     target_compile_options(loom_pt_demo PUBLIC -ftemplate-depth=2048 -fbracket-depth=512 -ftemplate-backtrace-limit=1)
     install(TARGETS loom_pt_demo)
@@ -467,11 +463,10 @@ int main(){std::cout << fmt::format(\"{}\",0);}" FmtLibcxx)
     add_executable(prof_pt_compact_tbd ${PROF_SRC_DIR}/pt_compact.cpp)
     add_executable(prof_pt_compact_cld ${PROF_SRC_DIR}/pt_compact.cpp)
 
-    target_link_fmt(prof_pt_compact_tbd)
-    target_link_fmt(prof_pt_compact_cld)
-
     target_compile_options(prof_pt_compact_tbd PUBLIC -ftemplate-depth=2048 -fbracket-depth=512 -ftemplate-backtrace-limit=1 -fno-exceptions -save-temps)
+    target_link_libraries(prof_pt_compact_tbd PRIVATE ${FMT_TARGET})
     target_compile_options(prof_pt_compact_cld PUBLIC -ftemplate-depth=2048 -fbracket-depth=512 -ftemplate-backtrace-limit=1 -fno-exceptions -save-temps)
+    target_link_libraries(prof_pt_compact_cld PRIVATE ${FMT_TARGET})
     target_compile_definitions(prof_pt_compact_cld PRIVATE -DUSE_CLD)
 
     add_dependencies(prof prof_pt_compact_tbd prof_pt_compact_cld)

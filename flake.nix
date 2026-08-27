@@ -26,13 +26,13 @@
       ];
 
       buildDeps = with pkgs; [
+        llvm.libcxxClang
         cmake
         pkgconf
         ninja
       ];
 
       execDeps = with pkgs; [
-        llvm.libcxxClang
         fmtLibcxx
         glfw
         fast-float
