@@ -87,7 +87,14 @@
 
           nativeBuildInputs = docsDeps ++ buildDeps ++ [ pkgs.clang ];
 
-          cmakeFlags = [ "-DBUILD_DOC=ON" ];
+          cmakeFlags = [
+            "-DBUILD_DOCS=ON"
+            "-DBUILD_TESTS=OFF"
+            "-DBUILD_BENCHMARKS=OFF"
+            "-DBUILD_DEBUGGERS=OFF"
+            "-DBUILD_DEMO=OFF"
+            "-DBUILD_PROF=OFF"
+          ];
 
           buildPhase = ''
           runHook preBuild
