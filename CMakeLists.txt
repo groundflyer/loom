@@ -28,8 +28,10 @@ option(USE_SYSTEM_FMT "Use system libfmt" ON)
 option(USE_SYSTEM_GLFW "Use system glfw3" ON)
 option(USE_SYSTEM_FAST_FLOAT "Use system fast_float" ON)
 option(USE_SYSTEM_HWLOC "Use system hwloc" ON)
+option(BINDIST "Build binary distribution" OFF)
 set(TARGET_CPU "native" CACHE STRING "Target CPU")
 set(CUDA_BLOCK_SIZE 256 CACHE STRING "Number of threads in a block")
+set(LIBCXX_DIR "" CACHE STRING "Path to libc++ libraries for binary distribution")
 
 # compilation
 if(BUILD_TESTS OR BUILD_BENCHMARKS OR BUILD_DEBUGGERS OR BUILD_DEMO OR BUILD_PROF)
@@ -63,6 +65,13 @@ if(BUILD_TESTS OR BUILD_BENCHMARKS OR BUILD_DEBUGGERS OR BUILD_DEMO OR BUILD_PRO
   add_compile_options($<$<CONFIG:RelWithDebInfo>:-g>)
 
   include_directories(src)
+
+  if(BINDIST)
+    set(USE_SYSTEM_GLFW OFF)
+    set(USE_SYSTEM_HWLOC OFF)
+    add_link_options(-nostdlib++ -L${LIBCXX_DIR})
+    link_libraries(-l:libc++.a -l:libc++abi.a)
+  endif()
 
   # Link-time optimization
   if(CMAKE_BUILD_TYPE STREQUAL "Release")
@@ -121,7 +130,7 @@ if(BUILD_TESTS OR BUILD_BENCHMARKS OR BUILD_DEBUGGERS OR BUILD_DEMO OR BUILD_PRO
 #include <iostream>
 #include <fmt/core.h>
 int main(){std::cout << fmt::format(\"{}\",0);}" FmtLibcxx)
-    if(FmtLibcxx)
+    if(FmtLibcxx AND NOT BINDIST)
       set(FMT_TARGET fmt::fmt)
     else()
       set(FMT_TARGET fmt::fmt-header-only)

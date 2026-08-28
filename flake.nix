@@ -69,11 +69,13 @@
             libxext
             libxcursor
             libxxf86vm
+            llvm.libcxx
           ] ++ buildDeps;
 
           shellHook = ''
           export CMAKE_EXPORT_COMPILE_COMMANDS=1
           export NIX_ENFORCE_NO_NATIVE=0
+          export LIBCXX_DIR=${pkgs.lib.getStatic pkgs.llvmPackages.libcxx}
           ulimit -s unlimited
           '';
         };
