@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 
 showhelp() {
-    echo "Usage: $0 [-h] [-t] [-b] [-d] [-e] [-a] [-c] [-cuda] [-D] [-g] [-l] [-f]"
-    echo -e "\t-t\tbuild and run tests"
-    echo -e "\t-b\tbuild and run benchmarks"
+    echo "Usage: $0 [-h] [-t] [-b] [-d] [-e] [-a] [-c] [-cuda] [-D] [-g] [-l] [-f] [-demo] [-prof]"
+    echo -e "\t-t\tbuild tests"
+    echo -e "\t-b\tbuild benchmarks"
     echo -e "\t-d\tbuild documentation"
     echo -e "\t-e\tuse temporary directory"
-    echo -e "\t-a\tbuild all, then run benchmarks and tests"
+    echo -e "\t-a\tbuild all"
     echo -e "\t-c\trun cmake only, don't build"
     echo -e "\t-cuda\tuse cuda"
     echo -e "\t-D\tbuild RelWithDebInfo"
@@ -14,6 +14,8 @@ showhelp() {
     echo -e "\t-h\tshow this help message and exit"
     echo -e "\t-l\tset libc++ build flags"
     echo -e "\t-f\tfetch dependecies instead of using system's ones"
+    echo -e "\t-demo\tbuild pt demo"
+    echo -e "\t-prof\tbuild binaries for profiling"
 }
 
 SRC_DIR=`realpath $(dirname "${BASH_SOURCE[0]}")`
@@ -26,20 +28,16 @@ TEST=false
 BENCHMARK=false
 [ -z "${JOBS:-}" ] && JOBS=1
 DO_BUILD=true
-CXX=g++
-TARGETS=()
+
 [ -z "${BM_RUNS:-}" ] && BM_RUNS=4
 
 enable_tests() {
     CMAKE_ARGS+=(-DBUILD_TESTS=ON)
     TEST=true
-    TARGETS+=(tests)
 }
 
 enable_benchmarks() {
-    CMAKE_ARGS+=(-DBUILD_BENCHMARKS=ON)
-    BENCHMARK=true
-    TARGETS+=(benchmarks)
+    CMAKE_ARGS+=(-DBUILD_BENCHMARKS=ON -DBUILD_HEAVY_BENCHMARKS=ON)
 }
 
 enable_debugger() {
@@ -48,7 +46,6 @@ enable_debugger() {
 
 enable_docs() {
     CMAKE_ARGS+=(-DBUILD_DOCS=ON)
-    TARGETS+=(docs)
 }
 
 enable_demo() {
@@ -57,7 +54,6 @@ enable_demo() {
 
 enable_prof() {
     CMAKE_ARGS+=(-DBUILD_PROF=ON)
-    TARGETS+=(prof)
 }
 
 enable_debug() {
@@ -83,9 +79,7 @@ fetch_deps() {
 
 run_tests() {
     if [ $TEST = true ]; then
-        pushd ${BUILD_DIR}/src/tests
-        ctest -j${JOBS}
-        popd
+        ctest .
     fi
 }
 
@@ -103,6 +97,16 @@ run_benchmarks() {
             done
         done
     fi
+}
+
+run_build() {
+    mkdir -p $1
+    pushd $1
+    cmake "${CMAKE_ARGS[@]}" ${SRC_DIR}
+    if [ $DO_BUILD = true ]; then
+        make -j${JOBS}
+    fi
+    popd
 }
 
 for key in $@; do
@@ -123,7 +127,6 @@ for key in $@; do
             enable_tests
             enable_benchmarks
             enable_docs
-            TARGETS=(all)
             ;;
         -c)
             DO_BUILD=false
@@ -143,6 +146,12 @@ for key in $@; do
         -f)
             fetch_deps
             ;;
+        -demo)
+            enable_demo
+            ;;
+        -prof)
+            enable_prof
+            ;;
         -h)
             showhelp
             exit 0
@@ -155,17 +164,6 @@ for key in $@; do
     esac
 done
 
-enable_demo
-enable_prof
-
 ulimit -s unlimited
 
-mkdir -p ${BUILD_DIR}
-pushd ${BUILD_DIR}
-cmake "${CMAKE_ARGS[@]}" ${SRC_DIR}
-if [ $DO_BUILD = true ]; then
-    make -j${JOBS} ${TARGETS[*]}
-    run_tests
-    run_benchmarks
-fi
-popd
+run_build ${BUILD_DIR}
