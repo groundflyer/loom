@@ -50,6 +50,10 @@ using all_uints =
     type_sequence<std::uint8_t, std::uint16_t, std::uint32_t, std::uint64_t>;
 using fac_ints   = type_sequence<std::uint32_t, std::uint64_t>;
 using all_floats = type_sequence<float, double>;
+using fit4_uints =
+    std::conditional_t<(simd::simd_width <= 16),
+                       type_sequence<std::uint8_t, std::uint16_t>,
+                       all_uints>;
 
 template <auto>
 struct sort_name;

@@ -371,7 +371,7 @@ main(int argc, char* argv[])
         rs);
 
     test_suites_types(
-        all_uints{},
+        fit4_uints{},
         type_sequence<
             StandardTestSuite<jmp4_test, GM_U3, ::fn::val_jmp4_fn>,
             StandardTestSuite<bit_and_test, GM_Bit_Bin, std::bit_and<>>,
@@ -410,7 +410,7 @@ main(int argc, char* argv[])
         tm,
         rs);
 
-    test_suites_types(all_uints{},
+    test_suites_types(fit4_uints{},
                       type_sequence<InvariantTestSuite<sct_inv_test, GM_U3>,
                                     InvariantTestSuite<slt_inv_test, GM_U3>>{},
                       track,

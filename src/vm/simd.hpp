@@ -3286,8 +3286,6 @@ struct visitor_selector<STITCH::MASKED>
         static constexpr fsize_t threshold = get_threshold_v<N, UTR>;
         static constexpr popcnt_helper<index_t, N> popcnt{};
 
-        static_assert(threshold >= 2);
-
         using index_vector_t = packed_vector<index_t, N>;
         using mask_t         = mask_type<index_t, N>;
 
