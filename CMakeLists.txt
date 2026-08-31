@@ -17,6 +17,7 @@ option(BUILD_TESTS "Build tests" OFF)
 option(BUILD_BENCHMARKS "Build benchmarks" OFF)
 option(BUILD_FM_BENCHMARKS "Additionaly build fast-math versions of benchmarks" OFF)
 option(BUILD_ALL_BENCHMARKS "Enable optional benchmarks. Requires at least 32Gb RAM" OFF)
+option(BUILD_HEAVY_BENCHMARKS "Build heavy benchmarks. Requires at least 32Gb RAM" OFF)
 option(BUILD_DEBUGGERS "Build debuggers" OFF)
 option(BUILD_DEMO "Build SmallPT demo" ON)
 option(BUILD_PROF "Build profiling executables" OFF)
@@ -30,8 +31,11 @@ option(USE_SYSTEM_FAST_FLOAT "Use system fast_float" ON)
 option(USE_SYSTEM_HWLOC "Use system hwloc" ON)
 option(BINDIST "Build binary distribution" OFF)
 set(TARGET_CPU "native" CACHE STRING "Target CPU")
+set(TARGET_VEXT "" CACHE STRING "Target vector extension")
 set(CUDA_BLOCK_SIZE 256 CACHE STRING "Number of threads in a block")
 set(LIBCXX_DIR "" CACHE STRING "Path to libc++ libraries for binary distribution")
+set(GLFW_SRC_DIR "" CACHE STRING "Path to glfw source for binary distribution")
+set(HWLOC_SRC_DIR "" CACHE STRING "Pathe to hwloc source for binary distribution")
 
 # compilation
 if(BUILD_TESTS OR BUILD_BENCHMARKS OR BUILD_DEBUGGERS OR BUILD_DEMO OR BUILD_PROF)
@@ -47,6 +51,7 @@ if(BUILD_TESTS OR BUILD_BENCHMARKS OR BUILD_DEBUGGERS OR BUILD_DEMO OR BUILD_PRO
     set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "Release" "RelWithDebInfo")
   endif()
   message(STATUS "Build Type: ${CMAKE_BUILD_TYPE}")
+  message(STATUS "Target architecture: ${TARGET_CPU}")
 
   # Check for required compiler features
   include(CxxFeatures)
@@ -63,6 +68,11 @@ if(BUILD_TESTS OR BUILD_BENCHMARKS OR BUILD_DEBUGGERS OR BUILD_DEMO OR BUILD_PRO
   add_compile_options($<$<CONFIG:RelWithDebInfo>:-march=${TARGET_CPU}>)
   add_compile_options($<$<CONFIG:RelWithDebInfo>:-O3>)
   add_compile_options($<$<CONFIG:RelWithDebInfo>:-g>)
+
+  if(TARGET_VEXT)
+    add_compile_options($<$<CONFIG:Release>:-m${TARGET_VEXT}>)
+    add_compile_options($<$<CONFIG:RelWithDebInfo>:-m${TARGET_VEXT}>)
+  endif()
 
   include_directories(src)
 
@@ -115,7 +125,7 @@ if(BUILD_TESTS OR BUILD_BENCHMARKS OR BUILD_DEBUGGERS OR BUILD_DEMO OR BUILD_PRO
     set(GL_LIBS OpenGL::GL glfw)
     set(GL_DEFS "-DGLFW_INCLUDE_GLCOREARB -DGLFW_INCLUDE_GLEXT -DGL_GLEXT_PROTOTYPES")
   endif()
-  
+
   # fmt
   if(USE_SYSTEM_FMT)
     find_package(fmt 9 REQUIRED)
@@ -186,16 +196,19 @@ int main(){std::cout << fmt::format(\"{}\",0);}" FmtLibcxx)
 
     message(STATUS "Fetching hwloc...")
 
-    FetchContent_Populate(hwloc)
+    if(NOT HWLOC_SRC_DIR)
+      FetchContent_Populate(hwloc)
+    else()
+      set(hwloc_SOURCE_DIR ${HWLOC_SRC_DIR})
+    endif()
 
     set(HWLOC_INCLUDE "${CMAKE_CURRENT_BINARY_DIR}/hwloc-prefix/include")
     set(HWLOC_LIBRARY "${CMAKE_CURRENT_BINARY_DIR}/hwloc-prefix/lib/libhwloc.a")
 
     ExternalProject_Add(hwloc
-      BUILD_IN_SOURCE ON
       SOURCE_DIR ${hwloc_SOURCE_DIR}
       CONFIGURE_COMMAND
-      ./configure
+      <SOURCE_DIR>/configure
       --prefix=<INSTALL_DIR>
       --enable-static=yes
       --enable-shared=no
@@ -227,6 +240,9 @@ int main(){std::cout << fmt::format(\"{}\",0);}" FmtLibcxx)
   include_directories(ext/include)
   # Disable static_math warnings
   add_compile_options(-Wno-deprecated-literal-operator -Wno-nan-infinity-disabled -Wno-unused-function)
+
+  add_custom_target(light_targets)
+  add_custom_target(heavy_targets)
 
   # Tests
   if(BUILD_TESTS)
@@ -260,6 +276,7 @@ int main(){std::cout << fmt::format(\"{}\",0);}" FmtLibcxx)
     set(TESTS_SRC_DIR src/tests)
 
     add_custom_target(tests)
+    add_dependencies(light_targets tests)
 
     foreach(src ${test_srcs})
       string(REPLACE ".cpp" "" name ${src})
@@ -378,55 +395,58 @@ int main(){std::cout << fmt::format(\"{}\",0);}" FmtLibcxx)
 
     add_custom_target(simd_bms DEPENDS bm_threefry)
     add_custom_target(light_bms DEPENDS bm_root_finding_bisection bm_factorial bm_fibonacci simd_bms)
-
-    set(b_values 1 5 20)
-    set(t_values 0.001 0.0005 0.0001)
-    set(d_values 2 5 20)
-    set(pt_kernels pt_const pt2_const)
-
-    set(pt_src ${BM_SRC_DIR}/pt.cpp)
-    set(primary_src ${BM_SRC_DIR}/primary.cpp)
-
     add_custom_target(heavy_bms)
+    add_dependencies(light_targets light_bms)
+    add_dependencies(heavy_targets heavy_bms)
 
-    foreach(bval ${b_values})
-      set(primary_name "bm_primary_b${bval}")
-      add_executable(${primary_name} ${primary_src})
-      target_compile_definitions(${primary_name} PRIVATE -DBLUR_VALUE="${bval}")
-      set_bm_target_flags(${primary_name} "")
-      add_dependencies(heavy_bms ${primary_name})
-      install(TARGETS ${primary_name})
+    if(BUILD_HEAVY_BENCHMARKS)
+      set(b_values 1 5 20)
+      set(t_values 0.001 0.0005 0.0001)
+      set(d_values 2 5 20)
+      set(pt_kernels pt_const pt2_const)
 
-      if(BUILD_FM_BENCHMARKS)
-        set(fname ${pimary_name}_fm)
-        add_executable(${fname} ${primary_src})
-        set_bm_target_flags(${fname} -ffast-math)
-        add_dependencies(heavy_bms ${fname})
-        install(TARGETS ${fname})
-      endif()
+      set(pt_src ${BM_SRC_DIR}/pt.cpp)
+      set(primary_src ${BM_SRC_DIR}/primary.cpp)
 
-      foreach(ptk ${pt_kernels})
-        foreach(tval ${t_values})
-          foreach(dval ${d_values})
-            set(pt_name "bm_${ptk}_b${bval}_t${tval}_d${dval}")
+      foreach(bval ${b_values})
+        set(primary_name "bm_primary_b${bval}")
+        add_executable(${primary_name} ${primary_src})
+        target_compile_definitions(${primary_name} PRIVATE -DBLUR_VALUE="${bval}")
+        set_bm_target_flags(${primary_name} "")
+        add_dependencies(heavy_bms ${primary_name})
+        install(TARGETS ${primary_name})
 
-            add_executable(${pt_name} ${pt_src})
-            target_compile_definitions(${pt_name} PRIVATE -DPT_KERNEL=${ptk} -DTHRESHOLD_VALUE="${tval}" -DBLUR_VALUE="${bval}" -DDEPTH_VALUE="${dval}")
-            set_bm_target_flags(${pt_name} "")
-            add_dependencies(heavy_bms ${pt_name})
-            install(TARGETS ${pt_name})
+        if(BUILD_FM_BENCHMARKS)
+          set(fname ${pimary_name}_fm)
+          add_executable(${fname} ${primary_src})
+          set_bm_target_flags(${fname} -ffast-math)
+          add_dependencies(heavy_bms ${fname})
+          install(TARGETS ${fname})
+        endif()
 
-            if(BUILD_FM_BENCHMARKS)
-              set(fname ${pt_name}_fm)
-              add_executable(${fname} ${pt_src})
-              set_bm_target_flags(${fname} -ffast-math)
-              add_dependencies(heavy_bms ${fname})
-              install(TARGETS ${fname})
-            endif()
+        foreach(ptk ${pt_kernels})
+          foreach(tval ${t_values})
+            foreach(dval ${d_values})
+              set(pt_name "bm_${ptk}_b${bval}_t${tval}_d${dval}")
+
+              add_executable(${pt_name} ${pt_src})
+              target_compile_definitions(${pt_name} PRIVATE -DPT_KERNEL=${ptk} -DTHRESHOLD_VALUE="${tval}" -DBLUR_VALUE="${bval}" -DDEPTH_VALUE="${dval}")
+              set_bm_target_flags(${pt_name} "")
+              add_dependencies(heavy_bms ${pt_name})
+              install(TARGETS ${pt_name})
+
+              if(BUILD_FM_BENCHMARKS)
+                set(fname ${pt_name}_fm)
+                add_executable(${fname} ${pt_src})
+                set_bm_target_flags(${fname} -ffast-math)
+                add_dependencies(heavy_bms ${fname})
+                install(TARGETS ${fname})
+              endif()
+            endforeach()
           endforeach()
         endforeach()
       endforeach()
-    endforeach()
+    endif()
 
     add_custom_target(benchmarks DEPENDS light_bms heavy_bms)
   endif()
@@ -453,6 +473,7 @@ int main(){std::cout << fmt::format(\"{}\",0);}" FmtLibcxx)
     target_link_libraries(loom_pt_demo PUBLIC viewport pt_vm pt_ref Threads::Threads ${HWLOC_TARGET} ${FMT_TARGET})
     target_compile_options(loom_pt_demo PUBLIC -ftemplate-depth=2048 -fbracket-depth=512 -ftemplate-backtrace-limit=1)
     install(TARGETS loom_pt_demo)
+    add_dependencies(heavy_targets loom_pt_demo)
   endif()
 
   if(BUILD_PROF)
@@ -472,6 +493,7 @@ int main(){std::cout << fmt::format(\"{}\",0);}" FmtLibcxx)
     target_compile_definitions(prof_pt_compact_cld PRIVATE -DUSE_CLD)
 
     add_dependencies(prof prof_pt_compact_tbd prof_pt_compact_cld)
+    add_dependencies(heavy_targets prof)
   endif()
 endif()
 

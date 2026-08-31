@@ -29,7 +29,6 @@
         llvm.libcxxClang
         cmake
         pkgconf
-        ninja
       ];
 
       execDeps = with pkgs; [
@@ -40,7 +39,87 @@
         hwloc
       ];
 
+      cleanDeps = with pkgs; [
+            libGL
+            libx11
+            libxrandr
+            libxinerama
+            libxi
+            libxext
+            libxcursor
+            libxxf86vm
+            llvm.libcxx
+          ];
+
       pver = "1.0.0";
+
+      prepare = ''
+        export NIX_ENFORCE_NO_NATIVE=0
+        ulimit -s unlimited
+      '';
+
+      safeBuild = ''
+        runHook preBuild
+        cmake --build . -t light_targets -j "$NIX_BUILD_CORES"
+        cmake --build . -t heavy_targets -j 1
+        runHook postBuild
+      '';
+
+      runTests = ''
+        runHook preCheck
+        ctest --output-on-failure
+        runHook postCheck
+      '';
+
+      buildForArch = { arch, vext ? "" }:
+        let
+          wideOn = if arch == "x86-64" then "OFF" else "ON";
+          glfwSrc = pkgs.fetchFromGitHub {
+            owner = "glfw";
+            repo = "glfw";
+            tag = "3.3.8";
+            hash = "sha256-4+H0IXjAwbL5mAWfsIVhW0BSJhcWjkQx4j2TrzZ3aIo=";
+          };
+          hwlocSrc = pkgs.fetchzip {
+            url = "https://download.open-mpi.org/release/hwloc/v2.13/hwloc-2.13.0.tar.bz2";
+            hash = "sha256-GdVv3Og4OvrZCgV8StfHldTX4NSwXC61S4tZsfLsEEU=";
+          };
+        in
+          pkgs.stdenv.mkDerivation {
+            pname = "loom-${arch}";
+            version = pver;
+            src = self;
+
+            nativeBuildInputs = buildDeps;
+            buildInputs = with pkgs; [ fmt range-v3 fast-float ] ++ cleanDeps;
+
+            cmakeFlags = [
+              "-DBUILD_DOCS=OFF"
+              "-DBUILD_TESTS=ON"
+              "-DBUILD_BENCHMARKS=ON"
+              "-DBUILD_HEAVY_BENCHMARKS=${wideOn}"
+              "-DBUILD_DEBUGGERS=OFF"
+              "-DBUILD_DEMO=${wideOn}"
+              "-DBUILD_PROF=OFF"
+              "-DTARGET_CPU=${arch}"
+              "-DTARGET_VEXT=${vext}"
+              "-DBINDIST=ON"
+              "-DLIBCXX_DIR=${pkgs.lib.getStatic pkgs.llvmPackages.libcxx}"
+              "-DGLFW_SRC_DIR=${glfwSrc}"
+              "-DHWLOC_SRC_DIR=${hwlocSrc}"
+            ];
+
+            preBuild = ''
+              ulimit -s unlimited
+            '';
+            buildPhase = safeBuild;
+            doCheck = true;
+            checkPhase = runTests;
+
+            postInstall = ''
+              strip $out/bin/*
+            '';
+          };
     in {
       devShells.${system} = {
         default = pkgs.mkShell {
@@ -53,31 +132,16 @@
 
           shellHook = ''
           export CMAKE_EXPORT_COMPILE_COMMANDS=1
-          export NIX_ENFORCE_NO_NATIVE=0
           export ASAN_SYMBOLIZER_PATH=${pkgs.lib.getExe' pkgs.libllvm "llvm-symbolizer"}
-          ulimit -s unlimited
-          '';
+          '' + prepare;
         };
 
         clean = pkgs.mkShell {
-          packages = with pkgs; [
-            libGL
-            libx11
-            libxrandr
-            libxinerama
-            libxi
-            libxext
-            libxcursor
-            libxxf86vm
-            llvm.libcxx
-          ] ++ buildDeps;
+          packages = cleanDeps ++ buildDeps;
 
           shellHook = ''
-          export CMAKE_EXPORT_COMPILE_COMMANDS=1
-          export NIX_ENFORCE_NO_NATIVE=0
           export LIBCXX_DIR=${pkgs.lib.getStatic pkgs.llvmPackages.libcxx}
-          ulimit -s unlimited
-          '';
+          '' + prepare;
         };
       };
 
@@ -98,12 +162,6 @@
             "-DBUILD_PROF=OFF"
           ];
 
-          buildPhase = ''
-          runHook preBuild
-          cmake --build .
-          runHook postBuild
-          '';
-
           installPhase = ''
           mkdir -p $out
           cp -r html $out/html
@@ -119,15 +177,16 @@
           buildInputs = execDeps;
 
           cmakeFlags = [
-            "-DBUILD_TESTS=OFF"
-            "-DBUILD_BENCHMARKS=OFF"
+            "-DBUILD_TESTS=ON"
+            "-DBUILD_BENCHMARKS=ON"
+            "-DBUILD_HEAVY_BENCHMARKS=OFF"
             "-DBUILD_DEMO=ON"
           ];
 
-          preBuild = ''
-          export NIX_ENFORCE_NO_NATIVE=0
-          ulimit -s unlimited
-          '';
+          preBuild = prepare;
+          buildPhase = safeBuild;
+          doCheck = true;
+          checkPhase = runTests;
         };
 
         benchmarks = pkgs.stdenv.mkDerivation {
@@ -141,29 +200,25 @@
           cmakeFlags = [
             "-DBUILD_TESTS=ON"
             "-DBUILD_BENCHMARKS=ON"
+            "-DBUILD_HEAVY_BENCHMARKS=ON"
             "-DBUILD_DEMO=OFF"
           ];
 
-          preBuild = ''
-          export NIX_ENFORCE_NO_NATIVE=0
-          ulimit -s unlimited
-          '';
-
-          buildPhase = ''
-          runHook preBuild
-          cmake --build . -t tests -j "$NIX_BUILD_CORES"
-          cmake --build . -t light_bms -j "$NIX_BUILD_CORES"
-          cmake --build . -t heavy_bms -j 1
-          runHook postBuild
-          '';
-
+          preBuild = prepare;
+          buildPhase = safeBuild;
           doCheck = true;
-          checkPhase = ''
-          runHook preCheck
-          ctest --output-on-failure
-          runHook postCheck
-          '';
+          checkPhase = runTests;
         };
-      };
+      } // builtins.listToAttrs (map
+        (cfg: {
+          name = cfg.arch;
+          value = buildForArch cfg;
+        })
+        [
+          { arch = "x86-64"; }
+          { arch = "x86-64-v2"; vext = "avx"; }
+          { arch = "x86-64-v3"; }
+          { arch = "x86-64-v4"; }
+        ]);
     };
 }
