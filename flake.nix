@@ -90,7 +90,7 @@
             version = pver;
             src = self;
 
-            nativeBuildInputs = buildDeps;
+            nativeBuildInputs = buildDeps ++ [ pkgs.patchelf ];
             buildInputs = with pkgs; [ fmt range-v3 fast-float ] ++ cleanDeps;
 
             cmakeFlags = [
@@ -115,6 +115,13 @@
             buildPhase = safeBuild;
             doCheck = true;
             checkPhase = runTests;
+
+            postFixup = ''
+              for exe in $out/bin/*; do
+                patchelf --remove-rpath "$exe"
+                patchelf --set-interpreter /lib64/ld-linux-x86-64.so.2 "$exe"
+              done
+            '';
 
             postInstall = ''
               strip $out/bin/*
