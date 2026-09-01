@@ -71,9 +71,9 @@
         runHook postCheck
       '';
 
-      buildForArch = { arch, vext ? "" }:
+      buildForArch = { name, arch, features ? [] }:
         let
-          wideOn = if arch == "x86-64" then "OFF" else "ON";
+          wideOn = if name == "sse" then "OFF" else "ON";
           glfwSrc = pkgs.fetchFromGitHub {
             owner = "glfw";
             repo = "glfw";
@@ -86,7 +86,7 @@
           };
         in
           pkgs.stdenv.mkDerivation {
-            pname = "loom-${arch}";
+            pname = "loom-${name}";
             version = pver;
             src = self;
 
@@ -102,7 +102,7 @@
               "-DBUILD_DEMO=${wideOn}"
               "-DBUILD_PROF=OFF"
               "-DTARGET_CPU=${arch}"
-              "-DTARGET_VEXT=${vext}"
+              "-DTARGET_CPU_FEATURES=${pkgs.lib.strings.join ";" features}"
               "-DBINDIST=ON"
               "-DLIBCXX_DIR=${pkgs.lib.getStatic pkgs.llvmPackages.libcxx}"
               "-DGLFW_SRC_DIR=${glfwSrc}"
@@ -218,14 +218,15 @@
         };
       } // builtins.listToAttrs (map
         (cfg: {
-          name = cfg.arch;
+          name = cfg.name;
           value = buildForArch cfg;
         })
         [
-          { arch = "x86-64"; }
-          { arch = "x86-64-v2"; vext = "avx"; }
-          { arch = "x86-64-v3"; }
-          { arch = "x86-64-v4"; }
+          { name = "sse"; arch = "x86-64-v2"; }
+          { name = "avx"; arch = "x86-64-v2"; features = [ "avx" ]; }
+          { name = "avx2"; arch = "x86-64-v3"; }
+          { name = "avx512"; arch = "x86-64-v4"; }
+          { name = "sandy"; arch = "sandybridge"; }
         ]);
     };
 }
