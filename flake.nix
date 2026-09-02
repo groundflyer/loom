@@ -107,6 +107,7 @@
               "-DLIBCXX_DIR=${pkgs.lib.getStatic pkgs.llvmPackages.libcxx}"
               "-DGLFW_SRC_DIR=${glfwSrc}"
               "-DHWLOC_SRC_DIR=${hwlocSrc}"
+              "-DREPO_HASH=${self.shortRev or self.dirtyShortRev}"
             ];
 
             preBuild = ''
@@ -188,6 +189,7 @@
             "-DBUILD_BENCHMARKS=ON"
             "-DBUILD_HEAVY_BENCHMARKS=ON"
             "-DBUILD_DEMO=ON"
+            "-DREPO_HASH=${self.shortRev or self.dirtyShortRev}"
           ];
 
           preBuild = prepare;
@@ -209,6 +211,7 @@
             "-DBUILD_BENCHMARKS=ON"
             "-DBUILD_HEAVY_BENCHMARKS=ON"
             "-DBUILD_DEMO=OFF"
+            "-DREPO_HASH=${self.shortRev or self.dirtyShortRev}"
           ];
 
           preBuild = prepare;

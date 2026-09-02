@@ -36,6 +36,7 @@ set(CUDA_BLOCK_SIZE 256 CACHE STRING "Number of threads in a block")
 set(LIBCXX_DIR "" CACHE STRING "Path to libc++ libraries for binary distribution")
 set(GLFW_SRC_DIR "" CACHE STRING "Path to glfw source for binary distribution")
 set(HWLOC_SRC_DIR "" CACHE STRING "Pathe to hwloc source for binary distribution")
+set(REPO_HASH "" CACHE STRING "Git repository revision")
 
 # compilation
 if(BUILD_TESTS OR BUILD_BENCHMARKS OR BUILD_DEBUGGERS OR BUILD_DEMO OR BUILD_PROF)
@@ -344,17 +345,22 @@ int main(){std::cout << fmt::format(\"{}\",0);}" FmtLibcxx)
 
   if(BUILD_BENCHMARKS)
     message(STATUS "Building benchmarks")
-    find_package(Git)
-    if(Git_FOUND)
-      execute_process(COMMAND ${GIT_EXECUTABLE} rev-parse --short HEAD
-        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-        OUTPUT_VARIABLE _REPO_HASH)
-      string(REPLACE "\n" "" REPO_HASH ${_REPO_HASH})
-      execute_process(COMMAND ${GIT_EXECUTABLE} diff-index --quiet HEAD
-        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-        RESULT_VARIABLE REPO_HAS_CHANGES)
-      if(REPO_HAS_CHANGES)
-        string(APPEND REPO_HASH "*")
+
+    if(NOT REPO_HASH)
+      find_package(Git)
+      if(Git_FOUND)
+        execute_process(COMMAND ${GIT_EXECUTABLE} rev-parse --short HEAD
+          WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+          OUTPUT_VARIABLE _REPO_HASH)
+        string(REPLACE "\n" "" REPO_HASH ${_REPO_HASH})
+        execute_process(COMMAND ${GIT_EXECUTABLE} diff-index --quiet HEAD
+          WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+          RESULT_VARIABLE REPO_HAS_CHANGES)
+        if(REPO_HAS_CHANGES)
+          string(APPEND REPO_HASH "-dirty")
+        endif()
+      else()
+        set(REPO_HASH "unknown")
       endif()
     endif()
 
