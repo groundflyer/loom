@@ -1,18 +1,20 @@
 #!/usr/bin/env bash
 
 showhelp() {
-    echo "Usage: $0 <BIN_DIR> <LOG_DIR>"
+    echo "Usage: $0 <BIN_DIR> <LOG_DIR> [bm_args...]"
     echo -e "\tBIN_DIR\tdirectory with compiled benchmarks"
     echo -e "\tLOG_DIR\tdirectory with benchmark logs"
+    echo -e "\tbm_args...\targuments to pass to the benchmarks, e.g. -n20 -s100000"
 }
 
-if [[ $# != 2 ]]; then
+if [[ $# < 2 ]]; then
     showhelp
     exit 1
 fi
 
 BIN_DIR=$1
 LOG_DIR=$2
+shift 2
 
 bms=(
     bm_threefry
@@ -84,7 +86,7 @@ for bm in ${bms[@]}; do
     log=${userlogdir}/${bm:3}.csv
     if [[ -f ${bm} ]]; then
         echo "Running ${bm}"
-        ./${bm} -l ${log}
+        ./${bm} -l ${log} $@
     fi
 done
 popd
