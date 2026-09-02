@@ -81,12 +81,10 @@ user_id=`git config --get user.email | sha256sum | cut -c1-10`
 host=`hostname | sha256sum | cut -c1-10`
 userlogdir="${LOG_DIR}/${user_id}/${host}"
 mkdir -p ${userlogdir}
-pushd $BIN_DIR
 for bm in ${bms[@]}; do
     log=${userlogdir}/${bm:3}.csv
-    if [[ -f ${bm} ]]; then
+    if [[ -f ${BIN_DIR}/${bm} ]]; then
         echo "Running ${bm}"
-        ./${bm} -l ${log} $@
+        ${BIN_DIR}/${bm} -l ${log} $@
     fi
 done
-popd
