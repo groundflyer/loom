@@ -186,7 +186,7 @@
           cmakeFlags = [
             "-DBUILD_TESTS=ON"
             "-DBUILD_BENCHMARKS=ON"
-            "-DBUILD_HEAVY_BENCHMARKS=OFF"
+            "-DBUILD_HEAVY_BENCHMARKS=ON"
             "-DBUILD_DEMO=ON"
           ];
 
