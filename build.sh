@@ -83,22 +83,6 @@ run_tests() {
     fi
 }
 
-run_benchmarks() {
-    if [ $BENCHMARK = true ]; then
-        user_id=`git config --get user.email | sha256sum | cut -c1-10`
-        host=`hostname | sha256sum | cut -c1-10`
-        logdir="${SRC_DIR}/bm_logs/${user_id}/${host}"
-        mkdir -p ${logdir}
-        for bm in bm_*; do
-            log=${logdir}/${bm:3}.csv
-            for i in `seq 1 ${BM_RUNS}`; do
-                echo "Running ${bm} ${i}/${BM_RUNS}"
-                ./${bm} -l ${log}
-            done
-        done
-    fi
-}
-
 run_build() {
     mkdir -p $1
     pushd $1

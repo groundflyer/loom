@@ -451,6 +451,7 @@ int main(){std::cout << fmt::format(\"{}\",0);}" FmtLibcxx)
     endif()
 
     add_custom_target(benchmarks DEPENDS light_bms heavy_bms)
+    install(PROGRAMS src/scripts/benchmark TYPE BIN)
   endif()
 
   if(BUILD_DEMO)

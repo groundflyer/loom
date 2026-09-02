@@ -1,0 +1,90 @@
+#!/usr/bin/env bash
+
+showhelp() {
+    echo "Usage: $0 <BIN_DIR> <LOG_DIR>"
+    echo -e "\tBIN_DIR\tdirectory with compiled benchmarks"
+    echo -e "\tLOG_DIR\tdirectory with benchmark logs"
+}
+
+if [[ $# != 2 ]]; then
+    showhelp
+    exit 1
+fi
+
+BIN_DIR=$1
+LOG_DIR=$2
+
+bms=(
+    bm_threefry
+    bm_factorial
+    bm_fibonacci
+    bm_root_finding_bisection
+    bm_pt_const_b1_t0.0001_d2
+    bm_pt_const_b1_t0.0001_d20
+    bm_pt_const_b1_t0.0001_d5
+    bm_pt_const_b1_t0.0005_d2
+    bm_pt_const_b1_t0.0005_d20
+    bm_pt_const_b1_t0.0005_d5
+    bm_pt_const_b1_t0.001_d2
+    bm_pt_const_b1_t0.001_d20
+    bm_pt_const_b1_t0.001_d5
+    bm_pt_const_b20_t0.0001_d2
+    bm_pt_const_b20_t0.0001_d20
+    bm_pt_const_b20_t0.0001_d5
+    bm_pt_const_b20_t0.0005_d2
+    bm_pt_const_b20_t0.0005_d20
+    bm_pt_const_b20_t0.0005_d5
+    bm_pt_const_b20_t0.001_d2
+    bm_pt_const_b20_t0.001_d20
+    bm_pt_const_b20_t0.001_d5
+    bm_pt_const_b5_t0.0001_d2
+    bm_pt_const_b5_t0.0001_d20
+    bm_pt_const_b5_t0.0001_d5
+    bm_pt_const_b5_t0.0005_d2
+    bm_pt_const_b5_t0.0005_d20
+    bm_pt_const_b5_t0.0005_d5
+    bm_pt_const_b5_t0.001_d2
+    bm_pt_const_b5_t0.001_d20
+    bm_pt_const_b5_t0.001_d5
+    bm_pt2_const_b1_t0.0001_d2
+    bm_pt2_const_b1_t0.0001_d20
+    bm_pt2_const_b1_t0.0001_d5
+    bm_pt2_const_b1_t0.0005_d2
+    bm_pt2_const_b1_t0.0005_d20
+    bm_pt2_const_b1_t0.0005_d5
+    bm_pt2_const_b1_t0.001_d2
+    bm_pt2_const_b1_t0.001_d20
+    bm_pt2_const_b1_t0.001_d5
+    bm_pt2_const_b20_t0.0001_d2
+    bm_pt2_const_b20_t0.0001_d20
+    bm_pt2_const_b20_t0.0001_d5
+    bm_pt2_const_b20_t0.0005_d2
+    bm_pt2_const_b20_t0.0005_d20
+    bm_pt2_const_b20_t0.0005_d5
+    bm_pt2_const_b20_t0.001_d2
+    bm_pt2_const_b20_t0.001_d20
+    bm_pt2_const_b20_t0.001_d5
+    bm_pt2_const_b5_t0.0001_d2
+    bm_pt2_const_b5_t0.0001_d20
+    bm_pt2_const_b5_t0.0001_d5
+    bm_pt2_const_b5_t0.0005_d2
+    bm_pt2_const_b5_t0.0005_d20
+    bm_pt2_const_b5_t0.0005_d5
+    bm_pt2_const_b5_t0.001_d2
+    bm_pt2_const_b5_t0.001_d20
+    bm_pt2_const_b5_t0.001_d5
+)
+
+user_id=`git config --get user.email | sha256sum | cut -c1-10`
+host=`hostname | sha256sum | cut -c1-10`
+userlogdir="${LOG_DIR}/${user_id}/${host}"
+mkdir -p ${userlogdir}
+pushd $BIN_DIR
+for bm in ${bms[@]}; do
+    log=${userlogdir}/${bm:3}.csv
+    if [[ -f ${bm} ]]; then
+        echo "Running ${bm}"
+        ./${bm} -l ${log}
+    fi
+done
+popd
