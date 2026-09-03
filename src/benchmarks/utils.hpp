@@ -42,10 +42,11 @@ rcnv_string() noexcept
 inline constexpr std::size_t def_num_runs    = 10;
 inline constexpr std::size_t def_sample_size = 1000000;
 
+template <std::size_t ss = def_sample_size>
 inline constexpr auto sample_size_opt =
-    argparse::option<'s', "sample-size">("sample size. Default: 1000000",
+    argparse::option<'s', "sample-size">("sample size",
                                          "N",
-                                         def_sample_size,
+                                         ss,
                                          read_number<std::size_t, false>);
 
 template <typename... Opts>

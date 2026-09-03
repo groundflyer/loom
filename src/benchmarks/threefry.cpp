@@ -105,7 +105,8 @@ int
 main(int argc, char* argv[])
 {
     const auto parse_results =
-        argparse::parse(make_opts(sample_size_opt), {argc, argv});
+        argparse::parse(make_opts(sample_size_opt<def_sample_size * 10>),
+                        {argc, argv});
     Logger            logger      = get_logger(parse_results);
     const std::size_t sample_size = get_sample_size(logger, parse_results);
 

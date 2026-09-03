@@ -1,26 +1,31 @@
 #!/usr/bin/env bash
 
 showhelp() {
-    echo "Usage: $0 <BIN_DIR> <LOG_DIR> [bm_args...]"
+    echo "Usage: $0 <CLASS> <BIN_DIR> <LOG_DIR> [bm_args...]"
+    echo -e "\tCLASS\tbenchmarks to run: all, light, render"
     echo -e "\tBIN_DIR\tdirectory with compiled benchmarks"
     echo -e "\tLOG_DIR\tdirectory with benchmark logs"
     echo -e "\tbm_args...\targuments to pass to the benchmarks, e.g. -n20 -s100000"
 }
 
-if [[ $# < 2 ]]; then
+if [[ $# < 3 ]]; then
     showhelp
     exit 1
 fi
 
-BIN_DIR=$1
-LOG_DIR=$2
-shift 2
+CLASS=$1
+BIN_DIR=$2
+LOG_DIR=$3
+shift 3
 
-bms=(
+light=(
     bm_threefry
     bm_factorial
     bm_fibonacci
     bm_root_finding_bisection
+)
+
+render=(
     bm_pt_const_b1_t0.0001_d2
     bm_pt_const_b1_t0.0001_d20
     bm_pt_const_b1_t0.0001_d5
@@ -81,6 +86,18 @@ user_id=`git config --get user.email | sha256sum | cut -c1-10`
 host=`hostname | sha256sum | cut -c1-10`
 userlogdir="${LOG_DIR}/${user_id}/${host}"
 mkdir -p ${userlogdir}
+
+if [[ ${CLASS} == "light" ]]; then
+    bms=(${light[@]})
+    echo "Running light benchmarks"
+elif [[ ${CLASS} == "render" ]]; then
+    echo "Running render benchmarks"
+    bms=(${render[@]})
+else
+    echo "Running all benchmarks"
+    bms=(${light[@]} ${render[@]})
+fi
+
 for bm in ${bms[@]}; do
     log=${userlogdir}/${bm:3}.csv
     if [[ -f ${BIN_DIR}/${bm} ]]; then

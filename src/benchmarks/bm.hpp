@@ -97,7 +97,7 @@ run_benchmarks(Logger&     logger,
             if(file)
                 fmt::print(
                     file,
-                    "{:%FT%TZ},{},clang-{},fast-math:{},{},{},{},{:.3f}\n",
+                    "{:%FT%TZ},{},clang-{},fast-math:{},{},{},{},{:.6f}\n",
                     std::chrono::floor<std::chrono::seconds>(
                         std::chrono::system_clock::now()),
                     REPO_HASH,
@@ -112,7 +112,7 @@ run_benchmarks(Logger&     logger,
             if(file)
                 fmt::println(
                     file,
-                    "{:%FT%TZ},{},clang-{},fast-math:{},{},{},{},{:.3%S}",
+                    "{:%FT%TZ},{},clang-{},fast-math:{},{},{},{},{:.6%S}",
                     std::chrono::floor<std::chrono::seconds>(
                         std::chrono::system_clock::now()),
                     REPO_HASH,

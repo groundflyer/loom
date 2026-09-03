@@ -14,7 +14,7 @@ int
 main(int argc, char* argv[])
 {
     const auto parse_results =
-        argparse::parse(make_opts(sample_size_opt), {argc, argv});
+        argparse::parse(make_opts(sample_size_opt<>), {argc, argv});
     Logger            logger      = get_logger(parse_results);
     const std::size_t sample_size = get_sample_size(logger, parse_results);
     const std::size_t num_runs    = get_num_runs(logger, parse_results);
