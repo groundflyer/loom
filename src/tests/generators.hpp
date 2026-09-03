@@ -5,6 +5,7 @@
 #pragma once
 
 #include <common/math.hpp>
+#include <common/random.hpp>
 #include <common/test.hpp>
 
 #include <concepts>

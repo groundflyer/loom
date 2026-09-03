@@ -3,9 +3,9 @@
 #include "generators.hpp"
 #include "programs.hpp"
 #include "root_finding.hpp"
+#include "util.hpp"
 #include "vm_test_suite_utils.hpp"
 
-#include <common/test.hpp>
 #include <common/typeinfo.hpp>
 #include <vm/simd.hpp>
 
@@ -337,10 +337,12 @@ struct InvariantTestSuite
 int
 main(int argc, char* argv[])
 {
-    fmt::print("Using x86-64 vector extensions: {}\n", simd::info::value);
+    const auto [nr, seed] = parse_test_args(argc, argv);
     Track         track;
-    ParmTestMaker tm{parse_numruns(argc, argv)};
-    RandomState   rs;
+    ParmTestMaker tm{align_up(nr, 32u)};
+    RandomState   rs{seed};
+
+    fmt::print("Using x86-64 vector extensions: {}\n", simd::info::value);
 
     test_set<mock_kernel<9>>(track, tm, rs);
 

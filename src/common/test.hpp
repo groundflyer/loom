@@ -5,9 +5,7 @@
 
 #pragma once
 
-#include "argparse.hpp"
 #include "functional.hpp"
-#include "random.hpp"
 #include "string.hpp"
 #include "tuple.hpp"
 
@@ -830,26 +828,6 @@ struct ParmTestMaker
     }
 };
 
-template <unsigned def = 1000>
-unsigned
-parse_numruns(int argc, char* argv[])
-{
-    const auto ret =
-        argparse::parse(std::tuple{argparse::option<'n', "numruns">(
-                            "number of runs for parametric tests",
-                            "N",
-                            def,
-                            read_number<unsigned, allow_throws>)},
-                        {argc, argv})
-            .template get_opt<'n'>();
-
-#ifdef __EXCEPTIONS
-    return ret;
-#else
-    return ret.value();
-#endif
-}
-
 struct transparent_id
 {
     template <typename T>
@@ -982,5 +960,4 @@ class uni_tuple_cmp
         return impl(t1, t2, std::make_index_sequence<std::tuple_size_v<T1>>{});
     }
 };
-
 } // namespace loom::test

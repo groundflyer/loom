@@ -1,12 +1,12 @@
 // -*- C++ -*-
 // vm_mp.cpp
-#include <common/test.hpp>
 #include <vm/mp.hpp>
 #include <vm/simd.hpp>
 
 #include "generators.hpp"
 #include "programs.hpp"
 #include "root_finding.hpp"
+#include "util.hpp"
 #include "vm_test_suite_utils.hpp"
 
 #include <algorithm>
@@ -240,6 +240,13 @@ test_simd_all(Args&&... args) noexcept
 int
 main(int argc, char* argv[])
 {
+    const auto [nr, seed] = parse_test_args<10000>(argc, argv);
+
+    Track          track;
+    RandomState    rs{seed};
+    const unsigned num_runs    = align_up(nr, 32u * 8u);
+    const unsigned stream_size = align_up(num_runs / 1000, 32u * 8u);
+
     fmt::print("Using x86-64 vector extensions: {}\n", simd::info::value);
     CPUTopology top;
 #if FMT_VERSION < 110000
@@ -248,11 +255,6 @@ main(int argc, char* argv[])
     fmt::println("CPU topology: {}", top);
 #endif
 
-    Track          track;
-    RandomState    rs;
-    const unsigned num_runs =
-        align_up(parse_numruns<10000>(argc, argv), 32u * 8u);
-    const unsigned stream_size = align_up(num_runs / 1000, 32u * 8u);
     fmt::print("Input size: {}\n", num_runs);
     fmt::print("Stream size: {}\n", stream_size);
 

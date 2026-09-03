@@ -1,8 +1,10 @@
 // -*- C++ -*-
 // vm_smallpt.cpp
+
+#include "util.hpp"
+
 #include <common/linal.hpp>
 #include <common/math.hpp>
-#include <common/test.hpp>
 #include <smallpt/ref/pt.hpp>
 #include <smallpt/vm/pt.hpp>
 #include <vm/bse.hpp>
@@ -276,9 +278,7 @@ to_tuple(const Ray<T>& ray) noexcept
 int
 main(int argc, char* argv[])
 {
-    Track         track;
-    ParmTestMaker tm{parse_numruns<100000>(argc, argv)};
-    RandomState   rs;
+    auto [track, tm, rs] = test_init<100000>(argc, argv);
 
     fmt::print("Floating-point equality ULP: {}\n", ulp);
 

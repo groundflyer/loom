@@ -16,6 +16,7 @@ isnan(long double)
 
 #include "programs.hpp"
 #include "stream_wrapper.hpp"
+#include "util.hpp"
 
 #include <common/test.hpp>
 #include <vm/cuda.hpp>
@@ -41,12 +42,12 @@ using minmax_float = minmax_test<float>;
 int
 main(int argc, char* argv[])
 {
+    const auto [nr, seed] = parse_test_args(argc, argv);
     Track          track;
-    const unsigned vector_size =
-        std::bit_floor(parse_numruns<102400>(argc, argv));
+    const unsigned vector_size = std::bit_floor(nr);
     const unsigned stream_size = vector_size >> 1;
     ParmTestMaker  tm{vector_size};
-    RandomState    rs;
+    RandomState    rs{seed};
 
     auto g_int   = rs.make_gen<int>(2, 10);
     auto g_ui    = rs.make_gen<unsigned>(0, 10);

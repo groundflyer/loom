@@ -1,8 +1,8 @@
 // -*- C++ -*-
 // sort.cpp
+#include "util.hpp"
 #include "vm_test_suite_utils.hpp"
 
-#include <common/test.hpp>
 #include <common/typeinfo.hpp>
 
 #include <vm/bve.hpp>
@@ -120,10 +120,9 @@ struct CountingSortTestSuite
 int
 main(int argc, char* argv[])
 {
+    auto [track, tm, rs] = test_init(argc, argv);
+
     fmt::print("Using x86-64 vector extensions: {}\n", simd::info::value);
-    Track         track;
-    RandomState   rs;
-    ParmTestMaker tm{parse_numruns(argc, argv)};
 
     using vec_type = std::vector<unsigned>;
 

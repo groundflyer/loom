@@ -1,5 +1,7 @@
 // -*- C++ -*-
 // char.cpp
+#include "util.hpp"
+
 #include <common/string.hpp>
 #include <common/test.hpp>
 #include <common/typeinfo.hpp>
@@ -152,9 +154,7 @@ test_integral(Track& track, const ParmTestMaker& tm, RandomState& rs) noexcept
 int
 main(int argc, char* argv[])
 {
-    Track         track;
-    ParmTestMaker tm{parse_numruns(argc, argv)};
-    RandomState   rs;
+    auto [track, tm, rs] = test_init(argc, argv);
 
     test_integral<int>(track, tm, rs);
     test_integral<long>(track, tm, rs);

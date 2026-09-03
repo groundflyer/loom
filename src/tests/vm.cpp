@@ -4,9 +4,9 @@
 #include "generators.hpp"
 #include "programs.hpp"
 #include "stream_wrapper.hpp"
+#include "util.hpp"
 #include "vm_test_suite_utils.hpp"
 
-#include <common/test.hpp>
 #include <common/typeinfo.hpp>
 #include <vm/bse.hpp>
 #include <vm/bve.hpp>
@@ -250,9 +250,10 @@ struct StandardTestSuite
 int
 main(int argc, char* argv[])
 {
+    const auto [nr, seed] = parse_test_args(argc, argv);
     Track         track;
-    ParmTestMaker tm{align_up(parse_numruns(argc, argv), 32u)};
-    RandomState   rs;
+    ParmTestMaker tm{align_up(nr, 32u)};
+    RandomState   rs{seed};
 
     fmt::print("Using x86-64 vector extensions: {}\n", simd::info::value);
 

@@ -2,8 +2,8 @@
 // lang_root_finding.cpp
 #include "root_finding.hpp"
 #include "stream_wrapper.hpp"
+#include "util.hpp"
 
-#include <common/test.hpp>
 #include <common/typeinfo.hpp>
 #include <vm/bse.hpp>
 #include <vm/simd.hpp>
@@ -203,10 +203,11 @@ struct test_suite
 int
 main(int argc, char* argv[])
 {
-    fmt::print("Using x86-64 vector extensions: {}\n", simd::info::value);
+    const auto [nr, seed] = parse_test_args<10000>(argc, argv);
     Track         track;
-    ParmTestMaker tm{align_up(parse_numruns<10000>(argc, argv), 64u)};
-    RandomState   rs;
+    ParmTestMaker tm{align_up(nr, 64u)};
+    RandomState   rs{seed};
+    fmt::print("Using x86-64 vector extensions: {}\n", simd::info::value);
 
     test_suite<float>  tsf;
     test_suite<double> tsd;

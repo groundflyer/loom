@@ -1,8 +1,8 @@
 // -*- C++ -*-
 // vm_linal.cpp
+#include "util.hpp"
 #include <common/linal.hpp>
 #include <common/math.hpp>
-#include <common/test.hpp>
 #include <vm/bse.hpp>
 #include <vm/lib/linal.hpp>
 
@@ -62,9 +62,7 @@ static constexpr int ulp = 30;
 int
 main(int argc, char* argv[])
 {
-    Track         track;
-    ParmTestMaker tm{parse_numruns<100000>(argc, argv)};
-    RandomState   rs;
+    auto [track, tm, rs] = test_init<100000>(argc, argv);
 
     vm::bse::function<cross_dot_test<float>>   bse_cross_dot;
     vm::bse::function<cross_test<float>>       bse_cross;

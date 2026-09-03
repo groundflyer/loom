@@ -1,6 +1,7 @@
 // -*- C++ -*-
 // union.cpp
-#include <common/test.hpp>
+#include "util.hpp"
+
 #include <common/union.hpp>
 
 using namespace loom;
@@ -30,15 +31,14 @@ static_assert(std::is_swappable_v<ProxyUnionTest>);
 int
 main(int argc, char* argv[])
 {
-    Track         track;
-    ParmTestMaker tm{parse_numruns(argc, argv)};
-    RandomState   rs;
-    auto          bgen         = rs.make_gen<bool>(0.5);
-    auto          igen         = rs.make_gen<int>(-10000, 10000);
-    auto          ugen         = rs.make_gen<unsigned>(0, 10000);
-    auto          fgen         = rs.make_gen<float>();
-    auto          dgen         = rs.make_gen<double>();
-    auto          union_assign = [](auto val) noexcept
+    auto [track, tm, rs] = test_init(argc, argv);
+
+    auto bgen         = rs.make_gen<bool>(0.5);
+    auto igen         = rs.make_gen<int>(-10000, 10000);
+    auto ugen         = rs.make_gen<unsigned>(0, 10000);
+    auto fgen         = rs.make_gen<float>();
+    auto dgen         = rs.make_gen<double>();
+    auto union_assign = [](auto val) noexcept
     {
         UnionTest t;
         t = val;

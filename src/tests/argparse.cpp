@@ -3,6 +3,7 @@
 /// @brief argparse module tests.
 
 #include <common/argparse.hpp>
+#include <common/random.hpp>
 #include <common/test.hpp>
 #include <common/tuple.hpp>
 
