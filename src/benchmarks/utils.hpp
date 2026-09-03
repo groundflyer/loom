@@ -467,44 +467,52 @@ struct StandardBenchmarkSuite
                     vm::simd::simd_width * 8));
             });
 
-        using utr1 = std::ratio<1, 2>;
-        using utr2 = std::ratio<1, 16>;
+        if constexpr(KT<T>::is_straightline)
+            return run_benchmarks(std::forward<Args>(args)...,
+                                  Ref<T>{sample_size, inputs, sink},
+                                  BSE<T>{sample_size, inputs, sink},
+                                  SIMDCompact<T>{sample_size, inputs, sink});
+        else
+        {
+            using utr1 = std::ratio<1, 2>;
+            using utr2 = std::ratio<1, 16>;
 
-        using ss1 = SIMDStream<T, true, utr1>;
-        using ss2 = SIMDStream<T, false, utr1>;
-        using ss3 = SIMDStream<T, true, utr2>;
-        using ss4 = SIMDStream<T, false, utr2>;
+            using ss1 = SIMDStream<T, true, utr1>;
+            using ss2 = SIMDStream<T, false, utr1>;
+            using ss3 = SIMDStream<T, true, utr2>;
+            using ss4 = SIMDStream<T, false, utr2>;
 
-        return run_benchmarks(
-            std::forward<Args>(args)...,
+            return run_benchmarks(
+                std::forward<Args>(args)...,
 
-            // clang-format off
-            Ref<T>{sample_size, inputs, sink},
-            // clang-format on
+                // clang-format off
+                Ref<T>{sample_size, inputs, sink},
+                // clang-format on
 
-            BSE<T>{sample_size, inputs, sink},
-            SIMDCompact<T>{sample_size, inputs, sink},
+                BSE<T>{sample_size, inputs, sink},
+                SIMDCompact<T>{sample_size, inputs, sink},
 
-            SIMDFullRange<T, true, utr1>{sample_size, inputs, sink},
-            SIMDFullRange<T, false, utr1>{sample_size, inputs, sink},
-            SIMDFullRange<T, true, utr2>{sample_size, inputs, sink},
-            SIMDFullRange<T, false, utr2>{sample_size, inputs, sink},
+                SIMDFullRange<T, true, utr1>{sample_size, inputs, sink},
+                SIMDFullRange<T, false, utr1>{sample_size, inputs, sink},
+                SIMDFullRange<T, true, utr2>{sample_size, inputs, sink},
+                SIMDFullRange<T, false, utr2>{sample_size, inputs, sink},
 
-            ss1{{sample_size, inputs, sink}, 32},
-            ss1{{sample_size, inputs, sink}, 64},
-            ss1{{sample_size, inputs, sink}, 128},
+                ss1{{sample_size, inputs, sink}, 32},
+                ss1{{sample_size, inputs, sink}, 64},
+                ss1{{sample_size, inputs, sink}, 128},
 
-            ss2{{sample_size, inputs, sink}, 32},
-            ss2{{sample_size, inputs, sink}, 64},
-            ss2{{sample_size, inputs, sink}, 128},
+                ss2{{sample_size, inputs, sink}, 32},
+                ss2{{sample_size, inputs, sink}, 64},
+                ss2{{sample_size, inputs, sink}, 128},
 
-            ss3{{sample_size, inputs, sink}, 32},
-            ss3{{sample_size, inputs, sink}, 64},
-            ss3{{sample_size, inputs, sink}, 128},
+                ss3{{sample_size, inputs, sink}, 32},
+                ss3{{sample_size, inputs, sink}, 64},
+                ss3{{sample_size, inputs, sink}, 128},
 
-            ss4{{sample_size, inputs, sink}, 32},
-            ss4{{sample_size, inputs, sink}, 64},
-            ss4{{sample_size, inputs, sink}, 128});
+                ss4{{sample_size, inputs, sink}, 32},
+                ss4{{sample_size, inputs, sink}, 64},
+                ss4{{sample_size, inputs, sink}, 128});
+        }
     }
 };
 
