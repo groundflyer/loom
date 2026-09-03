@@ -93,9 +93,9 @@ main(int argc, char* argv[])
                 read_number<std::size_t, true>),
             argparse::option<'p', "exchange-period">(
                 "exchange period in milliseconds for multithreaded hybrid "
-                "method. Default: 2",
+                "method. Default: 10",
                 "T",
-                2,
+                10,
                 read_number<unsigned, true>),
             argparse::option<'f', "fps">("target fps. Default: 10",
                                          "F",
