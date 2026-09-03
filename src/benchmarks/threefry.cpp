@@ -37,7 +37,7 @@ struct Ref
     std::string
     info() const noexcept
     {
-        return fmt::format("reference|{}", size);
+        return fmt::format("reference;{}", size);
     }
 
     std::chrono::steady_clock::duration
@@ -71,7 +71,7 @@ struct SIMD
     std::string
     info() const noexcept
     {
-        return fmt::format("simd|{}", size);
+        return fmt::format("simd;{}", size);
     }
 
     std::chrono::steady_clock::duration

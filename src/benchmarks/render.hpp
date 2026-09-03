@@ -54,7 +54,7 @@ struct RenderBSE
     std::string
     info() const noexcept
     {
-        return fmt::format("scalar|tbd:{}", tbd);
+        return fmt::format("scalar;tbd:{}", tbd);
     }
 
     Clock::duration
@@ -96,9 +96,9 @@ struct RenderSIMDCompact
     info() const noexcept
     {
         if constexpr(tbd)
-            return fmt::format("predicated|ts:{}|tbd:{}", ts, tbd);
+            return fmt::format("predicated;ts:{};tbd:{}", ts, tbd);
         else
-            return fmt::format("predicated|ts:{}|tbd:{}|{}|UTR:{:.0f}%",
+            return fmt::format("predicated;ts:{};tbd:{};{};UTR:{:.0f}%",
                                ts,
                                tbd,
                                rcnv_string<rcnv>(),
@@ -174,13 +174,13 @@ struct RenderSIMDFunction
     info() const noexcept
     {
         if constexpr(tbd)
-            return fmt::format("hybrid-full-range|ts:{}|tbd:{}|UTRt:{:.0f}%",
+            return fmt::format("hybrid-full-range;ts:{};tbd:{};UTR:{:.0f}%",
                                ts,
                                tbd,
                                ratio2percent<float, UTRt>());
         else
             return fmt::format(
-                "hybrid-full-range|ts:{}|tbd:{}|{}|UTRt:{:.0f}%|UTRh:{:.0f}%",
+                "hybrid-full-range;ts:{};tbd:{};{};UTRt:{:.0f}%;UTRh:{:.0f}%",
                 ts,
                 tbd,
                 rcnv_string<rcnv>(),
@@ -245,15 +245,14 @@ struct RenderSIMDStream
     info() const noexcept
     {
         if constexpr(tbd)
-            return fmt::format(
-                "hybrid-stream|ts:{}|tbd:{}|size:{}|UTRt:{:.0f}%",
-                ts,
-                tbd,
-                stream_size,
-                ratio2percent<float, UTRt>());
+            return fmt::format("hybrid-stream;ts:{};tbd:{};size:{};UTR:{:.0f}%",
+                               ts,
+                               tbd,
+                               stream_size,
+                               ratio2percent<float, UTRt>());
         else
-            return fmt::format("hybrid-stream|ts:{}|tbd:{}|{}|size:{}|UTRt:{:."
-                               "0f}%|UTRh:{:.0f}%",
+            return fmt::format("hybrid-stream;ts:{};tbd:{};{};size:{};UTRt:{:."
+                               "0f}%;UTRh:{:.0f}%",
                                ts,
                                tbd,
                                rcnv_string<rcnv>(),

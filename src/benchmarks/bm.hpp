@@ -147,17 +147,17 @@ print_results(std::array<bm_result<Dur>, N> results) noexcept
 
     for(const auto& [id, _]: results) id_width = std::max(id_width, id.size());
 
-    fmt::print("{:<{}} | {:^7} | {:>3}\n",
+    fmt::print("| {:<{}} | {:^7} | {:>3} |\n",
                "Benchmark",
                id_width,
                "Time",
                "Slowdown");
 
-    fmt::print("{0:-^{1}}{2}{0:-^9}{2}{0:-^9}\n", "", id_width + 1, "\u253c");
+    fmt::print("|:{0:-^{1}}|:{0:-^7}:|:{0:-^8}:|\n", "", id_width + 1);
 
     for(const auto& [id, dur]: results)
 #if FMT_VERSION < 110000
-        fmt::print("{:<{}} | {:>6.03f}s | {:>3.0f}%\n",
+        fmt::print("| {:<{}} | {:>6.03f}s |   {:^3.0f}%   |\n",
                    id,
                    id_width,
                    to_format(dur),
@@ -165,7 +165,7 @@ print_results(std::array<bm_result<Dur>, N> results) noexcept
                     static_cast<double>(fastest_dur.count())) *
                        100);
 #else
-        fmt::print("{:<{}} | {:>6.3%S}s | {:>3.0f}%\n",
+        fmt::print("| {:<{}} | {:>6.3%S}s |   {:^3.0f}%   |\n",
                    id,
                    id_width,
                    dur,
