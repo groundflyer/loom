@@ -71,7 +71,26 @@
         runHook postCheck
       '';
 
-      buildForArch = { name, arch, features ? [] }:
+      buildWithConf = cmakeConf: pkgs.stdenv.mkDerivation {
+          pname = "loom";
+          version = pver;
+          src = self;
+
+          nativeBuildInputs = buildDeps;
+          buildInputs = execDeps;
+
+          cmakeFlags = [
+            "-DBUILD_TESTS=ON"
+            "-DREPO_HASH=${self.shortRev or self.dirtyShortRev}"
+          ] ++ cmakeConf;
+
+          preBuild = prepare;
+          buildPhase = safeBuild;
+          doCheck = true;
+          checkPhase = runTests;
+        };
+
+      bindistForArch = { name, arch, features ? [] }:
         let
           wideOn = if name == "sse" then "OFF" else "ON";
           glfwSrc = pkgs.fetchFromGitHub {
@@ -176,60 +195,52 @@
           '';
         };
 
-        default = pkgs.stdenv.mkDerivation {
-          pname = "loom";
-          version = pver;
-          src = self;
+        default = buildWithConf [
+          "-DBUILD_BENCHMARKS=ON"
+          "-DBUILD_HEAVY_BENCHMARKS=ON"
+          "-DBUILD_DEMO=ON"
+        ];
 
-          nativeBuildInputs = buildDeps;
-          buildInputs = execDeps;
+        minimal = buildWithConf [
+          "-DBUILD_BENCHMARKS=ON"
+          "-DBUILD_DEMO=OFF"
+        ];
 
-          cmakeFlags = [
-            "-DBUILD_TESTS=ON"
-            "-DBUILD_BENCHMARKS=ON"
-            "-DBUILD_HEAVY_BENCHMARKS=ON"
-            "-DBUILD_DEMO=ON"
-            "-DREPO_HASH=${self.shortRev or self.dirtyShortRev}"
-          ];
+        benchmarks = buildWithConf [
+          "-DBUILD_BENCHMARKS=ON"
+          "-DBUILD_HEAVY_BENCHMARKS=ON"
+          "-DBUILD_DEMO=OFF"
+        ];
 
-          preBuild = prepare;
-          buildPhase = safeBuild;
-          doCheck = true;
-          checkPhase = runTests;
-        };
+        all_benchmarks = buildWithConf [
+          "-DBUILD_BENCHMARKS=ON"
+          "-DBUILD_HEAVY_BENCHMARKS=ON"
+          "-DBUILD_FM_BENCHMARKS=ON"
+          "-DBUILD_ALL_BENCHMARKS=ON"
+          "-DBUILD_DEMO=OFF"
+        ];
 
-        benchmarks = pkgs.stdenv.mkDerivation {
-          pname = "loom";
-          version = pver;
-          src = self;
+        complete = buildWithConf [
+          "-DBUILD_BENCHMARKS=ON"
+          "-DBUILD_HEAVY_BENCHMARKS=ON"
+          "-DBUILD_FM_BENCHMARKS=ON"
+          "-DBUILD_ALL_BENCHMARKS=ON"
+          "-DBUILD_DEBUGGERS=ON"
+          "-DBUILD_PROF=ON"
+          "-DBUILD_DEMO=ON"
+        ];
 
-          nativeBuildInputs = buildDeps;
-          buildInputs = execDeps;
-
-          cmakeFlags = [
-            "-DBUILD_TESTS=ON"
-            "-DBUILD_BENCHMARKS=ON"
-            "-DBUILD_HEAVY_BENCHMARKS=ON"
-            "-DBUILD_DEMO=OFF"
-            "-DREPO_HASH=${self.shortRev or self.dirtyShortRev}"
-          ];
-
-          preBuild = prepare;
-          buildPhase = safeBuild;
-          doCheck = true;
-          checkPhase = runTests;
-        };
       } // builtins.listToAttrs (map
         (cfg: {
           name = cfg.name;
-          value = buildForArch cfg;
+          value = bindistForArch cfg;
         })
         [
-          { name = "sse"; arch = "x86-64-v2"; }
-          { name = "avx"; arch = "x86-64-v2"; features = [ "avx" ]; }
-          { name = "avx2"; arch = "x86-64-v3"; }
-          { name = "avx512"; arch = "x86-64-v4"; }
-          { name = "sandy"; arch = "sandybridge"; }
+          { name = "bindist_sse"; arch = "x86-64-v2"; }
+          { name = "bindist_avx"; arch = "x86-64-v2"; features = [ "avx" ]; }
+          { name = "bindist_avx2"; arch = "x86-64-v3"; }
+          { name = "bindist_avx512"; arch = "x86-64-v4"; }
+          { name = "bindist_sandy"; arch = "sandybridge"; }
         ]);
     };
 }
