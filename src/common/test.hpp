@@ -397,7 +397,10 @@ class Track
         return m_passed != m_total;
     }
 
-    ~Track() { message(); }
+    ~Track()
+    {
+        if(m_total) message();
+    }
 };
 
 template <typename... ArgRngs,
