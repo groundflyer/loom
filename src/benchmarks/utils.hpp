@@ -295,9 +295,14 @@ struct StandardBenchmarkSuite
         std::string
         info() const noexcept
         {
-            return fmt::format("predicated;{};{}",
-                               TypeInfo<T>::chars,
-                               base::sample_size);
+            if constexpr(K::is_straightline)
+                return fmt::format("simd;{};{}",
+                                   TypeInfo<T>::chars,
+                                   base::sample_size);
+            else
+                return fmt::format("predicated;{};{}",
+                                   TypeInfo<T>::chars,
+                                   base::sample_size);
         }
 
         std::chrono::steady_clock::duration
