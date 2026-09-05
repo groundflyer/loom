@@ -274,6 +274,7 @@ int main(){std::cout << fmt::format(\"{}\",0);}" FmtLibcxx)
       sort.cpp
       vm_smallpt.cpp
       vm_linal.cpp
+      vm_fp_mix.cpp
     )
 
     set(TESTS_SRC_DIR src/tests)
@@ -366,7 +367,7 @@ int main(){std::cout << fmt::format(\"{}\",0);}" FmtLibcxx)
 
     set(BM_SRC_DIR src/benchmarks)
 
-    set(bm_srcs threefry.cpp root_finding_bisection.cpp factorial.cpp fibonacci.cpp)
+    set(bm_srcs threefry.cpp root_finding_bisection.cpp factorial.cpp fibonacci.cpp fp_mix.cpp)
 
     if(BUILD_ALL_BENCHMARKS)
       message(STATUS "Building optional benchmarks")
@@ -406,6 +407,8 @@ int main(){std::cout << fmt::format(\"{}\",0);}" FmtLibcxx)
     add_custom_target(heavy_bms)
     add_dependencies(light_targets light_bms)
     add_dependencies(heavy_targets heavy_bms)
+
+    # target_compile_options(bm_fp_mix PRIVATE -save-temps)
 
     if(BUILD_HEAVY_BENCHMARKS)
       set(b_values 1 5 20)

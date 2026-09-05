@@ -20,6 +20,7 @@ shift 3
 
 light=(
     bm_threefry
+    bm_fp_mix
     bm_factorial
     bm_fibonacci
     bm_root_finding_bisection

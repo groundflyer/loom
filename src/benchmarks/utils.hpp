@@ -61,6 +61,10 @@ make_opts(Opts... opts) noexcept
             "N",
             def_num_runs,
             read_number<std::size_t, false>),
+        argparse::option<'S', "seed">("random seed",
+                                      "S",
+                                      0,
+                                      read_number<unsigned, false>),
         opts...};
 }
 

@@ -131,6 +131,42 @@ struct is_kernel<mock_kernel<_num_blocks, vars>> : std::true_type
 {
 };
 
+template <template <typename> typename K,
+          template <typename> typename GM,
+          typename Ref,
+          bool     fuzzy = false,
+          unsigned ULP   = 100>
+struct RefBSESuite
+{
+    template <typename T>
+    bool
+    operator()(test::Track&        track,
+               test::ParmTestMaker tm,
+               RandomState&        rs) const noexcept
+    {
+        using k_t = K<T>;
+
+        constexpr std::string_view nameview = k_t::nameview;
+        constexpr auto             ti       = TypeInfo<T>::chars;
+        constexpr GM<T>            gm{};
+        constexpr Ref              ref{};
+
+        auto gs = gm(rs);
+
+        bse::function<k_t> f;
+
+        if constexpr(std::is_floating_point_v<T> && fuzzy)
+            return track.check(test::NamedFuzzyTest(
+                tm.fuzzy_with_ref(gs, f, ref, ulp_cmp{ULP}),
+                fmt::format("{}: {}", nameview, ti),
+                0.01));
+        else
+            return track.check(
+                test::NamedTest(tm.with_ref(gs, f, ref),
+                                fmt::format("{}: {}", nameview, ti)));
+    }
+};
+
 template <typename T, std::size_t N>
 simd::packed_vector<T, N>
 a2v(const std::array<T, N>& a) noexcept
