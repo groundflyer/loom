@@ -402,7 +402,7 @@ int main(){std::cout << fmt::format(\"{}\",0);}" FmtLibcxx)
       endif()
     endforeach()
 
-    add_custom_target(simd_bms DEPENDS bm_threefry)
+    add_custom_target(simd_bms DEPENDS bm_threefry bm_fp_mix)
     add_custom_target(light_bms DEPENDS bm_root_finding_bisection bm_factorial bm_fibonacci simd_bms)
     add_custom_target(heavy_bms)
     add_dependencies(light_targets light_bms)
