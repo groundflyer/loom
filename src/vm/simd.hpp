@@ -40,6 +40,12 @@ constexpr inline fsize_t simd_width = 32; // 256
 constexpr inline fsize_t simd_width = 16; // 128
 #endif
 
+#ifdef __FMA__
+#define ELEMENTWISE_FMA(x, y, z) __builtin_elementwise_fma(x, y, z)
+#else
+#define ELEMENTWISE_FMA(x, y, z) (x * y + z)
+#endif
+
 /// @brief Current x86-64 vector extension infostring.
 struct info
 {
@@ -174,9 +180,9 @@ static constexpr T FORCE_INLINE
 nest_fma(T x2, T k1, T k2, Ts... ks) noexcept
 {
     if constexpr(sizeof...(Ts) > 0)
-        return __builtin_elementwise_fma(nest_fma(x2, k2, ks...), x2, k1);
+        return ELEMENTWISE_FMA(nest_fma(x2, k2, ks...), x2, k1);
     else
-        return __builtin_elementwise_fma(x2, k2, k1);
+        return ELEMENTWISE_FMA(x2, k2, k1);
 }
 } // namespace detail
 
@@ -311,7 +317,7 @@ struct fms_intrinsics_wranger
     static vector_t FORCE_INLINE
     op(const vector_t x, const vector_t y, const vector_t z) noexcept
     {
-        return __builtin_elementwise_fma(x, y, -z);
+        return ELEMENTWISE_FMA(x, y, -z);
     }
 };
 
@@ -905,7 +911,7 @@ struct remap_comp<N, ops::fma, T, T, T, T>
                    const packed_vector<T, N> y,
                    const packed_vector<T, N> z) const noexcept
         {
-            return __builtin_elementwise_fma(x, y, z);
+            return ELEMENTWISE_FMA(x, y, z);
         }
     };
 };
@@ -3764,6 +3770,7 @@ class compact_compiler
         operator()(const Args... args) noexcept
         {
             facade::set_inputs(args...);
+            // asm volatile("START_KERNEL_%=:" :::);
             facade::template step<Kernel>();
             return facade::get_outputs();
         }
