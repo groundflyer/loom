@@ -92,7 +92,8 @@
 
       bindistForArch = { name, arch, features ? [] }:
         let
-          wideOn = if name == "sse" then "OFF" else "ON";
+          isNarrow = name == "bindist_sse";
+          wideOn = if isNarrow then "OFF" else "ON";
           glfwSrc = pkgs.fetchFromGitHub {
             owner = "glfw";
             repo = "glfw";
@@ -144,7 +145,7 @@
             '';
 
             postInstall = ''
-              strip $out/bin/*
+              strip -s -x $out/bin/*
             '';
           };
     in {
