@@ -56,16 +56,25 @@ get_cpu_model() noexcept
 
 template <typename Dur>
 static std::string
-format_duration(Dur d, const unsigned z, const unsigned f) noexcept
+format_duration(Dur            d,
+                const unsigned z,
+                const unsigned f,
+                const bool     always_mins = false) noexcept
 {
     const auto mins = std::chrono::duration_cast<std::chrono::minutes>(d);
     d -= mins;
 
-    return std::format("{:02}:{:0{}.{}f}",
-                       mins.count(),
-                       std::chrono::duration<double>(d).count(),
-                       z,
-                       f);
+    if(mins.count() || always_mins)
+        return std::format("{:02}:{:0{}.{}f}",
+                           mins.count(),
+                           std::chrono::duration<double>(d).count(),
+                           z,
+                           f);
+    else
+        return std::format("{:0{}.{}f}s",
+                           std::chrono::duration<double>(d).count(),
+                           z,
+                           f);
 }
 
 template <typename Dur = std::chrono::steady_clock::duration>
@@ -125,38 +134,43 @@ print_results(std::array<bm_result<Dur>, N> results) noexcept
                       std::less<std::size_t>{},
                       [](const auto& e) noexcept { return e.second.count(); });
 
-    const Dur fastest_dur = results[0].second;
+    const Dur fastest_dur = results.front().second;
+    const Dur slowest_dur = results.back().second;
 
     std::size_t id_width = 10;
 
     for(const auto& [id, _]: results) id_width = std::max(id_width, id.size());
 
-    fmt::print("| {:<{}} | {:^7} | {:>3} |\n",
+    const bool has_mins =
+        std::chrono::duration_cast<std::chrono::minutes>(slowest_dur).count();
+    const unsigned time_width = has_mins ? 9 : 7;
+    const unsigned sd_width =
+        magnitude(static_cast<unsigned>(static_cast<double>(
+            slowest_dur.count() / static_cast<double>(fastest_dur.count())))) +
+        8;
+
+    fmt::print("| {:<{}} | {:^{}} | {:>{}} |\n",
                "Benchmark",
                id_width,
                "Time",
-               "Slowdown");
+               time_width,
+               "Slowdown",
+               sd_width);
 
-    fmt::print("|:{0:-^{1}}|:{0:-^7}:|:{0:-^8}:|\n", "", id_width + 1);
+    fmt::print("|:{0:-^{1}}|:{0:-^{2}}:|:{0:-^{3}}:|\n",
+               "",
+               id_width + 1,
+               time_width,
+               sd_width);
 
     for(const auto& [id, dur]: results)
-#if FMT_VERSION < 110000
-        fmt::print("| {:<{}} | {:>6.03f}s |   {:^3.0f}%   |\n",
+        fmt::print("| {:<{}} | {} | {:>{}.2f}x |\n",
                    id,
                    id_width,
-                   to_format(dur),
-                   (static_cast<double>(dur.count()) /
-                    static_cast<double>(fastest_dur.count())) *
-                       100);
-#else
-        fmt::print("| {:<{}} | {:>6.3%S}s |   {:^3.0f}%   |\n",
-                   id,
-                   id_width,
-                   dur,
-                   (static_cast<double>(dur.count()) /
-                    static_cast<double>(fastest_dur.count())) *
-                       100);
-#endif
+                   format_duration(dur, 6, 3, has_mins),
+                   static_cast<double>(dur.count()) /
+                       static_cast<double>(fastest_dur.count()),
+                   sd_width - 1);
 }
 } // namespace fn
 MK_NIEBLOID(print_results)
