@@ -54,17 +54,19 @@ get_cpu_model() noexcept
                        stepping);
 }
 
-#if FMT_VERSION < 110000
 template <typename Dur>
-static double
-to_format(const Dur& dur) noexcept
+static std::string
+format_duration(Dur d, const unsigned z, const unsigned f) noexcept
 {
-    return static_cast<double>(
-               std::chrono::duration_cast<std::chrono::milliseconds>(dur)
-                   .count()) /
-           1000;
+    const auto mins = std::chrono::duration_cast<std::chrono::minutes>(d);
+    d -= mins;
+
+    return std::format("{:02}:{:0{}.{}f}",
+                       mins.count(),
+                       std::chrono::duration<double>(d).count(),
+                       z,
+                       f);
 }
-#endif
 
 template <typename Dur = std::chrono::steady_clock::duration>
 using bm_result = std::pair<std::string, Dur>;
@@ -91,28 +93,11 @@ run_benchmarks(Logger&     logger,
             logger.info("Benchmarking {} [{}/{}]...", i, j + 1ul, num_runs);
             const Dur dur = bm();
             avg += dur;
-#if FMT_VERSION < 110000
-            const auto durs = to_format(dur);
-            logger.info("Result {:.3f}s", durs);
-            if(file)
-                fmt::print(
-                    file,
-                    "{:%FT%TZ},{},clang-{},fast-math:{},{},{},{},{:.6f}\n",
-                    std::chrono::floor<std::chrono::seconds>(
-                        std::chrono::system_clock::now()),
-                    REPO_HASH,
-                    rtrim(__clang_version__),
-                    fast_math,
-                    get_cpu_model(),
-                    vm::simd::info::value,
-                    i,
-                    durs);
-#else
-            logger.info("Result {:.3%S}s", dur);
+            logger.info("Result {}", format_duration(dur, 6, 3));
             if(file)
                 fmt::println(
                     file,
-                    "{:%FT%TZ},{},clang-{},fast-math:{},{},{},{},{:.6%S}",
+                    "{:%FT%TZ},{},clang-{},fast-math:{},{},{},{},{:09.6f}",
                     std::chrono::floor<std::chrono::seconds>(
                         std::chrono::system_clock::now()),
                     REPO_HASH,
@@ -121,8 +106,7 @@ run_benchmarks(Logger&     logger,
                     get_cpu_model(),
                     vm::simd::info::value,
                     i,
-                    dur);
-#endif
+                    std::chrono::duration<double>(dur).count());
         }
 
         return bm_result<Dur>{std::move(i), avg / num_runs};
