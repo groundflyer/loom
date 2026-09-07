@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include "debug.hpp"
 #include "functional.hpp"
 
 #include <static_math/cmath.h>
@@ -20,6 +21,19 @@ namespace loom
 {
 template <std::floating_point T>
 inline constexpr T Pi = T{3.141592653589793};
+
+/// @brief FMA that fallbacks to expression @f$x * y + z@f$ if fast FMA
+/// instruction is not available.
+template <std::floating_point T>
+static T FORCE_INLINE
+fma(const T x, const T y, const T z) noexcept
+{
+#if defined(__FMA__) || defined(FP_FAST_FMA)
+    return std::fma(x, y, z);
+#else
+    return x * y + z;
+#endif
+}
 
 /// @brief Integral division that rounds the result to the nearest bigger
 /// number.

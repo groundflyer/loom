@@ -355,7 +355,7 @@ refract(const Vec3f& nfn,
         const float  ddn,
         const float  cos2t) noexcept
 {
-    return normalize(i * eta - nfn * std::fma(ddn, eta, std::sqrt(cos2t)));
+    return normalize(i * eta - nfn * loom::fma(ddn, eta, std::sqrt(cos2t)));
 }
 
 /// @brief Distribution based on Trowbridge-Reitz @cite Trowbridge:75.
@@ -378,9 +378,9 @@ gtr(const float dotWmWg, const float alpha) noexcept
 static float
 gaf(const float cos_theta, const float alpha) noexcept
 {
-    return 2 / (1 + std::sqrt(std::fma(alpha * alpha,
-                                       (1 / (cos_theta * cos_theta) - 1),
-                                       1)));
+    return 2 / (1 + std::sqrt(loom::fma(alpha * alpha,
+                                        (1 / (cos_theta * cos_theta) - 1),
+                                        1.f)));
 }
 
 /// @brief Microfacet slope generation.
@@ -428,10 +428,10 @@ get_slope(const float cos_theta, const Vec2f u) noexcept
     }
 
     const float z =
-        sy * std::fma(std::fma(sy, .27385f, -.73369f), sy, .46341f) /
-        std::fma(std::fma(std::fma(sy, .093073f, .309420f), sy, -1.f),
-                 sy,
-                 .597999f);
+        sy * loom::fma(loom::fma(sy, .27385f, -.73369f), sy, .46341f) /
+        loom::fma(loom::fma(loom::fma(sy, .093073f, .309420f), sy, -1.f),
+                  sy,
+                  .597999f);
     const float rety = S * z * std::sqrt(1 + retx * retx);
 
     return Vec2f{retx, rety};
@@ -461,8 +461,8 @@ microfacet(Vec3f wi, const Vec2f& alpha, const Vec2f u) noexcept
     const float cosphi = tb ? wix / lensq : 1.f;
     const float sinphi = tb ? wiy / lensq : 0.f;
 
-    const float nx = std::fma(sinphi, sy, cosphi * sx) * alphax;
-    const float ny = std::fma(cosphi, sy, -sinphi * sx) * alphay;
+    const float nx = loom::fma(sinphi, sy, cosphi * sx) * alphax;
+    const float ny = loom::fma(cosphi, sy, -sinphi * sx) * alphay;
 
     return make_normal(-nx, -ny, 1.f);
 }

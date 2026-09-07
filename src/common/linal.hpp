@@ -1337,7 +1337,7 @@ dot(const Vector<T, N, Container1>& a,
             if(std::is_constant_evaluated())
                 ret = a[i] * b[i] + ret;
             else
-                ret = std::fma(a[i], b[i], ret);
+                ret = loom::fma(a[i], b[i], ret);
         return ret;
     }
     else
@@ -1365,7 +1365,7 @@ dot(const Matrix<T, M, N, MContainer>& lhs,
             if(std::is_constant_evaluated())
                 ret[i] = lhs.at(i, j) * rhs[j] + ret[i];
             else
-                ret[i] = std::fma(lhs.at(i, j), rhs[j], ret[i]);
+                ret[i] = loom::fma(lhs.at(i, j), rhs[j], ret[i]);
 
     return ret;
 }
@@ -1391,7 +1391,7 @@ dot(const Matrix<T, M1, N1, Container1>& lhs,
                     ret.at(i, j) = lhs.at(i, r) * rhs.at(r, j) + ret.at(i, j);
                 else
                     ret.at(i, j) =
-                        std::fma(lhs.at(i, r), rhs.at(r, j), ret.at(i, j));
+                        loom::fma(lhs.at(i, r), rhs.at(r, j), ret.at(i, j));
 
     return ret;
 }

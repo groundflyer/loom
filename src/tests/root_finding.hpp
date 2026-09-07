@@ -135,10 +135,10 @@ val_eval(T a, T b, T c, T d, T x) noexcept
 {
     T x2 = x * x;
     T x3 = x2 * x;
-    return std::fma(
+    return loom::fma(
         a,
         x3,
-        std::fma(b, x2, std::fma(c, x, d))); // a * x3 + b * x2 + c * x + d;
+        loom::fma(b, x2, loom::fma(c, x, d))); // a * x3 + b * x2 + c * x + d;
 }
 
 template <std::floating_point T>

@@ -129,7 +129,7 @@ struct fma
     T
     operator()(const T x, const T y, const T z) const noexcept
     {
-        return std::fma(x, y, z);
+        return loom::fma(x, y, z);
     }
 };
 
@@ -142,7 +142,7 @@ struct fms
     T
     operator()(const T x, const T y, const T z) const noexcept
     {
-        return std::fma(x, y, -z);
+        return loom::fma(x, y, -z);
     }
 };
 

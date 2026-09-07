@@ -18,7 +18,7 @@ class fp_mix_ref
     static T
     mix1(const T a, const T b, const T c) noexcept
     {
-        const T d = std::fma(a, b, c);
+        const T d = loom::fma(a, b, c);
         const T e = std::abs(d - (b / c));
         const T f = std::abs(a * c - d);
         const T g = std::min(e, f);
