@@ -259,7 +259,7 @@ struct StandardBenchmarkSuite
         }
     };
 
-    template <typename T>
+    template <typename T, bool tbd = true>
     struct BSE : Base<T>
     {
         using base = Base<T>;
@@ -268,7 +268,8 @@ struct StandardBenchmarkSuite
         std::string
         info() const noexcept
         {
-            return fmt::format("scalar;{};{}",
+            return fmt::format("scalar;tbd:{};{};{}",
+                               tbd,
                                TypeInfo<T>::chars,
                                base::sample_size);
         }
@@ -276,13 +277,13 @@ struct StandardBenchmarkSuite
         std::chrono::steady_clock::duration
         operator()() const noexcept
         {
-            vm::bse::function<K> f;
+            vm::bse::function<K, tbd> f;
 
             return base::scalar(f);
         }
     };
 
-    template <typename T>
+    template <typename T, bool ts = false, bool tbd = true>
     struct SIMDCompact : Base<T>
     {
         using base     = Base<T>;
@@ -300,7 +301,9 @@ struct StandardBenchmarkSuite
                                    TypeInfo<T>::chars,
                                    base::sample_size);
             else
-                return fmt::format("predicated;{};{}",
+                return fmt::format("predicated;ts:{};tbd:{};{};{}",
+                                   ts,
+                                   tbd,
                                    TypeInfo<T>::chars,
                                    base::sample_size);
         }
@@ -310,7 +313,7 @@ struct StandardBenchmarkSuite
         {
             ElapsedTimer<> timer;
 
-            vm::simd::compact_function<K> f;
+            vm::simd::compact_function<K, ts, tbd> f;
 
             std::ranges::for_each(
                 ranges::views::chunk(invopply(zipper, base::inputs), N),
@@ -338,7 +341,7 @@ struct StandardBenchmarkSuite
         }
     };
 
-    template <typename T, bool ts, typename UTR>
+    template <typename T, bool ts, typename UTR, bool tbd = true>
     struct SIMDFullRange : Base<T>
     {
         using base   = Base<T>;
@@ -348,18 +351,20 @@ struct StandardBenchmarkSuite
         std::string
         info() const noexcept
         {
-            return fmt::format("hybrid-full-range;ts:{};UTR:{:.0f}%;{};{}",
-                               ts,
-                               ratio2percent<T, UTR>(),
-                               TypeInfo<T>::chars,
-                               base::sample_size);
+            return fmt::format(
+                "hybrid-full-range;ts:{};tbd:{};UTR:{:.0f}%;{};{}",
+                ts,
+                tbd,
+                ratio2percent<T, UTR>(),
+                TypeInfo<T>::chars,
+                base::sample_size);
         }
 
         std::chrono::steady_clock::duration
         operator()() const noexcept
         {
             vm::simd::
-                hybrid_function<K, ts, true, vm::simd::SUCCESSOR_MAJOR, UTR>
+                hybrid_function<K, ts, tbd, vm::simd::SUCCESSOR_MAJOR, UTR>
                     f(base::sample_size);
 
             ElapsedTimer<> timer;
@@ -383,7 +388,7 @@ struct StandardBenchmarkSuite
         }
     };
 
-    template <typename T, bool ts, typename UTR>
+    template <typename T, bool ts, typename UTR, bool tbd = true>
     struct SIMDStream : Base<T>
     {
         using base = Base<T>;
@@ -396,18 +401,20 @@ struct StandardBenchmarkSuite
         std::string
         info() const noexcept
         {
-            return fmt::format("hybrid-stream;ts:{};UTR:{:.0f}%;size:{};{};{}",
-                               ts,
-                               ratio2percent<T, UTR>(),
-                               stream_size,
-                               TypeInfo<T>::chars,
-                               base::sample_size);
+            return fmt::format(
+                "hybrid-stream;ts:{};tbd:{};UTR:{:.0f}%;size:{};{};{}",
+                ts,
+                tbd,
+                ratio2percent<T, UTR>(),
+                stream_size,
+                TypeInfo<T>::chars,
+                base::sample_size);
         }
 
         std::chrono::steady_clock::duration
         operator()() const noexcept
         {
-            vm::simd::hybrid_stream<K, ts, true, vm::simd::SUCCESSOR_MAJOR, UTR>
+            vm::simd::hybrid_stream<K, ts, tbd, vm::simd::SUCCESSOR_MAJOR, UTR>
                 s(stream_size);
 
             auto view = std::views::transform(invopply(zipper, base::inputs),
@@ -499,7 +506,8 @@ struct StandardBenchmarkSuite
                 // clang-format on
 
                 BSE<T>{sample_size, inputs, sink},
-                SIMDCompact<T>{sample_size, inputs, sink},
+                SIMDCompact<T, true>{sample_size, inputs, sink},
+                SIMDCompact<T, false>{sample_size, inputs, sink},
 
                 SIMDFullRange<T, true, utr1>{sample_size, inputs, sink},
                 SIMDFullRange<T, false, utr1>{sample_size, inputs, sink},
