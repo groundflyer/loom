@@ -104,9 +104,9 @@ run_benchmarks(Logger&     logger,
             avg += dur;
             logger.info("Result {}", format_duration(dur, 6, 3));
             if(file)
-                fmt::println(
+                fmt::print(
                     file,
-                    "{:%FT%TZ},{},clang-{},fast-math:{},{},{},{},{:09.6f}",
+                    "{:%FT%TZ},{},clang-{},fast-math:{},{},{},{},{:09.6f}\n",
                     std::chrono::floor<std::chrono::seconds>(
                         std::chrono::system_clock::now()),
                     REPO_HASH,
