@@ -144,12 +144,16 @@ def parse_record(line) -> Record:
                   id= make_bid(vals[6]),
                   time=float(vals[7]))
 
-def get_records(f):
-    return [parse_record(l) for l in f.readlines()]
-
-def latest(records):
-    lh = records[-1].hash
-    return filter(lambda r: r.hash == lh, records)
+def get_records(path, latest=True):
+    print("working with", path)
+    with open(path, 'r') as f:
+        records = [parse_record(l) for l in f.readlines()]
+    if latest:
+        lh = records[-1].hash
+        print("Latest hash: ", lh)
+        return list(filter(lambda r: r.hash == lh, records))
+    else:
+        return records
 
 def get_unique_bids(records):
     return set(r.id for r in records)
@@ -170,8 +174,14 @@ def h2p_speedup(records):
     pred_bid = next(filter(lambda bid: bid.method == Method.PREDICATED, ubids))
     hbid, hval = reduce(lambda l, r: l if l[1] < r[1] else r,
                        best_of_methods(hybrid_bids, records))
+    print("pred bid: ", pred_bid)
+    print("hybrid bid: ", hbid)
+    print("hybrid avg: ", hval)
     pval = avg_of(pred_bid, records)
-    return pval / hval
+    print("predicated avg: ", pval)
+    ratio = pval / hval
+    print("ratio ", ratio)
+    return ratio
 
 def main():
     parser = argparse.ArgumentParser()
@@ -180,15 +190,20 @@ def main():
 
     d = path.abspath(args.path)
 
-    xs = [h2p_speedup(get_records(open(p, 'r'))) for p in
-          filter(lambda p: path.exists(p),
-                 (path.join(d, n + '.csv') for n in render))]
+    xs = [(h2p_speedup(get_records(x[1])), x[0]) for x in
+          filter(lambda x: path.exists(x[1]),
+                 ((n, path.join(d, n + '.csv')) for n in render))]
 
-    max_speedup = max(xs)
-    min_speedup = min(xs)
-    avg_speedup = sum(xs) / len(xs)
+    xs.sort(key=lambda v: v[0])
 
-    print("Maximum speedup: {:.2f}x\nAverage speedup: {:.2f}x\nMinimum speedup: {:2f}x".format(max_speedup, avg_speedup, min_speedup))
+    vs, ns = zip(*xs)
+
+    max_speedup, best = xs[-1]
+    min_speedup, worst = xs[0]
+    avg_speedup = sum(vs) / len(vs)
+
+    print("Maximum speedup: {:.2f}x ({})\nAverage speedup: {:.2f}x\nMinimum speedup: {:2f}x ({})".format(
+        max_speedup, best, avg_speedup, min_speedup, worst))
 
 if __name__ == '__main__':
     main()
