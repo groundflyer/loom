@@ -219,7 +219,7 @@ def main():
     min_speedup, worst = xs[0]
     avg_speedup = sum(vs) / l
 
-    print("Maximum speedup: {:.2f}x ({})\nAverage speedup: {:.2f}x\nMinimum speedup: {:2f}x ({})".format(
+    print("Maximum speedup: {:.2f}x ({})\nAverage speedup: {:.2f}x\nMinimum speedup: {:.2f}x ({})".format(
         max_speedup, best, avg_speedup, min_speedup, worst))
 
     print("\nTop 3")
