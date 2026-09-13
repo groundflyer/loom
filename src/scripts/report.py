@@ -2,6 +2,7 @@
 
 import argparse
 import datetime as dt
+import logging
 
 from enum import Enum
 from dataclasses import dataclass
@@ -75,6 +76,8 @@ def sm_prep(s) -> str:
 
 Method = Enum('Method', [sm_prep(s) for s in orig_methods])
 
+logger = logging.getLogger(__name__)
+
 @dataclass(frozen=True)
 class BenchmarkID:
     method: Method
@@ -145,12 +148,12 @@ def parse_record(line) -> Record:
                   time=float(vals[7]))
 
 def get_records(path, latest=True):
-    print("working with", path)
+    logger.debug("working with {}", path)
     with open(path, 'r') as f:
         records = [parse_record(l) for l in f.readlines()]
     if latest:
         lh = records[-1].hash
-        print("Latest hash: ", lh)
+        logger.debug("Latest hash: {}", lh)
         return list(filter(lambda r: r.hash == lh, records))
     else:
         return records
@@ -174,23 +177,36 @@ def h2p_speedup(records):
     pred_bid = next(filter(lambda bid: bid.method == Method.PREDICATED, ubids))
     hbid, hval = reduce(lambda l, r: l if l[1] < r[1] else r,
                        best_of_methods(hybrid_bids, records))
-    print("pred bid: ", pred_bid)
-    print("hybrid bid: ", hbid)
-    print("hybrid avg: ", hval)
+    logger.debug("pred bid: {}", pred_bid)
+    logger.debug("hybrid bid: {}", hbid)
+    logger.debug("hybrid avg: {}", hval)
     pval = avg_of(pred_bid, records)
-    print("predicated avg: ", pval)
+    logger.debug("predicated avg: {}", pval)
     ratio = pval / hval
-    print("ratio ", ratio)
+    logger.debug("ratio {}", ratio)
     return ratio
+
+def decode_pt(s):
+    kernel, _, b, t, d = s.split('_')
+    blur = int(b[1:])
+    threshold = float(t[1:])
+    depth = int(d[1:])
+    return "PT v{}; blur={}; threshold={}; depth:{}".format(1 if kernel == "pt" else 2,
+                                                            blur, threshold, depth)
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('path', help='Path to directory with benchmarks logs')
+    parser.add_argument('path', help='path to directory with benchmarks logs')
+    parser.add_argument('-v', '--verbose', help='verbose logging', action='store_true')
+    parser.add_argument('-a', '--all', help='print all results', action='store_true')
     args = parser.parse_args()
+
+    if(args.verbose):
+        logger.setLevel(logging.DEBUG)
 
     d = path.abspath(args.path)
 
-    xs = [(h2p_speedup(get_records(x[1])), x[0]) for x in
+    xs = [(h2p_speedup(get_records(x[1])), decode_pt(x[0])) for x in
           filter(lambda x: path.exists(x[1]),
                  ((n, path.join(d, n + '.csv')) for n in render))]
 
@@ -198,12 +214,30 @@ def main():
 
     vs, ns = zip(*xs)
 
+    l = len(vs)
     max_speedup, best = xs[-1]
     min_speedup, worst = xs[0]
-    avg_speedup = sum(vs) / len(vs)
+    avg_speedup = sum(vs) / l
 
     print("Maximum speedup: {:.2f}x ({})\nAverage speedup: {:.2f}x\nMinimum speedup: {:2f}x ({})".format(
         max_speedup, best, avg_speedup, min_speedup, worst))
+
+    print("\nTop 3")
+    for i in range(3):
+        print("{:.2f}x {}".format(*xs[-1-i]))
+
+    print("\nBottom 3")
+    for i in range(3):
+        print("{:.2f}x {}".format(*xs[2-i]))
+
+    print("\nMedian 3")
+    for i in range(3):
+        print("{:.2f}x {}".format(*xs[l // 2 - 1 + i]))
+
+    if(args.all):
+        print("\nAll results")
+        for (x, y) in xs[::-1]:
+            print("{:.2f}x {}".format(x, y))
 
 if __name__ == '__main__':
     main()
