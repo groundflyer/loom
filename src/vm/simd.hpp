@@ -3504,11 +3504,11 @@ enum ReconvMethod
 {
     WARP_FAIR,    /*!< Every PC in gang gets gets its time */
     HYBRID_MAJOR, /*!< Only PCs having the majority are executed selecting
-                     between successors and greedy search when utilization
+                     between successors and warp search when utilization
                      hits threshold */
     WARP_MAJOR,   /*!< Only PCs having the majority are executed selecting from
-                      greedy search */
-    HYBRID_FAIR,  /*!< Prefers greedy major grouping, when utilization hits
+                      warp */
+    HYBRID_FAIR,  /*!< Prefers warp-major grouping, when utilization hits
                     threshold, switch to fair */
     SUCCESSOR_FIRST, /*!< Select first PC from successors falling back to
                      pending set */
@@ -4003,7 +4003,7 @@ class compact_compiler
 /// @tparam use_tbd use threaded block dispatch
 /// @tparam rcnv reconvergence method
 /// @tparam UTRt main utilization threshold ratio
-/// @tparam UTRh utilization threshold ratio for hybrid and static reconvergence
+/// @tparam UTRh utilization threshold ratio for hybrid and successor-major
 /// @tparam skip_pending don't restart the warp
 template <Kernel       K,
           bool         ts      = false,
