@@ -4004,14 +4004,17 @@ class compact_compiler
 /// @tparam rcnv reconvergence method
 /// @tparam UTRt main utilization threshold ratio
 /// @tparam UTRh utilization threshold ratio for hybrid and static reconvergence
+/// @tparam skip_pending don't restart the warp
 template <Kernel       K,
           bool         ts      = false,
           bool         use_tbd = true,
           ReconvMethod rcnv    = SUCCESSOR_MAJOR,
           typename UTRt        = std::ratio<1, 16>,
-          typename UTRh        = UTRt>
-    requires(!K::is_straightline && typelist::of_same_size<typename K::reg_types> &&
-             val_utr_v<UTRt> && val_utr_v<UTRh>)
+          typename UTRh        = UTRt,
+          bool skip_pending    = false>
+    requires(!K::is_straightline &&
+             typelist::of_same_size<typename K::reg_types> && val_utr_v<UTRt> &&
+             val_utr_v<UTRh>)
 class hybrid_compiler
 {
     using labelmap  = K::labelmap;
@@ -4128,32 +4131,51 @@ class hybrid_compiler
                                            static_cast<index_t>(
                                                K::num_blocks)>>;
 
-                        std::uint64_t pending{};
-
-                        while(pops > t)
+                        if constexpr(skip_pending)
                         {
-                            pending = typelist::visit_at(
+                            typelist::visit_at(
                                 pc,
-                                [&, mask, t]<typename D>(
-                                    std::uint64_t pending) noexcept
-                                { return D::eval(storage, mask, pending, t); },
+                                [&, mask, t]<typename D>() noexcept
+                                { D::eval(storage, mask, 0ul, t); },
                                 spec_blocks{},
-                                copy_id,
-                                pending);
+                                sink);
+                        }
+                        else
+                        {
+                            std::uint64_t pending{};
 
-                            pcs  = storage.pc();
-                            pops = 0;
-                            mask = mask_t{};
+                            while(pops > t)
+                            {
+                                pending = typelist::visit_at(
+                                    pc,
+                                    [&, mask, t]<typename D>(
+                                        std::uint64_t pending) noexcept
+                                    {
+                                        return D::eval(storage,
+                                                       mask,
+                                                       pending,
+                                                       t);
+                                    },
+                                    spec_blocks{},
+                                    copy_id,
+                                    pending);
 
-                            if(pending)
-                                std::tie(pc, mask, pops) = major_group<K, N>(
-                                    pcs,
-                                    simple_set<index_t>(pending));
+                                pcs  = storage.pc();
+                                pops = 0;
+                                mask = mask_t{};
 
-                            if(!pops)
-                                std::tie(pc, mask, pops) = major_group<K, N>(
-                                    pcs,
-                                    greedy_groups<K, N, true>{pcs});
+                                if(pending)
+                                    std::tie(pc, mask, pops) =
+                                        major_group<K, N>(
+                                            pcs,
+                                            simple_set<index_t>(pending));
+
+                                if(!pops)
+                                    std::tie(pc, mask, pops) =
+                                        major_group<K, N>(
+                                            pcs,
+                                            greedy_groups<K, N, true>{pcs});
+                            }
                         }
                     }
                     else if constexpr(rcnv == HYBRID_MAJOR)
