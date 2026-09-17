@@ -651,7 +651,8 @@ struct eval<Compute<Op, Dst, VarArgs...>, LabelMap, VarMap, PCVar>
         requires(typelist::elem<Var, typelist::map<fst_t, VarMap>>)
     using var_idx = typelist::lookup<Var, VarMap>;
 
-    using idxs      = typelist::map<var_idx, type_sequence<VarArgs...>>;
+    using idxs = typelist::to_integer_sequence<
+        typelist::map<var_idx, type_sequence<VarArgs...>>>;
     using device_op = remap_comp_t<Op>;
 
     template <typename... Args>
@@ -686,7 +687,7 @@ struct eval<ParmJump<Var, Labels>, LabelMap, VarMap, PCVar>
 {
     static constexpr auto vari  = typelist::lookup<Var, VarMap>::value;
     static constexpr auto pci   = typelist::lookup<PCVar, VarMap>::value;
-    static constexpr auto table = pjmp_arr<ParmJump<Var, Labels>, LabelMap>;
+    static constexpr auto table = jmp_arr<ParmJump<Var, Labels>, LabelMap>;
 
     template <typename... Args>
     __device__ void
