@@ -14,13 +14,6 @@
 
 namespace loom
 {
-static std::uint32_t
-encode_res(const Vec2u& res) noexcept
-{
-    const auto [w, h] = res;
-    return w << 16 | h;
-}
-
 static inline int FORCE_INLINE
 masked_ray_count(const vm::simd::native_vector<std::uint32_t> vrc,
                  const std::size_t tail_size) noexcept

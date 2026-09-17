@@ -327,9 +327,8 @@ int main(){std::cout << fmt::format(\"{}\",0);}" FmtLibcxx)
 
   if(BUILD_DEBUGGERS)
     message(STATUS "Building debuggers")
-    add_custom_target(dbgs)
     set(DBGS_SRC_DIR src/dbg)
-    set(dbg_srcs root_finding.cpp fibonacci.cpp factorial.cpp smallpt.cpp)
+    set(dbg_srcs root_finding.cpp fibonacci.cpp factorial.cpp smallpt.cpp pt_const.cpp pt2_const.cpp)
 
     foreach(src ${dbg_srcs})
       string(REPLACE ".cpp" "" name ${src})
@@ -337,11 +336,17 @@ int main(){std::cout << fmt::format(\"{}\",0);}" FmtLibcxx)
 
       add_executable(${name} ${DBGS_SRC_DIR}/${src})
       target_link_libraries(${name} PUBLIC FastFloat::fast_float ${FMT_TARGET})
-      add_dependencies(dbgs ${name})
       install(TARGETS ${name})
     endforeach()
 
     target_compile_options(dbg_smallpt PRIVATE -ftemplate-depth=2048 -fbracket-depth=1600 -ftemplate-backtrace-limit=1)
+    target_compile_options(dbg_pt_const PRIVATE -ftemplate-depth=2048 -fbracket-depth=1600 -ftemplate-backtrace-limit=1)
+    target_compile_options(dbg_pt2_const PRIVATE -ftemplate-depth=2048 -fbracket-depth=1600 -ftemplate-backtrace-limit=1)
+
+    add_custom_target(light_dbgs DEPENDS dbg_root_finding dbg_factorial dbg_fibonacci)
+    add_custom_target(heavy_dbgs DEPENDS dbg_smallpt dbg_pt_const dbg_pt2_const)
+    add_dependencies(light_targets light_dbgs)
+    add_dependencies(heavy_targets heavy_dbgs)
   endif()
 
   if(BUILD_BENCHMARKS)
