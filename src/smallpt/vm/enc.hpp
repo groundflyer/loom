@@ -22,8 +22,16 @@ decode_pp(const std::uint32_t p) noexcept
 {
     return Vec2u(p >> 16, p & 0xffff);
 }
+
+static std::uint32_t
+encode_res(const Vec2u& res) noexcept
+{
+    const auto [w, h] = res;
+    return w << 16 | h;
+}
 } // namespace fn
 
 MK_NIEBLOID(encode_pp);
 MK_NIEBLOID(decode_pp);
+MK_NIEBLOID(encode_res);
 } // namespace loom

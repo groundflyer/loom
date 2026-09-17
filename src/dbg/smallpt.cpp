@@ -1,5 +1,6 @@
 // -*- C++ -*-
 // smallpt.cpp
+#include <smallpt/vm/enc.hpp>
 #include <smallpt/vm/pt.hpp>
 #include <vm/dbg.hpp>
 
@@ -69,14 +70,14 @@ main(int argc, char* argv[])
                                  PRETTIFY_TMACRO(float, anisorough_n)>>(
         argc,
         argv,
-        std::tuple{option<"enc-pp">("encoded pixel position",
-                                    "P",
-                                    0,
+        std::tuple{option<"pp", 2>("pixel position",
+                                   {"X", "Y"},
+                                   {0, 0},
+                                   read_number<unsigned, true>),
+                   option<"res", 2>("image resolution",
+                                    {"W", "H"},
+                                    {400, 400},
                                     read_number<unsigned, true>),
-                   option<"enc-res">("encoded image resolution",
-                                     "R",
-                                     0,
-                                     read_number<unsigned, true>),
                    option<"threshold">("adaptive sampling threshold",
                                        "T",
                                        0.0001f,
@@ -88,8 +89,8 @@ main(int argc, char* argv[])
                    option<"blur">("blur", "B", 1.f, read_number<float, true>)},
         [](const auto& pr)
         {
-            return std::tuple{pr.template get_opt<"enc-pp">(),
-                              pr.template get_opt<"enc-res">(),
+            return std::tuple{encode_pp(Vec2u{pr.template get_opt<"pp">()}),
+                              encode_res(Vec2u{pr.template get_opt<"res">()}),
                               pr.template get_opt<"threshold">(),
                               pr.template get_opt<"max-depth">(),
                               pr.template get_opt<"blur">()};
