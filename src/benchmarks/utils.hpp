@@ -130,6 +130,7 @@ log_info(Logger& logger, std::size_t num_runs) noexcept
 {
     logger.info("CPU: {}; SIMD: {}", get_cpu_model(), vm::simd::info::value);
     logger.info("clang-{}; fast-math: {}", rtrim(__clang_version__), fast_math);
+    logger.info("commit: {}", REPO_HASH);
     logger.info("Running each benchmark {} times", num_runs);
 }
 
