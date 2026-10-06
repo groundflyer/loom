@@ -3251,8 +3251,8 @@ struct visitor_selector
     };
 };
 
-/// @brief Compute minimum gang size.
-/// @tparam N lane size
+/// @brief Compute warp utilization threshold.
+/// @tparam N warp size
 /// @tparam UTR utilization threshold ratio
 template <fsize_t N, typename UTR>
 struct get_threshold :
