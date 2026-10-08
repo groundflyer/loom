@@ -23,9 +23,10 @@ EventState::EventState(std::size_t is,
                        unsigned    md,
                        float       b,
                        bool        lr,
-                       METHOD      m) noexcept :
+                       METHOD      m,
+                       bool        mp) noexcept :
     img_size(is), stream_size(ss), threshold(t), max_depth(md), blur(b),
-    lock_res(lr), method(m)
+    lock_res(lr), method(m), run_mp(mp)
 {
 }
 

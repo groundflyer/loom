@@ -142,6 +142,14 @@ hybrid(EventState& estate, ViewState& vstate)
     const float       blur        = estate.blur;
     const std::size_t stream_size = estate.stream_size;
 
+#ifdef DEMO_WRITE_PROGRESS
+    std::FILE* concatfile = std::fopen("hybrid_concatfile.txt", "a+");
+
+    static constexpr std::string_view wpref = "hybrid";
+
+    write_image(vstate.img, concatfile, wpref, 0ul, .0);
+#endif
+
     vm::simd::hybrid_stream<pt_float,
                             false,
                             true,
@@ -179,7 +187,17 @@ hybrid(EventState& estate, ViewState& vstate)
         if(img_timer.has_expired(vstate.tf))
         {
             vstate.update(estate);
+
+#ifdef DEMO_WRITE_PROGRESS
+            write_image(
+                vstate.img,
+                concatfile,
+                wpref,
+                progress,
+                std::chrono::duration<double>(img_timer.restart()).count());
+#else
             img_timer.restart();
+#endif
         }
 
         if(osd_timer.has_expired(osd_timeframe))
@@ -224,6 +242,15 @@ hybrid(EventState& estate, ViewState& vstate)
                       ray_traversal_rate(all_rc, at),
                       std::chrono::duration_cast<std::chrono::seconds>(at));
 
+#ifdef DEMO_WRITE_PROGRESS
+    write_image(vstate.img,
+                concatfile,
+                wpref,
+                progress,
+                std::chrono::duration<double>(img_timer.elapsed()).count());
+    std::fclose(concatfile);
+#endif
+
     return true;
 }
 
@@ -248,6 +275,14 @@ hybrid_mp(EventState&                     estate,
     const unsigned    max_depth   = estate.max_depth;
     const float       blur        = estate.blur;
     const std::size_t stream_size = estate.stream_size;
+
+#ifdef DEMO_WRITE_PROGRESS
+    std::FILE* concatfile = std::fopen("hybrid_mp_concatfile.txt", "a+");
+
+    static constexpr std::string_view wpref = "hybrid_mp";
+
+    write_image(vstate.img, concatfile, wpref, 0ul, .0);
+#endif
 
     const unsigned num_workers = std::thread::hardware_concurrency();
     vm::mp::Shop<type_sequence<pt_float>, mp_context> shop(num_workers,
@@ -288,7 +323,17 @@ hybrid_mp(EventState&                     estate,
             if(img_timer.has_expired(vstate.tf))
             {
                 vstate.update(estate);
+
+#ifdef DEMO_WRITE_PROGRESS
+                write_image(
+                    vstate.img,
+                    concatfile,
+                    wpref,
+                    progress,
+                    std::chrono::duration<double>(img_timer.restart()).count());
+#else
                 img_timer.restart();
+#endif
             }
 
             if(osd_timer.has_expired(osd_timeframe))
@@ -323,6 +368,15 @@ hybrid_mp(EventState&                     estate,
                       ray_traversal_rate(tmp_rc, osd_timer.elapsed()),
                       ray_traversal_rate(all_rc, at),
                       std::chrono::duration_cast<std::chrono::seconds>(at));
+
+#ifdef DEMO_WRITE_PROGRESS
+    write_image(vstate.img,
+                concatfile,
+                wpref,
+                vstate.img.size(),
+                std::chrono::duration<double>(img_timer.elapsed()).count());
+    std::fclose(concatfile);
+#endif
 
     return true;
 }

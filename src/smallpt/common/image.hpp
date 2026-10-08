@@ -71,12 +71,14 @@ class ScanlineImage
         return pixel_count() * NC;
     }
 
+    template <bool is_const = false>
     class _iterator : public std::random_access_iterator_tag
     {
-        ScanlineImage* p_img;
-        unsigned       m_size;
-        unsigned       m_width;
-        unsigned       m_pos;
+        std::conditional_t<is_const, const ScanlineImage*, ScanlineImage*>
+                 p_img;
+        unsigned m_size;
+        unsigned m_width;
+        unsigned m_pos;
 
       public:
         using value_type      = _value_type;
@@ -237,8 +239,8 @@ class ScanlineImage
 
   public:
     using value_type      = _ref;
-    using iterator        = _iterator;
-    using const_iterator  = const _iterator;
+    using iterator        = _iterator<false>;
+    using const_iterator  = const _iterator<true>;
     using reference       = value_type;
     using const_reference = const value_type;
 

@@ -11,8 +11,34 @@
 
 #include <algorithm>
 
+#ifdef DEMO_WRITE_PROGRESS
+#include <cstdio>
+#include <smallpt/common/io.hpp>
+#endif
+
 namespace loom
 {
+#ifdef DEMO_WRITE_PROGRESS
+static void
+write_image(const Image&     img,
+            std::FILE*       concatfile,
+            std::string_view prefix,
+            std::size_t      progress,
+            double           delay)
+{
+    const std::string img_filename =
+        fmt::format("{}_{:08}.ppt", prefix, progress);
+    write_ppm(img, img_filename);
+    if(progress == 0ul)
+        fmt::println(concatfile, "file '{}'", img_filename);
+    else
+        fmt::println(concatfile,
+                     "duration {:05.4f}\nfile '{}'",
+                     delay,
+                     img_filename);
+}
+#endif
+
 template <typename RenderPixel, typename ImgProj = std::identity>
 static bool
 scanline(EventState& estate,
@@ -22,6 +48,14 @@ scanline(EventState& estate,
     ElapsedTimer<> img_timer, osd_timer, avg_timer;
 
     std::size_t progress{}, tmp_rc{}, all_rc{};
+
+#ifdef DEMO_WRITE_PROGRESS
+    std::FILE* concatfile = std::fopen("scanline_concatfile.txt", "a+");
+
+    static constexpr std::string_view wpref = "scanline";
+
+    write_image(vstate.img, concatfile, wpref, 0ul, .0);
+#endif
 
     return std::ranges::none_of(
                imgproj(vstate.img),
@@ -37,7 +71,17 @@ scanline(EventState& estate,
                    if(img_timer.has_expired(vstate.tf))
                    {
                        vstate.update(estate);
+#ifdef DEMO_WRITE_PROGRESS
+                       write_image(
+                           vstate.img,
+                           concatfile,
+                           wpref,
+                           progress,
+                           std::chrono::duration<double>(img_timer.restart())
+                               .count());
+#else
                        img_timer.restart();
+#endif
                    }
 
                    if(osd_timer.has_expired(osd_timeframe))
@@ -64,6 +108,16 @@ scanline(EventState& estate,
                           ray_traversal_rate(tmp_rc, osd_timer.elapsed()),
                           ray_traversal_rate(all_rc, at),
                           std::chrono::duration_cast<std::chrono::seconds>(at));
+
+#ifdef DEMO_WRITE_PROGRESS
+        write_image(vstate.img,
+                    concatfile,
+                    wpref,
+                    progress,
+                    std::chrono::duration<double>(img_timer.elapsed()).count());
+        std::fclose(concatfile);
+#endif
+
         return estate.req_stop();
     }();
 }
@@ -85,6 +139,14 @@ scanline_mp(EventState& estate,
     PADDED_VALUE(Shared, scc);
 
     decltype(auto) r = imgproj(vstate.img);
+
+#ifdef DEMO_WRITE_PROGRESS
+    std::FILE* concatfile = std::fopen("scanline_mp_concatfile.txt", "a+");
+
+    static constexpr std::string_view wpref = "scanline_mp";
+
+    write_image(vstate.img, concatfile, wpref, 0ul, .0);
+#endif
 
     thread_pool<dynamic_size> tp(
         std::thread::hardware_concurrency(),
@@ -133,6 +195,14 @@ scanline_mp(EventState& estate,
     {
         vstate.update(estate);
 
+#ifdef DEMO_WRITE_PROGRESS
+        write_image(vstate.img,
+                    concatfile,
+                    wpref,
+                    scc.progress.load(std::memory_order_relaxed),
+                    std::chrono::duration<double>(vstate.tf).count());
+#endif
+
         if(osd_timer.has_expired(osd_timeframe))
         {
             const std::size_t rc =
@@ -167,6 +237,15 @@ scanline_mp(EventState& estate,
                           ray_traversal_rate(all_rc, at),
                           std::chrono::duration_cast<std::chrono::seconds>(at));
     }
+
+#ifdef DEMO_WRITE_PROGRESS
+    write_image(vstate.img,
+                concatfile,
+                wpref,
+                scc.progress.load(std::memory_order_relaxed),
+                std::chrono::duration<double>(vstate.tf).count());
+    std::fclose(concatfile);
+#endif
 
     return true;
 }

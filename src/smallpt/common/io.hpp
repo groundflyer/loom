@@ -10,23 +10,23 @@
 
 #include <filesystem>
 #include <fstream>
-#include <string_view>
 
 namespace fs = std::filesystem;
 
 namespace loom
 {
-template <typename T, std::size_t NC, typename Alloc>
+template <typename T, unsigned NC, typename Alloc>
 void
 write_ppm(const ScanlineImage<T, NC, Alloc>& img, const fs::path& filename)
 {
     std::ofstream os(filename, std::ios_base::out | std::ios_base::binary);
     const auto [w, h] = img.res();
-    fmt::print(os, "P6\n{} {}\n255\n", w, h);
+    fmt::println(os, "P6\n{} {}\n255", w, h);
 
-    for(const auto pix: img)
+    for(const auto [_, pix]: img)
     {
-        const Vector<std::uint8_t, 3, std::array> rgb{downsample<std::uint8_t>(pix)};
+        const Vector<std::uint8_t, 3, std::array> rgb{
+            downsample<std::uint8_t>(pix)};
         for(const std::uint8_t val: rgb) os << val;
     }
 }

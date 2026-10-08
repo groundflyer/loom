@@ -69,6 +69,7 @@ main(int argc, char* argv[])
                     if(sv == "reference") return REFERENCE;
                     throw UnknownMethod{sv};
                 }),
+            argparse::flag<'S', "no-mp">("disable multithreading", true),
             argparse::option<'t', "threshold">("adaptive sampling threshold",
                                                "T",
                                                0.0001f,
@@ -144,7 +145,8 @@ main(int argc, char* argv[])
                           max_depth,
                           blur,
                           lock_res,
-                          parse_results.template get_opt<'m'>()};
+                          parse_results.template get_opt<'m'>(),
+                          parse_results.template get_opt<'S'>()};
 
         logger.debug("initializing glfw");
         const auto& h = gl::System::init();
