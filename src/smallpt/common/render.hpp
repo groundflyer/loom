@@ -141,7 +141,8 @@ scanline_mp(EventState& estate,
     decltype(auto) r = imgproj(vstate.img);
 
 #ifdef DEMO_WRITE_PROGRESS
-    std::FILE* concatfile = std::fopen("scanline_mp_concatfile.txt", "a+");
+    std::FILE*     concatfile = std::fopen("scanline_mp_concatfile.txt", "a+");
+    ElapsedTimer<> img_timer;
 
     static constexpr std::string_view wpref = "scanline_mp";
 
@@ -200,7 +201,7 @@ scanline_mp(EventState& estate,
                     concatfile,
                     wpref,
                     scc.progress.load(std::memory_order_relaxed),
-                    std::chrono::duration<double>(vstate.tf).count());
+                    std::chrono::duration<double>(img_timer.restart()).count());
 #endif
 
         if(osd_timer.has_expired(osd_timeframe))
@@ -243,7 +244,7 @@ scanline_mp(EventState& estate,
                 concatfile,
                 wpref,
                 scc.progress.load(std::memory_order_relaxed),
-                std::chrono::duration<double>(vstate.tf).count());
+                std::chrono::duration<double>(img_timer.elapsed()).count());
     std::fclose(concatfile);
 #endif
 
