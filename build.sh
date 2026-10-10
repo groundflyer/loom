@@ -26,7 +26,7 @@ CMAKE_ARGS=(
 )
 TEST=false
 BENCHMARK=false
-[ -z "${JOBS:-}" ] && JOBS=1
+[ -z "${JOBS:-}" ] && JOBS=16
 DO_BUILD=true
 
 [ -z "${BM_RUNS:-}" ] && BM_RUNS=4
@@ -88,7 +88,8 @@ run_build() {
     pushd $1
     cmake "${CMAKE_ARGS[@]}" ${SRC_DIR}
     if [ $DO_BUILD = true ]; then
-        make -j${JOBS}
+        make -j${JOBS} light_targets
+        make heavy_targets
     fi
     popd
 }
