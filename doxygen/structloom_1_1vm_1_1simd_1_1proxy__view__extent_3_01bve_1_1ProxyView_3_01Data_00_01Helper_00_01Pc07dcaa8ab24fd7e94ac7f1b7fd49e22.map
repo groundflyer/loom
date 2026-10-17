@@ -1,0 +1,5 @@
+<map id="loom::vm::simd::proxy_view_extent&lt; bve::ProxyView&lt; Data, Helper, PCVar, N &gt; &gt;" name="loom::vm::simd::proxy_view_extent&lt; bve::ProxyView&lt; Data, Helper, PCVar, N &gt; &gt;">
+<area shape="rect" id="Node000001" title="Get the size of bve::ProxyView." alt="" coords="5,145,230,207"/>
+<area shape="rect" id="Node000002" href="$structloom_1_1vm_1_1simd_1_1proxy__view__extent.html" title="Test if provided type is bve::ProxyView and provide its size." alt="" coords="33,5,202,50"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="120,66,120,145,115,145,115,66"/>
+</map>

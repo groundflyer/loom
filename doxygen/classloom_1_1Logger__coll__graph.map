@@ -1,0 +1,5 @@
+<map id="loom::Logger" name="loom::Logger">
+<area shape="rect" id="Node000001" title="Simple logger with classic verbosity schema, timestamps and colorful output." alt="" coords="27,106,133,134"/>
+<area shape="rect" id="Node000002" href="$structloom_1_1Logger_1_1Flush.html" title="Empty class tag type that used to indicate Logger if the output line should be rewritten in place." alt="" coords="5,5,155,33"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="83,49,83,105,77,105,77,49"/>
+</map>

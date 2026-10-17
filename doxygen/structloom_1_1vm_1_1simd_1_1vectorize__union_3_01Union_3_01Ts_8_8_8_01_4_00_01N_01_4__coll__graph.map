@@ -1,0 +1,9 @@
+<map id="loom::vm::simd::vectorize_union&lt; Union&lt; Ts... &gt;, N &gt;" name="loom::vm::simd::vectorize_union&lt; Union&lt; Ts... &gt;, N &gt;">
+<area shape="rect" id="Node000001" title="Ensure loom::Union correctly converted to union of packed vectors. Union specialisation." alt="" coords="621,40,827,85"/>
+<area shape="rect" id="Node000002" href="$structloom_1_1vm_1_1simd_1_1make__packed__vector.html" title="Create aligned SIMD packed vector type that consist of N elements of type T." alt="" coords="240,5,418,50"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="434,34,621,51,621,56,433,39"/>
+<area shape="rect" id="Node000003" href="$structloom_1_1vm_1_1simd_1_1vectorize__union.html" title="Ensure loom::Union correctly converted to union of packed vectors. Fundamental type specialisation." alt="" coords="233,75,424,119"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="439,91,597,79,621,77,621,82,598,85,440,96"/>
+<area shape="rect" id="Node000004" href="$structloom_1_1vm_1_1simd_1_1make__packed__vector.html" title="Create aligned SIMD packed vector type that consist of N elements of type T." alt="" coords="5,75,184,119"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="199,94,232,94,232,100,199,100"/>
+</map>

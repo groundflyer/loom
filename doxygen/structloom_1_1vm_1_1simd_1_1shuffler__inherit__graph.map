@@ -1,0 +1,9 @@
+<map id="loom::vm::simd::shuffler&lt; Idxs, N &gt;" name="loom::vm::simd::shuffler&lt; Idxs, N &gt;">
+<area shape="rect" id="Node000001" title="Helper class for prametric jumps." alt="" coords="5,84,186,129"/>
+<area shape="rect" id="Node000002" href="$structloom_1_1vm_1_1simd_1_1shuffler.html" title=" " alt="" coords="400,5,580,50"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="153,75,209,54,307,36,399,27,400,33,307,41,210,60,155,80"/>
+<area shape="rect" id="Node000003" href="$structloom_1_1vm_1_1simd_1_1shuffler_3_01std_1_1integer__sequence_3_01index__t_00_01a_00_01b_01_4_00_01N_01_4.html" title="Helper specialization for two&#45;way jump." alt="" coords="400,76,580,137"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="202,104,399,104,399,109,202,109"/>
+<area shape="rect" id="Node000004" href="$structloom_1_1vm_1_1simd_1_1shuffler_3_01std_1_1integer__sequence_3_01index__t_00_01is_8_8_8_01_4_00_01N_01_4.html" title="Helper specialization for multi&#45;way jump." alt="" coords="400,161,580,222"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="152,133,210,156,307,176,399,186,399,191,306,182,209,162,150,138"/>
+</map>

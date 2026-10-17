@@ -1,0 +1,9 @@
+<map id="loom::Intersection&lt; T &gt;" name="loom::Intersection&lt; T &gt;">
+<area shape="rect" id="Node000001" title="Intersection definition." alt="" coords="5,358,183,386"/>
+<area shape="rect" id="Node000002" href="$classloom_1_1Vector.html" title=" " alt="" coords="21,241,167,285"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="97,301,97,358,91,358,91,301"/>
+<area shape="rect" id="Node000003" href="$classloom_1_1Vector.html" title=" " alt="" coords="21,123,167,168"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="97,184,97,240,91,240,91,184"/>
+<area shape="rect" id="Node000004" href="$classloom_1_1Vector.html" title="N&#45;dimensional euclidian vector." alt="" coords="20,5,168,50"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="97,66,97,122,91,122,91,66"/>
+</map>

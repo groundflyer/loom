@@ -1,0 +1,11 @@
+<map id="loom::vm::mp::Signal" name="loom::vm::mp::Signal">
+<area shape="rect" id="Node000001" title="One&#45;sided signal." alt="" coords="5,14,166,42"/>
+<area shape="rect" id="Node000002" href="$classloom_1_1vm_1_1mp_1_1ShopBase_3_01Ks_00_01Ctx_00_01dynamic__size_01_4.html" title="Workshop basic functionality for dynamic number of workers." alt="" coords="580,5,775,50"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="182,32,381,34,580,32,580,37,381,39,182,37"/>
+<area shape="poly" id="edge5_Node000001_Node000002" title=" " alt="" coords="182,18,381,16,580,18,580,23,381,21,182,24"/>
+<area shape="rect" id="Node000004" href="$classloom_1_1vm_1_1mp_1_1ShopBase.html" title="Workshop basic functionality for static number of workers." alt="" coords="215,81,399,126"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="144,45,241,78,239,83,142,50"/>
+<area shape="rect" id="Node000003" href="$classloom_1_1vm_1_1mp_1_1Shop.html" title="Implements workshop." alt="" coords="824,5,976,50"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="791,25,824,25,824,30,791,30"/>
+<area shape="poly" id="edge4_Node000004_Node000002" title=" " alt="" coords="415,115,485,115,521,111,556,103,582,93,607,79,649,48,652,53,610,83,584,98,557,108,522,116,485,121,415,121"/>
+</map>

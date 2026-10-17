@@ -1,0 +1,25 @@
+var searchData=
+[
+  ['fac_0',['fac',['../namespaceloom.html#a2891415eee381f95f56b71e9c78cd8bd',1,'loom']]],
+  ['first_5fgroup_1',['first_group',['../namespaceloom_1_1vm_1_1simd.html#acb01757215a07835c6ebe35fe5b6df00',1,'loom::vm::simd']]],
+  ['first_5fof_2',['first_of',['../group__Typelist.html#gad03a895837ca8674cccc406196219f77',1,'loom::typelist']]],
+  ['first_5fof_5ffuncs_3',['first_of_funcs',['../group__Typelist.html#ga6e4071a6d5e1eafbdbfe1f02f9be242f',1,'loom::typelist']]],
+  ['fit_5fblock_5findex_4',['fit_block_index',['../namespaceloom_1_1vm.html#adbd967b676b6335c099b167774c0ac57',1,'loom::vm']]],
+  ['fit_5fin_5fbins_5',['fit_in_bins',['../namespaceloom_1_1vm_1_1simd.html#af8b6ebfa0a9e98e0608dd568c6bce6b6',1,'loom::vm::simd::fit_in_bins()'],['../namespaceloom_1_1vm_1_1bve.html#a1fad7d137a4ae5517ac0cb111af5b8d8',1,'loom::vm::bve::fit_in_bins()']]],
+  ['flag_6',['flag',['../group__ArgParse.html#ga0cb58e8535fc44643b0bd08e5970680a',1,'loom::argparse::flag(const std::string_view doc, const bool def_val=false) noexcept'],['../group__ArgParse.html#gadb0d0786f6384c9726a724daab3e15da',1,'loom::argparse::flag(const std::string_view doc, const bool def_val=false) noexcept'],['../namespaceloom_1_1argparse.html#gadb0d0786f6384c9726a724daab3e15da',1,'loom::argparse::flag(const std::string_view doc, const bool def_val=false) noexcept']]],
+  ['flat_5fref_7',['flat_ref',['../group__LINAL.html#gaef09e20e8794046cf41662bdfd2bd70b',1,'loom']]],
+  ['flip_8',['flip',['../namespaceloom.html#aa28e334c42cf15f99df29ee3832e45ad',1,'loom']]],
+  ['fma_9',['fma',['../namespaceloom.html#a66b1b6b376b7dc3b58ba4087c67d7d59',1,'loom']]],
+  ['fold_10',['fold',['../namespaceloom.html#a512e6c2f455e0c1b407758063844ed29',1,'loom']]],
+  ['fold_5ftuple_11',['fold_tuple',['../namespaceloom.html#a2df947e3fc99648f7bc910763be5e959',1,'loom::fold_tuple(const Tuple &amp;tuple, BinaryOp &amp;&amp;op, const T &amp;init)'],['../namespaceloom.html#a5793424822a19d6a27cbad1422bf43be',1,'loom::fold_tuple(const Tuple &amp;tuple, BinaryOp &amp;&amp;op)']]],
+  ['for_5feach_12',['for_each',['../group__Typelist.html#gaa35f517f93d40c742544de24c1badd70',1,'loom::typelist::for_each()'],['../group__Intlist.html#gab62d7fb8e20571ed071dbe49d1dd45bd',1,'loom::intlist::for_each()'],['../namespaceloom.html#acb5f31955a8ea225ffbf327138e29827',1,'loom::for_each()']]],
+  ['for_5feach_5farg_13',['for_each_arg',['../group__Typelist.html#ga01b43ca646fc2e5883d7c29d06318179',1,'loom::typelist']]],
+  ['for_5feach_5farg_5fmasked_14',['for_each_arg_masked',['../namespaceloom_1_1typelist.html#a9287f6840cd7605324c93e92e397ccdb',1,'loom::typelist']]],
+  ['for_5feach_5fmasked_15',['for_each_masked',['../namespaceloom_1_1typelist.html#aec3a83e8ca83aa648e6439a1929bc621',1,'loom::typelist']]],
+  ['fuzzy_16',['fuzzy',['../structloom_1_1test_1_1ParmTestMaker.html#aa8133b8eb5e1e4cb0bdad3b2986f89c7',1,'loom::test::ParmTestMaker']]],
+  ['fuzzy_5frng_5finvariant_17',['fuzzy_rng_invariant',['../structloom_1_1test_1_1ParmTestMaker.html#afd4e172e21b68656dbdac16c80298e58',1,'loom::test::ParmTestMaker']]],
+  ['fuzzy_5frng_5fwith_5fref_18',['fuzzy_rng_with_ref',['../structloom_1_1test_1_1ParmTestMaker.html#a9a14596d65166889f0c95b38ca42ea74',1,'loom::test::ParmTestMaker']]],
+  ['fuzzy_5frng_5fwith_5fscalar_5fref_19',['fuzzy_rng_with_scalar_ref',['../structloom_1_1test_1_1ParmTestMaker.html#ab6aaa62bc3d87e2b6dfa5ecddfcf25da',1,'loom::test::ParmTestMaker']]],
+  ['fuzzy_5fulp_20',['fuzzy_ulp',['../structloom_1_1test_1_1ParmTestMaker.html#a3a6f3202fe223b3d0422335622470263',1,'loom::test::ParmTestMaker']]],
+  ['fuzzy_5fwith_5fref_21',['fuzzy_with_ref',['../structloom_1_1test_1_1ParmTestMaker.html#a732ba4c08efd8ae916b62c985e926053',1,'loom::test::ParmTestMaker']]]
+];

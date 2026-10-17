@@ -1,0 +1,9 @@
+<map id="loom::AlignedAllocator&lt; T, alignment &gt;" name="loom::AlignedAllocator&lt; T, alignment &gt;">
+<area shape="rect" id="Node000001" title="Allocator capable to allocate aligned memory region." alt="" coords="5,75,175,119"/>
+<area shape="rect" id="Node000002" href="$classloom_1_1AlignedAllocator.html" title=" " alt="" coords="379,5,548,50"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="181,68,198,64,291,47,378,34,379,40,292,52,199,69,182,73"/>
+<area shape="rect" id="Node000003" href="$classloom_1_1AlignedAllocator.html" title=" " alt="" coords="379,75,548,119"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="190,94,378,94,378,100,190,100"/>
+<area shape="rect" id="Node000004" href="$classloom_1_1AlignedAllocator.html" title=" " alt="" coords="379,144,548,189"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="183,121,199,125,292,142,379,154,378,159,291,147,198,130,182,126"/>
+</map>

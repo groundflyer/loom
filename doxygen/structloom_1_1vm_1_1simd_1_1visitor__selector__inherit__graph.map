@@ -1,0 +1,7 @@
+<map id="loom::vm::simd::visitor_selector&lt; stitch &gt;" name="loom::vm::simd::visitor_selector&lt; stitch &gt;">
+<area shape="rect" id="Node000001" title="Create default step visitor for memory facade." alt="" coords="5,53,178,97"/>
+<area shape="rect" id="Node000002" href="$structloom_1_1vm_1_1simd_1_1visitor__selector.html" title=" " alt="" coords="389,18,579,63"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="193,64,388,46,388,52,193,69"/>
+<area shape="rect" id="Node000003" href="$structloom_1_1vm_1_1simd_1_1visitor__selector_3_01STITCH_1_1MASKED_01_4.html" title="Create masked execution step visitor." alt="" coords="374,87,594,132"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="194,91,202,92,373,104,373,110,201,97,193,96"/>
+</map>

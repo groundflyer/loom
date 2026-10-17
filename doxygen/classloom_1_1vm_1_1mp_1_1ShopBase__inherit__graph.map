@@ -1,0 +1,9 @@
+<map id="loom::vm::mp::ShopBase&lt; Ks, Ctx, N &gt;" name="loom::vm::mp::ShopBase&lt; Ks, Ctx, N &gt;">
+<area shape="rect" id="Node000001" title="Workshop basic functionality for static number of workers." alt="" coords="10,82,195,127"/>
+<area shape="rect" id="Node000003" href="$classloom_1_1vm_1_1mp_1_1ShopBase_3_01Ks_00_01Ctx_00_01dynamic__size_01_4.html" title="Workshop basic functionality for dynamic number of workers." alt="" coords="5,222,200,267"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="105,142,105,222,100,222,100,142"/>
+<area shape="rect" id="Node000002" href="$classloom_1_1vm_1_1mp_1_1Signal.html" title="One&#45;sided signal." alt="" coords="22,5,183,33"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="105,48,105,82,100,82,100,48"/>
+<area shape="rect" id="Node000004" href="$classloom_1_1vm_1_1mp_1_1Shop.html" title="Implements workshop." alt="" coords="26,316,179,361"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="105,283,105,316,100,316,100,283"/>
+</map>

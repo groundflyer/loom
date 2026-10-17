@@ -1,0 +1,48 @@
+var group__LINAL =
+[
+    [ "loom::Vector&lt; T, N, Container &gt;", "classloom_1_1Vector.html", [
+      [ "Vector", "classloom_1_1Vector.html#ae36241bfb6f139695f4693a1ccbfd9a3", null ],
+      [ "Vector", "classloom_1_1Vector.html#a42597086a6620440946cef18d5ce69eb", null ],
+      [ "Vector", "classloom_1_1Vector.html#ac77b66d92623a1882a5533b933400299", null ],
+      [ "data", "classloom_1_1Vector.html#ae9707ed1b0b0997ba4c5c27074776f91", null ],
+      [ "data", "classloom_1_1Vector.html#ad1db560ee33828f1f4b10a8647111fc6", null ]
+    ] ],
+    [ "loom::Matrix&lt; T, M, N, Container &gt;", "classloom_1_1Matrix.html", [
+      [ "Matrix", "classloom_1_1Matrix.html#a67804a1d3ef06f230612aebdf338941a", null ],
+      [ "Matrix", "classloom_1_1Matrix.html#a3ae3b34f979ee4e980538d2d9945946e", null ],
+      [ "Matrix", "classloom_1_1Matrix.html#a1c4c0159b101b2cd28de529658b737a8", null ],
+      [ "data", "classloom_1_1Matrix.html#a6efabeeff6dd38cfeea12a9750b71696", null ],
+      [ "data", "classloom_1_1Matrix.html#a943c8759a3c647e9588e0a99cbce6034", null ],
+      [ "identity", "classloom_1_1Matrix.html#adf7725fa056ed63f08cb93e4f5f59243", null ]
+    ] ],
+    [ "loom::fn::all", "group__LINAL.html#gacad0838f11a659dc4f01d5c824b1c56b", null ],
+    [ "loom::fn::any", "group__LINAL.html#gad0143f14cf1d24372cdd5051bb6843d7", null ],
+    [ "loom::fn::avg", "group__LINAL.html#gabd027bb824a9c20d7a2a8aabaf6c5bc5", null ],
+    [ "loom::fn::cofactor", "group__LINAL.html#gae0e9f9fb4aa16e88fc58ec6945f0261c", null ],
+    [ "loom::fn::cross", "group__LINAL.html#gadf881f1e792f89908d3a39390fc469df", null ],
+    [ "loom::fn::det", "group__LINAL.html#gad1179c14f533609f053911a02ad48338", null ],
+    [ "loom::fn::distance", "group__LINAL.html#ga31c39e92a8887bd24eac194ead01f50e", null ],
+    [ "loom::fn::dot", "group__LINAL.html#gac533c6a29f119c0a8eb74edb66d0892e", null ],
+    [ "loom::fn::dot", "group__LINAL.html#ga705c6fed1f53bf187432d56cb06f32bd", null ],
+    [ "loom::fn::dot", "group__LINAL.html#ga0a88ae67da38985d22dd129206f08acb", null ],
+    [ "loom::flat_ref", "group__LINAL.html#gaef09e20e8794046cf41662bdfd2bd70b", null ],
+    [ "loom::fn::inverse", "group__LINAL.html#gaf01c6e39849d8d65c9a2e359a1a579b8", null ],
+    [ "loom::fn::length", "group__LINAL.html#gab62c2b3f82d69f90a3f5d69b3c644d04", null ],
+    [ "loom::fn::length2", "group__LINAL.html#ga0b8fb9492c6e591a18f7e18cf17a1289", null ],
+    [ "loom::fn::minor_matrix", "group__LINAL.html#ga97c5345df4ac6e96d4387a962f8e5bfb", null ],
+    [ "loom::fn::normalize", "group__LINAL.html#ga951c799c268132810a25a1c68565f6c9", null ],
+    [ "loom::fn::product", "group__LINAL.html#gae453742a20c90a6fce4cdcfcbe86c6ae", null ],
+    [ "loom::reduce", "group__LINAL.html#ga15d5d275a0614072c8c069c24d892bfa", null ],
+    [ "loom::ref", "group__LINAL.html#ga58926fbc7fccf1732dee5b0c99124a0a", null ],
+    [ "loom::ref", "group__LINAL.html#ga435ff480279bda9b3149938ef571f43e", null ],
+    [ "loom::fn::roll", "group__LINAL.html#ga3ae5499576ec80bb382b86cf87bb522d", null ],
+    [ "loom::fn::sum", "group__LINAL.html#ga2e71d424536a499ef3f9522b441fe9cd", null ],
+    [ "loom::transform", "group__LINAL.html#gab1799aab52c25779805179b2b66199e2", null ],
+    [ "loom::transform_reduce", "group__LINAL.html#gac53614402c101c8dba90565f003e08fa", null ],
+    [ "loom::transform_reduce", "group__LINAL.html#ga00a4d2e29ad6e0a6c1ab531f2fb55d16", null ],
+    [ "loom::fn::transpose", "group__LINAL.html#gabaea5c458a68c720d4283dbbf5c7a3e7", null ],
+    [ "loom::Vector", "group__LINAL.html#gae239b22aec71caedd20f54e48c980f74", null ],
+    [ "loom::downsample", "group__LINAL.html#ga2ccb79e916d41a13aabfd1dee7106971", null ],
+    [ "loom::max", "group__LINAL.html#ga723a973a57faf04714cf7d30b5cfbec4", null ],
+    [ "loom::min", "group__LINAL.html#ga3d0f274c6c7dc6074cfbcc84a91a72f7", null ]
+];

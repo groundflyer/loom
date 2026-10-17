@@ -1,0 +1,7 @@
+<map id="loom::vm::simd::threaded_dispatch&lt; K, pc, Compiler &gt;" name="loom::vm::simd::threaded_dispatch&lt; K, pc, Compiler &gt;">
+<area shape="rect" id="Node000001" title="threaded block dispatch implementation for SIMD predicated execution." alt="" coords="5,44,218,89"/>
+<area shape="rect" id="Node000002" href="$classloom_1_1vm_1_1simd_1_1threaded__dispatch.html" title=" " alt="" coords="427,5,628,50"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="233,52,426,34,426,40,233,58"/>
+<area shape="rect" id="Node000003" href="$classloom_1_1vm_1_1simd_1_1threaded__dispatch.html" title=" " alt="" coords="433,74,622,136"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="234,81,242,82,433,97,432,103,241,87,233,86"/>
+</map>

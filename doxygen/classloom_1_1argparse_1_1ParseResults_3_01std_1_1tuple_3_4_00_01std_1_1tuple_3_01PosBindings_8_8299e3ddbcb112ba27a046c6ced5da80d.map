@@ -1,0 +1,5 @@
+<map id="loom::argparse::ParseResults&lt; std::tuple&lt;&gt;, std::tuple&lt; PosBindings... &gt;, void &gt;" name="loom::argparse::ParseResults&lt; std::tuple&lt;&gt;, std::tuple&lt; PosBindings... &gt;, void &gt;">
+<area shape="rect" id="Node000001" title="Holds results of parsing when options are not defined." alt="" coords="5,185,216,246"/>
+<area shape="rect" id="Node000002" href="$classloom_1_1argparse_1_1ParseResults.html" title="Holds results of parsing." alt="" coords="5,5,216,67"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="113,83,113,184,108,184,108,83"/>
+</map>

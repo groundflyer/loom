@@ -1,0 +1,9 @@
+<map id="common/random.hpp" name="common/random.hpp">
+<area shape="rect" id="Node000001" title="Random number generation." alt="" coords="37,5,197,33"/>
+<area shape="rect" id="Node000002" title=" " alt="" coords="5,81,61,109"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="104,36,61,73,58,69,100,32"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="84,81,150,109"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="120,34,120,65,114,65,114,34"/>
+<area shape="rect" id="Node000004" title=" " alt="" coords="173,81,245,109"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="135,31,183,69,179,73,132,36"/>
+</map>

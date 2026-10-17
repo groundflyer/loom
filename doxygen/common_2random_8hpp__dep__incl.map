@@ -1,0 +1,7 @@
+<map id="common/random.hpp" name="common/random.hpp">
+<area shape="rect" id="Node000001" title="Random number generation." alt="" coords="75,5,236,33"/>
+<area shape="rect" id="Node000002" href="$ref_2pt_8hpp.html" title="Reference smallpt functions." alt="" coords="5,81,143,109"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="131,46,90,83,87,79,128,42"/>
+<area shape="rect" id="Node000003" href="$argparse_8cpp.html" title="argparse module tests." alt="" coords="167,81,309,109"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="183,42,225,79,222,83,180,46"/>
+</map>

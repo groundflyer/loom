@@ -1,0 +1,7 @@
+<map id="common/argparse.hpp" name="common/argparse.hpp">
+<area shape="rect" id="Node000001" title="Parsing command line arguments." alt="" coords="64,5,232,33"/>
+<area shape="rect" id="Node000002" href="$argparse_8cpp.html" title="argparse module tests." alt="" coords="5,81,147,109"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="126,46,91,82,87,79,123,42"/>
+<area shape="rect" id="Node000003" href="$dbg_8hpp.html" title="Utilities for kernel debugging." alt="" coords="171,81,269,109"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="173,42,209,79,205,82,170,46"/>
+</map>

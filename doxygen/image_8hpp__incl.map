@@ -1,0 +1,9 @@
+<map id="smallpt/common/image.hpp" name="smallpt/common/image.hpp">
+<area shape="rect" id="Node000001" title="Multi&#45;channel raster image." alt="" coords="35,5,240,33"/>
+<area shape="rect" id="Node000002" title=" " alt="" coords="5,81,75,109"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="122,36,71,74,67,70,118,31"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="99,81,176,109"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="140,34,140,65,135,65,135,34"/>
+<area shape="rect" id="Node000004" title=" " alt="" coords="199,81,265,109"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="156,31,205,69,202,73,153,36"/>
+</map>

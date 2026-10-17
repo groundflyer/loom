@@ -1,0 +1,26 @@
+<map id="vm/core.hpp" name="vm/core.hpp">
+<area shape="rect" id="Node000001" title="Foundation of the virtual machine." alt="" coords="343,5,446,33"/>
+<area shape="rect" id="Node000002" href="$vm_2pt_8hpp.html" title="VM port of smallpt." alt="" coords="15,157,155,184"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="328,24,243,28,148,37,65,55,34,67,14,83,9,92,9,101,19,120,40,139,63,154,60,158,36,143,15,124,3,102,4,90,10,79,32,63,63,50,147,32,242,22,328,18"/>
+<area shape="rect" id="Node000003" href="$bse_8hpp.html" title="Basic scalar evaluator." alt="" coords="390,81,487,109"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="413,45,433,79,429,82,408,48"/>
+<area shape="rect" id="Node000004" href="$dbg_8hpp.html" title="Utilities for kernel debugging." alt="" coords="315,157,413,184"/>
+<area shape="poly" id="edge8_Node000001_Node000004" title=" " alt="" coords="389,49,381,82,368,157,363,156,376,80,384,47"/>
+<area shape="rect" id="Node000005" href="$simd_8hpp.html" title="SIMD backend implementation." alt="" coords="451,157,557,184"/>
+<area shape="poly" id="edge14_Node000001_Node000005" title=" " alt="" coords="452,37,480,55,502,80,510,99,513,120,510,156,504,156,507,120,505,101,498,82,476,59,449,42"/>
+<area shape="rect" id="Node000006" href="$bve_8hpp.html" title="Basic vector evaluator." alt="" coords="563,81,661,109"/>
+<area shape="poly" id="edge5_Node000001_Node000006" title=" " alt="" coords="448,36,574,78,572,83,447,41"/>
+<area shape="rect" id="Node000008" href="$vm_2lib_2linal_8hpp.html" title="Linear aglebra port." alt="" coords="24,81,146,109"/>
+<area shape="poly" id="edge9_Node000001_Node000008" title=" " alt="" coords="329,39,141,83,140,78,327,34"/>
+<area shape="rect" id="Node000009" href="$vm_2lib_2random_8hpp.html" title="Random number generation port." alt="" coords="170,81,315,109"/>
+<area shape="poly" id="edge11_Node000001_Node000009" title=" " alt="" coords="355,42,271,83,268,78,353,38"/>
+<area shape="rect" id="Node000010" href="$mp_8hpp.html" title="Multi&#45;processor evaluation." alt="" coords="686,81,781,109"/>
+<area shape="poly" id="edge13_Node000001_Node000010" title=" " alt="" coords="462,32,686,81,685,86,461,37"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="416,122,379,158,375,154,412,118"/>
+<area shape="poly" id="edge4_Node000003_Node000005" title=" " alt="" coords="462,119,494,154,490,158,458,122"/>
+<area shape="poly" id="edge7_Node000006_Node000005" title=" " alt="" coords="582,120,525,158,522,154,579,116"/>
+<area shape="rect" id="Node000007" href="$cuda_8hpp.html" title="CUDA backend." alt="" coords="581,157,686,184"/>
+<area shape="poly" id="edge6_Node000006_Node000007" title=" " alt="" coords="623,123,632,155,627,157,617,124"/>
+<area shape="poly" id="edge10_Node000008_Node000002" title=" " alt="" coords="88,124,88,156,83,156,83,124"/>
+<area shape="poly" id="edge12_Node000009_Node000002" title=" " alt="" coords="202,118,114,159,112,154,200,113"/>
+</map>

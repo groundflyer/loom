@@ -1,0 +1,5 @@
+<map id="loom::vm::simd::make_wavefront_instruction_runner&lt; I, LabelMap, PCVar &gt;" name="loom::vm::simd::make_wavefront_instruction_runner&lt; I, LabelMap, PCVar &gt;">
+<area shape="rect" id="Node000001" title="Executes a single instruction I through the whole view." alt="" coords="5,5,227,67"/>
+<area shape="rect" id="Node000002" href="$classloom_1_1vm_1_1simd_1_1make__wavefront__instruction__runner.html" title=" " alt="" coords="26,162,206,207"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="119,83,119,162,113,162,113,83"/>
+</map>

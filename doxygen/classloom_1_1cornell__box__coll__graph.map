@@ -1,0 +1,14 @@
+<map id="loom::cornell_box&lt; real &gt;" name="loom::cornell_box&lt; real &gt;">
+<area shape="rect" id="Node000001" title="Cornell box description." alt="" coords="5,602,154,646"/>
+<area shape="rect" id="Node000002" href="$structloom_1_1Disk.html" title=" " alt="" coords="6,501,153,529"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="82,544,82,601,77,601,77,544"/>
+<area shape="rect" id="Node000003" href="$classloom_1_1Vector.html" title=" " alt="" coords="6,241,153,285"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="78,301,74,360,74,428,81,501,75,501,69,428,69,360,73,301"/>
+<area shape="rect" id="Node000006" href="$structloom_1_1Disk.html" title="Disk definition." alt="" coords="143,390,272,418"/>
+<area shape="poly" id="edge6_Node000006_Node000003" title=" " alt="" coords="112,295,198,388,194,392,108,299"/>
+<area shape="rect" id="Node000004" href="$classloom_1_1Vector.html" title=" " alt="" coords="6,123,153,168"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="82,184,82,240,77,240,77,184"/>
+<area shape="rect" id="Node000005" href="$classloom_1_1Vector.html" title="N&#45;dimensional euclidian vector." alt="" coords="5,5,154,50"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="82,66,82,122,77,122,77,66"/>
+<area shape="poly" id="edge5_Node000002_Node000006" title=" " alt="" coords="182,430,97,502,93,498,179,426"/>
+</map>

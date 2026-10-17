@@ -1,0 +1,5 @@
+<map id="loom::vm::simd::make_block_compiler&lt; STITCH::MINIKERNEL, Block, LabelMap, PCVar &gt;" name="loom::vm::simd::make_block_compiler&lt; STITCH::MINIKERNEL, Block, LabelMap, PCVar &gt;">
+<area shape="rect" id="Node000001" title="Executes Block as SIMD kernel." alt="" coords="5,162,235,241"/>
+<area shape="rect" id="Node000002" href="$classloom_1_1vm_1_1simd_1_1make__block__compiler.html" title="Selects block compiler using stitch." alt="" coords="29,5,211,67"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="123,82,123,162,117,162,117,82"/>
+</map>

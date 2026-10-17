@@ -1,0 +1,5 @@
+<map id="loom::vm::infer_reg_types&lt; Vars, Names &gt;" name="loom::vm::infer_reg_types&lt; Vars, Names &gt;">
+<area shape="rect" id="Node000001" title="Infers register types merging variables with same names into unions." alt="" coords="5,5,182,50"/>
+<area shape="rect" id="Node000002" href="$structloom_1_1vm_1_1infer__reg__types.html" title=" " alt="" coords="10,123,177,168"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="96,66,96,122,91,122,91,66"/>
+</map>

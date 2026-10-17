@@ -1,0 +1,26 @@
+var searchData=
+[
+  ['data_0',['data',['../classloom_1_1Vector.html#ae9707ed1b0b0997ba4c5c27074776f91',1,'loom::Vector::data() const noexcept'],['../classloom_1_1Vector.html#ad1db560ee33828f1f4b10a8647111fc6',1,'loom::Vector::data() noexcept'],['../classloom_1_1Matrix.html#a6efabeeff6dd38cfeea12a9750b71696',1,'loom::Matrix::data() const noexcept'],['../classloom_1_1Matrix.html#a943c8759a3c647e9588e0a99cbce6034',1,'loom::Matrix::data() noexcept']]],
+  ['dbg_2ehpp_1',['dbg.hpp',['../dbg_8hpp.html',1,'']]],
+  ['debug_2',['DEBUG',['../classloom_1_1Logger.html#ab8db9560976091b3f316584090777307a516be878bb48bfdd6d35b371e4397dab',1,'loom::Logger']]],
+  ['debug_3',['debug',['../classloom_1_1Logger.html#ab115203f5e65c4546c2a0af1c12e74d4',1,'loom::Logger']]],
+  ['debug_2ehpp_4',['debug.hpp',['../debug_8hpp.html',1,'']]],
+  ['def_5fbinary_5fop_5',['DEF_BINARY_OP',['../common_2linal_8hpp.html#afc9761c0ffab636c178d9297f3463455',1,'linal.hpp']]],
+  ['def_5funary_5fop_6',['DEF_UNARY_OP',['../common_2linal_8hpp.html#a8cb14ad9ddfbbb27700765f22049981c',1,'linal.hpp']]],
+  ['defaultreader_7',['DefaultReader',['../structloom_1_1argparse_1_1DefaultReader.html',1,'loom::argparse']]],
+  ['degrees_8',['degrees',['../namespaceloom.html#aac0781e85fb3ac21486e26d7a5827e70',1,'loom']]],
+  ['dehomogenize_9',['dehomogenize',['../namespaceloom_1_1fn.html#a753216fb24ad5d084c6f035f533c8064',1,'loom::fn']]],
+  ['dep_5fcheck_10',['dep_check',['../classloom_1_1test_1_1Track.html#a1cd5b97bebf4ec6ae5c7725268fb11af',1,'loom::test::Track']]],
+  ['det_11',['det',['../group__LINAL.html#gad1179c14f533609f053911a02ad48338',1,'loom::fn']]],
+  ['detach_12',['detach',['../classloom_1_1thread__pool.html#a79028181e171bd0f226cbe8a9556e977',1,'loom::thread_pool::detach()'],['../classloom_1_1thread__pool_3_01dynamic__size_01_4.html#a90e2328aa483db50b36977477d3ebc1f',1,'loom::thread_pool&lt; dynamic_size &gt;::detach()']]],
+  ['development_20documentation_13',['Development documentation',['../index.html',1,'']]],
+  ['disk_14',['Disk',['../structloom_1_1Disk.html',1,'loom']]],
+  ['disk_2ehpp_15',['disk.hpp',['../disk_8hpp.html',1,'']]],
+  ['disk_3c_20real_20_3e_16',['Disk&lt; real &gt;',['../structloom_1_1Disk.html',1,'loom']]],
+  ['distance_17',['distance',['../group__LINAL.html#ga31c39e92a8887bd24eac194ead01f50e',1,'loom::fn']]],
+  ['documentation_18',['Development documentation',['../index.html',1,'']]],
+  ['dot_19',['dot',['../group__LINAL.html#ga0a88ae67da38985d22dd129206f08acb',1,'loom::fn::dot(const Vector&lt; T, N, Container1 &gt; &amp;a, const Vector&lt; T, N, Container2 &gt; &amp;b) noexcept'],['../group__LINAL.html#gac533c6a29f119c0a8eb74edb66d0892e',1,'loom::fn::dot(const Matrix&lt; T, M, N, MContainer &gt; &amp;lhs, const Vector&lt; T, N, VContainer &gt; &amp;rhs) noexcept'],['../group__LINAL.html#ga705c6fed1f53bf187432d56cb06f32bd',1,'loom::fn::dot(const Matrix&lt; T, M1, N1, Container1 &gt; &amp;lhs, const Matrix&lt; T, M2, N2, Container2 &gt; &amp;rhs) noexcept']]],
+  ['downsample_20',['downsample',['../group__LINAL.html#ga2ccb79e916d41a13aabfd1dee7106971',1,'loom']]],
+  ['drop_21',['drop',['../group__Typelist.html#gae431c568a862f3cc65d64bc6d2f16671',1,'loom::typelist::drop'],['../group__Intlist.html#gac685050261ff26b44e7dd1063edfa6d5',1,'loom::intlist::drop']]],
+  ['dynamic_5fextent_22',['dynamic_extent',['../namespaceloom_1_1vm_1_1simd.html#a6fddcd6a4e697c7492f6ea72f87a9aa1',1,'loom::vm::simd']]]
+];

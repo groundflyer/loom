@@ -1,0 +1,5 @@
+<map id="loom::vm::stored_var&lt; Instruction, PCVar &gt;" name="loom::vm::stored_var&lt; Instruction, PCVar &gt;">
+<area shape="rect" id="Node000001" title="Get the variable Instruction stores result to." alt="" coords="26,5,193,50"/>
+<area shape="rect" id="Node000002" href="$structloom_1_1vm_1_1stored__var.html" title=" " alt="" coords="5,145,214,190"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="112,65,112,145,107,145,107,65"/>
+</map>

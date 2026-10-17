@@ -1,0 +1,13 @@
+<map id="loom::vm::standard_compiler&lt; Block, LabelMap, Eval &gt;" name="loom::vm::standard_compiler&lt; Block, LabelMap, Eval &gt;">
+<area shape="rect" id="Node000001" title="Default evaluator." alt="" coords="5,205,217,266"/>
+<area shape="rect" id="Node000002" href="$structloom_1_1vm_1_1standard__compiler.html" title=" " alt="" coords="455,25,666,86"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="138,190,181,138,209,114,239,94,292,73,347,59,402,52,454,49,454,54,403,57,348,65,293,78,242,99,212,118,185,142,142,193"/>
+<area shape="rect" id="Node000003" href="$structloom_1_1vm_1_1standard__compiler.html" title=" " alt="" coords="455,110,666,172"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="192,196,240,179,350,157,454,145,454,150,350,162,241,185,193,201"/>
+<area shape="rect" id="Node000004" href="$structloom_1_1vm_1_1standard__compiler.html" title=" " alt="" coords="457,196,664,275"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="232,233,457,233,457,238,232,238"/>
+<area shape="rect" id="Node000005" href="$structloom_1_1vm_1_1standard__compiler.html" title=" " alt="" coords="464,298,657,343"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="233,261,241,263,464,303,463,308,240,268,231,267"/>
+<area shape="rect" id="Node000006" href="$structloom_1_1vm_1_1standard__compiler.html" title=" " alt="" coords="469,367,652,429"/>
+<area shape="poly" id="edge5_Node000001_Node000006" title=" " alt="" coords="149,276,191,317,215,336,242,351,298,372,357,386,416,394,469,397,469,402,415,399,356,391,297,377,240,356,212,340,187,321,145,280"/>
+</map>

@@ -1,0 +1,5 @@
+<map id="loom::thread_pool&lt; dynamic_size &gt;" name="loom::thread_pool&lt; dynamic_size &gt;">
+<area shape="rect" id="Node000001" title="Thread pool with size determined at runtime." alt="" coords="20,106,170,151"/>
+<area shape="rect" id="Node000002" href="$classloom_1_1thread__pool.html" title="Constant sized thread pool." alt="" coords="5,5,185,33"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="98,49,98,105,92,105,92,49"/>
+</map>

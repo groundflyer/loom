@@ -1,0 +1,11 @@
+<map id="loom::vm::simd::make_block_compiler&lt; stitch, Args &gt;" name="loom::vm::simd::make_block_compiler&lt; stitch, Args &gt;">
+<area shape="rect" id="Node000001" title="Selects block compiler using stitch." alt="" coords="5,162,188,224"/>
+<area shape="rect" id="Node000002" href="$classloom_1_1vm_1_1simd_1_1make__block__compiler.html" title=" " alt="" coords="443,15,634,77"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="135,149,170,120,211,96,268,74,329,60,388,50,443,45,443,51,389,56,330,65,270,80,213,101,173,124,139,153"/>
+<area shape="rect" id="Node000003" href="$classloom_1_1vm_1_1simd_1_1make__block__compiler_3_01STITCH_1_1MASKED_00_01Block_00_01LabelMap_00_01PCVar_01_4.html" title="Masked minikernel specialization." alt="" coords="437,101,641,180"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="202,169,211,168,328,154,436,144,436,150,328,159,212,173,203,174"/>
+<area shape="rect" id="Node000004" href="$classloom_1_1vm_1_1simd_1_1make__block__compiler_3_01STITCH_1_1MINIKERNEL_00_01Block_00_01LabelMap_00_01PCVar_01_4.html" title="Executes Block as SIMD kernel." alt="" coords="424,204,654,283"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="203,213,212,215,321,228,424,235,423,241,320,233,211,220,202,219"/>
+<area shape="rect" id="Node000005" href="$classloom_1_1vm_1_1simd_1_1make__block__compiler_3_01STITCH_1_1WAVEFRONT_00_01Block_00_01LabelMap_00_01PCVar_01_4.html" title="Wavefront specialization." alt="" coords="424,307,654,385"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="138,233,173,262,213,287,264,307,319,322,424,338,423,344,318,327,263,312,210,292,170,267,135,237"/>
+</map>

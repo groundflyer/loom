@@ -1,0 +1,9 @@
+<map id="loom::Perspective&lt; real &gt;" name="loom::Perspective&lt; real &gt;">
+<area shape="rect" id="Node000001" title="Perspective camera." alt="" coords="10,381,159,425"/>
+<area shape="rect" id="Node000002" href="$classloom_1_1Vector.html" title=" " alt="" coords="5,241,164,285"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="87,301,87,380,82,380,82,301"/>
+<area shape="rect" id="Node000003" href="$classloom_1_1Vector.html" title=" " alt="" coords="11,123,158,168"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="87,184,87,240,82,240,82,184"/>
+<area shape="rect" id="Node000004" href="$classloom_1_1Vector.html" title="N&#45;dimensional euclidian vector." alt="" coords="10,5,159,50"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="87,66,87,122,82,122,82,66"/>
+</map>

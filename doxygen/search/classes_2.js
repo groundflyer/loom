@@ -1,0 +1,28 @@
+var searchData=
+[
+  ['cache_5fline_5fcapacity_0',['cache_line_capacity',['../structloom_1_1cache__line__capacity.html',1,'loom']]],
+  ['cmov_1',['cmov',['../structloom_1_1vm_1_1ops_1_1cmov.html',1,'loom::vm::ops']]],
+  ['cmp_5fintrinsics_5fwrangler_2',['cmp_intrinsics_wrangler',['../structloom_1_1vm_1_1simd_1_1cmp__intrinsics__wrangler.html',1,'loom::vm::simd']]],
+  ['cmp_5fintrinsics_5fwrangler_3c_20index_5ft_2c_20n_20_3e_3',['cmp_intrinsics_wrangler&lt; index_t, N &gt;',['../structloom_1_1vm_1_1simd_1_1cmp__intrinsics__wrangler.html',1,'loom::vm::simd']]],
+  ['collect_5ftypes_4',['collect_types',['../classloom_1_1vm_1_1collect__types.html',1,'loom::vm']]],
+  ['compact_5fcompiler_5',['compact_compiler',['../classloom_1_1vm_1_1simd_1_1compact__compiler.html',1,'loom::vm::simd']]],
+  ['compiler_6',['compiler',['../classloom_1_1vm_1_1simd_1_1compiler.html',1,'loom::vm::simd']]],
+  ['compute_7',['Compute',['../structloom_1_1vm_1_1Compute.html',1,'loom::vm']]],
+  ['compute_3c_20op_2c_20dst_2c_20args_2e_2e_2e_20_3e_8',['Compute&lt; Op, Dst, Args... &gt;',['../structloom_1_1vm_1_1Compute.html',1,'loom::vm']]],
+  ['compute_3c_20op_2c_20variable_3c_20t_2c_20typelist_3a_3aat_3c_20i_2c_20dst_20_3e_20_3e_2c_20variable_3c_20t_2c_20typelist_3a_3aat_3c_20i_2c_20src_20_3e_20_3e_20_3e_9',['Compute&lt; Op, Variable&lt; T, typelist::at&lt; I, Dst &gt; &gt;, Variable&lt; T, typelist::at&lt; I, Src &gt; &gt; &gt;',['../structloom_1_1vm_1_1Compute.html',1,'loom::vm']]],
+  ['compute_3c_20op_2c_20variable_3c_20t_2c_20typelist_3a_3aat_3c_20i_2c_20dst_20_3e_20_3e_2c_20variable_3c_20t_2c_20typelist_3a_3aproj_3c_20i_2c_20a_20_3e_20_3e_2c_20variable_3c_20t_2c_20typelist_3a_3aproj_3c_20i_2c_20b_20_3e_20_3e_20_3e_10',['Compute&lt; Op, Variable&lt; T, typelist::at&lt; I, Dst &gt; &gt;, Variable&lt; T, typelist::proj&lt; I, A &gt; &gt;, Variable&lt; T, typelist::proj&lt; I, B &gt; &gt; &gt;',['../structloom_1_1vm_1_1Compute.html',1,'loom::vm']]],
+  ['compute_3c_20op_2c_20variable_3c_20t_2c_20typelist_3a_3aat_3c_20i_2c_20dst_20_3e_20_3e_2c_20variable_3c_20t_2c_20typelist_3a_3aproj_3c_20i_2c_20a_20_3e_20_3e_2c_20variable_3c_20t_2c_20typelist_3a_3aproj_3c_20i_2c_20b_20_3e_20_3e_2c_20variable_3c_20t_2c_20typelist_3a_3aproj_3c_20i_2c_20c_20_3e_20_3e_20_3e_11',['Compute&lt; Op, Variable&lt; T, typelist::at&lt; I, Dst &gt; &gt;, Variable&lt; T, typelist::proj&lt; I, A &gt; &gt;, Variable&lt; T, typelist::proj&lt; I, B &gt; &gt;, Variable&lt; T, typelist::proj&lt; I, C &gt; &gt; &gt;',['../structloom_1_1vm_1_1Compute.html',1,'loom::vm']]],
+  ['compute_3c_20ops_3a_3afma_2c_20dst_5fvar_2c_20variable_3c_20major_5ftype_2c_20typelist_3a_3aat_3c_20i_2c_20a_20_3e_20_3e_2c_20variable_3c_20major_5ftype_2c_20typelist_3a_3aat_3c_20i_2c_20b_20_3e_20_3e_2c_20dst_5fvar_20_3e_12',['Compute&lt; ops::fma, dst_var, Variable&lt; MAJOR_TYPE, typelist::at&lt; I, A &gt; &gt;, Variable&lt; MAJOR_TYPE, typelist::at&lt; I, B &gt; &gt;, dst_var &gt;',['../structloom_1_1vm_1_1Compute.html',1,'loom::vm']]],
+  ['compute_3c_20ops_3a_3afma_2c_20tvar_5fidx_3c_20dst_2c_20i_20_3e_2c_20tvar_5fij_3c_20mat_2c_20i_2c_20j_20_3e_2c_20tvar_5fidx_3c_20vec_2c_20j_20_3e_2c_20tvar_5fidx_3c_20dst_2c_20i_20_3e_20_3e_13',['Compute&lt; ops::fma, tvar_idx&lt; Dst, I &gt;, tvar_ij&lt; Mat, I, J &gt;, tvar_idx&lt; Vec, J &gt;, tvar_idx&lt; Dst, I &gt; &gt;',['../structloom_1_1vm_1_1Compute.html',1,'loom::vm']]],
+  ['compute_3c_20ops_3a_3afma_2c_20tvar_5fidx_3c_20dst_2c_20i_20_3e_2c_20tvar_5fij_3c_20mat_2c_20i_2c_20j_20_3e_2c_20tvar_5fidx_3c_20vec_2c_20j_20_3e_2c_20tvar_5fidx_3c_20dst_2c_20i_20_3e_20_3e_3c_20i_2c_20j_20_3e_14',['Compute&lt; ops::fma, tvar_idx&lt; Dst, I &gt;, tvar_ij&lt; Mat, I, J &gt;, tvar_idx&lt; Vec, J &gt;, tvar_idx&lt; Dst, I &gt; &gt;&lt; I, J &gt;',['../structloom_1_1vm_1_1Compute.html',1,'loom::vm']]],
+  ['compute_3c_20std_3a_3aidentity_2c_20tvar_5fidx_3c_20dst_2c_20i_20_3e_2c_20tvar_280_29_3e_15',['Compute&lt; std::identity, tvar_idx&lt; Dst, I &gt;, TVAR(0)&gt;',['../structloom_1_1vm_1_1Compute.html',1,'loom::vm']]],
+  ['concurrentstreamfacade_16',['ConcurrentStreamFacade',['../classloom_1_1vm_1_1simd_1_1ConcurrentStreamFacade.html',1,'loom::vm::simd']]],
+  ['concurrentstreamfacade_3c_20k_2c_20std_3a_3avector_2c_20allocator_2c_20countingsorter_3c_20k_2c_20memory_20_3e_20_3e_17',['ConcurrentStreamFacade&lt; K, std::vector, allocator, CountingSorter&lt; K, memory &gt; &gt;',['../classloom_1_1vm_1_1simd_1_1ConcurrentStreamFacade.html',1,'loom::vm::simd']]],
+  ['context_18',['Context',['../structloom_1_1vm_1_1mp_1_1Context.html',1,'loom::vm::mp']]],
+  ['context_3c_20k_2c_20compiler_20_3e_19',['Context&lt; K, compiler &gt;',['../structloom_1_1vm_1_1mp_1_1Context.html',1,'loom::vm::mp']]],
+  ['context_3c_20k_2c_20mp_5fstream_20_3e_20',['Context&lt; K, mp_stream &gt;',['../structloom_1_1vm_1_1mp_1_1Context.html',1,'loom::vm::mp']]],
+  ['cornell_5fbox_21',['cornell_box',['../classloom_1_1cornell__box.html',1,'loom']]],
+  ['cornell_5fbox_3c_20float_20_3e_22',['cornell_box&lt; float &gt;',['../classloom_1_1cornell__box.html',1,'loom']]],
+  ['cputopology_23',['CPUTopology',['../classloom_1_1CPUTopology.html',1,'loom']]],
+  ['cylinder_24',['Cylinder',['../structloom_1_1Cylinder.html',1,'loom']]]
+];

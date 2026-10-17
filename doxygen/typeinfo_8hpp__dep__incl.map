@@ -1,0 +1,7 @@
+<map id="common/typeinfo.hpp" name="common/typeinfo.hpp">
+<area shape="rect" id="Node000001" title="Simple primitive type reflection." alt="" coords="43,5,208,33"/>
+<area shape="rect" id="Node000002" href="$linal_8cpp.html" title="Linear algebra tests." alt="" coords="5,81,118,109"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="106,47,75,82,71,79,102,43"/>
+<area shape="rect" id="Node000003" href="$dbg_8hpp.html" title="Utilities for kernel debugging." alt="" coords="142,81,240,109"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="149,43,181,79,177,82,145,46"/>
+</map>

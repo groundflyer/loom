@@ -1,0 +1,7 @@
+<map id="loom::argparse::ParseResults&lt; OptBindings, PosBindings, Options &gt;" name="loom::argparse::ParseResults&lt; OptBindings, PosBindings, Options &gt;">
+<area shape="rect" id="Node000001" title="Holds results of parsing." alt="" coords="5,63,216,124"/>
+<area shape="rect" id="Node000002" href="$classloom_1_1argparse_1_1ParseResults_3_01std_1_1tuple_3_01OptBindings_8_8_8_01_4_00_01std_1_1tuple_3_4_00_01Options_01_4.html" title="Holds results of parsing when positionals are not defined." alt="" coords="459,12,669,74"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="231,71,239,70,458,48,459,53,240,75,231,76"/>
+<area shape="rect" id="Node000003" href="$classloom_1_1argparse_1_1ParseResults_3_01std_1_1tuple_3_4_00_01std_1_1tuple_3_01PosBindings_8_8_8_01_4_00_01void_01_4.html" title="Holds results of parsing when options are not defined." alt="" coords="459,112,669,174"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="196,128,240,139,296,147,352,151,458,149,458,155,352,156,295,152,239,145,195,133"/>
+</map>

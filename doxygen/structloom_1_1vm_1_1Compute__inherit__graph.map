@@ -1,0 +1,19 @@
+<map id="loom::vm::Compute&lt; Op, Dst, Args &gt;" name="loom::vm::Compute&lt; Op, Dst, Args &gt;">
+<area shape="rect" id="Node000001" title="Describes a computation operation." alt="" coords="5,491,167,536"/>
+<area shape="rect" id="Node000002" href="$structloom_1_1vm_1_1Compute.html" title=" " alt="" coords="468,34,630,78"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="88,476,99,382,119,264,133,206,149,154,167,112,189,83,220,62,254,46,290,36,327,30,401,28,468,36,467,41,401,34,328,35,291,41,256,51,222,66,193,87,172,114,154,156,138,207,125,265,105,383,93,476"/>
+<area shape="rect" id="Node000003" href="$structloom_1_1vm_1_1Compute.html" title=" " alt="" coords="453,145,645,258"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="86,475,93,419,110,351,123,317,140,284,162,254,189,228,226,218,292,210,452,201,452,207,292,215,227,223,192,233,166,257,145,287,128,319,115,353,99,420,92,476"/>
+<area shape="rect" id="Node000004" href="$structloom_1_1vm_1_1Compute.html" title=" " alt="" coords="442,285,656,363"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="98,475,112,444,131,410,157,377,189,351,234,336,297,326,441,320,441,325,298,332,235,341,192,356,161,381,136,413,116,446,102,478"/>
+<area shape="rect" id="Node000005" href="$structloom_1_1vm_1_1Compute.html" title=" " alt="" coords="447,449,651,578"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="182,511,446,511,446,516,182,516"/>
+<area shape="rect" id="Node000006" href="$structloom_1_1vm_1_1Compute.html" title=" " alt="" coords="449,613,648,742"/>
+<area shape="poly" id="edge5_Node000001_Node000006" title=" " alt="" coords="105,549,139,605,163,632,192,653,222,667,254,678,321,690,388,693,448,690,449,696,388,699,321,696,253,683,220,672,189,658,160,636,135,608,100,551"/>
+<area shape="rect" id="Node000007" href="$structloom_1_1vm_1_1Compute.html" title=" " alt="" coords="436,767,662,863"/>
+<area shape="poly" id="edge6_Node000001_Node000007" title=" " alt="" coords="92,551,99,607,115,673,128,707,145,739,166,767,192,791,219,808,248,821,311,835,374,839,435,835,435,840,374,844,310,841,246,826,217,813,189,795,162,771,140,741,123,709,110,675,93,608,86,552"/>
+<area shape="rect" id="Node000009" href="$structloom_1_1vm_1_1Compute.html" title=" " alt="" coords="457,887,640,948"/>
+<area shape="poly" id="edge8_Node000001_Node000009" title=" " alt="" coords="95,550,107,634,128,738,157,833,174,869,192,892,221,911,253,926,287,935,322,941,392,942,457,936,457,941,392,948,321,946,286,940,251,931,219,916,189,896,169,872,152,835,123,739,102,635,89,551"/>
+<area shape="rect" id="Node000008" href="$structloom_1_1vm_1_1Compute.html" title=" " alt="" coords="764,758,952,871"/>
+<area shape="poly" id="edge7_Node000007_Node000008" title=" " alt="" coords="678,812,764,812,764,817,678,817"/>
+</map>

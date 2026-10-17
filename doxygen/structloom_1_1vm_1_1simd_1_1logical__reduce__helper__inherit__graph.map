@@ -1,0 +1,5 @@
+<map id="loom::vm::simd::logical_reduce_helper&lt; T, N &gt;" name="loom::vm::simd::logical_reduce_helper&lt; T, N &gt;">
+<area shape="rect" id="Node000001" title="Helper to perform reduce_and on mask type." alt="" coords="5,5,182,50"/>
+<area shape="rect" id="Node000002" href="$structloom_1_1vm_1_1simd_1_1logical__reduce__helper.html" title=" " alt="" coords="6,123,181,185"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="96,65,96,122,91,122,91,65"/>
+</map>

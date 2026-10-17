@@ -1,0 +1,5 @@
+<map id="loom::vm::successors_table&lt; Blocks, LabelMap &gt;" name="loom::vm::successors_table&lt; Blocks, LabelMap &gt;">
+<area shape="rect" id="Node000001" title="Create successor table for basic blocks." alt="" coords="5,5,211,50"/>
+<area shape="rect" id="Node000002" href="$structloom_1_1vm_1_1successors__table.html" title=" " alt="" coords="17,145,199,190"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="111,65,111,145,105,145,105,65"/>
+</map>

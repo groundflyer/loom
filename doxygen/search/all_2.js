@@ -1,0 +1,27 @@
+var searchData=
+[
+  ['basic_5fscalar_5fcompiler_0',['basic_scalar_compiler',['../classloom_1_1vm_1_1bse_1_1basic__scalar__compiler.html',1,'loom::vm::bse']]],
+  ['basis_1',['basis',['../namespaceloom_1_1fn.html#a279833dba506d4e51dad0c26afd503e4',1,'loom::fn']]],
+  ['basis_5fmatrix_2',['basis_matrix',['../namespaceloom_1_1fn.html#ac46c8479229b463bae074e526c83641b',1,'loom::fn']]],
+  ['bibliography_3',['Bibliography',['../citelist.html',1,'']]],
+  ['bind_5flist_4',['bind_list',['../group__ArgParse.html#gaca3e4cbf4a10ddb217dfc8b296c04fc8',1,'loom::argparse']]],
+  ['bind_5fvalue_5',['bind_value',['../group__ArgParse.html#ga57f0d384e106c7aeca822d530b9f21f8',1,'loom::argparse']]],
+  ['binding_6',['Binding',['../classloom_1_1argparse_1_1Binding.html',1,'loom::argparse']]],
+  ['bitonic_5fmerge_7',['bitonic_merge',['../namespaceloom_1_1vm_1_1cuda.html#a04766cdc8251db9ce6d181422fbafc07',1,'loom::vm::cuda']]],
+  ['blend_8',['blend',['../structloom_1_1vm_1_1simd_1_1blend__intrinsics__wrangler.html#aa5b82105cca80c48f69c9b573f0ccdec',1,'loom::vm::simd::blend_intrinsics_wrangler']]],
+  ['blend_5fintrinsics_5fwrangler_9',['blend_intrinsics_wrangler',['../structloom_1_1vm_1_1simd_1_1blend__intrinsics__wrangler.html',1,'loom::vm::simd']]],
+  ['blend_5fintrinsics_5fwrangler_3c_20index_5ft_2c_20n_20_3e_10',['blend_intrinsics_wrangler&lt; index_t, N &gt;',['../structloom_1_1vm_1_1simd_1_1blend__intrinsics__wrangler.html',1,'loom::vm::simd']]],
+  ['blend_5fintrinsics_5fwrangler_3c_20ret_2c_20n_20_3e_11',['blend_intrinsics_wrangler&lt; Ret, N &gt;',['../structloom_1_1vm_1_1simd_1_1blend__intrinsics__wrangler.html',1,'loom::vm::simd']]],
+  ['block_5fcompiler_12',['block_compiler',['../namespaceloom_1_1vm_1_1simd.html#a211979d5f2fa1937e92e07e741837af7',1,'loom::vm::simd']]],
+  ['blocks_5fstatements_13',['blocks_statements',['../structloom_1_1vm_1_1kernel__blank.html#a504e82c56e52d125f2615050e55d5261',1,'loom::vm::kernel_blank']]],
+  ['bound_14',['bound',['../namespaceloom_1_1fn.html#aca81180454dd4ca9e8b0ae4e58fd8ee5',1,'loom::fn::bound(const AABB&lt; T &gt; &amp;prim) noexcept'],['../namespaceloom_1_1fn.html#a55054e1cb2b41e61060a11e62b9d74e3',1,'loom::fn::bound(const Disk&lt; T &gt; &amp;prim) noexcept'],['../namespaceloom_1_1fn.html#a347ad08821c102f6397749087ab60482',1,'loom::fn::bound(const Quad&lt; T &gt; &amp;prim) noexcept'],['../namespaceloom_1_1fn.html#aa6e14c03d4dd21fd2185c29756aa7a97',1,'loom::fn::bound(const Sphere&lt; T &gt; &amp;prim) noexcept'],['../namespaceloom_1_1fn.html#a5ecd7deaa8da48eeb025bd5c6eb675e8',1,'loom::fn::bound(const Triangle&lt; T &gt; &amp;prim) noexcept']]],
+  ['broadcast_15',['broadcast',['../namespaceloom_1_1vm_1_1simd.html#a5ecd34b905a58df677773e7608d1ce3b',1,'loom::vm::simd']]],
+  ['bse_2ehpp_16',['bse.hpp',['../bse_8hpp.html',1,'']]],
+  ['bulk_5fdispatcher_17',['bulk_dispatcher',['../classloom_1_1vm_1_1simd_1_1bulk__dispatcher.html',1,'loom::vm::simd']]],
+  ['bulk_5fdispatcher_3c_20eval_3c_20i_2c_20labelmap_2c_20n_20_3e_2c_20standard_5feval_3c_20i_2c_20labelmap_20_3e_2c_20n_2c_20sizeof_28vartype_3c_20pcvar_20_3e_29_3e_18',['bulk_dispatcher&lt; eval&lt; I, LabelMap, N &gt;, standard_eval&lt; I, LabelMap &gt;, N, sizeof(vartype&lt; PCVar &gt;)&gt;',['../classloom_1_1vm_1_1simd_1_1bulk__dispatcher.html',1,'loom::vm::simd']]],
+  ['bulk_5fdispatcher_3c_20simdrunner_2c_20serialrunner_2c_20n_2c_20sizeof_28index_5ft_29_3e_19',['bulk_dispatcher&lt; SIMDRunner, SerialRunner, N, sizeof(index_t)&gt;',['../classloom_1_1vm_1_1simd_1_1bulk__dispatcher.html',1,'loom::vm::simd']]],
+  ['bump_5fctr_20',['bump_ctr',['../namespaceloom_1_1fn.html#a4fff45440b95c2264901bcf16c8ff240',1,'loom::fn']]],
+  ['bve_2ehpp_21',['bve.hpp',['../bve_8hpp.html',1,'']]],
+  ['bve_5fcounting_5fsort_22',['bve_COUNTING_SORT',['../namespaceloom_1_1vm_1_1simd.html#aca48e9f4869370f2f9970061a7e9e7dea97434b77143321ad143ee2e0832d680a',1,'loom::vm::simd']]],
+  ['bve_5fintrosort_23',['bve_INTROSORT',['../namespaceloom_1_1vm_1_1simd.html#aca48e9f4869370f2f9970061a7e9e7dead5ff515ff3acf0491aded3f09d49f761',1,'loom::vm::simd']]]
+];

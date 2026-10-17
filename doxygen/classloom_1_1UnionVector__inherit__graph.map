@@ -1,0 +1,9 @@
+<map id="loom::UnionVector&lt; Types, Allocator &gt;" name="loom::UnionVector&lt; Types, Allocator &gt;">
+<area shape="rect" id="Node000001" title="Unsafe union of vectors." alt="" coords="5,93,158,138"/>
+<area shape="rect" id="Node000002" href="$classloom_1_1UnionVector.html" title=" " alt="" coords="405,8,609,69"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="166,86,181,82,296,61,404,46,404,51,297,66,182,88,167,91"/>
+<area shape="rect" id="Node000003" href="$classloom_1_1UnionVector.html" title=" " alt="" coords="431,93,583,138"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="173,113,430,113,430,118,173,118"/>
+<area shape="rect" id="Node000004" href="$classloom_1_1UnionVector.html" title=" " alt="" coords="431,163,583,207"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="167,140,182,143,313,165,431,177,430,182,312,170,181,149,166,145"/>
+</map>

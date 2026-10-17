@@ -1,0 +1,6 @@
+var searchData=
+[
+  ['neq_0',['neq',['../structloom_1_1vm_1_1simd_1_1cmp__intrinsics__wrangler.html#a0e28908eb21e7f976e1444edf3ea18cc',1,'loom::vm::simd::cmp_intrinsics_wrangler']]],
+  ['normal_1',['normal',['../namespaceloom_1_1fn.html#a07095ffdcf0b370d675edd193cbc3a78',1,'loom::fn::normal(const Vec3&lt; T &gt; &amp;pos, const AABB&lt; T &gt; &amp;prim) noexcept'],['../namespaceloom_1_1fn.html#a93037c55bbb20019b07f98d193f64858',1,'loom::fn::normal(Vec3&lt; T &gt; pos, const Cylinder&lt; T &gt; &amp;prim) noexcept'],['../namespaceloom_1_1fn.html#acdbbfeaf14710d8f43b90d50727d9984',1,'loom::fn::normal(const Vec3&lt; T, PosContainer &gt; &amp;, const Disk&lt; T &gt; &amp;prim) noexcept'],['../namespaceloom_1_1fn.html#a4f25efd6bcb9a6818cc6180e5dd9d431',1,'loom::fn::normal(const Vec3&lt; T, PosContainer &gt; &amp;, const Quad&lt; T &gt; &amp;prim) noexcept'],['../namespaceloom_1_1fn.html#a849d6505f6ee9140436acbd76351dec7',1,'loom::fn::normal(const Vec3&lt; T, PosContainer &gt; &amp;pos, const Sphere&lt; T &gt; &amp;prim) noexcept'],['../namespaceloom_1_1fn.html#ac9e4c22687449ef5d3c9b64e1c65c22d',1,'loom::fn::normal(const Vec3&lt; T, PosContainer &gt; &amp;, const Triangle&lt; T &gt; &amp;prim) noexcept']]],
+  ['normalize_2',['normalize',['../group__LINAL.html#ga951c799c268132810a25a1c68565f6c9',1,'loom::fn']]]
+];

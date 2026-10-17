@@ -1,0 +1,5 @@
+<map id="loom::vm::simd::native_instruction_extent&lt; Jump&lt; Target &gt;, index_t &gt;" name="loom::vm::simd::native_instruction_extent&lt; Jump&lt; Target &gt;, index_t &gt;">
+<area shape="rect" id="Node000001" title="vm::Jump specialization." alt="" coords="5,140,200,202"/>
+<area shape="rect" id="Node000002" href="$structloom_1_1vm_1_1simd_1_1native__instruction__extent.html" title="Get native widest SIMD vector extent for instruction I." alt="" coords="16,5,189,67"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="105,83,105,140,100,140,100,83"/>
+</map>

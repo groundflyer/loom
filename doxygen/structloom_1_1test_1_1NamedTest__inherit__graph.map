@@ -1,0 +1,5 @@
+<map id="loom::test::NamedTest&lt; Test, Name &gt;" name="loom::test::NamedTest&lt; Test, Name &gt;">
+<area shape="rect" id="Node000001" title="Associates a test with a name." alt="" coords="24,5,192,50"/>
+<area shape="rect" id="Node000002" href="$structloom_1_1test_1_1NamedFuzzyTest.html" title="Associates a fuzzy test with name and failing threshold." alt="" coords="5,98,211,143"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="111,66,111,98,105,98,105,66"/>
+</map>

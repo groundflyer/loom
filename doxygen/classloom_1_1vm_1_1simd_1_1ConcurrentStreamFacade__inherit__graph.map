@@ -1,0 +1,5 @@
+<map id="loom::vm::simd::ConcurrentStreamFacade&lt; K, _Vector, Allocator, Sorter &gt;" name="loom::vm::simd::ConcurrentStreamFacade&lt; K, _Vector, Allocator, Sorter &gt;">
+<area shape="rect" id="Node000001" title="Stream facade that allows concurrent exchange/computation." alt="" coords="5,22,208,84"/>
+<area shape="rect" id="Node000002" href="$classloom_1_1vm_1_1simd_1_1ConcurrentStreamFacade.html" title=" " alt="" coords="490,13,708,92"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="223,50,489,50,489,55,223,55"/>
+</map>

@@ -1,0 +1,7 @@
+<map id="vm/bse.hpp" name="vm/bse.hpp">
+<area shape="rect" id="Node000001" title="Basic scalar evaluator." alt="" coords="68,5,166,33"/>
+<area shape="rect" id="Node000002" href="$dbg_8hpp.html" title="Utilities for kernel debugging." alt="" coords="5,81,104,109"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="98,47,68,82,64,79,94,43"/>
+<area shape="rect" id="Node000003" href="$simd_8hpp.html" title="SIMD backend implementation." alt="" coords="128,81,234,109"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="141,43,172,79,168,82,137,47"/>
+</map>

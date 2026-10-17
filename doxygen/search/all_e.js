@@ -1,0 +1,25 @@
+var searchData=
+[
+  ['n_5fpos_0',['n_pos',['../namespaceloom_1_1vm_1_1cuda.html#a1f61a967c36e5fe72c51aafe27d51694',1,'loom::vm::cuda']]],
+  ['name_1',['name',['../structloom_1_1test_1_1NamedTest.html#a8a3f1e0cbab2aa925b3bd3a06ba91c68',1,'loom::test::NamedTest']]],
+  ['namedfuzzytest_2',['NamedFuzzyTest',['../structloom_1_1test_1_1NamedFuzzyTest.html',1,'loom::test']]],
+  ['namedtest_3',['NamedTest',['../structloom_1_1test_1_1NamedTest.html',1,'loom::test']]],
+  ['nappend_4',['nappend',['../group__Intlist.html#ga100319e85578ea7e9ad20517e6ff7e7e',1,'loom::intlist']]],
+  ['native_5finstruction_5fextent_5',['native_instruction_extent',['../structloom_1_1vm_1_1simd_1_1native__instruction__extent.html',1,'loom::vm::simd']]],
+  ['native_5finstruction_5fextent_3c_20compute_3c_20op_2c_20dst_2c_20arg1_2c_20args_2e_2e_2e_20_3e_2c_20index_5ft_20_3e_6',['native_instruction_extent&lt; Compute&lt; Op, Dst, Arg1, Args... &gt;, index_t &gt;',['../structloom_1_1vm_1_1simd_1_1native__instruction__extent_3_01Compute_3_01Op_00_01Dst_00_01Arg1_00c55145157ac48ce15f5b0855dd05a4ac.html',1,'loom::vm::simd']]],
+  ['native_5finstruction_5fextent_3c_20jump_3c_20target_20_3e_2c_20index_5ft_20_3e_7',['native_instruction_extent&lt; Jump&lt; Target &gt;, index_t &gt;',['../structloom_1_1vm_1_1simd_1_1native__instruction__extent_3_01Jump_3_01Target_01_4_00_01index__t_01_4.html',1,'loom::vm::simd']]],
+  ['native_5finstruction_5fextent_3c_20parmjump_3c_20var_2c_20labels_20_3e_2c_20index_5ft_20_3e_8',['native_instruction_extent&lt; ParmJump&lt; Var, Labels &gt;, index_t &gt;',['../structloom_1_1vm_1_1simd_1_1native__instruction__extent_3_01ParmJump_3_01Var_00_01Labels_01_4_00_01index__t_01_4.html',1,'loom::vm::simd']]],
+  ['native_5finstruction_5fextent_5fv_9',['native_instruction_extent_v',['../namespaceloom_1_1vm_1_1simd.html#a75b9df7a78afec66b4f43446028772d8',1,'loom::vm::simd']]],
+  ['native_5fvector_10',['native_vector',['../namespaceloom_1_1vm_1_1simd.html#a4b7912f2aa644dbbf55ce99112cec4ba',1,'loom::vm::simd']]],
+  ['native_5fvector_5fextent_11',['native_vector_extent',['../structloom_1_1vm_1_1simd_1_1native__vector__extent.html',1,'loom::vm::simd']]],
+  ['native_5fvector_5fextent_5fv_12',['native_vector_extent_v',['../namespaceloom_1_1vm_1_1simd.html#a8e29ede7eeb268098ea92662aa9db74f',1,'loom::vm::simd']]],
+  ['neq_13',['neq',['../structloom_1_1vm_1_1simd_1_1cmp__intrinsics__wrangler.html#a0e28908eb21e7f976e1444edf3ea18cc',1,'loom::vm::simd::cmp_intrinsics_wrangler']]],
+  ['nlperm_14',['nlperm',['../group__Intlist.html#gadad6308465de44956c2661d42c6fd70a',1,'loom::intlist']]],
+  ['none_15',['NONE',['../namespaceloom.html#a8d1c8f3f8de4dd31c8518e14de606538ab50339a10e1de285ac99d4c3990b8693',1,'loom']]],
+  ['normal_16',['normal',['../namespaceloom_1_1fn.html#a07095ffdcf0b370d675edd193cbc3a78',1,'loom::fn::normal(const Vec3&lt; T &gt; &amp;pos, const AABB&lt; T &gt; &amp;prim) noexcept'],['../namespaceloom_1_1fn.html#a93037c55bbb20019b07f98d193f64858',1,'loom::fn::normal(Vec3&lt; T &gt; pos, const Cylinder&lt; T &gt; &amp;prim) noexcept'],['../namespaceloom_1_1fn.html#acdbbfeaf14710d8f43b90d50727d9984',1,'loom::fn::normal(const Vec3&lt; T, PosContainer &gt; &amp;, const Disk&lt; T &gt; &amp;prim) noexcept'],['../namespaceloom_1_1fn.html#a4f25efd6bcb9a6818cc6180e5dd9d431',1,'loom::fn::normal(const Vec3&lt; T, PosContainer &gt; &amp;, const Quad&lt; T &gt; &amp;prim) noexcept'],['../namespaceloom_1_1fn.html#a849d6505f6ee9140436acbd76351dec7',1,'loom::fn::normal(const Vec3&lt; T, PosContainer &gt; &amp;pos, const Sphere&lt; T &gt; &amp;prim) noexcept'],['../namespaceloom_1_1fn.html#ac9e4c22687449ef5d3c9b64e1c65c22d',1,'loom::fn::normal(const Vec3&lt; T, PosContainer &gt; &amp;, const Triangle&lt; T &gt; &amp;prim) noexcept']]],
+  ['normalize_17',['normalize',['../group__LINAL.html#ga951c799c268132810a25a1c68565f6c9',1,'loom::fn']]],
+  ['not_5fpc_18',['not_pc',['../namespaceloom_1_1vm.html#aab01aa5f471cb8df26c1e64492efa7b2',1,'loom::vm']]],
+  ['npos_19',['npos',['../group__ArgParse.html#ga95401598621d5274b657acbd3f740ecf',1,'loom::argparse']]],
+  ['nub_20',['nub',['../group__Typelist.html#ga93803cb46926540c2965489046c80136',1,'loom::typelist::nub'],['../group__Intlist.html#ga25f3708708eacb0ee4c3eac837688d60',1,'loom::intlist::nub']]],
+  ['num_5fruns_21',['num_runs',['../structloom_1_1test_1_1ParmTestMaker.html#a297013df22a91a3d657c17f75a3c044f',1,'loom::test::ParmTestMaker']]]
+];

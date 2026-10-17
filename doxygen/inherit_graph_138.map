@@ -1,0 +1,9 @@
+<map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
+<area shape="rect" id="Node000000" href="$structloom_1_1vm_1_1simd_1_1make__packed__vector.html" title="Create aligned SIMD packed vector type that consist of N elements of type T." alt="" coords="5,75,184,119"/>
+<area shape="rect" id="Node000001" href="$structloom_1_1vm_1_1simd_1_1vectorize__union.html" title=" " alt="" coords="254,5,414,50"/>
+<area shape="poly" id="edge5_Node000000_Node000001" title=" " alt="" coords="188,67,254,48,255,53,189,73"/>
+<area shape="rect" id="Node000002" href="$structloom_1_1vm_1_1simd_1_1vectorize__union_3_01Union_3_01Ts_8_8_8_01_4_00_01N_01_4.html" title="Ensure loom::Union correctly converted to union of packed vectors. Union specialisation." alt="" coords="232,75,437,119"/>
+<area shape="poly" id="edge6_Node000000_Node000002" title=" " alt="" coords="199,94,231,94,231,100,199,100"/>
+<area shape="rect" id="Node000003" href="$structloom_1_1vm_1_1simd_1_1vectorize__union.html" title="Ensure loom::Union correctly converted to union of packed vectors. Fundamental type specialisation." alt="" coords="239,144,430,189"/>
+<area shape="poly" id="edge7_Node000000_Node000003" title=" " alt="" coords="189,121,255,141,254,146,188,127"/>
+</map>

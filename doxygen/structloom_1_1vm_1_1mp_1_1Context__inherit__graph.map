@@ -1,0 +1,7 @@
+<map id="loom::vm::mp::Context&lt; K, StreamCompiler, Lock &gt;" name="loom::vm::mp::Context&lt; K, StreamCompiler, Lock &gt;">
+<area shape="rect" id="Node000001" title="Kernel execution context. Manages concurrent exchange and kernel execution." alt="" coords="103,5,274,67"/>
+<area shape="rect" id="Node000002" href="$structloom_1_1vm_1_1mp_1_1Context.html" title=" " alt="" coords="5,140,177,185"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="142,80,131,93,102,141,98,138,127,89,138,76"/>
+<area shape="rect" id="Node000003" href="$structloom_1_1vm_1_1mp_1_1Context.html" title=" " alt="" coords="201,140,373,185"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="248,76,260,89,274,114,284,139,279,141,270,117,256,93,244,79"/>
+</map>

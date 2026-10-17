@@ -1,0 +1,7 @@
+<map id="loom::vm::simd::bulk_dispatcher&lt; SIMDRunner, SerialRunner, N, type_size &gt;" name="loom::vm::simd::bulk_dispatcher&lt; SIMDRunner, SerialRunner, N, type_size &gt;">
+<area shape="rect" id="Node000001" title="Unrolls loops of evaluations into cache line." alt="" coords="5,114,217,176"/>
+<area shape="rect" id="Node000002" href="$classloom_1_1vm_1_1simd_1_1bulk__dispatcher.html" title=" " alt="" coords="463,41,666,137"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="232,117,240,116,355,102,462,92,462,98,355,107,241,121,233,122"/>
+<area shape="rect" id="Node000003" href="$classloom_1_1vm_1_1simd_1_1bulk__dispatcher.html" title=" " alt="" coords="467,160,662,239"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="233,162,241,163,467,188,466,193,240,168,232,167"/>
+</map>

@@ -1,0 +1,7 @@
+<map id="loom::vm::simd::compiler&lt; K, stitch, sort_method, concurrent, UTR &gt;" name="loom::vm::simd::compiler&lt; K, stitch, sort_method, concurrent, UTR &gt;">
+<area shape="rect" id="Node000001" title="Basic SIMD backend." alt="" coords="5,52,194,114"/>
+<area shape="rect" id="Node000002" href="$classloom_1_1vm_1_1simd_1_1compiler.html" title=" " alt="" coords="435,9,619,71"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="209,69,434,47,435,52,209,75"/>
+<area shape="rect" id="Node000003" href="$classloom_1_1vm_1_1simd_1_1compiler.html" title=" " alt="" coords="435,95,618,156"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="195,116,218,121,274,128,330,131,435,130,435,135,330,136,273,133,217,126,193,121"/>
+</map>

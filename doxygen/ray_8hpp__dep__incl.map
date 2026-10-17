@@ -1,0 +1,17 @@
+<map id="smallpt/ref/ray.hpp" name="smallpt/ref/ray.hpp">
+<area shape="rect" id="Node000001" title="Ray and intersection definitions." alt="" coords="382,5,525,33"/>
+<area shape="rect" id="Node000002" href="$aabb_8hpp.html" title="Definition and functions for axis&#45;aligned bounding box." alt="" coords="285,81,448,126"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="430,46,391,82,388,78,427,42"/>
+<area shape="rect" id="Node000008" href="$ref_2pt_8hpp.html" title="Reference smallpt functions." alt="" coords="471,90,608,117"/>
+<area shape="poly" id="edge7_Node000001_Node000008" title=" " alt="" coords="480,42,528,87,524,91,476,46"/>
+<area shape="rect" id="Node000003" href="$cylinder_8hpp.html" title="Reference cylinder primitive implementation." alt="" coords="5,174,168,218"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="286,133,154,176,153,171,284,128"/>
+<area shape="rect" id="Node000004" href="$disk_8hpp.html" title="Disk primitive definition and auxiliary functions." alt="" coords="192,174,354,218"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="336,138,297,175,293,172,332,134"/>
+<area shape="rect" id="Node000005" href="$sphere_8hpp.html" title="Sphere primitive definition and auxiliary functions." alt="" coords="379,174,541,218"/>
+<area shape="poly" id="edge4_Node000002_Node000005" title=" " alt="" coords="401,134,440,172,436,175,397,138"/>
+<area shape="rect" id="Node000006" href="$triangle_8hpp.html" title="Triangle primitive definition and auxiliary functions." alt="" coords="565,174,728,218"/>
+<area shape="poly" id="edge5_Node000002_Node000006" title=" " alt="" coords="449,128,580,171,579,176,447,133"/>
+<area shape="rect" id="Node000007" href="$quad_8hpp.html" title="Difinition of quadrilateral primitive and auxiliary functions." alt="" coords="565,266,728,311"/>
+<area shape="poly" id="edge6_Node000006_Node000007" title=" " alt="" coords="649,234,649,266,644,266,644,234"/>
+</map>

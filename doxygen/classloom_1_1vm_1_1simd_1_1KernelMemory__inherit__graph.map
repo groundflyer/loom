@@ -1,0 +1,9 @@
+<map id="loom::vm::simd::KernelMemory&lt; RegTypes, RegNames, PCVar, N &gt;" name="loom::vm::simd::KernelMemory&lt; RegTypes, RegNames, PCVar, N &gt;">
+<area shape="rect" id="Node000001" title="Local memory pool of SIMD vectors." alt="" coords="5,84,262,128"/>
+<area shape="rect" id="Node000002" href="$classloom_1_1vm_1_1simd_1_1KernelMemory.html" title=" " alt="" coords="481,14,740,59"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="257,78,285,73,480,47,480,52,286,78,258,83"/>
+<area shape="rect" id="Node000003" href="$classloom_1_1vm_1_1simd_1_1KernelMemory.html" title=" " alt="" coords="497,84,724,128"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="277,103,497,103,497,109,277,109"/>
+<area shape="rect" id="Node000004" href="$classloom_1_1vm_1_1simd_1_1KernelMemory.html" title=" " alt="" coords="492,162,728,207"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="205,132,286,156,391,172,492,180,491,185,390,177,285,161,203,137"/>
+</map>

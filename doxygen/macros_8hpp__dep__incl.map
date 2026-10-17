@@ -1,0 +1,13 @@
+<map id="vm/macros.hpp" name="vm/macros.hpp">
+<area shape="rect" id="Node000001" title="C macros for programming VM asm." alt="" coords="101,5,224,33"/>
+<area shape="rect" id="Node000002" href="$vm_2pt_8hpp.html" title="VM port of smallpt." alt="" coords="14,157,154,184"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="87,35,46,53,27,66,13,82,9,92,9,102,19,121,39,139,61,154,58,158,35,143,15,125,4,103,3,91,8,80,24,62,43,48,85,30"/>
+<area shape="rect" id="Node000003" href="$vm_2lib_2linal_8hpp.html" title="Linear aglebra port." alt="" coords="23,81,145,109"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="139,46,100,83,96,79,136,42"/>
+<area shape="rect" id="Node000004" href="$vm_2lib_2random_8hpp.html" title="Random number generation port." alt="" coords="169,81,313,109"/>
+<area shape="poly" id="edge4_Node000001_Node000004" title=" " alt="" coords="190,42,229,79,226,83,186,46"/>
+<area shape="rect" id="Node000005" href="$simd_8hpp.html" title="SIMD backend implementation." alt="" coords="337,81,444,109"/>
+<area shape="poly" id="edge6_Node000001_Node000005" title=" " alt="" coords="219,36,351,78,349,83,217,41"/>
+<area shape="poly" id="edge3_Node000003_Node000002" title=" " alt="" coords="87,124,87,156,81,156,81,124"/>
+<area shape="poly" id="edge5_Node000004_Node000002" title=" " alt="" coords="201,118,113,159,111,154,198,113"/>
+</map>

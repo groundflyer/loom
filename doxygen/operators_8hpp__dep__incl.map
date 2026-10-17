@@ -1,0 +1,17 @@
+<map id="vm/operators.hpp" name="vm/operators.hpp">
+<area shape="rect" id="Node000001" title="Additional computation operations and their default implementations." alt="" coords="207,5,343,33"/>
+<area shape="rect" id="Node000002" href="$vm_2pt_8hpp.html" title="VM port of smallpt." alt="" coords="273,157,413,184"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="191,25,118,32,51,47,27,58,12,71,9,87,20,107,36,120,60,131,125,147,201,158,272,164,272,169,200,163,124,152,58,136,33,124,16,110,4,88,8,69,24,53,49,42,117,27,191,20"/>
+<area shape="rect" id="Node000003" href="$cuda_8hpp.html" title="CUDA backend." alt="" coords="30,81,136,109"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="228,41,118,83,116,78,226,36"/>
+<area shape="rect" id="Node000004" href="$dbg_8hpp.html" title="Utilities for kernel debugging." alt="" coords="159,81,257,109"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="255,46,222,82,218,79,251,43"/>
+<area shape="rect" id="Node000005" href="$vm_2lib_2linal_8hpp.html" title="Linear aglebra port." alt="" coords="282,81,404,109"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="299,43,333,79,329,82,296,46"/>
+<area shape="rect" id="Node000006" href="$vm_2lib_2random_8hpp.html" title="Random number generation port." alt="" coords="428,81,572,109"/>
+<area shape="poly" id="edge6_Node000001_Node000006" title=" " alt="" coords="330,36,461,78,459,83,329,41"/>
+<area shape="rect" id="Node000007" href="$simd_8hpp.html" title="SIMD backend implementation." alt="" coords="596,81,703,109"/>
+<area shape="poly" id="edge8_Node000001_Node000007" title=" " alt="" coords="358,34,597,80,596,86,357,39"/>
+<area shape="poly" id="edge5_Node000005_Node000002" title=" " alt="" coords="346,124,346,156,340,156,340,124"/>
+<area shape="poly" id="edge7_Node000006_Node000002" title=" " alt="" coords="460,118,372,159,370,154,457,113"/>
+</map>

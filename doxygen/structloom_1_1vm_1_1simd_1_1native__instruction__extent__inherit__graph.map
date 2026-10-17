@@ -1,0 +1,9 @@
+<map id="loom::vm::simd::native_instruction_extent&lt; I, index_t &gt;" name="loom::vm::simd::native_instruction_extent&lt; I, index_t &gt;">
+<area shape="rect" id="Node000001" title="Get native widest SIMD vector extent for instruction I." alt="" coords="5,108,178,170"/>
+<area shape="rect" id="Node000002" href="$structloom_1_1vm_1_1simd_1_1native__instruction__extent_3_01Compute_3_01Op_00_01Dst_00_01Arg1_00c55145157ac48ce15f5b0855dd05a4ac.html" title="vm::Compute specialization." alt="" coords="426,5,646,84"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="192,108,201,106,425,61,426,66,202,111,194,113"/>
+<area shape="rect" id="Node000003" href="$structloom_1_1vm_1_1simd_1_1native__instruction__extent_3_01Jump_3_01Target_01_4_00_01index__t_01_4.html" title="vm::Jump specialization." alt="" coords="439,108,634,170"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="193,137,439,137,439,142,193,142"/>
+<area shape="rect" id="Node000004" href="$structloom_1_1vm_1_1simd_1_1native__instruction__extent_3_01ParmJump_3_01Var_00_01Labels_01_4_00_01index__t_01_4.html" title="vm::ParmJump specialization." alt="" coords="423,194,650,256"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="163,175,202,189,258,202,315,211,422,221,422,226,314,217,257,208,201,195,161,180"/>
+</map>
