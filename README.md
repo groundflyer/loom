@@ -1,23 +1,20 @@
 Loom is a proof-of-concept virtual machine for SPMD (single program-multiple data) execution, embedded in C++.
 The purpose of this project is to answer question: can we counter control-flow divergence and increase throughput by sorting and regrouping threads?
 
-    Control-flow divergence occurs when parallel threads executing the same program take different execution paths due to data-dependent branches.
-    In SIMD/SIMT architectures, threads following different paths must typically execute them in separate groups or under predication, leaving some processing lanes idle and reducing effective hardware utilization.
+>Control-flow divergence occurs when parallel threads executing the same program take different execution paths due to data-dependent branches. In SIMD/SIMT architectures, threads following different paths must typically execute them in separate groups or under predication, leaving some processing lanes idle and reducing effective hardware utilization.
 
 Example of Cornell Box rendering process with different VM backends:
 
-| predicated  | hybrid (size=1024)  | hybrid (size=4000)  |
-|:-----------:|:----------------:|:----------------:|
-| <video src="groundflyer.github.io/loom/assets/video/predicated.webm" muted autoplay controls width="100%"></video>  | <video src="groundflyer.github.io/loom/assets/video/hybrid_s1024.webm" muted autoplay controls width="100%"></video> | <video src="groundflyer.github.io/loom/assets/video/hybrid_s4000.webm" muted autoplay controls width="100%"></video> |
-
 In order to experiment freely I had to simplify and restrict conventional SPMD programming model significantly.
 The resulting programming model heavily adapts unstructured control flow.
-I tried to formalize the model and have drafted an [article](groundflyer.github.io/loom/assets/pdfs/draft.pdf).
+I tried to formalize the model and have drafted an [article](https://groundflyer.github.io/loom/assets/pdf/draft.pdf).
 
 ## TL;DR
 
 Having a thread pool of persistent threads (SPMD kernel instances),
 let's sort the threads by program counter and regroup them into more coherent groups.
+
+The flowchart of VM's execution algorithm:
 
 ```mermaid
 flowchart TD
@@ -41,7 +38,7 @@ flowchart TD
     class Tasks,Complete decision
 ```
 
-Let's consider a kernel with unstructured control flow.
+To illustrate the process, let's consider a kernel with unstructured control flow.
 
 ```mermaid
 ---
@@ -70,7 +67,7 @@ flowchart TB
     style B stroke:#000000,fill:#00C853
 ```
 
-Thread pool evolution during execution is illustrated with this graph ![thread-pool](groundflyer.github.io/loom/assets/svg/states.svg)
+Thread pool evolution during execution is illustrated with this graph: ![thread-pool](https://groundflyer.github.io/loom/assets/svg/states.svg)
 
 ## Implementation
 
@@ -79,10 +76,19 @@ The VM targets x86 vector extension from SSE to AVX-512 and implements two main 
 * compact - predicated warp execution with dynamic reconvergence
 * hybrid - compact SIMD backend integrated within thread pool sorting and regrouping
 
-In path tracing benchmarks the hybrid backend is consistently faster than the compact one.
+In path tracing benchmarks the hybrid backend is up to 1.54x faster than the compact one.
 
 There are other backends developed for validation and testing, but most of interest could be BSE (Basic Scalar Evaluator).
 Its performance is roughly the same as plain C++.
+
+## Demo
+
+The project comes with an interactive path-tracing demo.
+
+| predicated  | hybrid (size=1024)  | hybrid (size=4000)  |
+|:-----------:|:----------------:|:----------------:|
+| [predicated.webm](https://github.com/user-attachments/assets/bf28c091-3434-4e4d-a634-4e5f4e252c00) | [hybrid_s1024.webm](https://github.com/user-attachments/assets/0175f4ff-e2ae-4fc8-a603-b0d473a7e647) | [hybrid_s4000.webm](https://github.com/user-attachments/assets/c38c9f2e-a91c-4f46-99db-325d48c0802e) |
+
 
 # Build
 
@@ -91,11 +97,11 @@ Its performance is roughly the same as plain C++.
 To build all benchmarks and demo you need:
 
 * GNU/Linux distribution
-* 32Gb RAM (explanation further)
+* 32Gb RAM required ([explanation](#faq))
 
 ## Build with nix
 
-The easiest way to build is to use [nix package manager](nix.org).
+The easiest way to build is to use [nix package manager](https://nix.org).
 
 Just `cd` to source directory and run `nix build`.
 
@@ -103,7 +109,7 @@ Apart from `default` build target there are `complete` and `minimal` ones.
 
 ## Generic linux distro
 
-Even if you don't run [NixOS](nixos.org) or don't have nix installed
+Even if you don't run [NixOS](https://nixos.org) or don't have nix installed
 you still can build everything with CMake.
 
 ### Dependencies
@@ -135,16 +141,18 @@ Run all benchmarks:
 
 For example, nix users have `<dir_with_binaries>` to be `result/bin/`.
 
-Except `all`, the other options for benchmarks are `light` and `render`.
+If you don't want to run all benchmarks (it can take quite a while), the other options for benchmarks are `light` and `render`.
+`render` benchmarks still take a lot of time.
 
 The interactive demo executable is called loom_pt_demo. Invoke with `-h` to see available options.
 
 # FAQ
 
-**Q:** Why 32Gb RAM just to build one file?
-**A:** Kernel preprocessing, basic-block construction and consistency checks is done at compile time via template metaprogramming.
-The template instantiation depth for bigger kernels is so deep, the stack limits need to be unlocked.
-Path-tracing kernel consists of ~1.5K instructions and clang consumes almost 30Gb during its compilation.
+**Q:** Why 32Gb RAM to build the project?
+
+**A:** Kernel preprocessing, basic-block construction and consistency checks are done at compile time with template metaprogramming.
+The template instantiation depth for bigger kernels is so deep, the stack limits need to be unlocked for clang not to crash with stack overflow.
+The path-tracing kernel consists of ~1.5K instructions and clang consumes almost 30Gb during its compilation.
 
 # License
 
