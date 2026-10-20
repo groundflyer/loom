@@ -21,7 +21,7 @@ import datetime as dt
 import logging
 
 from enum import Enum
-from dataclasses import dataclass
+from dataclasses import dataclass, asdict
 from functools import reduce
 from os import path
 
@@ -164,12 +164,12 @@ def parse_record(line) -> Record:
                   time=float(vals[7]))
 
 def get_records(path, latest=True):
-    logger.debug("working with {}", path)
+    logger.debug("working with %s", path)
     with open(path, 'r') as f:
         records = [parse_record(l) for l in f.readlines()]
     if latest:
         lh = records[-1].hash
-        logger.debug("Latest hash: {}", lh)
+        logger.debug("Latest hash: %s", lh)
         return list(filter(lambda r: r.hash == lh, records))
     else:
         return records
@@ -193,14 +193,14 @@ def h2p_speedup(records):
     pred_bid = next(filter(lambda bid: bid.method == Method.PREDICATED, ubids))
     hbid, hval = reduce(lambda l, r: l if l[1] < r[1] else r,
                        best_of_methods(hybrid_bids, records))
-    logger.debug("pred bid: {}", pred_bid)
-    logger.debug("hybrid bid: {}", hbid)
-    logger.debug("hybrid avg: {}", hval)
+    logger.debug("pred bid: %s", str(asdict(pred_bid)))
+    logger.debug("hybrid bid: %s", str(asdict(hbid)))
+    logger.debug("hybrid avg: %f", hval)
     pval = avg_of(pred_bid, records)
-    logger.debug("predicated avg: {}", pval)
+    logger.debug("predicated avg: %f", pval)
     ratio = pval / hval
-    logger.debug("ratio {}", ratio)
-    return ratio
+    logger.debug("ratio %f", ratio)
+    return ratio, hbid
 
 def decode_pt(s):
     kernel, _, b, t, d = s.split('_')
@@ -217,15 +217,18 @@ def main():
     parser.add_argument('-a', '--all', help='print all results', action='store_true')
     args = parser.parse_args()
 
-    if(args.verbose):
+    logging.basicConfig(level=logging.INFO)
+
+    if (args.verbose):
         logger.setLevel(logging.DEBUG)
 
     d = path.abspath(args.path)
 
-    xs = [(h2p_speedup(get_records(x[1])), decode_pt(x[0])) for x in
+    xs1 = ((h2p_speedup(get_records(x[1])), decode_pt(x[0])) for x in
           filter(lambda x: path.exists(x[1]),
-                 ((n, path.join(d, n + '.csv')) for n in render))]
+                 ((n, path.join(d, n + '.csv')) for n in render)))
 
+    xs = [(x[0][0], (x[1], str(asdict(x[0][1])))) for x in xs1]
     xs.sort(key=lambda v: v[0])
 
     vs, ns = zip(*xs)
@@ -235,8 +238,13 @@ def main():
     min_speedup, worst = xs[0]
     avg_speedup = sum(vs) / l
 
+    sep = lambda: print("{:=^40}".format(""))
+
+    sep()
     print("Maximum speedup: {:.2f}x ({})\nAverage speedup: {:.2f}x\nMinimum speedup: {:.2f}x ({})".format(
         max_speedup, best, avg_speedup, min_speedup, worst))
+
+    sep()
 
     print("\nTop 3")
     for i in range(3):
@@ -251,6 +259,7 @@ def main():
         print("{:.2f}x {}".format(*xs[l // 2 - 1 + i]))
 
     if(args.all):
+        sep()
         print("\nAll results")
         for (x, y) in xs[::-1]:
             print("{:.2f}x {}".format(x, y))
