@@ -1,5 +1,5 @@
 // -*- C++ -*-
-// factorial.cpp
+// fibonacci.cpp
 // This file is part of
 // Loom: a proof-of-concept virtual machine for SPMD execution
 // Copyright (C) 2026 Roman Saldygashev (sldg.roman@gmail.com)
