@@ -3,16 +3,12 @@ The purpose of this project is to answer question: can we counter control-flow d
 
 >Control-flow divergence occurs when parallel threads executing the same program take different execution paths due to data-dependent branches. In SIMD/SIMT architectures, threads following different paths must typically execute them in separate groups or under predication, leaving some processing lanes idle and reducing effective hardware utilization.
 
-Example of Cornell Box rendering process with different VM backends:
-
 In order to experiment freely I had to simplify and restrict conventional SPMD programming model significantly.
 The resulting programming model heavily adapts unstructured control flow.
 I tried to formalize the model and have drafted an [article](https://groundflyer.github.io/loom/assets/pdf/draft.pdf).
-
-## TL;DR
-
-Having a thread pool of persistent threads (SPMD kernel instances),
+TL;DR: having a thread pool of persistent threads (SPMD kernel instances),
 let's sort the threads by program counter and regroup them into more coherent groups.
+This scheduling scheme can be more efficient for highly irregular workloads than conventional reconvergence.
 
 <!-- The flowchart of VM's execution algorithm: -->
 
@@ -71,7 +67,7 @@ let's sort the threads by program counter and regroup them into more coherent gr
 
 ## Implementation
 
-The VM targets x86 vector extension from SSE to AVX-512 and implements two main SIMD backends:
+The VM targets x86 vector extensions from SSE to AVX-512 and implements two main SIMD backends:
 
 * compact - predicated warp execution with dynamic reconvergence
 * hybrid - compact SIMD backend integrated within thread pool sorting and regrouping
@@ -145,6 +141,118 @@ If you don't want to run all benchmarks (it can take quite a while), the other o
 `render` benchmarks still take a lot of time.
 
 The interactive demo executable is called loom_pt_demo. Invoke with `-h` to see available options.
+
+# Programming Model
+
+Unlike conventional SPMD models Loom forbids mutable shared state and doesn't provide thread id.
+A kernel is a pure function: all inputs and outputs should be specified explicitly.
+The kernel's state is bounded and consists only of virtual registers and program counter.
+Registers are defined on the fly.
+
+Here is prettified assembly IR of an exemplary kernel computing Fibonacci sequence:
+
+```asm
+%kernel fib n:u64             # one input parameter of type u64 stored into n
+    le @u64 cmp n 1           # cmp <- n <= 1
+    cmov @u64 c cmp n 1       # c <- cmp ? n : 1
+    jmp cmp 0: work 1: HALT   # if cmp = 0 then goto work else terminate
+work:
+    mov @u64 p 0              # p <- 0
+    mov @u64 c 1              # c <- 1
+    mov @u64 i 2              # i <- 2
+loop:
+    add @u64 t p c            # t <- p + c
+    mov @u64 p c              # p <- c
+    mov @u64 c t              # c <- t
+    add @u64 i i 1            # increment i
+    le @u64 cmp i n           # cmp <- i <= n
+    jmp cmp 0: HALT 1: loop   # if cmp = 0 then terminate else goto loop
+%endkernel c:u64              # the result value is retreived from c
+```
+
+<!-- This how it looks in C++ sources: -->
+
+<!-- ```c++ -->
+<!-- template <std::unsigned_integral T> -->
+<!-- TKERNEL1(fib, n) -->
+<!--     TLE(cmp, n, 1), -->
+<!--     TCMOV(c, cmp, n, 1), -->
+<!--     IPJMP2(cmp, work, HALT), -->
+<!--     LABEL(work), -->
+<!--     TMOV(p, 0), -->
+<!--     TMOV(c, 1), -->
+<!--     TMOV(i, 2), -->
+<!--     LABEL(loop), -->
+<!--     TADD(t, p, c), -->
+<!--     TMOV(p, c), -->
+<!--     TMOV(c, t), -->
+<!--     TADD(i, i, 1), -->
+<!--     TLE(cmp, i, n), -->
+<!--     IPJMP2(cmp, HALT, loop) -->
+<!-- TKERNEL_END1(c); -->
+<!-- ``` -->
+
+<!-- This is how it looks after preprocessor stages: -->
+
+<!-- ```c++ -->
+<!-- template <std::unsigned_integral T> -->
+<!-- using fib_test = loom::vm::kernel_blank< -->
+<!--     loom::sl2cs<"fib_test">, -->
+<!--     loom::type_sequence<loom::vm::Variable<T, loom::sl2cs<"n">>>, -->
+<!--     loom::type_sequence< -->
+<!--         loom::vm::Compute<std::less_equal<T>, -->
+<!--                           loom::vm::Variable<loom::uint_of_size_t<sizeof(T)>, -->
+<!--                                              loom::sl2cs<"cmp">>, -->
+<!--                           loom::vm::Variable<T, loom::sl2cs<"n">>, -->
+<!--                           loom::vm::Variable<T, loom::sl2cs<"1">>>, -->
+<!--         loom::vm::Compute<loom::vm::ops::cmov, -->
+<!--                           loom::vm::Variable<T, loom::sl2cs<"c">>, -->
+<!--                           loom::vm::Variable<loom::uint_of_size_t<sizeof(T)>, -->
+<!--                                              loom::sl2cs<"cmp">>, -->
+<!--                           loom::vm::Variable<T, loom::sl2cs<"n">>, -->
+<!--                           loom::vm::Variable<T, loom::sl2cs<"1">>>, -->
+<!--         loom::vm::ParmJump< -->
+<!--             loom::vm::Variable<loom::uint_of_size_t<sizeof(T)>, -->
+<!--                                loom::sl2cs<"cmp">>, -->
+<!--             loom::type_sequence<loom::vm::Label<loom::sl2cs<"work">>, -->
+<!--                                 loom::vm::Label<loom::sl2cs<"HALT">>>>, -->
+<!--         loom::vm::Label<loom::sl2cs<"work">>, -->
+<!--         loom::vm::Compute<std::identity, -->
+<!--                           loom::vm::Variable<T, loom::sl2cs<"p">>, -->
+<!--                           loom::vm::Variable<T, loom::sl2cs<"0">>>, -->
+<!--         loom::vm::Compute<std::identity, -->
+<!--                           loom::vm::Variable<T, loom::sl2cs<"c">>, -->
+<!--                           loom::vm::Variable<T, loom::sl2cs<"1">>>, -->
+<!--         loom::vm::Compute<std::identity, -->
+<!--                           loom::vm::Variable<T, loom::sl2cs<"i">>, -->
+<!--                           loom::vm::Variable<T, loom::sl2cs<"2">>>, -->
+<!--         loom::vm::Label<loom::sl2cs<"loop">>, -->
+<!--         loom::vm::Compute<std::plus<T>, -->
+<!--                           loom::vm::Variable<T, loom::sl2cs<"t">>, -->
+<!--                           loom::vm::Variable<T, loom::sl2cs<"p">>, -->
+<!--                           loom::vm::Variable<T, loom::sl2cs<"c">>>, -->
+<!--         loom::vm::Compute<std::identity, -->
+<!--                           loom::vm::Variable<T, loom::sl2cs<"p">>, -->
+<!--                           loom::vm::Variable<T, loom::sl2cs<"c">>>, -->
+<!--         loom::vm::Compute<std::identity, -->
+<!--                           loom::vm::Variable<T, loom::sl2cs<"c">>, -->
+<!--                           loom::vm::Variable<T, loom::sl2cs<"t">>>, -->
+<!--         loom::vm::Compute<std::plus<T>, -->
+<!--                           loom::vm::Variable<T, loom::sl2cs<"i">>, -->
+<!--                           loom::vm::Variable<T, loom::sl2cs<"i">>, -->
+<!--                           loom::vm::Variable<T, loom::sl2cs<"1">>>, -->
+<!--         loom::vm::Compute<std::less_equal<T>, -->
+<!--                           loom::vm::Variable<loom::uint_of_size_t<sizeof(T)>, -->
+<!--                                              loom::sl2cs<"cmp">>, -->
+<!--                           loom::vm::Variable<T, loom::sl2cs<"i">>, -->
+<!--                           loom::vm::Variable<T, loom::sl2cs<"n">>>, -->
+<!--         loom::vm::ParmJump< -->
+<!--             loom::vm::Variable<loom::uint_of_size_t<sizeof(T)>, -->
+<!--                                loom::sl2cs<"cmp">>, -->
+<!--             loom::type_sequence<loom::vm::Label<loom::sl2cs<"HALT">>, -->
+<!--                                 loom::vm::Label<loom::sl2cs<"loop">>>>>, -->
+<!--     loom::type_sequence<loom::vm::Variable<T, loom::sl2cs<"c">>>>; -->
+<!-- ``` -->
 
 # FAQ
 
