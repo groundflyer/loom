@@ -1,10 +1,49 @@
 <html>
   <head>
-<title>Loom</title>
+    <title>Loom</title>
+    <style>
+      video{
+          width: 400px;
+          height: 400px;
+      }
+      table, th, td {
+        border: 1px solid #666;
+      }
+    </style>
 </head>
 <body>
-<h1>Loom</h1>
+<h1>Site under construction</h1>
 
-<a href="doxygen/index.html">API Documentaion</a>
+<h2>Available resources</h2>
+
+<ul>
+  <li><a href="doxygen/index.html">API Documentaion</a></li>
+  <li><a href="assets/pdf/draft.pdf">Draft article</a></li>
+</ul>
+
+<h2>Path-tracing demo</h2>
+
+
+<table>
+  <tr>
+    <th>predicated</th>
+    <th>hybrid [stream size: 1024]</th>
+    <th>hybrid [stream size: 4000]</th>
+  </tr>
+  <tr>
+    <th>
+      <video autoplay controls muted playsinline src="assets/video/predicated.webm">Rendering with compact SIMD backend</video>
+    </th>
+    <th>
+      <video autoplay controls muted playsinline src="assets/video/hybrid_s1024.webm">Rendering with hybrid SIMD backend (stream size 1024)</video>
+    </th>
+    <th>
+      <video autoplay controls muted playsinline src="assets/video/hybrid_s4000.webm">Rendering with hybrid SIMD backend (stream size 4000)</video>
+    </th>
+</table>
+
+
+</video>
+
 </body>
 </html>
