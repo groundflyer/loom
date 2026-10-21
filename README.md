@@ -3,67 +3,13 @@ The purpose of this project is to answer question: can we counter control-flow d
 
 >Control-flow divergence occurs when parallel threads executing the same program take different execution paths due to data-dependent branches. In SIMD/SIMT architectures, threads following different paths must typically execute them in separate groups or under predication, leaving some processing lanes idle and reducing effective hardware utilization.
 
+The project focuses on program execution and scheduling.
 In order to experiment freely I had to simplify and restrict conventional SPMD programming model significantly.
-The resulting programming model heavily adapts unstructured control flow.
+The resulting programming model adapts unstructured control flow.
 I tried to formalize the model and have drafted an [article](https://groundflyer.github.io/loom/assets/pdf/draft.pdf).
 TL;DR: having a thread pool of persistent threads (SPMD kernel instances),
 let's sort the threads by program counter and regroup them into more coherent groups.
 This scheduling scheme can be more efficient for highly irregular workloads than conventional reconvergence.
-
-<!-- The flowchart of VM's execution algorithm: -->
-
-<!-- ```mermaid -->
-<!-- flowchart TD -->
-<!--     Start(["START"]) -\-> Populate["Populate"] -->
-<!--     Populate -\-> Group["Group"] -->
-<!--     Group -\-> Execute["Execute"] -->
-<!--     Execute -\-> Sort["Sort"] -->
-<!--     Sort -\-> Tasks{"Tasks available?"} -->
-<!--     Tasks -\->|Yes| Exchange["Exchange"] -->
-<!--     Exchange -\-> Group -->
-<!--     Tasks -\->|No| Complete{"All instances complete?"} -->
-<!--     Complete -\->|No| Group -->
-<!--     Complete -\->|Yes| Retrieve["Retrieve"] -->
-<!--     Retrieve -\-> Finish(["END"]) -->
-
-<!--     classDef terminal fill:#f0fdf4,stroke:#4ade80 -->
-<!--     classDef process fill:#eef2ff,stroke:#818cf8 -->
-<!--     classDef decision fill:#fff7ed,stroke:#fb923c -->
-<!--     class Start,Finish terminal -->
-<!--     class Populate,Group,Execute,Sort,Exchange,Retrieve process -->
-<!--     class Tasks,Complete decision -->
-<!-- ``` -->
-
-<!-- To illustrate the process, let's consider a kernel with unstructured control flow. -->
-
-<!-- ```mermaid -->
-<!-- --- -->
-<!-- config: -->
-<!--   layout: elk -->
-<!-- --- -->
-<!-- flowchart TB -->
-<!--     START["START"] -\-> A["A"] & HALT(("HALT")) & B["B"] -->
-<!--     A -\-> HALT -->
-<!--     B -\-> HALT -->
-
-<!--     START@{ shape: rounded} -->
-<!--     A@{ shape: rounded} -->
-<!--     B@{ shape: rounded} -->
-<!--      START:::startNode -->
-<!--      A:::nodeA -->
-<!--      HALT:::haltNode -->
-<!--      B:::nodeB -->
-<!--     classDef startNode stroke:#3b82f6,fill:#dbeafe -->
-<!--     classDef nodeA stroke:#facc15,fill:#fefce8 -->
-<!--     classDef nodeB stroke:#4ade80,fill:#f0fdf4 -->
-<!--     classDef haltNode stroke:#000000,fill:#f3f4f6 -->
-<!--     style START stroke:#000000,fill:#2962FF -->
-<!--     style A fill:#FFD600,stroke:#000000 -->
-<!--     style HALT fill:#000000,color:#ffffff -->
-<!--     style B stroke:#000000,fill:#00C853 -->
-<!-- ``` -->
-
-<!-- Thread pool evolution during execution is illustrated with this graph: ![thread-pool](https://groundflyer.github.io/loom/assets/svg/states.svg) -->
 
 ## Implementation
 
