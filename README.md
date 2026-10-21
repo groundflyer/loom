@@ -74,16 +74,17 @@ The VM targets x86 vector extensions from SSE to AVX-512 and implements two main
 
 In path tracing benchmarks the hybrid backend is up to 1.54x faster than the compact one.
 
-There are other backends developed for validation and testing, but most of interest could be BSE (Basic Scalar Evaluator).
-Its performance is roughly the same as plain C++.
+There are other execution backends, including CUDA, developed for sole purpose to test things and establish API,
+so they are not efficient and do not participate in benchmarking (except the scalar backend that sometimes faster than plain C++).
 
 ## Demo
 
 The project comes with an interactive path-tracing demo.
 
-| predicated  | hybrid (size=1024)  | hybrid (size=4000)  |
-|:-----------:|:----------------:|:----------------:|
-| [predicated.webm](https://github.com/user-attachments/assets/bf28c091-3434-4e4d-a634-4e5f4e252c00) | [hybrid_s1024.webm](https://github.com/user-attachments/assets/0175f4ff-e2ae-4fc8-a603-b0d473a7e647) | [hybrid_s4000.webm](https://github.com/user-attachments/assets/c38c9f2e-a91c-4f46-99db-325d48c0802e) |
+
+
+https://github.com/user-attachments/assets/f2524dba-1714-4b08-a1ca-bf351dc6c7f0
+
 
 
 # Build
@@ -103,7 +104,7 @@ Just `cd` to source directory and run `nix build`.
 
 Apart from `default` build target there are `complete` and `minimal` ones.
 
-## Generic linux distro
+## Build in a generic linux distro
 
 Even if you don't run [NixOS](https://nixos.org) or don't have nix installed
 you still can build everything with CMake.
@@ -111,9 +112,9 @@ you still can build everything with CMake.
 ### Dependencies
 
 * CMake
-* LLVM clang version 19 or newer
-* LLVM libc++ version 19 or newer
-* libfmt version 9 or newer
+* LLVM Clang 19 or newer
+* LLVM Libc++ 19 or newer
+* libfmt 9 or newer
 * glfw3
 * range-v3
 * fast_float
@@ -140,7 +141,13 @@ For example, nix users have `<dir_with_binaries>` to be `result/bin/`.
 If you don't want to run all benchmarks (it can take quite a while), the other options for benchmarks are `light` and `render`.
 `render` benchmarks still take a lot of time.
 
-The interactive demo executable is called loom_pt_demo. Invoke with `-h` to see available options.
+To inspect results of path tracing benchmarks there is a quick'n'dirty script in `src/scripts/report.py`.
+
+Invoke it with one argument:
+
+`report.py <dir_with_benchmark_results>`
+
+The interactive demo executable is called `loom_pt_demo`. Invoke with `-h` to see available options.
 
 # Programming Model
 
@@ -170,89 +177,117 @@ loop:
 %endkernel c:u64              # the result value is retreived from c
 ```
 
-<!-- This how it looks in C++ sources: -->
+This how it looks in C++ sources:
 
-<!-- ```c++ -->
-<!-- template <std::unsigned_integral T> -->
-<!-- TKERNEL1(fib, n) -->
-<!--     TLE(cmp, n, 1), -->
-<!--     TCMOV(c, cmp, n, 1), -->
-<!--     IPJMP2(cmp, work, HALT), -->
-<!--     LABEL(work), -->
-<!--     TMOV(p, 0), -->
-<!--     TMOV(c, 1), -->
-<!--     TMOV(i, 2), -->
-<!--     LABEL(loop), -->
-<!--     TADD(t, p, c), -->
-<!--     TMOV(p, c), -->
-<!--     TMOV(c, t), -->
-<!--     TADD(i, i, 1), -->
-<!--     TLE(cmp, i, n), -->
-<!--     IPJMP2(cmp, HALT, loop) -->
-<!-- TKERNEL_END1(c); -->
-<!-- ``` -->
+```c++
+template <std::unsigned_integral T>
+TKERNEL1(fib, n)
+    TLE(cmp, n, 1),
+    TCMOV(c, cmp, n, 1),
+    IPJMP2(cmp, work, HALT),
+    LABEL(work),
+    TMOV(p, 0),
+    TMOV(c, 1),
+    TMOV(i, 2),
+    LABEL(loop),
+    TADD(t, p, c),
+    TMOV(p, c),
+    TMOV(c, t),
+    TADD(i, i, 1),
+    TLE(cmp, i, n),
+    IPJMP2(cmp, HALT, loop)
+TKERNEL_END1(c);
+```
 
-<!-- This is how it looks after preprocessor stages: -->
+This is how it looks after preprocessor stages:
 
-<!-- ```c++ -->
-<!-- template <std::unsigned_integral T> -->
-<!-- using fib_test = loom::vm::kernel_blank< -->
-<!--     loom::sl2cs<"fib_test">, -->
-<!--     loom::type_sequence<loom::vm::Variable<T, loom::sl2cs<"n">>>, -->
-<!--     loom::type_sequence< -->
-<!--         loom::vm::Compute<std::less_equal<T>, -->
-<!--                           loom::vm::Variable<loom::uint_of_size_t<sizeof(T)>, -->
-<!--                                              loom::sl2cs<"cmp">>, -->
-<!--                           loom::vm::Variable<T, loom::sl2cs<"n">>, -->
-<!--                           loom::vm::Variable<T, loom::sl2cs<"1">>>, -->
-<!--         loom::vm::Compute<loom::vm::ops::cmov, -->
-<!--                           loom::vm::Variable<T, loom::sl2cs<"c">>, -->
-<!--                           loom::vm::Variable<loom::uint_of_size_t<sizeof(T)>, -->
-<!--                                              loom::sl2cs<"cmp">>, -->
-<!--                           loom::vm::Variable<T, loom::sl2cs<"n">>, -->
-<!--                           loom::vm::Variable<T, loom::sl2cs<"1">>>, -->
-<!--         loom::vm::ParmJump< -->
-<!--             loom::vm::Variable<loom::uint_of_size_t<sizeof(T)>, -->
-<!--                                loom::sl2cs<"cmp">>, -->
-<!--             loom::type_sequence<loom::vm::Label<loom::sl2cs<"work">>, -->
-<!--                                 loom::vm::Label<loom::sl2cs<"HALT">>>>, -->
-<!--         loom::vm::Label<loom::sl2cs<"work">>, -->
-<!--         loom::vm::Compute<std::identity, -->
-<!--                           loom::vm::Variable<T, loom::sl2cs<"p">>, -->
-<!--                           loom::vm::Variable<T, loom::sl2cs<"0">>>, -->
-<!--         loom::vm::Compute<std::identity, -->
-<!--                           loom::vm::Variable<T, loom::sl2cs<"c">>, -->
-<!--                           loom::vm::Variable<T, loom::sl2cs<"1">>>, -->
-<!--         loom::vm::Compute<std::identity, -->
-<!--                           loom::vm::Variable<T, loom::sl2cs<"i">>, -->
-<!--                           loom::vm::Variable<T, loom::sl2cs<"2">>>, -->
-<!--         loom::vm::Label<loom::sl2cs<"loop">>, -->
-<!--         loom::vm::Compute<std::plus<T>, -->
-<!--                           loom::vm::Variable<T, loom::sl2cs<"t">>, -->
-<!--                           loom::vm::Variable<T, loom::sl2cs<"p">>, -->
-<!--                           loom::vm::Variable<T, loom::sl2cs<"c">>>, -->
-<!--         loom::vm::Compute<std::identity, -->
-<!--                           loom::vm::Variable<T, loom::sl2cs<"p">>, -->
-<!--                           loom::vm::Variable<T, loom::sl2cs<"c">>>, -->
-<!--         loom::vm::Compute<std::identity, -->
-<!--                           loom::vm::Variable<T, loom::sl2cs<"c">>, -->
-<!--                           loom::vm::Variable<T, loom::sl2cs<"t">>>, -->
-<!--         loom::vm::Compute<std::plus<T>, -->
-<!--                           loom::vm::Variable<T, loom::sl2cs<"i">>, -->
-<!--                           loom::vm::Variable<T, loom::sl2cs<"i">>, -->
-<!--                           loom::vm::Variable<T, loom::sl2cs<"1">>>, -->
-<!--         loom::vm::Compute<std::less_equal<T>, -->
-<!--                           loom::vm::Variable<loom::uint_of_size_t<sizeof(T)>, -->
-<!--                                              loom::sl2cs<"cmp">>, -->
-<!--                           loom::vm::Variable<T, loom::sl2cs<"i">>, -->
-<!--                           loom::vm::Variable<T, loom::sl2cs<"n">>>, -->
-<!--         loom::vm::ParmJump< -->
-<!--             loom::vm::Variable<loom::uint_of_size_t<sizeof(T)>, -->
-<!--                                loom::sl2cs<"cmp">>, -->
-<!--             loom::type_sequence<loom::vm::Label<loom::sl2cs<"HALT">>, -->
-<!--                                 loom::vm::Label<loom::sl2cs<"loop">>>>>, -->
-<!--     loom::type_sequence<loom::vm::Variable<T, loom::sl2cs<"c">>>>; -->
-<!-- ``` -->
+```c++
+template <std::unsigned_integral T>
+using fib = loom::vm::kernel_blank<
+    loom::sl2cs<"fib">,
+    loom::type_sequence<loom::vm::Variable<T, loom::sl2cs<"n">>>,
+    loom::type_sequence<
+        loom::vm::Compute<std::less_equal<T>,
+                          loom::vm::Variable<loom::uint_of_size_t<sizeof(T)>,
+                                             loom::sl2cs<"cmp">>,
+                          loom::vm::Variable<T, loom::sl2cs<"n">>,
+                          loom::vm::Variable<T, loom::sl2cs<"1">>>,
+        loom::vm::Compute<loom::vm::ops::cmov,
+                          loom::vm::Variable<T, loom::sl2cs<"c">>,
+                          loom::vm::Variable<loom::uint_of_size_t<sizeof(T)>,
+                                             loom::sl2cs<"cmp">>,
+                          loom::vm::Variable<T, loom::sl2cs<"n">>,
+                          loom::vm::Variable<T, loom::sl2cs<"1">>>,
+        loom::vm::ParmJump<
+            loom::vm::Variable<loom::uint_of_size_t<sizeof(T)>,
+                               loom::sl2cs<"cmp">>,
+            loom::type_sequence<loom::vm::Label<loom::sl2cs<"work">>,
+                                loom::vm::Label<loom::sl2cs<"HALT">>>>,
+        loom::vm::Label<loom::sl2cs<"work">>,
+        loom::vm::Compute<std::identity,
+                          loom::vm::Variable<T, loom::sl2cs<"p">>,
+                          loom::vm::Variable<T, loom::sl2cs<"0">>>,
+        loom::vm::Compute<std::identity,
+                          loom::vm::Variable<T, loom::sl2cs<"c">>,
+                          loom::vm::Variable<T, loom::sl2cs<"1">>>,
+        loom::vm::Compute<std::identity,
+                          loom::vm::Variable<T, loom::sl2cs<"i">>,
+                          loom::vm::Variable<T, loom::sl2cs<"2">>>,
+        loom::vm::Label<loom::sl2cs<"loop">>,
+        loom::vm::Compute<std::plus<T>,
+                          loom::vm::Variable<T, loom::sl2cs<"t">>,
+                          loom::vm::Variable<T, loom::sl2cs<"p">>,
+                          loom::vm::Variable<T, loom::sl2cs<"c">>>,
+        loom::vm::Compute<std::identity,
+                          loom::vm::Variable<T, loom::sl2cs<"p">>,
+                          loom::vm::Variable<T, loom::sl2cs<"c">>>,
+        loom::vm::Compute<std::identity,
+                          loom::vm::Variable<T, loom::sl2cs<"c">>,
+                          loom::vm::Variable<T, loom::sl2cs<"t">>>,
+        loom::vm::Compute<std::plus<T>,
+                          loom::vm::Variable<T, loom::sl2cs<"i">>,
+                          loom::vm::Variable<T, loom::sl2cs<"i">>,
+                          loom::vm::Variable<T, loom::sl2cs<"1">>>,
+        loom::vm::Compute<std::less_equal<T>,
+                          loom::vm::Variable<loom::uint_of_size_t<sizeof(T)>,
+                                             loom::sl2cs<"cmp">>,
+                          loom::vm::Variable<T, loom::sl2cs<"i">>,
+                          loom::vm::Variable<T, loom::sl2cs<"n">>>,
+        loom::vm::ParmJump<
+            loom::vm::Variable<loom::uint_of_size_t<sizeof(T)>,
+                               loom::sl2cs<"cmp">>,
+            loom::type_sequence<loom::vm::Label<loom::sl2cs<"HALT">>,
+                                loom::vm::Label<loom::sl2cs<"loop">>>>>,
+    loom::type_sequence<loom::vm::Variable<T, loom::sl2cs<"c">>>>;
+```
+
+This is *roughly* what it could compile to:
+
+```asm
+START:
+# allocs...
+    vmovdqa64   (%rax), %zmm1
+    vpcmpleuq   %zmm0, %zmm1, %k1
+    vpblendmq   %zmm1, %zmm0, %zmm3 {%k1}
+    vpmovm2q    %k1, %zmm4
+# spills...
+WORK:
+# allocs...
+# spills...
+LOOP:
+# allocs...
+    knotw       %k1, %k2
+    vpmovm2q    %k2, %zmm4
+    vporq       %zmm0, %zmm4, %zmm4
+    vpcmpleuq   %zmm1, %zmm5, %k2
+# spills
+```
+
+As you can see there too much data reloading between basic blocks. This is a weak spot of the implementation: basic blocks have to compile into separate non-inlineable functions to allow regrouping. As a result, the overall performance doesn't scale well for more complicated programs.
+
+For instance, root finding benchmark (fp32, 16 simd lanes) is only about 5.5x faster than scalar execution on AMD Zen 4 (dual 256-bit datapath for AVX-512F, so the speedup should be ~8x).
+
+Straightline programs (those without branching) performance scale linearly though, according to running CPU SIMD throughput. At the moment, there are only two straightline benchmarks: fp_mix and threefry.
 
 # FAQ
 
