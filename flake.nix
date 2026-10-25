@@ -237,10 +237,10 @@
           value = bindistForArch cfg;
         })
         [
-          { name = "bindist_sse"; arch = "x86-64-v2"; }
-          { name = "bindist_avx"; arch = "x86-64-v2"; features = [ "avx" ]; }
-          { name = "bindist_avx2"; arch = "x86-64-v3"; }
-          { name = "bindist_avx512"; arch = "x86-64-v4"; }
+          { name = "bindist_x86-64-v2"; arch = "x86-64-v2"; }
+          { name = "bindist_x86-64-v2-avx"; arch = "x86-64-v2"; features = [ "avx" ]; }
+          { name = "bindist_x86-64-v3"; arch = "x86-64-v3"; }
+          { name = "bindist_x86-64-v4"; arch = "x86-64-v4"; }
           { name = "bindist_sandy"; arch = "sandybridge"; }
         ]);
     };

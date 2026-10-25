@@ -1,0 +1,39 @@
+#!/usr/bin/env zsh
+set -euo pipefail
+
+typeset -A builds
+builds=(
+    x86-64-v2      bindist_x86-64-v2
+    x86-64-v2-avx  bindist_x86-64-v2-avx
+    x86-64-v3      bindist_x86-64-v3
+    x86-64-v4      bindist_x86-64-v4
+)
+
+archive="bindist-$(date +%Y%m%d).tar.gz"
+tmpdir=$(mktemp -d)
+trap 'rm -rv "$tmpdir"' EXIT INT TERM
+
+stage="$tmpdir/dist"
+mkdir -pv "$stage"
+
+for arch in ${(k)builds}; do
+    attr="${builds[$arch]}"
+    out="out-$arch"
+
+    print "Building $attr..."
+    nix build ".#$attr" --out-link "$out"
+
+    print "Staging $arch..."
+    mkdir -pv "$stage/$arch"
+    cp -av "$out/bin/." "$stage/$arch/"
+
+    chmod -v -R u+rwX,go+rX,go-w "$stage/$arch"
+done
+
+mkdir "$stage/scripts"
+cp src/scripts/* "$stage/scripts"
+cp ext/scripts/x86-64-level  "$stage/scripts"
+
+tar -C "$stage" -czf "$PWD/$archive" .
+
+print "Created $archive"
