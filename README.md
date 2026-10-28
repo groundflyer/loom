@@ -6,7 +6,7 @@ The purpose of this project is to answer question: can we counter control-flow d
 The project focuses on program execution and scheduling.
 In order to experiment freely I had to simplify and restrict conventional SPMD programming model significantly.
 The resulting programming model adapts unstructured control flow.
-I tried to formalize the model and have drafted an [article](https://groundflyer.github.io/loom/assets/pdf/draft.pdf).
+<!-- I tried to formalize the model and have drafted an [article](https://groundflyer.github.io/loom/assets/pdf/draft.pdf). -->
 TL;DR: having a thread pool of persistent threads (SPMD kernel instances),
 let's sort the threads by program counter and regroup them into more coherent groups.
 This scheduling scheme can be more efficient for highly irregular workloads than conventional reconvergence.
