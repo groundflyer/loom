@@ -524,7 +524,7 @@ struct StandardBenchmarkSuite
                 SIMDCompact<T, true>{sample_size, inputs, sink},
                 SIMDCompact<T, false>{sample_size, inputs, sink},
 
-#ifdef BM_FULL_RANGE
+#ifdef BENCH_ALL
                 SIMDFullRange<T, true, utr1>{sample_size, inputs, sink},
                 SIMDFullRange<T, false, utr1>{sample_size, inputs, sink},
                 SIMDFullRange<T, true, utr2>{sample_size, inputs, sink},
