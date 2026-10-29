@@ -27,7 +27,7 @@
 <area shape="poly" id="edge10_Node000009_Node000010" title=" " alt="" coords="463,217,267,277,265,272,461,212"/>
 <area shape="rect" id="Node000012" href="$dbg_8hpp.html" title="Utilities for kernel debugging." alt="" coords="340,435,438,462"/>
 <area shape="poly" id="edge31_Node000009_Node000012" title=" " alt="" coords="431,203,363,210,285,222,205,241,128,269,88,286,58,303,34,325,13,360,8,373,13,385,34,401,67,414,156,432,255,441,340,444,340,450,255,446,156,437,66,419,32,406,9,388,3,374,8,358,30,322,55,298,86,282,126,264,203,236,284,216,362,204,431,198"/>
-<area shape="rect" id="Node000013" href="$test_8hpp.html" title="Testing utilities." alt="" coords="331,275,466,302"/>
+<area shape="rect" id="Node000013" href="$test_8hpp.html" title=" " alt="" coords="331,275,466,302"/>
 <area shape="poly" id="edge13_Node000009_Node000013" title=" " alt="" coords="492,221,418,276,415,272,489,217"/>
 <area shape="rect" id="Node000015" href="$core_8hpp.html" title="Foundation of the virtual machine." alt="" coords="746,275,848,302"/>
 <area shape="poly" id="edge16_Node000009_Node000015" title=" " alt="" coords="576,213,758,272,756,277,574,218"/>

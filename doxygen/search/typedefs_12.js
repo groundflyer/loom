@@ -1,6 +1,6 @@
 var searchData=
 [
-  ['range_0',['range',['../group__Intlist.html#gaf847fb272c8816f3d89e6056cef2158c',1,'loom::intlist']]],
+  ['range_0',['range',['../group__Intlist.html#gafe4b88d38d9d55bef7c29d254e836ed2',1,'loom::intlist']]],
   ['reg_5fnames_1',['reg_names',['../structloom_1_1vm_1_1kernel__blank.html#af8e687cdffc70e25128f405a57f6dcdb',1,'loom::vm::kernel_blank']]],
   ['reg_5ftypes_2',['reg_types',['../structloom_1_1vm_1_1kernel__blank.html#a22921eeb167271ca70fe8f2793142697',1,'loom::vm::kernel_blank']]],
   ['remap_5fcomp_5fmask_5ft_3',['remap_comp_mask_t',['../namespaceloom_1_1vm_1_1simd.html#a0aa594ac1316da606b4b23928f375a42',1,'loom::vm::simd']]],

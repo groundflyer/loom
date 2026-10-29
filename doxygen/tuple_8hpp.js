@@ -19,10 +19,10 @@ var tuple_8hpp =
     [ "loom::map_tuple", "namespaceloom.html#ae3e7ca326faa9bf507d3d6a48dece2d7", null ],
     [ "loom::repeat_to_array", "namespaceloom.html#a889b9af8cfe4294aa009815af4aef50a", null ],
     [ "loom::repeat_to_tuple", "namespaceloom.html#a98eedd559f6205cf9d9c2f88cd1c1057", null ],
-    [ "loom::tuple2array", "namespaceloom.html#a9acfbfb69abe6082ab639c99c9c92eb2", null ],
+    [ "loom::tuple2array", "namespaceloom.html#ace6475247bde12eda960ccc0b5e654da", null ],
     [ "loom::visit_at", "namespaceloom.html#a19a2660c98ec1334cda7218ca2bd96e7", null ],
-    [ "loom::zip_tuples", "namespaceloom.html#a908239d71b3c95139f4de666e7554ccf", null ],
-    [ "loom::zip_with_for_each", "namespaceloom.html#a4046bd3bb7bd97711e746bb73f6659ae", null ],
+    [ "loom::zip_tuples", "namespaceloom.html#a035f011a2f9fa829fce100643b75193c", null ],
+    [ "loom::zip_with_for_each", "namespaceloom.html#ab7a3de89e379551db65a7536ce8074de", null ],
     [ "loom::is_tuple_v", "namespaceloom.html#a8dd6294c1050891561f68a3e7a1a0bda", null ],
     [ "loom::uniform_init", "namespaceloom.html#a681a1221613b35143ef798d90b8f0462", null ]
 ];

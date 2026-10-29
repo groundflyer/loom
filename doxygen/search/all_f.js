@@ -5,7 +5,7 @@ var searchData=
   ['operator_28_29_2',['operator()',['../structloom_1_1vm_1_1ops_1_1cmov.html#ac30b981f68a0ca2d3e0d8d0c04d9b983',1,'loom::vm::ops::cmov::operator()()'],['../structloom_1_1vm_1_1ops_1_1lshift.html#a11bf62d92fcf46348d59fb658110d8ad',1,'loom::vm::ops::lshift::operator()()'],['../structloom_1_1vm_1_1ops_1_1rshift.html#a0a259a82bc86962f672eb5df6fe630f4',1,'loom::vm::ops::rshift::operator()()']]],
   ['operator_5b_5d_3',['operator[]',['../structloom_1_1AABB.html#a56ab03b299e138eecd7ff9df42e5cff2',1,'loom::AABB']]],
   ['operators_2ehpp_4',['operators.hpp',['../operators_8hpp.html',1,'']]],
-  ['optimize_5fadjascent_5flabels_5',['optimize_adjascent_labels',['../namespaceloom_1_1vm.html#a5030959c5ad9ce0bd5de96b67a42cab7',1,'loom::vm']]],
+  ['optimize_5fadjascent_5flabels_5',['optimize_adjascent_labels',['../namespaceloom_1_1vm.html#a64c6cb05fec7a9b5d15b6e2e8d284f36',1,'loom::vm']]],
   ['optimize_5flabels_6',['optimize_labels',['../classloom_1_1vm_1_1optimize__labels.html',1,'loom::vm']]],
   ['optimize_5flabels_5ft_7',['optimize_labels_t',['../namespaceloom_1_1vm.html#a49e35fe6e49904d43179ac4d7b876364',1,'loom::vm']]],
   ['option_8',['Option',['../structloom_1_1argparse_1_1Option.html',1,'loom::argparse']]],

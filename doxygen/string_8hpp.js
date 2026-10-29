@@ -4,7 +4,7 @@ var string_8hpp =
     [ "loom::fn::s2i_base_prefix_fn&lt; Int &gt;", "structloom_1_1fn_1_1s2i__base__prefix__fn.html", null ],
     [ "loom::fn::s2f_fn&lt; T &gt;", "structloom_1_1fn_1_1s2f__fn.html", null ],
     [ "loom::char_sequence", "group__CTString.html#ga872f3618645ab19393ce66edb62e1f1d", null ],
-    [ "loom::sl2cs", "group__CTString.html#gad45f19dd79de754c307b089b2fe4fd6f", null ],
+    [ "loom::sl2cs", "group__CTString.html#gaf0b5f03cdc1ec41cac34da64d02d48f2", null ],
     [ "loom::fn::c2i", "namespaceloom_1_1fn.html#ac510c30448b8f6a216aec97446b857d0", null ],
     [ "loom::cs2sv", "group__CTString.html#ga69a4cafb4286297f3c24f7307a9dbc31", null ],
     [ "loom::read_number", "namespaceloom.html#ac29ba5a6608077989f43c993cc69d689", null ],

@@ -1,7 +1,7 @@
 var argparse_8hpp =
 [
-    [ "loom::argparse::ErrorState", "group__ArgParse.html#ga41bffa9552e4c8ec8fd3bcbf00e189e5", null ],
-    [ "loom::argparse::wrap_string", "group__ArgParse.html#ga70bcb0dfa5d8508d0c3ec66a2ef268fe", null ],
+    [ "loom::argparse::ErrorState", "group__ArgParse.html#ga4b56a614886088960312b9a0e52c47dd", null ],
+    [ "loom::argparse::wrap_string", "group__ArgParse.html#gaca1ba6aefd0ee48d86667de3c452abcc", null ],
     [ "loom::argparse::bind_list", "group__ArgParse.html#gaca3e4cbf4a10ddb217dfc8b296c04fc8", null ],
     [ "loom::argparse::bind_value", "group__ArgParse.html#ga57f0d384e106c7aeca822d530b9f21f8", null ],
     [ "loom::argparse::flag", "namespaceloom_1_1argparse.html#gadb0d0786f6384c9726a724daab3e15da", null ],

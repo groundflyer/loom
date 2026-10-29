@@ -9,7 +9,7 @@ var searchData=
   ['eq_6',['eq',['../structloom_1_1vm_1_1simd_1_1cmp__intrinsics__wrangler.html#a7578c0208349f535039a22719b17b1e6',1,'loom::vm::simd::cmp_intrinsics_wrangler']]],
   ['error_7',['ERROR',['../classloom_1_1Logger.html#ab8db9560976091b3f316584090777307a06622b746d0b8e2344ed50c671bd5114',1,'loom::Logger']]],
   ['error_8',['error',['../classloom_1_1Logger.html#a538ea4aa64ac4b7e42840ed02da2c53c',1,'loom::Logger']]],
-  ['errorstate_9',['ErrorState',['../group__ArgParse.html#ga41bffa9552e4c8ec8fd3bcbf00e189e5',1,'loom::argparse']]],
+  ['errorstate_9',['ErrorState',['../group__ArgParse.html#ga4b56a614886088960312b9a0e52c47dd',1,'loom::argparse']]],
   ['eval_10',['eval',['../classloom_1_1vm_1_1simd_1_1eval.html',1,'loom::vm::simd']]],
   ['eval_3c_20compute_3c_20op_2c_20dst_2c_20args_2e_2e_2e_20_3e_2c_20labelmap_2c_20n_20_3e_11',['eval&lt; Compute&lt; Op, Dst, Args... &gt;, LabelMap, N &gt;',['../classloom_1_1vm_1_1simd_1_1eval_3_01Compute_3_01Op_00_01Dst_00_01Args_8_8_8_01_4_00_01LabelMap_00_01N_01_4.html',1,'loom::vm::simd']]],
   ['eval_3c_20i_2c_20_5flabelmap_2c_20n_20_3e_12',['eval&lt; I, _LabelMap, N &gt;',['../classloom_1_1vm_1_1simd_1_1eval.html',1,'loom::vm::simd']]],

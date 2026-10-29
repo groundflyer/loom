@@ -15,7 +15,7 @@ var searchData=
   ['matrix_12',['Matrix',['../classloom_1_1Matrix.html#a67804a1d3ef06f230612aebdf338941a',1,'loom::Matrix::Matrix(T &amp;&amp;rhs) noexcept'],['../classloom_1_1Matrix.html#a3ae3b34f979ee4e980538d2d9945946e',1,'loom::Matrix::Matrix(Data &amp;&amp;rhs) noexcept'],['../classloom_1_1Matrix.html#a1c4c0159b101b2cd28de529658b737a8',1,'loom::Matrix::Matrix(Ts &amp;&amp;... rhs) noexcept']]],
   ['matrix_5ftest_13',['matrix_test',['../namespacemat__test.html#a1bb3a18a2a8df0b4732f50e936f3b0cb',1,'mat_test']]],
   ['maybe_5fcollect_14',['maybe_collect',['../group__Typelist.html#ga97ce54ea7e527b69aec187e7d5cb0b6c',1,'loom::typelist']]],
-  ['maybe_5fcollect_5farg_15',['maybe_collect_arg',['../group__Typelist.html#ga718c93a39ff2c3334972cff5a9fc6037',1,'loom::typelist']]],
+  ['maybe_5fcollect_5farg_15',['maybe_collect_arg',['../group__Typelist.html#gac97d46286ef722e567cbbdeb32308178',1,'loom::typelist']]],
   ['microfacet_16',['microfacet',['../namespaceloom.html#a0739db4c0f32b6c261343533efac2cfa',1,'loom']]],
   ['minor_5fmatrix_17',['minor_matrix',['../group__LINAL.html#ga97c5345df4ac6e96d4387a962f8e5bfb',1,'loom::fn']]],
   ['minus_5fone_5fpow_18',['minus_one_pow',['../namespaceloom.html#a54e6dabe58abc5d84a001c0880ce8006',1,'loom']]]

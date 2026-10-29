@@ -29,7 +29,7 @@ var core_8hpp =
     [ "loom::vm::input_types", "namespaceloom_1_1vm.html#a74a4d865f45216b613dac26913d6f0f4", null ],
     [ "loom::vm::ins_vars_t", "namespaceloom_1_1vm.html#af0f9ee4ee2a8bb3a1830b4cb4f6a632b", null ],
     [ "loom::vm::load_list_t", "namespaceloom_1_1vm.html#ac8b0ed60943ea90d334aeb20059328c2", null ],
-    [ "loom::vm::optimize_adjascent_labels", "namespaceloom_1_1vm.html#a5030959c5ad9ce0bd5de96b67a42cab7", null ],
+    [ "loom::vm::optimize_adjascent_labels", "namespaceloom_1_1vm.html#a64c6cb05fec7a9b5d15b6e2e8d284f36", null ],
     [ "loom::vm::optimize_labels_t", "namespaceloom_1_1vm.html#a49e35fe6e49904d43179ac4d7b876364", null ],
     [ "loom::vm::output_type", "namespaceloom_1_1vm.html#a5d7ef394dd0272f4f17b5e4c257f0567", null ],
     [ "loom::vm::output_types", "namespaceloom_1_1vm.html#a38322a526898b2ea7629c486068e3251", null ],

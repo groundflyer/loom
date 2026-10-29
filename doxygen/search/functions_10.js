@@ -6,7 +6,7 @@ var searchData=
   ['scatter_3',['scatter',['../structloom_1_1vm_1_1simd_1_1gather__scatter__intrinsics__wrangler.html#a3ec8238178bc073b33ecc1d37e1949a3',1,'loom::vm::simd::gather_scatter_intrinsics_wrangler']]],
   ['schlick_4',['schlick',['../namespaceloom.html#aee3e3ef5c8c4b3dc42cd07dc83d33368',1,'loom']]],
   ['select_5',['select',['../namespaceloom.html#a11d063632fda5d88c3a8d926b4d2475d',1,'loom']]],
-  ['set_5fthread_5faffinity_6',['set_thread_affinity',['../namespaceloom.html#a166576a3a3ec0dabc486aa38fcee83bb',1,'loom']]],
+  ['set_5fthread_5faffinity_6',['set_thread_affinity',['../namespaceloom.html#af5b63d51bf919f7257cc5bae07b990ed',1,'loom']]],
   ['sgn_7',['sgn',['../namespaceloom.html#a8cd431ad295da69ff4366e81e6e9b298',1,'loom']]],
   ['show_5fhelp_8',['show_help',['../group__ArgParse.html#ga06b81a854ce0e2384b8313fa86df8370',1,'loom::argparse']]],
   ['sort_9',['sort',['../namespaceloom_1_1vm_1_1cuda.html#abeec449ae034fe40e1907d0aed753ebc',1,'loom::vm::cuda']]],
