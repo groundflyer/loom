@@ -17,10 +17,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#include <vm/dbg.hpp>
-
-#include <tests/programs.hpp>
 #include <tests/root_finding.hpp>
+#include <vm/dbg.hpp>
 
 using namespace std;
 using namespace loom;

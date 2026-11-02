@@ -18,7 +18,6 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <tests/programs.hpp>
-#include <tests/root_finding.hpp>
 #include <vm/dbg.hpp>
 
 using namespace std;
