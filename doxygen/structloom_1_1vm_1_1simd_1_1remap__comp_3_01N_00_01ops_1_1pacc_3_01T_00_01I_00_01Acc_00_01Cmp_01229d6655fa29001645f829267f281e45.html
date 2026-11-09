@@ -105,14 +105,12 @@ $(function(){initNavTree('structloom_1_1vm_1_1simd_1_1remap__comp_3_01N_00_01ops
 <p>Remap predicate accumulation <a class="el" href="classloom_1_1vm_1_1ops_1_1pacc.html" title="Predicate accumulation.">ops::pacc</a>.  
  <a href="#details">More...</a></p>
 
-<p><code>#include &quot;simd.hpp&quot;</code></p>
+<p><code>#include &quot;<a class="el" href="simd_8hpp_source.html">simd.hpp</a>&quot;</code></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pub-types" class="groupheader"><a id="pub-types" name="pub-types"></a>
 Public Types</h2></td></tr>
-<tr class="memitem:aa57b9f2505f1068b527dc8ee834fdaf2" id="r_aa57b9f2505f1068b527dc8ee834fdaf2"><td class="memItemLeft"><a id="aa57b9f2505f1068b527dc8ee834fdaf2" name="aa57b9f2505f1068b527dc8ee834fdaf2"></a>
-using&#160;</td><td class="memItemRight"><b>vector_t</b> = <a class="el" href="namespaceloom_1_1vm_1_1simd.html#a736757f9b89dc96a7b1448e5914327aa">packed_vector</a>&lt;T, N&gt;</td></tr>
-<tr class="memitem:aadf117f52657d0ea29f834fdb2e002e4" id="r_aadf117f52657d0ea29f834fdb2e002e4"><td class="memItemLeft"><a id="aadf117f52657d0ea29f834fdb2e002e4" name="aadf117f52657d0ea29f834fdb2e002e4"></a>
-using&#160;</td><td class="memItemRight"><b>mask_t</b> = <a class="el" href="namespaceloom_1_1vm_1_1simd.html#a736757f9b89dc96a7b1448e5914327aa">packed_vector</a>&lt;I, N&gt;</td></tr>
+<tr class="memitem:aa57b9f2505f1068b527dc8ee834fdaf2" id="r_aa57b9f2505f1068b527dc8ee834fdaf2"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="#aa57b9f2505f1068b527dc8ee834fdaf2">vector_t</a> = <a class="el" href="namespaceloom_1_1vm_1_1simd.html#a736757f9b89dc96a7b1448e5914327aa">packed_vector</a>&lt;T, N&gt;</td></tr>
+<tr class="memitem:aadf117f52657d0ea29f834fdb2e002e4" id="r_aadf117f52657d0ea29f834fdb2e002e4"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="#aadf117f52657d0ea29f834fdb2e002e4">mask_t</a> = <a class="el" href="namespaceloom_1_1vm_1_1simd.html#a736757f9b89dc96a7b1448e5914327aa">packed_vector</a>&lt;I, N&gt;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pub-static-attribs" class="groupheader"><a id="pub-static-attribs" name="pub-static-attribs"></a>
 Static Public Attributes</h2></td></tr>
@@ -122,7 +120,46 @@ Static Public Attributes</h2></td></tr>
 <a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
 <div class="textblock"><div class="compoundTemplParams">template&lt;<a class="el" href="namespaceloom_1_1vm_1_1simd.html#a13f74c165cada10f5eb92d2beb50b144">fsize_t</a> N, typename T, std::integral I, template&lt; typename &gt; typename Acc, template&lt; typename &gt; typename Cmp&gt;<br />
 struct loom::vm::simd::remap_comp&lt; N, ops::pacc&lt; T, I, Acc, Cmp &gt;, I, I, T, T &gt;</div><p>Remap predicate accumulation <a class="el" href="classloom_1_1vm_1_1ops_1_1pacc.html" title="Predicate accumulation.">ops::pacc</a>. </p>
-</div><a name="doc-variable-members" id="doc-variable-members"></a><h2 id="header-doc-variable-members" class="groupheader">Member Data Documentation</h2>
+
+<p class="definition">Definition at line <a class="el" href="simd_8hpp_source.html#l01179">1179</a> of file <a class="el" href="simd_8hpp_source.html">simd.hpp</a>.</p>
+</div><a name="doc-typedef-members" id="doc-typedef-members"></a><h2 id="header-doc-typedef-members" class="groupheader">Member Typedef Documentation</h2>
+<a id="aadf117f52657d0ea29f834fdb2e002e4" name="aadf117f52657d0ea29f834fdb2e002e4"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aadf117f52657d0ea29f834fdb2e002e4">&#9670;&#160;</a></span>mask_t</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;<a class="el" href="namespaceloom_1_1vm_1_1simd.html#a13f74c165cada10f5eb92d2beb50b144">fsize_t</a> N, typename T, std::integral I, template&lt; typename &gt; typename Acc, template&lt; typename &gt; typename Cmp&gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">using loom::vm::simd::remap_comp&lt; N, <a class="el" href="classloom_1_1vm_1_1ops_1_1pacc.html">ops::pacc</a>&lt; T, I, Acc, Cmp &gt;, I, I, T, T &gt;::mask_t = <a class="el" href="namespaceloom_1_1vm_1_1simd.html#a736757f9b89dc96a7b1448e5914327aa">packed_vector</a>&lt;I, N&gt;</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="simd_8hpp_source.html#l01185">1185</a> of file <a class="el" href="simd_8hpp_source.html">simd.hpp</a>.</p>
+
+</div>
+</div>
+<a id="aa57b9f2505f1068b527dc8ee834fdaf2" name="aa57b9f2505f1068b527dc8ee834fdaf2"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa57b9f2505f1068b527dc8ee834fdaf2">&#9670;&#160;</a></span>vector_t</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;<a class="el" href="namespaceloom_1_1vm_1_1simd.html#a13f74c165cada10f5eb92d2beb50b144">fsize_t</a> N, typename T, std::integral I, template&lt; typename &gt; typename Acc, template&lt; typename &gt; typename Cmp&gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">using loom::vm::simd::remap_comp&lt; N, <a class="el" href="classloom_1_1vm_1_1ops_1_1pacc.html">ops::pacc</a>&lt; T, I, Acc, Cmp &gt;, I, I, T, T &gt;::vector_t = <a class="el" href="namespaceloom_1_1vm_1_1simd.html#a736757f9b89dc96a7b1448e5914327aa">packed_vector</a>&lt;T, N&gt;</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="simd_8hpp_source.html#l01184">1184</a> of file <a class="el" href="simd_8hpp_source.html">simd.hpp</a>.</p>
+
+</div>
+</div>
+<a name="doc-variable-members" id="doc-variable-members"></a><h2 id="header-doc-variable-members" class="groupheader">Member Data Documentation</h2>
 <a id="ac7e7497d47219932c4732e5b390100c4" name="ac7e7497d47219932c4732e5b390100c4"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#ac7e7497d47219932c4732e5b390100c4">&#9670;&#160;</a></span>acc</h2>
 
@@ -144,6 +181,8 @@ template&lt;<a class="el" href="namespaceloom_1_1vm_1_1simd.html#a13f74c165cada1
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="simd_8hpp_source.html#l01181">1181</a> of file <a class="el" href="simd_8hpp_source.html">simd.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno"> 1181</span>{};</div>
 </div><!-- fragment -->
 </div>
@@ -169,12 +208,14 @@ template&lt;<a class="el" href="namespaceloom_1_1vm_1_1simd.html#a13f74c165cada1
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="simd_8hpp_source.html#l01182">1182</a> of file <a class="el" href="simd_8hpp_source.html">simd.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno"> 1182</span>{};</div>
 </div><!-- fragment -->
 </div>
 </div>
 <hr/>The documentation for this struct was generated from the following file:<ul>
-<li>vm/<a class="el" href="simd_8hpp.html">simd.hpp</a></li>
+<li>vm/<a class="el" href="simd_8hpp_source.html">simd.hpp</a></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->

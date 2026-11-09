@@ -105,7 +105,7 @@ $(function(){initNavTree('structloom_1_1Perspective.html','','structloom_1_1Pers
 <p><a class="el" href="structloom_1_1Perspective.html" title="Perspective camera.">Perspective</a> camera.  
  <a href="#details">More...</a></p>
 
-<p><code>#include &quot;pt.hpp&quot;</code></p>
+<p><code>#include &quot;<a class="el" href="ref_2pt_8hpp_source.html">pt.hpp</a>&quot;</code></p>
 <div id="dynsection-0" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>Inheritance diagram for loom::Perspective&lt; real &gt;:</div>
 <div id="dynsection-0-summary" class="dynsummary" style="display:block;">
 </div>
@@ -127,14 +127,14 @@ Public Member Functions</h2></td></tr>
 <tr class="heading"><td colspan="2"><h2 id="header-pub-attribs" class="groupheader"><a id="pub-attribs" name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
 <tr class="memitem:a86d166e2b13f8bd09b0fd6fab1b7c054" id="r_a86d166e2b13f8bd09b0fd6fab1b7c054"><td class="memItemLeft">real&#160;</td><td class="memItemRight"><a class="el" href="#a86d166e2b13f8bd09b0fd6fab1b7c054">tan_fov_half</a> {1}</td></tr>
-<tr class="memitem:a9ba025a969a2fe6d918cf801c974ba7e" id="r_a9ba025a969a2fe6d918cf801c974ba7e"><td class="memItemLeft"><a id="a9ba025a969a2fe6d918cf801c974ba7e" name="a9ba025a969a2fe6d918cf801c974ba7e"></a>
-Vec3&lt; real &gt;&#160;</td><td class="memItemRight"><b>pos</b></td></tr>
-<tr class="memitem:a0f714e88246049e1fda424fbdaf6e885" id="r_a0f714e88246049e1fda424fbdaf6e885"><td class="memItemLeft"><a id="a0f714e88246049e1fda424fbdaf6e885" name="a0f714e88246049e1fda424fbdaf6e885"></a>
-Vec3&lt; real &gt;&#160;</td><td class="memItemRight"><b>dir</b></td></tr>
+<tr class="memitem:a9ba025a969a2fe6d918cf801c974ba7e" id="r_a9ba025a969a2fe6d918cf801c974ba7e"><td class="memItemLeft">Vec3&lt; real &gt;&#160;</td><td class="memItemRight"><a class="el" href="#a9ba025a969a2fe6d918cf801c974ba7e">pos</a></td></tr>
+<tr class="memitem:a0f714e88246049e1fda424fbdaf6e885" id="r_a0f714e88246049e1fda424fbdaf6e885"><td class="memItemLeft">Vec3&lt; real &gt;&#160;</td><td class="memItemRight"><a class="el" href="#a0f714e88246049e1fda424fbdaf6e885">dir</a></td></tr>
 </table>
 <a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
 <div class="textblock"><div class="compoundTemplParams">template&lt;std::floating_point real&gt;<br />
 struct loom::Perspective&lt; real &gt;</div><p><a class="el" href="structloom_1_1Perspective.html" title="Perspective camera.">Perspective</a> camera. </p>
+
+<p class="definition">Definition at line <a class="el" href="ref_2pt_8hpp_source.html#l00050">50</a> of file <a class="el" href="ref_2pt_8hpp_source.html">pt.hpp</a>.</p>
 </div><a name="doc-func-members" id="doc-func-members"></a><h2 id="header-doc-func-members" class="groupheader">Member Function Documentation</h2>
 <a id="a955efa50e0244f91f7235b436a78a02e" name="a955efa50e0244f91f7235b436a78a02e"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a955efa50e0244f91f7235b436a78a02e">&#9670;&#160;</a></span>operator()()</h2>
@@ -162,14 +162,52 @@ template&lt;template&lt; typename, std::size_t &gt; typename Container&gt; </div
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="ref_2pt_8hpp_source.html#l00058">58</a> of file <a class="el" href="ref_2pt_8hpp_source.html">pt.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">   59</span>    {</div>
 <div class="line"><span class="lineno">   60</span>        <span class="keywordflow">return</span> {pos, dir - <a class="code hl_struct" href="structloom_1_1Perspective.html">Vec3&lt;real&gt;</a>(<a class="code hl_struct" href="structloom_1_1Perspective.html">ndc</a> * tan_fov_half)};</div>
 <div class="line"><span class="lineno">   61</span>    }</div>
-<div class="ttc" id="astructloom_1_1Perspective_html"><div class="ttname"><a href="structloom_1_1Perspective.html">loom::Perspective</a></div><div class="ttdoc">Perspective camera.</div><div class="ttdef"><b>Definition</b> pt.hpp:51</div></div>
+<div class="ttc" id="astructloom_1_1Perspective_html"><div class="ttname"><a href="structloom_1_1Perspective.html">loom::Perspective</a></div><div class="ttdoc">Perspective camera.</div><div class="ttdef"><b>Definition</b> <a href="ref_2pt_8hpp_source.html#l00050">pt.hpp:51</a></div></div>
 </div><!-- fragment -->
 </div>
 </div>
 <a name="doc-variable-members" id="doc-variable-members"></a><h2 id="header-doc-variable-members" class="groupheader">Member Data Documentation</h2>
+<a id="a0f714e88246049e1fda424fbdaf6e885" name="a0f714e88246049e1fda424fbdaf6e885"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a0f714e88246049e1fda424fbdaf6e885">&#9670;&#160;</a></span>dir</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;std::floating_point real&gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">Vec3&lt;real&gt; <a class="el" href="structloom_1_1Perspective.html">loom::Perspective</a>&lt; real &gt;::dir</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="ref_2pt_8hpp_source.html#l00054">54</a> of file <a class="el" href="ref_2pt_8hpp_source.html">pt.hpp</a>.</p>
+
+</div>
+</div>
+<a id="a9ba025a969a2fe6d918cf801c974ba7e" name="a9ba025a969a2fe6d918cf801c974ba7e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a9ba025a969a2fe6d918cf801c974ba7e">&#9670;&#160;</a></span>pos</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;std::floating_point real&gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">Vec3&lt;real&gt; <a class="el" href="structloom_1_1Perspective.html">loom::Perspective</a>&lt; real &gt;::pos</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="ref_2pt_8hpp_source.html#l00053">53</a> of file <a class="el" href="ref_2pt_8hpp_source.html">pt.hpp</a>.</p>
+
+</div>
+</div>
 <a id="a86d166e2b13f8bd09b0fd6fab1b7c054" name="a86d166e2b13f8bd09b0fd6fab1b7c054"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a86d166e2b13f8bd09b0fd6fab1b7c054">&#9670;&#160;</a></span>tan_fov_half</h2>
 
@@ -183,12 +221,14 @@ template&lt;std::floating_point real&gt; </div>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="ref_2pt_8hpp_source.html#l00052">52</a> of file <a class="el" href="ref_2pt_8hpp_source.html">pt.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">   52</span>{1};</div>
 </div><!-- fragment -->
 </div>
 </div>
 <hr/>The documentation for this struct was generated from the following file:<ul>
-<li>smallpt/ref/<a class="el" href="ref_2pt_8hpp.html">pt.hpp</a></li>
+<li>smallpt/ref/<a class="el" href="ref_2pt_8hpp_source.html">pt.hpp</a></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->

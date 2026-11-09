@@ -105,7 +105,7 @@ $(function(){initNavTree('structloom_1_1vm_1_1mp_1_1Context.html','','structloom
 <p><a class="el" href="conceptloom_1_1vm_1_1Kernel.html" title="Kernel ready to compile.">Kernel</a> execution context. Manages concurrent exchange and kernel execution.  
  <a href="#details">More...</a></p>
 
-<p><code>#include &quot;mp.hpp&quot;</code></p>
+<p><code>#include &quot;<a class="el" href="mp_8hpp_source.html">mp.hpp</a>&quot;</code></p>
 <div id="dynsection-0" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>Inheritance diagram for loom::vm::mp::Context&lt; K, StreamCompiler, Lock &gt;:</div>
 <div id="dynsection-0-summary" class="dynsummary" style="display:block;">
 </div>
@@ -130,12 +130,9 @@ Public Member Functions</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pub-attribs" class="groupheader"><a id="pub-attribs" name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
-<tr class="memitem:a6a4d9804ba71e08fd89728731c3503eb" id="r_a6a4d9804ba71e08fd89728731c3503eb"><td class="memItemLeft"><a id="a6a4d9804ba71e08fd89728731c3503eb" name="a6a4d9804ba71e08fd89728731c3503eb"></a>
-StreamCompiler&lt; K &gt;&#160;</td><td class="memItemRight"><b>stream</b></td></tr>
-<tr class="memitem:a5dd887bd8e82bcd8ef0056762b2d9352" id="r_a5dd887bd8e82bcd8ef0056762b2d9352"><td class="memItemLeft"><a id="a5dd887bd8e82bcd8ef0056762b2d9352" name="a5dd887bd8e82bcd8ef0056762b2d9352"></a>
-Lock&#160;</td><td class="memItemRight"><b>lock</b></td></tr>
-<tr class="memitem:a0845cee0a420c15617545a7bfdfdd94a" id="r_a0845cee0a420c15617545a7bfdfdd94a"><td class="memItemLeft"><a id="a0845cee0a420c15617545a7bfdfdd94a" name="a0845cee0a420c15617545a7bfdfdd94a"></a>
-bool&#160;</td><td class="memItemRight"><b>need_sort</b> = false</td></tr>
+<tr class="memitem:a6a4d9804ba71e08fd89728731c3503eb" id="r_a6a4d9804ba71e08fd89728731c3503eb"><td class="memItemLeft">StreamCompiler&lt; K &gt;&#160;</td><td class="memItemRight"><a class="el" href="#a6a4d9804ba71e08fd89728731c3503eb">stream</a></td></tr>
+<tr class="memitem:a5dd887bd8e82bcd8ef0056762b2d9352" id="r_a5dd887bd8e82bcd8ef0056762b2d9352"><td class="memItemLeft">Lock&#160;</td><td class="memItemRight"><a class="el" href="#a5dd887bd8e82bcd8ef0056762b2d9352">lock</a></td></tr>
+<tr class="memitem:a0845cee0a420c15617545a7bfdfdd94a" id="r_a0845cee0a420c15617545a7bfdfdd94a"><td class="memItemLeft">bool&#160;</td><td class="memItemRight"><a class="el" href="#a0845cee0a420c15617545a7bfdfdd94a">need_sort</a> = false</td></tr>
 </table>
 <a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
 <div class="textblock"><div class="compoundTemplParams">template&lt;Kernel K, template&lt; typename &gt; typename StreamCompiler, typename Lock = std::mutex&gt;<br />
@@ -148,6 +145,8 @@ struct loom::vm::mp::Context&lt; K, StreamCompiler, Lock &gt;</div><p><a class="
   </table>
   </dd>
 </dl>
+
+<p class="definition">Definition at line <a class="el" href="mp_8hpp_source.html#l00070">70</a> of file <a class="el" href="mp_8hpp_source.html">mp.hpp</a>.</p>
 </div><a name="doc-constructors" id="doc-constructors"></a><h2 id="header-doc-constructors" class="groupheader">Constructor &amp; Destructor Documentation</h2>
 <a id="ad5aebdd384e75df6c1963f5471b0fe4e" name="ad5aebdd384e75df6c1963f5471b0fe4e"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#ad5aebdd384e75df6c1963f5471b0fe4e">&#9670;&#160;</a></span>Context()</h2>
@@ -173,8 +172,10 @@ template&lt;Kernel K, template&lt; typename &gt; typename StreamCompiler, typena
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="mp_8hpp_source.html#l00080">80</a> of file <a class="el" href="mp_8hpp_source.html">mp.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">   80</span>: stream(<a class="code hl_struct" href="structloom_1_1vm_1_1mp_1_1Context.html">n</a>) {}</div>
-<div class="ttc" id="astructloom_1_1vm_1_1mp_1_1Context_html"><div class="ttname"><a href="structloom_1_1vm_1_1mp_1_1Context.html">loom::vm::mp::Context</a></div><div class="ttdoc">Kernel execution context. Manages concurrent exchange and kernel execution.</div><div class="ttdef"><b>Definition</b> mp.hpp:71</div></div>
+<div class="ttc" id="astructloom_1_1vm_1_1mp_1_1Context_html"><div class="ttname"><a href="structloom_1_1vm_1_1mp_1_1Context.html">loom::vm::mp::Context</a></div><div class="ttdoc">Kernel execution context. Manages concurrent exchange and kernel execution.</div><div class="ttdef"><b>Definition</b> <a href="mp_8hpp_source.html#l00070">mp.hpp:71</a></div></div>
 </div><!-- fragment -->
 </div>
 </div>
@@ -216,6 +217,8 @@ template&lt;typename InputIter, typename Sentinel, typename OutIter&gt; </div>
 </div><div class="memdoc">
 
 <p>Attempt to exchange. Used in supervisor/main thread. </p>
+
+<p class="definition">Definition at line <a class="el" href="mp_8hpp_source.html#l00112">112</a> of file <a class="el" href="mp_8hpp_source.html">mp.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">  113</span>    {</div>
 <div class="line"><span class="lineno">  114</span>        <span class="keywordflow">if</span>(<a class="code hl_struct" href="structloom_1_1vm_1_1mp_1_1Context.html">ib</a> != <a class="code hl_struct" href="structloom_1_1vm_1_1mp_1_1Context.html">s</a> &amp;&amp; <a class="code hl_struct" href="structloom_1_1vm_1_1mp_1_1Context.html">exchange_available</a>.test(<a class="code hl_struct" href="structloom_1_1vm_1_1mp_1_1Context.html">std::memory_order_relaxed</a>) &amp;&amp;</div>
 <div class="line"><span class="lineno">  115</span>           lock.try_lock())</div>
@@ -264,6 +267,8 @@ template&lt;Kernel K, template&lt; typename &gt; typename StreamCompiler, typena
 </div><div class="memdoc">
 
 <p>Attempt to sort. Used in worker thread. </p>
+
+<p class="definition">Definition at line <a class="el" href="mp_8hpp_source.html#l00084">84</a> of file <a class="el" href="mp_8hpp_source.html">mp.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">   85</span>    {</div>
 <div class="line"><span class="lineno">   86</span>        <span class="keywordflow">if</span>(need_sort &amp;&amp; lock.try_lock())</div>
 <div class="line"><span class="lineno">   87</span>        {</div>
@@ -309,6 +314,8 @@ template&lt;Kernel K, template&lt; typename &gt; typename StreamCompiler, typena
 </div><div class="memdoc">
 
 <p>Attempt to compute and then attempts to sort. Used in worker thread. Can be executed during exchange concurrently. </p>
+
+<p class="definition">Definition at line <a class="el" href="mp_8hpp_source.html#l00099">99</a> of file <a class="el" href="mp_8hpp_source.html">mp.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">  100</span>    {</div>
 <div class="line"><span class="lineno">  101</span>        <span class="keywordflow">if</span>(!(need_sort || stream.done()))</div>
 <div class="line"><span class="lineno">  102</span>        {</div>
@@ -317,12 +324,67 @@ template&lt;Kernel K, template&lt; typename &gt; typename StreamCompiler, typena
 <div class="line"><span class="lineno">  105</span>        }</div>
 <div class="line"><span class="lineno">  106</span>        <a class="code hl_function" href="#ab2ce8dfb1d30db9a0e9ee45ec60ca9b1">try_sort</a>();</div>
 <div class="line"><span class="lineno">  107</span>    }</div>
-<div class="ttc" id="astructloom_1_1vm_1_1mp_1_1Context_html_ab2ce8dfb1d30db9a0e9ee45ec60ca9b1"><div class="ttname"><a href="#ab2ce8dfb1d30db9a0e9ee45ec60ca9b1">loom::vm::mp::Context::try_sort</a></div><div class="ttdeci">void try_sort() noexcept</div><div class="ttdoc">Attempt to sort. Used in worker thread.</div><div class="ttdef"><b>Definition</b> mp.hpp:84</div></div>
+<div class="ttc" id="astructloom_1_1vm_1_1mp_1_1Context_html_ab2ce8dfb1d30db9a0e9ee45ec60ca9b1"><div class="ttname"><a href="#ab2ce8dfb1d30db9a0e9ee45ec60ca9b1">loom::vm::mp::Context::try_sort</a></div><div class="ttdeci">void try_sort() noexcept</div><div class="ttdoc">Attempt to sort. Used in worker thread.</div><div class="ttdef"><b>Definition</b> <a href="mp_8hpp_source.html#l00084">mp.hpp:84</a></div></div>
 </div><!-- fragment -->
 </div>
 </div>
+<a name="doc-variable-members" id="doc-variable-members"></a><h2 id="header-doc-variable-members" class="groupheader">Member Data Documentation</h2>
+<a id="a5dd887bd8e82bcd8ef0056762b2d9352" name="a5dd887bd8e82bcd8ef0056762b2d9352"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a5dd887bd8e82bcd8ef0056762b2d9352">&#9670;&#160;</a></span>lock</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;Kernel K, template&lt; typename &gt; typename StreamCompiler, typename Lock = std::mutex&gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">Lock <a class="el" href="structloom_1_1vm_1_1mp_1_1Context.html">loom::vm::mp::Context</a>&lt; K, StreamCompiler, Lock &gt;::lock</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="mp_8hpp_source.html#l00073">73</a> of file <a class="el" href="mp_8hpp_source.html">mp.hpp</a>.</p>
+
+</div>
+</div>
+<a id="a0845cee0a420c15617545a7bfdfdd94a" name="a0845cee0a420c15617545a7bfdfdd94a"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a0845cee0a420c15617545a7bfdfdd94a">&#9670;&#160;</a></span>need_sort</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;Kernel K, template&lt; typename &gt; typename StreamCompiler, typename Lock = std::mutex&gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">bool <a class="el" href="structloom_1_1vm_1_1mp_1_1Context.html">loom::vm::mp::Context</a>&lt; K, StreamCompiler, Lock &gt;::need_sort = false</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="mp_8hpp_source.html#l00074">74</a> of file <a class="el" href="mp_8hpp_source.html">mp.hpp</a>.</p>
+
+</div>
+</div>
+<a id="a6a4d9804ba71e08fd89728731c3503eb" name="a6a4d9804ba71e08fd89728731c3503eb"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a6a4d9804ba71e08fd89728731c3503eb">&#9670;&#160;</a></span>stream</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;Kernel K, template&lt; typename &gt; typename StreamCompiler, typename Lock = std::mutex&gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">StreamCompiler&lt;K&gt; <a class="el" href="structloom_1_1vm_1_1mp_1_1Context.html">loom::vm::mp::Context</a>&lt; K, StreamCompiler, Lock &gt;::stream</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="mp_8hpp_source.html#l00072">72</a> of file <a class="el" href="mp_8hpp_source.html">mp.hpp</a>.</p>
+
+</div>
+</div>
 <hr/>The documentation for this struct was generated from the following file:<ul>
-<li>vm/<a class="el" href="mp_8hpp.html">mp.hpp</a></li>
+<li>vm/<a class="el" href="mp_8hpp_source.html">mp.hpp</a></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->

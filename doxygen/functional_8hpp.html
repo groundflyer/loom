@@ -119,7 +119,9 @@ $(function(){initNavTree('functional_8hpp.html','',''); });
 <div id="dynsection-1-content" class="dyncontent" style="display:none;">
 <div class="center"><div class="zoom"><iframe scrolling="no" loading="lazy" frameborder="0" src="functional_8hpp__dep__incl.svg" width="100%" height="600"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
 </div>
-</div><table class="memberdecls">
+</div>
+<p><a href="functional_8hpp_source.html">Go to the source code of this file.</a></p>
+<table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-namespaces" class="groupheader"><a id="namespaces" name="namespaces"></a>
 Namespaces</h2></td></tr>
 <tr class="memitem:loom" id="r_loom"><td class="memItemLeft">namespace &#160;</td><td class="memItemRight"><a class="el" href="namespaceloom.html">loom</a></td></tr>
@@ -159,29 +161,25 @@ Variables</h2></td></tr>
 <tr class="memitem:a8092a489a148c58b45a5ef609122f7ba" id="r_a8092a489a148c58b45a5ef609122f7ba"><td class="memTemplParams" colspan="2">template&lt;typename T, bool list_init = false&gt; </td></tr>
 <tr class="memitem:a8092a489a148c58b45a5ef609122f7ba template"><td class="memItemLeft">constexpr fn::maker_fn&lt; T, list_init &gt;&#160;</td><td class="memItemRight"><a class="el" href="namespaceloom.html#a8092a489a148c58b45a5ef609122f7ba">loom::maker</a></td></tr>
 <tr class="memdesc:a8092a489a148c58b45a5ef609122f7ba"><td class="mdescLeft">&#160;</td><td class="mdescRight">Builds an object of type <code class="param">T</code> from provided arguments.  <br /></td></tr>
-<tr class="memitem:acfc7cdecd9100fabac7c7dec07077a5a" id="r_acfc7cdecd9100fabac7c7dec07077a5a"><td class="memTemplParams" colspan="2"><a id="acfc7cdecd9100fabac7c7dec07077a5a" name="acfc7cdecd9100fabac7c7dec07077a5a"></a>
-template&lt;typename T&gt; </td></tr>
-<tr class="memitem:acfc7cdecd9100fabac7c7dec07077a5a template"><td class="memItemLeft">constexpr fn::tuple_maker_fn&lt; T &gt;&#160;</td><td class="memItemRight"><b>loom::tuple_maker</b></td></tr>
-<tr class="memdesc:acfc7cdecd9100fabac7c7dec07077a5a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Functional object wrapper around std::make_from_tuple. <br /></td></tr>
-<tr class="memitem:a26f6d93be3a78d7e27feca481a7051ec" id="r_a26f6d93be3a78d7e27feca481a7051ec"><td class="memItemLeft"><a id="a26f6d93be3a78d7e27feca481a7051ec" name="a26f6d93be3a78d7e27feca481a7051ec"></a>
-constexpr fn::sink_fn&#160;</td><td class="memItemRight"><b>loom::sink</b></td></tr>
-<tr class="memdesc:a26f6d93be3a78d7e27feca481a7051ec"><td class="mdescLeft">&#160;</td><td class="mdescRight">Doesn't do anything. <br /></td></tr>
-<tr class="memitem:a5d80d16504269ce7b296cda56c29aab2" id="r_a5d80d16504269ce7b296cda56c29aab2"><td class="memItemLeft"><a id="a5d80d16504269ce7b296cda56c29aab2" name="a5d80d16504269ce7b296cda56c29aab2"></a>
-constexpr fn::elem_fn&lt; 0 &gt;&#160;</td><td class="memItemRight"><b>loom::first</b></td></tr>
-<tr class="memdesc:a5d80d16504269ce7b296cda56c29aab2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Niebloid that always returns the first element of a tuple-like object. <br /></td></tr>
-<tr class="memitem:a5a1d354ed84acf56169585fc53c1548d" id="r_a5a1d354ed84acf56169585fc53c1548d"><td class="memItemLeft"><a id="a5a1d354ed84acf56169585fc53c1548d" name="a5a1d354ed84acf56169585fc53c1548d"></a>
-constexpr fn::elem_fn&lt; 1 &gt;&#160;</td><td class="memItemRight"><b>loom::second</b></td></tr>
-<tr class="memdesc:a5a1d354ed84acf56169585fc53c1548d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Niebloid that always returns the second element of a tuple-like object. <br /></td></tr>
-<tr class="memitem:a1399c21f9808d9d4118cc779af36527c" id="r_a1399c21f9808d9d4118cc779af36527c"><td class="memTemplParams" colspan="2"><a id="a1399c21f9808d9d4118cc779af36527c" name="a1399c21f9808d9d4118cc779af36527c"></a>
-template&lt;std::size_t I&gt; </td></tr>
-<tr class="memitem:a1399c21f9808d9d4118cc779af36527c template"><td class="memItemLeft">constexpr fn::elem_fn&lt; I &gt;&#160;</td><td class="memItemRight"><b>loom::elem</b></td></tr>
-<tr class="memdesc:a1399c21f9808d9d4118cc779af36527c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Niebloid that always return the <code class="param">Ith</code> element of a tuple-like object. <br /></td></tr>
-<tr class="memitem:a2863f3ed17f20ba53afadc315c506f84" id="r_a2863f3ed17f20ba53afadc315c506f84"><td class="memItemLeft"><a id="a2863f3ed17f20ba53afadc315c506f84" name="a2863f3ed17f20ba53afadc315c506f84"></a>
-constexpr fn::copy_identity&#160;</td><td class="memItemRight"><b>loom::copy_id</b></td></tr>
-<tr class="memdesc:a2863f3ed17f20ba53afadc315c506f84"><td class="mdescLeft">&#160;</td><td class="mdescRight">Same as std::identity, but copies input parameter. <br /></td></tr>
+<tr class="memitem:acfc7cdecd9100fabac7c7dec07077a5a" id="r_acfc7cdecd9100fabac7c7dec07077a5a"><td class="memTemplParams" colspan="2">template&lt;typename T&gt; </td></tr>
+<tr class="memitem:acfc7cdecd9100fabac7c7dec07077a5a template"><td class="memItemLeft">constexpr fn::tuple_maker_fn&lt; T &gt;&#160;</td><td class="memItemRight"><a class="el" href="namespaceloom.html#acfc7cdecd9100fabac7c7dec07077a5a">loom::tuple_maker</a></td></tr>
+<tr class="memdesc:acfc7cdecd9100fabac7c7dec07077a5a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Functional object wrapper around std::make_from_tuple.  <br /></td></tr>
+<tr class="memitem:a26f6d93be3a78d7e27feca481a7051ec" id="r_a26f6d93be3a78d7e27feca481a7051ec"><td class="memItemLeft">constexpr fn::sink_fn&#160;</td><td class="memItemRight"><a class="el" href="namespaceloom.html#a26f6d93be3a78d7e27feca481a7051ec">loom::sink</a></td></tr>
+<tr class="memdesc:a26f6d93be3a78d7e27feca481a7051ec"><td class="mdescLeft">&#160;</td><td class="mdescRight">Doesn't do anything.  <br /></td></tr>
+<tr class="memitem:a5d80d16504269ce7b296cda56c29aab2" id="r_a5d80d16504269ce7b296cda56c29aab2"><td class="memItemLeft">constexpr fn::elem_fn&lt; 0 &gt;&#160;</td><td class="memItemRight"><a class="el" href="namespaceloom.html#a5d80d16504269ce7b296cda56c29aab2">loom::first</a></td></tr>
+<tr class="memdesc:a5d80d16504269ce7b296cda56c29aab2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Niebloid that always returns the first element of a tuple-like object.  <br /></td></tr>
+<tr class="memitem:a5a1d354ed84acf56169585fc53c1548d" id="r_a5a1d354ed84acf56169585fc53c1548d"><td class="memItemLeft">constexpr fn::elem_fn&lt; 1 &gt;&#160;</td><td class="memItemRight"><a class="el" href="namespaceloom.html#a5a1d354ed84acf56169585fc53c1548d">loom::second</a></td></tr>
+<tr class="memdesc:a5a1d354ed84acf56169585fc53c1548d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Niebloid that always returns the second element of a tuple-like object.  <br /></td></tr>
+<tr class="memitem:a1399c21f9808d9d4118cc779af36527c" id="r_a1399c21f9808d9d4118cc779af36527c"><td class="memTemplParams" colspan="2">template&lt;std::size_t I&gt; </td></tr>
+<tr class="memitem:a1399c21f9808d9d4118cc779af36527c template"><td class="memItemLeft">constexpr fn::elem_fn&lt; I &gt;&#160;</td><td class="memItemRight"><a class="el" href="namespaceloom.html#a1399c21f9808d9d4118cc779af36527c">loom::elem</a></td></tr>
+<tr class="memdesc:a1399c21f9808d9d4118cc779af36527c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Niebloid that always return the <code class="param">Ith</code> element of a tuple-like object.  <br /></td></tr>
+<tr class="memitem:a2863f3ed17f20ba53afadc315c506f84" id="r_a2863f3ed17f20ba53afadc315c506f84"><td class="memItemLeft">constexpr fn::copy_identity&#160;</td><td class="memItemRight"><a class="el" href="namespaceloom.html#a2863f3ed17f20ba53afadc315c506f84">loom::copy_id</a></td></tr>
+<tr class="memdesc:a2863f3ed17f20ba53afadc315c506f84"><td class="mdescLeft">&#160;</td><td class="mdescRight">Same as std::identity, but copies input parameter.  <br /></td></tr>
 </table>
 <a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Utilities for functional programming. </p>
+
+<p class="definition">Definition in file <a class="el" href="functional_8hpp_source.html">functional.hpp</a>.</p>
 </div><a name="doc-define-members" id="doc-define-members"></a><h2 id="header-doc-define-members" class="groupheader">Macro Definition Documentation</h2>
 <a id="a5e2dcbd09599b9bf0057c55907531e3f" name="a5e2dcbd09599b9bf0057c55907531e3f"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a5e2dcbd09599b9bf0057c55907531e3f">&#9670;&#160;</a></span>COMPOSE_OP</h2>
@@ -199,7 +197,9 @@ constexpr fn::copy_identity&#160;</td><td class="memItemRight"><b>loom::copy_id<
 <div class="line">{                                                                 \</div>
 <div class="line">    <span class="keywordflow">return</span> compose(*<span class="keyword">this</span>, rhs);                                   \</div>
 <div class="line">}</div>
-</div><!-- fragment --><div class="fragment"><div class="line"><span class="lineno">   27</span><span class="preprocessor">#define COMPOSE_OP                                                    \</span></div>
+</div><!-- fragment -->
+<p class="definition">Definition at line <a class="el" href="functional_8hpp_source.html#l00027">27</a> of file <a class="el" href="functional_8hpp_source.html">functional.hpp</a>.</p>
+<div class="fragment"><div class="line"><span class="lineno">   27</span><span class="preprocessor">#define COMPOSE_OP                                                    \</span></div>
 <div class="line"><span class="lineno">   28</span><span class="preprocessor">    template &lt;typename Rhs&gt;                                           \</span></div>
 <div class="line"><span class="lineno">   29</span><span class="preprocessor">    constexpr decltype(auto) operator|(const Rhs&amp; rhs) const noexcept \</span></div>
 <div class="line"><span class="lineno">   30</span><span class="preprocessor">    {                                                                 \</span></div>
@@ -241,7 +241,7 @@ constexpr fn::copy_identity&#160;</td><td class="memItemRight"><b>loom::copy_id<
 <div class="line">};                                                            \</div>
 <div class="line">}                                                             \</div>
 <div class="line"><span class="keyword">inline</span> <span class="keyword">constexpr</span> fn::NAME##_fn NAME{};</div>
-<div class="ttc" id="anamespacefn_html"><div class="ttname"><a href="namespacefn.html">fn</a></div><div class="ttdef"><b>Definition</b> programs.hpp:290</div></div>
+<div class="ttc" id="anamespacefn_html"><div class="ttname"><a href="namespacefn.html">fn</a></div><div class="ttdef"><b>Definition</b> <a href="programs_8hpp_source.html#l00289">programs.hpp:290</a></div></div>
 </div><!-- fragment -->
 <p>Declare a composable functional object using <code class="param">FUNC</code> as its implementation and instantiate it. </p>
 <dl class="params"><dt>Parameters</dt><dd>
@@ -251,6 +251,8 @@ constexpr fn::copy_identity&#160;</td><td class="memItemRight"><b>loom::copy_id<
   </table>
   </dd>
 </dl>
+
+<p class="definition">Definition at line <a class="el" href="functional_8hpp_source.html#l00038">38</a> of file <a class="el" href="functional_8hpp_source.html">functional.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">   38</span><span class="preprocessor">#define MK_NAMED_NIEBLOID(NAME, FUNC)                             \</span></div>
 <div class="line"><span class="lineno">   39</span><span class="preprocessor">    namespace fn                                                  \</span></div>
 <div class="line"><span class="lineno">   40</span><span class="preprocessor">    {                                                             \</span></div>
@@ -285,9 +287,11 @@ constexpr fn::copy_identity&#160;</td><td class="memItemRight"><b>loom::copy_id<
       </table>
 </div><div class="memdoc">
 <b>Value:</b><div class="fragment"><div class="line"><a class="code hl_define" href="#a53627b504c63828a9fef09d902c33353">MK_NAMED_NIEBLOID</a>(FUNC, FUNC)</div>
-<div class="ttc" id="afunctional_8hpp_html_a53627b504c63828a9fef09d902c33353"><div class="ttname"><a href="#a53627b504c63828a9fef09d902c33353">MK_NAMED_NIEBLOID</a></div><div class="ttdeci">#define MK_NAMED_NIEBLOID(NAME, FUNC)</div><div class="ttdoc">Declare a composable functional object using FUNC as its implementation and instantiate it.</div><div class="ttdef"><b>Definition</b> functional.hpp:38</div></div>
+<div class="ttc" id="afunctional_8hpp_html_a53627b504c63828a9fef09d902c33353"><div class="ttname"><a href="#a53627b504c63828a9fef09d902c33353">MK_NAMED_NIEBLOID</a></div><div class="ttdeci">#define MK_NAMED_NIEBLOID(NAME, FUNC)</div><div class="ttdoc">Declare a composable functional object using FUNC as its implementation and instantiate it.</div><div class="ttdef"><b>Definition</b> <a href="functional_8hpp_source.html#l00038">functional.hpp:38</a></div></div>
 </div><!-- fragment -->
 <p>Same as MK_NAMED_NIEBLOID, but <code class="param">FUNC</code> is also used as the name. </p>
+
+<p class="definition">Definition at line <a class="el" href="functional_8hpp_source.html#l00056">56</a> of file <a class="el" href="functional_8hpp_source.html">functional.hpp</a>.</p>
 
 </div>
 </div>

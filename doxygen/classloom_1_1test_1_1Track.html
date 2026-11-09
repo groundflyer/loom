@@ -105,7 +105,7 @@ $(function(){initNavTree('classloom_1_1test_1_1Track.html','','classloom_1_1test
 <p>Keeps track of tests and prints their status.  
  <a href="#details">More...</a></p>
 
-<p><code>#include &quot;test.hpp&quot;</code></p>
+<p><code>#include &quot;<a class="el" href="test_8hpp_source.html">test.hpp</a>&quot;</code></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pub-methods" class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
@@ -124,6 +124,8 @@ Public Member Functions</h2></td></tr>
 </table>
 <a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Keeps track of tests and prints their status. </p>
+
+<p class="definition">Definition at line <a class="el" href="test_8hpp_source.html#l00182">182</a> of file <a class="el" href="test_8hpp_source.html">test.hpp</a>.</p>
 </div><a name="doc-constructors" id="doc-constructors"></a><h2 id="header-doc-constructors" class="groupheader">Constructor &amp; Destructor Documentation</h2>
 <a id="a3fddd6e6e5db31c736ab7d5715adc63c" name="a3fddd6e6e5db31c736ab7d5715adc63c"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a3fddd6e6e5db31c736ab7d5715adc63c">&#9670;&#160;</a></span>~Track()</h2>
@@ -147,6 +149,8 @@ Public Member Functions</h2></td></tr>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="test_8hpp_source.html#l00413">413</a> of file <a class="el" href="test_8hpp_source.html">test.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">  414</span>    {</div>
 <div class="line"><span class="lineno">  415</span>        <span class="keywordflow">if</span>(m_total) message();</div>
 <div class="line"><span class="lineno">  416</span>    }</div>
@@ -187,6 +191,8 @@ template&lt;typename Test&gt; </div>
   </table>
   </dd>
 </dl>
+
+<p class="definition">Definition at line <a class="el" href="test_8hpp_source.html#l00357">357</a> of file <a class="el" href="test_8hpp_source.html">test.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">  358</span>    {</div>
 <div class="line"><span class="lineno">  359</span>        <span class="keyword">const</span> <span class="keywordtype">bool</span> p = run_print&lt;false&gt;(std::forward&lt;Test&gt;(test));</div>
 <div class="line"><span class="lineno">  360</span>        ++m_total;</div>
@@ -229,6 +235,8 @@ template&lt;typename... Tests&gt; </div>
   </dd>
 </dl>
 <p>A failed test halts the entire run or the run of its group, the following tests considered failed. </p>
+
+<p class="definition">Definition at line <a class="el" href="test_8hpp_source.html#l00375">375</a> of file <a class="el" href="test_8hpp_source.html">test.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">  376</span>    {</div>
 <div class="line"><span class="lineno">  377</span>        <span class="keyword">constexpr</span> <span class="keywordtype">unsigned</span> <a class="code hl_function" href="#ad2da2cfeefa6ba6ba15973d861994cfe">total</a> =</div>
 <div class="line"><span class="lineno">  378</span>            (... +</div>
@@ -244,7 +252,7 @@ template&lt;typename... Tests&gt; </div>
 <div class="line"><span class="lineno">  388</span> </div>
 <div class="line"><span class="lineno">  389</span>        <span class="keywordflow">return</span> ret;</div>
 <div class="line"><span class="lineno">  390</span>    }</div>
-<div class="ttc" id="aclassloom_1_1test_1_1Track_html_ad2da2cfeefa6ba6ba15973d861994cfe"><div class="ttname"><a href="#ad2da2cfeefa6ba6ba15973d861994cfe">loom::test::Track::total</a></div><div class="ttdeci">unsigned total() const noexcept</div><div class="ttdoc">The number of checked tests.</div><div class="ttdef"><b>Definition</b> test.hpp:401</div></div>
+<div class="ttc" id="aclassloom_1_1test_1_1Track_html_ad2da2cfeefa6ba6ba15973d861994cfe"><div class="ttname"><a href="#ad2da2cfeefa6ba6ba15973d861994cfe">loom::test::Track::total</a></div><div class="ttdeci">unsigned total() const noexcept</div><div class="ttdoc">The number of checked tests.</div><div class="ttdef"><b>Definition</b> <a href="test_8hpp_source.html#l00401">test.hpp:401</a></div></div>
 </div><!-- fragment -->
 </div>
 </div>
@@ -272,6 +280,8 @@ template&lt;typename... Tests&gt; </div>
 </div><div class="memdoc">
 
 <p>The number of passed tests. </p>
+
+<p class="definition">Definition at line <a class="el" href="test_8hpp_source.html#l00394">394</a> of file <a class="el" href="test_8hpp_source.html">test.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">  395</span>    {</div>
 <div class="line"><span class="lineno">  396</span>        <span class="keywordflow">return</span> m_passed;</div>
 <div class="line"><span class="lineno">  397</span>    }</div>
@@ -302,6 +312,8 @@ template&lt;typename... Tests&gt; </div>
 </div><div class="memdoc">
 
 <p>Returns non-zero if there are failed tests. </p>
+
+<p class="definition">Definition at line <a class="el" href="test_8hpp_source.html#l00408">408</a> of file <a class="el" href="test_8hpp_source.html">test.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">  409</span>    {</div>
 <div class="line"><span class="lineno">  410</span>        <span class="keywordflow">return</span> m_passed != m_total;</div>
 <div class="line"><span class="lineno">  411</span>    }</div>
@@ -338,6 +350,8 @@ template&lt;typename... Tests&gt; </div>
 </div><div class="memdoc">
 
 <p>The number of checked tests. </p>
+
+<p class="definition">Definition at line <a class="el" href="test_8hpp_source.html#l00401">401</a> of file <a class="el" href="test_8hpp_source.html">test.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">  402</span>    {</div>
 <div class="line"><span class="lineno">  403</span>        <span class="keywordflow">return</span> m_total;</div>
 <div class="line"><span class="lineno">  404</span>    }</div>
@@ -345,7 +359,7 @@ template&lt;typename... Tests&gt; </div>
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following file:<ul>
-<li>common/<a class="el" href="test_8hpp.html">test.hpp</a></li>
+<li>common/<a class="el" href="test_8hpp_source.html">test.hpp</a></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->

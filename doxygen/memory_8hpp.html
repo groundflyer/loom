@@ -104,7 +104,7 @@ $(function(){initNavTree('memory_8hpp.html','',''); });
 
 <p>Memory utilities.  
 <a href="#details">More...</a></p>
-<div class="textblock"><code>#include &quot;<a class="el" href="math_8hpp.html">math.hpp</a>&quot;</code><br />
+<div class="textblock"><code>#include &quot;<a class="el" href="math_8hpp_source.html">math.hpp</a>&quot;</code><br />
 <code>#include &lt;memory&gt;</code><br />
 </div><div class="textblock"><div id="dynsection-0" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>Include dependency graph for memory.hpp:</div>
 <div id="dynsection-0-summary" class="dynsummary" style="display:block;">
@@ -116,9 +116,11 @@ $(function(){initNavTree('memory_8hpp.html','',''); });
 <div id="dynsection-1-summary" class="dynsummary" style="display:block;">
 </div>
 <div id="dynsection-1-content" class="dyncontent" style="display:none;">
-<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="memory_8hpp__dep__incl.svg" width="374" height="190"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><div class="zoom"><iframe scrolling="no" loading="lazy" frameborder="0" src="memory_8hpp__dep__incl.svg" width="100%" height="581"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
 </div>
-</div><table class="memberdecls">
+</div>
+<p><a href="memory_8hpp_source.html">Go to the source code of this file.</a></p>
+<table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-nested-classes" class="groupheader"><a id="nested-classes" name="nested-classes"></a>
 Classes</h2></td></tr>
 <tr class="memitem:loom_3A_3AAlignedAllocator_3C_20T_2C_20alignment_20_3E" id="r_loom_3A_3AAlignedAllocator_3C_20T_2C_20alignment_20_3E"><td class="memItemLeft">class &#160;</td><td class="memItemRight"><a class="el" href="classloom_1_1AlignedAllocator.html">loom::AlignedAllocator&lt; T, alignment &gt;</a></td></tr>
@@ -138,21 +140,21 @@ Macros</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-typedef-members" class="groupheader"><a id="typedef-members" name="typedef-members"></a>
 Typedefs</h2></td></tr>
-<tr class="memitem:a9a366dc7144f2707c9b55beb55d6251e" id="r_a9a366dc7144f2707c9b55beb55d6251e"><td class="memTemplParams" colspan="2"><a id="a9a366dc7144f2707c9b55beb55d6251e" name="a9a366dc7144f2707c9b55beb55d6251e"></a>
-template&lt;typename T&gt; </td></tr>
-<tr class="memitem:a9a366dc7144f2707c9b55beb55d6251e template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><b>loom::CacheLineAlignedAllocator</b> = <a class="el" href="classloom_1_1AlignedAllocator.html">AlignedAllocator</a>&lt;T, cache_line_size&gt;</td></tr>
-<tr class="memdesc:a9a366dc7144f2707c9b55beb55d6251e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Allocates memory aligned to cache line size. <br /></td></tr>
+<tr class="memitem:a9a366dc7144f2707c9b55beb55d6251e" id="r_a9a366dc7144f2707c9b55beb55d6251e"><td class="memTemplParams" colspan="2">template&lt;typename T&gt; </td></tr>
+<tr class="memitem:a9a366dc7144f2707c9b55beb55d6251e template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="namespaceloom.html#a9a366dc7144f2707c9b55beb55d6251e">loom::CacheLineAlignedAllocator</a> = <a class="el" href="classloom_1_1AlignedAllocator.html">AlignedAllocator</a>&lt;T, cache_line_size&gt;</td></tr>
+<tr class="memdesc:a9a366dc7144f2707c9b55beb55d6251e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Allocates memory aligned to cache line size.  <br /></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-var-members" class="groupheader"><a id="var-members" name="var-members"></a>
 Variables</h2></td></tr>
-<tr class="memitem:a23a107029df82ab6f603bd1295db41c7" id="r_a23a107029df82ab6f603bd1295db41c7"><td class="memItemLeft"><a id="a23a107029df82ab6f603bd1295db41c7" name="a23a107029df82ab6f603bd1295db41c7"></a>
-constexpr std::size_t&#160;</td><td class="memItemRight"><b>loom::cache_line_size</b> = 64</td></tr>
+<tr class="memitem:a23a107029df82ab6f603bd1295db41c7" id="r_a23a107029df82ab6f603bd1295db41c7"><td class="memItemLeft">constexpr std::size_t&#160;</td><td class="memItemRight"><a class="el" href="namespaceloom.html#a23a107029df82ab6f603bd1295db41c7">loom::cache_line_size</a> = 64</td></tr>
 <tr class="memitem:a91ffbf077a7cd99d1851f98f7102c611" id="r_a91ffbf077a7cd99d1851f98f7102c611"><td class="memTemplParams" colspan="2">template&lt;typename T&gt; </td></tr>
 <tr class="memitem:a91ffbf077a7cd99d1851f98f7102c611 template"><td class="memItemLeft">constexpr std::size_t&#160;</td><td class="memItemRight"><a class="el" href="namespaceloom.html#a91ffbf077a7cd99d1851f98f7102c611">loom::cache_line_capacity_v</a></td></tr>
 <tr class="memdesc:a91ffbf077a7cd99d1851f98f7102c611"><td class="mdescLeft">&#160;</td><td class="mdescRight">Helper template variable for <a class="el" href="structloom_1_1cache__line__capacity.html" title="The number of values of type T that can fit into cache line.">cache_line_capacity</a>.  <br /></td></tr>
 </table>
 <a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Memory utilities. </p>
+
+<p class="definition">Definition in file <a class="el" href="memory_8hpp_source.html">memory.hpp</a>.</p>
 </div><a name="doc-define-members" id="doc-define-members"></a><h2 id="header-doc-define-members" class="groupheader">Macro Definition Documentation</h2>
 <a id="a4304562bf85c33d95698a65fadc346be" name="a4304562bf85c33d95698a65fadc346be"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a4304562bf85c33d95698a65fadc346be">&#9670;&#160;</a></span>PADDED_VALUE</h2>
@@ -179,6 +181,8 @@ constexpr std::size_t&#160;</td><td class="memItemRight"><b>loom::cache_line_siz
 <div class="line">}</div>
 </div><!-- fragment -->
 <p>Declare a value protected from false sharing. </p>
+
+<p class="definition">Definition at line <a class="el" href="memory_8hpp_source.html#l00099">99</a> of file <a class="el" href="memory_8hpp_source.html">memory.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">   99</span><span class="preprocessor">#define PADDED_VALUE(TYPE, NAME)                 \</span></div>
 <div class="line"><span class="lineno">  100</span><span class="preprocessor">    union alignas(cache_line_size)               \</span></div>
 <div class="line"><span class="lineno">  101</span><span class="preprocessor">    {                                            \</span></div>

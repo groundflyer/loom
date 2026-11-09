@@ -105,7 +105,7 @@ $(function(){initNavTree('structloom_1_1vm_1_1simd_1_1vectorize__union_3_01Union
 <p>Ensure <a class="el" href="classloom_1_1Union.html" title="Generic unsafe union.">loom::Union</a> correctly converted to union of packed vectors. <a class="el" href="classloom_1_1Union.html" title="Generic unsafe union.">Union</a> specialisation.  
  <a href="#details">More...</a></p>
 
-<p><code>#include &quot;simd.hpp&quot;</code></p>
+<p><code>#include &quot;<a class="el" href="simd_8hpp_source.html">simd.hpp</a>&quot;</code></p>
 <div id="dynsection-0" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>Inheritance diagram for loom::vm::simd::vectorize_union&lt; Union&lt; Ts... &gt;, N &gt;:</div>
 <div id="dynsection-0-summary" class="dynsummary" style="display:block;">
 </div>
@@ -121,17 +121,36 @@ $(function(){initNavTree('structloom_1_1vm_1_1simd_1_1vectorize__union_3_01Union
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pub-types" class="groupheader"><a id="pub-types" name="pub-types"></a>
 Public Types</h2></td></tr>
-<tr class="memitem:a171e141367e636d5b60411c7fc444dcf" id="r_a171e141367e636d5b60411c7fc444dcf"><td class="memItemLeft"><a id="a171e141367e636d5b60411c7fc444dcf" name="a171e141367e636d5b60411c7fc444dcf"></a>
-using&#160;</td><td class="memItemRight"><b>type</b> = <a class="el" href="classloom_1_1Union.html">Union</a>&lt;<a class="el" href="namespaceloom_1_1vm_1_1simd.html#a736757f9b89dc96a7b1448e5914327aa">packed_vector</a>&lt;Ts, N&gt;...&gt;</td></tr>
+<tr class="memitem:a171e141367e636d5b60411c7fc444dcf" id="r_a171e141367e636d5b60411c7fc444dcf"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="#a171e141367e636d5b60411c7fc444dcf">type</a> = <a class="el" href="classloom_1_1Union.html">Union</a>&lt;<a class="el" href="namespaceloom_1_1vm_1_1simd.html#a736757f9b89dc96a7b1448e5914327aa">packed_vector</a>&lt;Ts, N&gt;...&gt;</td></tr>
 <tr class="inherit_header pub_types_structloom_1_1vm_1_1simd_1_1make__packed__vector"><td colspan="2" onclick="javascript:dynsection.toggleInherit('pub_types_structloom_1_1vm_1_1simd_1_1make__packed__vector')"><span class="dynarrow"><span class="arrowhead closed"></span></span>Public Types inherited from <a class="el" href="structloom_1_1vm_1_1simd_1_1make__packed__vector.html">loom::vm::simd::make_packed_vector&lt; T, N &gt;</a></td></tr>
-<tr class="memitem:a10db6372481286ba3c7b7493e5131f91 inherit pub_types_structloom_1_1vm_1_1simd_1_1make__packed__vector" id="r_a10db6372481286ba3c7b7493e5131f91"><td class="memItemLeft">
-typedef T <a class="el" href="structloom_1_1vm_1_1simd_1_1make__packed__vector.html">type</a>&#160;</td><td class="memItemRight"><b>__attribute__</b>((vector_size(N *sizeof(T)), aligned(simd_width)))</td></tr>
+<tr class="memitem:a10db6372481286ba3c7b7493e5131f91 inherit pub_types_structloom_1_1vm_1_1simd_1_1make__packed__vector" id="r_a10db6372481286ba3c7b7493e5131f91"><td class="memItemLeft">typedef T <a class="el" href="structloom_1_1vm_1_1simd_1_1make__packed__vector.html">type</a>&#160;</td><td class="memItemRight"><a class="el" href="structloom_1_1vm_1_1simd_1_1make__packed__vector.html#a10db6372481286ba3c7b7493e5131f91">__attribute__</a>((vector_size(N *sizeof(T)), aligned(simd_width)))</td></tr>
 </table>
 <a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
 <div class="textblock"><div class="compoundTemplParams">template&lt;typename... Ts, <a class="el" href="namespaceloom_1_1vm_1_1simd.html#a13f74c165cada10f5eb92d2beb50b144">fsize_t</a> N&gt;<br />
 struct loom::vm::simd::vectorize_union&lt; Union&lt; Ts... &gt;, N &gt;</div><p>Ensure <a class="el" href="classloom_1_1Union.html" title="Generic unsafe union.">loom::Union</a> correctly converted to union of packed vectors. <a class="el" href="classloom_1_1Union.html" title="Generic unsafe union.">Union</a> specialisation. </p>
-</div><hr/>The documentation for this struct was generated from the following file:<ul>
-<li>vm/<a class="el" href="simd_8hpp.html">simd.hpp</a></li>
+
+<p class="definition">Definition at line <a class="el" href="simd_8hpp_source.html#l01545">1545</a> of file <a class="el" href="simd_8hpp_source.html">simd.hpp</a>.</p>
+</div><a name="doc-typedef-members" id="doc-typedef-members"></a><h2 id="header-doc-typedef-members" class="groupheader">Member Typedef Documentation</h2>
+<a id="a171e141367e636d5b60411c7fc444dcf" name="a171e141367e636d5b60411c7fc444dcf"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a171e141367e636d5b60411c7fc444dcf">&#9670;&#160;</a></span>type</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename... Ts, <a class="el" href="namespaceloom_1_1vm_1_1simd.html#a13f74c165cada10f5eb92d2beb50b144">fsize_t</a> N&gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">using <a class="el" href="structloom_1_1vm_1_1simd_1_1vectorize__union.html">loom::vm::simd::vectorize_union</a>&lt; <a class="el" href="classloom_1_1Union.html">Union</a>&lt; Ts... &gt;, N &gt;::type = <a class="el" href="classloom_1_1Union.html">Union</a>&lt;<a class="el" href="namespaceloom_1_1vm_1_1simd.html#a736757f9b89dc96a7b1448e5914327aa">packed_vector</a>&lt;Ts, N&gt;...&gt;</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="simd_8hpp_source.html#l01547">1547</a> of file <a class="el" href="simd_8hpp_source.html">simd.hpp</a>.</p>
+
+</div>
+</div>
+<hr/>The documentation for this struct was generated from the following file:<ul>
+<li>vm/<a class="el" href="simd_8hpp_source.html">simd.hpp</a></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->

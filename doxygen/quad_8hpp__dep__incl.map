@@ -1,0 +1,15 @@
+<map id="smallpt/ref/primitives/quad.hpp" name="smallpt/ref/primitives/quad.hpp">
+<area shape="rect" id="Node000001" title="Difinition of quadrilateral primitive and auxiliary functions." alt="" coords="249,5,411,50"/>
+<area shape="rect" id="Node000002" href="$niebloids_8hpp_source.html" title=" " alt="" coords="238,98,422,126"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="333,66,333,97,328,97,328,66"/>
+<area shape="rect" id="Node000003" href="$ref_2pt_8hpp.html" title="Reference smallpt functions." alt="" coords="94,174,231,201"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="287,135,193,176,191,171,285,130"/>
+<area shape="rect" id="Node000006" href="$primitives_8cpp_source.html" title=" " alt="" coords="255,174,405,201"/>
+<area shape="poly" id="edge5_Node000002_Node000006" title=" " alt="" coords="333,141,333,173,328,173,328,141"/>
+<area shape="rect" id="Node000007" href="$transforms_8cpp_source.html" title=" " alt="" coords="430,174,585,201"/>
+<area shape="poly" id="edge6_Node000002_Node000007" title=" " alt="" coords="377,130,477,171,475,176,375,134"/>
+<area shape="rect" id="Node000004" href="$ref_8cpp_source.html" title=" " alt="" coords="5,249,146,277"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="137,214,93,251,89,247,134,209"/>
+<area shape="rect" id="Node000005" href="$vm__smallpt_8cpp_source.html" title=" " alt="" coords="170,249,331,277"/>
+<area shape="poly" id="edge4_Node000003_Node000005" title=" " alt="" coords="191,209,236,247,233,251,188,214"/>
+</map>

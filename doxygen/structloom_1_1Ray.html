@@ -105,7 +105,7 @@ $(function(){initNavTree('structloom_1_1Ray.html','','structloom_1_1Ray-members'
 <p><a class="el" href="structloom_1_1Ray.html" title="Ray definition.">Ray</a> definition.  
  <a href="#details">More...</a></p>
 
-<p><code>#include &quot;ray.hpp&quot;</code></p>
+<p><code>#include &quot;<a class="el" href="ray_8hpp_source.html">ray.hpp</a>&quot;</code></p>
 <div id="dynsection-0" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>Collaboration diagram for loom::Ray&lt; T &gt;:</div>
 <div id="dynsection-0-summary" class="dynsummary" style="display:block;">
 </div>
@@ -120,14 +120,14 @@ Public Member Functions</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pub-attribs" class="groupheader"><a id="pub-attribs" name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
-<tr class="memitem:a7e406511c880c916276f688f4c6d4e4b" id="r_a7e406511c880c916276f688f4c6d4e4b"><td class="memItemLeft"><a id="a7e406511c880c916276f688f4c6d4e4b" name="a7e406511c880c916276f688f4c6d4e4b"></a>
-Vec3&lt; T &gt;&#160;</td><td class="memItemRight"><b>origin</b></td></tr>
-<tr class="memitem:a393589300cf0bbbcd851c9e5029cbe9f" id="r_a393589300cf0bbbcd851c9e5029cbe9f"><td class="memItemLeft"><a id="a393589300cf0bbbcd851c9e5029cbe9f" name="a393589300cf0bbbcd851c9e5029cbe9f"></a>
-Vec3&lt; T &gt;&#160;</td><td class="memItemRight"><b>dir</b></td></tr>
+<tr class="memitem:a7e406511c880c916276f688f4c6d4e4b" id="r_a7e406511c880c916276f688f4c6d4e4b"><td class="memItemLeft">Vec3&lt; T &gt;&#160;</td><td class="memItemRight"><a class="el" href="#a7e406511c880c916276f688f4c6d4e4b">origin</a></td></tr>
+<tr class="memitem:a393589300cf0bbbcd851c9e5029cbe9f" id="r_a393589300cf0bbbcd851c9e5029cbe9f"><td class="memItemLeft">Vec3&lt; T &gt;&#160;</td><td class="memItemRight"><a class="el" href="#a393589300cf0bbbcd851c9e5029cbe9f">dir</a></td></tr>
 </table>
 <a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
 <div class="textblock"><div class="compoundTemplParams">template&lt;std::floating_point T&gt;<br />
 struct loom::Ray&lt; T &gt;</div><p><a class="el" href="structloom_1_1Ray.html" title="Ray definition.">Ray</a> definition. </p>
+
+<p class="definition">Definition at line <a class="el" href="ray_8hpp_source.html#l00029">29</a> of file <a class="el" href="ray_8hpp_source.html">ray.hpp</a>.</p>
 </div><a name="doc-constructors" id="doc-constructors"></a><h2 id="header-doc-constructors" class="groupheader">Constructor &amp; Destructor Documentation</h2>
 <a id="ae39b5443c7e56e50297cdf89e3982cbd" name="ae39b5443c7e56e50297cdf89e3982cbd"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#ae39b5443c7e56e50297cdf89e3982cbd">&#9670;&#160;</a></span>Ray()</h2>
@@ -159,16 +159,55 @@ template&lt;template&lt; typename, std::size_t &gt; typename Container1, templat
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="ray_8hpp_source.html#l00036">36</a> of file <a class="el" href="ray_8hpp_source.html">ray.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">   37</span>                                                            :</div>
 <div class="line"><span class="lineno">   38</span>        origin(<a class="code hl_struct" href="structloom_1_1Ray.html">_origin</a>), dir(<a class="code hl_struct" href="structloom_1_1Ray.html">normalize</a>(<a class="code hl_struct" href="structloom_1_1Ray.html">_dir</a>))</div>
 <div class="line"><span class="lineno">   39</span>    {</div>
 <div class="line"><span class="lineno">   40</span>    }</div>
-<div class="ttc" id="astructloom_1_1Ray_html"><div class="ttname"><a href="structloom_1_1Ray.html">loom::Ray</a></div><div class="ttdoc">Ray definition.</div><div class="ttdef"><b>Definition</b> ray.hpp:30</div></div>
+<div class="ttc" id="astructloom_1_1Ray_html"><div class="ttname"><a href="structloom_1_1Ray.html">loom::Ray</a></div><div class="ttdoc">Ray definition.</div><div class="ttdef"><b>Definition</b> <a href="ray_8hpp_source.html#l00029">ray.hpp:30</a></div></div>
 </div><!-- fragment -->
 </div>
 </div>
+<a name="doc-variable-members" id="doc-variable-members"></a><h2 id="header-doc-variable-members" class="groupheader">Member Data Documentation</h2>
+<a id="a393589300cf0bbbcd851c9e5029cbe9f" name="a393589300cf0bbbcd851c9e5029cbe9f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a393589300cf0bbbcd851c9e5029cbe9f">&#9670;&#160;</a></span>dir</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;std::floating_point T&gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">Vec3&lt;T&gt; <a class="el" href="structloom_1_1Ray.html">loom::Ray</a>&lt; T &gt;::dir</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="ray_8hpp_source.html#l00032">32</a> of file <a class="el" href="ray_8hpp_source.html">ray.hpp</a>.</p>
+
+</div>
+</div>
+<a id="a7e406511c880c916276f688f4c6d4e4b" name="a7e406511c880c916276f688f4c6d4e4b"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a7e406511c880c916276f688f4c6d4e4b">&#9670;&#160;</a></span>origin</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;std::floating_point T&gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">Vec3&lt;T&gt; <a class="el" href="structloom_1_1Ray.html">loom::Ray</a>&lt; T &gt;::origin</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="ray_8hpp_source.html#l00031">31</a> of file <a class="el" href="ray_8hpp_source.html">ray.hpp</a>.</p>
+
+</div>
+</div>
 <hr/>The documentation for this struct was generated from the following file:<ul>
-<li>smallpt/ref/<a class="el" href="ray_8hpp.html">ray.hpp</a></li>
+<li>smallpt/ref/<a class="el" href="ray_8hpp_source.html">ray.hpp</a></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->

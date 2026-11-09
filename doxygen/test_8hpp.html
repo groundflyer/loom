@@ -101,9 +101,9 @@ $(function(){initNavTree('test_8hpp.html','',''); });
   <div class="headertitle"><div class="title">test.hpp File Reference</div></div>
 </div><!--header-->
 <div class="contents">
-<div class="textblock"><code>#include &quot;<a class="el" href="functional_8hpp.html">functional.hpp</a>&quot;</code><br />
-<code>#include &quot;<a class="el" href="string_8hpp.html">string.hpp</a>&quot;</code><br />
-<code>#include &quot;<a class="el" href="tuple_8hpp.html">tuple.hpp</a>&quot;</code><br />
+<div class="textblock"><code>#include &quot;<a class="el" href="functional_8hpp_source.html">functional.hpp</a>&quot;</code><br />
+<code>#include &quot;<a class="el" href="string_8hpp_source.html">string.hpp</a>&quot;</code><br />
+<code>#include &quot;<a class="el" href="tuple_8hpp_source.html">tuple.hpp</a>&quot;</code><br />
 <code>#include &lt;range/v3/numeric/accumulate.hpp&gt;</code><br />
 <code>#include &lt;range/v3/view/generate_n.hpp&gt;</code><br />
 <code>#include &lt;range/v3/view/zip.hpp&gt;</code><br />
@@ -126,9 +126,11 @@ $(function(){initNavTree('test_8hpp.html','',''); });
 <div id="dynsection-1-summary" class="dynsummary" style="display:block;">
 </div>
 <div id="dynsection-1-content" class="dyncontent" style="display:none;">
-<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="test_8hpp__dep__incl.svg" width="326" height="115"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><div class="zoom"><iframe scrolling="no" loading="lazy" frameborder="0" src="test_8hpp__dep__incl.svg" width="100%" height="468"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
 </div>
-</div><table class="memberdecls">
+</div>
+<p><a href="test_8hpp_source.html">Go to the source code of this file.</a></p>
+<table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-nested-classes" class="groupheader"><a id="nested-classes" name="nested-classes"></a>
 Classes</h2></td></tr>
 <tr class="memitem:loom_3A_3Atest_3A_3ANamedTest_3C_20Test_2C_20Name_20_3E" id="r_loom_3A_3Atest_3A_3ANamedTest_3C_20Test_2C_20Name_20_3E"><td class="memItemLeft">struct &#160;</td><td class="memItemRight"><a class="el" href="structloom_1_1test_1_1NamedTest.html">loom::test::NamedTest&lt; Test, Name &gt;</a></td></tr>
@@ -154,10 +156,9 @@ Macros</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-typedef-members" class="groupheader"><a id="typedef-members" name="typedef-members"></a>
 Typedefs</h2></td></tr>
-<tr class="memitem:a4dd9d39836acadd3bee2f540526bf67a" id="r_a4dd9d39836acadd3bee2f540526bf67a"><td class="memTemplParams" colspan="2"><a id="a4dd9d39836acadd3bee2f540526bf67a" name="a4dd9d39836acadd3bee2f540526bf67a"></a>
-template&lt;template&lt; typename &gt; typename Array, typename T&gt; </td></tr>
-<tr class="memitem:a4dd9d39836acadd3bee2f540526bf67a template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><b>loom::test::maybe_toa</b> = detail::maybe_toa&lt;Array, T&gt;::type</td></tr>
-<tr class="memdesc:a4dd9d39836acadd3bee2f540526bf67a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Tuple of arrays. <br /></td></tr>
+<tr class="memitem:a4dd9d39836acadd3bee2f540526bf67a" id="r_a4dd9d39836acadd3bee2f540526bf67a"><td class="memTemplParams" colspan="2">template&lt;template&lt; typename &gt; typename Array, typename T&gt; </td></tr>
+<tr class="memitem:a4dd9d39836acadd3bee2f540526bf67a template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="namespaceloom_1_1test.html#a4dd9d39836acadd3bee2f540526bf67a">loom::test::maybe_toa</a> = detail::maybe_toa&lt;Array, T&gt;::type</td></tr>
+<tr class="memdesc:a4dd9d39836acadd3bee2f540526bf67a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Tuple of arrays.  <br /></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-func-members" class="groupheader"><a id="func-members" name="func-members"></a>
 Functions</h2></td></tr>
@@ -192,7 +193,9 @@ Functions</h2></td></tr>
 <b>Value:</b><div class="fragment"><div class="line">fmt::styled(             \</div>
 <div class="line">    r ? <span class="stringliteral">&quot;PASS&quot;</span> : <span class="stringliteral">&quot;FAIL&quot;</span>, \</div>
 <div class="line">    fmt::fg(r ? fmt::terminal_color::green : fmt::terminal_color::red))</div>
-</div><!-- fragment --><div class="fragment"><div class="line"><span class="lineno">  184</span><span class="preprocessor">#define _OK(r)               \</span></div>
+</div><!-- fragment -->
+<p class="definition">Definition at line <a class="el" href="test_8hpp_source.html#l00184">184</a> of file <a class="el" href="test_8hpp_source.html">test.hpp</a>.</p>
+<div class="fragment"><div class="line"><span class="lineno">  184</span><span class="preprocessor">#define _OK(r)               \</span></div>
 <div class="line"><span class="lineno">  185</span><span class="preprocessor">    fmt::styled(             \</span></div>
 <div class="line"><span class="lineno">  186</span><span class="preprocessor">        r ? &quot;PASS&quot; : &quot;FAIL&quot;, \</span></div>
 <div class="line"><span class="lineno">  187</span><span class="preprocessor">        fmt::fg(r ? fmt::terminal_color::green : fmt::terminal_color::red))</span></div>
@@ -240,7 +243,9 @@ Functions</h2></td></tr>
 <div class="line"><span class="keyword">const</span> <span class="keywordtype">bool</span> p     = error &lt;= nftest.threshold;    \</div>
 <div class="line">print_status&lt;is_last&gt;(nftest.name, p, error, l); \</div>
 <div class="line"><span class="keywordflow">return</span> p</div>
-</div><!-- fragment --><div class="fragment"><div class="line"><span class="lineno">  272</span><span class="preprocessor">#define RUN_NFTEST                                   \</span></div>
+</div><!-- fragment -->
+<p class="definition">Definition at line <a class="el" href="test_8hpp_source.html#l00272">272</a> of file <a class="el" href="test_8hpp_source.html">test.hpp</a>.</p>
+<div class="fragment"><div class="line"><span class="lineno">  272</span><span class="preprocessor">#define RUN_NFTEST                                   \</span></div>
 <div class="line"><span class="lineno">  273</span><span class="preprocessor">    const auto error = run_test(nftest.test);        \</span></div>
 <div class="line"><span class="lineno">  274</span><span class="preprocessor">    const bool p     = error &lt;= nftest.threshold;    \</span></div>
 <div class="line"><span class="lineno">  275</span><span class="preprocessor">    print_status&lt;is_last&gt;(nftest.name, p, error, l); \</span></div>
@@ -262,7 +267,9 @@ Functions</h2></td></tr>
 <b>Value:</b><div class="fragment"><div class="line"><span class="keyword">const</span> <span class="keywordtype">bool</span> p = run_test(ntest.test);     \</div>
 <div class="line">print_status&lt;is_last&gt;(ntest.name, p, l); \</div>
 <div class="line"><span class="keywordflow">return</span> p</div>
-</div><!-- fragment --><div class="fragment"><div class="line"><span class="lineno">  251</span><span class="preprocessor">#define RUN_NTEST                            \</span></div>
+</div><!-- fragment -->
+<p class="definition">Definition at line <a class="el" href="test_8hpp_source.html#l00251">251</a> of file <a class="el" href="test_8hpp_source.html">test.hpp</a>.</p>
+<div class="fragment"><div class="line"><span class="lineno">  251</span><span class="preprocessor">#define RUN_NTEST                            \</span></div>
 <div class="line"><span class="lineno">  252</span><span class="preprocessor">    const bool p = run_test(ntest.test);     \</span></div>
 <div class="line"><span class="lineno">  253</span><span class="preprocessor">    print_status&lt;is_last&gt;(ntest.name, p, l); \</span></div>
 <div class="line"><span class="lineno">  254</span><span class="preprocessor">    return p</span></div>

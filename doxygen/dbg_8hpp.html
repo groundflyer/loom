@@ -104,13 +104,13 @@ $(function(){initNavTree('dbg_8hpp.html','',''); });
 
 <p>Utilities for kernel debugging.  
 <a href="#details">More...</a></p>
-<div class="textblock"><code>#include &quot;<a class="el" href="bse_8hpp.html">bse.hpp</a>&quot;</code><br />
-<code>#include &quot;<a class="el" href="core_8hpp.html">core.hpp</a>&quot;</code><br />
-<code>#include &quot;<a class="el" href="operators_8hpp.html">operators.hpp</a>&quot;</code><br />
-<code>#include &lt;<a class="el" href="argparse_8hpp.html">common/argparse.hpp</a>&gt;</code><br />
-<code>#include &lt;<a class="el" href="forbid_8hpp.html">common/forbid.hpp</a>&gt;</code><br />
-<code>#include &lt;<a class="el" href="string_8hpp.html">common/string.hpp</a>&gt;</code><br />
-<code>#include &lt;<a class="el" href="typeinfo_8hpp.html">common/typeinfo.hpp</a>&gt;</code><br />
+<div class="textblock"><code>#include &quot;<a class="el" href="bse_8hpp_source.html">bse.hpp</a>&quot;</code><br />
+<code>#include &quot;<a class="el" href="core_8hpp_source.html">core.hpp</a>&quot;</code><br />
+<code>#include &quot;<a class="el" href="operators_8hpp_source.html">operators.hpp</a>&quot;</code><br />
+<code>#include &lt;<a class="el" href="argparse_8hpp_source.html">common/argparse.hpp</a>&gt;</code><br />
+<code>#include &lt;<a class="el" href="forbid_8hpp_source.html">common/forbid.hpp</a>&gt;</code><br />
+<code>#include &lt;<a class="el" href="string_8hpp_source.html">common/string.hpp</a>&gt;</code><br />
+<code>#include &lt;<a class="el" href="typeinfo_8hpp_source.html">common/typeinfo.hpp</a>&gt;</code><br />
 <code>#include &lt;fmt/core.h&gt;</code><br />
 <code>#include &lt;fmt/format.h&gt;</code><br />
 <code>#include &lt;fmt/ranges.h&gt;</code><br />
@@ -134,7 +134,15 @@ $(function(){initNavTree('dbg_8hpp.html','',''); });
 <div id="dynsection-0-content" class="dyncontent" style="display:none;">
 <div class="center"><div class="zoom"><iframe scrolling="no" loading="lazy" frameborder="0" src="dbg_8hpp__incl.svg" width="100%" height="600"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
 </div>
-</div><table class="memberdecls">
+</div><div class="textblock"><div id="dynsection-1" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>This graph shows which files directly or indirectly include this file:</div>
+<div id="dynsection-1-summary" class="dynsummary" style="display:block;">
+</div>
+<div id="dynsection-1-content" class="dyncontent" style="display:none;">
+<div class="center"><div class="zoom"><iframe scrolling="no" loading="lazy" frameborder="0" src="dbg_8hpp__dep__incl.svg" width="100%" height="442"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
+</div>
+</div>
+<p><a href="dbg_8hpp_source.html">Go to the source code of this file.</a></p>
+<table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-namespaces" class="groupheader"><a id="namespaces" name="namespaces"></a>
 Namespaces</h2></td></tr>
 <tr class="memitem:loom" id="r_loom"><td class="memItemLeft">namespace &#160;</td><td class="memItemRight"><a class="el" href="namespaceloom.html">loom</a></td></tr>
@@ -153,12 +161,10 @@ Macros</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-typedef-members" class="groupheader"><a id="typedef-members" name="typedef-members"></a>
 Typedefs</h2></td></tr>
-<tr class="memitem:aa093668bbbc393b8695cc66b65ce971e" id="r_aa093668bbbc393b8695cc66b65ce971e"><td class="memTemplParams" colspan="2"><a id="aa093668bbbc393b8695cc66b65ce971e" name="aa093668bbbc393b8695cc66b65ce971e"></a>
-template&lt;typelist::List Statements&gt; </td></tr>
-<tr class="memitem:aa093668bbbc393b8695cc66b65ce971e template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><b>loom::vm::dbg::remove_ts</b> = <a class="el" href="group__Typelist.html#ga4927e608f27ebac1f3cd48556da3afe6">typelist::filter</a>&lt;is_not_ts, Statements&gt;</td></tr>
-<tr class="memitem:a99fb7a1d955abbb6cf1a65cc9d18c20d" id="r_a99fb7a1d955abbb6cf1a65cc9d18c20d"><td class="memTemplParams" colspan="2"><a id="a99fb7a1d955abbb6cf1a65cc9d18c20d" name="a99fb7a1d955abbb6cf1a65cc9d18c20d"></a>
-template&lt;typename Macro&gt; </td></tr>
-<tr class="memitem:a99fb7a1d955abbb6cf1a65cc9d18c20d template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><b>loom::vm::dbg::macro_statements</b> = Macro::statements</td></tr>
+<tr class="memitem:aa093668bbbc393b8695cc66b65ce971e" id="r_aa093668bbbc393b8695cc66b65ce971e"><td class="memTemplParams" colspan="2">template&lt;typelist::List Statements&gt; </td></tr>
+<tr class="memitem:aa093668bbbc393b8695cc66b65ce971e template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="namespaceloom_1_1vm_1_1dbg.html#aa093668bbbc393b8695cc66b65ce971e">loom::vm::dbg::remove_ts</a> = <a class="el" href="group__Typelist.html#ga4927e608f27ebac1f3cd48556da3afe6">typelist::filter</a>&lt;is_not_ts, Statements&gt;</td></tr>
+<tr class="memitem:a99fb7a1d955abbb6cf1a65cc9d18c20d" id="r_a99fb7a1d955abbb6cf1a65cc9d18c20d"><td class="memTemplParams" colspan="2">template&lt;typename Macro&gt; </td></tr>
+<tr class="memitem:a99fb7a1d955abbb6cf1a65cc9d18c20d template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="namespaceloom_1_1vm_1_1dbg.html#a99fb7a1d955abbb6cf1a65cc9d18c20d">loom::vm::dbg::macro_statements</a> = Macro::statements</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-func-members" class="groupheader"><a id="func-members" name="func-members"></a>
 Functions</h2></td></tr>
@@ -208,6 +214,8 @@ Variables</h2></td></tr>
 </table>
 <a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Utilities for kernel debugging. </p>
+
+<p class="definition">Definition in file <a class="el" href="dbg_8hpp_source.html">dbg.hpp</a>.</p>
 </div><a name="doc-define-members" id="doc-define-members"></a><h2 id="header-doc-define-members" class="groupheader">Macro Definition Documentation</h2>
 <a id="a1e9e36ca5f2f1b5ddc379046b7b1b508" name="a1e9e36ca5f2f1b5ddc379046b7b1b508"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a1e9e36ca5f2f1b5ddc379046b7b1b508">&#9670;&#160;</a></span>MK_OPS_PRETTIFY</h2>
@@ -243,7 +251,9 @@ Variables</h2></td></tr>
 <div class="line">    std::type_identity&lt;vartype&lt;Dst&gt;&gt;                                 \</div>
 <div class="line">{                                                                    \</div>
 <div class="line">};</div>
-</div><!-- fragment --><div class="fragment"><div class="line"><span class="lineno">  397</span><span class="preprocessor">#define MK_OPS_PRETTIFY(OP)                                              \</span></div>
+</div><!-- fragment -->
+<p class="definition">Definition at line <a class="el" href="dbg_8hpp_source.html#l00397">397</a> of file <a class="el" href="dbg_8hpp_source.html">dbg.hpp</a>.</p>
+<div class="fragment"><div class="line"><span class="lineno">  397</span><span class="preprocessor">#define MK_OPS_PRETTIFY(OP)                                              \</span></div>
 <div class="line"><span class="lineno">  398</span><span class="preprocessor">    template &lt;typename... _&gt;                                             \</span></div>
 <div class="line"><span class="lineno">  399</span><span class="preprocessor">    struct prettify&lt;ops::OP&lt;_...&gt;&gt;                                       \</span></div>
 <div class="line"><span class="lineno">  400</span><span class="preprocessor">    {                                                                    \</span></div>
@@ -305,8 +315,10 @@ Variables</h2></td></tr>
 <div class="line">    std::type_identity&lt;vartype&lt;Dst&gt;&gt;                              \</div>
 <div class="line">{                                                                 \</div>
 <div class="line">};</div>
-<div class="ttc" id="anamespacestd_html"><div class="ttname"><a href="namespacestd.html">std</a></div><div class="ttdef"><b>Definition</b> tuple.hpp:38</div></div>
-</div><!-- fragment --><div class="fragment"><div class="line"><span class="lineno">  375</span><span class="preprocessor">#define MK_STD_PRETTIFY(OP, NAME)                                     \</span></div>
+<div class="ttc" id="anamespacestd_html"><div class="ttname"><a href="namespacestd.html">std</a></div><div class="ttdef"><b>Definition</b> <a href="tuple_8hpp_source.html#l00037">tuple.hpp:38</a></div></div>
+</div><!-- fragment -->
+<p class="definition">Definition at line <a class="el" href="dbg_8hpp_source.html#l00375">375</a> of file <a class="el" href="dbg_8hpp_source.html">dbg.hpp</a>.</p>
+<div class="fragment"><div class="line"><span class="lineno">  375</span><span class="preprocessor">#define MK_STD_PRETTIFY(OP, NAME)                                     \</span></div>
 <div class="line"><span class="lineno">  376</span><span class="preprocessor">    template &lt;typename T&gt;                                             \</span></div>
 <div class="line"><span class="lineno">  377</span><span class="preprocessor">    struct prettify&lt;std::OP&lt;T&gt;&gt;                                       \</span></div>
 <div class="line"><span class="lineno">  378</span><span class="preprocessor">    {                                                                 \</span></div>
@@ -345,7 +357,9 @@ Variables</h2></td></tr>
       </table>
 </div><div class="memdoc">
 <b>Value:</b><div class="fragment"><div class="line">PRETTIFY_MACRO_PREFIX(__macro_decl_, MACRO_NAME)</div>
-</div><!-- fragment --><div class="fragment"><div class="line"><span class="lineno">  482</span><span class="preprocessor">#define PRETTIFY_MACRO(MACRO_NAME) \</span></div>
+</div><!-- fragment -->
+<p class="definition">Definition at line <a class="el" href="dbg_8hpp_source.html#l00482">482</a> of file <a class="el" href="dbg_8hpp_source.html">dbg.hpp</a>.</p>
+<div class="fragment"><div class="line"><span class="lineno">  482</span><span class="preprocessor">#define PRETTIFY_MACRO(MACRO_NAME) \</span></div>
 <div class="line"><span class="lineno">  483</span><span class="preprocessor">    PRETTIFY_MACRO_PREFIX(__macro_decl_, MACRO_NAME)</span></div>
 </div><!-- fragment -->
 </div>
@@ -369,7 +383,9 @@ Variables</h2></td></tr>
       </table>
 </div><div class="memdoc">
 <b>Value:</b><div class="fragment"><div class="line">pretty_macro&lt;PREFIX##MACRO_NAME, MACRO_NAME&gt;</div>
-</div><!-- fragment --><div class="fragment"><div class="line"><span class="lineno">  480</span><span class="preprocessor">#define PRETTIFY_MACRO_PREFIX(PREFIX, MACRO_NAME) \</span></div>
+</div><!-- fragment -->
+<p class="definition">Definition at line <a class="el" href="dbg_8hpp_source.html#l00480">480</a> of file <a class="el" href="dbg_8hpp_source.html">dbg.hpp</a>.</p>
+<div class="fragment"><div class="line"><span class="lineno">  480</span><span class="preprocessor">#define PRETTIFY_MACRO_PREFIX(PREFIX, MACRO_NAME) \</span></div>
 <div class="line"><span class="lineno">  481</span><span class="preprocessor">    pretty_macro&lt;PREFIX##MACRO_NAME, MACRO_NAME&gt;</span></div>
 </div><!-- fragment -->
 </div>
@@ -393,7 +409,9 @@ Variables</h2></td></tr>
       </table>
 </div><div class="memdoc">
 <b>Value:</b><div class="fragment"><div class="line">PRETTIFY_TMACRO_PREFIX(__macro_decl_, T, MACRO_NAME)</div>
-</div><!-- fragment --><div class="fragment"><div class="line"><span class="lineno">  487</span><span class="preprocessor">#define PRETTIFY_TMACRO(T, MACRO_NAME) \</span></div>
+</div><!-- fragment -->
+<p class="definition">Definition at line <a class="el" href="dbg_8hpp_source.html#l00487">487</a> of file <a class="el" href="dbg_8hpp_source.html">dbg.hpp</a>.</p>
+<div class="fragment"><div class="line"><span class="lineno">  487</span><span class="preprocessor">#define PRETTIFY_TMACRO(T, MACRO_NAME) \</span></div>
 <div class="line"><span class="lineno">  488</span><span class="preprocessor">    PRETTIFY_TMACRO_PREFIX(__macro_decl_, T, MACRO_NAME)</span></div>
 </div><!-- fragment -->
 </div>
@@ -422,7 +440,9 @@ Variables</h2></td></tr>
       </table>
 </div><div class="memdoc">
 <b>Value:</b><div class="fragment"><div class="line">pretty_tmacro&lt;T, PREFIX##MACRO_NAME, MACRO_NAME&gt;</div>
-</div><!-- fragment --><div class="fragment"><div class="line"><span class="lineno">  485</span><span class="preprocessor">#define PRETTIFY_TMACRO_PREFIX(PREFIX, T, MACRO_NAME) \</span></div>
+</div><!-- fragment -->
+<p class="definition">Definition at line <a class="el" href="dbg_8hpp_source.html#l00485">485</a> of file <a class="el" href="dbg_8hpp_source.html">dbg.hpp</a>.</p>
+<div class="fragment"><div class="line"><span class="lineno">  485</span><span class="preprocessor">#define PRETTIFY_TMACRO_PREFIX(PREFIX, T, MACRO_NAME) \</span></div>
 <div class="line"><span class="lineno">  486</span><span class="preprocessor">    pretty_tmacro&lt;T, PREFIX##MACRO_NAME, MACRO_NAME&gt;</span></div>
 </div><!-- fragment -->
 </div>

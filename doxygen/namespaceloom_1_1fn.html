@@ -118,8 +118,7 @@ Classes</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-typedef-members" class="groupheader"><a id="typedef-members" name="typedef-members"></a>
 Typedefs</h2></td></tr>
-<tr class="memitem:a0ec52d3300fc8b585d2a218287bde7b4" id="r_a0ec52d3300fc8b585d2a218287bde7b4"><td class="memItemLeft"><a id="a0ec52d3300fc8b585d2a218287bde7b4" name="a0ec52d3300fc8b585d2a218287bde7b4"></a>
-using&#160;</td><td class="memItemRight"><b>ar_32_2</b> = std::array&lt;std::uint32_t, 2&gt;</td></tr>
+<tr class="memitem:a0ec52d3300fc8b585d2a218287bde7b4" id="r_a0ec52d3300fc8b585d2a218287bde7b4"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="#a0ec52d3300fc8b585d2a218287bde7b4">ar_32_2</a> = std::array&lt;std::uint32_t, 2&gt;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-func-members" class="groupheader"><a id="func-members" name="func-members"></a>
 Functions</h2></td></tr>
@@ -358,7 +357,24 @@ requires (I &lt; M || J &lt; N)</td></tr>
 </table>
 <a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Convenience namespace hiding struct and functions definitions for niebloids. This namespace hides definitions of functions that are used as implementations for niebloids generated via MK_NIEBLOID macro in the loom namespace. </p>
-</div><a name="doc-func-members" id="doc-func-members"></a><h2 id="header-doc-func-members" class="groupheader">Function Documentation</h2>
+</div><a name="doc-typedef-members" id="doc-typedef-members"></a><h2 id="header-doc-typedef-members" class="groupheader">Typedef Documentation</h2>
+<a id="a0ec52d3300fc8b585d2a218287bde7b4" name="a0ec52d3300fc8b585d2a218287bde7b4"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a0ec52d3300fc8b585d2a218287bde7b4">&#9670;&#160;</a></span>ar_32_2</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">using loom::fn::ar_32_2 = std::array&lt;std::uint32_t, 2&gt;</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="common_2random_8hpp_source.html#l00057">57</a> of file <a class="el" href="common_2random_8hpp_source.html">random.hpp</a>.</p>
+
+</div>
+</div>
+<a name="doc-func-members" id="doc-func-members"></a><h2 id="header-doc-func-members" class="groupheader">Function Documentation</h2>
 <a id="ae35eb5939093137082fb43830f8ef1ce" name="ae35eb5939093137082fb43830f8ef1ce"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#ae35eb5939093137082fb43830f8ef1ce">&#9670;&#160;</a></span>any_string()</h2>
 
@@ -387,6 +403,8 @@ template&lt;typename... Rest&gt; </div>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="string_8hpp_source.html#l00178">178</a> of file <a class="el" href="string_8hpp_source.html">string.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">  179</span>{</div>
 <div class="line"><span class="lineno">  180</span>    <span class="keywordflow">return</span> (... || (w == rest));</div>
 <div class="line"><span class="lineno">  181</span>}</div>
@@ -423,12 +441,14 @@ template&lt;std::floating_point T, template&lt; typename, std::size_t &gt; typen
 </div><div class="memdoc">
 
 <p>Apply transformation matrix to <a class="el" href="structloom_1_1AABB.html" title="Axis-aligned bounding box.">AABB</a>. </p>
+
+<p class="definition">Definition at line <a class="el" href="aabb_8hpp_source.html#l00174">174</a> of file <a class="el" href="aabb_8hpp_source.html">aabb.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">  175</span>{</div>
 <div class="line"><span class="lineno">  176</span>    <span class="keyword">const</span> <span class="keyword">auto</span>&amp; [vmin, vmax] = prim;</div>
 <div class="line"><span class="lineno">  177</span>    <span class="keywordflow">return</span> <a class="code hl_struct" href="structloom_1_1AABB.html">AABB</a>(<a class="code hl_function" href="#a8a5ab09eb4f8809c82a00e69e5dfbe6d">apply_transform_p</a>(t, vmin), <a class="code hl_function" href="#a8a5ab09eb4f8809c82a00e69e5dfbe6d">apply_transform_p</a>(t, vmax));</div>
 <div class="line"><span class="lineno">  178</span>}</div>
-<div class="ttc" id="anamespaceloom_1_1fn_html_a8a5ab09eb4f8809c82a00e69e5dfbe6d"><div class="ttname"><a href="#a8a5ab09eb4f8809c82a00e69e5dfbe6d">loom::fn::apply_transform_p</a></div><div class="ttdeci">constexpr Vec3&lt; T &gt; apply_transform_p(const Mat4&lt; T, MatContainer &gt; &amp;t, const Vec3&lt; T, Vec3Container &gt; &amp;p) noexcept</div><div class="ttdoc">Apply transform to a point.</div><div class="ttdef"><b>Definition</b> transforms.hpp:74</div></div>
-<div class="ttc" id="astructloom_1_1AABB_html"><div class="ttname"><a href="structloom_1_1AABB.html">loom::AABB</a></div><div class="ttdoc">Axis-aligned bounding box.</div><div class="ttdef"><b>Definition</b> aabb.hpp:32</div></div>
+<div class="ttc" id="anamespaceloom_1_1fn_html_a8a5ab09eb4f8809c82a00e69e5dfbe6d"><div class="ttname"><a href="#a8a5ab09eb4f8809c82a00e69e5dfbe6d">loom::fn::apply_transform_p</a></div><div class="ttdeci">constexpr Vec3&lt; T &gt; apply_transform_p(const Mat4&lt; T, MatContainer &gt; &amp;t, const Vec3&lt; T, Vec3Container &gt; &amp;p) noexcept</div><div class="ttdoc">Apply transform to a point.</div><div class="ttdef"><b>Definition</b> <a href="transforms_8hpp_source.html#l00074">transforms.hpp:74</a></div></div>
+<div class="ttc" id="astructloom_1_1AABB_html"><div class="ttname"><a href="structloom_1_1AABB.html">loom::AABB</a></div><div class="ttdoc">Axis-aligned bounding box.</div><div class="ttdef"><b>Definition</b> <a href="aabb_8hpp_source.html#l00031">aabb.hpp:32</a></div></div>
 </div><!-- fragment -->
 </div>
 </div>
@@ -462,11 +482,13 @@ template&lt;std::floating_point T, template&lt; typename, std::size_t &gt; typen
 </div><div class="memdoc">
 
 <p>Transform disk with a transformation matrix. </p>
+
+<p class="definition">Definition at line <a class="el" href="cylinder_8hpp_source.html#l00103">103</a> of file <a class="el" href="cylinder_8hpp_source.html">cylinder.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">  105</span>{</div>
 <div class="line"><span class="lineno">  106</span>    <span class="keyword">const</span> <span class="keyword">auto</span>&amp; [p, r, h] = prim;</div>
 <div class="line"><span class="lineno">  107</span>    <span class="keywordflow">return</span> <a class="code hl_struct" href="structloom_1_1Cylinder.html">Cylinder</a>(<a class="code hl_function" href="#a8a5ab09eb4f8809c82a00e69e5dfbe6d">apply_transform_p</a>(t, p), r, h);</div>
 <div class="line"><span class="lineno">  108</span>}</div>
-<div class="ttc" id="astructloom_1_1Cylinder_html"><div class="ttname"><a href="structloom_1_1Cylinder.html">loom::Cylinder</a></div><div class="ttdoc">Simple Y-oriented cylinder.</div><div class="ttdef"><b>Definition</b> cylinder.hpp:30</div></div>
+<div class="ttc" id="astructloom_1_1Cylinder_html"><div class="ttname"><a href="structloom_1_1Cylinder.html">loom::Cylinder</a></div><div class="ttdoc">Simple Y-oriented cylinder.</div><div class="ttdef"><b>Definition</b> <a href="cylinder_8hpp_source.html#l00029">cylinder.hpp:30</a></div></div>
 </div><!-- fragment -->
 </div>
 </div>
@@ -500,12 +522,14 @@ template&lt;std::floating_point T, template&lt; typename, std::size_t &gt; typen
 </div><div class="memdoc">
 
 <p>Transform disk with a transformation matrix. </p>
+
+<p class="definition">Definition at line <a class="el" href="disk_8hpp_source.html#l00111">111</a> of file <a class="el" href="disk_8hpp_source.html">disk.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">  112</span>{</div>
 <div class="line"><span class="lineno">  113</span>    <span class="keyword">const</span> <span class="keyword">auto</span>&amp; [p, n, r] = prim;</div>
 <div class="line"><span class="lineno">  114</span>    <span class="keywordflow">return</span> <a class="code hl_struct" href="structloom_1_1Disk.html">Disk</a>(<a class="code hl_function" href="#a8a5ab09eb4f8809c82a00e69e5dfbe6d">apply_transform_p</a>(t, p), <a class="code hl_function" href="#a352cfab2e1780d4841a9f0468f65d020">apply_transform_n</a>(t, n), r);</div>
 <div class="line"><span class="lineno">  115</span>}</div>
-<div class="ttc" id="anamespaceloom_1_1fn_html_a352cfab2e1780d4841a9f0468f65d020"><div class="ttname"><a href="#a352cfab2e1780d4841a9f0468f65d020">loom::fn::apply_transform_n</a></div><div class="ttdeci">constexpr Vec3&lt; T &gt; apply_transform_n(const Mat4&lt; T, MatContainer &gt; &amp;t, const Vec3&lt; T, NormalContainer &gt; &amp;n) noexcept</div><div class="ttdoc">Apply transform to a normal.</div><div class="ttdef"><b>Definition</b> transforms.hpp:87</div></div>
-<div class="ttc" id="astructloom_1_1Disk_html"><div class="ttname"><a href="structloom_1_1Disk.html">loom::Disk</a></div><div class="ttdoc">Disk definition.</div><div class="ttdef"><b>Definition</b> disk.hpp:30</div></div>
+<div class="ttc" id="anamespaceloom_1_1fn_html_a352cfab2e1780d4841a9f0468f65d020"><div class="ttname"><a href="#a352cfab2e1780d4841a9f0468f65d020">loom::fn::apply_transform_n</a></div><div class="ttdeci">constexpr Vec3&lt; T &gt; apply_transform_n(const Mat4&lt; T, MatContainer &gt; &amp;t, const Vec3&lt; T, NormalContainer &gt; &amp;n) noexcept</div><div class="ttdoc">Apply transform to a normal.</div><div class="ttdef"><b>Definition</b> <a href="transforms_8hpp_source.html#l00087">transforms.hpp:87</a></div></div>
+<div class="ttc" id="astructloom_1_1Disk_html"><div class="ttname"><a href="structloom_1_1Disk.html">loom::Disk</a></div><div class="ttdoc">Disk definition.</div><div class="ttdef"><b>Definition</b> <a href="disk_8hpp_source.html#l00029">disk.hpp:30</a></div></div>
 </div><!-- fragment -->
 </div>
 </div>
@@ -539,12 +563,14 @@ template&lt;std::floating_point T, template&lt; typename, size_t &gt; typename M
 </div><div class="memdoc">
 
 <p>Transform a quadrilateral using a transformation matrix. </p>
+
+<p class="definition">Definition at line <a class="el" href="quad_8hpp_source.html#l00189">189</a> of file <a class="el" href="quad_8hpp_source.html">quad.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">  190</span>{</div>
 <div class="line"><span class="lineno">  191</span>    <span class="keywordflow">return</span> std::apply([&amp;](<span class="keyword">const</span> <span class="keyword">auto</span>&amp;... points) <span class="keyword">noexcept</span> -&gt; <a class="code hl_typedef" href="namespaceloom.html#a0d058cc043b58e8820584b18d8eb3f98">Quad&lt;T&gt;</a></div>
 <div class="line"><span class="lineno">  192</span>                      { <span class="keywordflow">return</span> {<a class="code hl_function" href="#a8a5ab09eb4f8809c82a00e69e5dfbe6d">apply_transform_p</a>(t, points)...}; },</div>
 <div class="line"><span class="lineno">  193</span>                      prim);</div>
 <div class="line"><span class="lineno">  194</span>}</div>
-<div class="ttc" id="anamespaceloom_html_a0d058cc043b58e8820584b18d8eb3f98"><div class="ttname"><a href="namespaceloom.html#a0d058cc043b58e8820584b18d8eb3f98">loom::Quad</a></div><div class="ttdeci">std::array&lt; Vec3&lt; T, Container &gt;, 4 &gt; Quad</div><div class="ttdoc">We define quadrilateral as an array of vertices.</div><div class="ttdef"><b>Definition</b> quad.hpp:32</div></div>
+<div class="ttc" id="anamespaceloom_html_a0d058cc043b58e8820584b18d8eb3f98"><div class="ttname"><a href="namespaceloom.html#a0d058cc043b58e8820584b18d8eb3f98">loom::Quad</a></div><div class="ttdeci">std::array&lt; Vec3&lt; T, Container &gt;, 4 &gt; Quad</div><div class="ttdoc">We define quadrilateral as an array of vertices.</div><div class="ttdef"><b>Definition</b> <a href="quad_8hpp_source.html#l00032">quad.hpp:32</a></div></div>
 </div><!-- fragment -->
 </div>
 </div>
@@ -576,10 +602,12 @@ template&lt;std::floating_point T, template&lt; typename, std::size_t &gt; typen
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="ray_8hpp_source.html#l00085">85</a> of file <a class="el" href="ray_8hpp_source.html">ray.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">   86</span>{</div>
 <div class="line"><span class="lineno">   87</span>    <span class="keywordflow">return</span> <a class="code hl_struct" href="structloom_1_1Ray.html">Ray</a>(<a class="code hl_function" href="#a8a5ab09eb4f8809c82a00e69e5dfbe6d">apply_transform_p</a>(t, ray.origin), <a class="code hl_function" href="#a352cfab2e1780d4841a9f0468f65d020">apply_transform_n</a>(t, ray.dir));</div>
 <div class="line"><span class="lineno">   88</span>}</div>
-<div class="ttc" id="astructloom_1_1Ray_html"><div class="ttname"><a href="structloom_1_1Ray.html">loom::Ray</a></div><div class="ttdoc">Ray definition.</div><div class="ttdef"><b>Definition</b> ray.hpp:30</div></div>
+<div class="ttc" id="astructloom_1_1Ray_html"><div class="ttname"><a href="structloom_1_1Ray.html">loom::Ray</a></div><div class="ttdoc">Ray definition.</div><div class="ttdef"><b>Definition</b> <a href="ray_8hpp_source.html#l00029">ray.hpp:30</a></div></div>
 </div><!-- fragment -->
 </div>
 </div>
@@ -613,11 +641,13 @@ template&lt;std::floating_point T, template&lt; typename, std::size_t &gt; typen
 </div><div class="memdoc">
 
 <p>Change sphere position using a transformation matrix. </p>
+
+<p class="definition">Definition at line <a class="el" href="sphere_8hpp_source.html#l00108">108</a> of file <a class="el" href="sphere_8hpp_source.html">sphere.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">  109</span>{</div>
 <div class="line"><span class="lineno">  110</span>    <span class="keyword">const</span> <span class="keyword">auto</span>&amp; [c, r] = prim;</div>
 <div class="line"><span class="lineno">  111</span>    <span class="keywordflow">return</span> <a class="code hl_struct" href="structloom_1_1Sphere.html">Sphere</a>(<a class="code hl_function" href="#a8a5ab09eb4f8809c82a00e69e5dfbe6d">apply_transform_p</a>(t, c), r);</div>
 <div class="line"><span class="lineno">  112</span>}</div>
-<div class="ttc" id="astructloom_1_1Sphere_html"><div class="ttname"><a href="structloom_1_1Sphere.html">loom::Sphere</a></div><div class="ttdoc">Sphere primitive.</div><div class="ttdef"><b>Definition</b> sphere.hpp:30</div></div>
+<div class="ttc" id="astructloom_1_1Sphere_html"><div class="ttname"><a href="structloom_1_1Sphere.html">loom::Sphere</a></div><div class="ttdoc">Sphere primitive.</div><div class="ttdef"><b>Definition</b> <a href="sphere_8hpp_source.html#l00029">sphere.hpp:30</a></div></div>
 </div><!-- fragment -->
 </div>
 </div>
@@ -651,12 +681,14 @@ template&lt;std::floating_point T, template&lt; typename, std::size_t &gt; typen
 </div><div class="memdoc">
 
 <p>Transform triangle with a transformation matrix. </p>
+
+<p class="definition">Definition at line <a class="el" href="triangle_8hpp_source.html#l00163">163</a> of file <a class="el" href="triangle_8hpp_source.html">triangle.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">  165</span>{</div>
 <div class="line"><span class="lineno">  166</span>    <span class="keywordflow">return</span> std::apply([&amp;](<span class="keyword">const</span> <span class="keyword">auto</span>&amp;... points) <span class="keyword">noexcept</span> -&gt; <a class="code hl_typedef" href="namespaceloom.html#ac7dbdc52c51e31150e7550b829b3f973">Triangle&lt;T&gt;</a></div>
 <div class="line"><span class="lineno">  167</span>                      { <span class="keywordflow">return</span> {<a class="code hl_function" href="#a8a5ab09eb4f8809c82a00e69e5dfbe6d">apply_transform_p</a>(t, points)...}; },</div>
 <div class="line"><span class="lineno">  168</span>                      prim);</div>
 <div class="line"><span class="lineno">  169</span>}</div>
-<div class="ttc" id="anamespaceloom_html_ac7dbdc52c51e31150e7550b829b3f973"><div class="ttname"><a href="namespaceloom.html#ac7dbdc52c51e31150e7550b829b3f973">loom::Triangle</a></div><div class="ttdeci">std::array&lt; Vec3&lt; T, Container &gt;, 3 &gt; Triangle</div><div class="ttdoc">Defining triangle as array of vertices.</div><div class="ttdef"><b>Definition</b> triangle.hpp:30</div></div>
+<div class="ttc" id="anamespaceloom_html_ac7dbdc52c51e31150e7550b829b3f973"><div class="ttname"><a href="namespaceloom.html#ac7dbdc52c51e31150e7550b829b3f973">loom::Triangle</a></div><div class="ttdeci">std::array&lt; Vec3&lt; T, Container &gt;, 3 &gt; Triangle</div><div class="ttdoc">Defining triangle as array of vertices.</div><div class="ttdef"><b>Definition</b> <a href="triangle_8hpp_source.html#l00030">triangle.hpp:30</a></div></div>
 </div><!-- fragment -->
 </div>
 </div>
@@ -697,10 +729,12 @@ template&lt;std::floating_point T, template&lt; typename, std::size_t &gt; typen
   </table>
   </dd>
 </dl>
+
+<p class="definition">Definition at line <a class="el" href="transforms_8hpp_source.html#l00061">61</a> of file <a class="el" href="transforms_8hpp_source.html">transforms.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">   63</span>{</div>
 <div class="line"><span class="lineno">   64</span>    <span class="keywordflow">return</span> <a class="code hl_function" href="#a753216fb24ad5d084c6f035f533c8064">dehomogenize</a>(t * Vec4&lt;T&gt;(v));</div>
 <div class="line"><span class="lineno">   65</span>}</div>
-<div class="ttc" id="anamespaceloom_1_1fn_html_a753216fb24ad5d084c6f035f533c8064"><div class="ttname"><a href="#a753216fb24ad5d084c6f035f533c8064">loom::fn::dehomogenize</a></div><div class="ttdeci">constexpr Vec3&lt; T &gt; dehomogenize(const Vec4&lt; T, Container &gt; &amp;a) noexcept</div><div class="ttdoc">Convert a vector from homogenous coordinates.</div><div class="ttdef"><b>Definition</b> transforms.hpp:44</div></div>
+<div class="ttc" id="anamespaceloom_1_1fn_html_a753216fb24ad5d084c6f035f533c8064"><div class="ttname"><a href="#a753216fb24ad5d084c6f035f533c8064">loom::fn::dehomogenize</a></div><div class="ttdeci">constexpr Vec3&lt; T &gt; dehomogenize(const Vec4&lt; T, Container &gt; &amp;a) noexcept</div><div class="ttdoc">Convert a vector from homogenous coordinates.</div><div class="ttdef"><b>Definition</b> <a href="transforms_8hpp_source.html#l00044">transforms.hpp:44</a></div></div>
 </div><!-- fragment -->
 </div>
 </div>
@@ -741,12 +775,14 @@ template&lt;std::floating_point T, template&lt; typename, std::size_t &gt; typen
   </table>
   </dd>
 </dl>
+
+<p class="definition">Definition at line <a class="el" href="transforms_8hpp_source.html#l00087">87</a> of file <a class="el" href="transforms_8hpp_source.html">transforms.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">   89</span>{</div>
 <div class="line"><span class="lineno">   90</span>    <span class="keywordflow">return</span> <a class="code hl_function" href="group__LINAL.html#ga951c799c268132810a25a1c68565f6c9">normalize</a>(<a class="code hl_function" href="#a753216fb24ad5d084c6f035f533c8064">dehomogenize</a>(<a class="code hl_function" href="group__LINAL.html#gabaea5c458a68c720d4283dbbf5c7a3e7">transpose</a>(<a class="code hl_function" href="group__LINAL.html#gaf01c6e39849d8d65c9a2e359a1a579b8">inverse</a>(t)) * (Vec4&lt;T&gt;(n))));</div>
 <div class="line"><span class="lineno">   91</span>}</div>
-<div class="ttc" id="agroup__LINAL_html_ga951c799c268132810a25a1c68565f6c9"><div class="ttname"><a href="group__LINAL.html#ga951c799c268132810a25a1c68565f6c9">loom::fn::normalize</a></div><div class="ttdeci">constexpr Vector&lt; T, N, std::array &gt; normalize(const Vector&lt; T, N, Container &gt; &amp;a) noexcept</div><div class="ttdoc">Normalize vector.</div><div class="ttdef"><b>Definition</b> linal.hpp:1461</div></div>
-<div class="ttc" id="agroup__LINAL_html_gabaea5c458a68c720d4283dbbf5c7a3e7"><div class="ttname"><a href="group__LINAL.html#gabaea5c458a68c720d4283dbbf5c7a3e7">loom::fn::transpose</a></div><div class="ttdeci">constexpr auto transpose(const Matrix&lt; T, M, N, Container &gt; &amp;a) noexcept</div><div class="ttdoc">Transpose matrix.</div><div class="ttdef"><b>Definition</b> linal.hpp:1627</div></div>
-<div class="ttc" id="agroup__LINAL_html_gaf01c6e39849d8d65c9a2e359a1a579b8"><div class="ttname"><a href="group__LINAL.html#gaf01c6e39849d8d65c9a2e359a1a579b8">loom::fn::inverse</a></div><div class="ttdeci">constexpr Matrix&lt; T, M, M, std::array &gt; inverse(const Matrix&lt; T, M, M, Container &gt; &amp;a) noexcept</div><div class="ttdoc">Compute inverse matrix .</div><div class="ttdef"><b>Definition</b> linal.hpp:1717</div></div>
+<div class="ttc" id="agroup__LINAL_html_ga951c799c268132810a25a1c68565f6c9"><div class="ttname"><a href="group__LINAL.html#ga951c799c268132810a25a1c68565f6c9">loom::fn::normalize</a></div><div class="ttdeci">constexpr Vector&lt; T, N, std::array &gt; normalize(const Vector&lt; T, N, Container &gt; &amp;a) noexcept</div><div class="ttdoc">Normalize vector.</div><div class="ttdef"><b>Definition</b> <a href="common_2linal_8hpp_source.html#l01461">linal.hpp:1461</a></div></div>
+<div class="ttc" id="agroup__LINAL_html_gabaea5c458a68c720d4283dbbf5c7a3e7"><div class="ttname"><a href="group__LINAL.html#gabaea5c458a68c720d4283dbbf5c7a3e7">loom::fn::transpose</a></div><div class="ttdeci">constexpr auto transpose(const Matrix&lt; T, M, N, Container &gt; &amp;a) noexcept</div><div class="ttdoc">Transpose matrix.</div><div class="ttdef"><b>Definition</b> <a href="common_2linal_8hpp_source.html#l01627">linal.hpp:1627</a></div></div>
+<div class="ttc" id="agroup__LINAL_html_gaf01c6e39849d8d65c9a2e359a1a579b8"><div class="ttname"><a href="group__LINAL.html#gaf01c6e39849d8d65c9a2e359a1a579b8">loom::fn::inverse</a></div><div class="ttdeci">constexpr Matrix&lt; T, M, M, std::array &gt; inverse(const Matrix&lt; T, M, M, Container &gt; &amp;a) noexcept</div><div class="ttdoc">Compute inverse matrix .</div><div class="ttdef"><b>Definition</b> <a href="common_2linal_8hpp_source.html#l01717">linal.hpp:1717</a></div></div>
 </div><!-- fragment -->
 </div>
 </div>
@@ -787,6 +823,8 @@ template&lt;std::floating_point T, template&lt; typename, std::size_t &gt; typen
   </table>
   </dd>
 </dl>
+
+<p class="definition">Definition at line <a class="el" href="transforms_8hpp_source.html#l00074">74</a> of file <a class="el" href="transforms_8hpp_source.html">transforms.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">   76</span>{</div>
 <div class="line"><span class="lineno">   77</span>    <span class="keywordflow">return</span> Vec3&lt;T&gt;(t * Vec4&lt;T&gt;(p, 1));</div>
 <div class="line"><span class="lineno">   78</span>}</div>
@@ -820,6 +858,8 @@ template&lt;std::floating_point T, template&lt; typename, std::size_t &gt; typen
 
 <p>Build orthonormal basis for given normal (z axis). <a class="el" href="citelist.html#CITEREF_duff2017basis">[1]</a>. </p>
 <dl class="section return"><dt>Returns</dt><dd>a pair of normals representing x and y axes. </dd></dl>
+
+<p class="definition">Definition at line <a class="el" href="transforms_8hpp_source.html#l00158">158</a> of file <a class="el" href="transforms_8hpp_source.html">transforms.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">  159</span>{</div>
 <div class="line"><span class="lineno">  160</span>    <span class="keyword">const</span> <span class="keyword">auto</span>&amp; [nx, ny, nz] = n;</div>
 <div class="line"><span class="lineno">  161</span>    <span class="keyword">const</span> T sign             = std::copysign(<span class="keyword">static_cast&lt;</span>T<span class="keyword">&gt;</span>(1), nz);</div>
@@ -830,7 +870,7 @@ template&lt;std::floating_point T, template&lt; typename, std::size_t &gt; typen
 <div class="line"><span class="lineno">  166</span>                                 -sign * nx),</div>
 <div class="line"><span class="lineno">  167</span>                     <a class="code hl_function" href="#ab707851ff9b1c52a33df9349c2e027e8">make_normal</a>(b, sign + ny * ny * a, -ny));</div>
 <div class="line"><span class="lineno">  168</span>}</div>
-<div class="ttc" id="anamespaceloom_1_1fn_html_ab707851ff9b1c52a33df9349c2e027e8"><div class="ttname"><a href="#ab707851ff9b1c52a33df9349c2e027e8">loom::fn::make_normal</a></div><div class="ttdeci">constexpr Vec3&lt; T &gt; make_normal(const T a, const Args... args) noexcept</div><div class="ttdoc">Build a normalized vector.</div><div class="ttdef"><b>Definition</b> transforms.hpp:34</div></div>
+<div class="ttc" id="anamespaceloom_1_1fn_html_ab707851ff9b1c52a33df9349c2e027e8"><div class="ttname"><a href="#ab707851ff9b1c52a33df9349c2e027e8">loom::fn::make_normal</a></div><div class="ttdeci">constexpr Vec3&lt; T &gt; make_normal(const T a, const Args... args) noexcept</div><div class="ttdoc">Build a normalized vector.</div><div class="ttdef"><b>Definition</b> <a href="transforms_8hpp_source.html#l00034">transforms.hpp:34</a></div></div>
 </div><!-- fragment -->
 </div>
 </div>
@@ -861,11 +901,13 @@ template&lt;std::floating_point T, template&lt; typename, std::size_t &gt; typen
 
 <p>Build orthonormal basis for given normal (z axis). <a class="el" href="citelist.html#CITEREF_duff2017basis">[1]</a>. </p>
 <dl class="section return"><dt>Returns</dt><dd>3x3 rotation matrix. </dd></dl>
+
+<p class="definition">Definition at line <a class="el" href="transforms_8hpp_source.html#l00176">176</a> of file <a class="el" href="transforms_8hpp_source.html">transforms.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">  177</span>{</div>
 <div class="line"><span class="lineno">  178</span>    <span class="keyword">const</span> <span class="keyword">auto</span> [x, y] = <a class="code hl_function" href="#a279833dba506d4e51dad0c26afd503e4">basis</a>(z);</div>
 <div class="line"><span class="lineno">  179</span>    <span class="keywordflow">return</span> <a class="code hl_function" href="group__LINAL.html#gabaea5c458a68c720d4283dbbf5c7a3e7">transpose</a>(Mat3&lt;T&gt;(x, y, z));</div>
 <div class="line"><span class="lineno">  180</span>}</div>
-<div class="ttc" id="anamespaceloom_1_1fn_html_a279833dba506d4e51dad0c26afd503e4"><div class="ttname"><a href="#a279833dba506d4e51dad0c26afd503e4">loom::fn::basis</a></div><div class="ttdeci">constexpr std::pair&lt; Vec3&lt; T &gt;, Vec3&lt; T &gt; &gt; basis(const Vec3&lt; T, Container &gt; &amp;n) noexcept</div><div class="ttdoc">Build orthonormal basis for given normal (z axis). duff2017basis.</div><div class="ttdef"><b>Definition</b> transforms.hpp:158</div></div>
+<div class="ttc" id="anamespaceloom_1_1fn_html_a279833dba506d4e51dad0c26afd503e4"><div class="ttname"><a href="#a279833dba506d4e51dad0c26afd503e4">loom::fn::basis</a></div><div class="ttdeci">constexpr std::pair&lt; Vec3&lt; T &gt;, Vec3&lt; T &gt; &gt; basis(const Vec3&lt; T, Container &gt; &amp;n) noexcept</div><div class="ttdoc">Build orthonormal basis for given normal (z axis). duff2017basis.</div><div class="ttdef"><b>Definition</b> <a href="transforms_8hpp_source.html#l00158">transforms.hpp:158</a></div></div>
 </div><!-- fragment -->
 </div>
 </div>
@@ -895,6 +937,8 @@ template&lt;std::floating_point T&gt; </div>
 </div><div class="memdoc">
 
 <p>Returns copy of itself. </p>
+
+<p class="definition">Definition at line <a class="el" href="aabb_8hpp_source.html#l00165">165</a> of file <a class="el" href="aabb_8hpp_source.html">aabb.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">  166</span>{</div>
 <div class="line"><span class="lineno">  167</span>    <span class="keywordflow">return</span> prim;</div>
 <div class="line"><span class="lineno">  168</span>}</div>
@@ -925,6 +969,8 @@ template&lt;std::floating_point T&gt; </div>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="cylinder_8hpp_source.html#l00094">94</a> of file <a class="el" href="cylinder_8hpp_source.html">cylinder.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">   95</span>{</div>
 <div class="line"><span class="lineno">   96</span>    <span class="keywordflow">return</span> {}; <span class="comment">// mock</span></div>
 <div class="line"><span class="lineno">   97</span>}</div>
@@ -957,6 +1003,8 @@ template&lt;std::floating_point T&gt; </div>
 </div><div class="memdoc">
 
 <p>Compute axis-aligned box bounding a disk. </p>
+
+<p class="definition">Definition at line <a class="el" href="disk_8hpp_source.html#l00098">98</a> of file <a class="el" href="disk_8hpp_source.html">disk.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">   99</span>{</div>
 <div class="line"><span class="lineno">  100</span>    <span class="keyword">const</span> <span class="keyword">auto</span>&amp; [p, n, r] = prim;</div>
 <div class="line"><span class="lineno">  101</span>    <span class="keyword">const</span> T h             = abs(</div>
@@ -964,8 +1012,8 @@ template&lt;std::floating_point T&gt; </div>
 <div class="line"><span class="lineno">  103</span>    <span class="keyword">const</span> Vec3&lt;T&gt; offset(r, h, r);</div>
 <div class="line"><span class="lineno">  104</span>    <span class="keywordflow">return</span> {p - offset, p + offset};</div>
 <div class="line"><span class="lineno">  105</span>}</div>
-<div class="ttc" id="agroup__LINAL_html_ga0a88ae67da38985d22dd129206f08acb"><div class="ttname"><a href="group__LINAL.html#ga0a88ae67da38985d22dd129206f08acb">loom::fn::dot</a></div><div class="ttdeci">constexpr T dot(const Vector&lt; T, N, Container1 &gt; &amp;a, const Vector&lt; T, N, Container2 &gt; &amp;b) noexcept</div><div class="ttdoc">Compute dot product of the given vectors.</div><div class="ttdef"><b>Definition</b> linal.hpp:1346</div></div>
-<div class="ttc" id="anamespaceloom_html_a97ff90dba9a626b1112818b11976bf70"><div class="ttname"><a href="namespaceloom.html#a97ff90dba9a626b1112818b11976bf70">loom::static_pow</a></div><div class="ttdeci">constexpr T static_pow(const T value) noexcept</div><div class="ttdoc">Rise a number to a constant power.</div><div class="ttdef"><b>Definition</b> math.hpp:224</div></div>
+<div class="ttc" id="agroup__LINAL_html_ga0a88ae67da38985d22dd129206f08acb"><div class="ttname"><a href="group__LINAL.html#ga0a88ae67da38985d22dd129206f08acb">loom::fn::dot</a></div><div class="ttdeci">constexpr T dot(const Vector&lt; T, N, Container1 &gt; &amp;a, const Vector&lt; T, N, Container2 &gt; &amp;b) noexcept</div><div class="ttdoc">Compute dot product of the given vectors.</div><div class="ttdef"><b>Definition</b> <a href="common_2linal_8hpp_source.html#l01346">linal.hpp:1346</a></div></div>
+<div class="ttc" id="anamespaceloom_html_a97ff90dba9a626b1112818b11976bf70"><div class="ttname"><a href="namespaceloom.html#a97ff90dba9a626b1112818b11976bf70">loom::static_pow</a></div><div class="ttdeci">constexpr T static_pow(const T value) noexcept</div><div class="ttdoc">Rise a number to a constant power.</div><div class="ttdef"><b>Definition</b> <a href="math_8hpp_source.html#l00224">math.hpp:224</a></div></div>
 </div><!-- fragment -->
 </div>
 </div>
@@ -995,6 +1043,8 @@ template&lt;std::floating_point T&gt; </div>
 </div><div class="memdoc">
 
 <p>Compute bounding box of quadrilateral. </p>
+
+<p class="definition">Definition at line <a class="el" href="quad_8hpp_source.html#l00180">180</a> of file <a class="el" href="quad_8hpp_source.html">quad.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">  181</span>{</div>
 <div class="line"><span class="lineno">  182</span>    <span class="keywordflow">return</span> detail::bound(prim);</div>
 <div class="line"><span class="lineno">  183</span>}</div>
@@ -1027,6 +1077,8 @@ template&lt;std::floating_point T&gt; </div>
 </div><div class="memdoc">
 
 <p>Compute bounding box of a sphere. </p>
+
+<p class="definition">Definition at line <a class="el" href="sphere_8hpp_source.html#l00098">98</a> of file <a class="el" href="sphere_8hpp_source.html">sphere.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">   99</span>{</div>
 <div class="line"><span class="lineno">  100</span>    <span class="keyword">const</span> <span class="keyword">auto</span>&amp; [c, r] = prim;</div>
 <div class="line"><span class="lineno">  101</span>    <span class="keywordflow">return</span> {c - r, c + r};</div>
@@ -1060,6 +1112,8 @@ template&lt;std::floating_point T&gt; </div>
 </div><div class="memdoc">
 
 <p>Compute triangle bounding box. </p>
+
+<p class="definition">Definition at line <a class="el" href="triangle_8hpp_source.html#l00154">154</a> of file <a class="el" href="triangle_8hpp_source.html">triangle.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">  155</span>{</div>
 <div class="line"><span class="lineno">  156</span>    <span class="keywordflow">return</span> detail::bound(prim);</div>
 <div class="line"><span class="lineno">  157</span>}</div>
@@ -1094,6 +1148,8 @@ template&lt;std::floating_point T&gt; </div>
 </div><div class="memdoc">
 
 <p>Increment threefry counter. </p>
+
+<p class="definition">Definition at line <a class="el" href="common_2random_8hpp_source.html#l00095">95</a> of file <a class="el" href="common_2random_8hpp_source.html">random.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">   96</span>{</div>
 <div class="line"><span class="lineno">   97</span>    ar_32_2 ret = c;</div>
 <div class="line"><span class="lineno">   98</span>    ret[0] += i;</div>
@@ -1144,6 +1200,8 @@ template&lt;std::integral Int = int&gt; </div>
   </table>
   </dd>
 </dl>
+
+<p class="definition">Definition at line <a class="el" href="string_8hpp_source.html#l00190">190</a> of file <a class="el" href="string_8hpp_source.html">string.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">  191</span>{</div>
 <div class="line"><span class="lineno">  192</span>    <span class="keywordflow">if</span>(base == 16)</div>
 <div class="line"><span class="lineno">  193</span>    {</div>
@@ -1188,6 +1246,8 @@ template&lt;std::floating_point T&gt; </div>
 </div><div class="memdoc">
 
 <p>Compute <a class="el" href="structloom_1_1AABB.html" title="Axis-aligned bounding box.">AABB</a> centroid. </p>
+
+<p class="definition">Definition at line <a class="el" href="aabb_8hpp_source.html#l00156">156</a> of file <a class="el" href="aabb_8hpp_source.html">aabb.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">  157</span>{</div>
 <div class="line"><span class="lineno">  158</span>    <span class="keyword">const</span> <span class="keyword">auto</span>&amp; [vmin, vmax] = prim;</div>
 <div class="line"><span class="lineno">  159</span>    <span class="keywordflow">return</span> (vmin + vmax) * <span class="keyword">static_cast&lt;</span>T<span class="keyword">&gt;</span>(0.5);</div>
@@ -1219,6 +1279,8 @@ template&lt;std::floating_point T&gt; </div>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="cylinder_8hpp_source.html#l00085">85</a> of file <a class="el" href="cylinder_8hpp_source.html">cylinder.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">   86</span>{</div>
 <div class="line"><span class="lineno">   87</span>    Vec3&lt;T&gt; p = prim.position;</div>
 <div class="line"><span class="lineno">   88</span>    p[1] += prim.height * <span class="keyword">static_cast&lt;</span>T<span class="keyword">&gt;</span>(0.5);</div>
@@ -1253,6 +1315,8 @@ template&lt;std::floating_point T&gt; </div>
 </div><div class="memdoc">
 
 <p>Return disk position. </p>
+
+<p class="definition">Definition at line <a class="el" href="disk_8hpp_source.html#l00090">90</a> of file <a class="el" href="disk_8hpp_source.html">disk.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">   91</span>{</div>
 <div class="line"><span class="lineno">   92</span>    <span class="keywordflow">return</span> prim.position;</div>
 <div class="line"><span class="lineno">   93</span>}</div>
@@ -1285,6 +1349,8 @@ template&lt;std::floating_point T&gt; </div>
 </div><div class="memdoc">
 
 <p>Compute centroid of a quadrilateral. </p>
+
+<p class="definition">Definition at line <a class="el" href="quad_8hpp_source.html#l00171">171</a> of file <a class="el" href="quad_8hpp_source.html">quad.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">  172</span>{</div>
 <div class="line"><span class="lineno">  173</span>    <span class="keyword">const</span> <span class="keyword">auto</span>&amp; [a, b, c, d] = prim;</div>
 <div class="line"><span class="lineno">  174</span>    <span class="keywordflow">return</span> a + b + c + d / <span class="keyword">static_cast&lt;</span>T<span class="keyword">&gt;</span>(4);</div>
@@ -1318,6 +1384,8 @@ template&lt;std::floating_point T&gt; </div>
 </div><div class="memdoc">
 
 <p>Return sphere position. </p>
+
+<p class="definition">Definition at line <a class="el" href="sphere_8hpp_source.html#l00090">90</a> of file <a class="el" href="sphere_8hpp_source.html">sphere.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">   91</span>{</div>
 <div class="line"><span class="lineno">   92</span>    <span class="keywordflow">return</span> prim.center;</div>
 <div class="line"><span class="lineno">   93</span>}</div>
@@ -1350,6 +1418,8 @@ template&lt;std::floating_point T&gt; </div>
 </div><div class="memdoc">
 
 <p>Compute triangle centroid. </p>
+
+<p class="definition">Definition at line <a class="el" href="triangle_8hpp_source.html#l00145">145</a> of file <a class="el" href="triangle_8hpp_source.html">triangle.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">  146</span>{</div>
 <div class="line"><span class="lineno">  147</span>    <span class="keyword">const</span> <span class="keyword">auto</span>&amp; [a, b, c] = prim;</div>
 <div class="line"><span class="lineno">  148</span>    <span class="keywordflow">return</span> (a + b + c) / <span class="keyword">static_cast&lt;</span>T<span class="keyword">&gt;</span>(3);</div>
@@ -1381,6 +1451,8 @@ template&lt;typename O&gt; </div>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="benchmarks_2render_8hpp_source.html#l00044">44</a> of file <a class="el" href="benchmarks_2render_8hpp_source.html">render.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">   45</span>{</div>
 <div class="line"><span class="lineno">   46</span>    <span class="keyword">const</span> <span class="keyword">auto</span> [r, g, b, _, __] = o;</div>
 <div class="line"><span class="lineno">   47</span>    <span class="keywordflow">return</span> RGBA{r, g, b, 1};</div>
@@ -1410,6 +1482,8 @@ template&lt;typename O&gt; </div>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="enc_8hpp_source.html#l00037">37</a> of file <a class="el" href="enc_8hpp_source.html">enc.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">   38</span>{</div>
 <div class="line"><span class="lineno">   39</span>    <span class="keywordflow">return</span> Vec2u(p &gt;&gt; 16, p &amp; 0xffff);</div>
 <div class="line"><span class="lineno">   40</span>}</div>
@@ -1448,6 +1522,8 @@ template&lt;std::floating_point T, template&lt; typename, std::size_t &gt; typen
   </table>
   </dd>
 </dl>
+
+<p class="definition">Definition at line <a class="el" href="transforms_8hpp_source.html#l00044">44</a> of file <a class="el" href="transforms_8hpp_source.html">transforms.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">   45</span>{</div>
 <div class="line"><span class="lineno">   46</span>    Vec3&lt;T&gt; ret{a};</div>
 <div class="line"><span class="lineno">   47</span>    <span class="keyword">const</span> T w = get_w(a);</div>
@@ -1456,7 +1532,7 @@ template&lt;std::floating_point T, template&lt; typename, std::size_t &gt; typen
 <div class="line"><span class="lineno">   50</span>        ret /= w;</div>
 <div class="line"><span class="lineno">   51</span>    <span class="keywordflow">return</span> ret;</div>
 <div class="line"><span class="lineno">   52</span>}</div>
-<div class="ttc" id="anamespaceloom_html_aea21d26f74655dbedcc9e59509ca4d59"><div class="ttname"><a href="namespaceloom.html#aea21d26f74655dbedcc9e59509ca4d59">loom::almost_equal</a></div><div class="ttdeci">constexpr bool almost_equal(const T a, const T b, const ULP ulp)</div><div class="ttdoc">Compare floating-point values for equality using epsilon.</div><div class="ttdef"><b>Definition</b> math.hpp:255</div></div>
+<div class="ttc" id="anamespaceloom_html_aea21d26f74655dbedcc9e59509ca4d59"><div class="ttname"><a href="namespaceloom.html#aea21d26f74655dbedcc9e59509ca4d59">loom::almost_equal</a></div><div class="ttdeci">constexpr bool almost_equal(const T a, const T b, const ULP ulp)</div><div class="ttdoc">Compare floating-point values for equality using epsilon.</div><div class="ttdef"><b>Definition</b> <a href="math_8hpp_source.html#l00255">math.hpp:255</a></div></div>
 </div><!-- fragment -->
 </div>
 </div>
@@ -1482,6 +1558,8 @@ template&lt;std::floating_point T, template&lt; typename, std::size_t &gt; typen
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="string_8hpp_source.html#l00258">258</a> of file <a class="el" href="string_8hpp_source.html">string.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">  259</span>{</div>
 <div class="line"><span class="lineno">  260</span>    <span class="keywordflow">if</span>(any_string(s.substr(0, 2), <span class="stringliteral">&quot;0x&quot;</span>, <span class="stringliteral">&quot;0X&quot;</span>))</div>
 <div class="line"><span class="lineno">  261</span>        <span class="keywordflow">return</span> {16, s.substr(2)};</div>
@@ -1515,6 +1593,8 @@ template&lt;std::floating_point T, template&lt; typename, std::size_t &gt; typen
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="enc_8hpp_source.html#l00030">30</a> of file <a class="el" href="enc_8hpp_source.html">enc.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">   31</span>{</div>
 <div class="line"><span class="lineno">   32</span>    <span class="keyword">const</span> <span class="keyword">auto</span> [x, y] = p;</div>
 <div class="line"><span class="lineno">   33</span>    <span class="keywordflow">return</span> x &lt;&lt; 16 | y;</div>
@@ -1544,6 +1624,8 @@ template&lt;std::floating_point T, template&lt; typename, std::size_t &gt; typen
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="enc_8hpp_source.html#l00043">43</a> of file <a class="el" href="enc_8hpp_source.html">enc.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">   44</span>{</div>
 <div class="line"><span class="lineno">   45</span>    <span class="keyword">const</span> <span class="keyword">auto</span> [w, h] = res;</div>
 <div class="line"><span class="lineno">   46</span>    <span class="keywordflow">return</span> w &lt;&lt; 16 | h;</div>
@@ -1575,6 +1657,8 @@ template&lt;std::floating_point T, template&lt; typename, std::size_t &gt; typen
 </div><div class="memdoc">
 
 <p>Generate canonical random number [0, 1). </p>
+
+<p class="definition">Definition at line <a class="el" href="common_2random_8hpp_source.html#l00087">87</a> of file <a class="el" href="common_2random_8hpp_source.html">random.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">   88</span>{</div>
 <div class="line"><span class="lineno">   89</span>    std::uint32_t bits = (x &gt;&gt; 9) | 0x3f800000;</div>
 <div class="line"><span class="lineno">   90</span>    <span class="keywordflow">return</span> <span class="keyword">reinterpret_cast&lt;</span><span class="keywordtype">float</span>&amp;<span class="keyword">&gt;</span>(bits) - 1.f;</div>
@@ -1613,6 +1697,8 @@ template&lt;std::floating_point R&gt; </div>
 
 <p>Compute ray-quadrilateral intersection. </p>
 <p>Implements algorithm described in <a class="el" href="citelist.html#CITEREF_ld2004aerit">[4]</a> </p>
+
+<p class="definition">Definition at line <a class="el" href="quad_8hpp_source.html#l00041">41</a> of file <a class="el" href="quad_8hpp_source.html">quad.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">   42</span>{</div>
 <div class="line"><span class="lineno">   43</span>    <span class="keyword">using </span>V3 = Vec3&lt;R&gt;;</div>
 <div class="line"><span class="lineno">   44</span> </div>
@@ -1714,7 +1800,7 @@ template&lt;std::floating_point R&gt; </div>
 <div class="line"><span class="lineno">  140</span> </div>
 <div class="line"><span class="lineno">  141</span>    <span class="keywordflow">return</span> {<span class="keyword">true</span>, t, Vec2&lt;R&gt;(u, v)};</div>
 <div class="line"><span class="lineno">  142</span>}</div>
-<div class="ttc" id="agroup__LINAL_html_gadf881f1e792f89908d3a39390fc469df"><div class="ttname"><a href="group__LINAL.html#gadf881f1e792f89908d3a39390fc469df">loom::fn::cross</a></div><div class="ttdeci">constexpr auto cross(const Vector&lt; T, N, Container1 &gt; &amp;a, const Vector&lt; T, N, Container2 &gt; &amp;b) noexcept</div><div class="ttdoc">N-dimensional cross product.</div><div class="ttdef"><b>Definition</b> linal.hpp:1430</div></div>
+<div class="ttc" id="agroup__LINAL_html_gadf881f1e792f89908d3a39390fc469df"><div class="ttname"><a href="group__LINAL.html#gadf881f1e792f89908d3a39390fc469df">loom::fn::cross</a></div><div class="ttdeci">constexpr auto cross(const Vector&lt; T, N, Container1 &gt; &amp;a, const Vector&lt; T, N, Container2 &gt; &amp;b) noexcept</div><div class="ttdoc">N-dimensional cross product.</div><div class="ttdef"><b>Definition</b> <a href="common_2linal_8hpp_source.html#l01430">linal.hpp:1430</a></div></div>
 </div><!-- fragment -->
 </div>
 </div>
@@ -1749,6 +1835,8 @@ template&lt;std::floating_point T&gt; </div>
 
 <p>Axis-aligned bounding box intersection function. </p>
 <p>Implements algorithm described in <a class="el" href="citelist.html#CITEREF_10.1145/1198555.1198748">[10]</a> </p>
+
+<p class="definition">Definition at line <a class="el" href="aabb_8hpp_source.html#l00086">86</a> of file <a class="el" href="aabb_8hpp_source.html">aabb.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">   87</span>{</div>
 <div class="line"><span class="lineno">   88</span>    <span class="keyword">const</span> <span class="keyword">auto</span>&amp; [o, d]             = ray;</div>
 <div class="line"><span class="lineno">   89</span>    <span class="keyword">const</span> Vec3&lt;T&gt; inv_d           = Vec3&lt;T&gt;{1} / d;</div>
@@ -1795,6 +1883,8 @@ template&lt;std::floating_point T&gt; </div>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="cylinder_8hpp_source.html#l00040">40</a> of file <a class="el" href="cylinder_8hpp_source.html">cylinder.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">   41</span>{</div>
 <div class="line"><span class="lineno">   42</span>    <span class="keyword">const</span> <span class="keyword">auto</span>&amp; [o, d]    = ray;</div>
 <div class="line"><span class="lineno">   43</span>    <span class="keyword">const</span> <span class="keyword">auto</span>&amp; [p, r, h] = prim;</div>
@@ -1812,7 +1902,7 @@ template&lt;std::floating_point T&gt; </div>
 <div class="line"><span class="lineno">   55</span> </div>
 <div class="line"><span class="lineno">   56</span>    <span class="keywordflow">return</span> {hit &amp;&amp; y &gt;= 0 &amp;&amp; y &lt;= h, t, Vec2&lt;T&gt;{}};</div>
 <div class="line"><span class="lineno">   57</span>}</div>
-<div class="ttc" id="anamespaceloom_html_a0d9f9ba65784b1414dbc2f3c5abc7ee7"><div class="ttname"><a href="namespaceloom.html#a0d9f9ba65784b1414dbc2f3c5abc7ee7">loom::quadratic</a></div><div class="ttdeci">constexpr std::pair&lt; bool, T &gt; quadratic(const T a, const T b, const T c) noexcept</div><div class="ttdoc">Solve quadratic equation  for non-complex cases.</div><div class="ttdef"><b>Definition</b> math.hpp:310</div></div>
+<div class="ttc" id="anamespaceloom_html_a0d9f9ba65784b1414dbc2f3c5abc7ee7"><div class="ttname"><a href="namespaceloom.html#a0d9f9ba65784b1414dbc2f3c5abc7ee7">loom::quadratic</a></div><div class="ttdeci">constexpr std::pair&lt; bool, T &gt; quadratic(const T a, const T b, const T c) noexcept</div><div class="ttdoc">Solve quadratic equation  for non-complex cases.</div><div class="ttdef"><b>Definition</b> <a href="math_8hpp_source.html#l00310">math.hpp:310</a></div></div>
 </div><!-- fragment -->
 </div>
 </div>
@@ -1846,13 +1936,15 @@ template&lt;std::floating_point T&gt; </div>
 </div><div class="memdoc">
 
 <p>Compute ray-disk intersection. </p>
+
+<p class="definition">Definition at line <a class="el" href="disk_8hpp_source.html#l00056">56</a> of file <a class="el" href="disk_8hpp_source.html">disk.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">   57</span>{</div>
 <div class="line"><span class="lineno">   58</span>    <span class="keyword">const</span> <span class="keyword">auto</span>&amp; [o, d]    = ray;</div>
 <div class="line"><span class="lineno">   59</span>    <span class="keyword">const</span> <span class="keyword">auto</span>&amp; [p, n, r] = prim;</div>
 <div class="line"><span class="lineno">   60</span>    <span class="keyword">const</span> T t             = <a class="code hl_function" href="group__LINAL.html#ga0a88ae67da38985d22dd129206f08acb">dot</a>(p - o, n) / <a class="code hl_function" href="group__LINAL.html#ga0a88ae67da38985d22dd129206f08acb">dot</a>(d, n);</div>
 <div class="line"><span class="lineno">   61</span>    <span class="keywordflow">return</span> {!std::signbit(t) &amp;&amp; <a class="code hl_function" href="group__LINAL.html#ga31c39e92a8887bd24eac194ead01f50e">distance</a>(o + d * t, p) &lt; r, t, Vec2&lt;T&gt;{}};</div>
 <div class="line"><span class="lineno">   62</span>}</div>
-<div class="ttc" id="agroup__LINAL_html_ga31c39e92a8887bd24eac194ead01f50e"><div class="ttname"><a href="group__LINAL.html#ga31c39e92a8887bd24eac194ead01f50e">loom::fn::distance</a></div><div class="ttdeci">constexpr T distance(const Vector&lt; T, N, Container1 &gt; &amp;a, const Vector&lt; T, N, Container2 &gt; &amp;b) noexcept</div><div class="ttdoc">Compute distance between two vectors.</div><div class="ttdef"><b>Definition</b> linal.hpp:1477</div></div>
+<div class="ttc" id="agroup__LINAL_html_ga31c39e92a8887bd24eac194ead01f50e"><div class="ttname"><a href="group__LINAL.html#ga31c39e92a8887bd24eac194ead01f50e">loom::fn::distance</a></div><div class="ttdeci">constexpr T distance(const Vector&lt; T, N, Container1 &gt; &amp;a, const Vector&lt; T, N, Container2 &gt; &amp;b) noexcept</div><div class="ttdoc">Compute distance between two vectors.</div><div class="ttdef"><b>Definition</b> <a href="common_2linal_8hpp_source.html#l01477">linal.hpp:1477</a></div></div>
 </div><!-- fragment -->
 </div>
 </div>
@@ -1886,6 +1978,8 @@ template&lt;std::floating_point T&gt; </div>
 </div><div class="memdoc">
 
 <p>Compute ray-sphere intersection. </p>
+
+<p class="definition">Definition at line <a class="el" href="sphere_8hpp_source.html#l00053">53</a> of file <a class="el" href="sphere_8hpp_source.html">sphere.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">   54</span>{</div>
 <div class="line"><span class="lineno">   55</span>    <span class="keyword">const</span> <span class="keyword">auto</span>&amp; [o, d]  = ray;</div>
 <div class="line"><span class="lineno">   56</span>    <span class="keyword">const</span> T       a     = <a class="code hl_function" href="group__LINAL.html#ga0b8fb9492c6e591a18f7e18cf17a1289">length2</a>(d);</div>
@@ -1895,7 +1989,7 @@ template&lt;std::floating_point T&gt; </div>
 <div class="line"><span class="lineno">   60</span>    <span class="keyword">const</span> <span class="keyword">auto</span> [hit, t] = <a class="code hl_function" href="namespaceloom.html#a0d9f9ba65784b1414dbc2f3c5abc7ee7">quadratic</a>(a, b, c);</div>
 <div class="line"><span class="lineno">   61</span>    <span class="keywordflow">return</span> {hit, t, Vec2&lt;T&gt;{}};</div>
 <div class="line"><span class="lineno">   62</span>}</div>
-<div class="ttc" id="agroup__LINAL_html_ga0b8fb9492c6e591a18f7e18cf17a1289"><div class="ttname"><a href="group__LINAL.html#ga0b8fb9492c6e591a18f7e18cf17a1289">loom::fn::length2</a></div><div class="ttdeci">constexpr T length2(const Vector&lt; T, N, Container &gt; &amp;a) noexcept</div><div class="ttdoc">Compute squared length of a vector.</div><div class="ttdef"><b>Definition</b> linal.hpp:1441</div></div>
+<div class="ttc" id="agroup__LINAL_html_ga0b8fb9492c6e591a18f7e18cf17a1289"><div class="ttname"><a href="group__LINAL.html#ga0b8fb9492c6e591a18f7e18cf17a1289">loom::fn::length2</a></div><div class="ttdeci">constexpr T length2(const Vector&lt; T, N, Container &gt; &amp;a) noexcept</div><div class="ttdoc">Compute squared length of a vector.</div><div class="ttdef"><b>Definition</b> <a href="common_2linal_8hpp_source.html#l01441">linal.hpp:1441</a></div></div>
 </div><!-- fragment -->
 </div>
 </div>
@@ -1930,6 +2024,8 @@ template&lt;std::floating_point T&gt; </div>
 
 <p>Compute ray-triangle intersection. </p>
 <p>Implements classic algorithm described in <a class="el" href="citelist.html#CITEREF_10.1080/10867651.1997.10487468">[5]</a> </p>
+
+<p class="definition">Definition at line <a class="el" href="triangle_8hpp_source.html#l00040">40</a> of file <a class="el" href="triangle_8hpp_source.html">triangle.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">   41</span>{</div>
 <div class="line"><span class="lineno">   42</span>    <span class="keyword">using </span>V3 = Vec3&lt;T&gt;;</div>
 <div class="line"><span class="lineno">   43</span> </div>
@@ -1983,6 +2079,8 @@ template&lt;std::floating_point T&gt; </div>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="string_8hpp_source.html#l00171">171</a> of file <a class="el" href="string_8hpp_source.html">string.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">  172</span>{</div>
 <div class="line"><span class="lineno">  173</span>    <span class="keywordflow">return</span> is_abcdef_upper(c) || is_abcdef_lower(c);</div>
 <div class="line"><span class="lineno">  174</span>}</div>
@@ -2011,6 +2109,8 @@ template&lt;std::floating_point T&gt; </div>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="string_8hpp_source.html#l00165">165</a> of file <a class="el" href="string_8hpp_source.html">string.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">  166</span>{</div>
 <div class="line"><span class="lineno">  167</span>    <span class="keywordflow">return</span> inclusive_range(<span class="charliteral">&#39;a&#39;</span>, <span class="charliteral">&#39;f&#39;</span>)(c);</div>
 <div class="line"><span class="lineno">  168</span>}</div>
@@ -2039,6 +2139,8 @@ template&lt;std::floating_point T&gt; </div>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="string_8hpp_source.html#l00159">159</a> of file <a class="el" href="string_8hpp_source.html">string.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">  160</span>{</div>
 <div class="line"><span class="lineno">  161</span>    <span class="keywordflow">return</span> inclusive_range(<span class="charliteral">&#39;A&#39;</span>, <span class="charliteral">&#39;F&#39;</span>)(c);</div>
 <div class="line"><span class="lineno">  162</span>}</div>
@@ -2067,6 +2169,8 @@ template&lt;std::floating_point T&gt; </div>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="string_8hpp_source.html#l00127">127</a> of file <a class="el" href="string_8hpp_source.html">string.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">  128</span>{</div>
 <div class="line"><span class="lineno">  129</span>    <span class="keywordflow">return</span> is_alpha_lower(c) || is_alpha_upper(c);</div>
 <div class="line"><span class="lineno">  130</span>}</div>
@@ -2095,6 +2199,8 @@ template&lt;std::floating_point T&gt; </div>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="string_8hpp_source.html#l00122">122</a> of file <a class="el" href="string_8hpp_source.html">string.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">  123</span>{</div>
 <div class="line"><span class="lineno">  124</span>    <span class="keywordflow">return</span> inclusive_range(<span class="charliteral">&#39;a&#39;</span>, <span class="charliteral">&#39;z&#39;</span>)(c);</div>
 <div class="line"><span class="lineno">  125</span>}</div>
@@ -2123,6 +2229,8 @@ template&lt;std::floating_point T&gt; </div>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="string_8hpp_source.html#l00117">117</a> of file <a class="el" href="string_8hpp_source.html">string.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">  118</span>{</div>
 <div class="line"><span class="lineno">  119</span>    <span class="keywordflow">return</span> inclusive_range(<span class="charliteral">&#39;A&#39;</span>, <span class="charliteral">&#39;Z&#39;</span>)(c);</div>
 <div class="line"><span class="lineno">  120</span>}</div>
@@ -2151,6 +2259,8 @@ template&lt;std::floating_point T&gt; </div>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="string_8hpp_source.html#l00137">137</a> of file <a class="el" href="string_8hpp_source.html">string.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">  138</span>{</div>
 <div class="line"><span class="lineno">  139</span>    <span class="keywordflow">return</span> is_alpha(c) || is_digit(c);</div>
 <div class="line"><span class="lineno">  140</span>}</div>
@@ -2179,6 +2289,8 @@ template&lt;std::floating_point T&gt; </div>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="string_8hpp_source.html#l00132">132</a> of file <a class="el" href="string_8hpp_source.html">string.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">  133</span>{</div>
 <div class="line"><span class="lineno">  134</span>    <span class="keywordflow">return</span> inclusive_range(<span class="charliteral">&#39;0&#39;</span>, <span class="charliteral">&#39;9&#39;</span>)(c);</div>
 <div class="line"><span class="lineno">  135</span>}</div>
@@ -2228,13 +2340,15 @@ template&lt;std::floating_point T, template&lt; typename, std::size_t &gt; typen
   </table>
   </dd>
 </dl>
+
+<p class="definition">Definition at line <a class="el" href="transforms_8hpp_source.html#l00142">142</a> of file <a class="el" href="transforms_8hpp_source.html">transforms.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">  145</span>{</div>
 <div class="line"><span class="lineno">  146</span>    <span class="keyword">const</span> Vec3&lt;T&gt; f = <a class="code hl_function" href="group__LINAL.html#ga951c799c268132810a25a1c68565f6c9">normalize</a>(eye - target);</div>
 <div class="line"><span class="lineno">  147</span>    <span class="keyword">const</span> Vec3&lt;T&gt; r = <a class="code hl_function" href="group__LINAL.html#ga951c799c268132810a25a1c68565f6c9">normalize</a>(<a class="code hl_function" href="group__LINAL.html#gadf881f1e792f89908d3a39390fc469df">cross</a>(up, f));</div>
 <div class="line"><span class="lineno">  148</span>    <span class="keyword">const</span> Vec3&lt;T&gt; u = <a class="code hl_function" href="group__LINAL.html#ga951c799c268132810a25a1c68565f6c9">normalize</a>(<a class="code hl_function" href="group__LINAL.html#gadf881f1e792f89908d3a39390fc469df">cross</a>(f, r));</div>
 <div class="line"><span class="lineno">  149</span>    <span class="keywordflow">return</span> <a class="code hl_function" href="group__LINAL.html#gaf01c6e39849d8d65c9a2e359a1a579b8">inverse</a>(Mat4&lt;T&gt;(r, 0, u, 0, f, 0, 0, 0, 0, 1) * <a class="code hl_function" href="#a9c59101514e424c0b32587001a06cd01">translate</a>(-eye));</div>
 <div class="line"><span class="lineno">  150</span>}</div>
-<div class="ttc" id="anamespaceloom_1_1fn_html_a9c59101514e424c0b32587001a06cd01"><div class="ttname"><a href="#a9c59101514e424c0b32587001a06cd01">loom::fn::translate</a></div><div class="ttdeci">constexpr Mat4&lt; T &gt; translate(const Vec3&lt; T, Container &gt; &amp;delta) noexcept</div><div class="ttdoc">Create translation transform.</div><div class="ttdef"><b>Definition</b> transforms.hpp:98</div></div>
+<div class="ttc" id="anamespaceloom_1_1fn_html_a9c59101514e424c0b32587001a06cd01"><div class="ttname"><a href="#a9c59101514e424c0b32587001a06cd01">loom::fn::translate</a></div><div class="ttdeci">constexpr Mat4&lt; T &gt; translate(const Vec3&lt; T, Container &gt; &amp;delta) noexcept</div><div class="ttdoc">Create translation transform.</div><div class="ttdef"><b>Definition</b> <a href="transforms_8hpp_source.html#l00098">transforms.hpp:98</a></div></div>
 </div><!-- fragment -->
 </div>
 </div>
@@ -2260,6 +2374,8 @@ template&lt;std::floating_point T, template&lt; typename, std::size_t &gt; typen
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="string_8hpp_source.html#l00143">143</a> of file <a class="el" href="string_8hpp_source.html">string.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">  144</span>{</div>
 <div class="line"><span class="lineno">  145</span>    <span class="keywordflow">if</span>(is_alpha_upper(c)) <span class="keywordflow">return</span> c + 32;</div>
 <div class="line"><span class="lineno">  146</span> </div>
@@ -2298,6 +2414,8 @@ template&lt;std::floating_point T, std::floating_point... Args&gt; </div>
 </div><div class="memdoc">
 
 <p>Build a normalized vector. </p>
+
+<p class="definition">Definition at line <a class="el" href="transforms_8hpp_source.html#l00034">34</a> of file <a class="el" href="transforms_8hpp_source.html">transforms.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">   35</span>{</div>
 <div class="line"><span class="lineno">   36</span>    <span class="keywordflow">return</span> <a class="code hl_function" href="group__LINAL.html#ga951c799c268132810a25a1c68565f6c9">normalize</a>(Vec3&lt;T&gt;(a, args...));</div>
 <div class="line"><span class="lineno">   37</span>}</div>
@@ -2334,6 +2452,8 @@ template&lt;std::floating_point T&gt; </div>
 </div><div class="memdoc">
 
 <p>Compute normal of <a class="el" href="structloom_1_1AABB.html" title="Axis-aligned bounding box.">AABB</a> at <code class="param">pos</code>. </p>
+
+<p class="definition">Definition at line <a class="el" href="aabb_8hpp_source.html#l00106">106</a> of file <a class="el" href="aabb_8hpp_source.html">aabb.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">  107</span>{</div>
 <div class="line"><span class="lineno">  108</span>    <span class="keyword">const</span> T  nsign[2]{-1, 1};</div>
 <div class="line"><span class="lineno">  109</span>    Vec3&lt;T&gt; vd[2]{};</div>
@@ -2347,7 +2467,7 @@ template&lt;std::floating_point T&gt; </div>
 <div class="line"><span class="lineno">  117</span>    <span class="keyword">const</span> <span class="keyword">auto</span> pp = md[0] &gt; md[1];</div>
 <div class="line"><span class="lineno">  118</span>    <span class="keywordflow">return</span> <a class="code hl_function" href="group__LINAL.html#ga951c799c268132810a25a1c68565f6c9">normalize</a>(vd[pp] * nsign[pp]);</div>
 <div class="line"><span class="lineno">  119</span>}</div>
-<div class="ttc" id="agroup__LINAL_html_ga3d0f274c6c7dc6074cfbcc84a91a72f7"><div class="ttname"><a href="group__LINAL.html#ga3d0f274c6c7dc6074cfbcc84a91a72f7">loom::min</a></div><div class="ttdeci">constexpr fn::min_fn min</div><div class="ttdoc">Select the smallest corresponding elements of two vectors or numbers.</div><div class="ttdef"><b>Definition</b> linal.hpp:1741</div></div>
+<div class="ttc" id="agroup__LINAL_html_ga3d0f274c6c7dc6074cfbcc84a91a72f7"><div class="ttname"><a href="group__LINAL.html#ga3d0f274c6c7dc6074cfbcc84a91a72f7">loom::min</a></div><div class="ttdeci">constexpr fn::min_fn min</div><div class="ttdoc">Select the smallest corresponding elements of two vectors or numbers.</div><div class="ttdef"><b>Definition</b> <a href="common_2linal_8hpp_source.html#l01741">linal.hpp:1741</a></div></div>
 </div><!-- fragment -->
 </div>
 </div>
@@ -2381,6 +2501,8 @@ template&lt;std::floating_point T, template&lt; typename, std::size_t &gt; typen
 </div><div class="memdoc">
 
 <p>Return disk normal. </p>
+
+<p class="definition">Definition at line <a class="el" href="disk_8hpp_source.html#l00068">68</a> of file <a class="el" href="disk_8hpp_source.html">disk.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">   69</span>{</div>
 <div class="line"><span class="lineno">   70</span>    <span class="keywordflow">return</span> prim.normal;</div>
 <div class="line"><span class="lineno">   71</span>}</div>
@@ -2417,6 +2539,8 @@ template&lt;std::floating_point T, template&lt; typename, std::size_t &gt; typen
 </div><div class="memdoc">
 
 <p>Compute normal of a quadrilateral. </p>
+
+<p class="definition">Definition at line <a class="el" href="quad_8hpp_source.html#l00148">148</a> of file <a class="el" href="quad_8hpp_source.html">quad.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">  149</span>{</div>
 <div class="line"><span class="lineno">  150</span>    <span class="keyword">const</span> <span class="keyword">auto</span> e01 = std::get&lt;3&gt;(prim) - std::get&lt;0&gt;(prim);</div>
 <div class="line"><span class="lineno">  151</span>    <span class="keyword">const</span> <span class="keyword">auto</span> e03 = std::get&lt;1&gt;(prim) - std::get&lt;0&gt;(prim);</div>
@@ -2455,6 +2579,8 @@ template&lt;std::floating_point T, template&lt; typename, std::size_t &gt; typen
 </div><div class="memdoc">
 
 <p>Compute triangle normal. </p>
+
+<p class="definition">Definition at line <a class="el" href="triangle_8hpp_source.html#l00074">74</a> of file <a class="el" href="triangle_8hpp_source.html">triangle.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">   75</span>{</div>
 <div class="line"><span class="lineno">   76</span>    <span class="keyword">const</span> <span class="keyword">auto</span>&amp; [v0, v1, v2] = prim;</div>
 <div class="line"><span class="lineno">   77</span>    <span class="keyword">const</span> Vec3&lt;T&gt; edge1      = v1 - v0;</div>
@@ -2494,6 +2620,8 @@ template&lt;std::floating_point T, template&lt; typename, std::size_t &gt; typen
 </div><div class="memdoc">
 
 <p>Compute surface normal at <code class="param">pos</code>. </p>
+
+<p class="definition">Definition at line <a class="el" href="sphere_8hpp_source.html#l00068">68</a> of file <a class="el" href="sphere_8hpp_source.html">sphere.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">   69</span>{</div>
 <div class="line"><span class="lineno">   70</span>    <span class="keywordflow">return</span> <a class="code hl_function" href="group__LINAL.html#ga951c799c268132810a25a1c68565f6c9">normalize</a>(pos - prim.center);</div>
 <div class="line"><span class="lineno">   71</span>}</div>
@@ -2530,6 +2658,8 @@ template&lt;std::floating_point T&gt; </div>
 </div><div class="memdoc">
 
 <p>Return cylinder normal. </p>
+
+<p class="definition">Definition at line <a class="el" href="cylinder_8hpp_source.html#l00062">62</a> of file <a class="el" href="cylinder_8hpp_source.html">cylinder.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">   63</span>{</div>
 <div class="line"><span class="lineno">   64</span>    Vec3&lt;T&gt; p = prim.position;</div>
 <div class="line"><span class="lineno">   65</span>    p[1]      = 0;</div>
@@ -2567,6 +2697,8 @@ template&lt;std::integral Int&gt; </div>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="string_8hpp_source.html#l00225">225</a> of file <a class="el" href="string_8hpp_source.html">string.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">  226</span>{</div>
 <div class="line"><span class="lineno">  227</span>    <span class="keywordflow">if</span>(s.empty()) <span class="keywordflow">return</span> {};</div>
 <div class="line"><span class="lineno">  228</span> </div>
@@ -2583,7 +2715,7 @@ template&lt;std::integral Int&gt; </div>
 <div class="line"><span class="lineno">  239</span> </div>
 <div class="line"><span class="lineno">  240</span>    <span class="keywordflow">return</span> ret;</div>
 <div class="line"><span class="lineno">  241</span>}</div>
-<div class="ttc" id="anamespaceloom_1_1fn_html_ac510c30448b8f6a216aec97446b857d0"><div class="ttname"><a href="#ac510c30448b8f6a216aec97446b857d0">loom::fn::c2i</a></div><div class="ttdeci">constexpr std::optional&lt; Int &gt; c2i(char c, Int base=10) noexcept</div><div class="ttdoc">Converts character into the corresponding integer number.</div><div class="ttdef"><b>Definition</b> string.hpp:190</div></div>
+<div class="ttc" id="anamespaceloom_1_1fn_html_ac510c30448b8f6a216aec97446b857d0"><div class="ttname"><a href="#ac510c30448b8f6a216aec97446b857d0">loom::fn::c2i</a></div><div class="ttdeci">constexpr std::optional&lt; Int &gt; c2i(char c, Int base=10) noexcept</div><div class="ttdoc">Converts character into the corresponding integer number.</div><div class="ttdef"><b>Definition</b> <a href="string_8hpp_source.html#l00190">string.hpp:190</a></div></div>
 </div><!-- fragment -->
 </div>
 </div>
@@ -2611,6 +2743,8 @@ template&lt;typename T&gt; </div>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="string_8hpp_source.html#l00210">210</a> of file <a class="el" href="string_8hpp_source.html">string.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">  211</span>{</div>
 <div class="line"><span class="lineno">  212</span>    T sign = <span class="keyword">static_cast&lt;</span>T<span class="keyword">&gt;</span>(1);</div>
 <div class="line"><span class="lineno">  213</span> </div>
@@ -2653,6 +2787,8 @@ template&lt;std::signed_integral Int&gt; </div>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="string_8hpp_source.html#l00245">245</a> of file <a class="el" href="string_8hpp_source.html">string.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">  246</span>{</div>
 <div class="line"><span class="lineno">  247</span>    <span class="keyword">auto</span> [sign, rest] = parse_sign&lt;Int&gt;(s);</div>
 <div class="line"><span class="lineno">  248</span> </div>
@@ -2690,6 +2826,8 @@ template&lt;typename Dur, std::size_t N&gt; </div>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="bm_8hpp_source.html#l00145">145</a> of file <a class="el" href="bm_8hpp_source.html">bm.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">  146</span>{</div>
 <div class="line"><span class="lineno">  147</span>    std::ranges::sort(results,</div>
 <div class="line"><span class="lineno">  148</span>                      std::less&lt;std::size_t&gt;{},</div>
@@ -2733,7 +2871,7 @@ template&lt;typename Dur, std::size_t N&gt; </div>
 <div class="line"><span class="lineno">  186</span>                       <span class="keyword">static_cast&lt;</span><span class="keywordtype">double</span><span class="keyword">&gt;</span>(fastest_dur.count()),</div>
 <div class="line"><span class="lineno">  187</span>                   sd_width - 1);</div>
 <div class="line"><span class="lineno">  188</span>}</div>
-<div class="ttc" id="anamespaceloom_html_a91b0ad055adc97764eb22076ae07bacd"><div class="ttname"><a href="namespaceloom.html#a91b0ad055adc97764eb22076ae07bacd">loom::magnitude</a></div><div class="ttdeci">constexpr unsigned magnitude(Int n, Int base=10) noexcept</div><div class="ttdoc">Compute order of magnitude.</div><div class="ttdef"><b>Definition</b> math.hpp:292</div></div>
+<div class="ttc" id="anamespaceloom_html_a91b0ad055adc97764eb22076ae07bacd"><div class="ttname"><a href="namespaceloom.html#a91b0ad055adc97764eb22076ae07bacd">loom::magnitude</a></div><div class="ttdeci">constexpr unsigned magnitude(Int n, Int base=10) noexcept</div><div class="ttdoc">Compute order of magnitude.</div><div class="ttdef"><b>Definition</b> <a href="math_8hpp_source.html#l00292">math.hpp:292</a></div></div>
 </div><!-- fragment -->
 </div>
 </div>
@@ -2774,6 +2912,8 @@ template&lt;std::floating_point T, template&lt; typename, std::size_t &gt; typen
   </table>
   </dd>
 </dl>
+
+<p class="definition">Definition at line <a class="el" href="transforms_8hpp_source.html#l00121">121</a> of file <a class="el" href="transforms_8hpp_source.html">transforms.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">  122</span>{</div>
 <div class="line"><span class="lineno">  123</span>    <span class="keyword">const</span> <span class="keyword">auto</span>&amp; [x, y, z] = axis;</div>
 <div class="line"><span class="lineno">  124</span>    <span class="keyword">const</span> Mat3&lt;T&gt; K{0, -z, y, z, 0, -x, -y, x, 0};</div>
@@ -2813,6 +2953,8 @@ template&lt;std::floating_point T, template&lt; typename, std::size_t &gt; typen
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="common_2random_8hpp_source.html#l00032">32</a> of file <a class="el" href="common_2random_8hpp_source.html">random.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">   33</span>{</div>
 <div class="line"><span class="lineno">   34</span>    <span class="keywordflow">return</span> (x &lt;&lt; (N &amp; 31)) | (x &gt;&gt; ((32 - N) &amp; 31));</div>
 <div class="line"><span class="lineno">   35</span>}</div>
@@ -2841,6 +2983,8 @@ template&lt;std::floating_point T, template&lt; typename, std::size_t &gt; typen
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="string_8hpp_source.html#l00424">424</a> of file <a class="el" href="string_8hpp_source.html">string.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">  425</span>{</div>
 <div class="line"><span class="lineno">  426</span>    <span class="keyword">auto</span> it = std::find_if(s.rbegin(),</div>
 <div class="line"><span class="lineno">  427</span>                           s.rend(),</div>
@@ -2881,6 +3025,8 @@ template&lt;std::floating_point T, template&lt; typename, std::size_t &gt; typen
 </div><div class="memdoc">
 
 <p>Uniformly sample position on <a class="el" href="structloom_1_1AABB.html" title="Axis-aligned bounding box.">AABB</a> surface. </p>
+
+<p class="definition">Definition at line <a class="el" href="aabb_8hpp_source.html#l00139">139</a> of file <a class="el" href="aabb_8hpp_source.html">aabb.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">  140</span>{</div>
 <div class="line"><span class="lineno">  141</span>    <span class="keyword">const</span> <span class="keyword">auto</span>&amp; [s1, s2] = s;</div>
 <div class="line"><span class="lineno">  142</span>    <span class="keyword">const</span> T        s3 = fmod(<span class="keyword">static_cast&lt;</span>T<span class="keyword">&gt;</span>(2) * (s1 + s2), <span class="keyword">static_cast&lt;</span>T<span class="keyword">&gt;</span>(1));</div>
@@ -2893,10 +3039,10 @@ template&lt;std::floating_point T, template&lt; typename, std::size_t &gt; typen
 <div class="line"><span class="lineno">  149</span>        b,</div>
 <div class="line"><span class="lineno">  150</span>        <a class="code hl_function" href="group__LINAL.html#ga3ae5499576ec80bb382b86cf87bb522d">roll</a>(Vec3&lt;T&gt;(<a class="code hl_function" href="namespaceloom.html#a431501218193fc931b025c51c502033d">resample</a>(s1), <a class="code hl_function" href="namespaceloom.html#a431501218193fc931b025c51c502033d">resample</a>(s2), <span class="keyword">static_cast&lt;</span>T<span class="keyword">&gt;</span>(0)), shift));</div>
 <div class="line"><span class="lineno">  151</span>}</div>
-<div class="ttc" id="agroup__LINAL_html_ga3ae5499576ec80bb382b86cf87bb522d"><div class="ttname"><a href="group__LINAL.html#ga3ae5499576ec80bb382b86cf87bb522d">loom::fn::roll</a></div><div class="ttdeci">constexpr Vector&lt; T, N, std::array &gt; roll(const Vector&lt; T, N, Container &gt; &amp;v, const int shift) noexcept</div><div class="ttdoc">Roll vector elements.</div><div class="ttdef"><b>Definition</b> linal.hpp:1540</div></div>
-<div class="ttc" id="agroup__LINAL_html_gab1799aab52c25779805179b2b66199e2"><div class="ttname"><a href="group__LINAL.html#gab1799aab52c25779805179b2b66199e2">loom::transform</a></div><div class="ttdeci">constexpr auto transform(const F &amp;f, const Vectors &amp;... vs) noexcept</div><div class="ttdoc">Apply function f to corresponding elements of input vectors vs.</div><div class="ttdef"><b>Definition</b> linal.hpp:1222</div></div>
-<div class="ttc" id="anamespaceloom_html_a15237017def68d1a388b4f6b9185fbe1"><div class="ttname"><a href="namespaceloom.html#a15237017def68d1a388b4f6b9185fbe1">loom::lerp</a></div><div class="ttdeci">constexpr T lerp(const T a, const T b, const Bias bias)</div><div class="ttdoc">Perform linear interpolation between two values.</div><div class="ttdef"><b>Definition</b> math.hpp:241</div></div>
-<div class="ttc" id="anamespaceloom_html_a431501218193fc931b025c51c502033d"><div class="ttname"><a href="namespaceloom.html#a431501218193fc931b025c51c502033d">loom::resample</a></div><div class="ttdeci">constexpr T resample(const T s) noexcept</div><div class="ttdoc">Resample canonical random point.</div><div class="ttdef"><b>Definition</b> math.hpp:177</div></div>
+<div class="ttc" id="agroup__LINAL_html_ga3ae5499576ec80bb382b86cf87bb522d"><div class="ttname"><a href="group__LINAL.html#ga3ae5499576ec80bb382b86cf87bb522d">loom::fn::roll</a></div><div class="ttdeci">constexpr Vector&lt; T, N, std::array &gt; roll(const Vector&lt; T, N, Container &gt; &amp;v, const int shift) noexcept</div><div class="ttdoc">Roll vector elements.</div><div class="ttdef"><b>Definition</b> <a href="common_2linal_8hpp_source.html#l01540">linal.hpp:1540</a></div></div>
+<div class="ttc" id="agroup__LINAL_html_gab1799aab52c25779805179b2b66199e2"><div class="ttname"><a href="group__LINAL.html#gab1799aab52c25779805179b2b66199e2">loom::transform</a></div><div class="ttdeci">constexpr auto transform(const F &amp;f, const Vectors &amp;... vs) noexcept</div><div class="ttdoc">Apply function f to corresponding elements of input vectors vs.</div><div class="ttdef"><b>Definition</b> <a href="common_2linal_8hpp_source.html#l01222">linal.hpp:1222</a></div></div>
+<div class="ttc" id="anamespaceloom_html_a15237017def68d1a388b4f6b9185fbe1"><div class="ttname"><a href="namespaceloom.html#a15237017def68d1a388b4f6b9185fbe1">loom::lerp</a></div><div class="ttdeci">constexpr T lerp(const T a, const T b, const Bias bias)</div><div class="ttdoc">Perform linear interpolation between two values.</div><div class="ttdef"><b>Definition</b> <a href="math_8hpp_source.html#l00241">math.hpp:241</a></div></div>
+<div class="ttc" id="anamespaceloom_html_a431501218193fc931b025c51c502033d"><div class="ttname"><a href="namespaceloom.html#a431501218193fc931b025c51c502033d">loom::resample</a></div><div class="ttdeci">constexpr T resample(const T s) noexcept</div><div class="ttdoc">Resample canonical random point.</div><div class="ttdef"><b>Definition</b> <a href="math_8hpp_source.html#l00177">math.hpp:177</a></div></div>
 </div><!-- fragment -->
 </div>
 </div>
@@ -2928,6 +3074,8 @@ template&lt;std::floating_point T, template&lt; typename, std::size_t &gt; typen
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="cylinder_8hpp_source.html#l00073">73</a> of file <a class="el" href="cylinder_8hpp_source.html">cylinder.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">   74</span>{</div>
 <div class="line"><span class="lineno">   75</span>    <span class="keyword">const</span> <span class="keyword">auto</span> [p, r, h] = prim;</div>
 <div class="line"><span class="lineno">   76</span>    <span class="keyword">const</span> <span class="keyword">auto</span> [t1, t2]  = s;</div>
@@ -2969,6 +3117,8 @@ template&lt;std::floating_point T, template&lt; typename, std::size_t &gt; typen
 </div><div class="memdoc">
 
 <p>Sample a point on disk surface. </p>
+
+<p class="definition">Definition at line <a class="el" href="disk_8hpp_source.html#l00077">77</a> of file <a class="el" href="disk_8hpp_source.html">disk.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">   78</span>{</div>
 <div class="line"><span class="lineno">   79</span>    <span class="keyword">const</span> <span class="keyword">auto</span>&amp; [p, n, r] = prim;</div>
 <div class="line"><span class="lineno">   80</span>    <span class="keyword">const</span> <span class="keyword">auto</span>&amp; [u0, u1]  = s;</div>
@@ -3010,6 +3160,8 @@ template&lt;std::floating_point T, template&lt; typename, size_t &gt; typename S
 </div><div class="memdoc">
 
 <p>Sample a point on a quadrilateral surface. </p>
+
+<p class="definition">Definition at line <a class="el" href="quad_8hpp_source.html#l00159">159</a> of file <a class="el" href="quad_8hpp_source.html">quad.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">  160</span>{</div>
 <div class="line"><span class="lineno">  161</span>    <span class="keyword">const</span> <span class="keyword">auto</span>&amp; [a, c1, b, c2] = prim;</div>
 <div class="line"><span class="lineno">  162</span>    <span class="keyword">const</span> <span class="keyword">auto</span>&amp; [t1, t2]       = s;</div>
@@ -3050,6 +3202,8 @@ template&lt;std::floating_point T, template&lt; typename, std::size_t &gt; typen
 </div><div class="memdoc">
 
 <p>Sample a point on sphere surface. </p>
+
+<p class="definition">Definition at line <a class="el" href="sphere_8hpp_source.html#l00077">77</a> of file <a class="el" href="sphere_8hpp_source.html">sphere.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">   78</span>{</div>
 <div class="line"><span class="lineno">   79</span>    <span class="keyword">const</span> <span class="keyword">auto</span>&amp; [c, r]   = prim;</div>
 <div class="line"><span class="lineno">   80</span>    <span class="keyword">const</span> <span class="keyword">auto</span>&amp; [t1, t2] = s;</div>
@@ -3092,6 +3246,8 @@ template&lt;std::floating_point T, template&lt; typename, std::size_t &gt; typen
 
 <p>Sample a point on triangle surface. </p>
 <p>Implements optimized sampling algorithm from <a class="el" href="citelist.html#CITEREF_heitz:hal-02073696">[3]</a> </p>
+
+<p class="definition">Definition at line <a class="el" href="triangle_8hpp_source.html#l00135">135</a> of file <a class="el" href="triangle_8hpp_source.html">triangle.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">  136</span>{</div>
 <div class="line"><span class="lineno">  137</span>    <span class="keywordflow">return</span> Vec3&lt;T&gt;(std::apply([&amp;](<span class="keyword">const</span> <span class="keyword">auto</span>&amp;... verts) <span class="keyword">noexcept</span></div>
 <div class="line"><span class="lineno">  138</span>                              { <span class="keywordflow">return</span> detail::triangle_sample(s, verts...); },</div>
@@ -3132,6 +3288,8 @@ template&lt;std::floating_point T, template&lt; typename, std::size_t &gt; typen
   </table>
   </dd>
 </dl>
+
+<p class="definition">Definition at line <a class="el" href="transforms_8hpp_source.html#l00109">109</a> of file <a class="el" href="transforms_8hpp_source.html">transforms.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">  110</span>{</div>
 <div class="line"><span class="lineno">  111</span>    <span class="keyword">const</span> <span class="keyword">auto</span>&amp; [x, y, z] = delta;</div>
 <div class="line"><span class="lineno">  112</span>    <span class="keywordflow">return</span> Mat4&lt;T&gt;(x, 0, 0, 0, 0, y, 0, 0, 0, 0, z, 0, 0, 0, 0, 1);</div>
@@ -3171,6 +3329,8 @@ template&lt;std::floating_point T, template&lt; typename, std::size_t &gt; typen
   </table>
   </dd>
 </dl>
+
+<p class="definition">Definition at line <a class="el" href="transforms_8hpp_source.html#l00098">98</a> of file <a class="el" href="transforms_8hpp_source.html">transforms.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">   99</span>{</div>
 <div class="line"><span class="lineno">  100</span>    <span class="keyword">const</span> <span class="keyword">auto</span>&amp; [x, y, z] = delta;</div>
 <div class="line"><span class="lineno">  101</span>    <span class="keywordflow">return</span> Mat4&lt;T&gt;(1, 0, 0, x, 0, 1, 0, y, 0, 0, 1, z, 0, 0, 0, 1);</div>
@@ -3200,6 +3360,8 @@ template&lt;std::floating_point T, template&lt; typename, std::size_t &gt; typen
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="string_8hpp_source.html#l00151">151</a> of file <a class="el" href="string_8hpp_source.html">string.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">  152</span>{</div>
 <div class="line"><span class="lineno">  153</span>    <span class="keywordflow">if</span>(is_alpha_lower(c)) <span class="keywordflow">return</span> c - 32;</div>
 <div class="line"><span class="lineno">  154</span> </div>

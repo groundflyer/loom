@@ -118,61 +118,48 @@ Concepts</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-typedef-members" class="groupheader"><a id="typedef-members" name="typedef-members"></a>
 Typedefs</h2></td></tr>
-<tr class="memitem:ga06bb10da8ccea9066796b0d2a9f5c974" id="r_ga06bb10da8ccea9066796b0d2a9f5c974"><td class="memTemplParams" colspan="2"><a id="ga06bb10da8ccea9066796b0d2a9f5c974" name="ga06bb10da8ccea9066796b0d2a9f5c974"></a>
-template&lt;typename T, List L&gt; </td></tr>
-<tr class="memitem:ga06bb10da8ccea9066796b0d2a9f5c974 template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><b>loom::typelist::cons</b> = detail::cons&lt;T, L&gt;::type</td></tr>
-<tr class="memdesc:ga06bb10da8ccea9066796b0d2a9f5c974"><td class="mdescLeft">&#160;</td><td class="mdescRight">Add class <code class="param">T</code> to the beginning of <a class="el" href="structloom_1_1type__sequence.html" title="Sequence of types.">type_sequence</a> <code class="param">L</code>. <br /></td></tr>
-<tr class="memitem:ga23f16e48bf88c44e2b2741f79181219e" id="r_ga23f16e48bf88c44e2b2741f79181219e"><td class="memTemplParams" colspan="2"><a id="ga23f16e48bf88c44e2b2741f79181219e" name="ga23f16e48bf88c44e2b2741f79181219e"></a>
-template&lt;List L1, List L2&gt; </td></tr>
-<tr class="memitem:ga23f16e48bf88c44e2b2741f79181219e template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><b>loom::typelist::join</b> = detail::join&lt;L1, L2&gt;::type</td></tr>
-<tr class="memdesc:ga23f16e48bf88c44e2b2741f79181219e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Concatenate two lists of types. <br /></td></tr>
-<tr class="memitem:gaa97eee0a7c3509fdb1a93449e1e2c241" id="r_gaa97eee0a7c3509fdb1a93449e1e2c241"><td class="memTemplParams" colspan="2"><a id="gaa97eee0a7c3509fdb1a93449e1e2c241" name="gaa97eee0a7c3509fdb1a93449e1e2c241"></a>
-template&lt;typename T, List L&gt; </td></tr>
-<tr class="memitem:gaa97eee0a7c3509fdb1a93449e1e2c241 template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><b>loom::typelist::append</b> = <a class="el" href="#ga23f16e48bf88c44e2b2741f79181219e">join</a>&lt;L, <a class="el" href="structloom_1_1type__sequence.html">type_sequence</a>&lt;T&gt;&gt;</td></tr>
-<tr class="memdesc:gaa97eee0a7c3509fdb1a93449e1e2c241"><td class="mdescLeft">&#160;</td><td class="mdescRight">Add class <code class="param">T</code> to the end of <a class="el" href="structloom_1_1type__sequence.html" title="Sequence of types.">type_sequence</a> <code class="param">L</code>. <br /></td></tr>
-<tr class="memitem:ga37b448e73d800475ee9bfe9f63c164a5" id="r_ga37b448e73d800475ee9bfe9f63c164a5"><td class="memTemplParams" colspan="2"><a id="ga37b448e73d800475ee9bfe9f63c164a5" name="ga37b448e73d800475ee9bfe9f63c164a5"></a>
-template&lt;std::size_t N, typename... Ts&gt; </td></tr>
-<tr class="memitem:ga37b448e73d800475ee9bfe9f63c164a5 template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><b>loom::typelist::repeat</b> = detail::repeat&lt;N, Ts...&gt;::type</td></tr>
-<tr class="memdesc:ga37b448e73d800475ee9bfe9f63c164a5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructs <a class="el" href="structloom_1_1type__sequence.html" title="Sequence of types.">type_sequence</a> repeating classes <code class="param">Ts</code> <code class="param">N</code> times. <br /></td></tr>
+<tr class="memitem:ga06bb10da8ccea9066796b0d2a9f5c974" id="r_ga06bb10da8ccea9066796b0d2a9f5c974"><td class="memTemplParams" colspan="2">template&lt;typename T, List L&gt; </td></tr>
+<tr class="memitem:ga06bb10da8ccea9066796b0d2a9f5c974 template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="#ga06bb10da8ccea9066796b0d2a9f5c974">loom::typelist::cons</a> = detail::cons&lt;T, L&gt;::type</td></tr>
+<tr class="memdesc:ga06bb10da8ccea9066796b0d2a9f5c974"><td class="mdescLeft">&#160;</td><td class="mdescRight">Add class <code class="param">T</code> to the beginning of <a class="el" href="structloom_1_1type__sequence.html" title="Sequence of types.">type_sequence</a> <code class="param">L</code>.  <br /></td></tr>
+<tr class="memitem:ga23f16e48bf88c44e2b2741f79181219e" id="r_ga23f16e48bf88c44e2b2741f79181219e"><td class="memTemplParams" colspan="2">template&lt;List L1, List L2&gt; </td></tr>
+<tr class="memitem:ga23f16e48bf88c44e2b2741f79181219e template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="#ga23f16e48bf88c44e2b2741f79181219e">loom::typelist::join</a> = detail::join&lt;L1, L2&gt;::type</td></tr>
+<tr class="memdesc:ga23f16e48bf88c44e2b2741f79181219e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Concatenate two lists of types.  <br /></td></tr>
+<tr class="memitem:gaa97eee0a7c3509fdb1a93449e1e2c241" id="r_gaa97eee0a7c3509fdb1a93449e1e2c241"><td class="memTemplParams" colspan="2">template&lt;typename T, List L&gt; </td></tr>
+<tr class="memitem:gaa97eee0a7c3509fdb1a93449e1e2c241 template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="#gaa97eee0a7c3509fdb1a93449e1e2c241">loom::typelist::append</a> = <a class="el" href="#ga23f16e48bf88c44e2b2741f79181219e">join</a>&lt;L, <a class="el" href="structloom_1_1type__sequence.html">type_sequence</a>&lt;T&gt;&gt;</td></tr>
+<tr class="memdesc:gaa97eee0a7c3509fdb1a93449e1e2c241"><td class="mdescLeft">&#160;</td><td class="mdescRight">Add class <code class="param">T</code> to the end of <a class="el" href="structloom_1_1type__sequence.html" title="Sequence of types.">type_sequence</a> <code class="param">L</code>.  <br /></td></tr>
+<tr class="memitem:ga37b448e73d800475ee9bfe9f63c164a5" id="r_ga37b448e73d800475ee9bfe9f63c164a5"><td class="memTemplParams" colspan="2">template&lt;std::size_t N, typename... Ts&gt; </td></tr>
+<tr class="memitem:ga37b448e73d800475ee9bfe9f63c164a5 template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="#ga37b448e73d800475ee9bfe9f63c164a5">loom::typelist::repeat</a> = detail::repeat&lt;N, Ts...&gt;::type</td></tr>
+<tr class="memdesc:ga37b448e73d800475ee9bfe9f63c164a5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructs <a class="el" href="structloom_1_1type__sequence.html" title="Sequence of types.">type_sequence</a> repeating classes <code class="param">Ts</code> <code class="param">N</code> times.  <br /></td></tr>
 <tr class="memitem:ga5f04f656660d39b73b42fc13d3e9f27c" id="r_ga5f04f656660d39b73b42fc13d3e9f27c"><td class="memTemplParams" colspan="2">template&lt;std::size_t I, List L&gt; </td></tr>
 <tr class="memitem:ga5f04f656660d39b73b42fc13d3e9f27c template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="#ga5f04f656660d39b73b42fc13d3e9f27c">loom::typelist::at</a> = detail::at&lt;I, L&gt;::type</td></tr>
 <tr class="memdesc:ga5f04f656660d39b73b42fc13d3e9f27c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Extract the <code class="param">Ith</code> class from <code class="param">L</code>.  <br /></td></tr>
-<tr class="memitem:gaea8e28f7333c97bbbde8c3ee4e2919be" id="r_gaea8e28f7333c97bbbde8c3ee4e2919be"><td class="memTemplParams" colspan="2"><a id="gaea8e28f7333c97bbbde8c3ee4e2919be" name="gaea8e28f7333c97bbbde8c3ee4e2919be"></a>
-template&lt;std::size_t I, typename T&gt; </td></tr>
-<tr class="memitem:gaea8e28f7333c97bbbde8c3ee4e2919be template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><b>loom::typelist::proj</b> = detail::proj&lt;T, I&gt;::type</td></tr>
-<tr class="memdesc:gaea8e28f7333c97bbbde8c3ee4e2919be"><td class="mdescLeft">&#160;</td><td class="mdescRight">Extract <code class="param">Ith</code> class when <code class="param">T</code> is <a class="el" href="structloom_1_1type__sequence.html" title="Sequence of types.">loom::type_sequence</a>, otherwise get <code class="param">T</code>. <br /></td></tr>
-<tr class="memitem:ga01954b67861600e312c877a34a8042b4" id="r_ga01954b67861600e312c877a34a8042b4"><td class="memTemplParams" colspan="2"><a id="ga01954b67861600e312c877a34a8042b4" name="ga01954b67861600e312c877a34a8042b4"></a>
-template&lt;List L&gt; </td></tr>
-<tr class="memitem:ga01954b67861600e312c877a34a8042b4 template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><b>loom::typelist::head</b> = <a class="el" href="#ga5f04f656660d39b73b42fc13d3e9f27c">at</a>&lt;0, L&gt;</td></tr>
-<tr class="memdesc:ga01954b67861600e312c877a34a8042b4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Extract the first class from <code class="param">L</code>. <br /></td></tr>
-<tr class="memitem:ga9891cf9697b8a63987cc4c1337e9c667" id="r_ga9891cf9697b8a63987cc4c1337e9c667"><td class="memTemplParams" colspan="2"><a id="ga9891cf9697b8a63987cc4c1337e9c667" name="ga9891cf9697b8a63987cc4c1337e9c667"></a>
-template&lt;List L&gt; </td></tr>
-<tr class="memitem:ga9891cf9697b8a63987cc4c1337e9c667 template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><b>loom::typelist::last</b> = <a class="el" href="#ga5f04f656660d39b73b42fc13d3e9f27c">at</a>&lt;<a class="el" href="#ga6a7d84dae989acaf892510ae449ff8c9">length</a>&lt;L&gt; - 1, L&gt;</td></tr>
-<tr class="memdesc:ga9891cf9697b8a63987cc4c1337e9c667"><td class="mdescLeft">&#160;</td><td class="mdescRight">Extract the last element from <code class="param">L</code>. <br /></td></tr>
-<tr class="memitem:ga41f2f823ac5a298db637668915d159bd" id="r_ga41f2f823ac5a298db637668915d159bd"><td class="memTemplParams" colspan="2"><a id="ga41f2f823ac5a298db637668915d159bd" name="ga41f2f823ac5a298db637668915d159bd"></a>
-template&lt;List L&gt; </td></tr>
-<tr class="memitem:ga41f2f823ac5a298db637668915d159bd template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><b>loom::typelist::tail</b> = detail::tail&lt;L&gt;::type</td></tr>
-<tr class="memdesc:ga41f2f823ac5a298db637668915d159bd"><td class="mdescLeft">&#160;</td><td class="mdescRight">Extract the elements after the head of <code class="param">list</code> as <a class="el" href="structloom_1_1type__sequence.html" title="Sequence of types.">type_sequence</a>. <br /></td></tr>
-<tr class="memitem:ga6a6d5892ca9b4456d7558fc8ca644b19" id="r_ga6a6d5892ca9b4456d7558fc8ca644b19"><td class="memTemplParams" colspan="2"><a id="ga6a6d5892ca9b4456d7558fc8ca644b19" name="ga6a6d5892ca9b4456d7558fc8ca644b19"></a>
-template&lt;List L&gt; </td></tr>
-<tr class="memitem:ga6a6d5892ca9b4456d7558fc8ca644b19 template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><b>loom::typelist::indices</b> = std::make_index_sequence&lt;<a class="el" href="#ga6a7d84dae989acaf892510ae449ff8c9">length</a>&lt;L&gt;&gt;</td></tr>
-<tr class="memdesc:ga6a6d5892ca9b4456d7558fc8ca644b19"><td class="mdescLeft">&#160;</td><td class="mdescRight">std::index_sequence for <code class="param">L</code>. <br /></td></tr>
-<tr class="memitem:ga48e50b4828062994bea9e68064bae7b8" id="r_ga48e50b4828062994bea9e68064bae7b8"><td class="memTemplParams" colspan="2"><a id="ga48e50b4828062994bea9e68064bae7b8" name="ga48e50b4828062994bea9e68064bae7b8"></a>
-template&lt;template&lt; typename, typename &gt; typename F, typename Acc, List L&gt; </td></tr>
-<tr class="memitem:ga48e50b4828062994bea9e68064bae7b8 template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><b>loom::typelist::foldl</b> = detail::foldl&lt;F, Acc, L&gt;::type</td></tr>
-<tr class="memdesc:ga48e50b4828062994bea9e68064bae7b8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Left-associative fold of a <a class="el" href="structloom_1_1type__sequence.html" title="Sequence of types.">type_sequence</a> <code class="param">L</code>. <br /></td></tr>
-<tr class="memitem:ga09e82c9a117de81e6cbfba8b58e74666" id="r_ga09e82c9a117de81e6cbfba8b58e74666"><td class="memTemplParams" colspan="2"><a id="ga09e82c9a117de81e6cbfba8b58e74666" name="ga09e82c9a117de81e6cbfba8b58e74666"></a>
-template&lt;template&lt; typename, typename &gt; typename F, typename Acc, List L&gt; </td></tr>
-<tr class="memitem:ga09e82c9a117de81e6cbfba8b58e74666 template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><b>loom::typelist::foldr</b> = detail::foldr&lt;F, Acc, L&gt;::type</td></tr>
-<tr class="memdesc:ga09e82c9a117de81e6cbfba8b58e74666"><td class="mdescLeft">&#160;</td><td class="mdescRight">Right-associative fold of a <a class="el" href="structloom_1_1type__sequence.html" title="Sequence of types.">type_sequence</a> <code class="param">L</code>. <br /></td></tr>
-<tr class="memitem:ga4708b33ea53ad76db3f3c1c43c4da18a" id="r_ga4708b33ea53ad76db3f3c1c43c4da18a"><td class="memTemplParams" colspan="2"><a id="ga4708b33ea53ad76db3f3c1c43c4da18a" name="ga4708b33ea53ad76db3f3c1c43c4da18a"></a>
-template&lt;List L&gt; </td></tr>
-<tr class="memitem:ga4708b33ea53ad76db3f3c1c43c4da18a template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><b>loom::typelist::reverse</b> = <a class="el" href="#ga09e82c9a117de81e6cbfba8b58e74666">foldr</a>&lt;<a class="el" href="#gaa97eee0a7c3509fdb1a93449e1e2c241">append</a>, <a class="el" href="structloom_1_1type__sequence.html">type_sequence</a>&lt;&gt;, L&gt;</td></tr>
-<tr class="memdesc:ga4708b33ea53ad76db3f3c1c43c4da18a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Reverse the order of elements. <br /></td></tr>
-<tr class="memitem:gaecd8e1bc8dfc53fbfd1abde91a668f46" id="r_gaecd8e1bc8dfc53fbfd1abde91a668f46"><td class="memTemplParams" colspan="2"><a id="gaecd8e1bc8dfc53fbfd1abde91a668f46" name="gaecd8e1bc8dfc53fbfd1abde91a668f46"></a>
-template&lt;template&lt; typename &gt; typename F, List L&gt; </td></tr>
-<tr class="memitem:gaecd8e1bc8dfc53fbfd1abde91a668f46 template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><b>loom::typelist::map</b> = detail::map&lt;F, L&gt;::type</td></tr>
-<tr class="memdesc:gaecd8e1bc8dfc53fbfd1abde91a668f46"><td class="mdescLeft">&#160;</td><td class="mdescRight">Apply <code class="param">F</code> to each element of <code class="param">L</code>. <br /></td></tr>
+<tr class="memitem:gaea8e28f7333c97bbbde8c3ee4e2919be" id="r_gaea8e28f7333c97bbbde8c3ee4e2919be"><td class="memTemplParams" colspan="2">template&lt;std::size_t I, typename T&gt; </td></tr>
+<tr class="memitem:gaea8e28f7333c97bbbde8c3ee4e2919be template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="#gaea8e28f7333c97bbbde8c3ee4e2919be">loom::typelist::proj</a> = detail::proj&lt;T, I&gt;::type</td></tr>
+<tr class="memdesc:gaea8e28f7333c97bbbde8c3ee4e2919be"><td class="mdescLeft">&#160;</td><td class="mdescRight">Extract <code class="param">Ith</code> class when <code class="param">T</code> is <a class="el" href="structloom_1_1type__sequence.html" title="Sequence of types.">loom::type_sequence</a>, otherwise get <code class="param">T</code>.  <br /></td></tr>
+<tr class="memitem:ga01954b67861600e312c877a34a8042b4" id="r_ga01954b67861600e312c877a34a8042b4"><td class="memTemplParams" colspan="2">template&lt;List L&gt; </td></tr>
+<tr class="memitem:ga01954b67861600e312c877a34a8042b4 template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="#ga01954b67861600e312c877a34a8042b4">loom::typelist::head</a> = <a class="el" href="#ga5f04f656660d39b73b42fc13d3e9f27c">at</a>&lt;0, L&gt;</td></tr>
+<tr class="memdesc:ga01954b67861600e312c877a34a8042b4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Extract the first class from <code class="param">L</code>.  <br /></td></tr>
+<tr class="memitem:ga9891cf9697b8a63987cc4c1337e9c667" id="r_ga9891cf9697b8a63987cc4c1337e9c667"><td class="memTemplParams" colspan="2">template&lt;List L&gt; </td></tr>
+<tr class="memitem:ga9891cf9697b8a63987cc4c1337e9c667 template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="#ga9891cf9697b8a63987cc4c1337e9c667">loom::typelist::last</a> = <a class="el" href="#ga5f04f656660d39b73b42fc13d3e9f27c">at</a>&lt;<a class="el" href="#ga6a7d84dae989acaf892510ae449ff8c9">length</a>&lt;L&gt; - 1, L&gt;</td></tr>
+<tr class="memdesc:ga9891cf9697b8a63987cc4c1337e9c667"><td class="mdescLeft">&#160;</td><td class="mdescRight">Extract the last element from <code class="param">L</code>.  <br /></td></tr>
+<tr class="memitem:ga41f2f823ac5a298db637668915d159bd" id="r_ga41f2f823ac5a298db637668915d159bd"><td class="memTemplParams" colspan="2">template&lt;List L&gt; </td></tr>
+<tr class="memitem:ga41f2f823ac5a298db637668915d159bd template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="#ga41f2f823ac5a298db637668915d159bd">loom::typelist::tail</a> = detail::tail&lt;L&gt;::type</td></tr>
+<tr class="memdesc:ga41f2f823ac5a298db637668915d159bd"><td class="mdescLeft">&#160;</td><td class="mdescRight">Extract the elements after the head of <code class="param">list</code> as <a class="el" href="structloom_1_1type__sequence.html" title="Sequence of types.">type_sequence</a>.  <br /></td></tr>
+<tr class="memitem:ga6a6d5892ca9b4456d7558fc8ca644b19" id="r_ga6a6d5892ca9b4456d7558fc8ca644b19"><td class="memTemplParams" colspan="2">template&lt;List L&gt; </td></tr>
+<tr class="memitem:ga6a6d5892ca9b4456d7558fc8ca644b19 template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="#ga6a6d5892ca9b4456d7558fc8ca644b19">loom::typelist::indices</a> = std::make_index_sequence&lt;<a class="el" href="#ga6a7d84dae989acaf892510ae449ff8c9">length</a>&lt;L&gt;&gt;</td></tr>
+<tr class="memdesc:ga6a6d5892ca9b4456d7558fc8ca644b19"><td class="mdescLeft">&#160;</td><td class="mdescRight">std::index_sequence for <code class="param">L</code>.  <br /></td></tr>
+<tr class="memitem:ga48e50b4828062994bea9e68064bae7b8" id="r_ga48e50b4828062994bea9e68064bae7b8"><td class="memTemplParams" colspan="2">template&lt;template&lt; typename, typename &gt; typename F, typename Acc, List L&gt; </td></tr>
+<tr class="memitem:ga48e50b4828062994bea9e68064bae7b8 template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="#ga48e50b4828062994bea9e68064bae7b8">loom::typelist::foldl</a> = detail::foldl&lt;F, Acc, L&gt;::type</td></tr>
+<tr class="memdesc:ga48e50b4828062994bea9e68064bae7b8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Left-associative fold of a <a class="el" href="structloom_1_1type__sequence.html" title="Sequence of types.">type_sequence</a> <code class="param">L</code>.  <br /></td></tr>
+<tr class="memitem:ga09e82c9a117de81e6cbfba8b58e74666" id="r_ga09e82c9a117de81e6cbfba8b58e74666"><td class="memTemplParams" colspan="2">template&lt;template&lt; typename, typename &gt; typename F, typename Acc, List L&gt; </td></tr>
+<tr class="memitem:ga09e82c9a117de81e6cbfba8b58e74666 template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="#ga09e82c9a117de81e6cbfba8b58e74666">loom::typelist::foldr</a> = detail::foldr&lt;F, Acc, L&gt;::type</td></tr>
+<tr class="memdesc:ga09e82c9a117de81e6cbfba8b58e74666"><td class="mdescLeft">&#160;</td><td class="mdescRight">Right-associative fold of a <a class="el" href="structloom_1_1type__sequence.html" title="Sequence of types.">type_sequence</a> <code class="param">L</code>.  <br /></td></tr>
+<tr class="memitem:ga4708b33ea53ad76db3f3c1c43c4da18a" id="r_ga4708b33ea53ad76db3f3c1c43c4da18a"><td class="memTemplParams" colspan="2">template&lt;List L&gt; </td></tr>
+<tr class="memitem:ga4708b33ea53ad76db3f3c1c43c4da18a template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="#ga4708b33ea53ad76db3f3c1c43c4da18a">loom::typelist::reverse</a> = <a class="el" href="#ga09e82c9a117de81e6cbfba8b58e74666">foldr</a>&lt;<a class="el" href="#gaa97eee0a7c3509fdb1a93449e1e2c241">append</a>, <a class="el" href="structloom_1_1type__sequence.html">type_sequence</a>&lt;&gt;, L&gt;</td></tr>
+<tr class="memdesc:ga4708b33ea53ad76db3f3c1c43c4da18a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Reverse the order of elements.  <br /></td></tr>
+<tr class="memitem:gaecd8e1bc8dfc53fbfd1abde91a668f46" id="r_gaecd8e1bc8dfc53fbfd1abde91a668f46"><td class="memTemplParams" colspan="2">template&lt;template&lt; typename &gt; typename F, List L&gt; </td></tr>
+<tr class="memitem:gaecd8e1bc8dfc53fbfd1abde91a668f46 template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="#gaecd8e1bc8dfc53fbfd1abde91a668f46">loom::typelist::map</a> = detail::map&lt;F, L&gt;::type</td></tr>
+<tr class="memdesc:gaecd8e1bc8dfc53fbfd1abde91a668f46"><td class="mdescLeft">&#160;</td><td class="mdescRight">Apply <code class="param">F</code> to each element of <code class="param">L</code>.  <br /></td></tr>
 <tr class="memitem:gaa132a6717edc9c46ecb16af45b6fe351" id="r_gaa132a6717edc9c46ecb16af45b6fe351"><td class="memTemplParams" colspan="2">template&lt;typename T, List L&gt; </td></tr>
 <tr class="memitem:gaa132a6717edc9c46ecb16af45b6fe351 template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="#gaa132a6717edc9c46ecb16af45b6fe351">loom::typelist::purge</a> = detail::purge&lt;T, L&gt;::type</td></tr>
 <tr class="memdesc:gaa132a6717edc9c46ecb16af45b6fe351"><td class="mdescLeft">&#160;</td><td class="mdescRight">Remove all occurences of type <code class="param">T</code> from <code class="param">L</code>.  <br /></td></tr>
@@ -188,36 +175,30 @@ template&lt;template&lt; typename &gt; typename F, List L&gt; </td></tr>
 <tr class="memitem:ga48d7fbf632b8dec4c7190494782f103f" id="r_ga48d7fbf632b8dec4c7190494782f103f"><td class="memTemplParams" colspan="2">template&lt;typename Xs, typename Ys&gt; </td></tr>
 <tr class="memitem:ga48d7fbf632b8dec4c7190494782f103f template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="#ga48d7fbf632b8dec4c7190494782f103f">loom::typelist::zip</a> = <a class="el" href="#ga3232866ad95b89c40cb138a4e74deb31">zip_with</a>&lt;<a class="el" href="group__TMP.html#ga25062b89626604933e1b3dabf203ee18">type_pair</a>, Xs, Ys&gt;</td></tr>
 <tr class="memdesc:ga48d7fbf632b8dec4c7190494782f103f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Make list of pairs <a class="el" href="structloom_1_1type__sequence.html" title="Sequence of types.">type_sequence</a>&lt;<a class="el" href="group__TMP.html#ga25062b89626604933e1b3dabf203ee18" title="Pair of types.">type_pair&lt;X, Y&gt;</a>...&gt; of corresponding types from lists <code class="param">Xs</code> and <code class="param">Ys</code>.  <br /></td></tr>
-<tr class="memitem:ga3d5c4761efe4142e9379a309b18d1237" id="r_ga3d5c4761efe4142e9379a309b18d1237"><td class="memTemplParams" colspan="2"><a id="ga3d5c4761efe4142e9379a309b18d1237" name="ga3d5c4761efe4142e9379a309b18d1237"></a>
-template&lt;List L&gt; </td></tr>
-<tr class="memitem:ga3d5c4761efe4142e9379a309b18d1237 template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><b>loom::typelist::concat</b> = <a class="el" href="#ga09e82c9a117de81e6cbfba8b58e74666">foldr</a>&lt;<a class="el" href="#ga23f16e48bf88c44e2b2741f79181219e">join</a>, <a class="el" href="structloom_1_1type__sequence.html">type_sequence</a>&lt;&gt;, L&gt;</td></tr>
-<tr class="memdesc:ga3d5c4761efe4142e9379a309b18d1237"><td class="mdescLeft">&#160;</td><td class="mdescRight">The concatenation of all the elements of a list <code class="param">L</code> of lists. <br /></td></tr>
-<tr class="memitem:ga4e4ceffe96059fc03ae6589802bf9749" id="r_ga4e4ceffe96059fc03ae6589802bf9749"><td class="memTemplParams" colspan="2"><a id="ga4e4ceffe96059fc03ae6589802bf9749" name="ga4e4ceffe96059fc03ae6589802bf9749"></a>
-template&lt;List L&gt; </td></tr>
-<tr class="memitem:ga4e4ceffe96059fc03ae6589802bf9749 template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><b>loom::typelist::flatten</b> = detail::flatten&lt;L, <a class="el" href="structloom_1_1type__sequence.html">type_sequence</a>&lt;&gt;&gt;::type</td></tr>
-<tr class="memdesc:ga4e4ceffe96059fc03ae6589802bf9749"><td class="mdescLeft">&#160;</td><td class="mdescRight">Flatten list that possibly contains lists of arbitrary nesting depth. <br /></td></tr>
-<tr class="memitem:ga6d62adb969f8ea423247e9c12b757087" id="r_ga6d62adb969f8ea423247e9c12b757087"><td class="memTemplParams" colspan="2"><a id="ga6d62adb969f8ea423247e9c12b757087" name="ga6d62adb969f8ea423247e9c12b757087"></a>
-template&lt;template&lt; typename &gt; typename F, List L&gt; </td></tr>
-<tr class="memitem:ga6d62adb969f8ea423247e9c12b757087 template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><b>loom::typelist::concat_map</b> = <a class="el" href="#ga3d5c4761efe4142e9379a309b18d1237">concat</a>&lt;<a class="el" href="#gaecd8e1bc8dfc53fbfd1abde91a668f46">map</a>&lt;F, L&gt;&gt;</td></tr>
-<tr class="memdesc:ga6d62adb969f8ea423247e9c12b757087"><td class="mdescLeft">&#160;</td><td class="mdescRight">Map a function returning a list over and concantenate the results. <br /></td></tr>
-<tr class="memitem:ga682252f35b37bb6e02ff054c14245df7" id="r_ga682252f35b37bb6e02ff054c14245df7"><td class="memTemplParams" colspan="2"><a id="ga682252f35b37bb6e02ff054c14245df7" name="ga682252f35b37bb6e02ff054c14245df7"></a>
-template&lt;List... Ls&gt; </td></tr>
-<tr class="memitem:ga682252f35b37bb6e02ff054c14245df7 template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><b>loom::typelist::cartesian</b> = detail::cartesian&lt;Ls...&gt;::type</td></tr>
-<tr class="memdesc:ga682252f35b37bb6e02ff054c14245df7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Cartesian product of lists. <br /></td></tr>
-<tr class="memitem:ga6d8a884ef807d2dcd0ffdb5ad24236f7" id="r_ga6d8a884ef807d2dcd0ffdb5ad24236f7"><td class="memTemplParams" colspan="2"><a id="ga6d8a884ef807d2dcd0ffdb5ad24236f7" name="ga6d8a884ef807d2dcd0ffdb5ad24236f7"></a>
-template&lt;typename ListZipper&gt; </td></tr>
-<tr class="memitem:ga6d8a884ef807d2dcd0ffdb5ad24236f7 template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><b>loom::typelist::list_zipper_step_forward</b> = detail::lz_step_forward&lt;ListZipper&gt;::type</td></tr>
-<tr class="memdesc:ga6d8a884ef807d2dcd0ffdb5ad24236f7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Given a list zipper (a pair of lists) take a step forward moving the head element from <code class="param">a</code> to <code class="param">b</code>. <br /></td></tr>
+<tr class="memitem:ga3d5c4761efe4142e9379a309b18d1237" id="r_ga3d5c4761efe4142e9379a309b18d1237"><td class="memTemplParams" colspan="2">template&lt;List L&gt; </td></tr>
+<tr class="memitem:ga3d5c4761efe4142e9379a309b18d1237 template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="#ga3d5c4761efe4142e9379a309b18d1237">loom::typelist::concat</a> = <a class="el" href="#ga09e82c9a117de81e6cbfba8b58e74666">foldr</a>&lt;<a class="el" href="#ga23f16e48bf88c44e2b2741f79181219e">join</a>, <a class="el" href="structloom_1_1type__sequence.html">type_sequence</a>&lt;&gt;, L&gt;</td></tr>
+<tr class="memdesc:ga3d5c4761efe4142e9379a309b18d1237"><td class="mdescLeft">&#160;</td><td class="mdescRight">The concatenation of all the elements of a list <code class="param">L</code> of lists.  <br /></td></tr>
+<tr class="memitem:ga4e4ceffe96059fc03ae6589802bf9749" id="r_ga4e4ceffe96059fc03ae6589802bf9749"><td class="memTemplParams" colspan="2">template&lt;List L&gt; </td></tr>
+<tr class="memitem:ga4e4ceffe96059fc03ae6589802bf9749 template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="#ga4e4ceffe96059fc03ae6589802bf9749">loom::typelist::flatten</a> = detail::flatten&lt;L, <a class="el" href="structloom_1_1type__sequence.html">type_sequence</a>&lt;&gt;&gt;::type</td></tr>
+<tr class="memdesc:ga4e4ceffe96059fc03ae6589802bf9749"><td class="mdescLeft">&#160;</td><td class="mdescRight">Flatten list that possibly contains lists of arbitrary nesting depth.  <br /></td></tr>
+<tr class="memitem:ga6d62adb969f8ea423247e9c12b757087" id="r_ga6d62adb969f8ea423247e9c12b757087"><td class="memTemplParams" colspan="2">template&lt;template&lt; typename &gt; typename F, List L&gt; </td></tr>
+<tr class="memitem:ga6d62adb969f8ea423247e9c12b757087 template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="#ga6d62adb969f8ea423247e9c12b757087">loom::typelist::concat_map</a> = <a class="el" href="#ga3d5c4761efe4142e9379a309b18d1237">concat</a>&lt;<a class="el" href="#gaecd8e1bc8dfc53fbfd1abde91a668f46">map</a>&lt;F, L&gt;&gt;</td></tr>
+<tr class="memdesc:ga6d62adb969f8ea423247e9c12b757087"><td class="mdescLeft">&#160;</td><td class="mdescRight">Map a function returning a list over and concantenate the results.  <br /></td></tr>
+<tr class="memitem:ga682252f35b37bb6e02ff054c14245df7" id="r_ga682252f35b37bb6e02ff054c14245df7"><td class="memTemplParams" colspan="2">template&lt;List... Ls&gt; </td></tr>
+<tr class="memitem:ga682252f35b37bb6e02ff054c14245df7 template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="#ga682252f35b37bb6e02ff054c14245df7">loom::typelist::cartesian</a> = detail::cartesian&lt;Ls...&gt;::type</td></tr>
+<tr class="memdesc:ga682252f35b37bb6e02ff054c14245df7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Cartesian product of lists.  <br /></td></tr>
+<tr class="memitem:ga6d8a884ef807d2dcd0ffdb5ad24236f7" id="r_ga6d8a884ef807d2dcd0ffdb5ad24236f7"><td class="memTemplParams" colspan="2">template&lt;typename ListZipper&gt; </td></tr>
+<tr class="memitem:ga6d8a884ef807d2dcd0ffdb5ad24236f7 template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="#ga6d8a884ef807d2dcd0ffdb5ad24236f7">loom::typelist::list_zipper_step_forward</a> = detail::lz_step_forward&lt;ListZipper&gt;::type</td></tr>
+<tr class="memdesc:ga6d8a884ef807d2dcd0ffdb5ad24236f7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Given a list zipper (a pair of lists) take a step forward moving the head element from <code class="param">a</code> to <code class="param">b</code>.  <br /></td></tr>
 <tr class="memitem:ga6a453ac110c6a6d63a577996714f31fc" id="r_ga6a453ac110c6a6d63a577996714f31fc"><td class="memTemplParams" colspan="2">template&lt;typename Dict, List L&gt; </td></tr>
 <tr class="memitem:ga6a453ac110c6a6d63a577996714f31fc template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="#ga6a453ac110c6a6d63a577996714f31fc">loom::typelist::replace_with_dict</a> = detail::replace_with_dict&lt;Dict, L&gt;::type</td></tr>
 <tr class="memdesc:ga6a453ac110c6a6d63a577996714f31fc"><td class="mdescLeft">&#160;</td><td class="mdescRight">Replace items occuring as keys of <code class="param">Dict</code> in <code class="param">L</code> with corresponding values.  <br /></td></tr>
 <tr class="memitem:gac5da4addb9ef6738b0e434ac5f5d8724" id="r_gac5da4addb9ef6738b0e434ac5f5d8724"><td class="memTemplParams" colspan="2">template&lt;typename Fs, typename... Args&gt; </td></tr>
 <tr class="memitem:gac5da4addb9ef6738b0e434ac5f5d8724 template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="#gac5da4addb9ef6738b0e434ac5f5d8724">loom::typelist::result_of</a> = detail::result_of&lt;Fs, Args...&gt;</td></tr>
 <tr class="memdesc:gac5da4addb9ef6738b0e434ac5f5d8724"><td class="mdescLeft">&#160;</td><td class="mdescRight">Considering the classes of <a class="el" href="structloom_1_1type__sequence.html" title="Sequence of types.">type_sequence</a> <code class="param">Fs</code> as functions get the list of return types by applying the functions to arguments of types <code class="param">Args</code>.  <br /></td></tr>
-<tr class="memitem:ga93803cb46926540c2965489046c80136" id="r_ga93803cb46926540c2965489046c80136"><td class="memTemplParams" colspan="2"><a id="ga93803cb46926540c2965489046c80136" name="ga93803cb46926540c2965489046c80136"></a>
-template&lt;List L&gt; </td></tr>
-<tr class="memitem:ga93803cb46926540c2965489046c80136 template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><b>loom::typelist::nub</b> = detail::nub&lt;L&gt;::type</td></tr>
-<tr class="memdesc:ga93803cb46926540c2965489046c80136"><td class="mdescLeft">&#160;</td><td class="mdescRight">Remove duplicate elements from <code class="param">L</code>. <br /></td></tr>
+<tr class="memitem:ga93803cb46926540c2965489046c80136" id="r_ga93803cb46926540c2965489046c80136"><td class="memTemplParams" colspan="2">template&lt;List L&gt; </td></tr>
+<tr class="memitem:ga93803cb46926540c2965489046c80136 template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="#ga93803cb46926540c2965489046c80136">loom::typelist::nub</a> = detail::nub&lt;L&gt;::type</td></tr>
+<tr class="memdesc:ga93803cb46926540c2965489046c80136"><td class="mdescLeft">&#160;</td><td class="mdescRight">Remove duplicate elements from <code class="param">L</code>.  <br /></td></tr>
 <tr class="memitem:ga4927e608f27ebac1f3cd48556da3afe6" id="r_ga4927e608f27ebac1f3cd48556da3afe6"><td class="memTemplParams" colspan="2">template&lt;template&lt; typename &gt; typename P, List L&gt; </td></tr>
 <tr class="memitem:ga4927e608f27ebac1f3cd48556da3afe6 template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="#ga4927e608f27ebac1f3cd48556da3afe6">loom::typelist::filter</a> = detail::filter&lt;P, L&gt;::type</td></tr>
 <tr class="memdesc:ga4927e608f27ebac1f3cd48556da3afe6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Filter <code class="param">L</code> elements with a predicate <code class="param">P</code>.  <br /></td></tr>
@@ -239,18 +220,15 @@ template&lt;List L&gt; </td></tr>
 <tr class="memitem:gaed1854a9502517f55a44de25213358bd" id="r_gaed1854a9502517f55a44de25213358bd"><td class="memTemplParams" colspan="2">template&lt;typename Delimeter, List L&gt; </td></tr>
 <tr class="memitem:gaed1854a9502517f55a44de25213358bd template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="#gaed1854a9502517f55a44de25213358bd">loom::typelist::split_up</a> = detail::split_up&lt;Delimeter, L&gt;::type</td></tr>
 <tr class="memdesc:gaed1854a9502517f55a44de25213358bd"><td class="mdescLeft">&#160;</td><td class="mdescRight">Split typelist into sublists with a delimeter.  <br /></td></tr>
-<tr class="memitem:ga6ee5883ae8964b73a0dd32bc6bc1e7b7" id="r_ga6ee5883ae8964b73a0dd32bc6bc1e7b7"><td class="memTemplParams" colspan="2"><a id="ga6ee5883ae8964b73a0dd32bc6bc1e7b7" name="ga6ee5883ae8964b73a0dd32bc6bc1e7b7"></a>
-template&lt;typename Source&gt; </td></tr>
-<tr class="memitem:ga6ee5883ae8964b73a0dd32bc6bc1e7b7 template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><b>loom::typelist::from</b> = detail::from&lt;Source&gt;::type</td></tr>
-<tr class="memdesc:ga6ee5883ae8964b73a0dd32bc6bc1e7b7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Convert a class template <code class="param">Source</code> into <a class="el" href="structloom_1_1type__sequence.html" title="Sequence of types.">type_sequence</a>. <br /></td></tr>
-<tr class="memitem:ga506a992045b92d561ffdf348b809689d" id="r_ga506a992045b92d561ffdf348b809689d"><td class="memTemplParams" colspan="2"><a id="ga506a992045b92d561ffdf348b809689d" name="ga506a992045b92d561ffdf348b809689d"></a>
-template&lt;typename Source, template&lt; typename... &gt; typename Target&gt; </td></tr>
-<tr class="memitem:ga506a992045b92d561ffdf348b809689d template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><b>loom::typelist::to</b> = detail::to&lt;Source, Target&gt;::type</td></tr>
-<tr class="memdesc:ga506a992045b92d561ffdf348b809689d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Convert <a class="el" href="structloom_1_1type__sequence.html" title="Sequence of types.">type_sequence</a> <code class="param">Source</code> to <code class="param">Target</code> class template. <br /></td></tr>
-<tr class="memitem:ga080e02e5806a88b6c6d8bd0039864e39" id="r_ga080e02e5806a88b6c6d8bd0039864e39"><td class="memTemplParams" colspan="2"><a id="ga080e02e5806a88b6c6d8bd0039864e39" name="ga080e02e5806a88b6c6d8bd0039864e39"></a>
-template&lt;List L, template&lt; typename... &gt; typename Target&gt; </td></tr>
-<tr class="memitem:ga080e02e5806a88b6c6d8bd0039864e39 template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><b>loom::typelist::maybe_to</b> = std::conditional_t&lt;<a class="el" href="#ga6a7d84dae989acaf892510ae449ff8c9">length</a>&lt;L&gt; == 1, <a class="el" href="#ga01954b67861600e312c877a34a8042b4">head</a>&lt;L&gt;, <a class="el" href="#ga506a992045b92d561ffdf348b809689d">to</a>&lt;L, Target&gt;&gt;</td></tr>
-<tr class="memdesc:ga080e02e5806a88b6c6d8bd0039864e39"><td class="mdescLeft">&#160;</td><td class="mdescRight">If <code class="param">L</code> consists of single element it's the resulting type, otherwise it's <code class="param">Target</code> of the elements. <br /></td></tr>
+<tr class="memitem:ga6ee5883ae8964b73a0dd32bc6bc1e7b7" id="r_ga6ee5883ae8964b73a0dd32bc6bc1e7b7"><td class="memTemplParams" colspan="2">template&lt;typename Source&gt; </td></tr>
+<tr class="memitem:ga6ee5883ae8964b73a0dd32bc6bc1e7b7 template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="#ga6ee5883ae8964b73a0dd32bc6bc1e7b7">loom::typelist::from</a> = detail::from&lt;Source&gt;::type</td></tr>
+<tr class="memdesc:ga6ee5883ae8964b73a0dd32bc6bc1e7b7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Convert a class template <code class="param">Source</code> into <a class="el" href="structloom_1_1type__sequence.html" title="Sequence of types.">type_sequence</a>.  <br /></td></tr>
+<tr class="memitem:ga506a992045b92d561ffdf348b809689d" id="r_ga506a992045b92d561ffdf348b809689d"><td class="memTemplParams" colspan="2">template&lt;typename Source, template&lt; typename... &gt; typename Target&gt; </td></tr>
+<tr class="memitem:ga506a992045b92d561ffdf348b809689d template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="#ga506a992045b92d561ffdf348b809689d">loom::typelist::to</a> = detail::to&lt;Source, Target&gt;::type</td></tr>
+<tr class="memdesc:ga506a992045b92d561ffdf348b809689d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Convert <a class="el" href="structloom_1_1type__sequence.html" title="Sequence of types.">type_sequence</a> <code class="param">Source</code> to <code class="param">Target</code> class template.  <br /></td></tr>
+<tr class="memitem:ga080e02e5806a88b6c6d8bd0039864e39" id="r_ga080e02e5806a88b6c6d8bd0039864e39"><td class="memTemplParams" colspan="2">template&lt;List L, template&lt; typename... &gt; typename Target&gt; </td></tr>
+<tr class="memitem:ga080e02e5806a88b6c6d8bd0039864e39 template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="#ga080e02e5806a88b6c6d8bd0039864e39">loom::typelist::maybe_to</a> = std::conditional_t&lt;<a class="el" href="#ga6a7d84dae989acaf892510ae449ff8c9">length</a>&lt;L&gt; == 1, <a class="el" href="#ga01954b67861600e312c877a34a8042b4">head</a>&lt;L&gt;, <a class="el" href="#ga506a992045b92d561ffdf348b809689d">to</a>&lt;L, Target&gt;&gt;</td></tr>
+<tr class="memdesc:ga080e02e5806a88b6c6d8bd0039864e39"><td class="mdescLeft">&#160;</td><td class="mdescRight">If <code class="param">L</code> consists of single element it's the resulting type, otherwise it's <code class="param">Target</code> of the elements.  <br /></td></tr>
 <tr class="memitem:gac8ddd7df02d9a3577791e5a47120a35e" id="r_gac8ddd7df02d9a3577791e5a47120a35e"><td class="memTemplParams" colspan="2">template&lt;List L&gt; </td></tr>
 <tr class="memitem:gac8ddd7df02d9a3577791e5a47120a35e template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="#gac8ddd7df02d9a3577791e5a47120a35e">loom::typelist::to_integer_sequence</a> = detail::to_integer_seq&lt;L&gt;::type</td></tr>
 <tr class="memdesc:gac8ddd7df02d9a3577791e5a47120a35e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Convert <a class="el" href="structloom_1_1type__sequence.html" title="Sequence of types.">type_sequence</a> of std::integer_constant into a std::integer_sequence.  <br /></td></tr>
@@ -299,26 +277,21 @@ Functions</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-var-members" class="groupheader"><a id="var-members" name="var-members"></a>
 Variables</h2></td></tr>
-<tr class="memitem:ga6a7d84dae989acaf892510ae449ff8c9" id="r_ga6a7d84dae989acaf892510ae449ff8c9"><td class="memTemplParams" colspan="2"><a id="ga6a7d84dae989acaf892510ae449ff8c9" name="ga6a7d84dae989acaf892510ae449ff8c9"></a>
-template&lt;List L&gt; </td></tr>
-<tr class="memitem:ga6a7d84dae989acaf892510ae449ff8c9 template"><td class="memItemLeft">constexpr std::size_t&#160;</td><td class="memItemRight"><b>loom::typelist::length</b> = detail::length&lt;L&gt;::value</td></tr>
-<tr class="memdesc:ga6a7d84dae989acaf892510ae449ff8c9"><td class="mdescLeft">&#160;</td><td class="mdescRight">Number of types in <code class="param">L</code>. <br /></td></tr>
-<tr class="memitem:gae94660c00bc4614147decf98a4a60329" id="r_gae94660c00bc4614147decf98a4a60329"><td class="memTemplParams" colspan="2"><a id="gae94660c00bc4614147decf98a4a60329" name="gae94660c00bc4614147decf98a4a60329"></a>
-template&lt;typename T, List L&gt; </td></tr>
-<tr class="memitem:gae94660c00bc4614147decf98a4a60329 template"><td class="memItemLeft">constexpr bool&#160;</td><td class="memItemRight"><b>loom::typelist::elem</b> = detail::elem&lt;T, L&gt;::value</td></tr>
-<tr class="memdesc:gae94660c00bc4614147decf98a4a60329"><td class="mdescLeft">&#160;</td><td class="mdescRight">Check whether <code class="param">T</code> occur in <code class="param">L</code>. <br /></td></tr>
-<tr class="memitem:gad7c3a54514b6f36f1ba682999037bd1b" id="r_gad7c3a54514b6f36f1ba682999037bd1b"><td class="memTemplParams" colspan="2"><a id="gad7c3a54514b6f36f1ba682999037bd1b" name="gad7c3a54514b6f36f1ba682999037bd1b"></a>
-template&lt;typename T, List L&gt; </td></tr>
-<tr class="memitem:gad7c3a54514b6f36f1ba682999037bd1b template"><td class="memItemLeft">constexpr std::size_t&#160;</td><td class="memItemRight"><b>loom::typelist::index</b> = detail::index&lt;0ul, T, L&gt;::value</td></tr>
-<tr class="memdesc:gad7c3a54514b6f36f1ba682999037bd1b"><td class="mdescLeft">&#160;</td><td class="mdescRight">The index of the first occurence of type <code class="param">T</code>. If there is no such type, the value is -1ul. <br /></td></tr>
-<tr class="memitem:gad924da2c28abdb7fc5199c76ac3ccc02" id="r_gad924da2c28abdb7fc5199c76ac3ccc02"><td class="memTemplParams" colspan="2"><a id="gad924da2c28abdb7fc5199c76ac3ccc02" name="gad924da2c28abdb7fc5199c76ac3ccc02"></a>
-template&lt;List L&gt; </td></tr>
-<tr class="memitem:gad924da2c28abdb7fc5199c76ac3ccc02 template"><td class="memItemLeft">constexpr bool&#160;</td><td class="memItemRight"><b>loom::typelist::same</b> = detail::same&lt;L&gt;::value</td></tr>
-<tr class="memdesc:gad924da2c28abdb7fc5199c76ac3ccc02"><td class="mdescLeft">&#160;</td><td class="mdescRight">Check whether the classes of <code class="param">L</code> are the same. <br /></td></tr>
-<tr class="memitem:gaf871974522ab43a5dba764bbb1a3197f" id="r_gaf871974522ab43a5dba764bbb1a3197f"><td class="memTemplParams" colspan="2"><a id="gaf871974522ab43a5dba764bbb1a3197f" name="gaf871974522ab43a5dba764bbb1a3197f"></a>
-template&lt;List L&gt; </td></tr>
-<tr class="memitem:gaf871974522ab43a5dba764bbb1a3197f template"><td class="memItemLeft">constexpr bool&#160;</td><td class="memItemRight"><b>loom::typelist::has_duplicates</b> = detail::has_duplicates&lt;L&gt;::value</td></tr>
-<tr class="memdesc:gaf871974522ab43a5dba764bbb1a3197f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Check if there are duplicates in <code class="param">L</code>. <br /></td></tr>
+<tr class="memitem:ga6a7d84dae989acaf892510ae449ff8c9" id="r_ga6a7d84dae989acaf892510ae449ff8c9"><td class="memTemplParams" colspan="2">template&lt;List L&gt; </td></tr>
+<tr class="memitem:ga6a7d84dae989acaf892510ae449ff8c9 template"><td class="memItemLeft">constexpr std::size_t&#160;</td><td class="memItemRight"><a class="el" href="#ga6a7d84dae989acaf892510ae449ff8c9">loom::typelist::length</a> = detail::length&lt;L&gt;::value</td></tr>
+<tr class="memdesc:ga6a7d84dae989acaf892510ae449ff8c9"><td class="mdescLeft">&#160;</td><td class="mdescRight">Number of types in <code class="param">L</code>.  <br /></td></tr>
+<tr class="memitem:gae94660c00bc4614147decf98a4a60329" id="r_gae94660c00bc4614147decf98a4a60329"><td class="memTemplParams" colspan="2">template&lt;typename T, List L&gt; </td></tr>
+<tr class="memitem:gae94660c00bc4614147decf98a4a60329 template"><td class="memItemLeft">constexpr bool&#160;</td><td class="memItemRight"><a class="el" href="#gae94660c00bc4614147decf98a4a60329">loom::typelist::elem</a> = detail::elem&lt;T, L&gt;::value</td></tr>
+<tr class="memdesc:gae94660c00bc4614147decf98a4a60329"><td class="mdescLeft">&#160;</td><td class="mdescRight">Check whether <code class="param">T</code> occur in <code class="param">L</code>.  <br /></td></tr>
+<tr class="memitem:gad7c3a54514b6f36f1ba682999037bd1b" id="r_gad7c3a54514b6f36f1ba682999037bd1b"><td class="memTemplParams" colspan="2">template&lt;typename T, List L&gt; </td></tr>
+<tr class="memitem:gad7c3a54514b6f36f1ba682999037bd1b template"><td class="memItemLeft">constexpr std::size_t&#160;</td><td class="memItemRight"><a class="el" href="#gad7c3a54514b6f36f1ba682999037bd1b">loom::typelist::index</a> = detail::index&lt;0ul, T, L&gt;::value</td></tr>
+<tr class="memdesc:gad7c3a54514b6f36f1ba682999037bd1b"><td class="mdescLeft">&#160;</td><td class="mdescRight">The index of the first occurence of type <code class="param">T</code>. If there is no such type, the value is -1ul.  <br /></td></tr>
+<tr class="memitem:gad924da2c28abdb7fc5199c76ac3ccc02" id="r_gad924da2c28abdb7fc5199c76ac3ccc02"><td class="memTemplParams" colspan="2">template&lt;List L&gt; </td></tr>
+<tr class="memitem:gad924da2c28abdb7fc5199c76ac3ccc02 template"><td class="memItemLeft">constexpr bool&#160;</td><td class="memItemRight"><a class="el" href="#gad924da2c28abdb7fc5199c76ac3ccc02">loom::typelist::same</a> = detail::same&lt;L&gt;::value</td></tr>
+<tr class="memdesc:gad924da2c28abdb7fc5199c76ac3ccc02"><td class="mdescLeft">&#160;</td><td class="mdescRight">Check whether the classes of <code class="param">L</code> are the same.  <br /></td></tr>
+<tr class="memitem:gaf871974522ab43a5dba764bbb1a3197f" id="r_gaf871974522ab43a5dba764bbb1a3197f"><td class="memTemplParams" colspan="2">template&lt;List L&gt; </td></tr>
+<tr class="memitem:gaf871974522ab43a5dba764bbb1a3197f template"><td class="memItemLeft">constexpr bool&#160;</td><td class="memItemRight"><a class="el" href="#gaf871974522ab43a5dba764bbb1a3197f">loom::typelist::has_duplicates</a> = detail::has_duplicates&lt;L&gt;::value</td></tr>
+<tr class="memdesc:gaf871974522ab43a5dba764bbb1a3197f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Check if there are duplicates in <code class="param">L</code>.  <br /></td></tr>
 <tr class="memitem:ga28a86980bb0f8a77b84181eb19754df0" id="r_ga28a86980bb0f8a77b84181eb19754df0"><td class="memTemplParams" colspan="2">template&lt;template&lt; typename &gt; typename P, List L&gt; </td></tr>
 <tr class="memitem:ga28a86980bb0f8a77b84181eb19754df0 template"><td class="memItemLeft">constexpr bool&#160;</td><td class="memItemRight"><a class="el" href="#ga28a86980bb0f8a77b84181eb19754df0">loom::typelist::all</a> = detail::all&lt;P, L&gt;::value</td></tr>
 <tr class="memdesc:ga28a86980bb0f8a77b84181eb19754df0"><td class="mdescLeft">&#160;</td><td class="mdescRight">Determines whether all elements of the <code class="param">L</code> satisfy the predicate <code class="param">P</code>.  <br /></td></tr>
@@ -328,22 +301,39 @@ template&lt;List L&gt; </td></tr>
 <tr class="memitem:ga3e5f353e7554784bd8cdd42ae76c064d" id="r_ga3e5f353e7554784bd8cdd42ae76c064d"><td class="memTemplParams" colspan="2">template&lt;typename Key, List Map&gt; </td></tr>
 <tr class="memitem:ga3e5f353e7554784bd8cdd42ae76c064d template"><td class="memItemLeft">constexpr bool&#160;</td><td class="memItemRight"><a class="el" href="#ga3e5f353e7554784bd8cdd42ae76c064d">loom::typelist::key_elem</a> = <a class="el" href="#gae94660c00bc4614147decf98a4a60329">elem</a>&lt;Key, <a class="el" href="#gab2f53d079f7a7c2a86ae8fcbb30f2e09">keys</a>&lt;Map&gt;&gt;</td></tr>
 <tr class="memdesc:ga3e5f353e7554784bd8cdd42ae76c064d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Helper meta-function. Check if <code class="param">Map</code> has element with key <code class="param">Key</code>.  <br /></td></tr>
-<tr class="memitem:ga54f8fccf482a0af743fa9106aab6b19f" id="r_ga54f8fccf482a0af743fa9106aab6b19f"><td class="memTemplParams" colspan="2"><a id="ga54f8fccf482a0af743fa9106aab6b19f" name="ga54f8fccf482a0af743fa9106aab6b19f"></a>
-template&lt;List L&gt; </td></tr>
-<tr class="memitem:ga54f8fccf482a0af743fa9106aab6b19f template"><td class="memItemLeft">constexpr bool&#160;</td><td class="memItemRight"><b>loom::typelist::empty</b> = <a class="el" href="#ga6a7d84dae989acaf892510ae449ff8c9">length</a>&lt;L&gt; == 0</td></tr>
-<tr class="memdesc:ga54f8fccf482a0af743fa9106aab6b19f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Check if <code class="param">L</code> is empty. <br /></td></tr>
-<tr class="memitem:ga69e250bbccc9f2eeafb7c5c4ce78546e" id="r_ga69e250bbccc9f2eeafb7c5c4ce78546e"><td class="memTemplParams" colspan="2"><a id="ga69e250bbccc9f2eeafb7c5c4ce78546e" name="ga69e250bbccc9f2eeafb7c5c4ce78546e"></a>
-template&lt;List L&gt; </td></tr>
-<tr class="memitem:ga69e250bbccc9f2eeafb7c5c4ce78546e template"><td class="memItemLeft">constexpr std::size_t&#160;</td><td class="memItemRight"><b>loom::typelist::max_sizeof</b> = detail::max_sizeof&lt;L&gt;::value</td></tr>
-<tr class="memdesc:ga69e250bbccc9f2eeafb7c5c4ce78546e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Size of the biggest type in the list. <br /></td></tr>
-<tr class="memitem:gaff5a7135282273f75043617b03ac09ce" id="r_gaff5a7135282273f75043617b03ac09ce"><td class="memTemplParams" colspan="2"><a id="gaff5a7135282273f75043617b03ac09ce" name="gaff5a7135282273f75043617b03ac09ce"></a>
-template&lt;List L&gt; </td></tr>
-<tr class="memitem:gaff5a7135282273f75043617b03ac09ce template"><td class="memItemLeft">constexpr bool&#160;</td><td class="memItemRight"><b>loom::typelist::of_same_size</b> = detail::of_same_size&lt;L&gt;::value</td></tr>
-<tr class="memdesc:gaff5a7135282273f75043617b03ac09ce"><td class="mdescLeft">&#160;</td><td class="mdescRight">Check if all types in <code class="param">L</code> have the same size. <br /></td></tr>
+<tr class="memitem:ga54f8fccf482a0af743fa9106aab6b19f" id="r_ga54f8fccf482a0af743fa9106aab6b19f"><td class="memTemplParams" colspan="2">template&lt;List L&gt; </td></tr>
+<tr class="memitem:ga54f8fccf482a0af743fa9106aab6b19f template"><td class="memItemLeft">constexpr bool&#160;</td><td class="memItemRight"><a class="el" href="#ga54f8fccf482a0af743fa9106aab6b19f">loom::typelist::empty</a> = <a class="el" href="#ga6a7d84dae989acaf892510ae449ff8c9">length</a>&lt;L&gt; == 0</td></tr>
+<tr class="memdesc:ga54f8fccf482a0af743fa9106aab6b19f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Check if <code class="param">L</code> is empty.  <br /></td></tr>
+<tr class="memitem:ga69e250bbccc9f2eeafb7c5c4ce78546e" id="r_ga69e250bbccc9f2eeafb7c5c4ce78546e"><td class="memTemplParams" colspan="2">template&lt;List L&gt; </td></tr>
+<tr class="memitem:ga69e250bbccc9f2eeafb7c5c4ce78546e template"><td class="memItemLeft">constexpr std::size_t&#160;</td><td class="memItemRight"><a class="el" href="#ga69e250bbccc9f2eeafb7c5c4ce78546e">loom::typelist::max_sizeof</a> = detail::max_sizeof&lt;L&gt;::value</td></tr>
+<tr class="memdesc:ga69e250bbccc9f2eeafb7c5c4ce78546e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Size of the biggest type in the list.  <br /></td></tr>
+<tr class="memitem:gaff5a7135282273f75043617b03ac09ce" id="r_gaff5a7135282273f75043617b03ac09ce"><td class="memTemplParams" colspan="2">template&lt;List L&gt; </td></tr>
+<tr class="memitem:gaff5a7135282273f75043617b03ac09ce template"><td class="memItemLeft">constexpr bool&#160;</td><td class="memItemRight"><a class="el" href="#gaff5a7135282273f75043617b03ac09ce">loom::typelist::of_same_size</a> = detail::of_same_size&lt;L&gt;::value</td></tr>
+<tr class="memdesc:gaff5a7135282273f75043617b03ac09ce"><td class="mdescLeft">&#160;</td><td class="mdescRight">Check if all types in <code class="param">L</code> have the same size.  <br /></td></tr>
 </table>
 <a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
 <div class="textblock"><p><a class="el" href="conceptloom_1_1typelist_1_1List.html" title="type_sequence constraint.">List</a> operations on type sequences. </p>
 </div><a name="doc-typedef-members" id="doc-typedef-members"></a><h2 id="header-doc-typedef-members" class="groupheader">Typedef Documentation</h2>
+<a id="gaa97eee0a7c3509fdb1a93449e1e2c241" name="gaa97eee0a7c3509fdb1a93449e1e2c241"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#gaa97eee0a7c3509fdb1a93449e1e2c241">&#9670;&#160;</a></span>append</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename T, List L&gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">using <a class="el" href="#gaa97eee0a7c3509fdb1a93449e1e2c241">loom::typelist::append</a> = <a class="el" href="#ga23f16e48bf88c44e2b2741f79181219e">join</a>&lt;L, <a class="el" href="structloom_1_1type__sequence.html">type_sequence</a>&lt;T&gt;&gt;</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Add class <code class="param">T</code> to the end of <a class="el" href="structloom_1_1type__sequence.html" title="Sequence of types.">type_sequence</a> <code class="param">L</code>. </p>
+
+<p class="definition">Definition at line <a class="el" href="tmp_8hpp_source.html#l00777">777</a> of file <a class="el" href="tmp_8hpp_source.html">tmp.hpp</a>.</p>
+
+</div>
+</div>
 <a id="ga5f04f656660d39b73b42fc13d3e9f27c" name="ga5f04f656660d39b73b42fc13d3e9f27c"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#ga5f04f656660d39b73b42fc13d3e9f27c">&#9670;&#160;</a></span>at</h2>
 
@@ -360,6 +350,88 @@ template&lt;std::size_t I, List L&gt; </div>
 
 <p>Extract the <code class="param">Ith</code> class from <code class="param">L</code>. </p>
 <p>If <code class="param">L</code> is too short, the resulting type is void. </p>
+
+<p class="definition">Definition at line <a class="el" href="tmp_8hpp_source.html#l00791">791</a> of file <a class="el" href="tmp_8hpp_source.html">tmp.hpp</a>.</p>
+
+</div>
+</div>
+<a id="ga682252f35b37bb6e02ff054c14245df7" name="ga682252f35b37bb6e02ff054c14245df7"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ga682252f35b37bb6e02ff054c14245df7">&#9670;&#160;</a></span>cartesian</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;List... Ls&gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">using <a class="el" href="#ga682252f35b37bb6e02ff054c14245df7">loom::typelist::cartesian</a> = detail::cartesian&lt;Ls...&gt;::type</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Cartesian product of lists. </p>
+
+<p class="definition">Definition at line <a class="el" href="tmp_8hpp_source.html#l00992">992</a> of file <a class="el" href="tmp_8hpp_source.html">tmp.hpp</a>.</p>
+
+</div>
+</div>
+<a id="ga3d5c4761efe4142e9379a309b18d1237" name="ga3d5c4761efe4142e9379a309b18d1237"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ga3d5c4761efe4142e9379a309b18d1237">&#9670;&#160;</a></span>concat</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;List L&gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">using <a class="el" href="#ga3d5c4761efe4142e9379a309b18d1237">loom::typelist::concat</a> = <a class="el" href="#ga09e82c9a117de81e6cbfba8b58e74666">foldr</a>&lt;<a class="el" href="#ga23f16e48bf88c44e2b2741f79181219e">join</a>, <a class="el" href="structloom_1_1type__sequence.html">type_sequence</a>&lt;&gt;, L&gt;</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>The concatenation of all the elements of a list <code class="param">L</code> of lists. </p>
+
+<p class="definition">Definition at line <a class="el" href="tmp_8hpp_source.html#l00875">875</a> of file <a class="el" href="tmp_8hpp_source.html">tmp.hpp</a>.</p>
+
+</div>
+</div>
+<a id="ga6d62adb969f8ea423247e9c12b757087" name="ga6d62adb969f8ea423247e9c12b757087"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ga6d62adb969f8ea423247e9c12b757087">&#9670;&#160;</a></span>concat_map</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;template&lt; typename &gt; typename F, List L&gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">using <a class="el" href="#ga6d62adb969f8ea423247e9c12b757087">loom::typelist::concat_map</a> = <a class="el" href="#ga3d5c4761efe4142e9379a309b18d1237">concat</a>&lt;<a class="el" href="#gaecd8e1bc8dfc53fbfd1abde91a668f46">map</a>&lt;F, L&gt;&gt;</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Map a function returning a list over and concantenate the results. </p>
+
+<p class="definition">Definition at line <a class="el" href="tmp_8hpp_source.html#l00883">883</a> of file <a class="el" href="tmp_8hpp_source.html">tmp.hpp</a>.</p>
+
+</div>
+</div>
+<a id="ga06bb10da8ccea9066796b0d2a9f5c974" name="ga06bb10da8ccea9066796b0d2a9f5c974"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ga06bb10da8ccea9066796b0d2a9f5c974">&#9670;&#160;</a></span>cons</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename T, List L&gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">using <a class="el" href="#ga06bb10da8ccea9066796b0d2a9f5c974">loom::typelist::cons</a> = detail::cons&lt;T, L&gt;::type</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Add class <code class="param">T</code> to the beginning of <a class="el" href="structloom_1_1type__sequence.html" title="Sequence of types.">type_sequence</a> <code class="param">L</code>. </p>
+
+<p class="definition">Definition at line <a class="el" href="tmp_8hpp_source.html#l00769">769</a> of file <a class="el" href="tmp_8hpp_source.html">tmp.hpp</a>.</p>
 
 </div>
 </div>
@@ -379,6 +451,8 @@ template&lt;std::size_t N, List L&gt; </div>
 
 <p>Suffix of <code class="param">L</code> after the first <code class="param">N</code> elements. </p>
 <p><code class="param">N</code> must be less than or equal of length of <code class="param">L</code>. </p>
+
+<p class="definition">Definition at line <a class="el" href="tmp_8hpp_source.html#l00855">855</a> of file <a class="el" href="tmp_8hpp_source.html">tmp.hpp</a>.</p>
 
 </div>
 </div>
@@ -407,6 +481,8 @@ template&lt;List L, std::integral I = std::size_t, I S = 0&gt; </div>
 </dl>
 <p>Type of the index member is std::integral_constant&lt;Index, value&gt;. </p>
 
+<p class="definition">Definition at line <a class="el" href="tmp_8hpp_source.html#l01949">1949</a> of file <a class="el" href="tmp_8hpp_source.html">tmp.hpp</a>.</p>
+
 </div>
 </div>
 <a id="ga4927e608f27ebac1f3cd48556da3afe6" name="ga4927e608f27ebac1f3cd48556da3afe6"></a>
@@ -431,6 +507,8 @@ template&lt;template&lt; typename &gt; typename P, List L&gt; </div>
   </dd>
 </dl>
 <p>The resulting <a class="el" href="structloom_1_1type__sequence.html" title="Sequence of types.">type_sequence</a> contains elements that satisfy P, i.e. P&lt;T&gt;::value == true. </p>
+
+<p class="definition">Definition at line <a class="el" href="tmp_8hpp_source.html#l01049">1049</a> of file <a class="el" href="tmp_8hpp_source.html">tmp.hpp</a>.</p>
 
 </div>
 </div>
@@ -457,6 +535,148 @@ template&lt;template&lt; typename &gt; typename P, List L&gt; </div>
 </dl>
 <p>If there is no type matching <code class="param">P</code> the resulting type is void. </p>
 
+<p class="definition">Definition at line <a class="el" href="tmp_8hpp_source.html#l01083">1083</a> of file <a class="el" href="tmp_8hpp_source.html">tmp.hpp</a>.</p>
+
+</div>
+</div>
+<a id="ga4e4ceffe96059fc03ae6589802bf9749" name="ga4e4ceffe96059fc03ae6589802bf9749"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ga4e4ceffe96059fc03ae6589802bf9749">&#9670;&#160;</a></span>flatten</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;List L&gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">using <a class="el" href="#ga4e4ceffe96059fc03ae6589802bf9749">loom::typelist::flatten</a> = detail::flatten&lt;L, <a class="el" href="structloom_1_1type__sequence.html">type_sequence</a>&lt;&gt;&gt;::type</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Flatten list that possibly contains lists of arbitrary nesting depth. </p>
+
+<p class="definition">Definition at line <a class="el" href="tmp_8hpp_source.html#l00879">879</a> of file <a class="el" href="tmp_8hpp_source.html">tmp.hpp</a>.</p>
+
+</div>
+</div>
+<a id="ga48e50b4828062994bea9e68064bae7b8" name="ga48e50b4828062994bea9e68064bae7b8"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ga48e50b4828062994bea9e68064bae7b8">&#9670;&#160;</a></span>foldl</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;template&lt; typename, typename &gt; typename F, typename Acc, List L&gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">using <a class="el" href="#ga48e50b4828062994bea9e68064bae7b8">loom::typelist::foldl</a> = detail::foldl&lt;F, Acc, L&gt;::type</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Left-associative fold of a <a class="el" href="structloom_1_1type__sequence.html" title="Sequence of types.">type_sequence</a> <code class="param">L</code>. </p>
+
+<p class="definition">Definition at line <a class="el" href="tmp_8hpp_source.html#l00825">825</a> of file <a class="el" href="tmp_8hpp_source.html">tmp.hpp</a>.</p>
+
+</div>
+</div>
+<a id="ga09e82c9a117de81e6cbfba8b58e74666" name="ga09e82c9a117de81e6cbfba8b58e74666"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ga09e82c9a117de81e6cbfba8b58e74666">&#9670;&#160;</a></span>foldr</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;template&lt; typename, typename &gt; typename F, typename Acc, List L&gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">using <a class="el" href="#ga09e82c9a117de81e6cbfba8b58e74666">loom::typelist::foldr</a> = detail::foldr&lt;F, Acc, L&gt;::type</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Right-associative fold of a <a class="el" href="structloom_1_1type__sequence.html" title="Sequence of types.">type_sequence</a> <code class="param">L</code>. </p>
+
+<p class="definition">Definition at line <a class="el" href="tmp_8hpp_source.html#l00829">829</a> of file <a class="el" href="tmp_8hpp_source.html">tmp.hpp</a>.</p>
+
+</div>
+</div>
+<a id="ga6ee5883ae8964b73a0dd32bc6bc1e7b7" name="ga6ee5883ae8964b73a0dd32bc6bc1e7b7"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ga6ee5883ae8964b73a0dd32bc6bc1e7b7">&#9670;&#160;</a></span>from</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename Source&gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">using <a class="el" href="#ga6ee5883ae8964b73a0dd32bc6bc1e7b7">loom::typelist::from</a> = detail::from&lt;Source&gt;::type</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Convert a class template <code class="param">Source</code> into <a class="el" href="structloom_1_1type__sequence.html" title="Sequence of types.">type_sequence</a>. </p>
+
+<p class="definition">Definition at line <a class="el" href="tmp_8hpp_source.html#l01106">1106</a> of file <a class="el" href="tmp_8hpp_source.html">tmp.hpp</a>.</p>
+
+</div>
+</div>
+<a id="ga01954b67861600e312c877a34a8042b4" name="ga01954b67861600e312c877a34a8042b4"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ga01954b67861600e312c877a34a8042b4">&#9670;&#160;</a></span>head</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;List L&gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">using <a class="el" href="#ga01954b67861600e312c877a34a8042b4">loom::typelist::head</a> = <a class="el" href="#ga5f04f656660d39b73b42fc13d3e9f27c">at</a>&lt;0, L&gt;</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Extract the first class from <code class="param">L</code>. </p>
+
+<p class="definition">Definition at line <a class="el" href="tmp_8hpp_source.html#l00800">800</a> of file <a class="el" href="tmp_8hpp_source.html">tmp.hpp</a>.</p>
+
+</div>
+</div>
+<a id="ga6a6d5892ca9b4456d7558fc8ca644b19" name="ga6a6d5892ca9b4456d7558fc8ca644b19"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ga6a6d5892ca9b4456d7558fc8ca644b19">&#9670;&#160;</a></span>indices</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;List L&gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">using <a class="el" href="#ga6a6d5892ca9b4456d7558fc8ca644b19">loom::typelist::indices</a> = std::make_index_sequence&lt;<a class="el" href="#ga6a7d84dae989acaf892510ae449ff8c9">length</a>&lt;L&gt;&gt;</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>std::index_sequence for <code class="param">L</code>. </p>
+
+<p class="definition">Definition at line <a class="el" href="tmp_8hpp_source.html#l00821">821</a> of file <a class="el" href="tmp_8hpp_source.html">tmp.hpp</a>.</p>
+
+</div>
+</div>
+<a id="ga23f16e48bf88c44e2b2741f79181219e" name="ga23f16e48bf88c44e2b2741f79181219e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ga23f16e48bf88c44e2b2741f79181219e">&#9670;&#160;</a></span>join</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;List L1, List L2&gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">using <a class="el" href="#ga23f16e48bf88c44e2b2741f79181219e">loom::typelist::join</a> = detail::join&lt;L1, L2&gt;::type</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Concatenate two lists of types. </p>
+
+<p class="definition">Definition at line <a class="el" href="tmp_8hpp_source.html#l00773">773</a> of file <a class="el" href="tmp_8hpp_source.html">tmp.hpp</a>.</p>
+
 </div>
 </div>
 <a id="gab2f53d079f7a7c2a86ae8fcbb30f2e09" name="gab2f53d079f7a7c2a86ae8fcbb30f2e09"></a>
@@ -480,6 +700,48 @@ template&lt;List Map&gt; </div>
   </table>
   </dd>
 </dl>
+
+<p class="definition">Definition at line <a class="el" href="tmp_8hpp_source.html#l01063">1063</a> of file <a class="el" href="tmp_8hpp_source.html">tmp.hpp</a>.</p>
+
+</div>
+</div>
+<a id="ga9891cf9697b8a63987cc4c1337e9c667" name="ga9891cf9697b8a63987cc4c1337e9c667"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ga9891cf9697b8a63987cc4c1337e9c667">&#9670;&#160;</a></span>last</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;List L&gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">using <a class="el" href="#ga9891cf9697b8a63987cc4c1337e9c667">loom::typelist::last</a> = <a class="el" href="#ga5f04f656660d39b73b42fc13d3e9f27c">at</a>&lt;<a class="el" href="#ga6a7d84dae989acaf892510ae449ff8c9">length</a>&lt;L&gt; - 1, L&gt;</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Extract the last element from <code class="param">L</code>. </p>
+
+<p class="definition">Definition at line <a class="el" href="tmp_8hpp_source.html#l00804">804</a> of file <a class="el" href="tmp_8hpp_source.html">tmp.hpp</a>.</p>
+
+</div>
+</div>
+<a id="ga6d8a884ef807d2dcd0ffdb5ad24236f7" name="ga6d8a884ef807d2dcd0ffdb5ad24236f7"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ga6d8a884ef807d2dcd0ffdb5ad24236f7">&#9670;&#160;</a></span>list_zipper_step_forward</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename ListZipper&gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">using <a class="el" href="#ga6d8a884ef807d2dcd0ffdb5ad24236f7">loom::typelist::list_zipper_step_forward</a> = detail::lz_step_forward&lt;ListZipper&gt;::type</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Given a list zipper (a pair of lists) take a step forward moving the head element from <code class="param">a</code> to <code class="param">b</code>. </p>
+
+<p class="definition">Definition at line <a class="el" href="tmp_8hpp_source.html#l00997">997</a> of file <a class="el" href="tmp_8hpp_source.html">tmp.hpp</a>.</p>
 
 </div>
 </div>
@@ -506,6 +768,88 @@ template&lt;typename Key, List Map&gt; </div>
 </dl>
 <p>If <code class="param">Key</code> not found the resulting type is void. </p>
 
+<p class="definition">Definition at line <a class="el" href="tmp_8hpp_source.html#l01057">1057</a> of file <a class="el" href="tmp_8hpp_source.html">tmp.hpp</a>.</p>
+
+</div>
+</div>
+<a id="gaecd8e1bc8dfc53fbfd1abde91a668f46" name="gaecd8e1bc8dfc53fbfd1abde91a668f46"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#gaecd8e1bc8dfc53fbfd1abde91a668f46">&#9670;&#160;</a></span>map</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;template&lt; typename &gt; typename F, List L&gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">using <a class="el" href="#gaecd8e1bc8dfc53fbfd1abde91a668f46">loom::typelist::map</a> = detail::map&lt;F, L&gt;::type</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Apply <code class="param">F</code> to each element of <code class="param">L</code>. </p>
+
+<p class="definition">Definition at line <a class="el" href="tmp_8hpp_source.html#l00837">837</a> of file <a class="el" href="tmp_8hpp_source.html">tmp.hpp</a>.</p>
+
+</div>
+</div>
+<a id="ga080e02e5806a88b6c6d8bd0039864e39" name="ga080e02e5806a88b6c6d8bd0039864e39"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ga080e02e5806a88b6c6d8bd0039864e39">&#9670;&#160;</a></span>maybe_to</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;List L, template&lt; typename... &gt; typename Target&gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">using <a class="el" href="#ga080e02e5806a88b6c6d8bd0039864e39">loom::typelist::maybe_to</a> = std::conditional_t&lt;<a class="el" href="#ga6a7d84dae989acaf892510ae449ff8c9">length</a>&lt;L&gt; == 1, <a class="el" href="#ga01954b67861600e312c877a34a8042b4">head</a>&lt;L&gt;, <a class="el" href="#ga506a992045b92d561ffdf348b809689d">to</a>&lt;L, Target&gt;&gt;</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>If <code class="param">L</code> consists of single element it's the resulting type, otherwise it's <code class="param">Target</code> of the elements. </p>
+
+<p class="definition">Definition at line <a class="el" href="tmp_8hpp_source.html#l01116">1116</a> of file <a class="el" href="tmp_8hpp_source.html">tmp.hpp</a>.</p>
+
+</div>
+</div>
+<a id="ga93803cb46926540c2965489046c80136" name="ga93803cb46926540c2965489046c80136"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ga93803cb46926540c2965489046c80136">&#9670;&#160;</a></span>nub</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;List L&gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">using <a class="el" href="#ga93803cb46926540c2965489046c80136">loom::typelist::nub</a> = detail::nub&lt;L&gt;::type</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Remove duplicate elements from <code class="param">L</code>. </p>
+
+<p class="definition">Definition at line <a class="el" href="tmp_8hpp_source.html#l01040">1040</a> of file <a class="el" href="tmp_8hpp_source.html">tmp.hpp</a>.</p>
+
+</div>
+</div>
+<a id="gaea8e28f7333c97bbbde8c3ee4e2919be" name="gaea8e28f7333c97bbbde8c3ee4e2919be"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#gaea8e28f7333c97bbbde8c3ee4e2919be">&#9670;&#160;</a></span>proj</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;std::size_t I, typename T&gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">using <a class="el" href="#gaea8e28f7333c97bbbde8c3ee4e2919be">loom::typelist::proj</a> = detail::proj&lt;T, I&gt;::type</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Extract <code class="param">Ith</code> class when <code class="param">T</code> is <a class="el" href="structloom_1_1type__sequence.html" title="Sequence of types.">loom::type_sequence</a>, otherwise get <code class="param">T</code>. </p>
+
+<p class="definition">Definition at line <a class="el" href="tmp_8hpp_source.html#l00796">796</a> of file <a class="el" href="tmp_8hpp_source.html">tmp.hpp</a>.</p>
+
 </div>
 </div>
 <a id="gaa132a6717edc9c46ecb16af45b6fe351" name="gaa132a6717edc9c46ecb16af45b6fe351"></a>
@@ -524,6 +868,28 @@ template&lt;typename T, List L&gt; </div>
 
 <p>Remove all occurences of type <code class="param">T</code> from <code class="param">L</code>. </p>
 <p>Does nothing if there is no <code class="param">T</code> in <code class="param">L</code>. </p>
+
+<p class="definition">Definition at line <a class="el" href="tmp_8hpp_source.html#l00843">843</a> of file <a class="el" href="tmp_8hpp_source.html">tmp.hpp</a>.</p>
+
+</div>
+</div>
+<a id="ga37b448e73d800475ee9bfe9f63c164a5" name="ga37b448e73d800475ee9bfe9f63c164a5"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ga37b448e73d800475ee9bfe9f63c164a5">&#9670;&#160;</a></span>repeat</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;std::size_t N, typename... Ts&gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">using <a class="el" href="#ga37b448e73d800475ee9bfe9f63c164a5">loom::typelist::repeat</a> = detail::repeat&lt;N, Ts...&gt;::type</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Constructs <a class="el" href="structloom_1_1type__sequence.html" title="Sequence of types.">type_sequence</a> repeating classes <code class="param">Ts</code> <code class="param">N</code> times. </p>
+
+<p class="definition">Definition at line <a class="el" href="tmp_8hpp_source.html#l00781">781</a> of file <a class="el" href="tmp_8hpp_source.html">tmp.hpp</a>.</p>
 
 </div>
 </div>
@@ -550,6 +916,8 @@ template&lt;typename Dict, List L&gt; </div>
   </dd>
 </dl>
 
+<p class="definition">Definition at line <a class="el" href="tmp_8hpp_source.html#l01005">1005</a> of file <a class="el" href="tmp_8hpp_source.html">tmp.hpp</a>.</p>
+
 </div>
 </div>
 <a id="gac5da4addb9ef6738b0e434ac5f5d8724" name="gac5da4addb9ef6738b0e434ac5f5d8724"></a>
@@ -575,6 +943,28 @@ template&lt;typename Fs, typename... Args&gt; </div>
   </dd>
 </dl>
 
+<p class="definition">Definition at line <a class="el" href="tmp_8hpp_source.html#l01018">1018</a> of file <a class="el" href="tmp_8hpp_source.html">tmp.hpp</a>.</p>
+
+</div>
+</div>
+<a id="ga4708b33ea53ad76db3f3c1c43c4da18a" name="ga4708b33ea53ad76db3f3c1c43c4da18a"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ga4708b33ea53ad76db3f3c1c43c4da18a">&#9670;&#160;</a></span>reverse</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;List L&gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">using <a class="el" href="#ga4708b33ea53ad76db3f3c1c43c4da18a">loom::typelist::reverse</a> = <a class="el" href="#ga09e82c9a117de81e6cbfba8b58e74666">foldr</a>&lt;<a class="el" href="#gaa97eee0a7c3509fdb1a93449e1e2c241">append</a>, <a class="el" href="structloom_1_1type__sequence.html">type_sequence</a>&lt;&gt;, L&gt;</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Reverse the order of elements. </p>
+
+<p class="definition">Definition at line <a class="el" href="tmp_8hpp_source.html#l00833">833</a> of file <a class="el" href="tmp_8hpp_source.html">tmp.hpp</a>.</p>
+
 </div>
 </div>
 <a id="gaed1854a9502517f55a44de25213358bd" name="gaed1854a9502517f55a44de25213358bd"></a>
@@ -593,6 +983,8 @@ template&lt;typename Delimeter, List L&gt; </div>
 
 <p>Split typelist into sublists with a delimeter. </p>
 <p>The resulting type is <a class="el" href="structloom_1_1type__sequence.html" title="Sequence of types.">type_sequence</a>&lt;<a class="el" href="structloom_1_1type__sequence.html" title="Sequence of types.">type_sequence&lt;...&gt;</a>...&gt;. </p>
+
+<p class="definition">Definition at line <a class="el" href="tmp_8hpp_source.html#l01102">1102</a> of file <a class="el" href="tmp_8hpp_source.html">tmp.hpp</a>.</p>
 
 </div>
 </div>
@@ -619,6 +1011,28 @@ template&lt;template&lt; typename &gt; typename P, List L&gt; </div>
 </dl>
 <p>The delimeter elements are such that satisfy predicate <code class="param">P</code>, i.e. P&lt;T&gt;::value == true. </p>
 
+<p class="definition">Definition at line <a class="el" href="tmp_8hpp_source.html#l01096">1096</a> of file <a class="el" href="tmp_8hpp_source.html">tmp.hpp</a>.</p>
+
+</div>
+</div>
+<a id="ga41f2f823ac5a298db637668915d159bd" name="ga41f2f823ac5a298db637668915d159bd"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ga41f2f823ac5a298db637668915d159bd">&#9670;&#160;</a></span>tail</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;List L&gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">using <a class="el" href="#ga41f2f823ac5a298db637668915d159bd">loom::typelist::tail</a> = detail::tail&lt;L&gt;::type</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Extract the elements after the head of <code class="param">list</code> as <a class="el" href="structloom_1_1type__sequence.html" title="Sequence of types.">type_sequence</a>. </p>
+
+<p class="definition">Definition at line <a class="el" href="tmp_8hpp_source.html#l00808">808</a> of file <a class="el" href="tmp_8hpp_source.html">tmp.hpp</a>.</p>
+
 </div>
 </div>
 <a id="ga4c74bc52800a04ab81728f4d8b0091cd" name="ga4c74bc52800a04ab81728f4d8b0091cd"></a>
@@ -638,6 +1052,28 @@ template&lt;std::size_t N, List L&gt; </div>
 <p>Prefix of <code class="param">L</code> of length <code class="param">N</code>. </p>
 <p><code class="param">N</code> must be less than or equal of length of <code class="param">L</code>. </p>
 
+<p class="definition">Definition at line <a class="el" href="tmp_8hpp_source.html#l00849">849</a> of file <a class="el" href="tmp_8hpp_source.html">tmp.hpp</a>.</p>
+
+</div>
+</div>
+<a id="ga506a992045b92d561ffdf348b809689d" name="ga506a992045b92d561ffdf348b809689d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ga506a992045b92d561ffdf348b809689d">&#9670;&#160;</a></span>to</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename Source, template&lt; typename... &gt; typename Target&gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">using <a class="el" href="#ga506a992045b92d561ffdf348b809689d">loom::typelist::to</a> = detail::to&lt;Source, Target&gt;::type</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Convert <a class="el" href="structloom_1_1type__sequence.html" title="Sequence of types.">type_sequence</a> <code class="param">Source</code> to <code class="param">Target</code> class template. </p>
+
+<p class="definition">Definition at line <a class="el" href="tmp_8hpp_source.html#l01110">1110</a> of file <a class="el" href="tmp_8hpp_source.html">tmp.hpp</a>.</p>
+
 </div>
 </div>
 <a id="gac8ddd7df02d9a3577791e5a47120a35e" name="gac8ddd7df02d9a3577791e5a47120a35e"></a>
@@ -656,6 +1092,8 @@ template&lt;List L&gt; </div>
 
 <p>Convert <a class="el" href="structloom_1_1type__sequence.html" title="Sequence of types.">type_sequence</a> of std::integer_constant into a std::integer_sequence. </p>
 <p>The value type of the first element is used as the value type for the resulting std::integer_sequence. </p>
+
+<p class="definition">Definition at line <a class="el" href="tmp_8hpp_source.html#l01124">1124</a> of file <a class="el" href="tmp_8hpp_source.html">tmp.hpp</a>.</p>
 
 </div>
 </div>
@@ -681,6 +1119,8 @@ template&lt;List Map&gt; </div>
   </dd>
 </dl>
 
+<p class="definition">Definition at line <a class="el" href="tmp_8hpp_source.html#l01069">1069</a> of file <a class="el" href="tmp_8hpp_source.html">tmp.hpp</a>.</p>
+
 </div>
 </div>
 <a id="ga48d7fbf632b8dec4c7190494782f103f" name="ga48d7fbf632b8dec4c7190494782f103f"></a>
@@ -700,6 +1140,8 @@ template&lt;typename Xs, typename Ys&gt; </div>
 <p>Make list of pairs <a class="el" href="structloom_1_1type__sequence.html" title="Sequence of types.">type_sequence</a>&lt;<a class="el" href="group__TMP.html#ga25062b89626604933e1b3dabf203ee18" title="Pair of types.">type_pair&lt;X, Y&gt;</a>...&gt; of corresponding types from lists <code class="param">Xs</code> and <code class="param">Ys</code>. </p>
 <p>If one input list is shorter than the other, excess elements of the longer list are discarded. </p>
 
+<p class="definition">Definition at line <a class="el" href="tmp_8hpp_source.html#l00871">871</a> of file <a class="el" href="tmp_8hpp_source.html">tmp.hpp</a>.</p>
+
 </div>
 </div>
 <a id="ga3232866ad95b89c40cb138a4e74deb31" name="ga3232866ad95b89c40cb138a4e74deb31"></a>
@@ -718,6 +1160,8 @@ template&lt;template&lt; typename, typename &gt; typename F, typename Xs, typena
 
 <p>Generalization of zip. Zips with the meta-function given as the first argument, instead of <a class="el" href="group__TMP.html#ga25062b89626604933e1b3dabf203ee18" title="Pair of types.">type_pair</a>. </p>
 <p>If one input list is shorter than the other, excess elements of the longer list are discarded. </p>
+
+<p class="definition">Definition at line <a class="el" href="tmp_8hpp_source.html#l00863">863</a> of file <a class="el" href="tmp_8hpp_source.html">tmp.hpp</a>.</p>
 
 </div>
 </div>
@@ -758,6 +1202,8 @@ template&lt;typename... Ts, typename F, typename... Args&gt; </div>
 
 <p>Invoke <code class="param">f</code> with elements of typelist::type_sequence as template parameter with <code class="param">args</code> until the result is true or control reaches end of the list. </p>
 <dl class="section return"><dt>Returns</dt><dd>true if at least one invocation returns true, otherwise false. </dd></dl>
+
+<p class="definition">Definition at line <a class="el" href="tmp_8hpp_source.html#l01266">1266</a> of file <a class="el" href="tmp_8hpp_source.html">tmp.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno"> 1267</span>{</div>
 <div class="line"><span class="lineno"> 1268</span>    <span class="keywordflow">return</span> (... || f.template <span class="keyword">operator</span>()&lt;Ts&gt;(std::forward&lt;Args&gt;(args)...));</div>
 <div class="line"><span class="lineno"> 1269</span>}</div>
@@ -795,10 +1241,12 @@ template&lt;typename... Fs, typename... Args&gt; </div>
 
 <p>Invoke every functional object <code class="param">Fs</code> in the typelist with <code class="param">args</code> until the result is true or control reaches end of the list. </p>
 <dl class="section return"><dt>Returns</dt><dd>true if at least one invocation returns true, otherwise false. </dd></dl>
+
+<p class="definition">Definition at line <a class="el" href="tmp_8hpp_source.html#l01278">1278</a> of file <a class="el" href="tmp_8hpp_source.html">tmp.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno"> 1280</span>{</div>
 <div class="line"><span class="lineno"> 1281</span>    <span class="keywordflow">return</span> <a class="code hl_function" href="#gad03a895837ca8674cccc406196219f77">first_of</a>(list, detail::self_caller{}, std::forward&lt;Args&gt;(args)...);</div>
 <div class="line"><span class="lineno"> 1282</span>}</div>
-<div class="ttc" id="agroup__Typelist_html_gad03a895837ca8674cccc406196219f77"><div class="ttname"><a href="#gad03a895837ca8674cccc406196219f77">loom::typelist::first_of</a></div><div class="ttdeci">constexpr bool first_of(type_sequence&lt; Ts... &gt;, F &amp;&amp;f, Args &amp;&amp;... args)</div><div class="ttdoc">Invoke f with elements of typelist::type_sequence as template parameter with args until the result is...</div><div class="ttdef"><b>Definition</b> tmp.hpp:1266</div></div>
+<div class="ttc" id="agroup__Typelist_html_gad03a895837ca8674cccc406196219f77"><div class="ttname"><a href="#gad03a895837ca8674cccc406196219f77">loom::typelist::first_of</a></div><div class="ttdeci">constexpr bool first_of(type_sequence&lt; Ts... &gt;, F &amp;&amp;f, Args &amp;&amp;... args)</div><div class="ttdoc">Invoke f with elements of typelist::type_sequence as template parameter with args until the result is...</div><div class="ttdef"><b>Definition</b> <a href="tmp_8hpp_source.html#l01266">tmp.hpp:1266</a></div></div>
 </div><!-- fragment -->
 </div>
 </div>
@@ -837,6 +1285,8 @@ template&lt;typename F, typename... Ts, typename... Args&gt; </div>
 </div><div class="memdoc">
 
 <p>Invoke <code class="param">f</code> with each class of <code class="param">L</code> as template parameter. </p>
+
+<p class="definition">Definition at line <a class="el" href="tmp_8hpp_source.html#l01137">1137</a> of file <a class="el" href="tmp_8hpp_source.html">tmp.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno"> 1139</span>{</div>
 <div class="line"><span class="lineno"> 1140</span>    <span class="keywordflow">return</span> (..., f.template <span class="keyword">operator</span>()&lt;Ts&gt;(std::forward&lt;Args&gt;(args)...));</div>
 <div class="line"><span class="lineno"> 1141</span>}</div>
@@ -878,6 +1328,8 @@ template&lt;typename F, typename... Ts, typename... Args&gt; </div>
 </div><div class="memdoc">
 
 <p>Same as <a class="el" href="#gaa35f517f93d40c742544de24c1badd70" title="Invoke f with each class of L as template parameter.">typelist::for_each</a>, except each argument of <code class="param">args</code> passed separately to coresponding invocation of <code class="param">f</code>. </p>
+
+<p class="definition">Definition at line <a class="el" href="tmp_8hpp_source.html#l01148">1148</a> of file <a class="el" href="tmp_8hpp_source.html">tmp.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno"> 1150</span>{</div>
 <div class="line"><span class="lineno"> 1151</span>    <span class="keywordflow">return</span> (..., f.template <span class="keyword">operator</span>()&lt;Ts&gt;(std::forward&lt;Args&gt;(args)));</div>
 <div class="line"><span class="lineno"> 1152</span>}</div>
@@ -914,10 +1366,12 @@ template&lt;typename... Fs, typename... Args&gt; </div>
 </div><div class="memdoc">
 
 <p>Instantiate every class in typelist as a functional object and invoke it with <code class="param">args</code>. </p>
+
+<p class="definition">Definition at line <a class="el" href="tmp_8hpp_source.html#l01253">1253</a> of file <a class="el" href="tmp_8hpp_source.html">tmp.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno"> 1255</span>{</div>
 <div class="line"><span class="lineno"> 1256</span>    <span class="keywordflow">return</span> <a class="code hl_function" href="#gaa35f517f93d40c742544de24c1badd70">for_each</a>(list, detail::self_caller{}, std::forward&lt;Args&gt;(args)...);</div>
 <div class="line"><span class="lineno"> 1257</span>}</div>
-<div class="ttc" id="agroup__Typelist_html_gaa35f517f93d40c742544de24c1badd70"><div class="ttname"><a href="#gaa35f517f93d40c742544de24c1badd70">loom::typelist::for_each</a></div><div class="ttdeci">constexpr decltype(auto) for_each(type_sequence&lt; Ts... &gt;, F &amp;&amp;f, Args &amp;&amp;... args) noexcept((... &amp;&amp;noexcept(f.template operator()&lt;Ts &gt;(std::forward&lt; Args &gt;(args)...))))</div><div class="ttdoc">Invoke f with each class of L as template parameter.</div><div class="ttdef"><b>Definition</b> tmp.hpp:1137</div></div>
+<div class="ttc" id="agroup__Typelist_html_gaa35f517f93d40c742544de24c1badd70"><div class="ttname"><a href="#gaa35f517f93d40c742544de24c1badd70">loom::typelist::for_each</a></div><div class="ttdeci">constexpr decltype(auto) for_each(type_sequence&lt; Ts... &gt;, F &amp;&amp;f, Args &amp;&amp;... args) noexcept((... &amp;&amp;noexcept(f.template operator()&lt;Ts &gt;(std::forward&lt; Args &gt;(args)...))))</div><div class="ttdoc">Invoke f with each class of L as template parameter.</div><div class="ttdef"><b>Definition</b> <a href="tmp_8hpp_source.html#l01137">tmp.hpp:1137</a></div></div>
 </div><!-- fragment -->
 </div>
 </div>
@@ -963,6 +1417,8 @@ template&lt;template&lt; typename... &gt; typename Tuple = std::tuple, typename 
   </table>
   </dd>
 </dl>
+
+<p class="definition">Definition at line <a class="el" href="tmp_8hpp_source.html#l01182">1182</a> of file <a class="el" href="tmp_8hpp_source.html">tmp.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno"> 1188</span>{</div>
 <div class="line"><span class="lineno"> 1189</span>    <span class="keywordflow">return</span> Tuple&lt;std::remove_cvref_t&lt;<span class="keyword">decltype</span>(f.template operator()&lt;Ts&gt;(</div>
 <div class="line"><span class="lineno"> 1190</span>        std::forward&lt;Args&gt;(args)...))&gt;...&gt; {</div>
@@ -1008,7 +1464,9 @@ template&lt;typename Ret, typename F, typename... Ts, typename... Args&gt; </div
 
 <p>Consecutively invoke <code class="param">f</code> with each class of <code class="param">list</code> as the first template parameter and <code class="param">args</code> as function parameters and put results into an instance of <code class="param">Ret</code>. It's similar to std::transform or <a class="el" href="namespaceloom.html#ae3e7ca326faa9bf507d3d6a48dece2d7" title="Apply op to every element of tuple and return result as a tuple.">loom::map_tuple</a>, except the input is a list of types, so it can be seen as transformation of virtual entities (types) to actual values. </p>
 <p>Each invocation looks roughly like this: </p><div class="fragment"><div class="line"><span class="keyword">auto</span> v_n = f&lt;T_n&gt;(args...);</div>
-</div><!-- fragment --> <div class="fragment"><div class="line"><span class="lineno"> 1169</span>{</div>
+</div><!-- fragment --> 
+<p class="definition">Definition at line <a class="el" href="tmp_8hpp_source.html#l01167">1167</a> of file <a class="el" href="tmp_8hpp_source.html">tmp.hpp</a>.</p>
+<div class="fragment"><div class="line"><span class="lineno"> 1169</span>{</div>
 <div class="line"><span class="lineno"> 1170</span>    <span class="keywordflow">return</span> { f.template operator()&lt;Ts&gt;(std::forward&lt;Args&gt;(args)...)... };</div>
 <div class="line"><span class="lineno"> 1171</span>}</div>
 </div><!-- fragment -->
@@ -1049,6 +1507,8 @@ template&lt;template&lt; typename... &gt; typename Tuple = std::tuple, typename 
 </div><div class="memdoc">
 
 <p>Same as materialize_to_tuple but if <code class="param">list</code> consists of one element, returns the unwrapped value. </p>
+
+<p class="definition">Definition at line <a class="el" href="tmp_8hpp_source.html#l01202">1202</a> of file <a class="el" href="tmp_8hpp_source.html">tmp.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno"> 1204</span>{</div>
 <div class="line"><span class="lineno"> 1205</span>    <span class="keywordflow">if</span> <span class="keyword">constexpr</span>(<span class="keyword">sizeof</span>...(Ts) &gt; 1)</div>
 <div class="line"><span class="lineno"> 1206</span>        <span class="keywordflow">return</span> <a class="code hl_function" href="#ga2ede23abeda98f0be7e117b958db625e">materialize_to_tuple&lt;Tuple&gt;</a>(list,</div>
@@ -1057,7 +1517,7 @@ template&lt;template&lt; typename... &gt; typename Tuple = std::tuple, typename 
 <div class="line"><span class="lineno"> 1209</span>    <span class="keywordflow">else</span></div>
 <div class="line"><span class="lineno"> 1210</span>        <span class="keywordflow">return</span> f.template operator()&lt;Ts...&gt;(std::forward&lt;Args&gt;(args)...);</div>
 <div class="line"><span class="lineno"> 1211</span>}</div>
-<div class="ttc" id="agroup__Typelist_html_ga2ede23abeda98f0be7e117b958db625e"><div class="ttname"><a href="#ga2ede23abeda98f0be7e117b958db625e">loom::typelist::materialize_to_tuple</a></div><div class="ttdeci">constexpr decltype(auto) materialize_to_tuple(type_sequence&lt; Ts... &gt;, F &amp;&amp;f, Args &amp;&amp;... args) noexcept((... &amp;&amp;noexcept(f.template operator()&lt;Ts &gt;(std::forward&lt; Args &gt;(args)...))))</div><div class="ttdoc">Same as materialize_with, but infer actual tuple type.</div><div class="ttdef"><b>Definition</b> tmp.hpp:1182</div></div>
+<div class="ttc" id="agroup__Typelist_html_ga2ede23abeda98f0be7e117b958db625e"><div class="ttname"><a href="#ga2ede23abeda98f0be7e117b958db625e">loom::typelist::materialize_to_tuple</a></div><div class="ttdeci">constexpr decltype(auto) materialize_to_tuple(type_sequence&lt; Ts... &gt;, F &amp;&amp;f, Args &amp;&amp;... args) noexcept((... &amp;&amp;noexcept(f.template operator()&lt;Ts &gt;(std::forward&lt; Args &gt;(args)...))))</div><div class="ttdoc">Same as materialize_with, but infer actual tuple type.</div><div class="ttdef"><b>Definition</b> <a href="tmp_8hpp_source.html#l01182">tmp.hpp:1182</a></div></div>
 </div><!-- fragment -->
 </div>
 </div>
@@ -1105,6 +1565,8 @@ template&lt;template&lt; typename... &gt; typename Tuple = std::tuple, typename 
   </table>
   </dd>
 </dl>
+
+<p class="definition">Definition at line <a class="el" href="tmp_8hpp_source.html#l01232">1232</a> of file <a class="el" href="tmp_8hpp_source.html">tmp.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno"> 1237</span>{</div>
 <div class="line"><span class="lineno"> 1238</span>    <span class="keywordflow">if</span> <span class="keyword">constexpr</span>(<span class="keyword">sizeof</span>...(Ts) &gt; 1)</div>
 <div class="line"><span class="lineno"> 1239</span>        <span class="keywordflow">return</span> Tuple&lt;std::remove_cvref_t&lt;<span class="keyword">decltype</span>(f.template <span class="keyword">operator</span>()&lt;Ts&gt;(</div>
@@ -1173,6 +1635,8 @@ template&lt;std::unsigned_integral I, typename Visitor, List L, typename... Args
   </table>
   </dd>
 </dl>
+
+<p class="definition">Definition at line <a class="el" href="tmp_8hpp_source.html#l01315">1315</a> of file <a class="el" href="tmp_8hpp_source.html">tmp.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno"> 1316</span>{</div>
 <div class="line"><span class="lineno"> 1317</span>    <span class="keywordflow">return</span> detail::unsafe_visit_at_impl&lt;I, 0u&gt;(i,</div>
 <div class="line"><span class="lineno"> 1318</span>                                               std::forward&lt;Visitor&gt;(visitor),</div>
@@ -1243,6 +1707,8 @@ template&lt;std::unsigned_integral I, typename Visitor, List L, typename Default
   </table>
   </dd>
 </dl>
+
+<p class="definition">Definition at line <a class="el" href="tmp_8hpp_source.html#l01302">1302</a> of file <a class="el" href="tmp_8hpp_source.html">tmp.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno"> 1303</span>{</div>
 <div class="line"><span class="lineno"> 1304</span>    <span class="keywordflow">return</span> detail::visit_at_impl&lt;I, 0u&gt;(i,</div>
 <div class="line"><span class="lineno"> 1305</span>                                        std::forward&lt;Visitor&gt;(visitor),</div>
@@ -1307,6 +1773,8 @@ template&lt;std::unsigned_integral I, List L, typename Default, typename... Args
   </table>
   </dd>
 </dl>
+
+<p class="definition">Definition at line <a class="el" href="tmp_8hpp_source.html#l01330">1330</a> of file <a class="el" href="tmp_8hpp_source.html">tmp.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno"> 1331</span>{</div>
 <div class="line"><span class="lineno"> 1332</span>    <span class="keywordflow">return</span> <a class="code hl_function" href="#ga0970c26454ef6b4dba077f40458859ff">visit_at</a>(i,</div>
 <div class="line"><span class="lineno"> 1333</span>                    detail::self_caller{},</div>
@@ -1314,7 +1782,7 @@ template&lt;std::unsigned_integral I, List L, typename Default, typename... Args
 <div class="line"><span class="lineno"> 1335</span>                    std::forward&lt;Default&gt;(def),</div>
 <div class="line"><span class="lineno"> 1336</span>                    std::forward&lt;Args&gt;(args)...);</div>
 <div class="line"><span class="lineno"> 1337</span>}</div>
-<div class="ttc" id="agroup__Typelist_html_ga0970c26454ef6b4dba077f40458859ff"><div class="ttname"><a href="#ga0970c26454ef6b4dba077f40458859ff">loom::typelist::visit_at</a></div><div class="ttdeci">constexpr decltype(auto) visit_at(const I i, Visitor &amp;&amp;visitor, L list, Default &amp;&amp;def, Args &amp;&amp;... args)</div><div class="ttdoc">Invoke visitor on the i&#39;th element of L. Fallbacks to def if i doesn&#39;t fit into the range.</div><div class="ttdef"><b>Definition</b> tmp.hpp:1302</div></div>
+<div class="ttc" id="agroup__Typelist_html_ga0970c26454ef6b4dba077f40458859ff"><div class="ttname"><a href="#ga0970c26454ef6b4dba077f40458859ff">loom::typelist::visit_at</a></div><div class="ttdeci">constexpr decltype(auto) visit_at(const I i, Visitor &amp;&amp;visitor, L list, Default &amp;&amp;def, Args &amp;&amp;... args)</div><div class="ttdoc">Invoke visitor on the i&#39;th element of L. Fallbacks to def if i doesn&#39;t fit into the range.</div><div class="ttdef"><b>Definition</b> <a href="tmp_8hpp_source.html#l01302">tmp.hpp:1302</a></div></div>
 </div><!-- fragment -->
 </div>
 </div>
@@ -1349,6 +1817,8 @@ template&lt;template&lt; typename &gt; typename P, List L&gt; </div>
   </dd>
 </dl>
 
+<p class="definition">Definition at line <a class="el" href="tmp_8hpp_source.html#l01029">1029</a> of file <a class="el" href="tmp_8hpp_source.html">tmp.hpp</a>.</p>
+
 </div>
 </div>
 <a id="ga6f93eef572e7ce3fbbbc3707a458c49d" name="ga6f93eef572e7ce3fbbbc3707a458c49d"></a>
@@ -1381,6 +1851,120 @@ template&lt;template&lt; typename &gt; typename P, List L&gt; </div>
   </dd>
 </dl>
 
+<p class="definition">Definition at line <a class="el" href="tmp_8hpp_source.html#l01036">1036</a> of file <a class="el" href="tmp_8hpp_source.html">tmp.hpp</a>.</p>
+
+</div>
+</div>
+<a id="gae94660c00bc4614147decf98a4a60329" name="gae94660c00bc4614147decf98a4a60329"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#gae94660c00bc4614147decf98a4a60329">&#9670;&#160;</a></span>elem</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename T, List L&gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool loom::typelist::elem = detail::elem&lt;T, L&gt;::value</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel inline">inline</span><span class="mlabel constexpr">constexpr</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Check whether <code class="param">T</code> occur in <code class="param">L</code>. </p>
+
+<p class="definition">Definition at line <a class="el" href="tmp_8hpp_source.html#l00812">812</a> of file <a class="el" href="tmp_8hpp_source.html">tmp.hpp</a>.</p>
+
+</div>
+</div>
+<a id="ga54f8fccf482a0af743fa9106aab6b19f" name="ga54f8fccf482a0af743fa9106aab6b19f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ga54f8fccf482a0af743fa9106aab6b19f">&#9670;&#160;</a></span>empty</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;List L&gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool loom::typelist::empty = <a class="el" href="#ga6a7d84dae989acaf892510ae449ff8c9">length</a>&lt;L&gt; == 0</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel inline">inline</span><span class="mlabel constexpr">constexpr</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Check if <code class="param">L</code> is empty. </p>
+
+<p class="definition">Definition at line <a class="el" href="tmp_8hpp_source.html#l01087">1087</a> of file <a class="el" href="tmp_8hpp_source.html">tmp.hpp</a>.</p>
+
+</div>
+</div>
+<a id="gaf871974522ab43a5dba764bbb1a3197f" name="gaf871974522ab43a5dba764bbb1a3197f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#gaf871974522ab43a5dba764bbb1a3197f">&#9670;&#160;</a></span>has_duplicates</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;List L&gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool loom::typelist::has_duplicates = detail::has_duplicates&lt;L&gt;::value</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel inline">inline</span><span class="mlabel constexpr">constexpr</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Check if there are duplicates in <code class="param">L</code>. </p>
+
+<p class="definition">Definition at line <a class="el" href="tmp_8hpp_source.html#l01022">1022</a> of file <a class="el" href="tmp_8hpp_source.html">tmp.hpp</a>.</p>
+
+</div>
+</div>
+<a id="gad7c3a54514b6f36f1ba682999037bd1b" name="gad7c3a54514b6f36f1ba682999037bd1b"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#gad7c3a54514b6f36f1ba682999037bd1b">&#9670;&#160;</a></span>index</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename T, List L&gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::size_t loom::typelist::index = detail::index&lt;0ul, T, L&gt;::value</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel inline">inline</span><span class="mlabel constexpr">constexpr</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>The index of the first occurence of type <code class="param">T</code>. If there is no such type, the value is -1ul. </p>
+
+<p class="definition">Definition at line <a class="el" href="tmp_8hpp_source.html#l00817">817</a> of file <a class="el" href="tmp_8hpp_source.html">tmp.hpp</a>.</p>
+
 </div>
 </div>
 <a id="ga3e5f353e7554784bd8cdd42ae76c064d" name="ga3e5f353e7554784bd8cdd42ae76c064d"></a>
@@ -1412,6 +1996,120 @@ template&lt;typename Key, List Map&gt; </div>
   </table>
   </dd>
 </dl>
+
+<p class="definition">Definition at line <a class="el" href="tmp_8hpp_source.html#l01075">1075</a> of file <a class="el" href="tmp_8hpp_source.html">tmp.hpp</a>.</p>
+
+</div>
+</div>
+<a id="ga6a7d84dae989acaf892510ae449ff8c9" name="ga6a7d84dae989acaf892510ae449ff8c9"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ga6a7d84dae989acaf892510ae449ff8c9">&#9670;&#160;</a></span>length</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;List L&gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::size_t loom::typelist::length = detail::length&lt;L&gt;::value</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel inline">inline</span><span class="mlabel constexpr">constexpr</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Number of types in <code class="param">L</code>. </p>
+
+<p class="definition">Definition at line <a class="el" href="tmp_8hpp_source.html#l00785">785</a> of file <a class="el" href="tmp_8hpp_source.html">tmp.hpp</a>.</p>
+
+</div>
+</div>
+<a id="ga69e250bbccc9f2eeafb7c5c4ce78546e" name="ga69e250bbccc9f2eeafb7c5c4ce78546e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ga69e250bbccc9f2eeafb7c5c4ce78546e">&#9670;&#160;</a></span>max_sizeof</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;List L&gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::size_t loom::typelist::max_sizeof = detail::max_sizeof&lt;L&gt;::value</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel inline">inline</span><span class="mlabel constexpr">constexpr</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Size of the biggest type in the list. </p>
+
+<p class="definition">Definition at line <a class="el" href="tmp_8hpp_source.html#l01128">1128</a> of file <a class="el" href="tmp_8hpp_source.html">tmp.hpp</a>.</p>
+
+</div>
+</div>
+<a id="gaff5a7135282273f75043617b03ac09ce" name="gaff5a7135282273f75043617b03ac09ce"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#gaff5a7135282273f75043617b03ac09ce">&#9670;&#160;</a></span>of_same_size</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;List L&gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool loom::typelist::of_same_size = detail::of_same_size&lt;L&gt;::value</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel inline">inline</span><span class="mlabel constexpr">constexpr</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Check if all types in <code class="param">L</code> have the same size. </p>
+
+<p class="definition">Definition at line <a class="el" href="tmp_8hpp_source.html#l01132">1132</a> of file <a class="el" href="tmp_8hpp_source.html">tmp.hpp</a>.</p>
+
+</div>
+</div>
+<a id="gad924da2c28abdb7fc5199c76ac3ccc02" name="gad924da2c28abdb7fc5199c76ac3ccc02"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#gad924da2c28abdb7fc5199c76ac3ccc02">&#9670;&#160;</a></span>same</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;List L&gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool loom::typelist::same = detail::same&lt;L&gt;::value</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel inline">inline</span><span class="mlabel constexpr">constexpr</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Check whether the classes of <code class="param">L</code> are the same. </p>
+
+<p class="definition">Definition at line <a class="el" href="tmp_8hpp_source.html#l01009">1009</a> of file <a class="el" href="tmp_8hpp_source.html">tmp.hpp</a>.</p>
 
 </div>
 </div>

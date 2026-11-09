@@ -104,9 +104,9 @@ $(function(){initNavTree('operators_8hpp.html','',''); });
 
 <p>Additional computation operations and their default implementations.  
 <a href="#details">More...</a></p>
-<div class="textblock"><code>#include &lt;<a class="el" href="string_8hpp.html">common/string.hpp</a>&gt;</code><br />
-<code>#include &lt;<a class="el" href="tmp_8hpp.html">common/tmp.hpp</a>&gt;</code><br />
-<code>#include &lt;<a class="el" href="tuple_8hpp.html">common/tuple.hpp</a>&gt;</code><br />
+<div class="textblock"><code>#include &lt;<a class="el" href="string_8hpp_source.html">common/string.hpp</a>&gt;</code><br />
+<code>#include &lt;<a class="el" href="tmp_8hpp_source.html">common/tmp.hpp</a>&gt;</code><br />
+<code>#include &lt;<a class="el" href="tuple_8hpp_source.html">common/tuple.hpp</a>&gt;</code><br />
 <code>#include &lt;algorithm&gt;</code><br />
 <code>#include &lt;array&gt;</code><br />
 <code>#include &lt;cmath&gt;</code><br />
@@ -121,9 +121,11 @@ $(function(){initNavTree('operators_8hpp.html','',''); });
 <div id="dynsection-1-summary" class="dynsummary" style="display:block;">
 </div>
 <div id="dynsection-1-content" class="dyncontent" style="display:none;">
-<div class="center"><div class="zoom"><iframe scrolling="no" loading="lazy" frameborder="0" src="operators_8hpp__dep__incl.svg" width="100%" height="442"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
+<div class="center"><div class="zoom"><iframe scrolling="no" loading="lazy" frameborder="0" src="operators_8hpp__dep__incl.svg" width="100%" height="581"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
 </div>
-</div><table class="memberdecls">
+</div>
+<p><a href="operators_8hpp_source.html">Go to the source code of this file.</a></p>
+<table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-nested-classes" class="groupheader"><a id="nested-classes" name="nested-classes"></a>
 Classes</h2></td></tr>
 <tr class="memitem:loom_3A_3Avm_3A_3Aops_3A_3Acmov" id="r_loom_3A_3Avm_3A_3Aops_3A_3Acmov"><td class="memItemLeft">struct &#160;</td><td class="memItemRight"><a class="el" href="structloom_1_1vm_1_1ops_1_1cmov.html">loom::vm::ops::cmov</a></td></tr>
@@ -166,6 +168,8 @@ Macros</h2></td></tr>
 </table>
 <a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Additional computation operations and their default implementations. </p>
+
+<p class="definition">Definition in file <a class="el" href="operators_8hpp_source.html">operators.hpp</a>.</p>
 </div><a name="doc-define-members" id="doc-define-members"></a><h2 id="header-doc-define-members" class="groupheader">Macro Definition Documentation</h2>
 <a id="aedd11d3a09bd972acdabdc809d020f37" name="aedd11d3a09bd972acdabdc809d020f37"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#aedd11d3a09bd972acdabdc809d020f37">&#9670;&#160;</a></span>MK_STD_BINOP</h2>
@@ -192,6 +196,8 @@ Macros</h2></td></tr>
 <div class="line">};</div>
 </div><!-- fragment -->
 <p>Macro template for binary operators available in STL. </p>
+
+<p class="definition">Definition at line <a class="el" href="operators_8hpp_source.html#l00279">279</a> of file <a class="el" href="operators_8hpp_source.html">operators.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">  279</span><span class="preprocessor">#define MK_STD_BINOP(NAME)                              \</span></div>
 <div class="line"><span class="lineno">  280</span><span class="preprocessor">    template &lt;typename T&gt;                               \</span></div>
 <div class="line"><span class="lineno">  281</span><span class="preprocessor">    struct NAME                                         \</span></div>
@@ -230,6 +236,8 @@ Macros</h2></td></tr>
 <div class="line">};</div>
 </div><!-- fragment -->
 <p>Macro template for unary floating-point operators available in STL. </p>
+
+<p class="definition">Definition at line <a class="el" href="operators_8hpp_source.html#l00303">303</a> of file <a class="el" href="operators_8hpp_source.html">operators.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">  303</span><span class="preprocessor">#define MK_STD_BINOP_FLOAT(NAME)                        \</span></div>
 <div class="line"><span class="lineno">  304</span><span class="preprocessor">    template &lt;std::floating_point T&gt;                    \</span></div>
 <div class="line"><span class="lineno">  305</span><span class="preprocessor">    struct NAME                                         \</span></div>
@@ -268,6 +276,8 @@ Macros</h2></td></tr>
 <div class="line">};</div>
 </div><!-- fragment -->
 <p>Macro template for unary floating-point operators available in STL. </p>
+
+<p class="definition">Definition at line <a class="el" href="operators_8hpp_source.html#l00291">291</a> of file <a class="el" href="operators_8hpp_source.html">operators.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">  291</span><span class="preprocessor">#define MK_STD_UNOP_FLOAT(NAME)              \</span></div>
 <div class="line"><span class="lineno">  292</span><span class="preprocessor">    template &lt;std::floating_point T&gt;         \</span></div>
 <div class="line"><span class="lineno">  293</span><span class="preprocessor">    struct NAME                              \</span></div>

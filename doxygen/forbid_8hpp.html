@@ -108,9 +108,11 @@ $(function(){initNavTree('forbid_8hpp.html','',''); });
 <div id="dynsection-0-summary" class="dynsummary" style="display:block;">
 </div>
 <div id="dynsection-0-content" class="dyncontent" style="display:none;">
-<div class="center"><div class="zoom"><iframe scrolling="no" loading="lazy" frameborder="0" src="forbid_8hpp__dep__incl.svg" width="100%" height="442"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
+<div class="center"><div class="zoom"><iframe scrolling="no" loading="lazy" frameborder="0" src="forbid_8hpp__dep__incl.svg" width="100%" height="600"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
 </div>
-</div><table class="memberdecls">
+</div>
+<p><a href="forbid_8hpp_source.html">Go to the source code of this file.</a></p>
+<table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-define-members" class="groupheader"><a id="define-members" name="define-members"></a>
 Macros</h2></td></tr>
 <tr class="memitem:a4a6520b43fa6b4976ab2f6f6364bbc75" id="r_a4a6520b43fa6b4976ab2f6f6364bbc75"><td class="memItemLeft">#define&#160;</td><td class="memItemRight"><a class="el" href="#a4a6520b43fa6b4976ab2f6f6364bbc75">FORBID_DEFAULT</a>(CLASS)</td></tr>
@@ -124,6 +126,8 @@ Macros</h2></td></tr>
 </table>
 <a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Convenience macros to delete class constructors and assignment operators. </p>
+
+<p class="definition">Definition in file <a class="el" href="forbid_8hpp_source.html">forbid.hpp</a>.</p>
 </div><a name="doc-define-members" id="doc-define-members"></a><h2 id="header-doc-define-members" class="groupheader">Macro Definition Documentation</h2>
 <a id="ac3f8c67ea704f1abbd36323f70b60e33" name="ac3f8c67ea704f1abbd36323f70b60e33"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#ac3f8c67ea704f1abbd36323f70b60e33">&#9670;&#160;</a></span>FORBID_ALL</h2>
@@ -142,9 +146,11 @@ Macros</h2></td></tr>
 <b>Value:</b><div class="fragment"><div class="line"><a class="code hl_define" href="#a4a6520b43fa6b4976ab2f6f6364bbc75">FORBID_DEFAULT</a>(CLASS); \</div>
 <div class="line">FORBID_COPY(CLASS);    \</div>
 <div class="line">FORBID_MOVE(CLASS)</div>
-<div class="ttc" id="aforbid_8hpp_html_a4a6520b43fa6b4976ab2f6f6364bbc75"><div class="ttname"><a href="#a4a6520b43fa6b4976ab2f6f6364bbc75">FORBID_DEFAULT</a></div><div class="ttdeci">#define FORBID_DEFAULT(CLASS)</div><div class="ttdoc">Delete default constructor.</div><div class="ttdef"><b>Definition</b> forbid.hpp:24</div></div>
+<div class="ttc" id="aforbid_8hpp_html_a4a6520b43fa6b4976ab2f6f6364bbc75"><div class="ttname"><a href="#a4a6520b43fa6b4976ab2f6f6364bbc75">FORBID_DEFAULT</a></div><div class="ttdeci">#define FORBID_DEFAULT(CLASS)</div><div class="ttdoc">Delete default constructor.</div><div class="ttdef"><b>Definition</b> <a href="forbid_8hpp_source.html#l00024">forbid.hpp:24</a></div></div>
 </div><!-- fragment -->
 <p>Delete default, copy, move constructors and assign operators. </p>
+
+<p class="definition">Definition at line <a class="el" href="forbid_8hpp_source.html#l00037">37</a> of file <a class="el" href="forbid_8hpp_source.html">forbid.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">   37</span><span class="preprocessor">#define FORBID_ALL(CLASS)  \</span></div>
 <div class="line"><span class="lineno">   38</span><span class="preprocessor">    FORBID_DEFAULT(CLASS); \</span></div>
 <div class="line"><span class="lineno">   39</span><span class="preprocessor">    FORBID_COPY(CLASS);    \</span></div>
@@ -170,6 +176,8 @@ Macros</h2></td></tr>
 <div class="line">CLASS&amp; operator=(<span class="keyword">const</span> CLASS&amp;) = <span class="keyword">delete</span></div>
 </div><!-- fragment -->
 <p>Delete copy constructor and copy-assign operator. </p>
+
+<p class="definition">Definition at line <a class="el" href="forbid_8hpp_source.html#l00027">27</a> of file <a class="el" href="forbid_8hpp_source.html">forbid.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">   27</span><span class="preprocessor">#define FORBID_COPY(CLASS)                   \</span></div>
 <div class="line"><span class="lineno">   28</span><span class="preprocessor">    CLASS(const CLASS&amp;)            = delete; \</span></div>
 <div class="line"><span class="lineno">   29</span><span class="preprocessor">    CLASS&amp; operator=(const CLASS&amp;) = delete</span></div>
@@ -194,6 +202,8 @@ Macros</h2></td></tr>
 </div><!-- fragment -->
 <p>Delete default constructor. </p>
 
+<p class="definition">Definition at line <a class="el" href="forbid_8hpp_source.html#l00024">24</a> of file <a class="el" href="forbid_8hpp_source.html">forbid.hpp</a>.</p>
+
 </div>
 </div>
 <a id="a550bea73fa865cf255c80d65d1de509c" name="a550bea73fa865cf255c80d65d1de509c"></a>
@@ -214,6 +224,8 @@ Macros</h2></td></tr>
 <div class="line">CLASS&amp; operator=(CLASS&amp;&amp;) = <span class="keyword">delete</span></div>
 </div><!-- fragment -->
 <p>Delete move constructor and move-assign operator. </p>
+
+<p class="definition">Definition at line <a class="el" href="forbid_8hpp_source.html#l00032">32</a> of file <a class="el" href="forbid_8hpp_source.html">forbid.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">   32</span><span class="preprocessor">#define FORBID_MOVE(CLASS)              \</span></div>
 <div class="line"><span class="lineno">   33</span><span class="preprocessor">    CLASS(const CLASS&amp;&amp;)      = delete; \</span></div>
 <div class="line"><span class="lineno">   34</span><span class="preprocessor">    CLASS&amp; operator=(CLASS&amp;&amp;) = delete</span></div>

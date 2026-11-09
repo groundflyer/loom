@@ -1,5 +1,18 @@
 <map id="smallpt/ref/primitives/triangle.hpp" name="smallpt/ref/primitives/triangle.hpp">
-<area shape="rect" id="Node000001" title="Triangle primitive definition and auxiliary functions." alt="" coords="5,5,168,50"/>
-<area shape="rect" id="Node000002" href="$quad_8hpp.html" title="Difinition of quadrilateral primitive and auxiliary functions." alt="" coords="5,98,168,143"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="89,66,89,98,84,98,84,66"/>
+<area shape="rect" id="Node000001" title="Triangle primitive definition and auxiliary functions." alt="" coords="249,5,411,50"/>
+<area shape="rect" id="Node000002" href="$niebloids_8hpp_source.html" title=" " alt="" coords="238,191,422,218"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="312,65,299,99,296,120,299,142,310,167,323,189,318,191,305,170,294,143,291,120,294,97,307,63"/>
+<area shape="rect" id="Node000008" href="$quad_8hpp.html" title="Difinition of quadrilateral primitive and auxiliary functions." alt="" coords="309,98,471,143"/>
+<area shape="poly" id="edge7_Node000001_Node000008" title=" " alt="" coords="355,61,378,96,374,99,351,64"/>
+<area shape="rect" id="Node000003" href="$ref_2pt_8hpp.html" title="Reference smallpt functions." alt="" coords="94,266,231,294"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="287,227,193,268,191,263,285,222"/>
+<area shape="rect" id="Node000006" href="$primitives_8cpp_source.html" title=" " alt="" coords="255,266,405,294"/>
+<area shape="poly" id="edge5_Node000002_Node000006" title=" " alt="" coords="333,234,333,266,328,266,328,234"/>
+<area shape="rect" id="Node000007" href="$transforms_8cpp_source.html" title=" " alt="" coords="430,266,585,294"/>
+<area shape="poly" id="edge6_Node000002_Node000007" title=" " alt="" coords="377,222,477,263,475,268,375,227"/>
+<area shape="rect" id="Node000004" href="$ref_8cpp_source.html" title=" " alt="" coords="5,342,146,370"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="137,306,93,344,89,340,134,302"/>
+<area shape="rect" id="Node000005" href="$vm__smallpt_8cpp_source.html" title=" " alt="" coords="170,342,331,370"/>
+<area shape="poly" id="edge4_Node000003_Node000005" title=" " alt="" coords="191,302,236,340,233,344,188,306"/>
+<area shape="poly" id="edge8_Node000008_Node000002" title=" " alt="" coords="368,157,342,192,338,188,363,154"/>
 </map>

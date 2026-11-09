@@ -105,7 +105,7 @@ $(function(){initNavTree('structloom_1_1vm_1_1standard__compiler.html','','struc
 <p>Default evaluator.  
  <a href="#details">More...</a></p>
 
-<p><code>#include &quot;core.hpp&quot;</code></p>
+<p><code>#include &quot;<a class="el" href="core_8hpp_source.html">core.hpp</a>&quot;</code></p>
 <div id="dynsection-0" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>Inheritance diagram for loom::vm::standard_compiler&lt; Block, LabelMap, Eval &gt;:</div>
 <div id="dynsection-0-summary" class="dynsummary" style="display:block;">
 </div>
@@ -115,11 +115,9 @@ $(function(){initNavTree('structloom_1_1vm_1_1standard__compiler.html','','struc
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pub-types" class="groupheader"><a id="pub-types" name="pub-types"></a>
 Public Types</h2></td></tr>
-<tr class="memitem:a37a4d565d624ec763e161f1c12ca1ea8" id="r_a37a4d565d624ec763e161f1c12ca1ea8"><td class="memTemplParams" colspan="2"><a id="a37a4d565d624ec763e161f1c12ca1ea8" name="a37a4d565d624ec763e161f1c12ca1ea8"></a>
-template&lt;typename Instruction&gt; </td></tr>
-<tr class="memitem:a37a4d565d624ec763e161f1c12ca1ea8 template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><b>eval</b> = Eval&lt;Instruction, LabelMap&gt;</td></tr>
-<tr class="memitem:a4c30bc823ecee00ce89d201ad2914f89" id="r_a4c30bc823ecee00ce89d201ad2914f89"><td class="memItemLeft"><a id="a4c30bc823ecee00ce89d201ad2914f89" name="a4c30bc823ecee00ce89d201ad2914f89"></a>
-using&#160;</td><td class="memItemRight"><b>instructions</b> = <a class="el" href="group__Typelist.html#gaecd8e1bc8dfc53fbfd1abde91a668f46">typelist::map</a>&lt;eval, Block&gt;</td></tr>
+<tr class="memitem:a37a4d565d624ec763e161f1c12ca1ea8" id="r_a37a4d565d624ec763e161f1c12ca1ea8"><td class="memTemplParams" colspan="2">template&lt;typename Instruction&gt; </td></tr>
+<tr class="memitem:a37a4d565d624ec763e161f1c12ca1ea8 template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="#a37a4d565d624ec763e161f1c12ca1ea8">eval</a> = Eval&lt;Instruction, LabelMap&gt;</td></tr>
+<tr class="memitem:a4c30bc823ecee00ce89d201ad2914f89" id="r_a4c30bc823ecee00ce89d201ad2914f89"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="#a4c30bc823ecee00ce89d201ad2914f89">instructions</a> = <a class="el" href="group__Typelist.html#gaecd8e1bc8dfc53fbfd1abde91a668f46">typelist::map</a>&lt;eval, Block&gt;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pub-methods" class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
@@ -129,7 +127,48 @@ Public Member Functions</h2></td></tr>
 <a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
 <div class="textblock"><div class="compoundTemplParams">template&lt;typename Block, typename LabelMap, template&lt; typename, typename &gt; typename Eval = standard_eval&gt;<br />
 struct loom::vm::standard_compiler&lt; Block, LabelMap, Eval &gt;</div><p>Default evaluator. </p>
-</div><a name="doc-func-members" id="doc-func-members"></a><h2 id="header-doc-func-members" class="groupheader">Member Function Documentation</h2>
+
+<p class="definition">Definition at line <a class="el" href="core_8hpp_source.html#l00788">788</a> of file <a class="el" href="core_8hpp_source.html">core.hpp</a>.</p>
+</div><a name="doc-typedef-members" id="doc-typedef-members"></a><h2 id="header-doc-typedef-members" class="groupheader">Member Typedef Documentation</h2>
+<a id="a37a4d565d624ec763e161f1c12ca1ea8" name="a37a4d565d624ec763e161f1c12ca1ea8"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a37a4d565d624ec763e161f1c12ca1ea8">&#9670;&#160;</a></span>eval</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename Block, typename LabelMap, template&lt; typename, typename &gt; typename Eval = standard_eval&gt; </div>
+<div class="memtemplate">
+template&lt;typename Instruction&gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">using <a class="el" href="structloom_1_1vm_1_1standard__compiler.html">loom::vm::standard_compiler</a>&lt; Block, LabelMap, Eval &gt;::eval = Eval&lt;Instruction, LabelMap&gt;</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="core_8hpp_source.html#l00791">791</a> of file <a class="el" href="core_8hpp_source.html">core.hpp</a>.</p>
+
+</div>
+</div>
+<a id="a4c30bc823ecee00ce89d201ad2914f89" name="a4c30bc823ecee00ce89d201ad2914f89"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a4c30bc823ecee00ce89d201ad2914f89">&#9670;&#160;</a></span>instructions</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename Block, typename LabelMap, template&lt; typename, typename &gt; typename Eval = standard_eval&gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">using <a class="el" href="structloom_1_1vm_1_1standard__compiler.html">loom::vm::standard_compiler</a>&lt; Block, LabelMap, Eval &gt;::instructions = <a class="el" href="group__Typelist.html#gaecd8e1bc8dfc53fbfd1abde91a668f46">typelist::map</a>&lt;eval, Block&gt;</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="core_8hpp_source.html#l00793">793</a> of file <a class="el" href="core_8hpp_source.html">core.hpp</a>.</p>
+
+</div>
+</div>
+<a name="doc-func-members" id="doc-func-members"></a><h2 id="header-doc-func-members" class="groupheader">Member Function Documentation</h2>
 <a id="ab79e3b956cd624fb839cc01b628244bf" name="ab79e3b956cd624fb839cc01b628244bf"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#ab79e3b956cd624fb839cc01b628244bf">&#9670;&#160;</a></span>operator()()</h2>
 
@@ -156,17 +195,19 @@ template&lt;typename... Args&gt; </div>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="core_8hpp_source.html#l00797">797</a> of file <a class="el" href="core_8hpp_source.html">core.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">  798</span>    {</div>
 <div class="line"><span class="lineno">  799</span>        <span class="keywordflow">return</span> <a class="code hl_function" href="group__Typelist.html#ga3858e86253ea748d323e68a0191c0e55">typelist::instantiate</a>(instructions{},</div>
 <div class="line"><span class="lineno">  800</span>                                     <a class="code hl_struct" href="structloom_1_1vm_1_1standard__compiler.html">std::forward&lt;Args&gt;</a>(<a class="code hl_struct" href="structloom_1_1vm_1_1standard__compiler.html">args</a>)...);</div>
 <div class="line"><span class="lineno">  801</span>    }</div>
-<div class="ttc" id="agroup__Typelist_html_ga3858e86253ea748d323e68a0191c0e55"><div class="ttname"><a href="group__Typelist.html#ga3858e86253ea748d323e68a0191c0e55">loom::typelist::instantiate</a></div><div class="ttdeci">constexpr decltype(auto) instantiate(type_sequence&lt; Fs... &gt; list, Args &amp;&amp;... args) noexcept(std::conjunction_v&lt; std::is_nothrow_invocable&lt; Fs, Args... &gt;... &gt;)</div><div class="ttdoc">Instantiate every class in typelist as a functional object and invoke it with args.</div><div class="ttdef"><b>Definition</b> tmp.hpp:1253</div></div>
-<div class="ttc" id="astructloom_1_1vm_1_1standard__compiler_html"><div class="ttname"><a href="structloom_1_1vm_1_1standard__compiler.html">loom::vm::standard_compiler</a></div><div class="ttdoc">Default evaluator.</div><div class="ttdef"><b>Definition</b> core.hpp:789</div></div>
+<div class="ttc" id="agroup__Typelist_html_ga3858e86253ea748d323e68a0191c0e55"><div class="ttname"><a href="group__Typelist.html#ga3858e86253ea748d323e68a0191c0e55">loom::typelist::instantiate</a></div><div class="ttdeci">constexpr decltype(auto) instantiate(type_sequence&lt; Fs... &gt; list, Args &amp;&amp;... args) noexcept(std::conjunction_v&lt; std::is_nothrow_invocable&lt; Fs, Args... &gt;... &gt;)</div><div class="ttdoc">Instantiate every class in typelist as a functional object and invoke it with args.</div><div class="ttdef"><b>Definition</b> <a href="tmp_8hpp_source.html#l01253">tmp.hpp:1253</a></div></div>
+<div class="ttc" id="astructloom_1_1vm_1_1standard__compiler_html"><div class="ttname"><a href="structloom_1_1vm_1_1standard__compiler.html">loom::vm::standard_compiler</a></div><div class="ttdoc">Default evaluator.</div><div class="ttdef"><b>Definition</b> <a href="core_8hpp_source.html#l00788">core.hpp:789</a></div></div>
 </div><!-- fragment -->
 </div>
 </div>
 <hr/>The documentation for this struct was generated from the following file:<ul>
-<li>vm/<a class="el" href="core_8hpp.html">core.hpp</a></li>
+<li>vm/<a class="el" href="core_8hpp_source.html">core.hpp</a></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->

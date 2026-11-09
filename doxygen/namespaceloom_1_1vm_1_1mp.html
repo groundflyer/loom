@@ -156,6 +156,8 @@ template&lt;typename InputCollection&gt; </div>
 </div><div class="memdoc">
 
 <p>Checks whether kernel inputs are completely consumed. </p>
+
+<p class="definition">Definition at line <a class="el" href="mp_8hpp_source.html#l00215">215</a> of file <a class="el" href="mp_8hpp_source.html">mp.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">  216</span>{</div>
 <div class="line"><span class="lineno">  217</span>    <span class="keywordflow">return</span> detail::is_complete_impl(</div>
 <div class="line"><span class="lineno">  218</span>        std::make_index_sequence&lt;std::tuple_size_v&lt;InputCollection&gt;&gt;{},</div>
@@ -191,6 +193,8 @@ template&lt;std::ranges::input_range... Inputs&gt; </div>
 
 <p>Helper function that ties kernel inputs together. </p>
 <dl class="section return"><dt>Returns</dt><dd>Tuple of pairs of an input iterator and a sentinel. </dd></dl>
+
+<p class="definition">Definition at line <a class="el" href="mp_8hpp_source.html#l00196">196</a> of file <a class="el" href="mp_8hpp_source.html">mp.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">  197</span>{</div>
 <div class="line"><span class="lineno">  198</span>    <span class="comment">// using make_tuple to avoid pair converting to tuple in case of one input</span></div>
 <div class="line"><span class="lineno">  199</span>    <span class="keywordflow">return</span> std::make_tuple(</div>
@@ -226,6 +230,8 @@ template&lt;typename... Containers&gt; </div>
 
 <p>Helper function that ties together output iterators. </p>
 <dl class="section return"><dt>Returns</dt><dd>tuple of output iterators. </dd></dl>
+
+<p class="definition">Definition at line <a class="el" href="mp_8hpp_source.html#l00207">207</a> of file <a class="el" href="mp_8hpp_source.html">mp.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">  208</span>{</div>
 <div class="line"><span class="lineno">  209</span>    <span class="keywordflow">return</span> std::tuple{std::back_inserter(containers)...};</div>
 <div class="line"><span class="lineno">  210</span>}</div>

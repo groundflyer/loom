@@ -104,15 +104,15 @@ $(function(){initNavTree('simd_8hpp.html','',''); });
 
 <p>SIMD backend implementation.  
 <a href="#details">More...</a></p>
-<div class="textblock"><code>#include &quot;<a class="el" href="bse_8hpp.html">bse.hpp</a>&quot;</code><br />
-<code>#include &quot;<a class="el" href="bve_8hpp.html">bve.hpp</a>&quot;</code><br />
-<code>#include &quot;<a class="el" href="core_8hpp.html">core.hpp</a>&quot;</code><br />
-<code>#include &quot;<a class="el" href="macros_8hpp.html">macros.hpp</a>&quot;</code><br />
-<code>#include &quot;<a class="el" href="operators_8hpp.html">operators.hpp</a>&quot;</code><br />
-<code>#include &lt;<a class="el" href="debug_8hpp.html">common/debug.hpp</a>&gt;</code><br />
-<code>#include &lt;<a class="el" href="memory_8hpp.html">common/memory.hpp</a>&gt;</code><br />
-<code>#include &lt;<a class="el" href="tmp_8hpp.html">common/tmp.hpp</a>&gt;</code><br />
-<code>#include &lt;<a class="el" href="tuple_8hpp.html">common/tuple.hpp</a>&gt;</code><br />
+<div class="textblock"><code>#include &quot;<a class="el" href="bse_8hpp_source.html">bse.hpp</a>&quot;</code><br />
+<code>#include &quot;<a class="el" href="bve_8hpp_source.html">bve.hpp</a>&quot;</code><br />
+<code>#include &quot;<a class="el" href="core_8hpp_source.html">core.hpp</a>&quot;</code><br />
+<code>#include &quot;<a class="el" href="macros_8hpp_source.html">macros.hpp</a>&quot;</code><br />
+<code>#include &quot;<a class="el" href="operators_8hpp_source.html">operators.hpp</a>&quot;</code><br />
+<code>#include &lt;<a class="el" href="debug_8hpp_source.html">common/debug.hpp</a>&gt;</code><br />
+<code>#include &lt;<a class="el" href="memory_8hpp_source.html">common/memory.hpp</a>&gt;</code><br />
+<code>#include &lt;<a class="el" href="tmp_8hpp_source.html">common/tmp.hpp</a>&gt;</code><br />
+<code>#include &lt;<a class="el" href="tuple_8hpp_source.html">common/tuple.hpp</a>&gt;</code><br />
 <code>#include &lt;algorithm&gt;</code><br />
 <code>#include &lt;bitset&gt;</code><br />
 <code>#include &lt;cstdlib&gt;</code><br />
@@ -124,7 +124,15 @@ $(function(){initNavTree('simd_8hpp.html','',''); });
 <div id="dynsection-0-content" class="dyncontent" style="display:none;">
 <div class="center"><div class="zoom"><iframe scrolling="no" loading="lazy" frameborder="0" src="simd_8hpp__incl.svg" width="100%" height="600"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
 </div>
-</div><table class="memberdecls">
+</div><div class="textblock"><div id="dynsection-1" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>This graph shows which files directly or indirectly include this file:</div>
+<div id="dynsection-1-summary" class="dynsummary" style="display:block;">
+</div>
+<div id="dynsection-1-content" class="dyncontent" style="display:none;">
+<div class="center"><div class="zoom"><iframe scrolling="no" loading="lazy" frameborder="0" src="simd_8hpp__dep__incl.svg" width="100%" height="525"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
+</div>
+</div>
+<p><a href="simd_8hpp_source.html">Go to the source code of this file.</a></p>
+<table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-nested-classes" class="groupheader"><a id="nested-classes" name="nested-classes"></a>
 Classes</h2></td></tr>
 <tr class="memitem:loom_3A_3Avm_3A_3Asimd_3A_3Ainfo" id="r_loom_3A_3Avm_3A_3Asimd_3A_3Ainfo"><td class="memItemLeft">struct &#160;</td><td class="memItemRight"><a class="el" href="structloom_1_1vm_1_1simd_1_1info.html">loom::vm::simd::info</a></td></tr>
@@ -261,8 +269,7 @@ Macros</h2></td></tr>
 <tr class="memitem:aa929bd46819ccca87abc80d92b886b45" id="r_aa929bd46819ccca87abc80d92b886b45"><td class="memItemLeft">#define&#160;</td><td class="memItemRight"><a class="el" href="#aa929bd46819ccca87abc80d92b886b45">MK_AVX512_CMP_INTRINSICS</a>(TYPE,  EXT,  EQINTR,  NEQINTR)</td></tr>
 <tr class="memitem:a9a04da90d5299784fc75e33f0a1b215c" id="r_a9a04da90d5299784fc75e33f0a1b215c"><td class="memItemLeft">#define&#160;</td><td class="memItemRight"><a class="el" href="#a9a04da90d5299784fc75e33f0a1b215c">MK_AVX512_BLEND_INTRINSICS</a>(TYPE,  EXT,  INTR)</td></tr>
 <tr class="memitem:a24013e73a279009d9ef00103ed97d686" id="r_a24013e73a279009d9ef00103ed97d686"><td class="memItemLeft">#define&#160;</td><td class="memItemRight"><a class="el" href="#a24013e73a279009d9ef00103ed97d686">MK_AVX512_GATHER_SCATTER_INTRINSICS</a>(TYPE,  EXT,  GATHER_INTR,  SCATTER_INTR)</td></tr>
-<tr class="memitem:a5e238a86623d5ae0dd259c7a90b8cc07" id="r_a5e238a86623d5ae0dd259c7a90b8cc07"><td class="memItemLeft"><a id="a5e238a86623d5ae0dd259c7a90b8cc07" name="a5e238a86623d5ae0dd259c7a90b8cc07"></a>
-#define&#160;</td><td class="memItemRight"><b>MK_AVX512_MASK_ADD_SUB_MIN_MAX_INTRINSICS</b>(TYPE,  EXT,  ADD_INTR,  SUB_INTR,  MIN_INTR,  MAX_INTR)</td></tr>
+<tr class="memitem:a5e238a86623d5ae0dd259c7a90b8cc07" id="r_a5e238a86623d5ae0dd259c7a90b8cc07"><td class="memItemLeft">#define&#160;</td><td class="memItemRight"><a class="el" href="#a5e238a86623d5ae0dd259c7a90b8cc07">MK_AVX512_MASK_ADD_SUB_MIN_MAX_INTRINSICS</a>(TYPE,  EXT,  ADD_INTR,  SUB_INTR,  MIN_INTR,  MAX_INTR)</td></tr>
 <tr class="memitem:a1d96399d8f0eb5462d8e79da2fbb40f1" id="r_a1d96399d8f0eb5462d8e79da2fbb40f1"><td class="memItemLeft">#define&#160;</td><td class="memItemRight"><a class="el" href="#a1d96399d8f0eb5462d8e79da2fbb40f1">MK_AVX512_MASK_MUL_DIV_INTRINSICS</a>(TYPE,  EXT,  MUL_INTR,  DIV_INTR)</td></tr>
 <tr class="memitem:a7f0ab0cc609a44502433e4f48a819a2b" id="r_a7f0ab0cc609a44502433e4f48a819a2b"><td class="memItemLeft">#define&#160;</td><td class="memItemRight"><a class="el" href="#a7f0ab0cc609a44502433e4f48a819a2b">MK_AVX512_MASK_ABS_INTRINSICS</a>(TYPE,  EXT,  INTR)</td></tr>
 <tr class="memitem:ad5a3ea4d2f09a61562fd5ff84b034ce8" id="r_ad5a3ea4d2f09a61562fd5ff84b034ce8"><td class="memItemLeft">#define&#160;</td><td class="memItemRight"><a class="el" href="#ad5a3ea4d2f09a61562fd5ff84b034ce8">MK_AVX512_MASK_SQRT_INTRINSICS</a>(TYPE,  EXT,  SQRT_INTR,  RSQRT_INTR)</td></tr>
@@ -281,61 +288,49 @@ Macros</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-typedef-members" class="groupheader"><a id="typedef-members" name="typedef-members"></a>
 Typedefs</h2></td></tr>
-<tr class="memitem:a13f74c165cada10f5eb92d2beb50b144" id="r_a13f74c165cada10f5eb92d2beb50b144"><td class="memItemLeft"><a id="a13f74c165cada10f5eb92d2beb50b144" name="a13f74c165cada10f5eb92d2beb50b144"></a>
-using&#160;</td><td class="memItemRight"><b>loom::vm::simd::fsize_t</b> = bve::fsize_t</td></tr>
-<tr class="memdesc:a13f74c165cada10f5eb92d2beb50b144"><td class="mdescLeft">&#160;</td><td class="mdescRight">Fast size type. <br /></td></tr>
-<tr class="memitem:a736757f9b89dc96a7b1448e5914327aa" id="r_a736757f9b89dc96a7b1448e5914327aa"><td class="memTemplParams" colspan="2"><a id="a736757f9b89dc96a7b1448e5914327aa" name="a736757f9b89dc96a7b1448e5914327aa"></a>
-template&lt;typename T, <a class="el" href="namespaceloom_1_1vm_1_1simd.html#a13f74c165cada10f5eb92d2beb50b144">fsize_t</a> N&gt; </td></tr>
-<tr class="memitem:a736757f9b89dc96a7b1448e5914327aa template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><b>loom::vm::simd::packed_vector</b> = <a class="el" href="structloom_1_1vm_1_1simd_1_1make__packed__vector.html">make_packed_vector</a>&lt;T, N&gt;<a class="el" href="structloom_1_1vm_1_1simd_1_1make__packed__vector.html">::type</a></td></tr>
-<tr class="memdesc:a736757f9b89dc96a7b1448e5914327aa"><td class="mdescLeft">&#160;</td><td class="mdescRight">Helper alias. <br /></td></tr>
-<tr class="memitem:a4b7912f2aa644dbbf55ce99112cec4ba" id="r_a4b7912f2aa644dbbf55ce99112cec4ba"><td class="memTemplParams" colspan="2"><a id="a4b7912f2aa644dbbf55ce99112cec4ba" name="a4b7912f2aa644dbbf55ce99112cec4ba"></a>
-template&lt;typename T&gt; </td></tr>
-<tr class="memitem:a4b7912f2aa644dbbf55ce99112cec4ba template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><b>loom::vm::simd::native_vector</b> = <a class="el" href="namespaceloom_1_1vm_1_1simd.html#a736757f9b89dc96a7b1448e5914327aa">packed_vector</a>&lt;T, <a class="el" href="namespaceloom_1_1vm_1_1simd.html#a8e29ede7eeb268098ea92662aa9db74f">native_vector_extent_v</a>&lt;T&gt;&gt;</td></tr>
-<tr class="memdesc:a4b7912f2aa644dbbf55ce99112cec4ba"><td class="mdescLeft">&#160;</td><td class="mdescRight">Helper alias. <br /></td></tr>
-<tr class="memitem:ab63c9ca39973768ec9e16d9dd2f35e28" id="r_ab63c9ca39973768ec9e16d9dd2f35e28"><td class="memTemplParams" colspan="2"><a id="ab63c9ca39973768ec9e16d9dd2f35e28" name="ab63c9ca39973768ec9e16d9dd2f35e28"></a>
-template&lt;typename T, <a class="el" href="namespaceloom_1_1vm_1_1simd.html#a13f74c165cada10f5eb92d2beb50b144">fsize_t</a> N&gt; </td></tr>
-<tr class="memitem:ab63c9ca39973768ec9e16d9dd2f35e28 template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><b>loom::vm::simd::mask_type</b> = <a class="el" href="structloom_1_1vm_1_1simd_1_1make__mask__type.html">make_mask_type</a>&lt;T, N&gt;<a class="el" href="structloom_1_1vm_1_1simd_1_1make__packed__vector.html">::type</a></td></tr>
-<tr class="memdesc:ab63c9ca39973768ec9e16d9dd2f35e28"><td class="mdescLeft">&#160;</td><td class="mdescRight">Mask type helper typedef. <br /></td></tr>
-<tr class="memitem:a4e5393874d9cea60313f12a407f03eda" id="r_a4e5393874d9cea60313f12a407f03eda"><td class="memTemplParams" colspan="2"><a id="a4e5393874d9cea60313f12a407f03eda" name="a4e5393874d9cea60313f12a407f03eda"></a>
-template&lt;<a class="el" href="namespaceloom_1_1vm_1_1simd.html#a13f74c165cada10f5eb92d2beb50b144">fsize_t</a> N, typename Op, typename Ret, typename... Args&gt; </td></tr>
-<tr class="memitem:a4e5393874d9cea60313f12a407f03eda template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><b>loom::vm::simd::remap_comp_t</b> = remap_comp&lt;N, Op, Ret, Args...&gt;<a class="el" href="structloom_1_1vm_1_1simd_1_1make__packed__vector.html">::type</a></td></tr>
-<tr class="memitem:a0aa594ac1316da606b4b23928f375a42" id="r_a0aa594ac1316da606b4b23928f375a42"><td class="memTemplParams" colspan="2"><a id="a0aa594ac1316da606b4b23928f375a42" name="a0aa594ac1316da606b4b23928f375a42"></a>
-template&lt;<a class="el" href="namespaceloom_1_1vm_1_1simd.html#a13f74c165cada10f5eb92d2beb50b144">fsize_t</a> N, typename Op, typename Ret, typename... Args&gt; </td></tr>
-<tr class="memitem:a0aa594ac1316da606b4b23928f375a42 template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><b>loom::vm::simd::remap_comp_mask_t</b> = <a class="el" href="structloom_1_1vm_1_1simd_1_1remap__comp__mask.html">remap_comp_mask</a>&lt;N, Op, Ret, Args...&gt;<a class="el" href="structloom_1_1vm_1_1simd_1_1make__packed__vector.html">::type</a></td></tr>
-<tr class="memdesc:a0aa594ac1316da606b4b23928f375a42"><td class="mdescLeft">&#160;</td><td class="mdescRight">Helper alias. <br /></td></tr>
+<tr class="memitem:a13f74c165cada10f5eb92d2beb50b144" id="r_a13f74c165cada10f5eb92d2beb50b144"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="namespaceloom_1_1vm_1_1simd.html#a13f74c165cada10f5eb92d2beb50b144">loom::vm::simd::fsize_t</a> = bve::fsize_t</td></tr>
+<tr class="memdesc:a13f74c165cada10f5eb92d2beb50b144"><td class="mdescLeft">&#160;</td><td class="mdescRight">Fast size type.  <br /></td></tr>
+<tr class="memitem:a736757f9b89dc96a7b1448e5914327aa" id="r_a736757f9b89dc96a7b1448e5914327aa"><td class="memTemplParams" colspan="2">template&lt;typename T, <a class="el" href="namespaceloom_1_1vm_1_1simd.html#a13f74c165cada10f5eb92d2beb50b144">fsize_t</a> N&gt; </td></tr>
+<tr class="memitem:a736757f9b89dc96a7b1448e5914327aa template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="namespaceloom_1_1vm_1_1simd.html#a736757f9b89dc96a7b1448e5914327aa">loom::vm::simd::packed_vector</a> = <a class="el" href="structloom_1_1vm_1_1simd_1_1make__packed__vector.html">make_packed_vector</a>&lt;T, N&gt;<a class="el" href="structloom_1_1vm_1_1simd_1_1make__packed__vector.html">::type</a></td></tr>
+<tr class="memdesc:a736757f9b89dc96a7b1448e5914327aa"><td class="mdescLeft">&#160;</td><td class="mdescRight">Helper alias.  <br /></td></tr>
+<tr class="memitem:a4b7912f2aa644dbbf55ce99112cec4ba" id="r_a4b7912f2aa644dbbf55ce99112cec4ba"><td class="memTemplParams" colspan="2">template&lt;typename T&gt; </td></tr>
+<tr class="memitem:a4b7912f2aa644dbbf55ce99112cec4ba template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="namespaceloom_1_1vm_1_1simd.html#a4b7912f2aa644dbbf55ce99112cec4ba">loom::vm::simd::native_vector</a> = <a class="el" href="namespaceloom_1_1vm_1_1simd.html#a736757f9b89dc96a7b1448e5914327aa">packed_vector</a>&lt;T, <a class="el" href="namespaceloom_1_1vm_1_1simd.html#a8e29ede7eeb268098ea92662aa9db74f">native_vector_extent_v</a>&lt;T&gt;&gt;</td></tr>
+<tr class="memdesc:a4b7912f2aa644dbbf55ce99112cec4ba"><td class="mdescLeft">&#160;</td><td class="mdescRight">Helper alias.  <br /></td></tr>
+<tr class="memitem:ab63c9ca39973768ec9e16d9dd2f35e28" id="r_ab63c9ca39973768ec9e16d9dd2f35e28"><td class="memTemplParams" colspan="2">template&lt;typename T, <a class="el" href="namespaceloom_1_1vm_1_1simd.html#a13f74c165cada10f5eb92d2beb50b144">fsize_t</a> N&gt; </td></tr>
+<tr class="memitem:ab63c9ca39973768ec9e16d9dd2f35e28 template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="namespaceloom_1_1vm_1_1simd.html#ab63c9ca39973768ec9e16d9dd2f35e28">loom::vm::simd::mask_type</a> = <a class="el" href="structloom_1_1vm_1_1simd_1_1make__mask__type.html">make_mask_type</a>&lt;T, N&gt;<a class="el" href="structloom_1_1vm_1_1simd_1_1make__packed__vector.html">::type</a></td></tr>
+<tr class="memdesc:ab63c9ca39973768ec9e16d9dd2f35e28"><td class="mdescLeft">&#160;</td><td class="mdescRight">Mask type helper typedef.  <br /></td></tr>
+<tr class="memitem:a4e5393874d9cea60313f12a407f03eda" id="r_a4e5393874d9cea60313f12a407f03eda"><td class="memTemplParams" colspan="2">template&lt;<a class="el" href="namespaceloom_1_1vm_1_1simd.html#a13f74c165cada10f5eb92d2beb50b144">fsize_t</a> N, typename Op, typename Ret, typename... Args&gt; </td></tr>
+<tr class="memitem:a4e5393874d9cea60313f12a407f03eda template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="namespaceloom_1_1vm_1_1simd.html#a4e5393874d9cea60313f12a407f03eda">loom::vm::simd::remap_comp_t</a> = remap_comp&lt;N, Op, Ret, Args...&gt;<a class="el" href="structloom_1_1vm_1_1simd_1_1make__packed__vector.html">::type</a></td></tr>
+<tr class="memitem:a0aa594ac1316da606b4b23928f375a42" id="r_a0aa594ac1316da606b4b23928f375a42"><td class="memTemplParams" colspan="2">template&lt;<a class="el" href="namespaceloom_1_1vm_1_1simd.html#a13f74c165cada10f5eb92d2beb50b144">fsize_t</a> N, typename Op, typename Ret, typename... Args&gt; </td></tr>
+<tr class="memitem:a0aa594ac1316da606b4b23928f375a42 template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="namespaceloom_1_1vm_1_1simd.html#a0aa594ac1316da606b4b23928f375a42">loom::vm::simd::remap_comp_mask_t</a> = <a class="el" href="structloom_1_1vm_1_1simd_1_1remap__comp__mask.html">remap_comp_mask</a>&lt;N, Op, Ret, Args...&gt;<a class="el" href="structloom_1_1vm_1_1simd_1_1make__packed__vector.html">::type</a></td></tr>
+<tr class="memdesc:a0aa594ac1316da606b4b23928f375a42"><td class="mdescLeft">&#160;</td><td class="mdescRight">Helper alias.  <br /></td></tr>
 <tr class="memitem:a2c263bcdb6f2bfc5184321257cd7a46e" id="r_a2c263bcdb6f2bfc5184321257cd7a46e"><td class="memTemplParams" colspan="2">template&lt;<a class="el" href="namespaceloom_1_1vm_1_1simd.html#a9a825882791c5a7e3437a0572f3313cd">STITCH</a> stitch, typename Block, typename LabelMap, typename PCVar&gt; </td></tr>
 <tr class="memitem:a2c263bcdb6f2bfc5184321257cd7a46e template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="namespaceloom_1_1vm_1_1simd.html#a2c263bcdb6f2bfc5184321257cd7a46e">loom::vm::simd::block_compiler</a></td></tr>
 <tr class="memdesc:a2c263bcdb6f2bfc5184321257cd7a46e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Helper typedef.  <br /></td></tr>
 <tr class="memitem:afe706be883ec78a63995b3dcdbaaa83c" id="r_afe706be883ec78a63995b3dcdbaaa83c"><td class="memTemplParams" colspan="2">template&lt;typename Block, typename LabelMap, typename PCVar, <a class="el" href="namespaceloom_1_1vm_1_1simd.html#a13f74c165cada10f5eb92d2beb50b144">fsize_t</a> N, bool ts&gt; </td></tr>
 <tr class="memitem:afe706be883ec78a63995b3dcdbaaa83c template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="namespaceloom_1_1vm_1_1simd.html#afe706be883ec78a63995b3dcdbaaa83c">loom::vm::simd::compact_masked_block_compiler</a></td></tr>
 <tr class="memdesc:afe706be883ec78a63995b3dcdbaaa83c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Helper typedef.  <br /></td></tr>
-<tr class="memitem:a8fad4170c38a5a2b6181feae1fa67d6f" id="r_a8fad4170c38a5a2b6181feae1fa67d6f"><td class="memTemplParams" colspan="2"><a id="a8fad4170c38a5a2b6181feae1fa67d6f" name="a8fad4170c38a5a2b6181feae1fa67d6f"></a>
-template&lt;<a class="el" href="namespaceloom_1_1vm_1_1simd.html#a9a825882791c5a7e3437a0572f3313cd">STITCH</a> stitch, typename... Args&gt; </td></tr>
-<tr class="memitem:a8fad4170c38a5a2b6181feae1fa67d6f template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><b>loom::vm::simd::select_visitor</b> = <a class="el" href="structloom_1_1vm_1_1simd_1_1visitor__selector.html">visitor_selector</a>&lt;stitch&gt;::template <a class="el" href="structloom_1_1vm_1_1simd_1_1make__packed__vector.html">type</a>&lt;Args...&gt;</td></tr>
-<tr class="memdesc:a8fad4170c38a5a2b6181feae1fa67d6f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Helper typedef. <br /></td></tr>
-<tr class="memitem:ae37adcea9f619c98a51cdb3e8f253c44" id="r_ae37adcea9f619c98a51cdb3e8f253c44"><td class="memTemplParams" colspan="2"><a id="ae37adcea9f619c98a51cdb3e8f253c44" name="ae37adcea9f619c98a51cdb3e8f253c44"></a>
-template&lt;typename T&gt; </td></tr>
-<tr class="memitem:ae37adcea9f619c98a51cdb3e8f253c44 template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><b>loom::vm::simd::SIMDAlignedAllocator</b> = <a class="el" href="classloom_1_1AlignedAllocator.html">AlignedAllocator</a>&lt;T, simd_width&gt;</td></tr>
-<tr class="memdesc:ae37adcea9f619c98a51cdb3e8f253c44"><td class="mdescLeft">&#160;</td><td class="mdescRight">Allocates memory aligned to native SIMD vector size. <br /></td></tr>
-<tr class="memitem:ae959109fe77739f25849f534137ff0ff" id="r_ae959109fe77739f25849f534137ff0ff"><td class="memTemplParams" colspan="2"><a id="ae959109fe77739f25849f534137ff0ff" name="ae959109fe77739f25849f534137ff0ff"></a>
-template&lt;Kernel K, <a class="el" href="namespaceloom_1_1vm_1_1simd.html#a9a825882791c5a7e3437a0572f3313cd">STITCH</a> stitch = MASKED, <a class="el" href="namespaceloom_1_1vm_1_1simd.html#aca48e9f4869370f2f9970061a7e9e7de">SORT</a> sort_method = COUNTING_SORT, typename UTR = std::ratio&lt;1, 2&gt;&gt; </td></tr>
-<tr class="memitem:ae959109fe77739f25849f534137ff0ff template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><b>loom::vm::simd::function</b> = <a class="el" href="classloom_1_1vm_1_1simd_1_1compiler.html">compiler</a>&lt;K, stitch, sort_method, false, UTR&gt;::function</td></tr>
-<tr class="memdesc:ae959109fe77739f25849f534137ff0ff"><td class="mdescLeft">&#160;</td><td class="mdescRight">Alias for function-like invocation. <br /></td></tr>
-<tr class="memitem:a0c7988ae9821941555359c701a3de257" id="r_a0c7988ae9821941555359c701a3de257"><td class="memTemplParams" colspan="2"><a id="a0c7988ae9821941555359c701a3de257" name="a0c7988ae9821941555359c701a3de257"></a>
-template&lt;Kernel K, <a class="el" href="namespaceloom_1_1vm_1_1simd.html#a9a825882791c5a7e3437a0572f3313cd">STITCH</a> stitch = MASKED, <a class="el" href="namespaceloom_1_1vm_1_1simd.html#aca48e9f4869370f2f9970061a7e9e7de">SORT</a> sort_method = COUNTING_SORT, bool concurrent = false, typename UTR = std::ratio&lt;1, 2&gt;&gt; </td></tr>
-<tr class="memitem:a0c7988ae9821941555359c701a3de257 template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><b>loom::vm::simd::stream</b> = <a class="el" href="classloom_1_1vm_1_1simd_1_1compiler.html">compiler</a>&lt;K, stitch, sort_method, concurrent, UTR&gt;::stream</td></tr>
-<tr class="memdesc:a0c7988ae9821941555359c701a3de257"><td class="mdescLeft">&#160;</td><td class="mdescRight">Alias for streaming invocation. <br /></td></tr>
+<tr class="memitem:a8fad4170c38a5a2b6181feae1fa67d6f" id="r_a8fad4170c38a5a2b6181feae1fa67d6f"><td class="memTemplParams" colspan="2">template&lt;<a class="el" href="namespaceloom_1_1vm_1_1simd.html#a9a825882791c5a7e3437a0572f3313cd">STITCH</a> stitch, typename... Args&gt; </td></tr>
+<tr class="memitem:a8fad4170c38a5a2b6181feae1fa67d6f template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="namespaceloom_1_1vm_1_1simd.html#a8fad4170c38a5a2b6181feae1fa67d6f">loom::vm::simd::select_visitor</a> = <a class="el" href="structloom_1_1vm_1_1simd_1_1visitor__selector.html">visitor_selector</a>&lt;stitch&gt;::template <a class="el" href="structloom_1_1vm_1_1simd_1_1make__packed__vector.html">type</a>&lt;Args...&gt;</td></tr>
+<tr class="memdesc:a8fad4170c38a5a2b6181feae1fa67d6f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Helper typedef.  <br /></td></tr>
+<tr class="memitem:ae37adcea9f619c98a51cdb3e8f253c44" id="r_ae37adcea9f619c98a51cdb3e8f253c44"><td class="memTemplParams" colspan="2">template&lt;typename T&gt; </td></tr>
+<tr class="memitem:ae37adcea9f619c98a51cdb3e8f253c44 template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="namespaceloom_1_1vm_1_1simd.html#ae37adcea9f619c98a51cdb3e8f253c44">loom::vm::simd::SIMDAlignedAllocator</a> = <a class="el" href="classloom_1_1AlignedAllocator.html">AlignedAllocator</a>&lt;T, simd_width&gt;</td></tr>
+<tr class="memdesc:ae37adcea9f619c98a51cdb3e8f253c44"><td class="mdescLeft">&#160;</td><td class="mdescRight">Allocates memory aligned to native SIMD vector size.  <br /></td></tr>
+<tr class="memitem:ae959109fe77739f25849f534137ff0ff" id="r_ae959109fe77739f25849f534137ff0ff"><td class="memTemplParams" colspan="2">template&lt;Kernel K, <a class="el" href="namespaceloom_1_1vm_1_1simd.html#a9a825882791c5a7e3437a0572f3313cd">STITCH</a> stitch = MASKED, <a class="el" href="namespaceloom_1_1vm_1_1simd.html#aca48e9f4869370f2f9970061a7e9e7de">SORT</a> sort_method = COUNTING_SORT, typename UTR = std::ratio&lt;1, 2&gt;&gt; </td></tr>
+<tr class="memitem:ae959109fe77739f25849f534137ff0ff template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="namespaceloom_1_1vm_1_1simd.html#ae959109fe77739f25849f534137ff0ff">loom::vm::simd::function</a> = <a class="el" href="classloom_1_1vm_1_1simd_1_1compiler.html">compiler</a>&lt;K, stitch, sort_method, false, UTR&gt;::function</td></tr>
+<tr class="memdesc:ae959109fe77739f25849f534137ff0ff"><td class="mdescLeft">&#160;</td><td class="mdescRight">Alias for function-like invocation.  <br /></td></tr>
+<tr class="memitem:a0c7988ae9821941555359c701a3de257" id="r_a0c7988ae9821941555359c701a3de257"><td class="memTemplParams" colspan="2">template&lt;Kernel K, <a class="el" href="namespaceloom_1_1vm_1_1simd.html#a9a825882791c5a7e3437a0572f3313cd">STITCH</a> stitch = MASKED, <a class="el" href="namespaceloom_1_1vm_1_1simd.html#aca48e9f4869370f2f9970061a7e9e7de">SORT</a> sort_method = COUNTING_SORT, bool concurrent = false, typename UTR = std::ratio&lt;1, 2&gt;&gt; </td></tr>
+<tr class="memitem:a0c7988ae9821941555359c701a3de257 template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="namespaceloom_1_1vm_1_1simd.html#a0c7988ae9821941555359c701a3de257">loom::vm::simd::stream</a> = <a class="el" href="classloom_1_1vm_1_1simd_1_1compiler.html">compiler</a>&lt;K, stitch, sort_method, concurrent, UTR&gt;::stream</td></tr>
+<tr class="memdesc:a0c7988ae9821941555359c701a3de257"><td class="mdescLeft">&#160;</td><td class="mdescRight">Alias for streaming invocation.  <br /></td></tr>
 <tr class="memitem:aa75264b67cd66dd05c53f8260bedddee" id="r_aa75264b67cd66dd05c53f8260bedddee"><td class="memTemplParams" colspan="2">template&lt;Kernel K, bool ts = false, bool use_tbd = true, <a class="el" href="namespaceloom_1_1vm_1_1simd.html#a9cc5d79de6e00db9b742817fdae77a87">ReconvMethod</a> rcnv = SUCCESSOR_MAJOR, typename UTRt = std::ratio&lt;1, 8&gt;, typename UTRh = std::ratio&lt;1, 8&gt;&gt; </td></tr>
 <tr class="memitem:aa75264b67cd66dd05c53f8260bedddee template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="namespaceloom_1_1vm_1_1simd.html#aa75264b67cd66dd05c53f8260bedddee">loom::vm::simd::hybrid_function</a></td></tr>
 <tr class="memdesc:aa75264b67cd66dd05c53f8260bedddee"><td class="mdescLeft">&#160;</td><td class="mdescRight">Alias for hybrid function-like invocation.  <br /></td></tr>
-<tr class="memitem:aebdc26eb19b8a654966f9826a0b8c7ac" id="r_aebdc26eb19b8a654966f9826a0b8c7ac"><td class="memTemplParams" colspan="2"><a id="aebdc26eb19b8a654966f9826a0b8c7ac" name="aebdc26eb19b8a654966f9826a0b8c7ac"></a>
-template&lt;Kernel K, bool ts = false, bool use_tbd = true, <a class="el" href="namespaceloom_1_1vm_1_1simd.html#a9cc5d79de6e00db9b742817fdae77a87">ReconvMethod</a> rcnv = SUCCESSOR_MAJOR, typename UTRt = std::ratio&lt;1, 8&gt;, typename UTRh = std::ratio&lt;1, 8&gt;&gt; </td></tr>
-<tr class="memitem:aebdc26eb19b8a654966f9826a0b8c7ac template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><b>loom::vm::simd::hybrid_stream</b> = <a class="el" href="classloom_1_1vm_1_1simd_1_1hybrid__compiler.html">hybrid_compiler</a>&lt;K, ts, use_tbd, rcnv, UTRt, UTRh&gt;<a class="el" href="namespaceloom_1_1vm_1_1simd.html#a0c7988ae9821941555359c701a3de257">::stream</a></td></tr>
-<tr class="memdesc:aebdc26eb19b8a654966f9826a0b8c7ac"><td class="mdescLeft">&#160;</td><td class="mdescRight">Alias for hybrid streaming invocation. <br /></td></tr>
-<tr class="memitem:a7731f9e3c4dc44f502e63b5cf26cbeaa" id="r_a7731f9e3c4dc44f502e63b5cf26cbeaa"><td class="memTemplParams" colspan="2"><a id="a7731f9e3c4dc44f502e63b5cf26cbeaa" name="a7731f9e3c4dc44f502e63b5cf26cbeaa"></a>
-template&lt;Kernel K, bool ts = false, bool use_tbd = true, <a class="el" href="namespaceloom_1_1vm_1_1simd.html#a9cc5d79de6e00db9b742817fdae77a87">ReconvMethod</a> rcnv = SUCCESSOR_MAJOR, typename UTR = std::ratio&lt;1, 8&gt;&gt; </td></tr>
-<tr class="memitem:a7731f9e3c4dc44f502e63b5cf26cbeaa template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><b>loom::vm::simd::compact_function</b> = <a class="el" href="classloom_1_1vm_1_1simd_1_1compact__compiler.html">compact_compiler</a>&lt;K, ts, use_tbd, rcnv, UTR&gt;<a class="el" href="structloom_1_1vm_1_1simd_1_1make__packed__vector.html">::type</a></td></tr>
-<tr class="memdesc:a7731f9e3c4dc44f502e63b5cf26cbeaa"><td class="mdescLeft">&#160;</td><td class="mdescRight">Alias for compact invocation. <br /></td></tr>
+<tr class="memitem:aebdc26eb19b8a654966f9826a0b8c7ac" id="r_aebdc26eb19b8a654966f9826a0b8c7ac"><td class="memTemplParams" colspan="2">template&lt;Kernel K, bool ts = false, bool use_tbd = true, <a class="el" href="namespaceloom_1_1vm_1_1simd.html#a9cc5d79de6e00db9b742817fdae77a87">ReconvMethod</a> rcnv = SUCCESSOR_MAJOR, typename UTRt = std::ratio&lt;1, 8&gt;, typename UTRh = std::ratio&lt;1, 8&gt;&gt; </td></tr>
+<tr class="memitem:aebdc26eb19b8a654966f9826a0b8c7ac template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="namespaceloom_1_1vm_1_1simd.html#aebdc26eb19b8a654966f9826a0b8c7ac">loom::vm::simd::hybrid_stream</a> = <a class="el" href="classloom_1_1vm_1_1simd_1_1hybrid__compiler.html">hybrid_compiler</a>&lt;K, ts, use_tbd, rcnv, UTRt, UTRh&gt;<a class="el" href="namespaceloom_1_1vm_1_1simd.html#a0c7988ae9821941555359c701a3de257">::stream</a></td></tr>
+<tr class="memdesc:aebdc26eb19b8a654966f9826a0b8c7ac"><td class="mdescLeft">&#160;</td><td class="mdescRight">Alias for hybrid streaming invocation.  <br /></td></tr>
+<tr class="memitem:a7731f9e3c4dc44f502e63b5cf26cbeaa" id="r_a7731f9e3c4dc44f502e63b5cf26cbeaa"><td class="memTemplParams" colspan="2">template&lt;Kernel K, bool ts = false, bool use_tbd = true, <a class="el" href="namespaceloom_1_1vm_1_1simd.html#a9cc5d79de6e00db9b742817fdae77a87">ReconvMethod</a> rcnv = SUCCESSOR_MAJOR, typename UTR = std::ratio&lt;1, 8&gt;&gt; </td></tr>
+<tr class="memitem:a7731f9e3c4dc44f502e63b5cf26cbeaa template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="namespaceloom_1_1vm_1_1simd.html#a7731f9e3c4dc44f502e63b5cf26cbeaa">loom::vm::simd::compact_function</a> = <a class="el" href="classloom_1_1vm_1_1simd_1_1compact__compiler.html">compact_compiler</a>&lt;K, ts, use_tbd, rcnv, UTR&gt;<a class="el" href="structloom_1_1vm_1_1simd_1_1make__packed__vector.html">::type</a></td></tr>
+<tr class="memdesc:a7731f9e3c4dc44f502e63b5cf26cbeaa"><td class="mdescLeft">&#160;</td><td class="mdescRight">Alias for compact invocation.  <br /></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-enum-members" class="groupheader"><a id="enum-members" name="enum-members"></a>
 Enumerations</h2></td></tr>
@@ -389,32 +384,29 @@ Functions</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-var-members" class="groupheader"><a id="var-members" name="var-members"></a>
 Variables</h2></td></tr>
-<tr class="memitem:a6fddcd6a4e697c7492f6ea72f87a9aa1" id="r_a6fddcd6a4e697c7492f6ea72f87a9aa1"><td class="memItemLeft"><a id="a6fddcd6a4e697c7492f6ea72f87a9aa1" name="a6fddcd6a4e697c7492f6ea72f87a9aa1"></a>
-constexpr <a class="el" href="namespaceloom_1_1vm_1_1simd.html#a13f74c165cada10f5eb92d2beb50b144">fsize_t</a>&#160;</td><td class="memItemRight"><b>loom::vm::simd::dynamic_extent</b> = bve::dynamic_extent</td></tr>
-<tr class="memdesc:a6fddcd6a4e697c7492f6ea72f87a9aa1"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constant idicating dynamic size of a bve::ProxyView. <br /></td></tr>
-<tr class="memitem:a28693445bc8eb07d77fb54f9621e14fb" id="r_a28693445bc8eb07d77fb54f9621e14fb"><td class="memItemLeft"><a id="a28693445bc8eb07d77fb54f9621e14fb" name="a28693445bc8eb07d77fb54f9621e14fb"></a>
-constexpr <a class="el" href="namespaceloom_1_1vm_1_1simd.html#a13f74c165cada10f5eb92d2beb50b144">fsize_t</a>&#160;</td><td class="memItemRight"><b>loom::vm::simd::simd_width</b> = 16</td></tr>
-<tr class="memitem:a5d0bcbc98cad4fb61806ace5ee865e3b" id="r_a5d0bcbc98cad4fb61806ace5ee865e3b"><td class="memTemplParams" colspan="2"><a id="a5d0bcbc98cad4fb61806ace5ee865e3b" name="a5d0bcbc98cad4fb61806ace5ee865e3b"></a>
-template&lt;typename _ProxyView&gt; </td></tr>
-<tr class="memitem:a5d0bcbc98cad4fb61806ace5ee865e3b template"><td class="memItemLeft">constexpr <a class="el" href="namespaceloom_1_1vm_1_1simd.html#a13f74c165cada10f5eb92d2beb50b144">fsize_t</a>&#160;</td><td class="memItemRight"><b>loom::vm::simd::pv_extent</b> = <a class="el" href="structloom_1_1vm_1_1simd_1_1proxy__view__extent.html">proxy_view_extent</a>&lt;_ProxyView&gt;::value</td></tr>
-<tr class="memdesc:a5d0bcbc98cad4fb61806ace5ee865e3b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Helper alias to check and get bve::ProxyView size. <br /></td></tr>
+<tr class="memitem:a6fddcd6a4e697c7492f6ea72f87a9aa1" id="r_a6fddcd6a4e697c7492f6ea72f87a9aa1"><td class="memItemLeft">constexpr <a class="el" href="namespaceloom_1_1vm_1_1simd.html#a13f74c165cada10f5eb92d2beb50b144">fsize_t</a>&#160;</td><td class="memItemRight"><a class="el" href="namespaceloom_1_1vm_1_1simd.html#a6fddcd6a4e697c7492f6ea72f87a9aa1">loom::vm::simd::dynamic_extent</a> = bve::dynamic_extent</td></tr>
+<tr class="memdesc:a6fddcd6a4e697c7492f6ea72f87a9aa1"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constant idicating dynamic size of a bve::ProxyView.  <br /></td></tr>
+<tr class="memitem:a28693445bc8eb07d77fb54f9621e14fb" id="r_a28693445bc8eb07d77fb54f9621e14fb"><td class="memItemLeft">constexpr <a class="el" href="namespaceloom_1_1vm_1_1simd.html#a13f74c165cada10f5eb92d2beb50b144">fsize_t</a>&#160;</td><td class="memItemRight"><a class="el" href="namespaceloom_1_1vm_1_1simd.html#a28693445bc8eb07d77fb54f9621e14fb">loom::vm::simd::simd_width</a> = 16</td></tr>
+<tr class="memitem:a5d0bcbc98cad4fb61806ace5ee865e3b" id="r_a5d0bcbc98cad4fb61806ace5ee865e3b"><td class="memTemplParams" colspan="2">template&lt;typename _ProxyView&gt; </td></tr>
+<tr class="memitem:a5d0bcbc98cad4fb61806ace5ee865e3b template"><td class="memItemLeft">constexpr <a class="el" href="namespaceloom_1_1vm_1_1simd.html#a13f74c165cada10f5eb92d2beb50b144">fsize_t</a>&#160;</td><td class="memItemRight"><a class="el" href="namespaceloom_1_1vm_1_1simd.html#a5d0bcbc98cad4fb61806ace5ee865e3b">loom::vm::simd::pv_extent</a> = <a class="el" href="structloom_1_1vm_1_1simd_1_1proxy__view__extent.html">proxy_view_extent</a>&lt;_ProxyView&gt;::value</td></tr>
+<tr class="memdesc:a5d0bcbc98cad4fb61806ace5ee865e3b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Helper alias to check and get bve::ProxyView size.  <br /></td></tr>
 <tr class="memitem:a8e29ede7eeb268098ea92662aa9db74f" id="r_a8e29ede7eeb268098ea92662aa9db74f"><td class="memTemplParams" colspan="2">template&lt;typename T&gt; </td></tr>
 <tr class="memitem:a8e29ede7eeb268098ea92662aa9db74f template"><td class="memItemLeft">constexpr <a class="el" href="namespaceloom_1_1vm_1_1simd.html#a13f74c165cada10f5eb92d2beb50b144">fsize_t</a>&#160;</td><td class="memItemRight"><a class="el" href="namespaceloom_1_1vm_1_1simd.html#a8e29ede7eeb268098ea92662aa9db74f">loom::vm::simd::native_vector_extent_v</a></td></tr>
 <tr class="memdesc:a8e29ede7eeb268098ea92662aa9db74f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Helper alias.  <br /></td></tr>
 <tr class="memitem:a75b9df7a78afec66b4f43446028772d8" id="r_a75b9df7a78afec66b4f43446028772d8"><td class="memTemplParams" colspan="2">template&lt;typename I, typename index_t&gt; </td></tr>
 <tr class="memitem:a75b9df7a78afec66b4f43446028772d8 template"><td class="memItemLeft">constexpr <a class="el" href="namespaceloom_1_1vm_1_1simd.html#a13f74c165cada10f5eb92d2beb50b144">fsize_t</a>&#160;</td><td class="memItemRight"><a class="el" href="namespaceloom_1_1vm_1_1simd.html#a75b9df7a78afec66b4f43446028772d8">loom::vm::simd::native_instruction_extent_v</a></td></tr>
 <tr class="memdesc:a75b9df7a78afec66b4f43446028772d8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Helper alias.  <br /></td></tr>
-<tr class="memitem:a9ce59d2a9776142f3607e2ed71d66070" id="r_a9ce59d2a9776142f3607e2ed71d66070"><td class="memTemplParams" colspan="2"><a id="a9ce59d2a9776142f3607e2ed71d66070" name="a9ce59d2a9776142f3607e2ed71d66070"></a>
-template&lt;<a class="el" href="namespaceloom_1_1vm_1_1simd.html#a13f74c165cada10f5eb92d2beb50b144">fsize_t</a> N, typename UTR&gt; </td></tr>
-<tr class="memitem:a9ce59d2a9776142f3607e2ed71d66070 template"><td class="memItemLeft">constexpr <a class="el" href="namespaceloom_1_1vm_1_1simd.html#a13f74c165cada10f5eb92d2beb50b144">fsize_t</a>&#160;</td><td class="memItemRight"><b>loom::vm::simd::get_threshold_v</b> = <a class="el" href="structloom_1_1vm_1_1simd_1_1get__threshold.html">get_threshold</a>&lt;N, UTR&gt;::value</td></tr>
-<tr class="memdesc:a9ce59d2a9776142f3607e2ed71d66070"><td class="mdescLeft">&#160;</td><td class="mdescRight">Helper variable. <br /></td></tr>
-<tr class="memitem:ab53db934c13a69df36e894a0d20e758a" id="r_ab53db934c13a69df36e894a0d20e758a"><td class="memTemplParams" colspan="2"><a id="ab53db934c13a69df36e894a0d20e758a" name="ab53db934c13a69df36e894a0d20e758a"></a>
-template&lt;typename UTR&gt; </td></tr>
-<tr class="memitem:ab53db934c13a69df36e894a0d20e758a template"><td class="memItemLeft">constexpr bool&#160;</td><td class="memItemRight"><b>loom::vm::simd::val_utr_v</b> = <a class="el" href="structloom_1_1vm_1_1simd_1_1val__utr.html">val_utr</a>&lt;UTR&gt;::value</td></tr>
-<tr class="memdesc:ab53db934c13a69df36e894a0d20e758a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Helper variable. <br /></td></tr>
+<tr class="memitem:a9ce59d2a9776142f3607e2ed71d66070" id="r_a9ce59d2a9776142f3607e2ed71d66070"><td class="memTemplParams" colspan="2">template&lt;<a class="el" href="namespaceloom_1_1vm_1_1simd.html#a13f74c165cada10f5eb92d2beb50b144">fsize_t</a> N, typename UTR&gt; </td></tr>
+<tr class="memitem:a9ce59d2a9776142f3607e2ed71d66070 template"><td class="memItemLeft">constexpr <a class="el" href="namespaceloom_1_1vm_1_1simd.html#a13f74c165cada10f5eb92d2beb50b144">fsize_t</a>&#160;</td><td class="memItemRight"><a class="el" href="namespaceloom_1_1vm_1_1simd.html#a9ce59d2a9776142f3607e2ed71d66070">loom::vm::simd::get_threshold_v</a> = <a class="el" href="structloom_1_1vm_1_1simd_1_1get__threshold.html">get_threshold</a>&lt;N, UTR&gt;::value</td></tr>
+<tr class="memdesc:a9ce59d2a9776142f3607e2ed71d66070"><td class="mdescLeft">&#160;</td><td class="mdescRight">Helper variable.  <br /></td></tr>
+<tr class="memitem:ab53db934c13a69df36e894a0d20e758a" id="r_ab53db934c13a69df36e894a0d20e758a"><td class="memTemplParams" colspan="2">template&lt;typename UTR&gt; </td></tr>
+<tr class="memitem:ab53db934c13a69df36e894a0d20e758a template"><td class="memItemLeft">constexpr bool&#160;</td><td class="memItemRight"><a class="el" href="namespaceloom_1_1vm_1_1simd.html#ab53db934c13a69df36e894a0d20e758a">loom::vm::simd::val_utr_v</a> = <a class="el" href="structloom_1_1vm_1_1simd_1_1val__utr.html">val_utr</a>&lt;UTR&gt;::value</td></tr>
+<tr class="memdesc:ab53db934c13a69df36e894a0d20e758a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Helper variable.  <br /></td></tr>
 </table>
 <a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>SIMD backend implementation. </p>
+
+<p class="definition">Definition in file <a class="el" href="simd_8hpp_source.html">simd.hpp</a>.</p>
 </div><a name="doc-define-members" id="doc-define-members"></a><h2 id="header-doc-define-members" class="groupheader">Macro Definition Documentation</h2>
 <a id="a72e80f27c67bc38f4081a3d7b5c5bb52" name="a72e80f27c67bc38f4081a3d7b5c5bb52"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a72e80f27c67bc38f4081a3d7b5c5bb52">&#9670;&#160;</a></span>DECLK</h2>
@@ -436,6 +428,8 @@ template&lt;typename UTR&gt; </td></tr>
 </div><div class="memdoc">
 <b>Value:</b><div class="fragment"><div class="line"><span class="keyword">constexpr</span> vector_t NAME = broadcast&lt;N&gt;(VAL)</div>
 </div><!-- fragment -->
+<p class="definition">Definition at line <a class="el" href="simd_8hpp_source.html#l00953">953</a> of file <a class="el" href="simd_8hpp_source.html">simd.hpp</a>.</p>
+
 </div>
 </div>
 <a id="ab7ccde8c14bbc48d9d549b95501937f5" name="ab7ccde8c14bbc48d9d549b95501937f5"></a>
@@ -463,6 +457,8 @@ template&lt;typename UTR&gt; </td></tr>
 </div><div class="memdoc">
 <b>Value:</b><div class="fragment"><div class="line">(x * y + z)</div>
 </div><!-- fragment -->
+<p class="definition">Definition at line <a class="el" href="simd_8hpp_source.html#l00062">62</a> of file <a class="el" href="simd_8hpp_source.html">simd.hpp</a>.</p>
+
 </div>
 </div>
 <a id="a9a04da90d5299784fc75e33f0a1b215c" name="a9a04da90d5299784fc75e33f0a1b215c"></a>
@@ -499,7 +495,9 @@ template&lt;typename UTR&gt; </td></tr>
 <div class="line">        <span class="keywordflow">return</span> INTR(k, a, b);                                          \</div>
 <div class="line">    }                                                                  \</div>
 <div class="line">};</div>
-</div><!-- fragment --><div class="fragment"><div class="line"><span class="lineno">  408</span><span class="preprocessor">#define MK_AVX512_BLEND_INTRINSICS(TYPE, EXT, INTR)                        \</span></div>
+</div><!-- fragment -->
+<p class="definition">Definition at line <a class="el" href="simd_8hpp_source.html#l00408">408</a> of file <a class="el" href="simd_8hpp_source.html">simd.hpp</a>.</p>
+<div class="fragment"><div class="line"><span class="lineno">  408</span><span class="preprocessor">#define MK_AVX512_BLEND_INTRINSICS(TYPE, EXT, INTR)                        \</span></div>
 <div class="line"><span class="lineno">  409</span><span class="preprocessor">    template &lt;&gt;                                                            \</span></div>
 <div class="line"><span class="lineno">  410</span><span class="preprocessor">    struct blend_intrinsics_wrangler&lt;TYPE, EXT&gt;                            \</span></div>
 <div class="line"><span class="lineno">  411</span><span class="preprocessor">    {                                                                      \</span></div>
@@ -559,7 +557,9 @@ template&lt;typename UTR&gt; </td></tr>
 <div class="line">        <span class="keywordflow">return</span> NEQINTR(lhs, rhs);                        \</div>
 <div class="line">    }                                                    \</div>
 <div class="line">};</div>
-</div><!-- fragment --><div class="fragment"><div class="line"><span class="lineno">  389</span><span class="preprocessor">#define MK_AVX512_CMP_INTRINSICS(TYPE, EXT, EQINTR, NEQINTR) \</span></div>
+</div><!-- fragment -->
+<p class="definition">Definition at line <a class="el" href="simd_8hpp_source.html#l00389">389</a> of file <a class="el" href="simd_8hpp_source.html">simd.hpp</a>.</p>
+<div class="fragment"><div class="line"><span class="lineno">  389</span><span class="preprocessor">#define MK_AVX512_CMP_INTRINSICS(TYPE, EXT, EQINTR, NEQINTR) \</span></div>
 <div class="line"><span class="lineno">  390</span><span class="preprocessor">    template &lt;&gt;                                              \</span></div>
 <div class="line"><span class="lineno">  391</span><span class="preprocessor">    struct cmp_intrinsics_wrangler&lt;TYPE, EXT&gt;                \</span></div>
 <div class="line"><span class="lineno">  392</span><span class="preprocessor">    {                                                        \</span></div>
@@ -625,6 +625,8 @@ template&lt;typename UTR&gt; </td></tr>
 <div class="line">    }                                                                \</div>
 <div class="line">};</div>
 </div><!-- fragment -->
+<p class="definition">Definition at line <a class="el" href="simd_8hpp_source.html#l00421">421</a> of file <a class="el" href="simd_8hpp_source.html">simd.hpp</a>.</p>
+
 </div>
 </div>
 <a id="a0c64ed1ecce51456c25b9b326574722f" name="a0c64ed1ecce51456c25b9b326574722f"></a>
@@ -643,6 +645,8 @@ template&lt;typename UTR&gt; </td></tr>
 </div><div class="memdoc">
 <b>Value:</b><div class="fragment"><div class="line">MK_AVX512_MASK_T(TYPE, 16, __mmask16)</div>
 </div><!-- fragment -->
+<p class="definition">Definition at line <a class="el" href="simd_8hpp_source.html#l00366">366</a> of file <a class="el" href="simd_8hpp_source.html">simd.hpp</a>.</p>
+
 </div>
 </div>
 <a id="acde82fab47f1c75a51a04c0f70ec75bc" name="acde82fab47f1c75a51a04c0f70ec75bc"></a>
@@ -661,6 +665,8 @@ template&lt;typename UTR&gt; </td></tr>
 </div><div class="memdoc">
 <b>Value:</b><div class="fragment"><div class="line">MK_AVX512_MASK_T(TYPE, 32, __mmask32)</div>
 </div><!-- fragment -->
+<p class="definition">Definition at line <a class="el" href="simd_8hpp_source.html#l00367">367</a> of file <a class="el" href="simd_8hpp_source.html">simd.hpp</a>.</p>
+
 </div>
 </div>
 <a id="af35f416ae2793d1283ec077bf17a0643" name="af35f416ae2793d1283ec077bf17a0643"></a>
@@ -679,6 +685,8 @@ template&lt;typename UTR&gt; </td></tr>
 </div><div class="memdoc">
 <b>Value:</b><div class="fragment"><div class="line">MK_AVX512_MASK_T(TYPE, 64, __mmask64)</div>
 </div><!-- fragment -->
+<p class="definition">Definition at line <a class="el" href="simd_8hpp_source.html#l00368">368</a> of file <a class="el" href="simd_8hpp_source.html">simd.hpp</a>.</p>
+
 </div>
 </div>
 <a id="aa09e505c06edc0abc1955b650e26085f" name="aa09e505c06edc0abc1955b650e26085f"></a>
@@ -697,6 +705,8 @@ template&lt;typename UTR&gt; </td></tr>
 </div><div class="memdoc">
 <b>Value:</b><div class="fragment"><div class="line">MK_AVX512_MASK_T(TYPE, 8, __mmask8)</div>
 </div><!-- fragment -->
+<p class="definition">Definition at line <a class="el" href="simd_8hpp_source.html#l00365">365</a> of file <a class="el" href="simd_8hpp_source.html">simd.hpp</a>.</p>
+
 </div>
 </div>
 <a id="a7f0ab0cc609a44502433e4f48a819a2b" name="a7f0ab0cc609a44502433e4f48a819a2b"></a>
@@ -733,7 +743,9 @@ template&lt;typename UTR&gt; </td></tr>
 <div class="line">        <span class="keywordflow">return</span> INTR(src, mask, v2);                                        \</div>
 <div class="line">    }                                                                      \</div>
 <div class="line">};</div>
-</div><!-- fragment --><div class="fragment"><div class="line"><span class="lineno">  511</span><span class="preprocessor">#define MK_AVX512_MASK_ABS_INTRINSICS(TYPE, EXT, INTR)                         \</span></div>
+</div><!-- fragment -->
+<p class="definition">Definition at line <a class="el" href="simd_8hpp_source.html#l00511">511</a> of file <a class="el" href="simd_8hpp_source.html">simd.hpp</a>.</p>
+<div class="fragment"><div class="line"><span class="lineno">  511</span><span class="preprocessor">#define MK_AVX512_MASK_ABS_INTRINSICS(TYPE, EXT, INTR)                         \</span></div>
 <div class="line"><span class="lineno">  512</span><span class="preprocessor">    template &lt;&gt;                                                                \</span></div>
 <div class="line"><span class="lineno">  513</span><span class="preprocessor">    struct avx512_mask_abs_intrinsics_wrangler&lt;TYPE, EXT&gt;                      \</span></div>
 <div class="line"><span class="lineno">  514</span><span class="preprocessor">    {                                                                          \</span></div>
@@ -746,6 +758,49 @@ template&lt;typename UTR&gt; </td></tr>
 <div class="line"><span class="lineno">  521</span><span class="preprocessor">        }                                                                      \</span></div>
 <div class="line"><span class="lineno">  522</span><span class="preprocessor">    };</span></div>
 </div><!-- fragment -->
+</div>
+</div>
+<a id="a5e238a86623d5ae0dd259c7a90b8cc07" name="a5e238a86623d5ae0dd259c7a90b8cc07"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a5e238a86623d5ae0dd259c7a90b8cc07">&#9670;&#160;</a></span>MK_AVX512_MASK_ADD_SUB_MIN_MAX_INTRINSICS</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define MK_AVX512_MASK_ADD_SUB_MIN_MAX_INTRINSICS</td>
+          <td>(</td>
+          <td class="paramtype"></td>          <td class="paramname"><span class="paramname"><em>TYPE</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"></td>          <td class="paramname"><span class="paramname"><em>EXT</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"></td>          <td class="paramname"><span class="paramname"><em>ADD_INTR</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"></td>          <td class="paramname"><span class="paramname"><em>SUB_INTR</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"></td>          <td class="paramname"><span class="paramname"><em>MIN_INTR</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"></td>          <td class="paramname"><span class="paramname"><em>MAX_INTR</em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="simd_8hpp_source.html#l00442">442</a> of file <a class="el" href="simd_8hpp_source.html">simd.hpp</a>.</p>
+
 </div>
 </div>
 <a id="a4ecc0605b2223e4920980ea609e3dafe" name="a4ecc0605b2223e4920980ea609e3dafe"></a>
@@ -793,7 +848,9 @@ template&lt;typename UTR&gt; </td></tr>
 <div class="line">        STORE_INTR(dest, mask, value);                                  \</div>
 <div class="line">    }                                                                   \</div>
 <div class="line">};</div>
-</div><!-- fragment --><div class="fragment"><div class="line"><span class="lineno">  370</span><span class="preprocessor">#define MK_AVX512_MASK_IO_INTRINSICS(TYPE, EXT, LOAD_INTR, STORE_INTR)      \</span></div>
+</div><!-- fragment -->
+<p class="definition">Definition at line <a class="el" href="simd_8hpp_source.html#l00370">370</a> of file <a class="el" href="simd_8hpp_source.html">simd.hpp</a>.</p>
+<div class="fragment"><div class="line"><span class="lineno">  370</span><span class="preprocessor">#define MK_AVX512_MASK_IO_INTRINSICS(TYPE, EXT, LOAD_INTR, STORE_INTR)      \</span></div>
 <div class="line"><span class="lineno">  371</span><span class="preprocessor">    template &lt;&gt;                                                             \</span></div>
 <div class="line"><span class="lineno">  372</span><span class="preprocessor">    struct mask_io_intrinsics_wrangler&lt;TYPE, EXT&gt;                           \</span></div>
 <div class="line"><span class="lineno">  373</span><span class="preprocessor">    {                                                                       \</span></div>
@@ -864,7 +921,9 @@ template&lt;typename UTR&gt; </td></tr>
 <div class="line">        <span class="keywordflow">return</span> DIV_INTR(src, mask, a, b);                            \</div>
 <div class="line">    }                                                                \</div>
 <div class="line">};</div>
-</div><!-- fragment --><div class="fragment"><div class="line"><span class="lineno">  487</span><span class="preprocessor">#define MK_AVX512_MASK_MUL_DIV_INTRINSICS(TYPE, EXT, MUL_INTR, DIV_INTR) \</span></div>
+</div><!-- fragment -->
+<p class="definition">Definition at line <a class="el" href="simd_8hpp_source.html#l00487">487</a> of file <a class="el" href="simd_8hpp_source.html">simd.hpp</a>.</p>
+<div class="fragment"><div class="line"><span class="lineno">  487</span><span class="preprocessor">#define MK_AVX512_MASK_MUL_DIV_INTRINSICS(TYPE, EXT, MUL_INTR, DIV_INTR) \</span></div>
 <div class="line"><span class="lineno">  488</span><span class="preprocessor">    template &lt;&gt;                                                          \</span></div>
 <div class="line"><span class="lineno">  489</span><span class="preprocessor">    struct avx512_mask_mul_div_intrinsics_wrangler&lt;TYPE, EXT&gt;            \</span></div>
 <div class="line"><span class="lineno">  490</span><span class="preprocessor">    {                                                                    \</span></div>
@@ -938,7 +997,9 @@ template&lt;typename UTR&gt; </td></tr>
 <div class="line">        <span class="keywordflow">return</span> RSQRT_INTR(src, mask, v2);                            \</div>
 <div class="line">    }                                                                \</div>
 <div class="line">};</div>
-</div><!-- fragment --><div class="fragment"><div class="line"><span class="lineno">  524</span><span class="preprocessor">#define MK_AVX512_MASK_SQRT_INTRINSICS(TYPE, EXT, SQRT_INTR, RSQRT_INTR) \</span></div>
+</div><!-- fragment -->
+<p class="definition">Definition at line <a class="el" href="simd_8hpp_source.html#l00524">524</a> of file <a class="el" href="simd_8hpp_source.html">simd.hpp</a>.</p>
+<div class="fragment"><div class="line"><span class="lineno">  524</span><span class="preprocessor">#define MK_AVX512_MASK_SQRT_INTRINSICS(TYPE, EXT, SQRT_INTR, RSQRT_INTR) \</span></div>
 <div class="line"><span class="lineno">  525</span><span class="preprocessor">    template &lt;&gt;                                                          \</span></div>
 <div class="line"><span class="lineno">  526</span><span class="preprocessor">    struct avx512_mask_sqrt_intrinsics_wrangler&lt;TYPE, EXT&gt;               \</span></div>
 <div class="line"><span class="lineno">  527</span><span class="preprocessor">    {                                                                    \</span></div>
@@ -990,7 +1051,9 @@ template&lt;typename UTR&gt; </td></tr>
 <div class="line">{                                       \</div>
 <div class="line">    <span class="keyword">using </span>type = MASK_T;                \</div>
 <div class="line">};</div>
-</div><!-- fragment --><div class="fragment"><div class="line"><span class="lineno">  358</span><span class="preprocessor">#define MK_AVX512_MASK_T(TYPE, EXT, MASK_T) \</span></div>
+</div><!-- fragment -->
+<p class="definition">Definition at line <a class="el" href="simd_8hpp_source.html#l00358">358</a> of file <a class="el" href="simd_8hpp_source.html">simd.hpp</a>.</p>
+<div class="fragment"><div class="line"><span class="lineno">  358</span><span class="preprocessor">#define MK_AVX512_MASK_T(TYPE, EXT, MASK_T) \</span></div>
 <div class="line"><span class="lineno">  359</span><span class="preprocessor">    template &lt;&gt;                             \</span></div>
 <div class="line"><span class="lineno">  360</span><span class="preprocessor">    struct make_mask_type&lt;TYPE, EXT&gt;        \</span></div>
 <div class="line"><span class="lineno">  361</span><span class="preprocessor">    {                                       \</span></div>
@@ -1018,7 +1081,9 @@ template&lt;typename UTR&gt; </td></tr>
 <div class="line">                                                  next_mask, \</div>
 <div class="line">                                                  pending,   \</div>
 <div class="line">                                                  threshold)</div>
-</div><!-- fragment --><div class="fragment"><div class="line"><span class="lineno"> 3535</span><span class="preprocessor">#define MK_CASE(IDX)                                             \</span></div>
+</div><!-- fragment -->
+<p class="definition">Definition at line <a class="el" href="simd_8hpp_source.html#l03535">3535</a> of file <a class="el" href="simd_8hpp_source.html">simd.hpp</a>.</p>
+<div class="fragment"><div class="line"><span class="lineno"> 3535</span><span class="preprocessor">#define MK_CASE(IDX)                                             \</span></div>
 <div class="line"><span class="lineno"> 3536</span><span class="preprocessor">    case IDX:                                                    \</span></div>
 <div class="line"><span class="lineno"> 3537</span><span class="preprocessor">        MUSTTAIL return typelist::at&lt;IDX, ccss&gt;::eval(mem,       \</span></div>
 <div class="line"><span class="lineno"> 3538</span><span class="preprocessor">                                                      next_mask, \</span></div>
@@ -1060,7 +1125,9 @@ template&lt;typename UTR&gt; </td></tr>
 <div class="line">        <span class="keywordflow">return</span> INTR(x, y, z);                                         \</div>
 <div class="line">    }                                                                 \</div>
 <div class="line">};</div>
-</div><!-- fragment --><div class="fragment"><div class="line"><span class="lineno">  558</span><span class="preprocessor">#define MK_FMS_INTRINSICS(TYPE, EXT, INTR)                                \</span></div>
+</div><!-- fragment -->
+<p class="definition">Definition at line <a class="el" href="simd_8hpp_source.html#l00558">558</a> of file <a class="el" href="simd_8hpp_source.html">simd.hpp</a>.</p>
+<div class="fragment"><div class="line"><span class="lineno">  558</span><span class="preprocessor">#define MK_FMS_INTRINSICS(TYPE, EXT, INTR)                                \</span></div>
 <div class="line"><span class="lineno">  559</span><span class="preprocessor">    template &lt;&gt;                                                           \</span></div>
 <div class="line"><span class="lineno">  560</span><span class="preprocessor">    struct fms_intrinsics_wranger&lt;TYPE, EXT&gt;                              \</span></div>
 <div class="line"><span class="lineno">  561</span><span class="preprocessor">    {                                                                     \</span></div>
@@ -1118,7 +1185,9 @@ template&lt;typename UTR&gt; </td></tr>
 <div class="line">        STORE_INTR(dest, mask, value);                                  \</div>
 <div class="line">    }                                                                   \</div>
 <div class="line">};</div>
-</div><!-- fragment --><div class="fragment"><div class="line"><span class="lineno">  340</span><span class="preprocessor">#define MK_MASK_IO_INTRINSICS(TYPE, EXT, LOAD_INTR, STORE_INTR)             \</span></div>
+</div><!-- fragment -->
+<p class="definition">Definition at line <a class="el" href="simd_8hpp_source.html#l00340">340</a> of file <a class="el" href="simd_8hpp_source.html">simd.hpp</a>.</p>
+<div class="fragment"><div class="line"><span class="lineno">  340</span><span class="preprocessor">#define MK_MASK_IO_INTRINSICS(TYPE, EXT, LOAD_INTR, STORE_INTR)             \</span></div>
 <div class="line"><span class="lineno">  341</span><span class="preprocessor">    template &lt;&gt;                                                             \</span></div>
 <div class="line"><span class="lineno">  342</span><span class="preprocessor">    struct mask_io_intrinsics_wrangler&lt;TYPE, EXT&gt;                           \</span></div>
 <div class="line"><span class="lineno">  343</span><span class="preprocessor">    {                                                                       \</span></div>
@@ -1169,7 +1238,9 @@ template&lt;typename UTR&gt; </td></tr>
 <div class="line">        }                                                      \</div>
 <div class="line">    };                                                         \</div>
 <div class="line">};</div>
-</div><!-- fragment --><div class="fragment"><div class="line"><span class="lineno"> 1228</span><span class="preprocessor">#define MK_REMAP_BIN_FUNC(OLD, NEW)                                \</span></div>
+</div><!-- fragment -->
+<p class="definition">Definition at line <a class="el" href="simd_8hpp_source.html#l01228">1228</a> of file <a class="el" href="simd_8hpp_source.html">simd.hpp</a>.</p>
+<div class="fragment"><div class="line"><span class="lineno"> 1228</span><span class="preprocessor">#define MK_REMAP_BIN_FUNC(OLD, NEW)                                \</span></div>
 <div class="line"><span class="lineno"> 1229</span><span class="preprocessor">    template &lt;fsize_t N, typename T&gt;                               \</span></div>
 <div class="line"><span class="lineno"> 1230</span><span class="preprocessor">    struct remap_comp&lt;N, OLD&lt;T&gt;, T, T, T&gt;                          \</span></div>
 <div class="line"><span class="lineno"> 1231</span><span class="preprocessor">    {                                                              \</span></div>
@@ -1222,7 +1293,9 @@ template&lt;typename UTR&gt; </td></tr>
 <div class="line">        }                                                      \</div>
 <div class="line">    };                                                         \</div>
 <div class="line">};</div>
-</div><!-- fragment --><div class="fragment"><div class="line"><span class="lineno"> 1199</span><span class="preprocessor">#define MK_REMAP_BINOP(FUNC, OP, R)                                \</span></div>
+</div><!-- fragment -->
+<p class="definition">Definition at line <a class="el" href="simd_8hpp_source.html#l01199">1199</a> of file <a class="el" href="simd_8hpp_source.html">simd.hpp</a>.</p>
+<div class="fragment"><div class="line"><span class="lineno"> 1199</span><span class="preprocessor">#define MK_REMAP_BINOP(FUNC, OP, R)                                \</span></div>
 <div class="line"><span class="lineno"> 1200</span><span class="preprocessor">    template &lt;fsize_t N, typename T&gt;                               \</span></div>
 <div class="line"><span class="lineno"> 1201</span><span class="preprocessor">    struct remap_comp&lt;N, FUNC&lt;T&gt;, R, T, T&gt;                         \</span></div>
 <div class="line"><span class="lineno"> 1202</span><span class="preprocessor">    {                                                              \</span></div>
@@ -1259,6 +1332,8 @@ template&lt;typename UTR&gt; </td></tr>
 </div><div class="memdoc">
 <b>Value:</b><div class="fragment"><div class="line">MK_REMAP_BINOP(func, op, INDEX_TYPE)</div>
 </div><!-- fragment -->
+<p class="definition">Definition at line <a class="el" href="simd_8hpp_source.html#l01258">1258</a> of file <a class="el" href="simd_8hpp_source.html">simd.hpp</a>.</p>
+
 </div>
 </div>
 <a id="ab5fc0102d71b18b10dcd9002e0b18a8e" name="ab5fc0102d71b18b10dcd9002e0b18a8e"></a>
@@ -1281,6 +1356,8 @@ template&lt;typename UTR&gt; </td></tr>
 </div><div class="memdoc">
 <b>Value:</b><div class="fragment"><div class="line">MK_REMAP_BINOP(func, op, T)</div>
 </div><!-- fragment -->
+<p class="definition">Definition at line <a class="el" href="simd_8hpp_source.html#l01257">1257</a> of file <a class="el" href="simd_8hpp_source.html">simd.hpp</a>.</p>
+
 </div>
 </div>
 <a id="ae14e9b2b72b54c3bfb873f594723b73d" name="ae14e9b2b72b54c3bfb873f594723b73d"></a>
@@ -1313,7 +1390,9 @@ template&lt;typename UTR&gt; </td></tr>
 <div class="line">        }                                                      \</div>
 <div class="line">    };                                                         \</div>
 <div class="line">};</div>
-</div><!-- fragment --><div class="fragment"><div class="line"><span class="lineno"> 1243</span><span class="preprocessor">#define MK_REMAP_UN_FUNC(OLD, NEW)                                 \</span></div>
+</div><!-- fragment -->
+<p class="definition">Definition at line <a class="el" href="simd_8hpp_source.html#l01243">1243</a> of file <a class="el" href="simd_8hpp_source.html">simd.hpp</a>.</p>
+<div class="fragment"><div class="line"><span class="lineno"> 1243</span><span class="preprocessor">#define MK_REMAP_UN_FUNC(OLD, NEW)                                 \</span></div>
 <div class="line"><span class="lineno"> 1244</span><span class="preprocessor">    template &lt;fsize_t N, typename T&gt;                               \</span></div>
 <div class="line"><span class="lineno"> 1245</span><span class="preprocessor">    struct remap_comp&lt;N, OLD&lt;T&gt;, T, T&gt;                             \</span></div>
 <div class="line"><span class="lineno"> 1246</span><span class="preprocessor">    {                                                              \</span></div>
@@ -1364,7 +1443,9 @@ template&lt;typename UTR&gt; </td></tr>
 <div class="line">        }                                                      \</div>
 <div class="line">    };                                                         \</div>
 <div class="line">};</div>
-</div><!-- fragment --><div class="fragment"><div class="line"><span class="lineno"> 1214</span><span class="preprocessor">#define MK_REMAP_UNOP(FUNC, OP, R)                                 \</span></div>
+</div><!-- fragment -->
+<p class="definition">Definition at line <a class="el" href="simd_8hpp_source.html#l01214">1214</a> of file <a class="el" href="simd_8hpp_source.html">simd.hpp</a>.</p>
+<div class="fragment"><div class="line"><span class="lineno"> 1214</span><span class="preprocessor">#define MK_REMAP_UNOP(FUNC, OP, R)                                 \</span></div>
 <div class="line"><span class="lineno"> 1215</span><span class="preprocessor">    template &lt;fsize_t N, typename T&gt;                               \</span></div>
 <div class="line"><span class="lineno"> 1216</span><span class="preprocessor">    struct remap_comp&lt;N, FUNC&lt;T&gt;, R, T&gt;                            \</span></div>
 <div class="line"><span class="lineno"> 1217</span><span class="preprocessor">    {                                                              \</span></div>
@@ -1400,6 +1481,8 @@ template&lt;typename UTR&gt; </td></tr>
 </div><div class="memdoc">
 <b>Value:</b><div class="fragment"><div class="line">MK_REMAP_UNOP(func, op, INDEX_TYPE)</div>
 </div><!-- fragment -->
+<p class="definition">Definition at line <a class="el" href="simd_8hpp_source.html#l01261">1261</a> of file <a class="el" href="simd_8hpp_source.html">simd.hpp</a>.</p>
+
 </div>
 </div>
 <a id="ad8ea76194091cfa03efb1df6d663ca42" name="ad8ea76194091cfa03efb1df6d663ca42"></a>
@@ -1422,6 +1505,8 @@ template&lt;typename UTR&gt; </td></tr>
 </div><div class="memdoc">
 <b>Value:</b><div class="fragment"><div class="line">MK_REMAP_UNOP(func, op, T)</div>
 </div><!-- fragment -->
+<p class="definition">Definition at line <a class="el" href="simd_8hpp_source.html#l01260">1260</a> of file <a class="el" href="simd_8hpp_source.html">simd.hpp</a>.</p>
+
 </div>
 </div>
 <a id="a7938be77f2a43643cfc2bb2b831a736f" name="a7938be77f2a43643cfc2bb2b831a736f"></a>
@@ -1457,7 +1542,9 @@ template&lt;typename UTR&gt; </td></tr>
 <div class="line">        <span class="keywordflow">return</span> INTR(x);                        \</div>
 <div class="line">    }                                          \</div>
 <div class="line">};</div>
-</div><!-- fragment --><div class="fragment"><div class="line"><span class="lineno">  546</span><span class="preprocessor">#define MK_RSQRT_INTRINSICS(TYPE, EXT, INTR)       \</span></div>
+</div><!-- fragment -->
+<p class="definition">Definition at line <a class="el" href="simd_8hpp_source.html#l00546">546</a> of file <a class="el" href="simd_8hpp_source.html">simd.hpp</a>.</p>
+<div class="fragment"><div class="line"><span class="lineno">  546</span><span class="preprocessor">#define MK_RSQRT_INTRINSICS(TYPE, EXT, INTR)       \</span></div>
 <div class="line"><span class="lineno">  547</span><span class="preprocessor">    template &lt;&gt;                                    \</span></div>
 <div class="line"><span class="lineno">  548</span><span class="preprocessor">    struct rsqrt_intrinsics_wrangler&lt;TYPE, EXT&gt;    \</span></div>
 <div class="line"><span class="lineno">  549</span><span class="preprocessor">    {                                              \</span></div>

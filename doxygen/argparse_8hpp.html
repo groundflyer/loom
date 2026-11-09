@@ -104,12 +104,12 @@ $(function(){initNavTree('argparse_8hpp.html','',''); });
 
 <p>Parsing command line arguments.  
 <a href="#details">More...</a></p>
-<div class="textblock"><code>#include &quot;<a class="el" href="debug_8hpp.html">debug.hpp</a>&quot;</code><br />
-<code>#include &quot;<a class="el" href="forbid_8hpp.html">forbid.hpp</a>&quot;</code><br />
-<code>#include &quot;<a class="el" href="functional_8hpp.html">functional.hpp</a>&quot;</code><br />
-<code>#include &quot;<a class="el" href="string_8hpp.html">string.hpp</a>&quot;</code><br />
-<code>#include &quot;<a class="el" href="tmp_8hpp.html">tmp.hpp</a>&quot;</code><br />
-<code>#include &quot;<a class="el" href="tuple_8hpp.html">tuple.hpp</a>&quot;</code><br />
+<div class="textblock"><code>#include &quot;<a class="el" href="debug_8hpp_source.html">debug.hpp</a>&quot;</code><br />
+<code>#include &quot;<a class="el" href="forbid_8hpp_source.html">forbid.hpp</a>&quot;</code><br />
+<code>#include &quot;<a class="el" href="functional_8hpp_source.html">functional.hpp</a>&quot;</code><br />
+<code>#include &quot;<a class="el" href="string_8hpp_source.html">string.hpp</a>&quot;</code><br />
+<code>#include &quot;<a class="el" href="tmp_8hpp_source.html">tmp.hpp</a>&quot;</code><br />
+<code>#include &quot;<a class="el" href="tuple_8hpp_source.html">tuple.hpp</a>&quot;</code><br />
 <code>#include &lt;algorithm&gt;</code><br />
 <code>#include &lt;array&gt;</code><br />
 <code>#include &lt;bit&gt;</code><br />
@@ -133,9 +133,11 @@ $(function(){initNavTree('argparse_8hpp.html','',''); });
 <div id="dynsection-1-summary" class="dynsummary" style="display:block;">
 </div>
 <div id="dynsection-1-content" class="dyncontent" style="display:none;">
-<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="argparse_8hpp__dep__incl.svg" width="275" height="115"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><div class="zoom"><iframe scrolling="no" loading="lazy" frameborder="0" src="argparse_8hpp__dep__incl.svg" width="100%" height="569"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
 </div>
-</div><table class="memberdecls">
+</div>
+<p><a href="argparse_8hpp_source.html">Go to the source code of this file.</a></p>
+<table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-nested-classes" class="groupheader"><a id="nested-classes" name="nested-classes"></a>
 Classes</h2></td></tr>
 <tr class="memitem:loom_3A_3Aargparse_3A_3AFlagReader" id="r_loom_3A_3Aargparse_3A_3AFlagReader"><td class="memItemLeft">struct &#160;</td><td class="memItemRight"><a class="el" href="structloom_1_1argparse_1_1FlagReader.html">loom::argparse::FlagReader</a></td></tr>
@@ -201,8 +203,7 @@ Typedefs</h2></td></tr>
 <tr class="memitem:gaca1ba6aefd0ee48d86667de3c452abcc" id="r_gaca1ba6aefd0ee48d86667de3c452abcc"><td class="memTemplParams" colspan="2">template&lt;<a class="el" href="structloom_1_1StringLiteral.html">StringLiteral</a> s&gt; </td></tr>
 <tr class="memitem:gaca1ba6aefd0ee48d86667de3c452abcc template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="group__ArgParse.html#gaca1ba6aefd0ee48d86667de3c452abcc">loom::argparse::wrap_string</a></td></tr>
 <tr class="memdesc:gaca1ba6aefd0ee48d86667de3c452abcc"><td class="mdescLeft">&#160;</td><td class="mdescRight">Make a pair of <a class="el" href="structloom_1_1StringLiteral.html" title="Wraps char[N].">StringLiteral</a> and a <a class="el" href="group__CTString.html#ga872f3618645ab19393ce66edb62e1f1d" title="Compile-time string.">char_sequence</a>.  <br /></td></tr>
-<tr class="memitem:gad6827f783fee4629ec55696868c1c721" id="r_gad6827f783fee4629ec55696868c1c721"><td class="memItemLeft">
-using&#160;</td><td class="memItemRight"><b>loom::argparse::missing_keyword</b> = <a class="el" href="group__CTString.html#ga872f3618645ab19393ce66edb62e1f1d">char_sequence</a>&lt;' '&gt;</td></tr>
+<tr class="memitem:gad6827f783fee4629ec55696868c1c721" id="r_gad6827f783fee4629ec55696868c1c721"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="group__ArgParse.html#gad6827f783fee4629ec55696868c1c721">loom::argparse::missing_keyword</a> = <a class="el" href="group__CTString.html#ga872f3618645ab19393ce66edb62e1f1d">char_sequence</a>&lt;' '&gt;</td></tr>
 <tr class="memitem:ga4b56a614886088960312b9a0e52c47dd" id="r_ga4b56a614886088960312b9a0e52c47dd"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="group__ArgParse.html#ga4b56a614886088960312b9a0e52c47dd">loom::argparse::ErrorState</a></td></tr>
 <tr class="memdesc:ga4b56a614886088960312b9a0e52c47dd"><td class="mdescLeft">&#160;</td><td class="mdescRight">Holds errors occured during parsing.  <br /></td></tr>
 </table><table class="memberdecls">
@@ -305,34 +306,29 @@ template&lt;typename PosBindings&gt; </td></tr>
 Variables</h2></td></tr>
 <tr class="memitem:ga95401598621d5274b657acbd3f740ecf" id="r_ga95401598621d5274b657acbd3f740ecf"><td class="memItemLeft">constexpr std::size_t&#160;</td><td class="memItemRight"><a class="el" href="group__ArgParse.html#ga95401598621d5274b657acbd3f740ecf">loom::argparse::npos</a> = -1ul</td></tr>
 <tr class="memdesc:ga95401598621d5274b657acbd3f740ecf"><td class="mdescLeft">&#160;</td><td class="mdescRight">Special value. The exact meaning depends on the context.  <br /></td></tr>
-<tr class="memitem:gadda86a177a7d321378c91cfbe8fcf469" id="r_gadda86a177a7d321378c91cfbe8fcf469"><td class="memTemplParams" colspan="2">
-template&lt;char Key, typename Options&gt; </td></tr>
-<tr class="memitem:gadda86a177a7d321378c91cfbe8fcf469 template"><td class="memItemLeft">constexpr std::size_t&#160;</td><td class="memItemRight"><b>loom::argparse::key_index</b> = detail::key_index&lt;Key, Options&gt;::value</td></tr>
-<tr class="memdesc:gadda86a177a7d321378c91cfbe8fcf469"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the index of an <a class="el" href="structloom_1_1argparse_1_1Option.html" title="Describes an option with multiple fields.">Option</a> with character key <code class="param">Key</code> in the list of <code class="param">Options</code>. <br /></td></tr>
+<tr class="memitem:gadda86a177a7d321378c91cfbe8fcf469" id="r_gadda86a177a7d321378c91cfbe8fcf469"><td class="memTemplParams" colspan="2">template&lt;char Key, typename Options&gt; </td></tr>
+<tr class="memitem:gadda86a177a7d321378c91cfbe8fcf469 template"><td class="memItemLeft">constexpr std::size_t&#160;</td><td class="memItemRight"><a class="el" href="group__ArgParse.html#gadda86a177a7d321378c91cfbe8fcf469">loom::argparse::key_index</a> = detail::key_index&lt;Key, Options&gt;::value</td></tr>
+<tr class="memdesc:gadda86a177a7d321378c91cfbe8fcf469"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the index of an <a class="el" href="structloom_1_1argparse_1_1Option.html" title="Describes an option with multiple fields.">Option</a> with character key <code class="param">Key</code> in the list of <code class="param">Options</code>.  <br /></td></tr>
 <tr class="memitem:ga7f6eac254fd9f95cd6b9544602941bfa" id="r_ga7f6eac254fd9f95cd6b9544602941bfa"><td class="memTemplParams" colspan="2">template&lt;typename Keyword, typename Options&gt; </td></tr>
 <tr class="memitem:ga7f6eac254fd9f95cd6b9544602941bfa template"><td class="memItemLeft">constexpr std::size_t&#160;</td><td class="memItemRight"><a class="el" href="group__ArgParse.html#ga7f6eac254fd9f95cd6b9544602941bfa">loom::argparse::keyword_index</a></td></tr>
 <tr class="memdesc:ga7f6eac254fd9f95cd6b9544602941bfa"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the index of an <a class="el" href="structloom_1_1argparse_1_1Option.html" title="Describes an option with multiple fields.">Option</a> with keyword <code class="param">Keyword</code> in the list of <code class="param">Options</code>.  <br /></td></tr>
-<tr class="memitem:ga5ed8cea85cef177e471f9b43cdbd91fd" id="r_ga5ed8cea85cef177e471f9b43cdbd91fd"><td class="memTemplParams" colspan="2">
-template&lt;<a class="el" href="structloom_1_1StringLiteral.html">StringLiteral</a> s&gt; </td></tr>
-<tr class="memitem:ga5ed8cea85cef177e471f9b43cdbd91fd template"><td class="memItemLeft">constexpr bool&#160;</td><td class="memItemRight"><b>loom::argparse::keyword_ok</b> = detail::keyword_ok_impl&lt;<a class="el" href="group__CTString.html#gaf0b5f03cdc1ec41cac34da64d02d48f2">sl2cs</a>&lt;s&gt;&gt;::value</td></tr>
-<tr class="memdesc:ga5ed8cea85cef177e471f9b43cdbd91fd"><td class="mdescLeft">&#160;</td><td class="mdescRight">Check if keyword <code class="param">s</code> meets requirements. <br /></td></tr>
-<tr class="memitem:ga12d8f7e3aeabf344bd51035bc0e1a790" id="r_ga12d8f7e3aeabf344bd51035bc0e1a790"><td class="memItemLeft">
-constexpr char&#160;</td><td class="memItemRight"><b>loom::argparse::missing_keychar</b> = ' '</td></tr>
-<tr class="memitem:gac027520ad882cfb82a2f80310fc83e76" id="r_gac027520ad882cfb82a2f80310fc83e76"><td class="memTemplParams" colspan="2">
-template&lt;typename O&gt; </td></tr>
-<tr class="memitem:gac027520ad882cfb82a2f80310fc83e76 template"><td class="memItemLeft">constexpr bool&#160;</td><td class="memItemRight"><b>loom::argparse::has_keychar_v</b> = has_keychar&lt;O&gt;::value</td></tr>
-<tr class="memitem:ga9483f3791f04fe5f06424c5e45958661" id="r_ga9483f3791f04fe5f06424c5e45958661"><td class="memTemplParams" colspan="2">
-template&lt;typename O&gt; </td></tr>
-<tr class="memitem:ga9483f3791f04fe5f06424c5e45958661 template"><td class="memItemLeft">constexpr bool&#160;</td><td class="memItemRight"><b>loom::argparse::has_keyword_v</b> = has_keyword&lt;O&gt;::value</td></tr>
-<tr class="memitem:ga418b825e60677eafb086972a2ef2728b" id="r_ga418b825e60677eafb086972a2ef2728b"><td class="memTemplParams" colspan="2">
-template&lt;typename O&gt; </td></tr>
-<tr class="memitem:ga418b825e60677eafb086972a2ef2728b template"><td class="memItemLeft">constexpr bool&#160;</td><td class="memItemRight"><b>loom::argparse::is_flag_v</b> = is_flag&lt;O&gt;::value</td></tr>
-<tr class="memitem:gaa6182be70b1054f5260347fa6c588215" id="r_gaa6182be70b1054f5260347fa6c588215"><td class="memTemplParams" colspan="2">
-template&lt;typename O&gt; </td></tr>
-<tr class="memitem:gaa6182be70b1054f5260347fa6c588215 template"><td class="memItemLeft">constexpr bool&#160;</td><td class="memItemRight"><b>loom::argparse::is_option</b> = !is_flag_v&lt;O&gt;</td></tr>
+<tr class="memitem:ga5ed8cea85cef177e471f9b43cdbd91fd" id="r_ga5ed8cea85cef177e471f9b43cdbd91fd"><td class="memTemplParams" colspan="2">template&lt;<a class="el" href="structloom_1_1StringLiteral.html">StringLiteral</a> s&gt; </td></tr>
+<tr class="memitem:ga5ed8cea85cef177e471f9b43cdbd91fd template"><td class="memItemLeft">constexpr bool&#160;</td><td class="memItemRight"><a class="el" href="group__ArgParse.html#ga5ed8cea85cef177e471f9b43cdbd91fd">loom::argparse::keyword_ok</a> = detail::keyword_ok_impl&lt;<a class="el" href="group__CTString.html#gaf0b5f03cdc1ec41cac34da64d02d48f2">sl2cs</a>&lt;s&gt;&gt;::value</td></tr>
+<tr class="memdesc:ga5ed8cea85cef177e471f9b43cdbd91fd"><td class="mdescLeft">&#160;</td><td class="mdescRight">Check if keyword <code class="param">s</code> meets requirements.  <br /></td></tr>
+<tr class="memitem:ga12d8f7e3aeabf344bd51035bc0e1a790" id="r_ga12d8f7e3aeabf344bd51035bc0e1a790"><td class="memItemLeft">constexpr char&#160;</td><td class="memItemRight"><a class="el" href="group__ArgParse.html#ga12d8f7e3aeabf344bd51035bc0e1a790">loom::argparse::missing_keychar</a> = ' '</td></tr>
+<tr class="memitem:gac027520ad882cfb82a2f80310fc83e76" id="r_gac027520ad882cfb82a2f80310fc83e76"><td class="memTemplParams" colspan="2">template&lt;typename O&gt; </td></tr>
+<tr class="memitem:gac027520ad882cfb82a2f80310fc83e76 template"><td class="memItemLeft">constexpr bool&#160;</td><td class="memItemRight"><a class="el" href="group__ArgParse.html#gac027520ad882cfb82a2f80310fc83e76">loom::argparse::has_keychar_v</a> = has_keychar&lt;O&gt;::value</td></tr>
+<tr class="memitem:ga9483f3791f04fe5f06424c5e45958661" id="r_ga9483f3791f04fe5f06424c5e45958661"><td class="memTemplParams" colspan="2">template&lt;typename O&gt; </td></tr>
+<tr class="memitem:ga9483f3791f04fe5f06424c5e45958661 template"><td class="memItemLeft">constexpr bool&#160;</td><td class="memItemRight"><a class="el" href="group__ArgParse.html#ga9483f3791f04fe5f06424c5e45958661">loom::argparse::has_keyword_v</a> = has_keyword&lt;O&gt;::value</td></tr>
+<tr class="memitem:ga418b825e60677eafb086972a2ef2728b" id="r_ga418b825e60677eafb086972a2ef2728b"><td class="memTemplParams" colspan="2">template&lt;typename O&gt; </td></tr>
+<tr class="memitem:ga418b825e60677eafb086972a2ef2728b template"><td class="memItemLeft">constexpr bool&#160;</td><td class="memItemRight"><a class="el" href="group__ArgParse.html#ga418b825e60677eafb086972a2ef2728b">loom::argparse::is_flag_v</a> = is_flag&lt;O&gt;::value</td></tr>
+<tr class="memitem:gaa6182be70b1054f5260347fa6c588215" id="r_gaa6182be70b1054f5260347fa6c588215"><td class="memTemplParams" colspan="2">template&lt;typename O&gt; </td></tr>
+<tr class="memitem:gaa6182be70b1054f5260347fa6c588215 template"><td class="memItemLeft">constexpr bool&#160;</td><td class="memItemRight"><a class="el" href="group__ArgParse.html#gaa6182be70b1054f5260347fa6c588215">loom::argparse::is_option</a> = !is_flag_v&lt;O&gt;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Parsing command line arguments. </p>
+
+<p class="definition">Definition in file <a class="el" href="argparse_8hpp_source.html">argparse.hpp</a>.</p>
 </div></div><!-- contents -->
 </div><!-- doc-content -->
 <div id="page-nav" class="page-nav-panel">

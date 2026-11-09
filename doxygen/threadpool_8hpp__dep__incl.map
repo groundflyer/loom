@@ -1,5 +1,16 @@
 <map id="common/threadpool.hpp" name="common/threadpool.hpp">
-<area shape="rect" id="Node000001" title="Basic thread pool." alt="" coords="5,5,186,33"/>
-<area shape="rect" id="Node000002" href="$mp_8hpp.html" title="Multi&#45;processor evaluation." alt="" coords="48,81,143,109"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="98,49,98,81,93,81,93,49"/>
+<area shape="rect" id="Node000001" title="Basic thread pool." alt="" coords="221,5,402,33"/>
+<area shape="rect" id="Node000002" href="$smallpt_2common_2render_8hpp_source.html" title=" " alt="" coords="5,81,210,109"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="262,41,145,83,143,78,260,36"/>
+<area shape="rect" id="Node000005" href="$threadpool_8cpp_source.html" title=" " alt="" coords="234,81,389,109"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="314,49,314,81,309,81,309,49"/>
+<area shape="rect" id="Node000006" href="$mp_8hpp.html" title="Multi&#45;processor evaluation." alt="" coords="413,81,508,109"/>
+<area shape="poly" id="edge5_Node000001_Node000006" title=" " alt="" coords="353,38,436,78,433,83,351,43"/>
+<area shape="rect" id="Node000003" href="$ref_8cpp_source.html" title=" " alt="" coords="37,157,178,184"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="110,124,110,156,105,156,105,124"/>
+<area shape="rect" id="Node000004" href="$smallpt_2vm_2vm_8cpp_source.html" title=" " alt="" coords="212,157,360,184"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="154,112,256,154,253,159,152,117"/>
+<area shape="poly" id="edge6_Node000006_Node000004" title=" " alt="" coords="417,117,318,159,316,154,415,113"/>
+<area shape="rect" id="Node000007" href="$vm__mp_8cpp_source.html" title=" " alt="" coords="394,157,528,184"/>
+<area shape="poly" id="edge7_Node000006_Node000007" title=" " alt="" coords="464,124,464,156,458,156,458,124"/>
 </map>

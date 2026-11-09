@@ -105,7 +105,7 @@ $(function(){initNavTree('structloom_1_1test_1_1ParmTestMaker.html','','structlo
 <p>Helper class to make parametric tests.  
  <a href="#details">More...</a></p>
 
-<p><code>#include &quot;test.hpp&quot;</code></p>
+<p><code>#include &quot;<a class="el" href="test_8hpp_source.html">test.hpp</a>&quot;</code></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pub-methods" class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
@@ -151,12 +151,13 @@ Public Member Functions</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pub-attribs" class="groupheader"><a id="pub-attribs" name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
-<tr class="memitem:a297013df22a91a3d657c17f75a3c044f" id="r_a297013df22a91a3d657c17f75a3c044f"><td class="memItemLeft"><a id="a297013df22a91a3d657c17f75a3c044f" name="a297013df22a91a3d657c17f75a3c044f"></a>
-unsigned&#160;</td><td class="memItemRight"><b>num_runs</b></td></tr>
-<tr class="memdesc:a297013df22a91a3d657c17f75a3c044f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Number of runs. <br /></td></tr>
+<tr class="memitem:a297013df22a91a3d657c17f75a3c044f" id="r_a297013df22a91a3d657c17f75a3c044f"><td class="memItemLeft">unsigned&#160;</td><td class="memItemRight"><a class="el" href="#a297013df22a91a3d657c17f75a3c044f">num_runs</a></td></tr>
+<tr class="memdesc:a297013df22a91a3d657c17f75a3c044f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Number of runs.  <br /></td></tr>
 </table>
 <a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Helper class to make parametric tests. </p>
+
+<p class="definition">Definition at line <a class="el" href="test_8hpp_source.html#l00513">513</a> of file <a class="el" href="test_8hpp_source.html">test.hpp</a>.</p>
 </div><a name="doc-constructors" id="doc-constructors"></a><h2 id="header-doc-constructors" class="groupheader">Constructor &amp; Destructor Documentation</h2>
 <a id="a9d9841bfb782ce09205bbe2817e5b29e" name="a9d9841bfb782ce09205bbe2817e5b29e"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a9d9841bfb782ce09205bbe2817e5b29e">&#9670;&#160;</a></span>ParmTestMaker()</h2>
@@ -180,11 +181,13 @@ unsigned&#160;</td><td class="memItemRight"><b>num_runs</b></td></tr>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="test_8hpp_source.html#l00518">518</a> of file <a class="el" href="test_8hpp_source.html">test.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">  518</span>                                       : <a class="code hl_variable" href="#a297013df22a91a3d657c17f75a3c044f">num_runs</a>(n)</div>
 <div class="line"><span class="lineno">  519</span>    {</div>
 <div class="line"><span class="lineno">  520</span>        fmt::print(<span class="stringliteral">&quot;Number of test iterations {}\n&quot;</span>, n);</div>
 <div class="line"><span class="lineno">  521</span>    }</div>
-<div class="ttc" id="astructloom_1_1test_1_1ParmTestMaker_html_a297013df22a91a3d657c17f75a3c044f"><div class="ttname"><a href="#a297013df22a91a3d657c17f75a3c044f">loom::test::ParmTestMaker::num_runs</a></div><div class="ttdeci">unsigned num_runs</div><div class="ttdoc">Number of runs.</div><div class="ttdef"><b>Definition</b> test.hpp:516</div></div>
+<div class="ttc" id="astructloom_1_1test_1_1ParmTestMaker_html_a297013df22a91a3d657c17f75a3c044f"><div class="ttname"><a href="#a297013df22a91a3d657c17f75a3c044f">loom::test::ParmTestMaker::num_runs</a></div><div class="ttdeci">unsigned num_runs</div><div class="ttdoc">Number of runs.</div><div class="ttdef"><b>Definition</b> <a href="test_8hpp_source.html#l00516">test.hpp:516</a></div></div>
 </div><!-- fragment -->
 </div>
 </div>
@@ -232,6 +235,8 @@ template&lt;std::invocable G, typename T, typename V&gt; </div>
   </table>
   </dd>
 </dl>
+
+<p class="definition">Definition at line <a class="el" href="test_8hpp_source.html#l00730">730</a> of file <a class="el" href="test_8hpp_source.html">test.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">  731</span>    {</div>
 <div class="line"><span class="lineno">  732</span>        <span class="keywordflow">if</span> <span class="keyword">constexpr</span>(std::is_rvalue_reference_v&lt;<span class="keyword">decltype</span>(v)&gt;)</div>
 <div class="line"><span class="lineno">  733</span>            <span class="keywordflow">return</span> [&amp;g, &amp;t, v = std::move(v), n = <a class="code hl_variable" href="#a297013df22a91a3d657c17f75a3c044f">num_runs</a>]() <span class="keyword">noexcept</span></div>
@@ -288,6 +293,8 @@ template&lt;std::invocable G, typename T, typename V = std::identity&gt; </div>
 </div><div class="memdoc">
 
 <p>Fuzzy version of rng_invariant. </p>
+
+<p class="definition">Definition at line <a class="el" href="test_8hpp_source.html#l00834">834</a> of file <a class="el" href="test_8hpp_source.html">test.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">  834</span>                                             {}) <span class="keyword">const</span> <span class="keyword">noexcept</span></div>
 <div class="line"><span class="lineno">  835</span>    {</div>
 <div class="line"><span class="lineno">  836</span>        <span class="keywordflow">return</span> [&amp;]() <span class="keyword">noexcept</span></div>
@@ -359,13 +366,15 @@ template&lt;bool do_sort = true, typename ElemCmp = std::equal_to&lt;&gt;, std::
   </table>
   </dd>
 </dl>
+
+<p class="definition">Definition at line <a class="el" href="test_8hpp_source.html#l00806">806</a> of file <a class="el" href="test_8hpp_source.html">test.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">  807</span>    {</div>
 <div class="line"><span class="lineno">  808</span>        <span class="keywordflow">return</span> <a class="code hl_function" href="#a50fe04a4d4eaddb170741a8b7213f1a2">rng_with_ref&lt;do_sort&gt;</a>(std::forward&lt;G&gt;(g),</div>
 <div class="line"><span class="lineno">  809</span>                                     std::forward&lt;T&gt;(t),</div>
 <div class="line"><span class="lineno">  810</span>                                     std::forward&lt;RI&gt;(ri),</div>
 <div class="line"><span class="lineno">  811</span>                                     range_cmp_estimator&lt;ElemCmp&gt;{});</div>
 <div class="line"><span class="lineno">  812</span>    }</div>
-<div class="ttc" id="astructloom_1_1test_1_1ParmTestMaker_html_a50fe04a4d4eaddb170741a8b7213f1a2"><div class="ttname"><a href="#a50fe04a4d4eaddb170741a8b7213f1a2">loom::test::ParmTestMaker::rng_with_ref</a></div><div class="ttdeci">auto rng_with_ref(G &amp;&amp;g, T &amp;&amp;t, RI &amp;&amp;ri, Cmp cmp=std::ranges::equal) const noexcept</div><div class="ttdoc">Make parametric test for function producing ranges.</div><div class="ttdef"><b>Definition</b> test.hpp:664</div></div>
+<div class="ttc" id="astructloom_1_1test_1_1ParmTestMaker_html_a50fe04a4d4eaddb170741a8b7213f1a2"><div class="ttname"><a href="#a50fe04a4d4eaddb170741a8b7213f1a2">loom::test::ParmTestMaker::rng_with_ref</a></div><div class="ttdeci">auto rng_with_ref(G &amp;&amp;g, T &amp;&amp;t, RI &amp;&amp;ri, Cmp cmp=std::ranges::equal) const noexcept</div><div class="ttdoc">Make parametric test for function producing ranges.</div><div class="ttdef"><b>Definition</b> <a href="test_8hpp_source.html#l00664">test.hpp:664</a></div></div>
 </div><!-- fragment -->
 </div>
 </div>
@@ -426,13 +435,15 @@ template&lt;bool do_sort = true, typename ElemCmp = std::equal_to&lt;&gt;, std::
   </table>
   </dd>
 </dl>
+
+<p class="definition">Definition at line <a class="el" href="test_8hpp_source.html#l00822">822</a> of file <a class="el" href="test_8hpp_source.html">test.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">  823</span>    {</div>
 <div class="line"><span class="lineno">  824</span>        <span class="keywordflow">return</span> <a class="code hl_function" href="#afec2a33f1866bbc094448e563d3d3b6e">rng_with_scalar_ref&lt;do_sort&gt;</a>(std::forward&lt;G&gt;(g),</div>
 <div class="line"><span class="lineno">  825</span>                                            std::forward&lt;T&gt;(t),</div>
 <div class="line"><span class="lineno">  826</span>                                            std::forward&lt;RI&gt;(ri),</div>
 <div class="line"><span class="lineno">  827</span>                                            range_cmp_estimator&lt;ElemCmp&gt;{});</div>
 <div class="line"><span class="lineno">  828</span>    }</div>
-<div class="ttc" id="astructloom_1_1test_1_1ParmTestMaker_html_afec2a33f1866bbc094448e563d3d3b6e"><div class="ttname"><a href="#afec2a33f1866bbc094448e563d3d3b6e">loom::test::ParmTestMaker::rng_with_scalar_ref</a></div><div class="ttdeci">auto rng_with_scalar_ref(G &amp;&amp;g, T &amp;&amp;t, RI &amp;&amp;ri, Cmp cmp=std::ranges::equal) const noexcept</div><div class="ttdoc">Special case of ParmTestMaker::rng_with_ref: reference implementation produces scalar values.</div><div class="ttdef"><b>Definition</b> test.hpp:697</div></div>
+<div class="ttc" id="astructloom_1_1test_1_1ParmTestMaker_html_afec2a33f1866bbc094448e563d3d3b6e"><div class="ttname"><a href="#afec2a33f1866bbc094448e563d3d3b6e">loom::test::ParmTestMaker::rng_with_scalar_ref</a></div><div class="ttdeci">auto rng_with_scalar_ref(G &amp;&amp;g, T &amp;&amp;t, RI &amp;&amp;ri, Cmp cmp=std::ranges::equal) const noexcept</div><div class="ttdoc">Special case of ParmTestMaker::rng_with_ref: reference implementation produces scalar values.</div><div class="ttdef"><b>Definition</b> <a href="test_8hpp_source.html#l00697">test.hpp:697</a></div></div>
 </div><!-- fragment -->
 </div>
 </div>
@@ -492,13 +503,15 @@ template&lt;typename G, typename T, typename RI&gt; </div>
   </table>
   </dd>
 </dl>
+
+<p class="definition">Definition at line <a class="el" href="test_8hpp_source.html#l00789">789</a> of file <a class="el" href="test_8hpp_source.html">test.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">  790</span>    {</div>
 <div class="line"><span class="lineno">  791</span>        <span class="keywordflow">return</span> <a class="code hl_function" href="#a732ba4c08efd8ae916b62c985e926053">fuzzy_with_ref</a>(std::forward&lt;G&gt;(g),</div>
 <div class="line"><span class="lineno">  792</span>                              std::forward&lt;T&gt;(t),</div>
 <div class="line"><span class="lineno">  793</span>                              std::forward&lt;RI&gt;(ri),</div>
 <div class="line"><span class="lineno">  794</span>                              ulp_cmp{ulp});</div>
 <div class="line"><span class="lineno">  795</span>    }</div>
-<div class="ttc" id="astructloom_1_1test_1_1ParmTestMaker_html_a732ba4c08efd8ae916b62c985e926053"><div class="ttname"><a href="#a732ba4c08efd8ae916b62c985e926053">loom::test::ParmTestMaker::fuzzy_with_ref</a></div><div class="ttdeci">auto fuzzy_with_ref(G &amp;&amp;g, T &amp;&amp;t, RI &amp;&amp;ri, Cmp cmp=Cmp{}) const noexcept</div><div class="ttdoc">Fuzzy version of ParmTestMaker::with_ref.</div><div class="ttdef"><b>Definition</b> test.hpp:757</div></div>
+<div class="ttc" id="astructloom_1_1test_1_1ParmTestMaker_html_a732ba4c08efd8ae916b62c985e926053"><div class="ttname"><a href="#a732ba4c08efd8ae916b62c985e926053">loom::test::ParmTestMaker::fuzzy_with_ref</a></div><div class="ttdeci">auto fuzzy_with_ref(G &amp;&amp;g, T &amp;&amp;t, RI &amp;&amp;ri, Cmp cmp=Cmp{}) const noexcept</div><div class="ttdoc">Fuzzy version of ParmTestMaker::with_ref.</div><div class="ttdef"><b>Definition</b> <a href="test_8hpp_source.html#l00757">test.hpp:757</a></div></div>
 </div><!-- fragment -->
 </div>
 </div>
@@ -552,6 +565,8 @@ template&lt;typename G, typename T, typename RI, typename Cmp = std::equal_to&lt
   </dd>
 </dl>
 <p>The test is passed when comparator <code class="param">cmp</code> invoked with the results produced by <code class="param">t</code> and <code class="param">ri</code> with the same data returns true.    </p>
+
+<p class="definition">Definition at line <a class="el" href="test_8hpp_source.html#l00757">757</a> of file <a class="el" href="test_8hpp_source.html">test.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">  757</span>                                                     {}) <span class="keyword">const</span> <span class="keyword">noexcept</span></div>
 <div class="line"><span class="lineno">  758</span>    {</div>
 <div class="line"><span class="lineno">  759</span>        <span class="keywordflow">if</span> <span class="keyword">constexpr</span>(std::is_rvalue_reference_v&lt;<span class="keyword">decltype</span>(ri)&gt;)</div>
@@ -576,8 +591,8 @@ template&lt;typename G, typename T, typename RI, typename Cmp = std::equal_to&lt
 <div class="line"><span class="lineno">  778</span>                                       <a class="code hl_function" href="namespaceloom.html#aaf2afe3c3ab5ede28cecb453f9f695fb">invopply</a>(ri, std::forward&lt;Gr&gt;(gr)));</div>
 <div class="line"><span class="lineno">  779</span>                });</div>
 <div class="line"><span class="lineno">  780</span>    }</div>
-<div class="ttc" id="anamespaceloom_html_aaf2afe3c3ab5ede28cecb453f9f695fb"><div class="ttname"><a href="namespaceloom.html#aaf2afe3c3ab5ede28cecb453f9f695fb">loom::invopply</a></div><div class="ttdeci">constexpr decltype(auto) invopply(F &amp;&amp;f, ValOrTuple &amp;&amp;mt)</div><div class="ttdoc">Apply f to elements of mt if mt is a tuple and application is possible, otherwise invoke f with mt di...</div><div class="ttdef"><b>Definition</b> tuple.hpp:877</div></div>
-<div class="ttc" id="astructloom_1_1test_1_1ParmTestMaker_html_aa8133b8eb5e1e4cb0bdad3b2986f89c7"><div class="ttname"><a href="#aa8133b8eb5e1e4cb0bdad3b2986f89c7">loom::test::ParmTestMaker::fuzzy</a></div><div class="ttdeci">auto fuzzy(G &amp;&amp;g, T &amp;&amp;t, V &amp;&amp;v) const noexcept</div><div class="ttdoc">Fuzzy version of ParmTestMaker::test, i.e. a portion of runs is allowed to fail. Use with NamedFuzzyT...</div><div class="ttdef"><b>Definition</b> test.hpp:730</div></div>
+<div class="ttc" id="anamespaceloom_html_aaf2afe3c3ab5ede28cecb453f9f695fb"><div class="ttname"><a href="namespaceloom.html#aaf2afe3c3ab5ede28cecb453f9f695fb">loom::invopply</a></div><div class="ttdeci">constexpr decltype(auto) invopply(F &amp;&amp;f, ValOrTuple &amp;&amp;mt)</div><div class="ttdoc">Apply f to elements of mt if mt is a tuple and application is possible, otherwise invoke f with mt di...</div><div class="ttdef"><b>Definition</b> <a href="tuple_8hpp_source.html#l00877">tuple.hpp:877</a></div></div>
+<div class="ttc" id="astructloom_1_1test_1_1ParmTestMaker_html_aa8133b8eb5e1e4cb0bdad3b2986f89c7"><div class="ttname"><a href="#aa8133b8eb5e1e4cb0bdad3b2986f89c7">loom::test::ParmTestMaker::fuzzy</a></div><div class="ttdeci">auto fuzzy(G &amp;&amp;g, T &amp;&amp;t, V &amp;&amp;v) const noexcept</div><div class="ttdoc">Fuzzy version of ParmTestMaker::test, i.e. a portion of runs is allowed to fail. Use with NamedFuzzyT...</div><div class="ttdef"><b>Definition</b> <a href="test_8hpp_source.html#l00730">test.hpp:730</a></div></div>
 </div><!-- fragment -->
 </div>
 </div>
@@ -625,6 +640,8 @@ template&lt;std::invocable G, invopplicable&lt; std::invoke_result_t&lt; G &gt; 
   </dd>
 </dl>
 <p>Unlike in <a class="el" href="#aa1aa242013ea27472e9ae84338238e8c" title="Make standard parametric test.">ParmTestMaker::test</a> validation can be done without test data. Only the result of test run <code class="param">t</code> is passed to validator <code class="param">v</code>. </p>
+
+<p class="definition">Definition at line <a class="el" href="test_8hpp_source.html#l00569">569</a> of file <a class="el" href="test_8hpp_source.html">test.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">  570</span>    {</div>
 <div class="line"><span class="lineno">  571</span>        <span class="keywordflow">return</span> [&amp;]() <span class="keyword">noexcept</span></div>
 <div class="line"><span class="lineno">  572</span>        {</div>
@@ -671,6 +688,8 @@ template&lt;std::invocable G, typename T, typename V = std::identity&gt; </div>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="test_8hpp_source.html#l00638">638</a> of file <a class="el" href="test_8hpp_source.html">test.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">  638</span>                                       {}) <span class="keyword">const</span> <span class="keyword">noexcept</span></div>
 <div class="line"><span class="lineno">  639</span>    {</div>
 <div class="line"><span class="lineno">  640</span>        <span class="keywordflow">return</span> [&amp;]() <span class="keyword">noexcept</span></div>
@@ -742,6 +761,8 @@ template&lt;bool do_sort = true, std::invocable G, typename T, typename RI, type
 </dl>
 <p>The test is passed when comparator <code class="param">cmp</code> invoked with the results produced by <code class="param">t</code> and <code class="param">ri</code> with the same data returns true.   </p>
 <p>Practically the same as <a class="el" href="#ac667b0188062f4fdabb7d40ba75884ac" title="Make parametric test with a reference implementation.">ParmTestMaker::with_ref</a>, but here <code class="param">t</code> and <code class="param">ri</code> produce ranges thus <code class="param">cmp</code> must be able to compare ranges. </p>
+
+<p class="definition">Definition at line <a class="el" href="test_8hpp_source.html#l00664">664</a> of file <a class="el" href="test_8hpp_source.html">test.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">  668</span>    {</div>
 <div class="line"><span class="lineno">  669</span><span class="preprocessor">#define LAMBDA_BODY(MY_V)                                                   \</span></div>
 <div class="line"><span class="lineno">  670</span><span class="preprocessor">    const auto              args = multi_gen(num_runs, std::forward&lt;G&gt;(g)); \</span></div>
@@ -821,6 +842,8 @@ template&lt;bool do_sort = true, std::invocable G, typename T, typename RI, type
 </dl>
 <p>The test is passed when comparator <code class="param">cmp</code> invoked with the results produced by <code class="param">t</code> and <code class="param">ri</code> with the same data returns true.   </p>
 <p>Practically the same as <a class="el" href="#ac667b0188062f4fdabb7d40ba75884ac" title="Make parametric test with a reference implementation.">ParmTestMaker::with_ref</a>, but here <code class="param">t</code> and <code class="param">ri</code> produce ranges thus <code class="param">cmp</code> must be able to compare ranges.    </p>
+
+<p class="definition">Definition at line <a class="el" href="test_8hpp_source.html#l00697">697</a> of file <a class="el" href="test_8hpp_source.html">test.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">  701</span>    {</div>
 <div class="line"><span class="lineno">  702</span>        <span class="keywordflow">return</span> <a class="code hl_function" href="#a50fe04a4d4eaddb170741a8b7213f1a2">rng_with_ref&lt;do_sort&gt;</a>(</div>
 <div class="line"><span class="lineno">  703</span>            std::forward&lt;G&gt;(g),</div>
@@ -893,6 +916,8 @@ template&lt;std::invocable G, invopplicable&lt; std::invoke_result_t&lt; G &gt; 
 <li>Validate test results by invoking <code class="param">v</code> with the data and the result of test invocation deciding if check was successful.</li>
 </ol>
 <p>To pass requires all runs to succeed. </p>
+
+<p class="definition">Definition at line <a class="el" href="test_8hpp_source.html#l00544">544</a> of file <a class="el" href="test_8hpp_source.html">test.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">  545</span>    {</div>
 <div class="line"><span class="lineno">  546</span>        <span class="keywordflow">return</span> [&amp;]() <span class="keyword">noexcept</span></div>
 <div class="line"><span class="lineno">  547</span>        {</div>
@@ -951,6 +976,8 @@ template&lt;std::invocable GH, typename T, typename Cmp = std::equal_to&lt;&gt;&
 </dl>
 <p>This case is useful when it's easier to generate a valid result immediately along with test data.</p>
 <p>Here generator <code class="param">gh</code> produces a pair of value. The first value is then passed to <code class="param">t</code>, the second is supposed to be a reference value </p>
+
+<p class="definition">Definition at line <a class="el" href="test_8hpp_source.html#l00596">596</a> of file <a class="el" href="test_8hpp_source.html">test.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">  596</span>                                         {}) <span class="keyword">const</span> <span class="keyword">noexcept</span></div>
 <div class="line"><span class="lineno">  597</span>    {</div>
 <div class="line"><span class="lineno">  598</span>        <span class="keywordflow">return</span> <a class="code hl_function" href="#aa1aa242013ea27472e9ae84338238e8c">test</a>(</div>
@@ -963,7 +990,7 @@ template&lt;std::invocable GH, typename T, typename Cmp = std::equal_to&lt;&gt;&
 <div class="line"><span class="lineno">  605</span>            [cmp](<span class="keyword">auto</span> tr, <span class="keyword">const</span> <span class="keyword">auto</span>&amp; feed) <span class="keyword">noexcept</span></div>
 <div class="line"><span class="lineno">  606</span>            { <span class="keywordflow">return</span> cmp(tr, std::get&lt;1&gt;(feed)); });</div>
 <div class="line"><span class="lineno">  607</span>    }</div>
-<div class="ttc" id="astructloom_1_1test_1_1ParmTestMaker_html_aa1aa242013ea27472e9ae84338238e8c"><div class="ttname"><a href="#aa1aa242013ea27472e9ae84338238e8c">loom::test::ParmTestMaker::test</a></div><div class="ttdeci">auto test(G &amp;&amp;g, T &amp;&amp;t, V &amp;&amp;v) const noexcept</div><div class="ttdoc">Make standard parametric test.</div><div class="ttdef"><b>Definition</b> test.hpp:544</div></div>
+<div class="ttc" id="astructloom_1_1test_1_1ParmTestMaker_html_aa1aa242013ea27472e9ae84338238e8c"><div class="ttname"><a href="#aa1aa242013ea27472e9ae84338238e8c">loom::test::ParmTestMaker::test</a></div><div class="ttdeci">auto test(G &amp;&amp;g, T &amp;&amp;t, V &amp;&amp;v) const noexcept</div><div class="ttdoc">Make standard parametric test.</div><div class="ttdef"><b>Definition</b> <a href="test_8hpp_source.html#l00544">test.hpp:544</a></div></div>
 </div><!-- fragment -->
 </div>
 </div>
@@ -1017,6 +1044,8 @@ template&lt;std::invocable G, invopplicable&lt; std::invoke_result_t&lt; G &gt; 
   </dd>
 </dl>
 <p>The test is passed when comparator <code class="param">cmp</code> invoked with the results produced by <code class="param">t</code> and <code class="param">ri</code> with the same data returns true. </p>
+
+<p class="definition">Definition at line <a class="el" href="test_8hpp_source.html#l00624">624</a> of file <a class="el" href="test_8hpp_source.html">test.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">  624</span>                                             {}) <span class="keyword">const</span> <span class="keyword">noexcept</span></div>
 <div class="line"><span class="lineno">  625</span>    {</div>
 <div class="line"><span class="lineno">  626</span>        <span class="keywordflow">return</span> <a class="code hl_function" href="#aa1aa242013ea27472e9ae84338238e8c">test</a>(</div>
@@ -1031,8 +1060,27 @@ template&lt;std::invocable G, invopplicable&lt; std::invoke_result_t&lt; G &gt; 
 </div><!-- fragment -->
 </div>
 </div>
+<a name="doc-variable-members" id="doc-variable-members"></a><h2 id="header-doc-variable-members" class="groupheader">Member Data Documentation</h2>
+<a id="a297013df22a91a3d657c17f75a3c044f" name="a297013df22a91a3d657c17f75a3c044f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a297013df22a91a3d657c17f75a3c044f">&#9670;&#160;</a></span>num_runs</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">unsigned loom::test::ParmTestMaker::num_runs</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Number of runs. </p>
+
+<p class="definition">Definition at line <a class="el" href="test_8hpp_source.html#l00516">516</a> of file <a class="el" href="test_8hpp_source.html">test.hpp</a>.</p>
+
+</div>
+</div>
 <hr/>The documentation for this struct was generated from the following file:<ul>
-<li>common/<a class="el" href="test_8hpp.html">test.hpp</a></li>
+<li>common/<a class="el" href="test_8hpp_source.html">test.hpp</a></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->

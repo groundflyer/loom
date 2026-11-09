@@ -129,14 +129,12 @@ Classes</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-typedef-members" class="groupheader"><a id="typedef-members" name="typedef-members"></a>
 Typedefs</h2></td></tr>
-<tr class="memitem:ga25062b89626604933e1b3dabf203ee18" id="r_ga25062b89626604933e1b3dabf203ee18"><td class="memTemplParams" colspan="2"><a id="ga25062b89626604933e1b3dabf203ee18" name="ga25062b89626604933e1b3dabf203ee18"></a>
-template&lt;typename A, typename B&gt; </td></tr>
-<tr class="memitem:ga25062b89626604933e1b3dabf203ee18 template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><b>loom::type_pair</b> = <a class="el" href="structloom_1_1type__sequence.html">type_sequence</a>&lt;A, B&gt;</td></tr>
-<tr class="memdesc:ga25062b89626604933e1b3dabf203ee18"><td class="mdescLeft">&#160;</td><td class="mdescRight">Pair of types. <br /></td></tr>
-<tr class="memitem:ga7a460461d2acb273e90bbff018f27259" id="r_ga7a460461d2acb273e90bbff018f27259"><td class="memTemplParams" colspan="2"><a id="ga7a460461d2acb273e90bbff018f27259" name="ga7a460461d2acb273e90bbff018f27259"></a>
-template&lt;typename T, typename Alt&gt; </td></tr>
-<tr class="memitem:ga7a460461d2acb273e90bbff018f27259 template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><b>loom::choice_t</b> = std::conditional_t&lt;std::is_void_v&lt;T&gt;, Alt, T&gt;</td></tr>
-<tr class="memdesc:ga7a460461d2acb273e90bbff018f27259"><td class="mdescLeft">&#160;</td><td class="mdescRight">Select first non-void type. If both are void the result type is void. <br /></td></tr>
+<tr class="memitem:ga25062b89626604933e1b3dabf203ee18" id="r_ga25062b89626604933e1b3dabf203ee18"><td class="memTemplParams" colspan="2">template&lt;typename A, typename B&gt; </td></tr>
+<tr class="memitem:ga25062b89626604933e1b3dabf203ee18 template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="#ga25062b89626604933e1b3dabf203ee18">loom::type_pair</a> = <a class="el" href="structloom_1_1type__sequence.html">type_sequence</a>&lt;A, B&gt;</td></tr>
+<tr class="memdesc:ga25062b89626604933e1b3dabf203ee18"><td class="mdescLeft">&#160;</td><td class="mdescRight">Pair of types.  <br /></td></tr>
+<tr class="memitem:ga7a460461d2acb273e90bbff018f27259" id="r_ga7a460461d2acb273e90bbff018f27259"><td class="memTemplParams" colspan="2">template&lt;typename T, typename Alt&gt; </td></tr>
+<tr class="memitem:ga7a460461d2acb273e90bbff018f27259 template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="#ga7a460461d2acb273e90bbff018f27259">loom::choice_t</a> = std::conditional_t&lt;std::is_void_v&lt;T&gt;, Alt, T&gt;</td></tr>
+<tr class="memdesc:ga7a460461d2acb273e90bbff018f27259"><td class="mdescLeft">&#160;</td><td class="mdescRight">Select first non-void type. If both are void the result type is void.  <br /></td></tr>
 <tr class="memitem:gaccb7e98fb4f9a4ac576a8eb80f52d448" id="r_gaccb7e98fb4f9a4ac576a8eb80f52d448"><td class="memTemplParams" colspan="2">template&lt;typename Pair&gt; </td></tr>
 <tr class="memitem:gaccb7e98fb4f9a4ac576a8eb80f52d448 template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="#gaccb7e98fb4f9a4ac576a8eb80f52d448">loom::fst_t</a> = fst&lt;Pair&gt;::type</td></tr>
 <tr class="memdesc:gaccb7e98fb4f9a4ac576a8eb80f52d448"><td class="mdescLeft">&#160;</td><td class="mdescRight">Extract the first type of <code class="param">Pair</code>.  <br /></td></tr>
@@ -146,10 +144,9 @@ template&lt;typename T, typename Alt&gt; </td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-var-members" class="groupheader"><a id="var-members" name="var-members"></a>
 Variables</h2></td></tr>
-<tr class="memitem:ga81b5a2869b21faf61e93858ebbfdc220" id="r_ga81b5a2869b21faf61e93858ebbfdc220"><td class="memTemplParams" colspan="2"><a id="ga81b5a2869b21faf61e93858ebbfdc220" name="ga81b5a2869b21faf61e93858ebbfdc220"></a>
-template&lt;typename T&gt; </td></tr>
-<tr class="memitem:ga81b5a2869b21faf61e93858ebbfdc220 template"><td class="memItemLeft">constexpr bool&#160;</td><td class="memItemRight"><b>loom::is_type_sequence_v</b> = <a class="el" href="structloom_1_1is__type__sequence.html">is_type_sequence</a>&lt;T&gt;::value</td></tr>
-<tr class="memdesc:ga81b5a2869b21faf61e93858ebbfdc220"><td class="mdescLeft">&#160;</td><td class="mdescRight">Helper variable template for <a class="el" href="structloom_1_1is__type__sequence.html" title="Check if provided type T is loom::type_sequence.">loom::is_type_sequence</a>. <br /></td></tr>
+<tr class="memitem:ga81b5a2869b21faf61e93858ebbfdc220" id="r_ga81b5a2869b21faf61e93858ebbfdc220"><td class="memTemplParams" colspan="2">template&lt;typename T&gt; </td></tr>
+<tr class="memitem:ga81b5a2869b21faf61e93858ebbfdc220 template"><td class="memItemLeft">constexpr bool&#160;</td><td class="memItemRight"><a class="el" href="#ga81b5a2869b21faf61e93858ebbfdc220">loom::is_type_sequence_v</a> = <a class="el" href="structloom_1_1is__type__sequence.html">is_type_sequence</a>&lt;T&gt;::value</td></tr>
+<tr class="memdesc:ga81b5a2869b21faf61e93858ebbfdc220"><td class="mdescLeft">&#160;</td><td class="mdescRight">Helper variable template for <a class="el" href="structloom_1_1is__type__sequence.html" title="Check if provided type T is loom::type_sequence.">loom::is_type_sequence</a>.  <br /></td></tr>
 <tr class="memitem:ga1308b4a2546732873b7d2d1f10a84fe6" id="r_ga1308b4a2546732873b7d2d1f10a84fe6"><td class="memTemplParams" colspan="2">template&lt;template&lt; typename &gt; typename RP, typename F, typename... Args&gt; </td></tr>
 <tr class="memitem:ga1308b4a2546732873b7d2d1f10a84fe6 template"><td class="memItemLeft">constexpr bool&#160;</td><td class="memItemRight"><a class="el" href="#ga1308b4a2546732873b7d2d1f10a84fe6">loom::is_strictly_invocable_rp_v</a></td></tr>
 <tr class="memdesc:ga1308b4a2546732873b7d2d1f10a84fe6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Determines whether resultig type of <code class="param">F</code> invoked with <code class="param">Args</code> satisfies predicate <code class="param">RP</code>.  <br /></td></tr>
@@ -159,6 +156,26 @@ template&lt;typename T&gt; </td></tr>
 <p>Here we define metafunctions as class templates, where function parameters are template parameters and the result is a public typedef member <code class="param">type</code> or a static constexpr member <code class="param">value</code>.</p>
 <p>The templates are hidden in the <code class="param">detail</code> namespace, while type aliases and variable templates are visible in loom namespace. </p>
 </div><a name="doc-typedef-members" id="doc-typedef-members"></a><h2 id="header-doc-typedef-members" class="groupheader">Typedef Documentation</h2>
+<a id="ga7a460461d2acb273e90bbff018f27259" name="ga7a460461d2acb273e90bbff018f27259"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ga7a460461d2acb273e90bbff018f27259">&#9670;&#160;</a></span>choice_t</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename T, typename Alt&gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">using <a class="el" href="#ga7a460461d2acb273e90bbff018f27259">loom::choice_t</a> = std::conditional_t&lt;std::is_void_v&lt;T&gt;, Alt, T&gt;</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Select first non-void type. If both are void the result type is void. </p>
+
+<p class="definition">Definition at line <a class="el" href="tmp_8hpp_source.html#l00076">76</a> of file <a class="el" href="tmp_8hpp_source.html">tmp.hpp</a>.</p>
+
+</div>
+</div>
 <a id="gaccb7e98fb4f9a4ac576a8eb80f52d448" name="gaccb7e98fb4f9a4ac576a8eb80f52d448"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#gaccb7e98fb4f9a4ac576a8eb80f52d448">&#9670;&#160;</a></span>fst_t</h2>
 
@@ -175,6 +192,8 @@ template&lt;typename Pair&gt; </div>
 
 <p>Extract the first type of <code class="param">Pair</code>. </p>
 <p>It is basically the same as <a class="el" href="group__Typelist.html#ga01954b67861600e312c877a34a8042b4" title="Extract the first class from L.">typelist::head</a>, but ensures that the number of elements in <a class="el" href="structloom_1_1type__sequence.html" title="Sequence of types.">type_sequence</a> <code class="param">Pair</code> is exactly two. </p>
+
+<p class="definition">Definition at line <a class="el" href="tmp_8hpp_source.html#l00102">102</a> of file <a class="el" href="tmp_8hpp_source.html">tmp.hpp</a>.</p>
 
 </div>
 </div>
@@ -194,6 +213,28 @@ template&lt;typename Pair&gt; </div>
 
 <p>Extract the second type of <code class="param">Pair</code>. </p>
 <p>Same as <a class="el" href="group__Typelist.html#ga9891cf9697b8a63987cc4c1337e9c667" title="Extract the last element from L.">typelist::last</a>, but guarantees that <a class="el" href="structloom_1_1type__sequence.html" title="Sequence of types.">type_sequence</a> <code class="param">Pair</code> consists only of two types. </p>
+
+<p class="definition">Definition at line <a class="el" href="tmp_8hpp_source.html#l00109">109</a> of file <a class="el" href="tmp_8hpp_source.html">tmp.hpp</a>.</p>
+
+</div>
+</div>
+<a id="ga25062b89626604933e1b3dabf203ee18" name="ga25062b89626604933e1b3dabf203ee18"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ga25062b89626604933e1b3dabf203ee18">&#9670;&#160;</a></span>type_pair</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename A, typename B&gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">using <a class="el" href="#ga25062b89626604933e1b3dabf203ee18">loom::type_pair</a> = <a class="el" href="structloom_1_1type__sequence.html">type_sequence</a>&lt;A, B&gt;</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Pair of types. </p>
+
+<p class="definition">Definition at line <a class="el" href="tmp_8hpp_source.html#l00071">71</a> of file <a class="el" href="tmp_8hpp_source.html">tmp.hpp</a>.</p>
 
 </div>
 </div>
@@ -231,6 +272,36 @@ template&lt;template&lt; typename &gt; typename RP, typename F, typename... Args
   </table>
   </dd>
 </dl>
+
+<p class="definition">Definition at line <a class="el" href="tmp_8hpp_source.html#l00119">119</a> of file <a class="el" href="tmp_8hpp_source.html">tmp.hpp</a>.</p>
+
+</div>
+</div>
+<a id="ga81b5a2869b21faf61e93858ebbfdc220" name="ga81b5a2869b21faf61e93858ebbfdc220"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ga81b5a2869b21faf61e93858ebbfdc220">&#9670;&#160;</a></span>is_type_sequence_v</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename T&gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool loom::is_type_sequence_v = <a class="el" href="structloom_1_1is__type__sequence.html">is_type_sequence</a>&lt;T&gt;::value</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel inline">inline</span><span class="mlabel constexpr">constexpr</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Helper variable template for <a class="el" href="structloom_1_1is__type__sequence.html" title="Check if provided type T is loom::type_sequence.">loom::is_type_sequence</a>. </p>
+
+<p class="definition">Definition at line <a class="el" href="tmp_8hpp_source.html#l00067">67</a> of file <a class="el" href="tmp_8hpp_source.html">tmp.hpp</a>.</p>
 
 </div>
 </div>

@@ -105,7 +105,7 @@ $(function(){initNavTree('classloom_1_1gl_1_1Shader.html','','classloom_1_1gl_1_
 <p><a class="el" href="classloom_1_1gl_1_1Shader.html" title="Shader wrapper.">Shader</a> wrapper.  
  <a href="#details">More...</a></p>
 
-<p><code>#include &quot;viewport.hpp&quot;</code></p>
+<p><code>#include &quot;<a class="el" href="viewport_8hpp_source.html">viewport.hpp</a>&quot;</code></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pub-methods" class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
@@ -116,6 +116,8 @@ Public Member Functions</h2></td></tr>
 </table>
 <a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
 <div class="textblock"><p><a class="el" href="classloom_1_1gl_1_1Shader.html" title="Shader wrapper.">Shader</a> wrapper. </p>
+
+<p class="definition">Definition at line <a class="el" href="viewport_8hpp_source.html#l00055">55</a> of file <a class="el" href="viewport_8hpp_source.html">viewport.hpp</a>.</p>
 </div><a name="doc-constructors" id="doc-constructors"></a><h2 id="header-doc-constructors" class="groupheader">Constructor &amp; Destructor Documentation</h2>
 <a id="a9e6bdaf677ef1d6fad375f2d5e771d1f" name="a9e6bdaf677ef1d6fad375f2d5e771d1f"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a9e6bdaf677ef1d6fad375f2d5e771d1f">&#9670;&#160;</a></span>Shader()</h2>
@@ -135,6 +137,8 @@ Public Member Functions</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="viewport_8cpp_source.html#l00064">64</a> of file <a class="el" href="viewport_8cpp_source.html">viewport.cpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">   64</span>                                                    :</div>
 <div class="line"><span class="lineno">   65</span>    m_id(glCreateShader(shader_type))</div>
 <div class="line"><span class="lineno">   66</span>{</div>
@@ -142,7 +146,7 @@ Public Member Functions</h2></td></tr>
 <div class="line"><span class="lineno">   68</span>    glCompileShader(m_id);</div>
 <div class="line"><span class="lineno">   69</span>    <a class="code hl_function" href="namespaceloom_1_1gl.html#aafc45e2c20dcd6495499f23dc32db713">check_shader_status</a>(m_id, GL_COMPILE_STATUS);</div>
 <div class="line"><span class="lineno">   70</span>}</div>
-<div class="ttc" id="anamespaceloom_1_1gl_html_aafc45e2c20dcd6495499f23dc32db713"><div class="ttname"><a href="namespaceloom_1_1gl.html#aafc45e2c20dcd6495499f23dc32db713">loom::gl::check_shader_status</a></div><div class="ttdeci">void check_shader_status(GLuint shader, GLenum pname)</div><div class="ttdoc">Check shader compilation status.</div><div class="ttdef"><b>Definition</b> viewport.cpp:51</div></div>
+<div class="ttc" id="anamespaceloom_1_1gl_html_aafc45e2c20dcd6495499f23dc32db713"><div class="ttname"><a href="namespaceloom_1_1gl.html#aafc45e2c20dcd6495499f23dc32db713">loom::gl::check_shader_status</a></div><div class="ttdeci">void check_shader_status(GLuint shader, GLenum pname)</div><div class="ttdoc">Check shader compilation status.</div><div class="ttdef"><b>Definition</b> <a href="viewport_8cpp_source.html#l00051">viewport.cpp:51</a></div></div>
 </div><!-- fragment -->
 </div>
 </div>
@@ -160,6 +164,8 @@ Public Member Functions</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="viewport_8cpp_source.html#l00072">72</a> of file <a class="el" href="viewport_8cpp_source.html">viewport.cpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">   72</span>{ glDeleteShader(m_id); }</div>
 </div><!-- fragment -->
 </div>
@@ -187,6 +193,8 @@ Public Member Functions</h2></td></tr>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="viewport_8hpp_source.html#l00065">65</a> of file <a class="el" href="viewport_8hpp_source.html">viewport.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">   66</span>    {</div>
 <div class="line"><span class="lineno">   67</span>        <span class="keywordflow">return</span> m_id;</div>
 <div class="line"><span class="lineno">   68</span>    }</div>
@@ -194,8 +202,8 @@ Public Member Functions</h2></td></tr>
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following files:<ul>
-<li>smallpt/common/<a class="el" href="viewport_8hpp.html">viewport.hpp</a></li>
-<li>smallpt/common/<b>viewport.cpp</b></li>
+<li>smallpt/common/<a class="el" href="viewport_8hpp_source.html">viewport.hpp</a></li>
+<li>smallpt/common/<a class="el" href="viewport_8cpp_source.html">viewport.cpp</a></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->

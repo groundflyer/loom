@@ -105,12 +105,11 @@ $(function(){initNavTree('structloom_1_1vm_1_1simd_1_1remap__comp_3_01N_00_01ops
 <p>Remap select constant <a class="el" href="structloom_1_1vm_1_1ops_1_1sct.html" title="Select constant.">ops::sct</a>.  
  <a href="#details">More...</a></p>
 
-<p><code>#include &quot;simd.hpp&quot;</code></p>
+<p><code>#include &quot;<a class="el" href="simd_8hpp_source.html">simd.hpp</a>&quot;</code></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pub-types" class="groupheader"><a id="pub-types" name="pub-types"></a>
 Public Types</h2></td></tr>
-<tr class="memitem:a6042da672765500f28911fed842f6111" id="r_a6042da672765500f28911fed842f6111"><td class="memItemLeft"><a id="a6042da672765500f28911fed842f6111" name="a6042da672765500f28911fed842f6111"></a>
-using&#160;</td><td class="memItemRight"><b>vector_t</b> = <a class="el" href="namespaceloom_1_1vm_1_1simd.html#a736757f9b89dc96a7b1448e5914327aa">packed_vector</a>&lt;T, N&gt;</td></tr>
+<tr class="memitem:a6042da672765500f28911fed842f6111" id="r_a6042da672765500f28911fed842f6111"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="#a6042da672765500f28911fed842f6111">vector_t</a> = <a class="el" href="namespaceloom_1_1vm_1_1simd.html#a736757f9b89dc96a7b1448e5914327aa">packed_vector</a>&lt;T, N&gt;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pub-static-attribs" class="groupheader"><a id="pub-static-attribs" name="pub-static-attribs"></a>
 Static Public Attributes</h2></td></tr>
@@ -120,7 +119,28 @@ Static Public Attributes</h2></td></tr>
 <div class="textblock"><div class="compoundTemplParams">template&lt;<a class="el" href="namespaceloom_1_1vm_1_1simd.html#a13f74c165cada10f5eb92d2beb50b144">fsize_t</a> N, typename T, typename I, typename L&gt;<br />
 requires (<a class="el" href="group__Typelist.html#ga6a7d84dae989acaf892510ae449ff8c9">typelist::length</a>&lt;L&gt; &lt;= N)<br />
 struct loom::vm::simd::remap_comp&lt; N, ops::sct&lt; T, I, L &gt;, T, I &gt;</div><p>Remap select constant <a class="el" href="structloom_1_1vm_1_1ops_1_1sct.html" title="Select constant.">ops::sct</a>. </p>
-</div><a name="doc-variable-members" id="doc-variable-members"></a><h2 id="header-doc-variable-members" class="groupheader">Member Data Documentation</h2>
+
+<p class="definition">Definition at line <a class="el" href="simd_8hpp_source.html#l01121">1121</a> of file <a class="el" href="simd_8hpp_source.html">simd.hpp</a>.</p>
+</div><a name="doc-typedef-members" id="doc-typedef-members"></a><h2 id="header-doc-typedef-members" class="groupheader">Member Typedef Documentation</h2>
+<a id="a6042da672765500f28911fed842f6111" name="a6042da672765500f28911fed842f6111"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a6042da672765500f28911fed842f6111">&#9670;&#160;</a></span>vector_t</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;<a class="el" href="namespaceloom_1_1vm_1_1simd.html#a13f74c165cada10f5eb92d2beb50b144">fsize_t</a> N, typename T, typename I, typename L&gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">using loom::vm::simd::remap_comp&lt; N, <a class="el" href="structloom_1_1vm_1_1ops_1_1sct.html">ops::sct</a>&lt; T, I, L &gt;, T, I &gt;::vector_t = <a class="el" href="namespaceloom_1_1vm_1_1simd.html#a736757f9b89dc96a7b1448e5914327aa">packed_vector</a>&lt;T, N&gt;</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="simd_8hpp_source.html#l01123">1123</a> of file <a class="el" href="simd_8hpp_source.html">simd.hpp</a>.</p>
+
+</div>
+</div>
+<a name="doc-variable-members" id="doc-variable-members"></a><h2 id="header-doc-variable-members" class="groupheader">Member Data Documentation</h2>
 <a id="ae89a2a56570efa8db6a6d5f02cde9522" name="ae89a2a56570efa8db6a6d5f02cde9522"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#ae89a2a56570efa8db6a6d5f02cde9522">&#9670;&#160;</a></span>table</h2>
 
@@ -147,10 +167,12 @@ template&lt;<a class="el" href="namespaceloom_1_1vm_1_1simd.html#a13f74c165cada1
 <div class="line">           { <span class="keywordflow">return</span> {vals...}; },</div>
 <div class="line">           ops::sct&lt;T, I, L&gt;::values)</div>
 </div><!-- fragment -->
+<p class="definition">Definition at line <a class="el" href="simd_8hpp_source.html#l01125">1125</a> of file <a class="el" href="simd_8hpp_source.html">simd.hpp</a>.</p>
+
 </div>
 </div>
 <hr/>The documentation for this struct was generated from the following file:<ul>
-<li>vm/<a class="el" href="simd_8hpp.html">simd.hpp</a></li>
+<li>vm/<a class="el" href="simd_8hpp_source.html">simd.hpp</a></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->

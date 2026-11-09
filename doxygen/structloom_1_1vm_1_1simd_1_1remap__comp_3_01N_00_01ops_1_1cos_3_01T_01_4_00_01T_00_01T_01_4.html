@@ -105,12 +105,11 @@ $(function(){initNavTree('structloom_1_1vm_1_1simd_1_1remap__comp_3_01N_00_01ops
 <p>Fast approximate cosine.  
  <a href="#details">More...</a></p>
 
-<p><code>#include &quot;simd.hpp&quot;</code></p>
+<p><code>#include &quot;<a class="el" href="simd_8hpp_source.html">simd.hpp</a>&quot;</code></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pub-types" class="groupheader"><a id="pub-types" name="pub-types"></a>
 Public Types</h2></td></tr>
-<tr class="memitem:af75d44cefc78b704f28a55fa01f11647" id="r_af75d44cefc78b704f28a55fa01f11647"><td class="memItemLeft"><a id="af75d44cefc78b704f28a55fa01f11647" name="af75d44cefc78b704f28a55fa01f11647"></a>
-using&#160;</td><td class="memItemRight"><b>vector_t</b> = <a class="el" href="namespaceloom_1_1vm_1_1simd.html#a736757f9b89dc96a7b1448e5914327aa">packed_vector</a>&lt;T, N&gt;</td></tr>
+<tr class="memitem:af75d44cefc78b704f28a55fa01f11647" id="r_af75d44cefc78b704f28a55fa01f11647"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="#af75d44cefc78b704f28a55fa01f11647">vector_t</a> = <a class="el" href="namespaceloom_1_1vm_1_1simd.html#a736757f9b89dc96a7b1448e5914327aa">packed_vector</a>&lt;T, N&gt;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
 <div class="textblock"><div class="compoundTemplParams">template&lt;<a class="el" href="namespaceloom_1_1vm_1_1simd.html#a13f74c165cada10f5eb92d2beb50b144">fsize_t</a> N, std::floating_point T&gt;<br />
@@ -118,8 +117,29 @@ requires (std::is_same_v&lt;T, float&gt; || std::is_same_v&lt;T, double&gt;)<br 
 struct loom::vm::simd::remap_comp&lt; N, ops::cos&lt; T &gt;, T, T &gt;</div><p>Fast approximate cosine. </p>
 <dl class="section warning"><dt>Warning</dt><dd>Valid only for range \([-\pi, \pi]\)</dd></dl>
 <p>Coefficients taken from <a class="el" href="citelist.html#CITEREF_schlor2019">[7]</a> </p>
-</div><hr/>The documentation for this struct was generated from the following file:<ul>
-<li>vm/<a class="el" href="simd_8hpp.html">simd.hpp</a></li>
+
+<p class="definition">Definition at line <a class="el" href="simd_8hpp_source.html#l01037">1037</a> of file <a class="el" href="simd_8hpp_source.html">simd.hpp</a>.</p>
+</div><a name="doc-typedef-members" id="doc-typedef-members"></a><h2 id="header-doc-typedef-members" class="groupheader">Member Typedef Documentation</h2>
+<a id="af75d44cefc78b704f28a55fa01f11647" name="af75d44cefc78b704f28a55fa01f11647"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#af75d44cefc78b704f28a55fa01f11647">&#9670;&#160;</a></span>vector_t</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;<a class="el" href="namespaceloom_1_1vm_1_1simd.html#a13f74c165cada10f5eb92d2beb50b144">fsize_t</a> N, std::floating_point T&gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">using loom::vm::simd::remap_comp&lt; N, ops::cos&lt; T &gt;, T, T &gt;::vector_t = <a class="el" href="namespaceloom_1_1vm_1_1simd.html#a736757f9b89dc96a7b1448e5914327aa">packed_vector</a>&lt;T, N&gt;</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="simd_8hpp_source.html#l01039">1039</a> of file <a class="el" href="simd_8hpp_source.html">simd.hpp</a>.</p>
+
+</div>
+</div>
+<hr/>The documentation for this struct was generated from the following file:<ul>
+<li>vm/<a class="el" href="simd_8hpp_source.html">simd.hpp</a></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->

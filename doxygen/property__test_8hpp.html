@@ -101,7 +101,7 @@ $(function(){initNavTree('property__test_8hpp.html','',''); });
   <div class="headertitle"><div class="title">property_test.hpp File Reference</div></div>
 </div><!--header-->
 <div class="contents">
-<div class="textblock"><code>#include &lt;<a class="el" href="tuple_8hpp.html">common/tuple.hpp</a>&gt;</code><br />
+<div class="textblock"><code>#include &lt;<a class="el" href="tuple_8hpp_source.html">common/tuple.hpp</a>&gt;</code><br />
 <code>#include &lt;fmt/format.h&gt;</code><br />
 <code>#include &lt;string_view&gt;</code><br />
 <code>#include &lt;utility&gt;</code><br />
@@ -115,9 +115,11 @@ $(function(){initNavTree('property__test_8hpp.html','',''); });
 <div id="dynsection-1-summary" class="dynsummary" style="display:block;">
 </div>
 <div id="dynsection-1-content" class="dyncontent" style="display:none;">
-<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="property__test_8hpp__dep__incl.svg" width="183" height="115"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="property__test_8hpp__dep__incl.svg" width="478" height="115"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
-</div><table class="memberdecls">
+</div>
+<p><a href="property__test_8hpp_source.html">Go to the source code of this file.</a></p>
+<table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-func-members" class="groupheader"><a id="func-members" name="func-members"></a>
 Functions</h2></td></tr>
 <tr class="memitem:ae8723f0deaad9f4b70c64804c5524bc5" id="r_ae8723f0deaad9f4b70c64804c5524bc5"><td class="memTemplParams" colspan="2">template&lt;typename Testing, typename Property, typename Generator&gt; </td></tr>
@@ -126,6 +128,8 @@ Functions</h2></td></tr>
 </table>
 <a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Simple property-based testing. </p>
+
+<p class="definition">Definition in file <a class="el" href="property__test_8hpp_source.html">property_test.hpp</a>.</p>
 </div><a name="doc-func-members" id="doc-func-members"></a><h2 id="header-doc-func-members" class="groupheader">Function Documentation</h2>
 <a id="ae8723f0deaad9f4b70c64804c5524bc5" name="ae8723f0deaad9f4b70c64804c5524bc5"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#ae8723f0deaad9f4b70c64804c5524bc5">&#9670;&#160;</a></span>test_property()</h2>
@@ -189,6 +193,8 @@ template&lt;typename Testing, typename Property, typename Generator&gt; </div>
 <p>If <code class="param">testing</code> accepts more then one value, <code class="param">generator</code> should return either a tuple or a pair. <code class="param">test_property</code> will decide automatically how to call <code class="param">testing</code>.</p>
 <p><code class="param">property</code> checks if the property is preserved. It accepts the output of <code class="param">testing</code> as the first argument and the output of <code class="param">generator</code> as the second argument. In case of fail it returns true, otherwise false.</p>
 <p>The test is probablistic: if the portion of failed tests is less than <code class="param">threshold</code>, test passed. </p>
+
+<p class="definition">Definition at line <a class="el" href="property__test_8hpp_source.html#l00074">74</a> of file <a class="el" href="property__test_8hpp_source.html">property_test.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">   80</span>{</div>
 <div class="line"><span class="lineno">   81</span>    std::size_t <a class="code hl_variable" href="group__Intlist.html#gac83cc78e7ecc92532933e5ba26644ead">sum</a> = 0;</div>
 <div class="line"><span class="lineno">   82</span>    <span class="keywordflow">for</span>(std::size_t i = 0; i &lt; n; ++i)</div>
@@ -219,8 +225,8 @@ template&lt;typename Testing, typename Property, typename Generator&gt; </div>
 <div class="line"><span class="lineno">  107</span> </div>
 <div class="line"><span class="lineno">  108</span>    <span class="keywordflow">return</span> ret &gt; 0;</div>
 <div class="line"><span class="lineno">  109</span>}</div>
-<div class="ttc" id="agroup__Intlist_html_gac83cc78e7ecc92532933e5ba26644ead"><div class="ttname"><a href="group__Intlist.html#gac83cc78e7ecc92532933e5ba26644ead">loom::intlist::sum</a></div><div class="ttdeci">constexpr auto sum</div><div class="ttdoc">Sum of all elements.</div><div class="ttdef"><b>Definition</b> tmp.hpp:1800</div></div>
-<div class="ttc" id="anamespaceloom_html_aaf2afe3c3ab5ede28cecb453f9f695fb"><div class="ttname"><a href="namespaceloom.html#aaf2afe3c3ab5ede28cecb453f9f695fb">loom::invopply</a></div><div class="ttdeci">constexpr decltype(auto) invopply(F &amp;&amp;f, ValOrTuple &amp;&amp;mt)</div><div class="ttdoc">Apply f to elements of mt if mt is a tuple and application is possible, otherwise invoke f with mt di...</div><div class="ttdef"><b>Definition</b> tuple.hpp:877</div></div>
+<div class="ttc" id="agroup__Intlist_html_gac83cc78e7ecc92532933e5ba26644ead"><div class="ttname"><a href="group__Intlist.html#gac83cc78e7ecc92532933e5ba26644ead">loom::intlist::sum</a></div><div class="ttdeci">constexpr auto sum</div><div class="ttdoc">Sum of all elements.</div><div class="ttdef"><b>Definition</b> <a href="tmp_8hpp_source.html#l01800">tmp.hpp:1800</a></div></div>
+<div class="ttc" id="anamespaceloom_html_aaf2afe3c3ab5ede28cecb453f9f695fb"><div class="ttname"><a href="namespaceloom.html#aaf2afe3c3ab5ede28cecb453f9f695fb">loom::invopply</a></div><div class="ttdeci">constexpr decltype(auto) invopply(F &amp;&amp;f, ValOrTuple &amp;&amp;mt)</div><div class="ttdoc">Apply f to elements of mt if mt is a tuple and application is possible, otherwise invoke f with mt di...</div><div class="ttdef"><b>Definition</b> <a href="tuple_8hpp_source.html#l00877">tuple.hpp:877</a></div></div>
 </div><!-- fragment -->
 </div>
 </div>

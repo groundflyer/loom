@@ -105,7 +105,7 @@ $(function(){initNavTree('classloom_1_1argparse_1_1StandardErrorHandler.html',''
 <p>Prints parse errors to stderr and terminates program with exit code 1.  
  <a href="#details">More...</a></p>
 
-<p><code>#include &quot;argparse.hpp&quot;</code></p>
+<p><code>#include &quot;<a class="el" href="argparse_8hpp_source.html">argparse.hpp</a>&quot;</code></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pub-methods" class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
@@ -119,6 +119,8 @@ Public Member Functions</h2></td></tr>
 <a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
 <div class="textblock"><div class="compoundTemplParams">template&lt;typename Options, typename Positionals&gt;<br />
 class loom::argparse::StandardErrorHandler&lt; Options, Positionals &gt;</div><p>Prints parse errors to stderr and terminates program with exit code 1. </p>
+
+<p class="definition">Definition at line <a class="el" href="argparse_8hpp_source.html#l01821">1821</a> of file <a class="el" href="argparse_8hpp_source.html">argparse.hpp</a>.</p>
 </div><a name="doc-constructors" id="doc-constructors"></a><h2 id="header-doc-constructors" class="groupheader">Constructor &amp; Destructor Documentation</h2>
 <a id="ad98a6adc74391714d07eaa3b37a7fa85" name="ad98a6adc74391714d07eaa3b37a7fa85"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#ad98a6adc74391714d07eaa3b37a7fa85">&#9670;&#160;</a></span>StandardErrorHandler()</h2>
@@ -153,11 +155,13 @@ template&lt;typename Options, typename Positionals&gt; </div>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="argparse_8hpp_source.html#l01836">1836</a> of file <a class="el" href="argparse_8hpp_source.html">argparse.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno"> 1838</span>                                                                 :</div>
 <div class="line"><span class="lineno"> 1839</span>        p_opts(&amp;<a class="code hl_class" href="classloom_1_1argparse_1_1StandardErrorHandler.html">opts</a>), p_poss(&amp;<a class="code hl_class" href="classloom_1_1argparse_1_1StandardErrorHandler.html">poss</a>), m_program_name(<a class="code hl_class" href="classloom_1_1argparse_1_1StandardErrorHandler.html">program_name</a>)</div>
 <div class="line"><span class="lineno"> 1840</span>    {</div>
 <div class="line"><span class="lineno"> 1841</span>    }</div>
-<div class="ttc" id="aclassloom_1_1argparse_1_1StandardErrorHandler_html"><div class="ttname"><a href="classloom_1_1argparse_1_1StandardErrorHandler.html">loom::argparse::StandardErrorHandler</a></div><div class="ttdoc">Prints parse errors to stderr and terminates program with exit code 1.</div><div class="ttdef"><b>Definition</b> argparse.hpp:1822</div></div>
+<div class="ttc" id="aclassloom_1_1argparse_1_1StandardErrorHandler_html"><div class="ttname"><a href="classloom_1_1argparse_1_1StandardErrorHandler.html">loom::argparse::StandardErrorHandler</a></div><div class="ttdoc">Prints parse errors to stderr and terminates program with exit code 1.</div><div class="ttdef"><b>Definition</b> <a href="argparse_8hpp_source.html#l01821">argparse.hpp:1822</a></div></div>
 </div><!-- fragment -->
 </div>
 </div>
@@ -186,6 +190,8 @@ template&lt;typename Options, typename Positionals&gt; </div>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="argparse_8hpp_source.html#l01844">1844</a> of file <a class="el" href="argparse_8hpp_source.html">argparse.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno"> 1845</span>    {</div>
 <div class="line"><span class="lineno"> 1846</span>        <span class="keywordflow">if</span>(<a class="code hl_class" href="classloom_1_1argparse_1_1StandardErrorHandler.html">ex</a>.keyword.empty())</div>
 <div class="line"><span class="lineno"> 1847</span>            <a class="code hl_class" href="classloom_1_1argparse_1_1StandardErrorHandler.html">fmt::print</a>(<a class="code hl_class" href="classloom_1_1argparse_1_1StandardErrorHandler.html">stderr</a>, <span class="stringliteral">&quot;{}: too few required arguments\n&quot;</span>, error_head);</div>
@@ -226,6 +232,8 @@ template&lt;typename Key&gt; </div>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="argparse_8hpp_source.html#l01859">1859</a> of file <a class="el" href="argparse_8hpp_source.html">argparse.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno"> 1860</span>    {</div>
 <div class="line"><span class="lineno"> 1861</span>        <a class="code hl_class" href="classloom_1_1argparse_1_1StandardErrorHandler.html">fmt::print</a>(<a class="code hl_class" href="classloom_1_1argparse_1_1StandardErrorHandler.html">stderr</a>, <span class="stringliteral">&quot;{}: unknown key \&quot;{}\&quot;\n&quot;</span>, error_head, <a class="code hl_class" href="classloom_1_1argparse_1_1StandardErrorHandler.html">ex</a>.value);</div>
 <div class="line"><span class="lineno"> 1862</span>        error_helper();</div>
@@ -258,6 +266,8 @@ template&lt;typename Options, typename Positionals&gt; </div>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="argparse_8hpp_source.html#l01867">1867</a> of file <a class="el" href="argparse_8hpp_source.html">argparse.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno"> 1868</span>    {</div>
 <div class="line"><span class="lineno"> 1869</span>        <a class="code hl_class" href="classloom_1_1argparse_1_1StandardErrorHandler.html">fmt::print</a>(<a class="code hl_class" href="classloom_1_1argparse_1_1StandardErrorHandler.html">stderr</a>,</div>
 <div class="line"><span class="lineno"> 1870</span>                   <span class="stringliteral">&quot;{}: unexpected value \&quot;{}\&quot;\n&quot;</span>,</div>
@@ -293,16 +303,18 @@ template&lt;typename Options, typename Positionals&gt; </div>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="argparse_8hpp_source.html#l01878">1878</a> of file <a class="el" href="argparse_8hpp_source.html">argparse.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno"> 1879</span>    {</div>
 <div class="line"><span class="lineno"> 1880</span>        <a class="code hl_function" href="group__ArgParse.html#ga06b81a854ce0e2384b8313fa86df8370">show_help</a>(m_program_name, *p_opts, *p_poss);</div>
 <div class="line"><span class="lineno"> 1881</span>        <a class="code hl_class" href="classloom_1_1argparse_1_1StandardErrorHandler.html">exit</a>(0);</div>
 <div class="line"><span class="lineno"> 1882</span>    }</div>
-<div class="ttc" id="agroup__ArgParse_html_ga06b81a854ce0e2384b8313fa86df8370"><div class="ttname"><a href="group__ArgParse.html#ga06b81a854ce0e2384b8313fa86df8370">loom::argparse::show_help</a></div><div class="ttdeci">static void show_help(std::string_view program_name, const std::tuple&lt; Options... &gt; &amp;options, const std::tuple&lt; Positionals... &gt; &amp;positionals, std::FILE *file=stdout) noexcept</div><div class="ttdoc">Prints formatted help message to file.</div><div class="ttdef"><b>Definition</b> argparse.hpp:1610</div></div>
+<div class="ttc" id="agroup__ArgParse_html_ga06b81a854ce0e2384b8313fa86df8370"><div class="ttname"><a href="group__ArgParse.html#ga06b81a854ce0e2384b8313fa86df8370">loom::argparse::show_help</a></div><div class="ttdeci">static void show_help(std::string_view program_name, const std::tuple&lt; Options... &gt; &amp;options, const std::tuple&lt; Positionals... &gt; &amp;positionals, std::FILE *file=stdout) noexcept</div><div class="ttdoc">Prints formatted help message to file.</div><div class="ttdef"><b>Definition</b> <a href="argparse_8hpp_source.html#l01610">argparse.hpp:1610</a></div></div>
 </div><!-- fragment -->
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following file:<ul>
-<li>common/<a class="el" href="argparse_8hpp.html">argparse.hpp</a></li>
+<li>common/<a class="el" href="argparse_8hpp_source.html">argparse.hpp</a></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->

@@ -1,5 +1,9 @@
 <map id="tests/property_test.hpp" name="tests/property_test.hpp">
-<area shape="rect" id="Node000001" title=" " alt="" coords="5,5,178,33"/>
-<area shape="rect" id="Node000002" href="$linal_8cpp.html" title="Linear algebra tests." alt="" coords="35,81,148,109"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="94,49,94,81,89,81,89,49"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="131,5,304,33"/>
+<area shape="rect" id="Node000002" href="$linal_8cpp.html" title="Linear algebra tests." alt="" coords="5,81,118,109"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="177,42,90,83,88,78,175,37"/>
+<area shape="rect" id="Node000003" href="$primitives_8cpp_source.html" title=" " alt="" coords="142,81,293,109"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="220,49,220,81,215,81,215,49"/>
+<area shape="rect" id="Node000004" href="$transforms_8cpp_source.html" title=" " alt="" coords="317,81,472,109"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="264,37,364,78,362,83,262,42"/>
 </map>

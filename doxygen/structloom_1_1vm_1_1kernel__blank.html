@@ -105,61 +105,45 @@ $(function(){initNavTree('structloom_1_1vm_1_1kernel__blank.html','','structloom
 <p><a class="el" href="conceptloom_1_1vm_1_1Kernel.html" title="Kernel ready to compile.">Kernel</a> definition structure.  
  <a href="#details">More...</a></p>
 
-<p><code>#include &quot;core.hpp&quot;</code></p>
+<p><code>#include &quot;<a class="el" href="core_8hpp_source.html">core.hpp</a>&quot;</code></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pub-types" class="groupheader"><a id="pub-types" name="pub-types"></a>
 Public Types</h2></td></tr>
-<tr class="memitem:a1f78bad7dad00477c795f3ddd9ae34e7" id="r_a1f78bad7dad00477c795f3ddd9ae34e7"><td class="memItemLeft"><a id="a1f78bad7dad00477c795f3ddd9ae34e7" name="a1f78bad7dad00477c795f3ddd9ae34e7"></a>
-using&#160;</td><td class="memItemRight"><b>input_vars</b> = InputVars</td></tr>
-<tr class="memitem:a54f55ef80ff6871ab7c77e398c5f4983" id="r_a54f55ef80ff6871ab7c77e398c5f4983"><td class="memItemLeft"><a id="a54f55ef80ff6871ab7c77e398c5f4983" name="a54f55ef80ff6871ab7c77e398c5f4983"></a>
-using&#160;</td><td class="memItemRight"><b>statements</b> = Statements</td></tr>
-<tr class="memitem:a7fec58611d7258b44d5e505100b34159" id="r_a7fec58611d7258b44d5e505100b34159"><td class="memItemLeft"><a id="a7fec58611d7258b44d5e505100b34159" name="a7fec58611d7258b44d5e505100b34159"></a>
-using&#160;</td><td class="memItemRight"><b>output_vars</b> = OutputVars</td></tr>
-<tr class="memitem:a1c30b054f53a75d5f96c695c651a2d6c" id="r_a1c30b054f53a75d5f96c695c651a2d6c"><td class="memItemLeft"><a id="a1c30b054f53a75d5f96c695c651a2d6c" name="a1c30b054f53a75d5f96c695c651a2d6c"></a>
-using&#160;</td><td class="memItemRight"><b>index_t</b> = <a class="el" href="namespaceloom.html#a5d16492618b736dbf84dbc352c4921de">uint_of_size_t</a>&lt;sizeof(<a class="el" href="namespaceloom_1_1vm.html#a569e338bf791b4e04a8a5a386c9e4983">vartype</a>&lt;<a class="el" href="group__Typelist.html#ga01954b67861600e312c877a34a8042b4">typelist::head</a>&lt;InputVars&gt;&gt;)&gt;</td></tr>
+<tr class="memitem:a1f78bad7dad00477c795f3ddd9ae34e7" id="r_a1f78bad7dad00477c795f3ddd9ae34e7"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="#a1f78bad7dad00477c795f3ddd9ae34e7">input_vars</a> = InputVars</td></tr>
+<tr class="memitem:a54f55ef80ff6871ab7c77e398c5f4983" id="r_a54f55ef80ff6871ab7c77e398c5f4983"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="#a54f55ef80ff6871ab7c77e398c5f4983">statements</a> = Statements</td></tr>
+<tr class="memitem:a7fec58611d7258b44d5e505100b34159" id="r_a7fec58611d7258b44d5e505100b34159"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="#a7fec58611d7258b44d5e505100b34159">output_vars</a> = OutputVars</td></tr>
+<tr class="memitem:a1c30b054f53a75d5f96c695c651a2d6c" id="r_a1c30b054f53a75d5f96c695c651a2d6c"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="#a1c30b054f53a75d5f96c695c651a2d6c">index_t</a> = <a class="el" href="namespaceloom.html#a5d16492618b736dbf84dbc352c4921de">uint_of_size_t</a>&lt;sizeof(<a class="el" href="namespaceloom_1_1vm.html#a569e338bf791b4e04a8a5a386c9e4983">vartype</a>&lt;<a class="el" href="group__Typelist.html#ga01954b67861600e312c877a34a8042b4">typelist::head</a>&lt;InputVars&gt;&gt;)&gt;</td></tr>
 <tr class="memitem:add8df5376b0419d7332b4dafebc34ad8" id="r_add8df5376b0419d7332b4dafebc34ad8"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="#add8df5376b0419d7332b4dafebc34ad8">flat_instructions</a></td></tr>
-<tr class="memitem:a8d9b8d70051403847361bf262af0ae92" id="r_a8d9b8d70051403847361bf262af0ae92"><td class="memItemLeft"><a id="a8d9b8d70051403847361bf262af0ae92" name="a8d9b8d70051403847361bf262af0ae92"></a>
-using&#160;</td><td class="memItemRight"><b>instructions</b> = <a class="el" href="namespaceloom_1_1vm.html#a49e35fe6e49904d43179ac4d7b876364">optimize_labels_t</a>&lt;flat_instructions&gt;</td></tr>
-<tr class="memitem:a1326972cf9a7451e85fa68c82391f1ea" id="r_a1326972cf9a7451e85fa68c82391f1ea"><td class="memItemLeft"><a id="a1326972cf9a7451e85fa68c82391f1ea" name="a1326972cf9a7451e85fa68c82391f1ea"></a>
-using&#160;</td><td class="memItemRight"><b>pc</b> = <a class="el" href="structloom_1_1vm_1_1Variable.html">Variable</a>&lt;index_t, <a class="el" href="namespaceloom_1_1vm.html#a9865319601f2f43d97fc0fdd52a36a3b">_pc_name</a>&gt;</td></tr>
-<tr class="memitem:a1ce5bffd0d8e9f53b7d2e273c56ad62c" id="r_a1ce5bffd0d8e9f53b7d2e273c56ad62c"><td class="memTemplParams" colspan="2"><a id="a1ce5bffd0d8e9f53b7d2e273c56ad62c" name="a1ce5bffd0d8e9f53b7d2e273c56ad62c"></a>
-template&lt;typename C&gt; </td></tr>
-<tr class="memitem:a1ce5bffd0d8e9f53b7d2e273c56ad62c template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><b>command_dst_t</b> = stored_var_t&lt;C, pc&gt;</td></tr>
-<tr class="memitem:a8e6c7375e712ed8470934ff7ba961ef9" id="r_a8e6c7375e712ed8470934ff7ba961ef9"><td class="memItemLeft"><a id="a8e6c7375e712ed8470934ff7ba961ef9" name="a8e6c7375e712ed8470934ff7ba961ef9"></a>
-using&#160;</td><td class="memItemRight"><b>stated_comps</b> = <a class="el" href="group__Typelist.html#ga4927e608f27ebac1f3cd48556da3afe6">typelist::filter</a>&lt;<a class="el" href="structloom_1_1vm_1_1is__compute.html">is_compute</a>, instructions&gt;</td></tr>
+<tr class="memitem:a8d9b8d70051403847361bf262af0ae92" id="r_a8d9b8d70051403847361bf262af0ae92"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="#a8d9b8d70051403847361bf262af0ae92">instructions</a> = <a class="el" href="namespaceloom_1_1vm.html#a49e35fe6e49904d43179ac4d7b876364">optimize_labels_t</a>&lt;flat_instructions&gt;</td></tr>
+<tr class="memitem:a1326972cf9a7451e85fa68c82391f1ea" id="r_a1326972cf9a7451e85fa68c82391f1ea"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="#a1326972cf9a7451e85fa68c82391f1ea">pc</a> = <a class="el" href="structloom_1_1vm_1_1Variable.html">Variable</a>&lt;index_t, <a class="el" href="namespaceloom_1_1vm.html#a9865319601f2f43d97fc0fdd52a36a3b">_pc_name</a>&gt;</td></tr>
+<tr class="memitem:a1ce5bffd0d8e9f53b7d2e273c56ad62c" id="r_a1ce5bffd0d8e9f53b7d2e273c56ad62c"><td class="memTemplParams" colspan="2">template&lt;typename C&gt; </td></tr>
+<tr class="memitem:a1ce5bffd0d8e9f53b7d2e273c56ad62c template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="#a1ce5bffd0d8e9f53b7d2e273c56ad62c">command_dst_t</a> = stored_var_t&lt;C, pc&gt;</td></tr>
+<tr class="memitem:a8e6c7375e712ed8470934ff7ba961ef9" id="r_a8e6c7375e712ed8470934ff7ba961ef9"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="#a8e6c7375e712ed8470934ff7ba961ef9">stated_comps</a> = <a class="el" href="group__Typelist.html#ga4927e608f27ebac1f3cd48556da3afe6">typelist::filter</a>&lt;<a class="el" href="structloom_1_1vm_1_1is__compute.html">is_compute</a>, instructions&gt;</td></tr>
 <tr class="memitem:afc5126d37717bd514496515f5c82cad6" id="r_afc5126d37717bd514496515f5c82cad6"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="#afc5126d37717bd514496515f5c82cad6">stated_vars</a></td></tr>
 <tr class="memdesc:afc5126d37717bd514496515f5c82cad6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Variables that have stored values to.  <br /></td></tr>
-<tr class="memitem:ab3ff0cbe438f4ce7bb5e01207171292b" id="r_ab3ff0cbe438f4ce7bb5e01207171292b"><td class="memItemLeft"><a id="ab3ff0cbe438f4ce7bb5e01207171292b" name="ab3ff0cbe438f4ce7bb5e01207171292b"></a>
-using&#160;</td><td class="memItemRight"><b>stated_labels</b> = <a class="el" href="group__Typelist.html#ga4927e608f27ebac1f3cd48556da3afe6">typelist::filter</a>&lt;<a class="el" href="structloom_1_1vm_1_1is__label.html">is_label</a>, instructions&gt;</td></tr>
+<tr class="memitem:ab3ff0cbe438f4ce7bb5e01207171292b" id="r_ab3ff0cbe438f4ce7bb5e01207171292b"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="#ab3ff0cbe438f4ce7bb5e01207171292b">stated_labels</a> = <a class="el" href="group__Typelist.html#ga4927e608f27ebac1f3cd48556da3afe6">typelist::filter</a>&lt;<a class="el" href="structloom_1_1vm_1_1is__label.html">is_label</a>, instructions&gt;</td></tr>
 <tr class="memitem:a0277c133ad9ba0a3fda04069040a6743" id="r_a0277c133ad9ba0a3fda04069040a6743"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="#a0277c133ad9ba0a3fda04069040a6743">blocks_statements</a></td></tr>
 <tr class="memdesc:a0277c133ad9ba0a3fda04069040a6743"><td class="mdescLeft">&#160;</td><td class="mdescRight">List of lists of commands.  <br /></td></tr>
-<tr class="memitem:ac6fd2d8b3a054041d2e35c4461cf5480" id="r_ac6fd2d8b3a054041d2e35c4461cf5480"><td class="memItemLeft"><a id="ac6fd2d8b3a054041d2e35c4461cf5480" name="ac6fd2d8b3a054041d2e35c4461cf5480"></a>
-using&#160;</td><td class="memItemRight"><b>labels</b> = <a class="el" href="group__Typelist.html#ga06bb10da8ccea9066796b0d2a9f5c974">typelist::cons</a>&lt;<a class="el" href="namespaceloom_1_1vm.html#a290cf1685ea79e0d647897f15f0dc711">StartLabel</a>, stated_labels&gt;</td></tr>
+<tr class="memitem:ac6fd2d8b3a054041d2e35c4461cf5480" id="r_ac6fd2d8b3a054041d2e35c4461cf5480"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="#ac6fd2d8b3a054041d2e35c4461cf5480">labels</a> = <a class="el" href="group__Typelist.html#ga06bb10da8ccea9066796b0d2a9f5c974">typelist::cons</a>&lt;<a class="el" href="namespaceloom_1_1vm.html#a290cf1685ea79e0d647897f15f0dc711">StartLabel</a>, stated_labels&gt;</td></tr>
 <tr class="memitem:aaf566a33b086713fd8a7e6e3667f6af3" id="r_aaf566a33b086713fd8a7e6e3667f6af3"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="#aaf566a33b086713fd8a7e6e3667f6af3">labelmap</a></td></tr>
 <tr class="memitem:abf82628b2b801bf4abcef2d304c92e5a" id="r_abf82628b2b801bf4abcef2d304c92e5a"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="#abf82628b2b801bf4abcef2d304c92e5a">variables</a></td></tr>
-<tr class="memitem:af8e687cdffc70e25128f405a57f6dcdb" id="r_af8e687cdffc70e25128f405a57f6dcdb"><td class="memItemLeft"><a id="af8e687cdffc70e25128f405a57f6dcdb" name="af8e687cdffc70e25128f405a57f6dcdb"></a>
-using&#160;</td><td class="memItemRight"><b>reg_names</b> = <a class="el" href="group__Typelist.html#ga93803cb46926540c2965489046c80136">typelist::nub</a>&lt;<a class="el" href="group__Typelist.html#gaecd8e1bc8dfc53fbfd1abde91a668f46">typelist::map</a>&lt;<a class="el" href="namespaceloom_1_1vm.html#a75a60c2650b102821cc6074ab663c81d">varname</a>, variables&gt;&gt;</td></tr>
-<tr class="memdesc:af8e687cdffc70e25128f405a57f6dcdb"><td class="mdescLeft">&#160;</td><td class="mdescRight">Names of registers. <br /></td></tr>
+<tr class="memitem:af8e687cdffc70e25128f405a57f6dcdb" id="r_af8e687cdffc70e25128f405a57f6dcdb"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="#af8e687cdffc70e25128f405a57f6dcdb">reg_names</a> = <a class="el" href="group__Typelist.html#ga93803cb46926540c2965489046c80136">typelist::nub</a>&lt;<a class="el" href="group__Typelist.html#gaecd8e1bc8dfc53fbfd1abde91a668f46">typelist::map</a>&lt;<a class="el" href="namespaceloom_1_1vm.html#a75a60c2650b102821cc6074ab663c81d">varname</a>, variables&gt;&gt;</td></tr>
+<tr class="memdesc:af8e687cdffc70e25128f405a57f6dcdb"><td class="mdescLeft">&#160;</td><td class="mdescRight">Names of registers.  <br /></td></tr>
 <tr class="memitem:a22921eeb167271ca70fe8f2793142697" id="r_a22921eeb167271ca70fe8f2793142697"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="#a22921eeb167271ca70fe8f2793142697">reg_types</a> = infer_reg_types_t&lt;variables, <a class="el" href="#af8e687cdffc70e25128f405a57f6dcdb">reg_names</a>&gt;</td></tr>
 <tr class="memdesc:a22921eeb167271ca70fe8f2793142697"><td class="mdescLeft">&#160;</td><td class="mdescRight">Registers types.  <br /></td></tr>
 <tr class="memitem:a5d009a989de81a47d5e1ebba7db3427b" id="r_a5d009a989de81a47d5e1ebba7db3427b"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="#a5d009a989de81a47d5e1ebba7db3427b">blocks</a></td></tr>
 <tr class="memitem:abca955456054b8a8e1750ed0d2dc324e" id="r_abca955456054b8a8e1750ed0d2dc324e"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="#abca955456054b8a8e1750ed0d2dc324e">variables1</a></td></tr>
 <tr class="memdesc:abca955456054b8a8e1750ed0d2dc324e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Variables to access unique registers once.  <br /></td></tr>
-<tr class="memitem:a3e992ef31e07bf7013286ca48ef6becf" id="r_a3e992ef31e07bf7013286ca48ef6becf"><td class="memItemLeft"><a id="a3e992ef31e07bf7013286ca48ef6becf" name="a3e992ef31e07bf7013286ca48ef6becf"></a>
-using&#160;</td><td class="memItemRight"><b>successors</b> = <a class="el" href="namespaceloom_1_1vm.html#afdce159def3a3cb75c7db533bf1192b8">successors_table_t</a>&lt;blocks, labelmap&gt;</td></tr>
-<tr class="memdesc:a3e992ef31e07bf7013286ca48ef6becf"><td class="mdescLeft">&#160;</td><td class="mdescRight">Successors table. <br /></td></tr>
+<tr class="memitem:a3e992ef31e07bf7013286ca48ef6becf" id="r_a3e992ef31e07bf7013286ca48ef6becf"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="#a3e992ef31e07bf7013286ca48ef6becf">successors</a> = <a class="el" href="namespaceloom_1_1vm.html#afdce159def3a3cb75c7db533bf1192b8">successors_table_t</a>&lt;blocks, labelmap&gt;</td></tr>
+<tr class="memdesc:a3e992ef31e07bf7013286ca48ef6becf"><td class="mdescLeft">&#160;</td><td class="mdescRight">Successors table.  <br /></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pub-static-attribs" class="groupheader"><a id="pub-static-attribs" name="pub-static-attribs"></a>
 Static Public Attributes</h2></td></tr>
 <tr class="memitem:a8b533e9717e83b053d27b522f8b769a9" id="r_a8b533e9717e83b053d27b522f8b769a9"><td class="memItemLeft">static constexpr std::size_t&#160;</td><td class="memItemRight"><a class="el" href="#a8b533e9717e83b053d27b522f8b769a9">num_blocks</a></td></tr>
-<tr class="memitem:a948266f326bd2cbdbfa3dd8a6c21470b" id="r_a948266f326bd2cbdbfa3dd8a6c21470b"><td class="memItemLeft"><a id="a948266f326bd2cbdbfa3dd8a6c21470b" name="a948266f326bd2cbdbfa3dd8a6c21470b"></a>
-static constexpr std::size_t&#160;</td><td class="memItemRight"><b>num_labels</b> = <a class="el" href="group__Typelist.html#ga6a7d84dae989acaf892510ae449ff8c9">typelist::length</a>&lt;stated_labels&gt;</td></tr>
-<tr class="memitem:ac657bf4757d1d7bd522e009a5ce01f9a" id="r_ac657bf4757d1d7bd522e009a5ce01f9a"><td class="memItemLeft"><a id="ac657bf4757d1d7bd522e009a5ce01f9a" name="ac657bf4757d1d7bd522e009a5ce01f9a"></a>
-static constexpr index_t&#160;</td><td class="memItemRight"><b>halt_pos</b> = -1</td></tr>
-<tr class="memitem:a0e584ee3111c82b7ebec47f22d0138ba" id="r_a0e584ee3111c82b7ebec47f22d0138ba"><td class="memItemLeft"><a id="a0e584ee3111c82b7ebec47f22d0138ba" name="a0e584ee3111c82b7ebec47f22d0138ba"></a>
-static constexpr bool&#160;</td><td class="memItemRight"><b>is_straightline</b> = num_blocks == 1</td></tr>
-<tr class="memitem:ac27a7baf4af1b7b57e242622ba614df8" id="r_ac27a7baf4af1b7b57e242622ba614df8"><td class="memItemLeft"><a id="ac27a7baf4af1b7b57e242622ba614df8" name="ac27a7baf4af1b7b57e242622ba614df8"></a>
-static constexpr std::string_view&#160;</td><td class="memItemRight"><b>nameview</b> = <a class="el" href="group__CTString.html#ga69a4cafb4286297f3c24f7307a9dbc31">cs2sv</a>&lt;Name&gt;</td></tr>
+<tr class="memitem:a948266f326bd2cbdbfa3dd8a6c21470b" id="r_a948266f326bd2cbdbfa3dd8a6c21470b"><td class="memItemLeft">static constexpr std::size_t&#160;</td><td class="memItemRight"><a class="el" href="#a948266f326bd2cbdbfa3dd8a6c21470b">num_labels</a> = <a class="el" href="group__Typelist.html#ga6a7d84dae989acaf892510ae449ff8c9">typelist::length</a>&lt;stated_labels&gt;</td></tr>
+<tr class="memitem:ac657bf4757d1d7bd522e009a5ce01f9a" id="r_ac657bf4757d1d7bd522e009a5ce01f9a"><td class="memItemLeft">static constexpr index_t&#160;</td><td class="memItemRight"><a class="el" href="#ac657bf4757d1d7bd522e009a5ce01f9a">halt_pos</a> = -1</td></tr>
+<tr class="memitem:a0e584ee3111c82b7ebec47f22d0138ba" id="r_a0e584ee3111c82b7ebec47f22d0138ba"><td class="memItemLeft">static constexpr bool&#160;</td><td class="memItemRight"><a class="el" href="#a0e584ee3111c82b7ebec47f22d0138ba">is_straightline</a> = num_blocks == 1</td></tr>
+<tr class="memitem:ac27a7baf4af1b7b57e242622ba614df8" id="r_ac27a7baf4af1b7b57e242622ba614df8"><td class="memItemLeft">static constexpr std::string_view&#160;</td><td class="memItemRight"><a class="el" href="#ac27a7baf4af1b7b57e242622ba614df8">nameview</a> = <a class="el" href="group__CTString.html#ga69a4cafb4286297f3c24f7307a9dbc31">cs2sv</a>&lt;Name&gt;</td></tr>
 <tr class="memitem:a12626c566d895fb49b0b5fb77ccfec13" id="r_a12626c566d895fb49b0b5fb77ccfec13"><td class="memItemLeft">static constexpr std::size_t&#160;</td><td class="memItemRight"><a class="el" href="#a12626c566d895fb49b0b5fb77ccfec13">state_size</a></td></tr>
 <tr class="memdesc:a12626c566d895fb49b0b5fb77ccfec13"><td class="mdescLeft">&#160;</td><td class="mdescRight">Size of program's state.  <br /></td></tr>
 </table>
@@ -176,6 +160,8 @@ struct loom::vm::kernel_blank&lt; Name, InputVars, Statements, OutputVars &gt;</
   </table>
   </dd>
 </dl>
+
+<p class="definition">Definition at line <a class="el" href="core_8hpp_source.html#l00945">945</a> of file <a class="el" href="core_8hpp_source.html">core.hpp</a>.</p>
 </div><a name="doc-typedef-members" id="doc-typedef-members"></a><h2 id="header-doc-typedef-members" class="groupheader">Member Typedef Documentation</h2>
 <a id="a5d009a989de81a47d5e1ebba7db3427b" name="a5d009a989de81a47d5e1ebba7db3427b"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a5d009a989de81a47d5e1ebba7db3427b">&#9670;&#160;</a></span>blocks</h2>
@@ -194,9 +180,11 @@ template&lt;CharSequence Name, typelist::List InputVars, typelist::List Statemen
 <div class="line">std::conditional_t&lt;is_straightline,</div>
 <div class="line">                   <a class="code hl_typedef" href="#a0277c133ad9ba0a3fda04069040a6743">blocks_statements</a>,</div>
 <div class="line">                   <a class="code hl_typedef" href="namespaceloom_1_1vm.html#a33eec3cdc96d944c143a892bd9f4f1e0">ensure_last_jumps_t&lt;blocks_statements, labels&gt;</a>&gt;</div>
-<div class="ttc" id="anamespaceloom_1_1vm_html_a33eec3cdc96d944c143a892bd9f4f1e0"><div class="ttname"><a href="namespaceloom_1_1vm.html#a33eec3cdc96d944c143a892bd9f4f1e0">loom::vm::ensure_last_jumps_t</a></div><div class="ttdeci">ensure_last_jumps&lt; Blocks, Labels &gt;::type ensure_last_jumps_t</div><div class="ttdoc">Helper typedef.</div><div class="ttdef"><b>Definition</b> core.hpp:833</div></div>
-<div class="ttc" id="astructloom_1_1vm_1_1kernel__blank_html_a0277c133ad9ba0a3fda04069040a6743"><div class="ttname"><a href="#a0277c133ad9ba0a3fda04069040a6743">loom::vm::kernel_blank::blocks_statements</a></div><div class="ttdeci">typelist::purge&lt; type_sequence&lt;&gt;, typelist::split_when&lt; is_label, instructions &gt; &gt; blocks_statements</div><div class="ttdoc">List of lists of commands.</div><div class="ttdef"><b>Definition</b> core.hpp:977</div></div>
+<div class="ttc" id="anamespaceloom_1_1vm_html_a33eec3cdc96d944c143a892bd9f4f1e0"><div class="ttname"><a href="namespaceloom_1_1vm.html#a33eec3cdc96d944c143a892bd9f4f1e0">loom::vm::ensure_last_jumps_t</a></div><div class="ttdeci">ensure_last_jumps&lt; Blocks, Labels &gt;::type ensure_last_jumps_t</div><div class="ttdoc">Helper typedef.</div><div class="ttdef"><b>Definition</b> <a href="core_8hpp_source.html#l00833">core.hpp:833</a></div></div>
+<div class="ttc" id="astructloom_1_1vm_1_1kernel__blank_html_a0277c133ad9ba0a3fda04069040a6743"><div class="ttname"><a href="#a0277c133ad9ba0a3fda04069040a6743">loom::vm::kernel_blank::blocks_statements</a></div><div class="ttdeci">typelist::purge&lt; type_sequence&lt;&gt;, typelist::split_when&lt; is_label, instructions &gt; &gt; blocks_statements</div><div class="ttdoc">List of lists of commands.</div><div class="ttdef"><b>Definition</b> <a href="core_8hpp_source.html#l00977">core.hpp:977</a></div></div>
 </div><!-- fragment -->
+<p class="definition">Definition at line <a class="el" href="core_8hpp_source.html#l01012">1012</a> of file <a class="el" href="core_8hpp_source.html">core.hpp</a>.</p>
+
 </div>
 </div>
 <a id="a0277c133ad9ba0a3fda04069040a6743" name="a0277c133ad9ba0a3fda04069040a6743"></a>
@@ -215,10 +203,32 @@ template&lt;CharSequence Name, typelist::List InputVars, typelist::List Statemen
 <b>Initial value:</b><div class="fragment"><div class="line"> </div>
 <div class="line"><a class="code hl_typedef" href="group__Typelist.html#gaa132a6717edc9c46ecb16af45b6fe351">typelist::purge&lt;type_sequence&lt;&gt;</a>,</div>
 <div class="line">                <a class="code hl_typedef" href="group__Typelist.html#ga159e1c1232cc25e216e5d2e7324e7ff8">typelist::split_when&lt;is_label, instructions&gt;</a>&gt;</div>
-<div class="ttc" id="agroup__Typelist_html_ga159e1c1232cc25e216e5d2e7324e7ff8"><div class="ttname"><a href="group__Typelist.html#ga159e1c1232cc25e216e5d2e7324e7ff8">loom::typelist::split_when</a></div><div class="ttdeci">detail::split_when&lt; P, L &gt;::type split_when</div><div class="ttdoc">Split typelist into sublists with a predicate.</div><div class="ttdef"><b>Definition</b> tmp.hpp:1096</div></div>
-<div class="ttc" id="agroup__Typelist_html_gaa132a6717edc9c46ecb16af45b6fe351"><div class="ttname"><a href="group__Typelist.html#gaa132a6717edc9c46ecb16af45b6fe351">loom::typelist::purge</a></div><div class="ttdeci">detail::purge&lt; T, L &gt;::type purge</div><div class="ttdoc">Remove all occurences of type T from L.</div><div class="ttdef"><b>Definition</b> tmp.hpp:843</div></div>
+<div class="ttc" id="agroup__Typelist_html_ga159e1c1232cc25e216e5d2e7324e7ff8"><div class="ttname"><a href="group__Typelist.html#ga159e1c1232cc25e216e5d2e7324e7ff8">loom::typelist::split_when</a></div><div class="ttdeci">detail::split_when&lt; P, L &gt;::type split_when</div><div class="ttdoc">Split typelist into sublists with a predicate.</div><div class="ttdef"><b>Definition</b> <a href="tmp_8hpp_source.html#l01096">tmp.hpp:1096</a></div></div>
+<div class="ttc" id="agroup__Typelist_html_gaa132a6717edc9c46ecb16af45b6fe351"><div class="ttname"><a href="group__Typelist.html#gaa132a6717edc9c46ecb16af45b6fe351">loom::typelist::purge</a></div><div class="ttdeci">detail::purge&lt; T, L &gt;::type purge</div><div class="ttdoc">Remove all occurences of type T from L.</div><div class="ttdef"><b>Definition</b> <a href="tmp_8hpp_source.html#l00843">tmp.hpp:843</a></div></div>
 </div><!-- fragment -->
 <p>List of lists of commands. </p>
+
+<p class="definition">Definition at line <a class="el" href="core_8hpp_source.html#l00977">977</a> of file <a class="el" href="core_8hpp_source.html">core.hpp</a>.</p>
+
+</div>
+</div>
+<a id="a1ce5bffd0d8e9f53b7d2e273c56ad62c" name="a1ce5bffd0d8e9f53b7d2e273c56ad62c"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a1ce5bffd0d8e9f53b7d2e273c56ad62c">&#9670;&#160;</a></span>command_dst_t</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;CharSequence Name, typelist::List InputVars, typelist::List Statements, typelist::List OutputVars&gt; </div>
+<div class="memtemplate">
+template&lt;typename C&gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">using <a class="el" href="structloom_1_1vm_1_1kernel__blank.html">loom::vm::kernel_blank</a>&lt; Name, InputVars, Statements, OutputVars &gt;::command_dst_t = stored_var_t&lt;C, pc&gt;</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="core_8hpp_source.html#l00960">960</a> of file <a class="el" href="core_8hpp_source.html">core.hpp</a>.</p>
 
 </div>
 </div>
@@ -237,8 +247,64 @@ template&lt;CharSequence Name, typelist::List InputVars, typelist::List Statemen
 </div><div class="memdoc">
 <b>Initial value:</b><div class="fragment"><div class="line"> </div>
 <div class="line"><a class="code hl_typedef" href="group__Typelist.html#ga4927e608f27ebac1f3cd48556da3afe6">typelist::filter&lt;is_statement, typelist::flatten&lt;statements&gt;</a>&gt;</div>
-<div class="ttc" id="agroup__Typelist_html_ga4927e608f27ebac1f3cd48556da3afe6"><div class="ttname"><a href="group__Typelist.html#ga4927e608f27ebac1f3cd48556da3afe6">loom::typelist::filter</a></div><div class="ttdeci">detail::filter&lt; P, L &gt;::type filter</div><div class="ttdoc">Filter L elements with a predicate P.</div><div class="ttdef"><b>Definition</b> tmp.hpp:1049</div></div>
+<div class="ttc" id="agroup__Typelist_html_ga4927e608f27ebac1f3cd48556da3afe6"><div class="ttname"><a href="group__Typelist.html#ga4927e608f27ebac1f3cd48556da3afe6">loom::typelist::filter</a></div><div class="ttdeci">detail::filter&lt; P, L &gt;::type filter</div><div class="ttdoc">Filter L elements with a predicate P.</div><div class="ttdef"><b>Definition</b> <a href="tmp_8hpp_source.html#l01049">tmp.hpp:1049</a></div></div>
 </div><!-- fragment -->
+<p class="definition">Definition at line <a class="el" href="core_8hpp_source.html#l00951">951</a> of file <a class="el" href="core_8hpp_source.html">core.hpp</a>.</p>
+
+</div>
+</div>
+<a id="a1c30b054f53a75d5f96c695c651a2d6c" name="a1c30b054f53a75d5f96c695c651a2d6c"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a1c30b054f53a75d5f96c695c651a2d6c">&#9670;&#160;</a></span>index_t</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;CharSequence Name, typelist::List InputVars, typelist::List Statements, typelist::List OutputVars&gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">using <a class="el" href="structloom_1_1vm_1_1kernel__blank.html">loom::vm::kernel_blank</a>&lt; Name, InputVars, Statements, OutputVars &gt;::index_t = <a class="el" href="namespaceloom.html#a5d16492618b736dbf84dbc352c4921de">uint_of_size_t</a>&lt;sizeof(<a class="el" href="namespaceloom_1_1vm.html#a569e338bf791b4e04a8a5a386c9e4983">vartype</a>&lt;<a class="el" href="group__Typelist.html#ga01954b67861600e312c877a34a8042b4">typelist::head</a>&lt;InputVars&gt;&gt;)&gt;</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="core_8hpp_source.html#l00950">950</a> of file <a class="el" href="core_8hpp_source.html">core.hpp</a>.</p>
+
+</div>
+</div>
+<a id="a1f78bad7dad00477c795f3ddd9ae34e7" name="a1f78bad7dad00477c795f3ddd9ae34e7"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a1f78bad7dad00477c795f3ddd9ae34e7">&#9670;&#160;</a></span>input_vars</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;CharSequence Name, typelist::List InputVars, typelist::List Statements, typelist::List OutputVars&gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">using <a class="el" href="structloom_1_1vm_1_1kernel__blank.html">loom::vm::kernel_blank</a>&lt; Name, InputVars, Statements, OutputVars &gt;::input_vars = InputVars</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="core_8hpp_source.html#l00947">947</a> of file <a class="el" href="core_8hpp_source.html">core.hpp</a>.</p>
+
+</div>
+</div>
+<a id="a8d9b8d70051403847361bf262af0ae92" name="a8d9b8d70051403847361bf262af0ae92"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a8d9b8d70051403847361bf262af0ae92">&#9670;&#160;</a></span>instructions</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;CharSequence Name, typelist::List InputVars, typelist::List Statements, typelist::List OutputVars&gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">using <a class="el" href="structloom_1_1vm_1_1kernel__blank.html">loom::vm::kernel_blank</a>&lt; Name, InputVars, Statements, OutputVars &gt;::instructions = <a class="el" href="namespaceloom_1_1vm.html#a49e35fe6e49904d43179ac4d7b876364">optimize_labels_t</a>&lt;flat_instructions&gt;</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="core_8hpp_source.html#l00953">953</a> of file <a class="el" href="core_8hpp_source.html">core.hpp</a>.</p>
+
 </div>
 </div>
 <a id="aaf566a33b086713fd8a7e6e3667f6af3" name="aaf566a33b086713fd8a7e6e3667f6af3"></a>
@@ -257,10 +323,86 @@ template&lt;CharSequence Name, typelist::List InputVars, typelist::List Statemen
 <b>Initial value:</b><div class="fragment"><div class="line"><a class="code hl_typedef" href="group__Typelist.html#ga06bb10da8ccea9066796b0d2a9f5c974">typelist::cons</a>&lt;</div>
 <div class="line">       <a class="code hl_typedef" href="group__TMP.html#ga25062b89626604933e1b3dabf203ee18">type_pair&lt;HaltLabel, std::integral_constant&lt;index_t, halt_pos&gt;</a>&gt;,</div>
 <div class="line">       <a class="code hl_typedef" href="group__Typelist.html#ga12d424d19441801a28b751ed7e626231">typelist::enumerate&lt;labels, index_t&gt;</a>&gt;</div>
-<div class="ttc" id="agroup__TMP_html_ga25062b89626604933e1b3dabf203ee18"><div class="ttname"><a href="group__TMP.html#ga25062b89626604933e1b3dabf203ee18">loom::type_pair</a></div><div class="ttdeci">type_sequence&lt; A, B &gt; type_pair</div><div class="ttdoc">Pair of types.</div><div class="ttdef"><b>Definition</b> tmp.hpp:71</div></div>
-<div class="ttc" id="agroup__Typelist_html_ga06bb10da8ccea9066796b0d2a9f5c974"><div class="ttname"><a href="group__Typelist.html#ga06bb10da8ccea9066796b0d2a9f5c974">loom::typelist::cons</a></div><div class="ttdeci">detail::cons&lt; T, L &gt;::type cons</div><div class="ttdoc">Add class T to the beginning of type_sequence L.</div><div class="ttdef"><b>Definition</b> tmp.hpp:769</div></div>
-<div class="ttc" id="agroup__Typelist_html_ga12d424d19441801a28b751ed7e626231"><div class="ttname"><a href="group__Typelist.html#ga12d424d19441801a28b751ed7e626231">loom::typelist::enumerate</a></div><div class="ttdeci">detail::enumerate&lt; L, I, S &gt;::type enumerate</div><div class="ttdoc">Enumerate types in L with indices of type Index .</div><div class="ttdef"><b>Definition</b> tmp.hpp:1949</div></div>
+<div class="ttc" id="agroup__TMP_html_ga25062b89626604933e1b3dabf203ee18"><div class="ttname"><a href="group__TMP.html#ga25062b89626604933e1b3dabf203ee18">loom::type_pair</a></div><div class="ttdeci">type_sequence&lt; A, B &gt; type_pair</div><div class="ttdoc">Pair of types.</div><div class="ttdef"><b>Definition</b> <a href="tmp_8hpp_source.html#l00071">tmp.hpp:71</a></div></div>
+<div class="ttc" id="agroup__Typelist_html_ga06bb10da8ccea9066796b0d2a9f5c974"><div class="ttname"><a href="group__Typelist.html#ga06bb10da8ccea9066796b0d2a9f5c974">loom::typelist::cons</a></div><div class="ttdeci">detail::cons&lt; T, L &gt;::type cons</div><div class="ttdoc">Add class T to the beginning of type_sequence L.</div><div class="ttdef"><b>Definition</b> <a href="tmp_8hpp_source.html#l00769">tmp.hpp:769</a></div></div>
+<div class="ttc" id="agroup__Typelist_html_ga12d424d19441801a28b751ed7e626231"><div class="ttname"><a href="group__Typelist.html#ga12d424d19441801a28b751ed7e626231">loom::typelist::enumerate</a></div><div class="ttdeci">detail::enumerate&lt; L, I, S &gt;::type enumerate</div><div class="ttdoc">Enumerate types in L with indices of type Index .</div><div class="ttdef"><b>Definition</b> <a href="tmp_8hpp_source.html#l01949">tmp.hpp:1949</a></div></div>
 </div><!-- fragment -->
+<p class="definition">Definition at line <a class="el" href="core_8hpp_source.html#l00991">991</a> of file <a class="el" href="core_8hpp_source.html">core.hpp</a>.</p>
+
+</div>
+</div>
+<a id="ac6fd2d8b3a054041d2e35c4461cf5480" name="ac6fd2d8b3a054041d2e35c4461cf5480"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac6fd2d8b3a054041d2e35c4461cf5480">&#9670;&#160;</a></span>labels</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;CharSequence Name, typelist::List InputVars, typelist::List Statements, typelist::List OutputVars&gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">using <a class="el" href="structloom_1_1vm_1_1kernel__blank.html">loom::vm::kernel_blank</a>&lt; Name, InputVars, Statements, OutputVars &gt;::labels = <a class="el" href="group__Typelist.html#ga06bb10da8ccea9066796b0d2a9f5c974">typelist::cons</a>&lt;<a class="el" href="namespaceloom_1_1vm.html#a290cf1685ea79e0d647897f15f0dc711">StartLabel</a>, stated_labels&gt;</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="core_8hpp_source.html#l00987">987</a> of file <a class="el" href="core_8hpp_source.html">core.hpp</a>.</p>
+
+</div>
+</div>
+<a id="a7fec58611d7258b44d5e505100b34159" name="a7fec58611d7258b44d5e505100b34159"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a7fec58611d7258b44d5e505100b34159">&#9670;&#160;</a></span>output_vars</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;CharSequence Name, typelist::List InputVars, typelist::List Statements, typelist::List OutputVars&gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">using <a class="el" href="structloom_1_1vm_1_1kernel__blank.html">loom::vm::kernel_blank</a>&lt; Name, InputVars, Statements, OutputVars &gt;::output_vars = OutputVars</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="core_8hpp_source.html#l00949">949</a> of file <a class="el" href="core_8hpp_source.html">core.hpp</a>.</p>
+
+</div>
+</div>
+<a id="a1326972cf9a7451e85fa68c82391f1ea" name="a1326972cf9a7451e85fa68c82391f1ea"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a1326972cf9a7451e85fa68c82391f1ea">&#9670;&#160;</a></span>pc</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;CharSequence Name, typelist::List InputVars, typelist::List Statements, typelist::List OutputVars&gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">using <a class="el" href="structloom_1_1vm_1_1kernel__blank.html">loom::vm::kernel_blank</a>&lt; Name, InputVars, Statements, OutputVars &gt;::pc = <a class="el" href="structloom_1_1vm_1_1Variable.html">Variable</a>&lt;index_t, <a class="el" href="namespaceloom_1_1vm.html#a9865319601f2f43d97fc0fdd52a36a3b">_pc_name</a>&gt;</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="core_8hpp_source.html#l00957">957</a> of file <a class="el" href="core_8hpp_source.html">core.hpp</a>.</p>
+
+</div>
+</div>
+<a id="af8e687cdffc70e25128f405a57f6dcdb" name="af8e687cdffc70e25128f405a57f6dcdb"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#af8e687cdffc70e25128f405a57f6dcdb">&#9670;&#160;</a></span>reg_names</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;CharSequence Name, typelist::List InputVars, typelist::List Statements, typelist::List OutputVars&gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">using <a class="el" href="structloom_1_1vm_1_1kernel__blank.html">loom::vm::kernel_blank</a>&lt; Name, InputVars, Statements, OutputVars &gt;::reg_names = <a class="el" href="group__Typelist.html#ga93803cb46926540c2965489046c80136">typelist::nub</a>&lt;<a class="el" href="group__Typelist.html#gaecd8e1bc8dfc53fbfd1abde91a668f46">typelist::map</a>&lt;<a class="el" href="namespaceloom_1_1vm.html#a75a60c2650b102821cc6074ab663c81d">varname</a>, variables&gt;&gt;</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Names of registers. </p>
+
+<p class="definition">Definition at line <a class="el" href="core_8hpp_source.html#l01003">1003</a> of file <a class="el" href="core_8hpp_source.html">core.hpp</a>.</p>
+
 </div>
 </div>
 <a id="a22921eeb167271ca70fe8f2793142697" name="a22921eeb167271ca70fe8f2793142697"></a>
@@ -280,6 +422,44 @@ template&lt;CharSequence Name, typelist::List InputVars, typelist::List Statemen
 <p>Registers types. </p>
 <p>If there are few different types corresponding to the same name, <a class="el" href="classloom_1_1Union.html" title="Generic unsafe union.">loom::Union</a> used to hold values of the register. </p>
 
+<p class="definition">Definition at line <a class="el" href="core_8hpp_source.html#l01009">1009</a> of file <a class="el" href="core_8hpp_source.html">core.hpp</a>.</p>
+
+</div>
+</div>
+<a id="a8e6c7375e712ed8470934ff7ba961ef9" name="a8e6c7375e712ed8470934ff7ba961ef9"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a8e6c7375e712ed8470934ff7ba961ef9">&#9670;&#160;</a></span>stated_comps</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;CharSequence Name, typelist::List InputVars, typelist::List Statements, typelist::List OutputVars&gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">using <a class="el" href="structloom_1_1vm_1_1kernel__blank.html">loom::vm::kernel_blank</a>&lt; Name, InputVars, Statements, OutputVars &gt;::stated_comps = <a class="el" href="group__Typelist.html#ga4927e608f27ebac1f3cd48556da3afe6">typelist::filter</a>&lt;<a class="el" href="structloom_1_1vm_1_1is__compute.html">is_compute</a>, instructions&gt;</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="core_8hpp_source.html#l00962">962</a> of file <a class="el" href="core_8hpp_source.html">core.hpp</a>.</p>
+
+</div>
+</div>
+<a id="ab3ff0cbe438f4ce7bb5e01207171292b" name="ab3ff0cbe438f4ce7bb5e01207171292b"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab3ff0cbe438f4ce7bb5e01207171292b">&#9670;&#160;</a></span>stated_labels</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;CharSequence Name, typelist::List InputVars, typelist::List Statements, typelist::List OutputVars&gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">using <a class="el" href="structloom_1_1vm_1_1kernel__blank.html">loom::vm::kernel_blank</a>&lt; Name, InputVars, Statements, OutputVars &gt;::stated_labels = <a class="el" href="group__Typelist.html#ga4927e608f27ebac1f3cd48556da3afe6">typelist::filter</a>&lt;<a class="el" href="structloom_1_1vm_1_1is__label.html">is_label</a>, instructions&gt;</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="core_8hpp_source.html#l00972">972</a> of file <a class="el" href="core_8hpp_source.html">core.hpp</a>.</p>
+
 </div>
 </div>
 <a id="afc5126d37717bd514496515f5c82cad6" name="afc5126d37717bd514496515f5c82cad6"></a>
@@ -298,11 +478,51 @@ template&lt;CharSequence Name, typelist::List InputVars, typelist::List Statemen
 <b>Initial value:</b><div class="fragment"><div class="line"><a class="code hl_typedef" href="group__Typelist.html#ga93803cb46926540c2965489046c80136">typelist::nub</a>&lt;</div>
 <div class="line">       <a class="code hl_typedef" href="group__Typelist.html#ga23f16e48bf88c44e2b2741f79181219e">typelist::join&lt;typelist::join&lt;InputVars, OutputVars&gt;</a>,</div>
 <div class="line">                      <a class="code hl_typedef" href="group__Typelist.html#gaecd8e1bc8dfc53fbfd1abde91a668f46">typelist::map&lt;command_dst_t, stated_comps&gt;</a>&gt;&gt;</div>
-<div class="ttc" id="agroup__Typelist_html_ga23f16e48bf88c44e2b2741f79181219e"><div class="ttname"><a href="group__Typelist.html#ga23f16e48bf88c44e2b2741f79181219e">loom::typelist::join</a></div><div class="ttdeci">detail::join&lt; L1, L2 &gt;::type join</div><div class="ttdoc">Concatenate two lists of types.</div><div class="ttdef"><b>Definition</b> tmp.hpp:773</div></div>
-<div class="ttc" id="agroup__Typelist_html_ga93803cb46926540c2965489046c80136"><div class="ttname"><a href="group__Typelist.html#ga93803cb46926540c2965489046c80136">loom::typelist::nub</a></div><div class="ttdeci">detail::nub&lt; L &gt;::type nub</div><div class="ttdoc">Remove duplicate elements from L.</div><div class="ttdef"><b>Definition</b> tmp.hpp:1040</div></div>
-<div class="ttc" id="agroup__Typelist_html_gaecd8e1bc8dfc53fbfd1abde91a668f46"><div class="ttname"><a href="group__Typelist.html#gaecd8e1bc8dfc53fbfd1abde91a668f46">loom::typelist::map</a></div><div class="ttdeci">detail::map&lt; F, L &gt;::type map</div><div class="ttdoc">Apply F to each element of L.</div><div class="ttdef"><b>Definition</b> tmp.hpp:837</div></div>
+<div class="ttc" id="agroup__Typelist_html_ga23f16e48bf88c44e2b2741f79181219e"><div class="ttname"><a href="group__Typelist.html#ga23f16e48bf88c44e2b2741f79181219e">loom::typelist::join</a></div><div class="ttdeci">detail::join&lt; L1, L2 &gt;::type join</div><div class="ttdoc">Concatenate two lists of types.</div><div class="ttdef"><b>Definition</b> <a href="tmp_8hpp_source.html#l00773">tmp.hpp:773</a></div></div>
+<div class="ttc" id="agroup__Typelist_html_ga93803cb46926540c2965489046c80136"><div class="ttname"><a href="group__Typelist.html#ga93803cb46926540c2965489046c80136">loom::typelist::nub</a></div><div class="ttdeci">detail::nub&lt; L &gt;::type nub</div><div class="ttdoc">Remove duplicate elements from L.</div><div class="ttdef"><b>Definition</b> <a href="tmp_8hpp_source.html#l01040">tmp.hpp:1040</a></div></div>
+<div class="ttc" id="agroup__Typelist_html_gaecd8e1bc8dfc53fbfd1abde91a668f46"><div class="ttname"><a href="group__Typelist.html#gaecd8e1bc8dfc53fbfd1abde91a668f46">loom::typelist::map</a></div><div class="ttdeci">detail::map&lt; F, L &gt;::type map</div><div class="ttdoc">Apply F to each element of L.</div><div class="ttdef"><b>Definition</b> <a href="tmp_8hpp_source.html#l00837">tmp.hpp:837</a></div></div>
 </div><!-- fragment -->
 <p>Variables that have stored values to. </p>
+
+<p class="definition">Definition at line <a class="el" href="core_8hpp_source.html#l00966">966</a> of file <a class="el" href="core_8hpp_source.html">core.hpp</a>.</p>
+
+</div>
+</div>
+<a id="a54f55ef80ff6871ab7c77e398c5f4983" name="a54f55ef80ff6871ab7c77e398c5f4983"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a54f55ef80ff6871ab7c77e398c5f4983">&#9670;&#160;</a></span>statements</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;CharSequence Name, typelist::List InputVars, typelist::List Statements, typelist::List OutputVars&gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">using <a class="el" href="structloom_1_1vm_1_1kernel__blank.html">loom::vm::kernel_blank</a>&lt; Name, InputVars, Statements, OutputVars &gt;::statements = Statements</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="core_8hpp_source.html#l00948">948</a> of file <a class="el" href="core_8hpp_source.html">core.hpp</a>.</p>
+
+</div>
+</div>
+<a id="a3e992ef31e07bf7013286ca48ef6becf" name="a3e992ef31e07bf7013286ca48ef6becf"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a3e992ef31e07bf7013286ca48ef6becf">&#9670;&#160;</a></span>successors</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;CharSequence Name, typelist::List InputVars, typelist::List Statements, typelist::List OutputVars&gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">using <a class="el" href="structloom_1_1vm_1_1kernel__blank.html">loom::vm::kernel_blank</a>&lt; Name, InputVars, Statements, OutputVars &gt;::successors = <a class="el" href="namespaceloom_1_1vm.html#afdce159def3a3cb75c7db533bf1192b8">successors_table_t</a>&lt;blocks, labelmap&gt;</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Successors table. </p>
+
+<p class="definition">Definition at line <a class="el" href="core_8hpp_source.html#l01025">1025</a> of file <a class="el" href="core_8hpp_source.html">core.hpp</a>.</p>
 
 </div>
 </div>
@@ -322,8 +542,10 @@ template&lt;CharSequence Name, typelist::List InputVars, typelist::List Statemen
 <b>Initial value:</b><div class="fragment"><div class="line">std::conditional_t&lt;is_straightline,</div>
 <div class="line">                                        <a class="code hl_typedef" href="#afc5126d37717bd514496515f5c82cad6">stated_vars</a>,</div>
 <div class="line">                                        <a class="code hl_typedef" href="group__Typelist.html#ga06bb10da8ccea9066796b0d2a9f5c974">typelist::cons&lt;pc, stated_vars&gt;</a>&gt;</div>
-<div class="ttc" id="astructloom_1_1vm_1_1kernel__blank_html_afc5126d37717bd514496515f5c82cad6"><div class="ttname"><a href="#afc5126d37717bd514496515f5c82cad6">loom::vm::kernel_blank::stated_vars</a></div><div class="ttdeci">typelist::nub&lt; typelist::join&lt; typelist::join&lt; InputVars, OutputVars &gt;, typelist::map&lt; command_dst_t, stated_comps &gt; &gt; &gt; stated_vars</div><div class="ttdoc">Variables that have stored values to.</div><div class="ttdef"><b>Definition</b> core.hpp:966</div></div>
+<div class="ttc" id="astructloom_1_1vm_1_1kernel__blank_html_afc5126d37717bd514496515f5c82cad6"><div class="ttname"><a href="#afc5126d37717bd514496515f5c82cad6">loom::vm::kernel_blank::stated_vars</a></div><div class="ttdeci">typelist::nub&lt; typelist::join&lt; typelist::join&lt; InputVars, OutputVars &gt;, typelist::map&lt; command_dst_t, stated_comps &gt; &gt; &gt; stated_vars</div><div class="ttdoc">Variables that have stored values to.</div><div class="ttdef"><b>Definition</b> <a href="core_8hpp_source.html#l00966">core.hpp:966</a></div></div>
 </div><!-- fragment -->
+<p class="definition">Definition at line <a class="el" href="core_8hpp_source.html#l00997">997</a> of file <a class="el" href="core_8hpp_source.html">core.hpp</a>.</p>
+
 </div>
 </div>
 <a id="abca955456054b8a8e1750ed0d2dc324e" name="abca955456054b8a8e1750ed0d2dc324e"></a>
@@ -342,14 +564,94 @@ template&lt;CharSequence Name, typelist::List InputVars, typelist::List Statemen
 <b>Initial value:</b><div class="fragment"><div class="line"><a class="code hl_typedef" href="group__Typelist.html#gaecd8e1bc8dfc53fbfd1abde91a668f46">typelist::map</a>&lt;</div>
 <div class="line">       make_var,</div>
 <div class="line">       <a class="code hl_typedef" href="group__Typelist.html#ga48d7fbf632b8dec4c7190494782f103f">typelist::zip&lt;typelist::map&lt;select_first_t, reg_types&gt;</a>, <a class="code hl_typedef" href="#af8e687cdffc70e25128f405a57f6dcdb">reg_names</a>&gt;&gt;</div>
-<div class="ttc" id="agroup__Typelist_html_ga48d7fbf632b8dec4c7190494782f103f"><div class="ttname"><a href="group__Typelist.html#ga48d7fbf632b8dec4c7190494782f103f">loom::typelist::zip</a></div><div class="ttdeci">zip_with&lt; type_pair, Xs, Ys &gt; zip</div><div class="ttdoc">Make list of pairs type_sequence&lt;type_pair&lt;X, Y&gt;...&gt; of corresponding types from lists Xs and Ys.</div><div class="ttdef"><b>Definition</b> tmp.hpp:871</div></div>
-<div class="ttc" id="astructloom_1_1vm_1_1kernel__blank_html_af8e687cdffc70e25128f405a57f6dcdb"><div class="ttname"><a href="#af8e687cdffc70e25128f405a57f6dcdb">loom::vm::kernel_blank::reg_names</a></div><div class="ttdeci">typelist::nub&lt; typelist::map&lt; varname, variables &gt; &gt; reg_names</div><div class="ttdoc">Names of registers.</div><div class="ttdef"><b>Definition</b> core.hpp:1003</div></div>
+<div class="ttc" id="agroup__Typelist_html_ga48d7fbf632b8dec4c7190494782f103f"><div class="ttname"><a href="group__Typelist.html#ga48d7fbf632b8dec4c7190494782f103f">loom::typelist::zip</a></div><div class="ttdeci">zip_with&lt; type_pair, Xs, Ys &gt; zip</div><div class="ttdoc">Make list of pairs type_sequence&lt;type_pair&lt;X, Y&gt;...&gt; of corresponding types from lists Xs and Ys.</div><div class="ttdef"><b>Definition</b> <a href="tmp_8hpp_source.html#l00871">tmp.hpp:871</a></div></div>
+<div class="ttc" id="astructloom_1_1vm_1_1kernel__blank_html_af8e687cdffc70e25128f405a57f6dcdb"><div class="ttname"><a href="#af8e687cdffc70e25128f405a57f6dcdb">loom::vm::kernel_blank::reg_names</a></div><div class="ttdeci">typelist::nub&lt; typelist::map&lt; varname, variables &gt; &gt; reg_names</div><div class="ttdoc">Names of registers.</div><div class="ttdef"><b>Definition</b> <a href="core_8hpp_source.html#l01003">core.hpp:1003</a></div></div>
 </div><!-- fragment -->
 <p>Variables to access unique registers once. </p>
+
+<p class="definition">Definition at line <a class="el" href="core_8hpp_source.html#l01020">1020</a> of file <a class="el" href="core_8hpp_source.html">core.hpp</a>.</p>
 
 </div>
 </div>
 <a name="doc-variable-members" id="doc-variable-members"></a><h2 id="header-doc-variable-members" class="groupheader">Member Data Documentation</h2>
+<a id="ac657bf4757d1d7bd522e009a5ce01f9a" name="ac657bf4757d1d7bd522e009a5ce01f9a"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac657bf4757d1d7bd522e009a5ce01f9a">&#9670;&#160;</a></span>halt_pos</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;CharSequence Name, typelist::List InputVars, typelist::List Statements, typelist::List OutputVars&gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">index_t <a class="el" href="structloom_1_1vm_1_1kernel__blank.html">loom::vm::kernel_blank</a>&lt; Name, InputVars, Statements, OutputVars &gt;::halt_pos = -1</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span><span class="mlabel constexpr">constexpr</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="core_8hpp_source.html#l00985">985</a> of file <a class="el" href="core_8hpp_source.html">core.hpp</a>.</p>
+
+</div>
+</div>
+<a id="a0e584ee3111c82b7ebec47f22d0138ba" name="a0e584ee3111c82b7ebec47f22d0138ba"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a0e584ee3111c82b7ebec47f22d0138ba">&#9670;&#160;</a></span>is_straightline</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;CharSequence Name, typelist::List InputVars, typelist::List Statements, typelist::List OutputVars&gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool <a class="el" href="structloom_1_1vm_1_1kernel__blank.html">loom::vm::kernel_blank</a>&lt; Name, InputVars, Statements, OutputVars &gt;::is_straightline = num_blocks == 1</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span><span class="mlabel constexpr">constexpr</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="core_8hpp_source.html#l00995">995</a> of file <a class="el" href="core_8hpp_source.html">core.hpp</a>.</p>
+
+</div>
+</div>
+<a id="ac27a7baf4af1b7b57e242622ba614df8" name="ac27a7baf4af1b7b57e242622ba614df8"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac27a7baf4af1b7b57e242622ba614df8">&#9670;&#160;</a></span>nameview</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;CharSequence Name, typelist::List InputVars, typelist::List Statements, typelist::List OutputVars&gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::string_view <a class="el" href="structloom_1_1vm_1_1kernel__blank.html">loom::vm::kernel_blank</a>&lt; Name, InputVars, Statements, OutputVars &gt;::nameview = <a class="el" href="group__CTString.html#ga69a4cafb4286297f3c24f7307a9dbc31">cs2sv</a>&lt;Name&gt;</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span><span class="mlabel constexpr">constexpr</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="core_8hpp_source.html#l01017">1017</a> of file <a class="el" href="core_8hpp_source.html">core.hpp</a>.</p>
+
+</div>
+</div>
 <a id="a8b533e9717e83b053d27b522f8b769a9" name="a8b533e9717e83b053d27b522f8b769a9"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a8b533e9717e83b053d27b522f8b769a9">&#9670;&#160;</a></span>num_blocks</h2>
 
@@ -373,8 +675,36 @@ template&lt;CharSequence Name, typelist::List InputVars, typelist::List Statemen
 </div><div class="memdoc">
 <b>Initial value:</b><div class="fragment"><div class="line">                                    =</div>
 <div class="line"><a class="code hl_variable" href="group__Typelist.html#ga6a7d84dae989acaf892510ae449ff8c9">typelist::length&lt;blocks_statements&gt;</a></div>
-<div class="ttc" id="agroup__Typelist_html_ga6a7d84dae989acaf892510ae449ff8c9"><div class="ttname"><a href="group__Typelist.html#ga6a7d84dae989acaf892510ae449ff8c9">loom::typelist::length</a></div><div class="ttdeci">constexpr std::size_t length</div><div class="ttdoc">Number of types in L.</div><div class="ttdef"><b>Definition</b> tmp.hpp:785</div></div>
+<div class="ttc" id="agroup__Typelist_html_ga6a7d84dae989acaf892510ae449ff8c9"><div class="ttname"><a href="group__Typelist.html#ga6a7d84dae989acaf892510ae449ff8c9">loom::typelist::length</a></div><div class="ttdeci">constexpr std::size_t length</div><div class="ttdoc">Number of types in L.</div><div class="ttdef"><b>Definition</b> <a href="tmp_8hpp_source.html#l00785">tmp.hpp:785</a></div></div>
 </div><!-- fragment -->
+<p class="definition">Definition at line <a class="el" href="core_8hpp_source.html#l00981">981</a> of file <a class="el" href="core_8hpp_source.html">core.hpp</a>.</p>
+
+</div>
+</div>
+<a id="a948266f326bd2cbdbfa3dd8a6c21470b" name="a948266f326bd2cbdbfa3dd8a6c21470b"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a948266f326bd2cbdbfa3dd8a6c21470b">&#9670;&#160;</a></span>num_labels</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;CharSequence Name, typelist::List InputVars, typelist::List Statements, typelist::List OutputVars&gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::size_t <a class="el" href="structloom_1_1vm_1_1kernel__blank.html">loom::vm::kernel_blank</a>&lt; Name, InputVars, Statements, OutputVars &gt;::num_labels = <a class="el" href="group__Typelist.html#ga6a7d84dae989acaf892510ae449ff8c9">typelist::length</a>&lt;stated_labels&gt;</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span><span class="mlabel constexpr">constexpr</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="core_8hpp_source.html#l00983">983</a> of file <a class="el" href="core_8hpp_source.html">core.hpp</a>.</p>
+
 </div>
 </div>
 <a id="a12626c566d895fb49b0b5fb77ccfec13" name="a12626c566d895fb49b0b5fb77ccfec13"></a>
@@ -401,15 +731,17 @@ template&lt;CharSequence Name, typelist::List InputVars, typelist::List Statemen
 <b>Initial value:</b><div class="fragment"><div class="line">                                    =</div>
 <div class="line"><a class="code hl_variable" href="group__Intlist.html#gac83cc78e7ecc92532933e5ba26644ead">intlist::sum</a>&lt;<a class="code hl_typedef" href="group__Typelist.html#gac8ddd7df02d9a3577791e5a47120a35e">typelist::to_integer_sequence</a>&lt;</div>
 <div class="line">    <a class="code hl_typedef" href="group__Typelist.html#gaecd8e1bc8dfc53fbfd1abde91a668f46">typelist::map&lt;register_size_t, reg_types&gt;</a>&gt;&gt;</div>
-<div class="ttc" id="agroup__Intlist_html_gac83cc78e7ecc92532933e5ba26644ead"><div class="ttname"><a href="group__Intlist.html#gac83cc78e7ecc92532933e5ba26644ead">loom::intlist::sum</a></div><div class="ttdeci">constexpr auto sum</div><div class="ttdoc">Sum of all elements.</div><div class="ttdef"><b>Definition</b> tmp.hpp:1800</div></div>
-<div class="ttc" id="agroup__Typelist_html_gac8ddd7df02d9a3577791e5a47120a35e"><div class="ttname"><a href="group__Typelist.html#gac8ddd7df02d9a3577791e5a47120a35e">loom::typelist::to_integer_sequence</a></div><div class="ttdeci">detail::to_integer_seq&lt; L &gt;::type to_integer_sequence</div><div class="ttdoc">Convert type_sequence of std::integer_constant into a std::integer_sequence.</div><div class="ttdef"><b>Definition</b> tmp.hpp:1124</div></div>
+<div class="ttc" id="agroup__Intlist_html_gac83cc78e7ecc92532933e5ba26644ead"><div class="ttname"><a href="group__Intlist.html#gac83cc78e7ecc92532933e5ba26644ead">loom::intlist::sum</a></div><div class="ttdeci">constexpr auto sum</div><div class="ttdoc">Sum of all elements.</div><div class="ttdef"><b>Definition</b> <a href="tmp_8hpp_source.html#l01800">tmp.hpp:1800</a></div></div>
+<div class="ttc" id="agroup__Typelist_html_gac8ddd7df02d9a3577791e5a47120a35e"><div class="ttname"><a href="group__Typelist.html#gac8ddd7df02d9a3577791e5a47120a35e">loom::typelist::to_integer_sequence</a></div><div class="ttdeci">detail::to_integer_seq&lt; L &gt;::type to_integer_sequence</div><div class="ttdoc">Convert type_sequence of std::integer_constant into a std::integer_sequence.</div><div class="ttdef"><b>Definition</b> <a href="tmp_8hpp_source.html#l01124">tmp.hpp:1124</a></div></div>
 </div><!-- fragment -->
 <p>Size of program's state. </p>
+
+<p class="definition">Definition at line <a class="el" href="core_8hpp_source.html#l01028">1028</a> of file <a class="el" href="core_8hpp_source.html">core.hpp</a>.</p>
 
 </div>
 </div>
 <hr/>The documentation for this struct was generated from the following file:<ul>
-<li>vm/<a class="el" href="core_8hpp.html">core.hpp</a></li>
+<li>vm/<a class="el" href="core_8hpp_source.html">core.hpp</a></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->

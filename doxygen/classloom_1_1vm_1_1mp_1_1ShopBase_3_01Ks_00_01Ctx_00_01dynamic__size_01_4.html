@@ -105,7 +105,7 @@ $(function(){initNavTree('classloom_1_1vm_1_1mp_1_1ShopBase_3_01Ks_00_01Ctx_00_0
 <p>Workshop basic functionality for dynamic number of workers.  
  <a href="#details">More...</a></p>
 
-<p><code>#include &quot;mp.hpp&quot;</code></p>
+<p><code>#include &quot;<a class="el" href="mp_8hpp_source.html">mp.hpp</a>&quot;</code></p>
 <div id="dynsection-0" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>Inheritance diagram for loom::vm::mp::ShopBase&lt; Ks, Ctx, dynamic_size &gt;:</div>
 <div id="dynsection-0-summary" class="dynsummary" style="display:block;">
 </div>
@@ -148,6 +148,8 @@ class loom::vm::mp::ShopBase&lt; Ks, Ctx, dynamic_size &gt;</div><p>Workshop bas
   </table>
   </dd>
 </dl>
+
+<p class="definition">Definition at line <a class="el" href="mp_8hpp_source.html#l00271">271</a> of file <a class="el" href="mp_8hpp_source.html">mp.hpp</a>.</p>
 </div><a name="doc-constructors" id="doc-constructors"></a><h2 id="header-doc-constructors" class="groupheader">Constructor &amp; Destructor Documentation</h2>
 <a id="adc1aaaeab2b3adfd1558075529b51734" name="adc1aaaeab2b3adfd1558075529b51734"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#adc1aaaeab2b3adfd1558075529b51734">&#9670;&#160;</a></span>ShopBase()</h2>
@@ -177,12 +179,14 @@ template&lt;typename Ks, template&lt; typename &gt; typename Ctx&gt; </div>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="mp_8hpp_source.html#l00281">281</a> of file <a class="el" href="mp_8hpp_source.html">mp.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">  281</span>                                                                    :</div>
 <div class="line"><span class="lineno">  282</span>        m_benches(<a class="code hl_class" href="classloom_1_1vm_1_1mp_1_1ShopBase.html">_num_workers</a>, <a class="code hl_class" href="classloom_1_1vm_1_1mp_1_1ShopBase.html">uniform_init</a>, <a class="code hl_class" href="classloom_1_1vm_1_1mp_1_1ShopBase.html">stream_size</a>)</div>
 <div class="line"><span class="lineno">  283</span>    {</div>
 <div class="line"><span class="lineno">  284</span>        <a class="code hl_class" href="classloom_1_1vm_1_1mp_1_1ShopBase.html">ASSERT</a>(<a class="code hl_class" href="classloom_1_1vm_1_1mp_1_1ShopBase.html">_num_workers</a> != 0, <span class="stringliteral">&quot;make more workers&quot;</span>);</div>
 <div class="line"><span class="lineno">  285</span>    }</div>
-<div class="ttc" id="aclassloom_1_1vm_1_1mp_1_1ShopBase_html"><div class="ttname"><a href="classloom_1_1vm_1_1mp_1_1ShopBase.html">loom::vm::mp::ShopBase</a></div><div class="ttdoc">Workshop basic functionality for static number of workers.</div><div class="ttdef"><b>Definition</b> mp.hpp:229</div></div>
+<div class="ttc" id="aclassloom_1_1vm_1_1mp_1_1ShopBase_html"><div class="ttname"><a href="classloom_1_1vm_1_1mp_1_1ShopBase.html">loom::vm::mp::ShopBase</a></div><div class="ttdoc">Workshop basic functionality for static number of workers.</div><div class="ttdef"><b>Definition</b> <a href="mp_8hpp_source.html#l00228">mp.hpp:229</a></div></div>
 </div><!-- fragment -->
 </div>
 </div>
@@ -213,6 +217,8 @@ template&lt;typename Ks, template&lt; typename &gt; typename Ctx&gt; </div>
 </div><div class="memdoc">
 
 <p>Constructs <a class="el" href="classloom_1_1thread__pool.html" title="Constant sized thread pool.">loom::thread_pool</a> of dynamic sizes with <a class="el" href="structloom_1_1vm_1_1mp_1_1Worker.html" title="Worker thread functional object.">Worker</a>. </p>
+
+<p class="definition">Definition at line <a class="el" href="mp_8hpp_source.html#l00303">303</a> of file <a class="el" href="mp_8hpp_source.html">mp.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">  304</span>    {</div>
 <div class="line"><span class="lineno">  305</span>        <span class="keywordflow">return</span> {<a class="code hl_class" href="classloom_1_1vm_1_1mp_1_1ShopBase.html">std::views::transform</a>(</div>
 <div class="line"><span class="lineno">  306</span>            m_benches,</div>
@@ -248,6 +254,8 @@ template&lt;typename F&gt; </div>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="mp_8hpp_source.html#l00289">289</a> of file <a class="el" href="mp_8hpp_source.html">mp.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">  290</span>    {</div>
 <div class="line"><span class="lineno">  291</span>        <a class="code hl_class" href="classloom_1_1vm_1_1mp_1_1ShopBase.html">std::ranges::for_each</a>(m_benches, <a class="code hl_class" href="classloom_1_1vm_1_1mp_1_1ShopBase.html">std::forward&lt;F&gt;</a>(<a class="code hl_class" href="classloom_1_1vm_1_1mp_1_1ShopBase.html">f</a>));</div>
 <div class="line"><span class="lineno">  292</span>    }</div>
@@ -280,6 +288,8 @@ template&lt;typename F&gt; </div>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="mp_8hpp_source.html#l00296">296</a> of file <a class="el" href="mp_8hpp_source.html">mp.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">  297</span>    {</div>
 <div class="line"><span class="lineno">  298</span>        <a class="code hl_class" href="classloom_1_1vm_1_1mp_1_1ShopBase.html">std::ranges::for_each</a>(m_benches, <a class="code hl_class" href="classloom_1_1vm_1_1mp_1_1ShopBase.html">std::forward&lt;F&gt;</a>(<a class="code hl_class" href="classloom_1_1vm_1_1mp_1_1ShopBase.html">f</a>));</div>
 <div class="line"><span class="lineno">  299</span>    }</div>
@@ -287,7 +297,7 @@ template&lt;typename F&gt; </div>
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following file:<ul>
-<li>vm/<a class="el" href="mp_8hpp.html">mp.hpp</a></li>
+<li>vm/<a class="el" href="mp_8hpp_source.html">mp.hpp</a></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->

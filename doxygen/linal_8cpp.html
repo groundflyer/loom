@@ -104,10 +104,10 @@ $(function(){initNavTree('linal_8cpp.html','',''); });
 
 <p>Linear algebra tests.  
 <a href="#details">More...</a></p>
-<div class="textblock"><code>#include &quot;<a class="el" href="property__test_8hpp.html">property_test.hpp</a>&quot;</code><br />
-<code>#include &lt;<a class="el" href="common_2linal_8hpp.html">common/linal.hpp</a>&gt;</code><br />
-<code>#include &lt;<a class="el" href="tuple_8hpp.html">common/tuple.hpp</a>&gt;</code><br />
-<code>#include &lt;<a class="el" href="typeinfo_8hpp.html">common/typeinfo.hpp</a>&gt;</code><br />
+<div class="textblock"><code>#include &quot;<a class="el" href="property__test_8hpp_source.html">property_test.hpp</a>&quot;</code><br />
+<code>#include &lt;<a class="el" href="common_2linal_8hpp_source.html">common/linal.hpp</a>&gt;</code><br />
+<code>#include &lt;<a class="el" href="tuple_8hpp_source.html">common/tuple.hpp</a>&gt;</code><br />
+<code>#include &lt;<a class="el" href="typeinfo_8hpp_source.html">common/typeinfo.hpp</a>&gt;</code><br />
 <code>#include &lt;fmt/ranges.h&gt;</code><br />
 <code>#include &lt;cstdlib&gt;</code><br />
 <code>#include &lt;random&gt;</code><br />
@@ -117,7 +117,9 @@ $(function(){initNavTree('linal_8cpp.html','',''); });
 <div id="dynsection-0-content" class="dyncontent" style="display:none;">
 <div class="center"><div class="zoom"><iframe scrolling="no" loading="lazy" frameborder="0" src="linal_8cpp__incl.svg" width="100%" height="600"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
 </div>
-</div><table class="memberdecls">
+</div>
+<p><a href="linal_8cpp_source.html">Go to the source code of this file.</a></p>
+<table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-namespaces" class="groupheader"><a id="namespaces" name="namespaces"></a>
 Namespaces</h2></td></tr>
 <tr class="memitem:loom" id="r_loom"><td class="memItemLeft">namespace &#160;</td><td class="memItemRight"><a class="el" href="namespaceloom.html">loom</a></td></tr>
@@ -125,14 +127,10 @@ Namespaces</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-typedef-members" class="groupheader"><a id="typedef-members" name="typedef-members"></a>
 Typedefs</h2></td></tr>
-<tr class="memitem:ad5b624ea90104d729115d87557fe668e" id="r_ad5b624ea90104d729115d87557fe668e"><td class="memItemLeft"><a id="ad5b624ea90104d729115d87557fe668e" name="ad5b624ea90104d729115d87557fe668e"></a>
-using&#160;</td><td class="memItemRight"><b>vec_test::Indicies</b> = make_index_sequence&lt;MaxN - 1&gt;</td></tr>
-<tr class="memitem:a91d3a1cb684ce9f1f6d844b0f7b1f9bf" id="r_a91d3a1cb684ce9f1f6d844b0f7b1f9bf"><td class="memItemLeft"><a id="a91d3a1cb684ce9f1f6d844b0f7b1f9bf" name="a91d3a1cb684ce9f1f6d844b0f7b1f9bf"></a>
-using&#160;</td><td class="memItemRight"><b>vec_test::ArithmeticTypes</b> = <a class="el" href="structloom_1_1type__sequence.html">type_sequence</a>&lt;int, long, float, double&gt;</td></tr>
-<tr class="memitem:a5c0bcbd5fec0ae4b3beff6635bf8ed74" id="r_a5c0bcbd5fec0ae4b3beff6635bf8ed74"><td class="memItemLeft"><a id="a5c0bcbd5fec0ae4b3beff6635bf8ed74" name="a5c0bcbd5fec0ae4b3beff6635bf8ed74"></a>
-using&#160;</td><td class="memItemRight"><b>mat_test::Indicies</b> = index_sequence&lt;3ul, 4ul&gt;</td></tr>
-<tr class="memitem:aa14858e71d881f16c4cdb48bc67d1c10" id="r_aa14858e71d881f16c4cdb48bc67d1c10"><td class="memItemLeft"><a id="aa14858e71d881f16c4cdb48bc67d1c10" name="aa14858e71d881f16c4cdb48bc67d1c10"></a>
-using&#160;</td><td class="memItemRight"><b>mat_test::ArithmeticTypes</b> = <a class="el" href="structloom_1_1type__sequence.html">type_sequence</a>&lt;float, double&gt;</td></tr>
+<tr class="memitem:ad5b624ea90104d729115d87557fe668e" id="r_ad5b624ea90104d729115d87557fe668e"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="namespacevec__test.html#ad5b624ea90104d729115d87557fe668e">vec_test::Indicies</a> = make_index_sequence&lt;MaxN - 1&gt;</td></tr>
+<tr class="memitem:a91d3a1cb684ce9f1f6d844b0f7b1f9bf" id="r_a91d3a1cb684ce9f1f6d844b0f7b1f9bf"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="namespacevec__test.html#a91d3a1cb684ce9f1f6d844b0f7b1f9bf">vec_test::ArithmeticTypes</a> = <a class="el" href="structloom_1_1type__sequence.html">type_sequence</a>&lt;int, long, float, double&gt;</td></tr>
+<tr class="memitem:a5c0bcbd5fec0ae4b3beff6635bf8ed74" id="r_a5c0bcbd5fec0ae4b3beff6635bf8ed74"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="namespacemat__test.html#a5c0bcbd5fec0ae4b3beff6635bf8ed74">mat_test::Indicies</a> = index_sequence&lt;3ul, 4ul&gt;</td></tr>
+<tr class="memitem:aa14858e71d881f16c4cdb48bc67d1c10" id="r_aa14858e71d881f16c4cdb48bc67d1c10"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="namespacemat__test.html#aa14858e71d881f16c4cdb48bc67d1c10">mat_test::ArithmeticTypes</a> = <a class="el" href="structloom_1_1type__sequence.html">type_sequence</a>&lt;float, double&gt;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-func-members" class="groupheader"><a id="func-members" name="func-members"></a>
 Functions</h2></td></tr>
@@ -173,13 +171,13 @@ Functions</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-var-members" class="groupheader"><a id="var-members" name="var-members"></a>
 Variables</h2></td></tr>
-<tr class="memitem:a09e1622d3cd94ebf91dd7609284693e9" id="r_a09e1622d3cd94ebf91dd7609284693e9"><td class="memItemLeft"><a id="a09e1622d3cd94ebf91dd7609284693e9" name="a09e1622d3cd94ebf91dd7609284693e9"></a>
-static const constexpr size_t&#160;</td><td class="memItemRight"><b>vec_test::MaxN</b> = 4</td></tr>
-<tr class="memitem:aed46a80c05cf5e6ebcfd3305c9a63570" id="r_aed46a80c05cf5e6ebcfd3305c9a63570"><td class="memItemLeft"><a id="aed46a80c05cf5e6ebcfd3305c9a63570" name="aed46a80c05cf5e6ebcfd3305c9a63570"></a>
-static const constexpr double&#160;</td><td class="memItemRight"><b>mat_test::threshold</b> = 0.05</td></tr>
+<tr class="memitem:a09e1622d3cd94ebf91dd7609284693e9" id="r_a09e1622d3cd94ebf91dd7609284693e9"><td class="memItemLeft">static const constexpr size_t&#160;</td><td class="memItemRight"><a class="el" href="namespacevec__test.html#a09e1622d3cd94ebf91dd7609284693e9">vec_test::MaxN</a> = 4</td></tr>
+<tr class="memitem:aed46a80c05cf5e6ebcfd3305c9a63570" id="r_aed46a80c05cf5e6ebcfd3305c9a63570"><td class="memItemLeft">static const constexpr double&#160;</td><td class="memItemRight"><a class="el" href="namespacemat__test.html#aed46a80c05cf5e6ebcfd3305c9a63570">mat_test::threshold</a> = 0.05</td></tr>
 </table>
 <a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Linear algebra tests. </p>
+
+<p class="definition">Definition in file <a class="el" href="linal_8cpp_source.html">linal.cpp</a>.</p>
 </div><a name="doc-func-members" id="doc-func-members"></a><h2 id="header-doc-func-members" class="groupheader">Function Documentation</h2>
 <a id="a0ddf1224851353fc92bfbff6f499fa97" name="a0ddf1224851353fc92bfbff6f499fa97"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a0ddf1224851353fc92bfbff6f499fa97">&#9670;&#160;</a></span>main()</h2>
@@ -199,6 +197,8 @@ static const constexpr double&#160;</td><td class="memItemRight"><b>mat_test::th
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="linal_8cpp_source.html#l00916">916</a> of file <a class="el" href="linal_8cpp_source.html">linal.cpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">  917</span>{</div>
 <div class="line"><span class="lineno">  918</span>    <span class="keyword">const</span> <span class="keywordtype">size_t</span> num_tests = argc == 2 ? atoi(argv[1]) : 100000;</div>
 <div class="line"><span class="lineno">  919</span> </div>
@@ -218,7 +218,7 @@ static const constexpr double&#160;</td><td class="memItemRight"><b>mat_test::th
 <div class="line"><span class="lineno">  933</span> </div>
 <div class="line"><span class="lineno">  934</span>    <span class="keywordflow">return</span> ret;</div>
 <div class="line"><span class="lineno">  935</span>}</div>
-<div class="ttc" id="anamespacevec__test_html_a25cd42c512fd5d88b2e4643eabce5b82"><div class="ttname"><a href="namespacevec__test.html#a25cd42c512fd5d88b2e4643eabce5b82">vec_test::vector_bool_test</a></div><div class="ttdeci">unsigned vector_bool_test(RandomEngine &amp;g, const size_t num_tests) noexcept</div><div class="ttdoc">Test loom::Vector with boolean value type.</div><div class="ttdef"><b>Definition</b> linal.cpp:428</div></div>
+<div class="ttc" id="anamespacevec__test_html_a25cd42c512fd5d88b2e4643eabce5b82"><div class="ttname"><a href="namespacevec__test.html#a25cd42c512fd5d88b2e4643eabce5b82">vec_test::vector_bool_test</a></div><div class="ttdeci">unsigned vector_bool_test(RandomEngine &amp;g, const size_t num_tests) noexcept</div><div class="ttdoc">Test loom::Vector with boolean value type.</div><div class="ttdef"><b>Definition</b> <a href="linal_8cpp_source.html#l00428">linal.cpp:428</a></div></div>
 </div><!-- fragment -->
 </div>
 </div>

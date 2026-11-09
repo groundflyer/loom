@@ -104,11 +104,11 @@ $(function(){initNavTree('core_8hpp.html','',''); });
 
 <p>Foundation of the virtual machine.  
 <a href="#details">More...</a></p>
-<div class="textblock"><code>#include &lt;<a class="el" href="functional_8hpp.html">common/functional.hpp</a>&gt;</code><br />
-<code>#include &lt;<a class="el" href="string_8hpp.html">common/string.hpp</a>&gt;</code><br />
-<code>#include &lt;<a class="el" href="tmp_8hpp.html">common/tmp.hpp</a>&gt;</code><br />
-<code>#include &lt;<a class="el" href="tuple_8hpp.html">common/tuple.hpp</a>&gt;</code><br />
-<code>#include &lt;<a class="el" href="union_8hpp.html">common/union.hpp</a>&gt;</code><br />
+<div class="textblock"><code>#include &lt;<a class="el" href="functional_8hpp_source.html">common/functional.hpp</a>&gt;</code><br />
+<code>#include &lt;<a class="el" href="string_8hpp_source.html">common/string.hpp</a>&gt;</code><br />
+<code>#include &lt;<a class="el" href="tmp_8hpp_source.html">common/tmp.hpp</a>&gt;</code><br />
+<code>#include &lt;<a class="el" href="tuple_8hpp_source.html">common/tuple.hpp</a>&gt;</code><br />
+<code>#include &lt;<a class="el" href="union_8hpp_source.html">common/union.hpp</a>&gt;</code><br />
 <code>#include &lt;cstdint&gt;</code><br />
 </div><div class="textblock"><div id="dynsection-0" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>Include dependency graph for core.hpp:</div>
 <div id="dynsection-0-summary" class="dynsummary" style="display:block;">
@@ -120,9 +120,11 @@ $(function(){initNavTree('core_8hpp.html','',''); });
 <div id="dynsection-1-summary" class="dynsummary" style="display:block;">
 </div>
 <div id="dynsection-1-content" class="dyncontent" style="display:none;">
-<div class="center"><div class="zoom"><iframe scrolling="no" loading="lazy" frameborder="0" src="core_8hpp__dep__incl.svg" width="100%" height="442"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
+<div class="center"><div class="zoom"><iframe scrolling="no" loading="lazy" frameborder="0" src="core_8hpp__dep__incl.svg" width="100%" height="600"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
 </div>
-</div><table class="memberdecls">
+</div>
+<p><a href="core_8hpp_source.html">Go to the source code of this file.</a></p>
+<table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-nested-classes" class="groupheader"><a id="nested-classes" name="nested-classes"></a>
 Classes</h2></td></tr>
 <tr class="memitem:loom_3A_3Avm_3A_3AVariable_3C_20Type_2C_20Name_20_3E" id="r_loom_3A_3Avm_3A_3AVariable_3C_20Type_2C_20Name_20_3E"><td class="memItemLeft">struct &#160;</td><td class="memItemRight"><a class="el" href="structloom_1_1vm_1_1Variable.html">loom::vm::Variable&lt; Type, Name &gt;</a></td></tr>
@@ -182,85 +184,63 @@ Concepts</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-typedef-members" class="groupheader"><a id="typedef-members" name="typedef-members"></a>
 Typedefs</h2></td></tr>
-<tr class="memitem:a569e338bf791b4e04a8a5a386c9e4983" id="r_a569e338bf791b4e04a8a5a386c9e4983"><td class="memTemplParams" colspan="2"><a id="a569e338bf791b4e04a8a5a386c9e4983" name="a569e338bf791b4e04a8a5a386c9e4983"></a>
-template&lt;typename _Variable&gt; </td></tr>
-<tr class="memitem:a569e338bf791b4e04a8a5a386c9e4983 template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><b>loom::vm::vartype</b> = _Variable::type</td></tr>
-<tr class="memdesc:a569e338bf791b4e04a8a5a386c9e4983"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get type of a <a class="el" href="structloom_1_1vm_1_1Variable.html" title="Describes a variable.">Variable</a>. <br /></td></tr>
-<tr class="memitem:a75a60c2650b102821cc6074ab663c81d" id="r_a75a60c2650b102821cc6074ab663c81d"><td class="memTemplParams" colspan="2"><a id="a75a60c2650b102821cc6074ab663c81d" name="a75a60c2650b102821cc6074ab663c81d"></a>
-template&lt;typename _Variable&gt; </td></tr>
-<tr class="memitem:a75a60c2650b102821cc6074ab663c81d template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><b>loom::vm::varname</b> = _Variable::name</td></tr>
-<tr class="memdesc:a75a60c2650b102821cc6074ab663c81d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get register name of a <a class="el" href="structloom_1_1vm_1_1Variable.html" title="Describes a variable.">Variable</a> as <a class="el" href="group__CTString.html#ga872f3618645ab19393ce66edb62e1f1d" title="Compile-time string.">char_sequence</a>. <br /></td></tr>
-<tr class="memitem:a9865319601f2f43d97fc0fdd52a36a3b" id="r_a9865319601f2f43d97fc0fdd52a36a3b"><td class="memItemLeft"><a id="a9865319601f2f43d97fc0fdd52a36a3b" name="a9865319601f2f43d97fc0fdd52a36a3b"></a>
-using&#160;</td><td class="memItemRight"><b>loom::vm::_pc_name</b> = <a class="el" href="group__CTString.html#gaf0b5f03cdc1ec41cac34da64d02d48f2">sl2cs</a>&lt;<a class="el" href="namespaceloom_1_1vm.html#aac6ab386303112de206711c72eba9f48">_pc_char</a>&gt;</td></tr>
-<tr class="memdesc:a9865319601f2f43d97fc0fdd52a36a3b"><td class="mdescLeft">&#160;</td><td class="mdescRight"><a class="el" href="group__CTString.html#ga872f3618645ab19393ce66edb62e1f1d" title="Compile-time string.">char_sequence</a> for _pc_char. <br /></td></tr>
-<tr class="memitem:a464072ab9da8b50f9559f7068f6d01e0" id="r_a464072ab9da8b50f9559f7068f6d01e0"><td class="memItemLeft"><a id="a464072ab9da8b50f9559f7068f6d01e0" name="a464072ab9da8b50f9559f7068f6d01e0"></a>
-using&#160;</td><td class="memItemRight"><b>loom::vm::HaltLabel</b> = <a class="el" href="structloom_1_1vm_1_1Label.html">Label</a>&lt;<a class="el" href="group__CTString.html#gaf0b5f03cdc1ec41cac34da64d02d48f2">sl2cs</a>&lt;&quot;HALT&quot;&gt;&gt;</td></tr>
-<tr class="memdesc:a464072ab9da8b50f9559f7068f6d01e0"><td class="mdescLeft">&#160;</td><td class="mdescRight">Special <a class="el" href="structloom_1_1vm_1_1Label.html" title="Describes a label.">Label</a> jump to halts program. <br /></td></tr>
-<tr class="memitem:a290cf1685ea79e0d647897f15f0dc711" id="r_a290cf1685ea79e0d647897f15f0dc711"><td class="memItemLeft"><a id="a290cf1685ea79e0d647897f15f0dc711" name="a290cf1685ea79e0d647897f15f0dc711"></a>
-using&#160;</td><td class="memItemRight"><b>loom::vm::StartLabel</b> = <a class="el" href="structloom_1_1vm_1_1Label.html">Label</a>&lt;<a class="el" href="group__CTString.html#gaf0b5f03cdc1ec41cac34da64d02d48f2">sl2cs</a>&lt;&quot;START&quot;&gt;&gt;</td></tr>
-<tr class="memdesc:a290cf1685ea79e0d647897f15f0dc711"><td class="mdescLeft">&#160;</td><td class="mdescRight">Special <a class="el" href="structloom_1_1vm_1_1Label.html" title="Describes a label.">Label</a> jump to starts program from the beginning. <br /></td></tr>
-<tr class="memitem:afe72ff37bf633d56baa29b19880bdce8" id="r_afe72ff37bf633d56baa29b19880bdce8"><td class="memTemplParams" colspan="2"><a id="afe72ff37bf633d56baa29b19880bdce8" name="afe72ff37bf633d56baa29b19880bdce8"></a>
-template&lt;typename Instruction, typename PCVar&gt; </td></tr>
-<tr class="memitem:afe72ff37bf633d56baa29b19880bdce8 template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><b>loom::vm::stored_var_t</b> = <a class="el" href="structloom_1_1vm_1_1stored__var.html">stored_var</a>&lt;Instruction, PCVar&gt;<a class="el" href="structloom_1_1vm_1_1stored__var.html">::type</a></td></tr>
-<tr class="memitem:af0f9ee4ee2a8bb3a1830b4cb4f6a632b" id="r_af0f9ee4ee2a8bb3a1830b4cb4f6a632b"><td class="memTemplParams" colspan="2"><a id="af0f9ee4ee2a8bb3a1830b4cb4f6a632b" name="af0f9ee4ee2a8bb3a1830b4cb4f6a632b"></a>
-template&lt;typename Instruction, typename PCVar&gt; </td></tr>
-<tr class="memitem:af0f9ee4ee2a8bb3a1830b4cb4f6a632b template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><b>loom::vm::ins_vars_t</b> = <a class="el" href="structloom_1_1vm_1_1ins__vars.html">ins_vars</a>&lt;Instruction, PCVar&gt;<a class="el" href="structloom_1_1vm_1_1stored__var.html">::type</a></td></tr>
-<tr class="memdesc:af0f9ee4ee2a8bb3a1830b4cb4f6a632b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get all variables used in <code class="param">Instruction</code>. <br /></td></tr>
-<tr class="memitem:a0bd2e642d67664e57b9b8e67f95795f8" id="r_a0bd2e642d67664e57b9b8e67f95795f8"><td class="memTemplParams" colspan="2"><a id="a0bd2e642d67664e57b9b8e67f95795f8" name="a0bd2e642d67664e57b9b8e67f95795f8"></a>
-template&lt;typename Name, typename Vars&gt; </td></tr>
-<tr class="memitem:a0bd2e642d67664e57b9b8e67f95795f8 template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><b>loom::vm::collect_types_t</b> = <a class="el" href="classloom_1_1vm_1_1collect__types.html">collect_types</a>&lt;Name, Vars&gt;<a class="el" href="structloom_1_1vm_1_1stored__var.html">::type</a></td></tr>
-<tr class="memitem:a575cfb5385757189eb5b7d455c71c3ba" id="r_a575cfb5385757189eb5b7d455c71c3ba"><td class="memTemplParams" colspan="2"><a id="a575cfb5385757189eb5b7d455c71c3ba" name="a575cfb5385757189eb5b7d455c71c3ba"></a>
-template&lt;typename Vars, typename Names&gt; </td></tr>
-<tr class="memitem:a575cfb5385757189eb5b7d455c71c3ba template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><b>loom::vm::infer_reg_types_t</b> = <a class="el" href="structloom_1_1vm_1_1infer__reg__types.html">infer_reg_types</a>&lt;Vars, Names&gt;<a class="el" href="structloom_1_1vm_1_1stored__var.html">::type</a></td></tr>
-<tr class="memitem:ab3c3e637b9a5fee1aa8622514accfc78" id="r_ab3c3e637b9a5fee1aa8622514accfc78"><td class="memTemplParams" colspan="2"><a id="ab3c3e637b9a5fee1aa8622514accfc78" name="ab3c3e637b9a5fee1aa8622514accfc78"></a>
-template&lt;typename Block, typename PCVar&gt; </td></tr>
-<tr class="memitem:ab3c3e637b9a5fee1aa8622514accfc78 template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><b>loom::vm::block_vars_t</b> = block_vars&lt;Block, PCVar&gt;<a class="el" href="structloom_1_1vm_1_1stored__var.html">::type</a></td></tr>
-<tr class="memitem:a34097f09646bbb921061a90126c822fc" id="r_a34097f09646bbb921061a90126c822fc"><td class="memTemplParams" colspan="2"><a id="a34097f09646bbb921061a90126c822fc" name="a34097f09646bbb921061a90126c822fc"></a>
-template&lt;typename _ParmJump, typename LabelMap&gt; </td></tr>
-<tr class="memitem:a34097f09646bbb921061a90126c822fc template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><b>loom::vm::jmp_idxs</b> = <a class="el" href="structloom_1_1vm_1_1jump__helper.html">jump_helper</a>&lt;_ParmJump, LabelMap&gt;<a class="el" href="structloom_1_1vm_1_1jump__helper.html">::jump_idxs</a></td></tr>
-<tr class="memitem:afdce159def3a3cb75c7db533bf1192b8" id="r_afdce159def3a3cb75c7db533bf1192b8"><td class="memTemplParams" colspan="2"><a id="afdce159def3a3cb75c7db533bf1192b8" name="afdce159def3a3cb75c7db533bf1192b8"></a>
-template&lt;typename Blocks, typename LabelMap&gt; </td></tr>
-<tr class="memitem:afdce159def3a3cb75c7db533bf1192b8 template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><b>loom::vm::successors_table_t</b> = <a class="el" href="structloom_1_1vm_1_1successors__table.html">successors_table</a>&lt;Blocks, LabelMap&gt;<a class="el" href="structloom_1_1vm_1_1stored__var.html">::type</a></td></tr>
-<tr class="memdesc:afdce159def3a3cb75c7db533bf1192b8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Helper typedef. <br /></td></tr>
-<tr class="memitem:a42120be74aaafbacb31bc4fa61c15165" id="r_a42120be74aaafbacb31bc4fa61c15165"><td class="memTemplParams" colspan="2"><a id="a42120be74aaafbacb31bc4fa61c15165" name="a42120be74aaafbacb31bc4fa61c15165"></a>
-template&lt;typename LabelMap&gt; </td></tr>
-<tr class="memitem:a42120be74aaafbacb31bc4fa61c15165 template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><b>loom::vm::get_index_t</b> = <a class="el" href="group__TMP.html#gab2989d802ecb9ef4c67692227c407fa1">snd_t</a>&lt;<a class="el" href="group__Typelist.html#ga01954b67861600e312c877a34a8042b4">typelist::head</a>&lt;LabelMap&gt;&gt;::value_type</td></tr>
-<tr class="memitem:ac8b0ed60943ea90d334aeb20059328c2" id="r_ac8b0ed60943ea90d334aeb20059328c2"><td class="memTemplParams" colspan="2"><a id="ac8b0ed60943ea90d334aeb20059328c2" name="ac8b0ed60943ea90d334aeb20059328c2"></a>
-template&lt;typename Block, typename PCVar&gt; </td></tr>
-<tr class="memitem:ac8b0ed60943ea90d334aeb20059328c2 template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><b>loom::vm::load_list_t</b> = <a class="el" href="classloom_1_1vm_1_1load__list.html">load_list</a>&lt;Block, PCVar&gt;<a class="el" href="structloom_1_1vm_1_1stored__var.html">::type</a></td></tr>
-<tr class="memdesc:ac8b0ed60943ea90d334aeb20059328c2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Helper typedef. <br /></td></tr>
-<tr class="memitem:a43dfda43dd5b06653cd107c2d33886f0" id="r_a43dfda43dd5b06653cd107c2d33886f0"><td class="memTemplParams" colspan="2"><a id="a43dfda43dd5b06653cd107c2d33886f0" name="a43dfda43dd5b06653cd107c2d33886f0"></a>
-template&lt;typename Block, typename PCVar&gt; </td></tr>
-<tr class="memitem:a43dfda43dd5b06653cd107c2d33886f0 template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><b>loom::vm::store_list_t</b> = <a class="el" href="classloom_1_1vm_1_1store__list.html">store_list</a>&lt;Block, PCVar&gt;<a class="el" href="structloom_1_1vm_1_1stored__var.html">::type</a></td></tr>
-<tr class="memdesc:a43dfda43dd5b06653cd107c2d33886f0"><td class="mdescLeft">&#160;</td><td class="mdescRight">Helper typedef. <br /></td></tr>
-<tr class="memitem:a33eec3cdc96d944c143a892bd9f4f1e0" id="r_a33eec3cdc96d944c143a892bd9f4f1e0"><td class="memTemplParams" colspan="2"><a id="a33eec3cdc96d944c143a892bd9f4f1e0" name="a33eec3cdc96d944c143a892bd9f4f1e0"></a>
-template&lt;typename Blocks, typename Labels&gt; </td></tr>
-<tr class="memitem:a33eec3cdc96d944c143a892bd9f4f1e0 template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><b>loom::vm::ensure_last_jumps_t</b> = <a class="el" href="classloom_1_1vm_1_1ensure__last__jumps.html">ensure_last_jumps</a>&lt;Blocks, Labels&gt;<a class="el" href="structloom_1_1vm_1_1stored__var.html">::type</a></td></tr>
-<tr class="memdesc:a33eec3cdc96d944c143a892bd9f4f1e0"><td class="mdescLeft">&#160;</td><td class="mdescRight">Helper typedef. <br /></td></tr>
-<tr class="memitem:afe2b97124f70ead68255a043227ae2c9" id="r_afe2b97124f70ead68255a043227ae2c9"><td class="memTemplParams" colspan="2"><a id="afe2b97124f70ead68255a043227ae2c9" name="afe2b97124f70ead68255a043227ae2c9"></a>
-template&lt;typename Instructions&gt; </td></tr>
-<tr class="memitem:afe2b97124f70ead68255a043227ae2c9 template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><b>loom::vm::trim_t</b> = detail::trim&lt;Instructions&gt;<a class="el" href="structloom_1_1vm_1_1stored__var.html">::type</a></td></tr>
-<tr class="memdesc:afe2b97124f70ead68255a043227ae2c9"><td class="mdescLeft">&#160;</td><td class="mdescRight">Trim extra labels in the beginning and ending of <code class="param">Instructions</code> list. <br /></td></tr>
-<tr class="memitem:a7bea488995ddf7f3baa05bbf0c5f7c8c" id="r_a7bea488995ddf7f3baa05bbf0c5f7c8c"><td class="memTemplParams" colspan="2"><a id="a7bea488995ddf7f3baa05bbf0c5f7c8c" name="a7bea488995ddf7f3baa05bbf0c5f7c8c"></a>
-template&lt;typename Instructions, typename LabelDict&gt; </td></tr>
-<tr class="memitem:a7bea488995ddf7f3baa05bbf0c5f7c8c template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><b>loom::vm::update_jumps_t</b> = detail::update_jmps&lt;Instructions, LabelDict&gt;<a class="el" href="structloom_1_1vm_1_1stored__var.html">::type</a></td></tr>
-<tr class="memdesc:a7bea488995ddf7f3baa05bbf0c5f7c8c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Update jumps to deleted labels. <br /></td></tr>
+<tr class="memitem:a569e338bf791b4e04a8a5a386c9e4983" id="r_a569e338bf791b4e04a8a5a386c9e4983"><td class="memTemplParams" colspan="2">template&lt;typename _Variable&gt; </td></tr>
+<tr class="memitem:a569e338bf791b4e04a8a5a386c9e4983 template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="namespaceloom_1_1vm.html#a569e338bf791b4e04a8a5a386c9e4983">loom::vm::vartype</a> = _Variable::type</td></tr>
+<tr class="memdesc:a569e338bf791b4e04a8a5a386c9e4983"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get type of a <a class="el" href="structloom_1_1vm_1_1Variable.html" title="Describes a variable.">Variable</a>.  <br /></td></tr>
+<tr class="memitem:a75a60c2650b102821cc6074ab663c81d" id="r_a75a60c2650b102821cc6074ab663c81d"><td class="memTemplParams" colspan="2">template&lt;typename _Variable&gt; </td></tr>
+<tr class="memitem:a75a60c2650b102821cc6074ab663c81d template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="namespaceloom_1_1vm.html#a75a60c2650b102821cc6074ab663c81d">loom::vm::varname</a> = _Variable::name</td></tr>
+<tr class="memdesc:a75a60c2650b102821cc6074ab663c81d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get register name of a <a class="el" href="structloom_1_1vm_1_1Variable.html" title="Describes a variable.">Variable</a> as <a class="el" href="group__CTString.html#ga872f3618645ab19393ce66edb62e1f1d" title="Compile-time string.">char_sequence</a>.  <br /></td></tr>
+<tr class="memitem:a9865319601f2f43d97fc0fdd52a36a3b" id="r_a9865319601f2f43d97fc0fdd52a36a3b"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="namespaceloom_1_1vm.html#a9865319601f2f43d97fc0fdd52a36a3b">loom::vm::_pc_name</a> = <a class="el" href="group__CTString.html#gaf0b5f03cdc1ec41cac34da64d02d48f2">sl2cs</a>&lt;<a class="el" href="namespaceloom_1_1vm.html#aac6ab386303112de206711c72eba9f48">_pc_char</a>&gt;</td></tr>
+<tr class="memdesc:a9865319601f2f43d97fc0fdd52a36a3b"><td class="mdescLeft">&#160;</td><td class="mdescRight"><a class="el" href="group__CTString.html#ga872f3618645ab19393ce66edb62e1f1d" title="Compile-time string.">char_sequence</a> for _pc_char.  <br /></td></tr>
+<tr class="memitem:a464072ab9da8b50f9559f7068f6d01e0" id="r_a464072ab9da8b50f9559f7068f6d01e0"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="namespaceloom_1_1vm.html#a464072ab9da8b50f9559f7068f6d01e0">loom::vm::HaltLabel</a> = <a class="el" href="structloom_1_1vm_1_1Label.html">Label</a>&lt;<a class="el" href="group__CTString.html#gaf0b5f03cdc1ec41cac34da64d02d48f2">sl2cs</a>&lt;&quot;HALT&quot;&gt;&gt;</td></tr>
+<tr class="memdesc:a464072ab9da8b50f9559f7068f6d01e0"><td class="mdescLeft">&#160;</td><td class="mdescRight">Special <a class="el" href="structloom_1_1vm_1_1Label.html" title="Describes a label.">Label</a> jump to halts program.  <br /></td></tr>
+<tr class="memitem:a290cf1685ea79e0d647897f15f0dc711" id="r_a290cf1685ea79e0d647897f15f0dc711"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="namespaceloom_1_1vm.html#a290cf1685ea79e0d647897f15f0dc711">loom::vm::StartLabel</a> = <a class="el" href="structloom_1_1vm_1_1Label.html">Label</a>&lt;<a class="el" href="group__CTString.html#gaf0b5f03cdc1ec41cac34da64d02d48f2">sl2cs</a>&lt;&quot;START&quot;&gt;&gt;</td></tr>
+<tr class="memdesc:a290cf1685ea79e0d647897f15f0dc711"><td class="mdescLeft">&#160;</td><td class="mdescRight">Special <a class="el" href="structloom_1_1vm_1_1Label.html" title="Describes a label.">Label</a> jump to starts program from the beginning.  <br /></td></tr>
+<tr class="memitem:afe72ff37bf633d56baa29b19880bdce8" id="r_afe72ff37bf633d56baa29b19880bdce8"><td class="memTemplParams" colspan="2">template&lt;typename Instruction, typename PCVar&gt; </td></tr>
+<tr class="memitem:afe72ff37bf633d56baa29b19880bdce8 template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="namespaceloom_1_1vm.html#afe72ff37bf633d56baa29b19880bdce8">loom::vm::stored_var_t</a> = <a class="el" href="structloom_1_1vm_1_1stored__var.html">stored_var</a>&lt;Instruction, PCVar&gt;<a class="el" href="structloom_1_1vm_1_1stored__var.html">::type</a></td></tr>
+<tr class="memitem:af0f9ee4ee2a8bb3a1830b4cb4f6a632b" id="r_af0f9ee4ee2a8bb3a1830b4cb4f6a632b"><td class="memTemplParams" colspan="2">template&lt;typename Instruction, typename PCVar&gt; </td></tr>
+<tr class="memitem:af0f9ee4ee2a8bb3a1830b4cb4f6a632b template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="namespaceloom_1_1vm.html#af0f9ee4ee2a8bb3a1830b4cb4f6a632b">loom::vm::ins_vars_t</a> = <a class="el" href="structloom_1_1vm_1_1ins__vars.html">ins_vars</a>&lt;Instruction, PCVar&gt;<a class="el" href="structloom_1_1vm_1_1stored__var.html">::type</a></td></tr>
+<tr class="memdesc:af0f9ee4ee2a8bb3a1830b4cb4f6a632b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get all variables used in <code class="param">Instruction</code>.  <br /></td></tr>
+<tr class="memitem:a0bd2e642d67664e57b9b8e67f95795f8" id="r_a0bd2e642d67664e57b9b8e67f95795f8"><td class="memTemplParams" colspan="2">template&lt;typename Name, typename Vars&gt; </td></tr>
+<tr class="memitem:a0bd2e642d67664e57b9b8e67f95795f8 template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="namespaceloom_1_1vm.html#a0bd2e642d67664e57b9b8e67f95795f8">loom::vm::collect_types_t</a> = <a class="el" href="classloom_1_1vm_1_1collect__types.html">collect_types</a>&lt;Name, Vars&gt;<a class="el" href="structloom_1_1vm_1_1stored__var.html">::type</a></td></tr>
+<tr class="memitem:a575cfb5385757189eb5b7d455c71c3ba" id="r_a575cfb5385757189eb5b7d455c71c3ba"><td class="memTemplParams" colspan="2">template&lt;typename Vars, typename Names&gt; </td></tr>
+<tr class="memitem:a575cfb5385757189eb5b7d455c71c3ba template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="namespaceloom_1_1vm.html#a575cfb5385757189eb5b7d455c71c3ba">loom::vm::infer_reg_types_t</a> = <a class="el" href="structloom_1_1vm_1_1infer__reg__types.html">infer_reg_types</a>&lt;Vars, Names&gt;<a class="el" href="structloom_1_1vm_1_1stored__var.html">::type</a></td></tr>
+<tr class="memitem:ab3c3e637b9a5fee1aa8622514accfc78" id="r_ab3c3e637b9a5fee1aa8622514accfc78"><td class="memTemplParams" colspan="2">template&lt;typename Block, typename PCVar&gt; </td></tr>
+<tr class="memitem:ab3c3e637b9a5fee1aa8622514accfc78 template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="namespaceloom_1_1vm.html#ab3c3e637b9a5fee1aa8622514accfc78">loom::vm::block_vars_t</a> = block_vars&lt;Block, PCVar&gt;<a class="el" href="structloom_1_1vm_1_1stored__var.html">::type</a></td></tr>
+<tr class="memitem:a34097f09646bbb921061a90126c822fc" id="r_a34097f09646bbb921061a90126c822fc"><td class="memTemplParams" colspan="2">template&lt;typename _ParmJump, typename LabelMap&gt; </td></tr>
+<tr class="memitem:a34097f09646bbb921061a90126c822fc template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="namespaceloom_1_1vm.html#a34097f09646bbb921061a90126c822fc">loom::vm::jmp_idxs</a> = <a class="el" href="structloom_1_1vm_1_1jump__helper.html">jump_helper</a>&lt;_ParmJump, LabelMap&gt;<a class="el" href="structloom_1_1vm_1_1jump__helper.html">::jump_idxs</a></td></tr>
+<tr class="memitem:afdce159def3a3cb75c7db533bf1192b8" id="r_afdce159def3a3cb75c7db533bf1192b8"><td class="memTemplParams" colspan="2">template&lt;typename Blocks, typename LabelMap&gt; </td></tr>
+<tr class="memitem:afdce159def3a3cb75c7db533bf1192b8 template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="namespaceloom_1_1vm.html#afdce159def3a3cb75c7db533bf1192b8">loom::vm::successors_table_t</a> = <a class="el" href="structloom_1_1vm_1_1successors__table.html">successors_table</a>&lt;Blocks, LabelMap&gt;<a class="el" href="structloom_1_1vm_1_1stored__var.html">::type</a></td></tr>
+<tr class="memdesc:afdce159def3a3cb75c7db533bf1192b8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Helper typedef.  <br /></td></tr>
+<tr class="memitem:a42120be74aaafbacb31bc4fa61c15165" id="r_a42120be74aaafbacb31bc4fa61c15165"><td class="memTemplParams" colspan="2">template&lt;typename LabelMap&gt; </td></tr>
+<tr class="memitem:a42120be74aaafbacb31bc4fa61c15165 template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="namespaceloom_1_1vm.html#a42120be74aaafbacb31bc4fa61c15165">loom::vm::get_index_t</a> = <a class="el" href="group__TMP.html#gab2989d802ecb9ef4c67692227c407fa1">snd_t</a>&lt;<a class="el" href="group__Typelist.html#ga01954b67861600e312c877a34a8042b4">typelist::head</a>&lt;LabelMap&gt;&gt;::value_type</td></tr>
+<tr class="memitem:ac8b0ed60943ea90d334aeb20059328c2" id="r_ac8b0ed60943ea90d334aeb20059328c2"><td class="memTemplParams" colspan="2">template&lt;typename Block, typename PCVar&gt; </td></tr>
+<tr class="memitem:ac8b0ed60943ea90d334aeb20059328c2 template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="namespaceloom_1_1vm.html#ac8b0ed60943ea90d334aeb20059328c2">loom::vm::load_list_t</a> = <a class="el" href="classloom_1_1vm_1_1load__list.html">load_list</a>&lt;Block, PCVar&gt;<a class="el" href="structloom_1_1vm_1_1stored__var.html">::type</a></td></tr>
+<tr class="memdesc:ac8b0ed60943ea90d334aeb20059328c2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Helper typedef.  <br /></td></tr>
+<tr class="memitem:a43dfda43dd5b06653cd107c2d33886f0" id="r_a43dfda43dd5b06653cd107c2d33886f0"><td class="memTemplParams" colspan="2">template&lt;typename Block, typename PCVar&gt; </td></tr>
+<tr class="memitem:a43dfda43dd5b06653cd107c2d33886f0 template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="namespaceloom_1_1vm.html#a43dfda43dd5b06653cd107c2d33886f0">loom::vm::store_list_t</a> = <a class="el" href="classloom_1_1vm_1_1store__list.html">store_list</a>&lt;Block, PCVar&gt;<a class="el" href="structloom_1_1vm_1_1stored__var.html">::type</a></td></tr>
+<tr class="memdesc:a43dfda43dd5b06653cd107c2d33886f0"><td class="mdescLeft">&#160;</td><td class="mdescRight">Helper typedef.  <br /></td></tr>
+<tr class="memitem:a33eec3cdc96d944c143a892bd9f4f1e0" id="r_a33eec3cdc96d944c143a892bd9f4f1e0"><td class="memTemplParams" colspan="2">template&lt;typename Blocks, typename Labels&gt; </td></tr>
+<tr class="memitem:a33eec3cdc96d944c143a892bd9f4f1e0 template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="namespaceloom_1_1vm.html#a33eec3cdc96d944c143a892bd9f4f1e0">loom::vm::ensure_last_jumps_t</a> = <a class="el" href="classloom_1_1vm_1_1ensure__last__jumps.html">ensure_last_jumps</a>&lt;Blocks, Labels&gt;<a class="el" href="structloom_1_1vm_1_1stored__var.html">::type</a></td></tr>
+<tr class="memdesc:a33eec3cdc96d944c143a892bd9f4f1e0"><td class="mdescLeft">&#160;</td><td class="mdescRight">Helper typedef.  <br /></td></tr>
+<tr class="memitem:afe2b97124f70ead68255a043227ae2c9" id="r_afe2b97124f70ead68255a043227ae2c9"><td class="memTemplParams" colspan="2">template&lt;typename Instructions&gt; </td></tr>
+<tr class="memitem:afe2b97124f70ead68255a043227ae2c9 template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="namespaceloom_1_1vm.html#afe2b97124f70ead68255a043227ae2c9">loom::vm::trim_t</a> = detail::trim&lt;Instructions&gt;<a class="el" href="structloom_1_1vm_1_1stored__var.html">::type</a></td></tr>
+<tr class="memdesc:afe2b97124f70ead68255a043227ae2c9"><td class="mdescLeft">&#160;</td><td class="mdescRight">Trim extra labels in the beginning and ending of <code class="param">Instructions</code> list.  <br /></td></tr>
+<tr class="memitem:a7bea488995ddf7f3baa05bbf0c5f7c8c" id="r_a7bea488995ddf7f3baa05bbf0c5f7c8c"><td class="memTemplParams" colspan="2">template&lt;typename Instructions, typename LabelDict&gt; </td></tr>
+<tr class="memitem:a7bea488995ddf7f3baa05bbf0c5f7c8c template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="namespaceloom_1_1vm.html#a7bea488995ddf7f3baa05bbf0c5f7c8c">loom::vm::update_jumps_t</a> = detail::update_jmps&lt;Instructions, LabelDict&gt;<a class="el" href="structloom_1_1vm_1_1stored__var.html">::type</a></td></tr>
+<tr class="memdesc:a7bea488995ddf7f3baa05bbf0c5f7c8c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Update jumps to deleted labels.  <br /></td></tr>
 <tr class="memitem:a64c6cb05fec7a9b5d15b6e2e8d284f36" id="r_a64c6cb05fec7a9b5d15b6e2e8d284f36"><td class="memTemplParams" colspan="2">template&lt;typename Instructions&gt; </td></tr>
 <tr class="memitem:a64c6cb05fec7a9b5d15b6e2e8d284f36 template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="namespaceloom_1_1vm.html#a64c6cb05fec7a9b5d15b6e2e8d284f36">loom::vm::optimize_adjascent_labels</a></td></tr>
 <tr class="memdesc:a64c6cb05fec7a9b5d15b6e2e8d284f36"><td class="mdescLeft">&#160;</td><td class="mdescRight">Remove adjascent labels.  <br /></td></tr>
-<tr class="memitem:a49e35fe6e49904d43179ac4d7b876364" id="r_a49e35fe6e49904d43179ac4d7b876364"><td class="memTemplParams" colspan="2"><a id="a49e35fe6e49904d43179ac4d7b876364" name="a49e35fe6e49904d43179ac4d7b876364"></a>
-template&lt;typename Instructions&gt; </td></tr>
-<tr class="memitem:a49e35fe6e49904d43179ac4d7b876364 template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><b>loom::vm::optimize_labels_t</b> = <a class="el" href="classloom_1_1vm_1_1optimize__labels.html">optimize_labels</a>&lt;Instructions&gt;<a class="el" href="structloom_1_1vm_1_1stored__var.html">::type</a></td></tr>
-<tr class="memdesc:a49e35fe6e49904d43179ac4d7b876364"><td class="mdescLeft">&#160;</td><td class="mdescRight">Helper typedef. <br /></td></tr>
-<tr class="memitem:a4494b7552e1eb2ae98f783c5b36fd17e" id="r_a4494b7552e1eb2ae98f783c5b36fd17e"><td class="memTemplParams" colspan="2"><a id="a4494b7552e1eb2ae98f783c5b36fd17e" name="a4494b7552e1eb2ae98f783c5b36fd17e"></a>
-template&lt;typename T&gt; </td></tr>
-<tr class="memitem:a4494b7552e1eb2ae98f783c5b36fd17e template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><b>loom::vm::register_size_t</b> = register_size&lt;T&gt;<a class="el" href="structloom_1_1vm_1_1stored__var.html">::type</a></td></tr>
-<tr class="memitem:a4a7dab8bc019ca1465f13b4802464654" id="r_a4a7dab8bc019ca1465f13b4802464654"><td class="memTemplParams" colspan="2"><a id="a4a7dab8bc019ca1465f13b4802464654" name="a4a7dab8bc019ca1465f13b4802464654"></a>
-template&lt;typename T&gt; </td></tr>
-<tr class="memitem:a4a7dab8bc019ca1465f13b4802464654 template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><b>loom::vm::select_first_t</b> = select_first&lt;T&gt;<a class="el" href="structloom_1_1vm_1_1stored__var.html">::type</a></td></tr>
-<tr class="memitem:a22715370226f22a898b9f2db3d755667" id="r_a22715370226f22a898b9f2db3d755667"><td class="memTemplParams" colspan="2"><a id="a22715370226f22a898b9f2db3d755667" name="a22715370226f22a898b9f2db3d755667"></a>
-template&lt;typename T&gt; </td></tr>
-<tr class="memitem:a22715370226f22a898b9f2db3d755667 template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><b>loom::vm::make_var</b> = <a class="el" href="structloom_1_1vm_1_1Variable.html">Variable</a>&lt;<a class="el" href="group__TMP.html#gaccb7e98fb4f9a4ac576a8eb80f52d448">fst_t</a>&lt;T&gt;, <a class="el" href="group__TMP.html#gab2989d802ecb9ef4c67692227c407fa1">snd_t</a>&lt;T&gt;&gt;</td></tr>
+<tr class="memitem:a49e35fe6e49904d43179ac4d7b876364" id="r_a49e35fe6e49904d43179ac4d7b876364"><td class="memTemplParams" colspan="2">template&lt;typename Instructions&gt; </td></tr>
+<tr class="memitem:a49e35fe6e49904d43179ac4d7b876364 template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="namespaceloom_1_1vm.html#a49e35fe6e49904d43179ac4d7b876364">loom::vm::optimize_labels_t</a> = <a class="el" href="classloom_1_1vm_1_1optimize__labels.html">optimize_labels</a>&lt;Instructions&gt;<a class="el" href="structloom_1_1vm_1_1stored__var.html">::type</a></td></tr>
+<tr class="memdesc:a49e35fe6e49904d43179ac4d7b876364"><td class="mdescLeft">&#160;</td><td class="mdescRight">Helper typedef.  <br /></td></tr>
+<tr class="memitem:a4494b7552e1eb2ae98f783c5b36fd17e" id="r_a4494b7552e1eb2ae98f783c5b36fd17e"><td class="memTemplParams" colspan="2">template&lt;typename T&gt; </td></tr>
+<tr class="memitem:a4494b7552e1eb2ae98f783c5b36fd17e template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="namespaceloom_1_1vm.html#a4494b7552e1eb2ae98f783c5b36fd17e">loom::vm::register_size_t</a> = register_size&lt;T&gt;<a class="el" href="structloom_1_1vm_1_1stored__var.html">::type</a></td></tr>
+<tr class="memitem:a4a7dab8bc019ca1465f13b4802464654" id="r_a4a7dab8bc019ca1465f13b4802464654"><td class="memTemplParams" colspan="2">template&lt;typename T&gt; </td></tr>
+<tr class="memitem:a4a7dab8bc019ca1465f13b4802464654 template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="namespaceloom_1_1vm.html#a4a7dab8bc019ca1465f13b4802464654">loom::vm::select_first_t</a> = select_first&lt;T&gt;<a class="el" href="structloom_1_1vm_1_1stored__var.html">::type</a></td></tr>
+<tr class="memitem:a22715370226f22a898b9f2db3d755667" id="r_a22715370226f22a898b9f2db3d755667"><td class="memTemplParams" colspan="2">template&lt;typename T&gt; </td></tr>
+<tr class="memitem:a22715370226f22a898b9f2db3d755667 template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="namespaceloom_1_1vm.html#a22715370226f22a898b9f2db3d755667">loom::vm::make_var</a> = <a class="el" href="structloom_1_1vm_1_1Variable.html">Variable</a>&lt;<a class="el" href="group__TMP.html#gaccb7e98fb4f9a4ac576a8eb80f52d448">fst_t</a>&lt;T&gt;, <a class="el" href="group__TMP.html#gab2989d802ecb9ef4c67692227c407fa1">snd_t</a>&lt;T&gt;&gt;</td></tr>
 <tr class="memitem:a74a4d865f45216b613dac26913d6f0f4" id="r_a74a4d865f45216b613dac26913d6f0f4"><td class="memTemplParams" colspan="2">template&lt;Kernel K&gt; </td></tr>
 <tr class="memitem:a74a4d865f45216b613dac26913d6f0f4 template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="namespaceloom_1_1vm.html#a74a4d865f45216b613dac26913d6f0f4">loom::vm::input_types</a> = <a class="el" href="group__Typelist.html#gaecd8e1bc8dfc53fbfd1abde91a668f46">typelist::map</a>&lt;<a class="el" href="namespaceloom_1_1vm.html#a569e338bf791b4e04a8a5a386c9e4983">vartype</a>, typename K::input_vars&gt;</td></tr>
 <tr class="memdesc:a74a4d865f45216b613dac26913d6f0f4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Helper shortcut <a class="el" href="structloom_1_1type__sequence.html" title="Sequence of types.">type_sequence</a> with input types of program <code class="param">P</code>.  <br /></td></tr>
@@ -286,25 +266,23 @@ Functions</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-var-members" class="groupheader"><a id="var-members" name="var-members"></a>
 Variables</h2></td></tr>
-<tr class="memitem:a3125b8bd2bd1f975cc78a686c3ece083" id="r_a3125b8bd2bd1f975cc78a686c3ece083"><td class="memTemplParams" colspan="2"><a id="a3125b8bd2bd1f975cc78a686c3ece083" name="a3125b8bd2bd1f975cc78a686c3ece083"></a>
-template&lt;typename _Variable&gt; </td></tr>
-<tr class="memitem:a3125b8bd2bd1f975cc78a686c3ece083 template"><td class="memItemLeft">constexpr std::string_view&#160;</td><td class="memItemRight"><b>loom::vm::varview</b> = _Variable::nameview</td></tr>
-<tr class="memdesc:a3125b8bd2bd1f975cc78a686c3ece083"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get register name of a <a class="el" href="structloom_1_1vm_1_1Variable.html" title="Describes a variable.">Variable</a> as std::string_view. <br /></td></tr>
-<tr class="memitem:aac6ab386303112de206711c72eba9f48" id="r_aac6ab386303112de206711c72eba9f48"><td class="memItemLeft"><a id="aac6ab386303112de206711c72eba9f48" name="aac6ab386303112de206711c72eba9f48"></a>
-constexpr char&#160;</td><td class="memItemRight"><b>loom::vm::_pc_char</b> [] = &quot;PC&quot;</td></tr>
-<tr class="memdesc:aac6ab386303112de206711c72eba9f48"><td class="mdescLeft">&#160;</td><td class="mdescRight">Name reserved for Program Counter register. <br /></td></tr>
+<tr class="memitem:a3125b8bd2bd1f975cc78a686c3ece083" id="r_a3125b8bd2bd1f975cc78a686c3ece083"><td class="memTemplParams" colspan="2">template&lt;typename _Variable&gt; </td></tr>
+<tr class="memitem:a3125b8bd2bd1f975cc78a686c3ece083 template"><td class="memItemLeft">constexpr std::string_view&#160;</td><td class="memItemRight"><a class="el" href="namespaceloom_1_1vm.html#a3125b8bd2bd1f975cc78a686c3ece083">loom::vm::varview</a> = _Variable::nameview</td></tr>
+<tr class="memdesc:a3125b8bd2bd1f975cc78a686c3ece083"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get register name of a <a class="el" href="structloom_1_1vm_1_1Variable.html" title="Describes a variable.">Variable</a> as std::string_view.  <br /></td></tr>
+<tr class="memitem:aac6ab386303112de206711c72eba9f48" id="r_aac6ab386303112de206711c72eba9f48"><td class="memItemLeft">constexpr char&#160;</td><td class="memItemRight"><a class="el" href="namespaceloom_1_1vm.html#aac6ab386303112de206711c72eba9f48">loom::vm::_pc_char</a> [] = &quot;PC&quot;</td></tr>
+<tr class="memdesc:aac6ab386303112de206711c72eba9f48"><td class="mdescLeft">&#160;</td><td class="mdescRight">Name reserved for Program Counter register.  <br /></td></tr>
 <tr class="memitem:aab01aa5f471cb8df26c1e64492efa7b2" id="r_aab01aa5f471cb8df26c1e64492efa7b2"><td class="memTemplParams" colspan="2">template&lt;typename... _Vars&gt; </td></tr>
 <tr class="memitem:aab01aa5f471cb8df26c1e64492efa7b2 template"><td class="memItemLeft">constexpr bool&#160;</td><td class="memItemRight"><a class="el" href="namespaceloom_1_1vm.html#aab01aa5f471cb8df26c1e64492efa7b2">loom::vm::not_pc</a></td></tr>
 <tr class="memdesc:aab01aa5f471cb8df26c1e64492efa7b2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Checks that <code class="param">_Vars</code> not named <a class="el" href="namespaceloom_1_1vm.html#a9865319601f2f43d97fc0fdd52a36a3b" title="char_sequence for _pc_char.">_pc_name</a>.  <br /></td></tr>
-<tr class="memitem:a62be2f282d3127421d4495a6dea35bf9" id="r_a62be2f282d3127421d4495a6dea35bf9"><td class="memTemplParams" colspan="2"><a id="a62be2f282d3127421d4495a6dea35bf9" name="a62be2f282d3127421d4495a6dea35bf9"></a>
-template&lt;typename _ParmJump, typename LabelMap&gt; </td></tr>
-<tr class="memitem:a62be2f282d3127421d4495a6dea35bf9 template"><td class="memItemLeft">constexpr auto&#160;</td><td class="memItemRight"><b>loom::vm::jmp_arr</b> = <a class="el" href="structloom_1_1vm_1_1jump__helper.html">jump_helper</a>&lt;_ParmJump, LabelMap&gt;::table</td></tr>
-<tr class="memitem:a2b947d213137c11c7b4be8e7aeb5a998" id="r_a2b947d213137c11c7b4be8e7aeb5a998"><td class="memTemplParams" colspan="2"><a id="a2b947d213137c11c7b4be8e7aeb5a998" name="a2b947d213137c11c7b4be8e7aeb5a998"></a>
-template&lt;typename _Variable&gt; </td></tr>
-<tr class="memitem:a2b947d213137c11c7b4be8e7aeb5a998 template"><td class="memItemLeft">constexpr bool&#160;</td><td class="memItemRight"><b>loom::vm::is_literal_v</b> = is_literal&lt;_Variable&gt;::value</td></tr>
+<tr class="memitem:a62be2f282d3127421d4495a6dea35bf9" id="r_a62be2f282d3127421d4495a6dea35bf9"><td class="memTemplParams" colspan="2">template&lt;typename _ParmJump, typename LabelMap&gt; </td></tr>
+<tr class="memitem:a62be2f282d3127421d4495a6dea35bf9 template"><td class="memItemLeft">constexpr auto&#160;</td><td class="memItemRight"><a class="el" href="namespaceloom_1_1vm.html#a62be2f282d3127421d4495a6dea35bf9">loom::vm::jmp_arr</a> = <a class="el" href="structloom_1_1vm_1_1jump__helper.html">jump_helper</a>&lt;_ParmJump, LabelMap&gt;::table</td></tr>
+<tr class="memitem:a2b947d213137c11c7b4be8e7aeb5a998" id="r_a2b947d213137c11c7b4be8e7aeb5a998"><td class="memTemplParams" colspan="2">template&lt;typename _Variable&gt; </td></tr>
+<tr class="memitem:a2b947d213137c11c7b4be8e7aeb5a998 template"><td class="memItemLeft">constexpr bool&#160;</td><td class="memItemRight"><a class="el" href="namespaceloom_1_1vm.html#a2b947d213137c11c7b4be8e7aeb5a998">loom::vm::is_literal_v</a> = is_literal&lt;_Variable&gt;::value</td></tr>
 </table>
 <a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Foundation of the virtual machine. </p>
+
+<p class="definition">Definition in file <a class="el" href="core_8hpp_source.html">core.hpp</a>.</p>
 </div></div><!-- contents -->
 </div><!-- doc-content -->
 <div id="page-nav" class="page-nav-panel">

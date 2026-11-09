@@ -1,0 +1,20 @@
+<map id="vm/dbg.hpp" name="vm/dbg.hpp">
+<area shape="rect" id="Node000001" title="Utilities for kernel debugging." alt="" coords="332,5,430,33"/>
+<area shape="rect" id="Node000002" href="$dbg_2factorial_8cpp_source.html" title=" " alt="" coords="5,81,136,109"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="317,38,127,83,126,78,316,33"/>
+<area shape="rect" id="Node000003" href="$dbg_2fibonacci_8cpp_source.html" title=" " alt="" coords="159,81,294,109"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="341,42,255,83,253,78,339,38"/>
+<area shape="rect" id="Node000004" href="$pt2__const_8cpp_source.html" title=" " alt="" coords="241,157,380,184"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="371,48,319,157,314,155,366,45"/>
+<area shape="rect" id="Node000005" href="$pt__const_8cpp_source.html" title=" " alt="" coords="405,157,536,184"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="388,47,397,77,410,107,431,134,454,154,451,158,427,137,406,110,391,79,383,49"/>
+<area shape="rect" id="Node000006" href="$pt__macros_8hpp_source.html" title=" " alt="" coords="419,81,564,109"/>
+<area shape="poly" id="edge5_Node000001_Node000006" title=" " alt="" coords="415,39,474,78,471,83,412,44"/>
+<area shape="rect" id="Node000007" href="$smallpt_8cpp_source.html" title=" " alt="" coords="560,157,685,184"/>
+<area shape="poly" id="edge10_Node000001_Node000007" title=" " alt="" coords="446,25,514,43,548,58,579,79,595,97,608,118,622,155,617,157,603,120,591,100,575,83,546,63,512,48,445,30"/>
+<area shape="rect" id="Node000008" href="$root__finding_8cpp_source.html" title=" " alt="" coords="640,81,794,109"/>
+<area shape="poly" id="edge9_Node000001_Node000008" title=" " alt="" coords="446,32,657,78,656,83,445,37"/>
+<area shape="poly" id="edge6_Node000006_Node000004" title=" " alt="" coords="446,117,344,159,342,154,444,112"/>
+<area shape="poly" id="edge7_Node000006_Node000005" title=" " alt="" coords="486,124,477,157,472,155,481,123"/>
+<area shape="poly" id="edge8_Node000006_Node000007" title=" " alt="" coords="530,114,601,154,598,159,527,119"/>
+</map>

@@ -105,7 +105,7 @@ $(function(){initNavTree('structloom_1_1vm_1_1ops_1_1sct.html','','structloom_1_
 <p>Select constant.  
  <a href="#details">More...</a></p>
 
-<p><code>#include &quot;operators.hpp&quot;</code></p>
+<p><code>#include &quot;<a class="el" href="operators_8hpp_source.html">operators.hpp</a>&quot;</code></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pub-methods" class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
@@ -128,6 +128,8 @@ struct loom::vm::ops::sct&lt; T, I, L &gt;</div><p>Select constant. </p>
 </dl>
 <p>This special instruction selects a constant from <code class="param">L</code> using index value.</p>
 <p>When size of <code class="param">List</code> is two just use cmov. </p>
+
+<p class="definition">Definition at line <a class="el" href="operators_8hpp_source.html#l00185">185</a> of file <a class="el" href="operators_8hpp_source.html">operators.hpp</a>.</p>
 </div><a name="doc-func-members" id="doc-func-members"></a><h2 id="header-doc-func-members" class="groupheader">Member Function Documentation</h2>
 <a id="a67da5669134aae687b29cd262dff5c04" name="a67da5669134aae687b29cd262dff5c04"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a67da5669134aae687b29cd262dff5c04">&#9670;&#160;</a></span>operator()()</h2>
@@ -153,10 +155,12 @@ template&lt;typename T, std::integral I, typelist::List L&gt; </div>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="operators_8hpp_source.html#l00198">198</a> of file <a class="el" href="operators_8hpp_source.html">operators.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">  199</span>    {</div>
 <div class="line"><span class="lineno">  200</span>        <span class="keywordflow">return</span> values[<a class="code hl_struct" href="structloom_1_1vm_1_1ops_1_1sct.html">i</a>];</div>
 <div class="line"><span class="lineno">  201</span>    }</div>
-<div class="ttc" id="astructloom_1_1vm_1_1ops_1_1sct_html"><div class="ttname"><a href="structloom_1_1vm_1_1ops_1_1sct.html">loom::vm::ops::sct</a></div><div class="ttdoc">Select constant.</div><div class="ttdef"><b>Definition</b> operators.hpp:186</div></div>
+<div class="ttc" id="astructloom_1_1vm_1_1ops_1_1sct_html"><div class="ttname"><a href="structloom_1_1vm_1_1ops_1_1sct.html">loom::vm::ops::sct</a></div><div class="ttdoc">Select constant.</div><div class="ttdef"><b>Definition</b> <a href="operators_8hpp_source.html#l00185">operators.hpp:186</a></div></div>
 </div><!-- fragment -->
 </div>
 </div>
@@ -191,16 +195,18 @@ template&lt;typename T, std::integral I, typelist::List L&gt; </div>
 <div class="line">                            <span class="keyword">static_assert</span>(pr.has_value());</div>
 <div class="line">                            <span class="keywordflow">return</span> pr.value();</div>
 <div class="line">                        }))</div>
-<div class="ttc" id="aconceptloom_1_1CharSequence_html"><div class="ttname"><a href="conceptloom_1_1CharSequence.html">loom::CharSequence</a></div><div class="ttdoc">Constraint of char_sequence.</div><div class="ttdef"><b>Definition</b> string.hpp:94</div></div>
-<div class="ttc" id="agroup__CTString_html_ga69a4cafb4286297f3c24f7307a9dbc31"><div class="ttname"><a href="group__CTString.html#ga69a4cafb4286297f3c24f7307a9dbc31">loom::cs2sv</a></div><div class="ttdeci">constexpr std::string_view cs2sv</div><div class="ttdoc">Convert char_sequence S to std::string_view.</div><div class="ttdef"><b>Definition</b> string.hpp:104</div></div>
-<div class="ttc" id="agroup__Typelist_html_ga97ce54ea7e527b69aec187e7d5cb0b6c"><div class="ttname"><a href="group__Typelist.html#ga97ce54ea7e527b69aec187e7d5cb0b6c">loom::typelist::maybe_collect</a></div><div class="ttdeci">constexpr decltype(auto) maybe_collect(type_sequence&lt; Ts... &gt; list, F &amp;&amp;f, Args &amp;&amp;... args) noexcept((... &amp;&amp;noexcept(f.template operator()&lt;Ts &gt;(std::forward&lt; Args &gt;(args)...))))</div><div class="ttdoc">Same as materialize_to_tuple but if list consists of one element, returns the unwrapped value.</div><div class="ttdef"><b>Definition</b> tmp.hpp:1202</div></div>
-<div class="ttc" id="anamespaceloom_html_a40096fe3beb5b36472d034c9d7835be9"><div class="ttname"><a href="namespaceloom.html#a40096fe3beb5b36472d034c9d7835be9">loom::s2n</a></div><div class="ttdeci">constexpr detail::select_parser&lt; T &gt;::type s2n</div><div class="ttdoc">Constexpr read integer or floating point number.</div><div class="ttdef"><b>Definition</b> string.hpp:476</div></div>
-<div class="ttc" id="anamespaceloom_html_ace6475247bde12eda960ccc0b5e654da"><div class="ttname"><a href="namespaceloom.html#ace6475247bde12eda960ccc0b5e654da">loom::tuple2array</a></div><div class="ttdeci">constexpr std::array&lt; T, sizeof...(Ts)+1 &gt; tuple2array(const Tuple&lt; T, Ts... &gt; &amp;t) noexcept</div><div class="ttdoc">Convert tuple to array.</div><div class="ttdef"><b>Definition</b> tuple.hpp:933</div></div>
+<div class="ttc" id="aconceptloom_1_1CharSequence_html"><div class="ttname"><a href="conceptloom_1_1CharSequence.html">loom::CharSequence</a></div><div class="ttdoc">Constraint of char_sequence.</div><div class="ttdef"><b>Definition</b> <a href="string_8hpp_source.html#l00094">string.hpp:94</a></div></div>
+<div class="ttc" id="agroup__CTString_html_ga69a4cafb4286297f3c24f7307a9dbc31"><div class="ttname"><a href="group__CTString.html#ga69a4cafb4286297f3c24f7307a9dbc31">loom::cs2sv</a></div><div class="ttdeci">constexpr std::string_view cs2sv</div><div class="ttdoc">Convert char_sequence S to std::string_view.</div><div class="ttdef"><b>Definition</b> <a href="string_8hpp_source.html#l00104">string.hpp:104</a></div></div>
+<div class="ttc" id="agroup__Typelist_html_ga97ce54ea7e527b69aec187e7d5cb0b6c"><div class="ttname"><a href="group__Typelist.html#ga97ce54ea7e527b69aec187e7d5cb0b6c">loom::typelist::maybe_collect</a></div><div class="ttdeci">constexpr decltype(auto) maybe_collect(type_sequence&lt; Ts... &gt; list, F &amp;&amp;f, Args &amp;&amp;... args) noexcept((... &amp;&amp;noexcept(f.template operator()&lt;Ts &gt;(std::forward&lt; Args &gt;(args)...))))</div><div class="ttdoc">Same as materialize_to_tuple but if list consists of one element, returns the unwrapped value.</div><div class="ttdef"><b>Definition</b> <a href="tmp_8hpp_source.html#l01202">tmp.hpp:1202</a></div></div>
+<div class="ttc" id="anamespaceloom_html_a40096fe3beb5b36472d034c9d7835be9"><div class="ttname"><a href="namespaceloom.html#a40096fe3beb5b36472d034c9d7835be9">loom::s2n</a></div><div class="ttdeci">constexpr detail::select_parser&lt; T &gt;::type s2n</div><div class="ttdoc">Constexpr read integer or floating point number.</div><div class="ttdef"><b>Definition</b> <a href="string_8hpp_source.html#l00476">string.hpp:476</a></div></div>
+<div class="ttc" id="anamespaceloom_html_ace6475247bde12eda960ccc0b5e654da"><div class="ttname"><a href="namespaceloom.html#ace6475247bde12eda960ccc0b5e654da">loom::tuple2array</a></div><div class="ttdeci">constexpr std::array&lt; T, sizeof...(Ts)+1 &gt; tuple2array(const Tuple&lt; T, Ts... &gt; &amp;t) noexcept</div><div class="ttdoc">Convert tuple to array.</div><div class="ttdef"><b>Definition</b> <a href="tuple_8hpp_source.html#l00933">tuple.hpp:933</a></div></div>
 </div><!-- fragment -->
+<p class="definition">Definition at line <a class="el" href="operators_8hpp_source.html#l00187">187</a> of file <a class="el" href="operators_8hpp_source.html">operators.hpp</a>.</p>
+
 </div>
 </div>
 <hr/>The documentation for this struct was generated from the following file:<ul>
-<li>vm/<a class="el" href="operators_8hpp.html">operators.hpp</a></li>
+<li>vm/<a class="el" href="operators_8hpp_source.html">operators.hpp</a></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->

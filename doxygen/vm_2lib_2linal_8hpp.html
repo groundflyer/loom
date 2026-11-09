@@ -104,9 +104,9 @@ $(function(){initNavTree('vm_2lib_2linal_8hpp.html','',''); });
 
 <p>Linear aglebra port.  
 <a href="#details">More...</a></p>
-<div class="textblock"><code>#include &lt;<a class="el" href="core_8hpp.html">vm/core.hpp</a>&gt;</code><br />
-<code>#include &lt;<a class="el" href="macros_8hpp.html">vm/macros.hpp</a>&gt;</code><br />
-<code>#include &lt;<a class="el" href="operators_8hpp.html">vm/operators.hpp</a>&gt;</code><br />
+<div class="textblock"><code>#include &lt;<a class="el" href="core_8hpp_source.html">vm/core.hpp</a>&gt;</code><br />
+<code>#include &lt;<a class="el" href="macros_8hpp_source.html">vm/macros.hpp</a>&gt;</code><br />
+<code>#include &lt;<a class="el" href="operators_8hpp_source.html">vm/operators.hpp</a>&gt;</code><br />
 </div><div class="textblock"><div id="dynsection-0" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>Include dependency graph for linal.hpp:</div>
 <div id="dynsection-0-summary" class="dynsummary" style="display:block;">
 </div>
@@ -117,9 +117,11 @@ $(function(){initNavTree('vm_2lib_2linal_8hpp.html','',''); });
 <div id="dynsection-1-summary" class="dynsummary" style="display:block;">
 </div>
 <div id="dynsection-1-content" class="dyncontent" style="display:none;">
-<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="vm_2lib_2linal_8hpp__dep__incl.svg" width="151" height="115"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><div class="zoom"><iframe scrolling="no" loading="lazy" frameborder="0" src="vm_2lib_2linal_8hpp__dep__incl.svg" width="100%" height="499"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
 </div>
-</div><table class="memberdecls">
+</div>
+<p><a href="vm_2lib_2linal_8hpp_source.html">Go to the source code of this file.</a></p>
+<table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-nested-classes" class="groupheader"><a id="nested-classes" name="nested-classes"></a>
 Classes</h2></td></tr>
 <tr class="memitem:loom_3A_3Avm_3A_3Amake_5Freg_5Farray_3C_20P_2C_20N_20_3E" id="r_loom_3A_3Avm_3A_3Amake_5Freg_5Farray_3C_20P_2C_20N_20_3E"><td class="memItemLeft">class &#160;</td><td class="memItemRight"><a class="el" href="classloom_1_1vm_1_1make__reg__array.html">loom::vm::make_reg_array&lt; P, N &gt;</a></td></tr>
@@ -166,24 +168,19 @@ Typedefs</h2></td></tr>
 <tr class="memitem:a46d8d92cdee1b77ed5b4439d6f693ce6" id="r_a46d8d92cdee1b77ed5b4439d6f693ce6"><td class="memTemplParams" colspan="2">template&lt;CharSequence P, std::uint8_t I&gt; </td></tr>
 <tr class="memitem:a46d8d92cdee1b77ed5b4439d6f693ce6 template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="namespaceloom_1_1vm.html#a46d8d92cdee1b77ed5b4439d6f693ce6">loom::vm::append_idx</a> = <a class="el" href="group__Intlist.html#gad1ec88844ef1901f4a1b634857025a8e">intlist::append</a>&lt;P, <a class="el" href="namespaceloom_1_1vm.html#ae87b1375a772e087725a311595469dbf">i2c</a>&lt;I&gt;&gt;</td></tr>
 <tr class="memdesc:a46d8d92cdee1b77ed5b4439d6f693ce6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Append number to register identifier prefix.  <br /></td></tr>
-<tr class="memitem:ab9ffae44fbf205028006efd0337bd7fa" id="r_ab9ffae44fbf205028006efd0337bd7fa"><td class="memTemplParams" colspan="2"><a id="ab9ffae44fbf205028006efd0337bd7fa" name="ab9ffae44fbf205028006efd0337bd7fa"></a>
-template&lt;CharSequence V&gt; </td></tr>
-<tr class="memitem:ab9ffae44fbf205028006efd0337bd7fa template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><b>loom::vm::remove_idx_t</b> = <a class="el" href="group__Intlist.html#gade974e329474ae954588937c1d8c774e">intlist::reverse</a>&lt;<a class="el" href="group__Intlist.html#gaef918c46e5e95ad77a50545a7772f60a">intlist::tail</a>&lt;<a class="el" href="group__Intlist.html#gade974e329474ae954588937c1d8c774e">intlist::reverse</a>&lt;V&gt;&gt;&gt;</td></tr>
-<tr class="memdesc:ab9ffae44fbf205028006efd0337bd7fa"><td class="mdescLeft">&#160;</td><td class="mdescRight">Remove last symbol. <br /></td></tr>
-<tr class="memitem:ae2e5c4bad85adab697d313005a1a78f7" id="r_ae2e5c4bad85adab697d313005a1a78f7"><td class="memTemplParams" colspan="2"><a id="ae2e5c4bad85adab697d313005a1a78f7" name="ae2e5c4bad85adab697d313005a1a78f7"></a>
-template&lt;CharSequence P, std::size_t N&gt; </td></tr>
-<tr class="memitem:ae2e5c4bad85adab697d313005a1a78f7 template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><b>loom::vm::make_reg_array_t</b> = <a class="el" href="classloom_1_1vm_1_1make__reg__array.html">make_reg_array</a>&lt;P, N&gt;<a class="el" href="structloom_1_1vm_1_1stored__var.html">::type</a></td></tr>
-<tr class="memdesc:ae2e5c4bad85adab697d313005a1a78f7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Helper alias for <a class="el" href="classloom_1_1vm_1_1make__reg__array.html" title="Make array of registers.">vm::make_reg_array</a>. <br /></td></tr>
-<tr class="memitem:ac83648813bbd05d096960b022904a874" id="r_ac83648813bbd05d096960b022904a874"><td class="memTemplParams" colspan="2"><a id="ac83648813bbd05d096960b022904a874" name="ac83648813bbd05d096960b022904a874"></a>
-template&lt;CharSequence P, std::size_t N&gt; </td></tr>
-<tr class="memitem:ac83648813bbd05d096960b022904a874 template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><b>loom::vm::make_reg_mat_t</b> = <a class="el" href="classloom_1_1vm_1_1make__reg__mat.html">make_reg_mat</a>&lt;P, N&gt;<a class="el" href="structloom_1_1vm_1_1stored__var.html">::type</a></td></tr>
-<tr class="memdesc:ac83648813bbd05d096960b022904a874"><td class="mdescLeft">&#160;</td><td class="mdescRight">Helper alias for <a class="el" href="classloom_1_1vm_1_1make__reg__mat.html" title="Make square matrix of registers.">vm::make_reg_mat</a>. <br /></td></tr>
-<tr class="memitem:a7e171659d21d29152c0437f22034d22c" id="r_a7e171659d21d29152c0437f22034d22c"><td class="memTemplParams" colspan="2"><a id="a7e171659d21d29152c0437f22034d22c" name="a7e171659d21d29152c0437f22034d22c"></a>
-template&lt;typename T, std::size_t N&gt; </td></tr>
-<tr class="memitem:a7e171659d21d29152c0437f22034d22c template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><b>loom::vm::maybe_make_reg_array_t</b> = maybe_make&lt;T, N, <a class="el" href="namespaceloom_1_1vm.html#ae2e5c4bad85adab697d313005a1a78f7">make_reg_array_t</a>&gt;<a class="el" href="structloom_1_1vm_1_1stored__var.html">::type</a></td></tr>
-<tr class="memitem:a591da60467cdbcfdda117a9ae1bdef8c" id="r_a591da60467cdbcfdda117a9ae1bdef8c"><td class="memTemplParams" colspan="2"><a id="a591da60467cdbcfdda117a9ae1bdef8c" name="a591da60467cdbcfdda117a9ae1bdef8c"></a>
-template&lt;typename T, std::size_t N&gt; </td></tr>
-<tr class="memitem:a591da60467cdbcfdda117a9ae1bdef8c template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><b>loom::vm::maybe_make_reg_mat_t</b> = maybe_make&lt;T, N, <a class="el" href="namespaceloom_1_1vm.html#ac83648813bbd05d096960b022904a874">make_reg_mat_t</a>&gt;<a class="el" href="structloom_1_1vm_1_1stored__var.html">::type</a></td></tr>
+<tr class="memitem:ab9ffae44fbf205028006efd0337bd7fa" id="r_ab9ffae44fbf205028006efd0337bd7fa"><td class="memTemplParams" colspan="2">template&lt;CharSequence V&gt; </td></tr>
+<tr class="memitem:ab9ffae44fbf205028006efd0337bd7fa template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="namespaceloom_1_1vm.html#ab9ffae44fbf205028006efd0337bd7fa">loom::vm::remove_idx_t</a> = <a class="el" href="group__Intlist.html#gade974e329474ae954588937c1d8c774e">intlist::reverse</a>&lt;<a class="el" href="group__Intlist.html#gaef918c46e5e95ad77a50545a7772f60a">intlist::tail</a>&lt;<a class="el" href="group__Intlist.html#gade974e329474ae954588937c1d8c774e">intlist::reverse</a>&lt;V&gt;&gt;&gt;</td></tr>
+<tr class="memdesc:ab9ffae44fbf205028006efd0337bd7fa"><td class="mdescLeft">&#160;</td><td class="mdescRight">Remove last symbol.  <br /></td></tr>
+<tr class="memitem:ae2e5c4bad85adab697d313005a1a78f7" id="r_ae2e5c4bad85adab697d313005a1a78f7"><td class="memTemplParams" colspan="2">template&lt;CharSequence P, std::size_t N&gt; </td></tr>
+<tr class="memitem:ae2e5c4bad85adab697d313005a1a78f7 template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="namespaceloom_1_1vm.html#ae2e5c4bad85adab697d313005a1a78f7">loom::vm::make_reg_array_t</a> = <a class="el" href="classloom_1_1vm_1_1make__reg__array.html">make_reg_array</a>&lt;P, N&gt;<a class="el" href="structloom_1_1vm_1_1stored__var.html">::type</a></td></tr>
+<tr class="memdesc:ae2e5c4bad85adab697d313005a1a78f7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Helper alias for <a class="el" href="classloom_1_1vm_1_1make__reg__array.html" title="Make array of registers.">vm::make_reg_array</a>.  <br /></td></tr>
+<tr class="memitem:ac83648813bbd05d096960b022904a874" id="r_ac83648813bbd05d096960b022904a874"><td class="memTemplParams" colspan="2">template&lt;CharSequence P, std::size_t N&gt; </td></tr>
+<tr class="memitem:ac83648813bbd05d096960b022904a874 template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="namespaceloom_1_1vm.html#ac83648813bbd05d096960b022904a874">loom::vm::make_reg_mat_t</a> = <a class="el" href="classloom_1_1vm_1_1make__reg__mat.html">make_reg_mat</a>&lt;P, N&gt;<a class="el" href="structloom_1_1vm_1_1stored__var.html">::type</a></td></tr>
+<tr class="memdesc:ac83648813bbd05d096960b022904a874"><td class="mdescLeft">&#160;</td><td class="mdescRight">Helper alias for <a class="el" href="classloom_1_1vm_1_1make__reg__mat.html" title="Make square matrix of registers.">vm::make_reg_mat</a>.  <br /></td></tr>
+<tr class="memitem:a7e171659d21d29152c0437f22034d22c" id="r_a7e171659d21d29152c0437f22034d22c"><td class="memTemplParams" colspan="2">template&lt;typename T, std::size_t N&gt; </td></tr>
+<tr class="memitem:a7e171659d21d29152c0437f22034d22c template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="namespaceloom_1_1vm.html#a7e171659d21d29152c0437f22034d22c">loom::vm::maybe_make_reg_array_t</a> = maybe_make&lt;T, N, <a class="el" href="namespaceloom_1_1vm.html#ae2e5c4bad85adab697d313005a1a78f7">make_reg_array_t</a>&gt;<a class="el" href="structloom_1_1vm_1_1stored__var.html">::type</a></td></tr>
+<tr class="memitem:a591da60467cdbcfdda117a9ae1bdef8c" id="r_a591da60467cdbcfdda117a9ae1bdef8c"><td class="memTemplParams" colspan="2">template&lt;typename T, std::size_t N&gt; </td></tr>
+<tr class="memitem:a591da60467cdbcfdda117a9ae1bdef8c template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="namespaceloom_1_1vm.html#a591da60467cdbcfdda117a9ae1bdef8c">loom::vm::maybe_make_reg_mat_t</a> = maybe_make&lt;T, N, <a class="el" href="namespaceloom_1_1vm.html#ac83648813bbd05d096960b022904a874">make_reg_mat_t</a>&gt;<a class="el" href="structloom_1_1vm_1_1stored__var.html">::type</a></td></tr>
 <tr class="memitem:a9eb312e0b37598881090f3637f6f8907" id="r_a9eb312e0b37598881090f3637f6f8907"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="namespaceloom_1_1vm.html#a9eb312e0b37598881090f3637f6f8907">loom::vm::__macro_decl_vec3_dot</a></td></tr>
 <tr class="memitem:a1c64831d23ed6bc8327375800a61cd8b" id="r_a1c64831d23ed6bc8327375800a61cd8b"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="namespaceloom_1_1vm.html#a1c64831d23ed6bc8327375800a61cd8b">loom::vm::__macro_decl_vec3_cross</a></td></tr>
 </table><table class="memberdecls">
@@ -200,13 +197,14 @@ Functions</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-var-members" class="groupheader"><a id="var-members" name="var-members"></a>
 Variables</h2></td></tr>
-<tr class="memitem:ae87b1375a772e087725a311595469dbf" id="r_ae87b1375a772e087725a311595469dbf"><td class="memTemplParams" colspan="2"><a id="ae87b1375a772e087725a311595469dbf" name="ae87b1375a772e087725a311595469dbf"></a>
-template&lt;std::uint8_t I&gt; </td></tr>
-<tr class="memitem:ae87b1375a772e087725a311595469dbf template"><td class="memItemLeft">constexpr char&#160;</td><td class="memItemRight"><b>loom::vm::i2c</b> = '0' + I</td></tr>
-<tr class="memdesc:ae87b1375a772e087725a311595469dbf"><td class="mdescLeft">&#160;</td><td class="mdescRight">Convert number to character. <br /></td></tr>
+<tr class="memitem:ae87b1375a772e087725a311595469dbf" id="r_ae87b1375a772e087725a311595469dbf"><td class="memTemplParams" colspan="2">template&lt;std::uint8_t I&gt; </td></tr>
+<tr class="memitem:ae87b1375a772e087725a311595469dbf template"><td class="memItemLeft">constexpr char&#160;</td><td class="memItemRight"><a class="el" href="namespaceloom_1_1vm.html#ae87b1375a772e087725a311595469dbf">loom::vm::i2c</a> = '0' + I</td></tr>
+<tr class="memdesc:ae87b1375a772e087725a311595469dbf"><td class="mdescLeft">&#160;</td><td class="mdescRight">Convert number to character.  <br /></td></tr>
 </table>
 <a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Linear aglebra port. </p>
+
+<p class="definition">Definition in file <a class="el" href="vm_2lib_2linal_8hpp_source.html">linal.hpp</a>.</p>
 </div><a name="doc-define-members" id="doc-define-members"></a><h2 id="header-doc-define-members" class="groupheader">Macro Definition Documentation</h2>
 <a id="a94eb0a3a068a909cdf5223c98ba4b852" name="a94eb0a3a068a909cdf5223c98ba4b852"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a94eb0a3a068a909cdf5223c98ba4b852">&#9670;&#160;</a></span>ARR_PARM_DECL</h2>
@@ -228,6 +226,8 @@ template&lt;std::uint8_t I&gt; </td></tr>
 </div><div class="memdoc">
 <b>Value:</b><div class="fragment"><div class="line">CS_JOIN(CS(NAME), detail::sq_br&lt;N&gt;)</div>
 </div><!-- fragment -->
+<p class="definition">Definition at line <a class="el" href="vm_2lib_2linal_8hpp_source.html#l00289">289</a> of file <a class="el" href="vm_2lib_2linal_8hpp_source.html">linal.hpp</a>.</p>
+
 </div>
 </div>
 <a id="a942b38f8d8c57c4405b9a42f78d6f384" name="a942b38f8d8c57c4405b9a42f78d6f384"></a>
@@ -246,6 +246,8 @@ template&lt;std::uint8_t I&gt; </td></tr>
 </div><div class="memdoc">
 <b>Value:</b><div class="fragment"><div class="line">remove_idx_t&lt;X&gt;</div>
 </div><!-- fragment -->
+<p class="definition">Definition at line <a class="el" href="vm_2lib_2linal_8hpp_source.html#l00465">465</a> of file <a class="el" href="vm_2lib_2linal_8hpp_source.html">linal.hpp</a>.</p>
+
 </div>
 </div>
 <a id="a4ae1158d1cb072de3f6281b6042800a4" name="a4ae1158d1cb072de3f6281b6042800a4"></a>
@@ -275,7 +277,9 @@ template&lt;std::uint8_t I&gt; </td></tr>
 <div class="line">                              maybe_make_reg_array_t&lt;VEC, N&gt;&gt;::type&gt; \</div>
 <div class="line">{                                                                    \</div>
 <div class="line">};</div>
-</div><!-- fragment --><div class="fragment"><div class="line"><span class="lineno">  360</span><span class="preprocessor">#define MAKE_MAT_VEC_MACRO(N)                                            \</span></div>
+</div><!-- fragment -->
+<p class="definition">Definition at line <a class="el" href="vm_2lib_2linal_8hpp_source.html#l00360">360</a> of file <a class="el" href="vm_2lib_2linal_8hpp_source.html">linal.hpp</a>.</p>
+<div class="fragment"><div class="line"><span class="lineno">  360</span><span class="preprocessor">#define MAKE_MAT_VEC_MACRO(N)                                            \</span></div>
 <div class="line"><span class="lineno">  361</span><span class="preprocessor">    using __macro_decl_mat_vec##N = macro_decl&lt;CS(mat_vec##N),           \</span></div>
 <div class="line"><span class="lineno">  362</span><span class="preprocessor">                                               ARR_PARM_DECL(dst, N),    \</span></div>
 <div class="line"><span class="lineno">  363</span><span class="preprocessor">                                               MAT_PARM_DECL(mat, N),    \</span></div>
@@ -330,7 +334,9 @@ template&lt;std::uint8_t I&gt; </td></tr>
 <div class="line">                              B&gt;::type&gt;                       \</div>
 <div class="line">{                                                             \</div>
 <div class="line">};</div>
-</div><!-- fragment --><div class="fragment"><div class="line"><span class="lineno">  310</span><span class="preprocessor">#define MAKE_STD_BINOP_VEC_SCALAR_MACRO(N, NAME, OP)              \</span></div>
+</div><!-- fragment -->
+<p class="definition">Definition at line <a class="el" href="vm_2lib_2linal_8hpp_source.html#l00310">310</a> of file <a class="el" href="vm_2lib_2linal_8hpp_source.html">linal.hpp</a>.</p>
+<div class="fragment"><div class="line"><span class="lineno">  310</span><span class="preprocessor">#define MAKE_STD_BINOP_VEC_SCALAR_MACRO(N, NAME, OP)              \</span></div>
 <div class="line"><span class="lineno">  311</span><span class="preprocessor">    using __macro_decl_vec##N##_scalar_##NAME =                   \</span></div>
 <div class="line"><span class="lineno">  312</span><span class="preprocessor">        macro_decl&lt;CS(vec##N##_scalar_##NAME),                    \</span></div>
 <div class="line"><span class="lineno">  313</span><span class="preprocessor">                   ARR_PARM_DECL(dst, N),                         \</span></div>
@@ -387,7 +393,9 @@ template&lt;std::uint8_t I&gt; </td></tr>
 <div class="line">                              maybe_make_reg_array_t&lt;B, N&gt;&gt;::type&gt; \</div>
 <div class="line">{                                                                  \</div>
 <div class="line">};</div>
-</div><!-- fragment --><div class="fragment"><div class="line"><span class="lineno">  293</span><span class="preprocessor">#define MAKE_STD_BINOP_VEC_VEC_MACRO(N, NAME, OP)                      \</span></div>
+</div><!-- fragment -->
+<p class="definition">Definition at line <a class="el" href="vm_2lib_2linal_8hpp_source.html#l00293">293</a> of file <a class="el" href="vm_2lib_2linal_8hpp_source.html">linal.hpp</a>.</p>
+<div class="fragment"><div class="line"><span class="lineno">  293</span><span class="preprocessor">#define MAKE_STD_BINOP_VEC_VEC_MACRO(N, NAME, OP)                      \</span></div>
 <div class="line"><span class="lineno">  294</span><span class="preprocessor">    using __macro_decl_vec_vec##N##_##NAME =                           \</span></div>
 <div class="line"><span class="lineno">  295</span><span class="preprocessor">        macro_decl&lt;CS(vec_vec##N##_##NAME),                            \</span></div>
 <div class="line"><span class="lineno">  296</span><span class="preprocessor">                   ARR_PARM_DECL(dst, N),                              \</span></div>
@@ -446,7 +454,9 @@ template&lt;std::uint8_t I&gt; </td></tr>
 <div class="line">                                  maybe_make_reg_array_t&lt;C, N&gt;&gt;::type&gt;  \</div>
 <div class="line">{                                                                       \</div>
 <div class="line">};</div>
-</div><!-- fragment --><div class="fragment"><div class="line"><span class="lineno">  341</span><span class="preprocessor">#define MAKE_TERNARY_OP_VEC_VEC_MACRO(N, NAME, OP)                          \</span></div>
+</div><!-- fragment -->
+<p class="definition">Definition at line <a class="el" href="vm_2lib_2linal_8hpp_source.html#l00341">341</a> of file <a class="el" href="vm_2lib_2linal_8hpp_source.html">linal.hpp</a>.</p>
+<div class="fragment"><div class="line"><span class="lineno">  341</span><span class="preprocessor">#define MAKE_TERNARY_OP_VEC_VEC_MACRO(N, NAME, OP)                          \</span></div>
 <div class="line"><span class="lineno">  342</span><span class="preprocessor">    using __macro_decl_vec_vec##N##_##NAME =                                \</span></div>
 <div class="line"><span class="lineno">  343</span><span class="preprocessor">        macro_decl&lt;CS(vec_vec##N##_##NAME),                                 \</span></div>
 <div class="line"><span class="lineno">  344</span><span class="preprocessor">                   ARR_PARM_DECL(dst, N),                                   \</span></div>
@@ -502,7 +512,9 @@ template&lt;std::uint8_t I&gt; </td></tr>
 <div class="line">                             maybe_make_reg_array_t&lt;A, N&gt;&gt;::type&gt;    \</div>
 <div class="line">{                                                                    \</div>
 <div class="line">};</div>
-</div><!-- fragment --><div class="fragment"><div class="line"><span class="lineno">  327</span><span class="preprocessor">#define MAKE_UNOP_VEC_MACRO(N, OP, NS)                                   \</span></div>
+</div><!-- fragment -->
+<p class="definition">Definition at line <a class="el" href="vm_2lib_2linal_8hpp_source.html#l00327">327</a> of file <a class="el" href="vm_2lib_2linal_8hpp_source.html">linal.hpp</a>.</p>
+<div class="fragment"><div class="line"><span class="lineno">  327</span><span class="preprocessor">#define MAKE_UNOP_VEC_MACRO(N, OP, NS)                                   \</span></div>
 <div class="line"><span class="lineno">  328</span><span class="preprocessor">    using __macro_decl_vec##N##_##OP = macro_decl&lt;CS(vec##N##_##OP),     \</span></div>
 <div class="line"><span class="lineno">  329</span><span class="preprocessor">                                                  ARR_PARM_DECL(dst, N), \</span></div>
 <div class="line"><span class="lineno">  330</span><span class="preprocessor">                                                  ARR_PARM_DECL(a, N)&gt;;  \</span></div>
@@ -537,7 +549,9 @@ template&lt;std::uint8_t I&gt; </td></tr>
       </table>
 </div><div class="memdoc">
 <b>Value:</b><div class="fragment"><div class="line">CS_JOIN(CS_JOIN(CS(NAME), detail::sq_br&lt;N&gt;), detail::sq_br&lt;N&gt;)</div>
-</div><!-- fragment --><div class="fragment"><div class="line"><span class="lineno">  290</span><span class="preprocessor">#define MAT_PARM_DECL(NAME, N) \</span></div>
+</div><!-- fragment -->
+<p class="definition">Definition at line <a class="el" href="vm_2lib_2linal_8hpp_source.html#l00290">290</a> of file <a class="el" href="vm_2lib_2linal_8hpp_source.html">linal.hpp</a>.</p>
+<div class="fragment"><div class="line"><span class="lineno">  290</span><span class="preprocessor">#define MAT_PARM_DECL(NAME, N) \</span></div>
 <div class="line"><span class="lineno">  291</span><span class="preprocessor">    CS_JOIN(CS_JOIN(CS(NAME), detail::sq_br&lt;N&gt;), detail::sq_br&lt;N&gt;)</span></div>
 </div><!-- fragment -->
 </div>

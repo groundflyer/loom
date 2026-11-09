@@ -104,11 +104,11 @@ $(function(){initNavTree('bve_8hpp.html','',''); });
 
 <p>Basic vector evaluator.  
 <a href="#details">More...</a></p>
-<div class="textblock"><code>#include &quot;<a class="el" href="core_8hpp.html">core.hpp</a>&quot;</code><br />
-<code>#include &lt;<a class="el" href="forbid_8hpp.html">common/forbid.hpp</a>&gt;</code><br />
-<code>#include &lt;<a class="el" href="debug_8hpp.html">common/debug.hpp</a>&gt;</code><br />
-<code>#include &lt;<a class="el" href="functional_8hpp.html">common/functional.hpp</a>&gt;</code><br />
-<code>#include &lt;<a class="el" href="tuple_8hpp.html">common/tuple.hpp</a>&gt;</code><br />
+<div class="textblock"><code>#include &quot;<a class="el" href="core_8hpp_source.html">core.hpp</a>&quot;</code><br />
+<code>#include &lt;<a class="el" href="forbid_8hpp_source.html">common/forbid.hpp</a>&gt;</code><br />
+<code>#include &lt;<a class="el" href="debug_8hpp_source.html">common/debug.hpp</a>&gt;</code><br />
+<code>#include &lt;<a class="el" href="functional_8hpp_source.html">common/functional.hpp</a>&gt;</code><br />
+<code>#include &lt;<a class="el" href="tuple_8hpp_source.html">common/tuple.hpp</a>&gt;</code><br />
 <code>#include &lt;range/v3/range/operations.hpp&gt;</code><br />
 <code>#include &lt;range/v3/view/chunk_by.hpp&gt;</code><br />
 <code>#include &lt;range/v3/view/filter.hpp&gt;</code><br />
@@ -129,9 +129,11 @@ $(function(){initNavTree('bve_8hpp.html','',''); });
 <div id="dynsection-1-summary" class="dynsummary" style="display:block;">
 </div>
 <div id="dynsection-1-content" class="dyncontent" style="display:none;">
-<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="bve_8hpp__dep__incl.svg" width="246" height="115"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><div class="zoom"><iframe scrolling="no" loading="lazy" frameborder="0" src="bve_8hpp__dep__incl.svg" width="100%" height="581"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
 </div>
-</div><table class="memberdecls">
+</div>
+<p><a href="bve_8hpp_source.html">Go to the source code of this file.</a></p>
+<table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-namespaces" class="groupheader"><a id="namespaces" name="namespaces"></a>
 Namespaces</h2></td></tr>
 <tr class="memitem:loom" id="r_loom"><td class="memItemLeft">namespace &#160;</td><td class="memItemRight"><a class="el" href="namespaceloom.html">loom</a></td></tr>
@@ -145,17 +147,13 @@ Macros</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-typedef-members" class="groupheader"><a id="typedef-members" name="typedef-members"></a>
 Typedefs</h2></td></tr>
-<tr class="memitem:a755454513fd606b5c1d60d468cdaf5ac" id="r_a755454513fd606b5c1d60d468cdaf5ac"><td class="memItemLeft"><a id="a755454513fd606b5c1d60d468cdaf5ac" name="a755454513fd606b5c1d60d468cdaf5ac"></a>
-using&#160;</td><td class="memItemRight"><b>loom::vm::bve::fsize_t</b> = std::uint32_t</td></tr>
-<tr class="memitem:a4f40f584ffad05df61e78ecdbe642f63" id="r_a4f40f584ffad05df61e78ecdbe642f63"><td class="memTemplParams" colspan="2"><a id="a4f40f584ffad05df61e78ecdbe642f63" name="a4f40f584ffad05df61e78ecdbe642f63"></a>
-template&lt;typename T, template&lt; typename, typename &gt; typename Vector, template&lt; typename &gt; typename Allocator&gt; </td></tr>
-<tr class="memitem:a4f40f584ffad05df61e78ecdbe642f63 template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><b>loom::vm::bve::vector_union_t</b> = vector_union&lt;T, <a class="el" href="classloom_1_1Vector.html">Vector</a>, Allocator&gt;::type</td></tr>
-<tr class="memitem:af13c5e41c98b338cc75983e2b46c4285" id="r_af13c5e41c98b338cc75983e2b46c4285"><td class="memTemplParams" colspan="2"><a id="af13c5e41c98b338cc75983e2b46c4285" name="af13c5e41c98b338cc75983e2b46c4285"></a>
-template&lt;Kernel K, SORT sort_method&gt; </td></tr>
-<tr class="memitem:af13c5e41c98b338cc75983e2b46c4285 template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><b>loom::vm::bve::function</b> = basic_vector_compiler&lt;K, sort_method&gt;::function</td></tr>
-<tr class="memitem:a3c95148739845e6953c48ad168c32777" id="r_a3c95148739845e6953c48ad168c32777"><td class="memTemplParams" colspan="2"><a id="a3c95148739845e6953c48ad168c32777" name="a3c95148739845e6953c48ad168c32777"></a>
-template&lt;Kernel K, SORT sort_method&gt; </td></tr>
-<tr class="memitem:a3c95148739845e6953c48ad168c32777 template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><b>loom::vm::bve::stream</b> = basic_vector_compiler&lt;K, sort_method&gt;::stream</td></tr>
+<tr class="memitem:a755454513fd606b5c1d60d468cdaf5ac" id="r_a755454513fd606b5c1d60d468cdaf5ac"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="namespaceloom_1_1vm_1_1bve.html#a755454513fd606b5c1d60d468cdaf5ac">loom::vm::bve::fsize_t</a> = std::uint32_t</td></tr>
+<tr class="memitem:a4f40f584ffad05df61e78ecdbe642f63" id="r_a4f40f584ffad05df61e78ecdbe642f63"><td class="memTemplParams" colspan="2">template&lt;typename T, template&lt; typename, typename &gt; typename Vector, template&lt; typename &gt; typename Allocator&gt; </td></tr>
+<tr class="memitem:a4f40f584ffad05df61e78ecdbe642f63 template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="namespaceloom_1_1vm_1_1bve.html#a4f40f584ffad05df61e78ecdbe642f63">loom::vm::bve::vector_union_t</a> = vector_union&lt;T, <a class="el" href="classloom_1_1Vector.html">Vector</a>, Allocator&gt;::type</td></tr>
+<tr class="memitem:af13c5e41c98b338cc75983e2b46c4285" id="r_af13c5e41c98b338cc75983e2b46c4285"><td class="memTemplParams" colspan="2">template&lt;Kernel K, SORT sort_method&gt; </td></tr>
+<tr class="memitem:af13c5e41c98b338cc75983e2b46c4285 template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="namespaceloom_1_1vm_1_1bve.html#af13c5e41c98b338cc75983e2b46c4285">loom::vm::bve::function</a> = basic_vector_compiler&lt;K, sort_method&gt;::function</td></tr>
+<tr class="memitem:a3c95148739845e6953c48ad168c32777" id="r_a3c95148739845e6953c48ad168c32777"><td class="memTemplParams" colspan="2">template&lt;Kernel K, SORT sort_method&gt; </td></tr>
+<tr class="memitem:a3c95148739845e6953c48ad168c32777 template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="namespaceloom_1_1vm_1_1bve.html#a3c95148739845e6953c48ad168c32777">loom::vm::bve::stream</a> = basic_vector_compiler&lt;K, sort_method&gt;::stream</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-enum-members" class="groupheader"><a id="enum-members" name="enum-members"></a>
 Enumerations</h2></td></tr>
@@ -192,13 +190,14 @@ Functions</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-var-members" class="groupheader"><a id="var-members" name="var-members"></a>
 Variables</h2></td></tr>
-<tr class="memitem:a3dfb7e90cafdffae857ab387da497f7a" id="r_a3dfb7e90cafdffae857ab387da497f7a"><td class="memItemLeft"><a id="a3dfb7e90cafdffae857ab387da497f7a" name="a3dfb7e90cafdffae857ab387da497f7a"></a>
-constexpr fsize_t&#160;</td><td class="memItemRight"><b>loom::vm::bve::dynamic_extent</b> = -1</td></tr>
+<tr class="memitem:a3dfb7e90cafdffae857ab387da497f7a" id="r_a3dfb7e90cafdffae857ab387da497f7a"><td class="memItemLeft">constexpr fsize_t&#160;</td><td class="memItemRight"><a class="el" href="namespaceloom_1_1vm_1_1bve.html#a3dfb7e90cafdffae857ab387da497f7a">loom::vm::bve::dynamic_extent</a> = -1</td></tr>
 <tr class="memitem:afe22194f216cc2e8ae9b2f87f2c3b3d7" id="r_afe22194f216cc2e8ae9b2f87f2c3b3d7"><td class="memTemplParams" colspan="2">template&lt;std::random_access_iterator I&gt; </td></tr>
 <tr class="memitem:afe22194f216cc2e8ae9b2f87f2c3b3d7 template"><td class="memItemLeft">constexpr std::iterator_traits&lt; I &gt;::difference_type&#160;</td><td class="memItemRight"><a class="el" href="namespaceloom_1_1vm_1_1bve.html#afe22194f216cc2e8ae9b2f87f2c3b3d7">loom::vm::bve::insertion_sort_limit</a></td></tr>
 </table>
 <a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Basic vector evaluator. </p>
+
+<p class="definition">Definition in file <a class="el" href="bve_8hpp_source.html">bve.hpp</a>.</p>
 </div><a name="doc-define-members" id="doc-define-members"></a><h2 id="header-doc-define-members" class="groupheader">Macro Definition Documentation</h2>
 <a id="a7dbffb890b69bdd32aa86a12f4a4ab76" name="a7dbffb890b69bdd32aa86a12f4a4ab76"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a7dbffb890b69bdd32aa86a12f4a4ab76">&#9670;&#160;</a></span>MK_COUNTING_SORTER</h2>
@@ -214,6 +213,8 @@ constexpr fsize_t&#160;</td><td class="memItemRight"><b>loom::vm::bve::dynamic_e
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="bve_8hpp_source.html#l00947">947</a> of file <a class="el" href="bve_8hpp_source.html">bve.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">  947</span><span class="preprocessor">#define MK_COUNTING_SORTER(NM)                                                \</span></div>
 <div class="line"><span class="lineno">  948</span><span class="preprocessor">    template &lt;Kernel K, typename _Memory&gt;                                     \</span></div>
 <div class="line"><span class="lineno">  949</span><span class="preprocessor">    class CountingSorter                                                      \</span></div>

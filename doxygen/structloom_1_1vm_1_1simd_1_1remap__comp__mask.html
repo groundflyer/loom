@@ -105,7 +105,7 @@ $(function(){initNavTree('structloom_1_1vm_1_1simd_1_1remap__comp__mask.html',''
 <p>Default masked computation.  
  <a href="#details">More...</a></p>
 
-<p><code>#include &quot;simd.hpp&quot;</code></p>
+<p><code>#include &quot;<a class="el" href="simd_8hpp_source.html">simd.hpp</a>&quot;</code></p>
 <div id="dynsection-0" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>Inheritance diagram for loom::vm::simd::remap_comp_mask&lt; N, Op, Ret, Args &gt;:</div>
 <div id="dynsection-0-summary" class="dynsummary" style="display:block;">
 </div>
@@ -115,12 +115,9 @@ $(function(){initNavTree('structloom_1_1vm_1_1simd_1_1remap__comp__mask.html',''
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pub-types" class="groupheader"><a id="pub-types" name="pub-types"></a>
 Public Types</h2></td></tr>
-<tr class="memitem:a8463699220f44ce086ed1ba7fde17091" id="r_a8463699220f44ce086ed1ba7fde17091"><td class="memItemLeft"><a id="a8463699220f44ce086ed1ba7fde17091" name="a8463699220f44ce086ed1ba7fde17091"></a>
-using&#160;</td><td class="memItemRight"><b>orig_comp</b> = remap_comp_t&lt;N, Op, Ret, Args...&gt;</td></tr>
-<tr class="memitem:a81eb8fbccf4a031af4d43f9c868bbe4a" id="r_a81eb8fbccf4a031af4d43f9c868bbe4a"><td class="memItemLeft"><a id="a81eb8fbccf4a031af4d43f9c868bbe4a" name="a81eb8fbccf4a031af4d43f9c868bbe4a"></a>
-using&#160;</td><td class="memItemRight"><b>mask_t</b> = <a class="el" href="namespaceloom_1_1vm_1_1simd.html#ab63c9ca39973768ec9e16d9dd2f35e28">mask_type</a>&lt;Ret, N&gt;</td></tr>
-<tr class="memitem:a9c5e50b8ad095f06e0fac09625965312" id="r_a9c5e50b8ad095f06e0fac09625965312"><td class="memItemLeft"><a id="a9c5e50b8ad095f06e0fac09625965312" name="a9c5e50b8ad095f06e0fac09625965312"></a>
-using&#160;</td><td class="memItemRight"><b>blend_wrangler</b> = <a class="el" href="structloom_1_1vm_1_1simd_1_1blend__intrinsics__wrangler.html">blend_intrinsics_wrangler</a>&lt;Ret, N&gt;</td></tr>
+<tr class="memitem:a8463699220f44ce086ed1ba7fde17091" id="r_a8463699220f44ce086ed1ba7fde17091"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="#a8463699220f44ce086ed1ba7fde17091">orig_comp</a> = remap_comp_t&lt;N, Op, Ret, Args...&gt;</td></tr>
+<tr class="memitem:a81eb8fbccf4a031af4d43f9c868bbe4a" id="r_a81eb8fbccf4a031af4d43f9c868bbe4a"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="#a81eb8fbccf4a031af4d43f9c868bbe4a">mask_t</a> = <a class="el" href="namespaceloom_1_1vm_1_1simd.html#ab63c9ca39973768ec9e16d9dd2f35e28">mask_type</a>&lt;Ret, N&gt;</td></tr>
+<tr class="memitem:a9c5e50b8ad095f06e0fac09625965312" id="r_a9c5e50b8ad095f06e0fac09625965312"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="#a9c5e50b8ad095f06e0fac09625965312">blend_wrangler</a> = <a class="el" href="structloom_1_1vm_1_1simd_1_1blend__intrinsics__wrangler.html">blend_intrinsics_wrangler</a>&lt;Ret, N&gt;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pub-static-attribs" class="groupheader"><a id="pub-static-attribs" name="pub-static-attribs"></a>
 Static Public Attributes</h2></td></tr>
@@ -129,7 +126,64 @@ Static Public Attributes</h2></td></tr>
 <a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
 <div class="textblock"><div class="compoundTemplParams">template&lt;<a class="el" href="namespaceloom_1_1vm_1_1simd.html#a13f74c165cada10f5eb92d2beb50b144">fsize_t</a> N, typename Op, typename Ret, typename... Args&gt;<br />
 struct loom::vm::simd::remap_comp_mask&lt; N, Op, Ret, Args &gt;</div><p>Default masked computation. </p>
-</div><a name="doc-variable-members" id="doc-variable-members"></a><h2 id="header-doc-variable-members" class="groupheader">Member Data Documentation</h2>
+
+<p class="definition">Definition at line <a class="el" href="simd_8hpp_source.html#l01315">1315</a> of file <a class="el" href="simd_8hpp_source.html">simd.hpp</a>.</p>
+</div><a name="doc-typedef-members" id="doc-typedef-members"></a><h2 id="header-doc-typedef-members" class="groupheader">Member Typedef Documentation</h2>
+<a id="a9c5e50b8ad095f06e0fac09625965312" name="a9c5e50b8ad095f06e0fac09625965312"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a9c5e50b8ad095f06e0fac09625965312">&#9670;&#160;</a></span>blend_wrangler</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;<a class="el" href="namespaceloom_1_1vm_1_1simd.html#a13f74c165cada10f5eb92d2beb50b144">fsize_t</a> N, typename Op, typename Ret, typename... Args&gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">using <a class="el" href="structloom_1_1vm_1_1simd_1_1remap__comp__mask.html">loom::vm::simd::remap_comp_mask</a>&lt; N, Op, Ret, Args &gt;::blend_wrangler = <a class="el" href="structloom_1_1vm_1_1simd_1_1blend__intrinsics__wrangler.html">blend_intrinsics_wrangler</a>&lt;Ret, N&gt;</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="simd_8hpp_source.html#l01319">1319</a> of file <a class="el" href="simd_8hpp_source.html">simd.hpp</a>.</p>
+
+</div>
+</div>
+<a id="a81eb8fbccf4a031af4d43f9c868bbe4a" name="a81eb8fbccf4a031af4d43f9c868bbe4a"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a81eb8fbccf4a031af4d43f9c868bbe4a">&#9670;&#160;</a></span>mask_t</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;<a class="el" href="namespaceloom_1_1vm_1_1simd.html#a13f74c165cada10f5eb92d2beb50b144">fsize_t</a> N, typename Op, typename Ret, typename... Args&gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">using <a class="el" href="structloom_1_1vm_1_1simd_1_1remap__comp__mask.html">loom::vm::simd::remap_comp_mask</a>&lt; N, Op, Ret, Args &gt;::mask_t = <a class="el" href="namespaceloom_1_1vm_1_1simd.html#ab63c9ca39973768ec9e16d9dd2f35e28">mask_type</a>&lt;Ret, N&gt;</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="simd_8hpp_source.html#l01318">1318</a> of file <a class="el" href="simd_8hpp_source.html">simd.hpp</a>.</p>
+
+</div>
+</div>
+<a id="a8463699220f44ce086ed1ba7fde17091" name="a8463699220f44ce086ed1ba7fde17091"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a8463699220f44ce086ed1ba7fde17091">&#9670;&#160;</a></span>orig_comp</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;<a class="el" href="namespaceloom_1_1vm_1_1simd.html#a13f74c165cada10f5eb92d2beb50b144">fsize_t</a> N, typename Op, typename Ret, typename... Args&gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">using <a class="el" href="structloom_1_1vm_1_1simd_1_1remap__comp__mask.html">loom::vm::simd::remap_comp_mask</a>&lt; N, Op, Ret, Args &gt;::orig_comp = remap_comp_t&lt;N, Op, Ret, Args...&gt;</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="simd_8hpp_source.html#l01317">1317</a> of file <a class="el" href="simd_8hpp_source.html">simd.hpp</a>.</p>
+
+</div>
+</div>
+<a name="doc-variable-members" id="doc-variable-members"></a><h2 id="header-doc-variable-members" class="groupheader">Member Data Documentation</h2>
 <a id="aaa782b60686940e6ffdcded3d0f9e134" name="aaa782b60686940e6ffdcded3d0f9e134"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#aaa782b60686940e6ffdcded3d0f9e134">&#9670;&#160;</a></span>comp</h2>
 
@@ -151,12 +205,14 @@ template&lt;<a class="el" href="namespaceloom_1_1vm_1_1simd.html#a13f74c165cada1
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="simd_8hpp_source.html#l01321">1321</a> of file <a class="el" href="simd_8hpp_source.html">simd.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno"> 1321</span>{};</div>
 </div><!-- fragment -->
 </div>
 </div>
 <hr/>The documentation for this struct was generated from the following file:<ul>
-<li>vm/<a class="el" href="simd_8hpp.html">simd.hpp</a></li>
+<li>vm/<a class="el" href="simd_8hpp_source.html">simd.hpp</a></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->

@@ -104,10 +104,10 @@ $(function(){initNavTree('argparse_8cpp.html','',''); });
 
 <p>argparse module tests.  
 <a href="#details">More...</a></p>
-<div class="textblock"><code>#include &lt;<a class="el" href="argparse_8hpp.html">common/argparse.hpp</a>&gt;</code><br />
-<code>#include &lt;<a class="el" href="common_2random_8hpp.html">common/random.hpp</a>&gt;</code><br />
-<code>#include &lt;<a class="el" href="test_8hpp.html">common/test.hpp</a>&gt;</code><br />
-<code>#include &lt;<a class="el" href="tuple_8hpp.html">common/tuple.hpp</a>&gt;</code><br />
+<div class="textblock"><code>#include &lt;<a class="el" href="argparse_8hpp_source.html">common/argparse.hpp</a>&gt;</code><br />
+<code>#include &lt;<a class="el" href="common_2random_8hpp_source.html">common/random.hpp</a>&gt;</code><br />
+<code>#include &lt;<a class="el" href="test_8hpp_source.html">common/test.hpp</a>&gt;</code><br />
+<code>#include &lt;<a class="el" href="tuple_8hpp_source.html">common/tuple.hpp</a>&gt;</code><br />
 <code>#include &lt;algorithm&gt;</code><br />
 <code>#include &lt;array&gt;</code><br />
 <code>#include &lt;bitset&gt;</code><br />
@@ -122,7 +122,9 @@ $(function(){initNavTree('argparse_8cpp.html','',''); });
 <div id="dynsection-0-content" class="dyncontent" style="display:none;">
 <div class="center"><div class="zoom"><iframe scrolling="no" loading="lazy" frameborder="0" src="argparse_8cpp__incl.svg" width="100%" height="600"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
 </div>
-</div><table class="memberdecls">
+</div>
+<p><a href="argparse_8cpp_source.html">Go to the source code of this file.</a></p>
+<table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-define-members" class="groupheader"><a id="define-members" name="define-members"></a>
 Macros</h2></td></tr>
 <tr class="memitem:ae1d17a9d5efa150f896a5ec9a7f0a463" id="r_ae1d17a9d5efa150f896a5ec9a7f0a463"><td class="memItemLeft">#define&#160;</td><td class="memItemRight"><a class="el" href="#ae1d17a9d5efa150f896a5ec9a7f0a463">PARSE_INIT</a></td></tr>
@@ -131,8 +133,7 @@ Macros</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-typedef-members" class="groupheader"><a id="typedef-members" name="typedef-members"></a>
 Typedefs</h2></td></tr>
-<tr class="memitem:a9192341769b4cc5b5af315f01e81fa5f" id="r_a9192341769b4cc5b5af315f01e81fa5f"><td class="memItemLeft"><a id="a9192341769b4cc5b5af315f01e81fa5f" name="a9192341769b4cc5b5af315f01e81fa5f"></a>
-using&#160;</td><td class="memItemRight"><b>strvec</b> = std::vector&lt;std::string&gt;</td></tr>
+<tr class="memitem:a9192341769b4cc5b5af315f01e81fa5f" id="r_a9192341769b4cc5b5af315f01e81fa5f"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="#a9192341769b4cc5b5af315f01e81fa5f">strvec</a> = std::vector&lt;std::string&gt;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-func-members" class="groupheader"><a id="func-members" name="func-members"></a>
 Functions</h2></td></tr>
@@ -178,17 +179,13 @@ Variables</h2></td></tr>
 <tr class="memitem:a93560d35df2201124ce7d7035970e746" id="r_a93560d35df2201124ce7d7035970e746"><td class="memItemLeft">constexpr auto&#160;</td><td class="memItemRight"><a class="el" href="#a93560d35df2201124ce7d7035970e746">o1</a></td></tr>
 <tr class="memitem:aeedce439011982767bd48593e46db485" id="r_aeedce439011982767bd48593e46db485"><td class="memItemLeft">constexpr auto&#160;</td><td class="memItemRight"><a class="el" href="#aeedce439011982767bd48593e46db485">o1kc</a></td></tr>
 <tr class="memitem:ad53a9af5cceebc544985e17b82a2f1b8" id="r_ad53a9af5cceebc544985e17b82a2f1b8"><td class="memItemLeft">constexpr auto&#160;</td><td class="memItemRight"><a class="el" href="#ad53a9af5cceebc544985e17b82a2f1b8">o1kw</a></td></tr>
-<tr class="memitem:a5b6721e2501b4f0a1320d1c065835e54" id="r_a5b6721e2501b4f0a1320d1c065835e54"><td class="memItemLeft"><a id="a5b6721e2501b4f0a1320d1c065835e54" name="a5b6721e2501b4f0a1320d1c065835e54"></a>
-constexpr auto&#160;</td><td class="memItemRight"><b>of1</b> = <a class="el" href="group__ArgParse.html#ga0cb58e8535fc44643b0bd08e5970680a">flag</a>&lt;'f', &quot;flag&quot;&gt;(&quot;long doc for flag&quot;)</td></tr>
-<tr class="memitem:a3869fdd7e1853db295826fef20abda46" id="r_a3869fdd7e1853db295826fef20abda46"><td class="memItemLeft"><a id="a3869fdd7e1853db295826fef20abda46" name="a3869fdd7e1853db295826fef20abda46"></a>
-constexpr auto&#160;</td><td class="memItemRight"><b>of2</b> = <a class="el" href="group__ArgParse.html#ga0cb58e8535fc44643b0bd08e5970680a">flag</a>&lt;'F', &quot;Flag&quot;&gt;(&quot;long doc for inverse Flag&quot;, true)</td></tr>
+<tr class="memitem:a5b6721e2501b4f0a1320d1c065835e54" id="r_a5b6721e2501b4f0a1320d1c065835e54"><td class="memItemLeft">constexpr auto&#160;</td><td class="memItemRight"><a class="el" href="#a5b6721e2501b4f0a1320d1c065835e54">of1</a> = <a class="el" href="group__ArgParse.html#ga0cb58e8535fc44643b0bd08e5970680a">flag</a>&lt;'f', &quot;flag&quot;&gt;(&quot;long doc for flag&quot;)</td></tr>
+<tr class="memitem:a3869fdd7e1853db295826fef20abda46" id="r_a3869fdd7e1853db295826fef20abda46"><td class="memItemLeft">constexpr auto&#160;</td><td class="memItemRight"><a class="el" href="#a3869fdd7e1853db295826fef20abda46">of2</a> = <a class="el" href="group__ArgParse.html#ga0cb58e8535fc44643b0bd08e5970680a">flag</a>&lt;'F', &quot;Flag&quot;&gt;(&quot;long doc for inverse Flag&quot;, true)</td></tr>
 <tr class="memitem:a65d2021336a7b45258aa04508b3146c3" id="r_a65d2021336a7b45258aa04508b3146c3"><td class="memItemLeft">constexpr auto&#160;</td><td class="memItemRight"><a class="el" href="#a65d2021336a7b45258aa04508b3146c3">o2</a></td></tr>
 <tr class="memitem:a49dcaab52eb18f6c13bff9f3410d462a" id="r_a49dcaab52eb18f6c13bff9f3410d462a"><td class="memItemLeft">constexpr auto&#160;</td><td class="memItemRight"><a class="el" href="#a49dcaab52eb18f6c13bff9f3410d462a">om</a></td></tr>
-<tr class="memitem:a59e1b3b5ca2a011544711894fe207c6d" id="r_a59e1b3b5ca2a011544711894fe207c6d"><td class="memItemLeft"><a id="a59e1b3b5ca2a011544711894fe207c6d" name="a59e1b3b5ca2a011544711894fe207c6d"></a>
-constexpr auto&#160;</td><td class="memItemRight"><b>pos1</b> = <a class="el" href="group__ArgParse.html#ga9af47bc2c4e12b48d0fff43e4eed45d6">positional</a>(&quot;doc for 1st positional&quot;, &quot;pos1&quot;)</td></tr>
+<tr class="memitem:a59e1b3b5ca2a011544711894fe207c6d" id="r_a59e1b3b5ca2a011544711894fe207c6d"><td class="memItemLeft">constexpr auto&#160;</td><td class="memItemRight"><a class="el" href="#a59e1b3b5ca2a011544711894fe207c6d">pos1</a> = <a class="el" href="group__ArgParse.html#ga9af47bc2c4e12b48d0fff43e4eed45d6">positional</a>(&quot;doc for 1st positional&quot;, &quot;pos1&quot;)</td></tr>
 <tr class="memitem:a356833c8abaee543852933659b37390e" id="r_a356833c8abaee543852933659b37390e"><td class="memItemLeft">constexpr auto&#160;</td><td class="memItemRight"><a class="el" href="#a356833c8abaee543852933659b37390e">pos2</a></td></tr>
-<tr class="memitem:ae7504a2221606549ecad2fb97bf4c804" id="r_ae7504a2221606549ecad2fb97bf4c804"><td class="memItemLeft"><a id="ae7504a2221606549ecad2fb97bf4c804" name="ae7504a2221606549ecad2fb97bf4c804"></a>
-constexpr auto&#160;</td><td class="memItemRight"><b>posl</b> = <a class="el" href="group__ArgParse.html#ga137e3e0ba130194b7e82ef37af2a8969">positional_list</a>(&quot;doc for <a class="el" href="group__ArgParse.html#ga9af47bc2c4e12b48d0fff43e4eed45d6">positional</a> list&quot;, &quot;poss&quot;)</td></tr>
+<tr class="memitem:ae7504a2221606549ecad2fb97bf4c804" id="r_ae7504a2221606549ecad2fb97bf4c804"><td class="memItemLeft">constexpr auto&#160;</td><td class="memItemRight"><a class="el" href="#ae7504a2221606549ecad2fb97bf4c804">posl</a> = <a class="el" href="group__ArgParse.html#ga137e3e0ba130194b7e82ef37af2a8969">positional_list</a>(&quot;doc for <a class="el" href="group__ArgParse.html#ga9af47bc2c4e12b48d0fff43e4eed45d6">positional</a> list&quot;, &quot;poss&quot;)</td></tr>
 <tr class="memitem:ae09144371e0c4a3d112f793b0c60b22a" id="r_ae09144371e0c4a3d112f793b0c60b22a"><td class="memItemLeft">constexpr std::tuple&#160;</td><td class="memItemRight"><a class="el" href="#ae09144371e0c4a3d112f793b0c60b22a">options</a> {o1, o1kc, o1kw, of1, of2, o2, om}</td></tr>
 <tr class="memitem:ab675acdd7032d9c63b773ff70be9947f" id="r_ab675acdd7032d9c63b773ff70be9947f"><td class="memItemLeft">constexpr std::tuple&#160;</td><td class="memItemRight"><a class="el" href="#ab675acdd7032d9c63b773ff70be9947f">positionals</a> {pos1, pos2, posl}</td></tr>
 <tr class="memitem:ae3e9a98ef520d997a51e28d25b98b8ef" id="r_ae3e9a98ef520d997a51e28d25b98b8ef"><td class="memItemLeft">constexpr <a class="el" href="structloom_1_1argparse_1_1KeywordValueMatcher.html">KeywordValueMatcher</a>&#160;</td><td class="memItemRight"><a class="el" href="#ae3e9a98ef520d997a51e28d25b98b8ef">keyword_value_parser</a> {}</td></tr>
@@ -199,6 +196,8 @@ constexpr auto&#160;</td><td class="memItemRight"><b>posl</b> = <a class="el" hr
 </table>
 <a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>argparse module tests. </p>
+
+<p class="definition">Definition in file <a class="el" href="argparse_8cpp_source.html">argparse.cpp</a>.</p>
 </div><a name="doc-define-members" id="doc-define-members"></a><h2 id="header-doc-define-members" class="groupheader">Macro Definition Documentation</h2>
 <a id="ac0d2d71eab3db2102407a3c6fa87eef4" name="ac0d2d71eab3db2102407a3c6fa87eef4"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#ac0d2d71eab3db2102407a3c6fa87eef4">&#9670;&#160;</a></span>MAKE_ERROR_CHECK</h2>
@@ -225,7 +224,7 @@ constexpr auto&#160;</td><td class="memItemRight"><b>posl</b> = <a class="el" hr
 <div class="line">    else                              \</div>
 <div class="line">        return <span class="keyword">false</span>;                 \</div>
 <div class="line">}</div>
-<div class="ttc" id="agroup__ArgParse_html_ga4b56a614886088960312b9a0e52c47dd"><div class="ttname"><a href="group__ArgParse.html#ga4b56a614886088960312b9a0e52c47dd">loom::argparse::ErrorState</a></div><div class="ttdeci">std::optional&lt; std::variant&lt; FewArgumentsException, UnexpectedValue, KeyException&lt; char &gt;, KeyException&lt; std::string_view &gt;, HelpRequest &gt; &gt; ErrorState</div><div class="ttdoc">Holds errors occured during parsing.</div><div class="ttdef"><b>Definition</b> argparse.hpp:1165</div></div>
+<div class="ttc" id="agroup__ArgParse_html_ga4b56a614886088960312b9a0e52c47dd"><div class="ttname"><a href="group__ArgParse.html#ga4b56a614886088960312b9a0e52c47dd">loom::argparse::ErrorState</a></div><div class="ttdeci">std::optional&lt; std::variant&lt; FewArgumentsException, UnexpectedValue, KeyException&lt; char &gt;, KeyException&lt; std::string_view &gt;, HelpRequest &gt; &gt; ErrorState</div><div class="ttdoc">Holds errors occured during parsing.</div><div class="ttdef"><b>Definition</b> <a href="argparse_8hpp_source.html#l01165">argparse.hpp:1165</a></div></div>
 </div><!-- fragment -->
 </div>
 </div>
@@ -244,7 +243,9 @@ constexpr auto&#160;</td><td class="memItemRight"><b>posl</b> = <a class="el" hr
 <div class="line">State      pos_state{positionals}; \</div>
 <div class="line"><a class="code hl_typedef" href="group__ArgParse.html#ga4b56a614886088960312b9a0e52c47dd">ErrorState</a> error;                  \</div>
 <div class="line"><span class="keyword">auto</span>       iter = args.begin()</div>
-</div><!-- fragment --><div class="fragment"><div class="line"><span class="lineno">  316</span><span class="preprocessor">#define PARSE_INIT                     \</span></div>
+</div><!-- fragment -->
+<p class="definition">Definition at line <a class="el" href="argparse_8cpp_source.html#l00316">316</a> of file <a class="el" href="argparse_8cpp_source.html">argparse.cpp</a>.</p>
+<div class="fragment"><div class="line"><span class="lineno">  316</span><span class="preprocessor">#define PARSE_INIT                     \</span></div>
 <div class="line"><span class="lineno">  317</span><span class="preprocessor">    State      opt_state{options};     \</span></div>
 <div class="line"><span class="lineno">  318</span><span class="preprocessor">    State      pos_state{positionals}; \</span></div>
 <div class="line"><span class="lineno">  319</span><span class="preprocessor">    ErrorState error;                  \</span></div>
@@ -268,10 +269,29 @@ constexpr auto&#160;</td><td class="memItemRight"><b>posl</b> = <a class="el" hr
 </div><div class="memdoc">
 <b>Value:</b><div class="fragment"><div class="line">args.push_back(gen_key(OPT, cgen)); \</div>
 <div class="line">args.push_back(val)</div>
-</div><!-- fragment --><div class="fragment"><div class="line"><span class="lineno">  434</span><span class="preprocessor">#define PUSH_KEY_VAL(OPT)               \</span></div>
+</div><!-- fragment -->
+<p class="definition">Definition at line <a class="el" href="argparse_8cpp_source.html#l00434">434</a> of file <a class="el" href="argparse_8cpp_source.html">argparse.cpp</a>.</p>
+<div class="fragment"><div class="line"><span class="lineno">  434</span><span class="preprocessor">#define PUSH_KEY_VAL(OPT)               \</span></div>
 <div class="line"><span class="lineno">  435</span><span class="preprocessor">    args.push_back(gen_key(OPT, cgen)); \</span></div>
 <div class="line"><span class="lineno">  436</span><span class="preprocessor">    args.push_back(val)</span></div>
 </div><!-- fragment -->
+</div>
+</div>
+<a name="doc-typedef-members" id="doc-typedef-members"></a><h2 id="header-doc-typedef-members" class="groupheader">Typedef Documentation</h2>
+<a id="a9192341769b4cc5b5af315f01e81fa5f" name="a9192341769b4cc5b5af315f01e81fa5f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a9192341769b4cc5b5af315f01e81fa5f">&#9670;&#160;</a></span>strvec</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">using strvec = std::vector&lt;std::string&gt;</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="argparse_8cpp_source.html#l00042">42</a> of file <a class="el" href="argparse_8cpp_source.html">argparse.cpp</a>.</p>
+
 </div>
 </div>
 <a name="doc-func-members" id="doc-func-members"></a><h2 id="header-doc-func-members" class="groupheader">Function Documentation</h2>
@@ -297,6 +317,8 @@ constexpr auto&#160;</td><td class="memItemRight"><b>posl</b> = <a class="el" hr
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="argparse_8cpp_source.html#l00421">421</a> of file <a class="el" href="argparse_8cpp_source.html">argparse.cpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">  422</span>{</div>
 <div class="line"><span class="lineno">  423</span>    <span class="keywordflow">return</span> std::tuple{</div>
 <div class="line"><span class="lineno">  424</span>        <span class="stringliteral">&quot;default&quot;</span>s,</div>
@@ -341,6 +363,8 @@ template&lt;typename C, typename W, typename L&gt; </div>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="argparse_8cpp_source.html#l00440">440</a> of file <a class="el" href="argparse_8cpp_source.html">argparse.cpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">  441</span>{</div>
 <div class="line"><span class="lineno">  442</span>    <span class="keyword">auto</span>                                    opt_vals = default_vals();</div>
 <div class="line"><span class="lineno">  443</span>    std::tuple&lt;std::string, strvec, strvec&gt; pos_vals;</div>
@@ -511,7 +535,7 @@ template&lt;typename C, typename W, typename L&gt; </div>
 <div class="line"><span class="lineno">  608</span>    <span class="keywordflow">return</span> std::pair{ArgvMock(std::move(args)),</div>
 <div class="line"><span class="lineno">  609</span>                     std::tuple_cat(std::move(opt_vals), std::move(pos_vals))};</div>
 <div class="line"><span class="lineno">  610</span>}</div>
-<div class="ttc" id="astructloom_1_1RandomState_html_ac48d7af864f24e4f760447dbd74407aa"><div class="ttname"><a href="structloom_1_1RandomState.html#ac48d7af864f24e4f760447dbd74407aa">loom::RandomState::make_gen</a></div><div class="ttdeci">auto make_gen(Args &amp;&amp;... args) noexcept</div><div class="ttdoc">Make RNG.</div><div class="ttdef"><b>Definition</b> random.hpp:157</div></div>
+<div class="ttc" id="astructloom_1_1RandomState_html_ac48d7af864f24e4f760447dbd74407aa"><div class="ttname"><a href="structloom_1_1RandomState.html#ac48d7af864f24e4f760447dbd74407aa">loom::RandomState::make_gen</a></div><div class="ttdeci">auto make_gen(Args &amp;&amp;... args) noexcept</div><div class="ttdoc">Make RNG.</div><div class="ttdef"><b>Definition</b> <a href="common_2random_8hpp_source.html#l00157">random.hpp:157</a></div></div>
 </div><!-- fragment -->
 </div>
 </div>
@@ -543,6 +567,8 @@ template&lt;char Key, typename Keyword, typename Reader, std::size_t n, typename
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="argparse_8cpp_source.html#l00241">241</a> of file <a class="el" href="argparse_8cpp_source.html">argparse.cpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">  242</span>{</div>
 <div class="line"><span class="lineno">  243</span>    <span class="keywordflow">if</span> <span class="keyword">constexpr</span>(Key == missing_keychar)</div>
 <div class="line"><span class="lineno">  244</span>        <span class="keywordflow">return</span> make_keyword(o);</div>
@@ -584,6 +610,8 @@ template&lt;typename <a class="el" href="structloom_1_1argparse_1_1Option.html">
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="argparse_8cpp_source.html#l00282">282</a> of file <a class="el" href="argparse_8cpp_source.html">argparse.cpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">  283</span>{</div>
 <div class="line"><span class="lineno">  284</span>    std::string key  = gen_key(o, cgen);</div>
 <div class="line"><span class="lineno">  285</span>    <span class="keyword">auto</span>        vals = gen_vals(o, wgen, lgen);</div>
@@ -628,6 +656,8 @@ template&lt;typename <a class="el" href="structloom_1_1argparse_1_1Option.html">
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="argparse_8cpp_source.html#l00299">299</a> of file <a class="el" href="argparse_8cpp_source.html">argparse.cpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">  300</span>{</div>
 <div class="line"><span class="lineno">  301</span>    <span class="keyword">const</span> std::string correct = wgen();</div>
 <div class="line"><span class="lineno">  302</span>    <span class="keyword">const</span> std::string kw      = make_keyword(o);</div>
@@ -664,13 +694,15 @@ template&lt;typename <a class="el" href="structloom_1_1argparse_1_1Option.html">
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="argparse_8cpp_source.html#l00308">308</a> of file <a class="el" href="argparse_8cpp_source.html">argparse.cpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">  309</span>{</div>
 <div class="line"><span class="lineno">  310</span>    <span class="keyword">const</span> <span class="keywordtype">bool</span>        correct = choice();</div>
 <div class="line"><span class="lineno">  311</span>    <span class="keyword">const</span> std::string <a class="code hl_namespace" href="namespaceloom_1_1test.html">test</a> =</div>
 <div class="line"><span class="lineno">  312</span>        make_keyword(o) + <span class="stringliteral">&quot;=&quot;</span> + (correct ? <span class="stringliteral">&quot;true&quot;</span>s : <span class="stringliteral">&quot;false&quot;</span>s);</div>
 <div class="line"><span class="lineno">  313</span>    <span class="keywordflow">return</span> {ArgvMock({<a class="code hl_namespace" href="namespaceloom_1_1test.html">test</a>}), correct};</div>
 <div class="line"><span class="lineno">  314</span>}</div>
-<div class="ttc" id="anamespaceloom_1_1test_html"><div class="ttname"><a href="namespaceloom_1_1test.html">loom::test</a></div><div class="ttdef"><b>Definition</b> test.hpp:41</div></div>
+<div class="ttc" id="anamespaceloom_1_1test_html"><div class="ttname"><a href="namespaceloom_1_1test.html">loom::test</a></div><div class="ttdef"><b>Definition</b> <a href="test_8hpp_source.html#l00040">test.hpp:41</a></div></div>
 </div><!-- fragment -->
 </div>
 </div>
@@ -707,6 +739,8 @@ template&lt;char Key, typename Keyword, typename Reader, std::size_t n, typename
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="argparse_8cpp_source.html#l00258">258</a> of file <a class="el" href="argparse_8cpp_source.html">argparse.cpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">  259</span>{</div>
 <div class="line"><span class="lineno">  260</span>    <span class="keyword">static_assert</span>(!Option&lt;Key, Keyword, Reader, n&gt;::is_flag);</div>
 <div class="line"><span class="lineno">  261</span>    <span class="keywordflow">if</span> <span class="keyword">constexpr</span>(n == 1)</div>
@@ -727,7 +761,7 @@ template&lt;char Key, typename Keyword, typename Reader, std::size_t n, typename
 <div class="line"><span class="lineno">  276</span>        <span class="keywordflow">return</span> ret;</div>
 <div class="line"><span class="lineno">  277</span>    }</div>
 <div class="line"><span class="lineno">  278</span>}</div>
-<div class="ttc" id="agroup__ArgParse_html_ga95401598621d5274b657acbd3f740ecf"><div class="ttname"><a href="group__ArgParse.html#ga95401598621d5274b657acbd3f740ecf">loom::argparse::npos</a></div><div class="ttdeci">constexpr std::size_t npos</div><div class="ttdoc">Special value. The exact meaning depends on the context.</div><div class="ttdef"><b>Definition</b> argparse.hpp:57</div></div>
+<div class="ttc" id="agroup__ArgParse_html_ga95401598621d5274b657acbd3f740ecf"><div class="ttname"><a href="group__ArgParse.html#ga95401598621d5274b657acbd3f740ecf">loom::argparse::npos</a></div><div class="ttdeci">constexpr std::size_t npos</div><div class="ttdoc">Special value. The exact meaning depends on the context.</div><div class="ttdef"><b>Definition</b> <a href="argparse_8hpp_source.html#l00057">argparse.hpp:57</a></div></div>
 </div><!-- fragment -->
 </div>
 </div>
@@ -759,14 +793,16 @@ template&lt;typename <a class="el" href="structloom_1_1argparse_1_1Option.html">
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="argparse_8cpp_source.html#l00412">412</a> of file <a class="el" href="argparse_8cpp_source.html">argparse.cpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">  413</span>{</div>
 <div class="line"><span class="lineno">  414</span>    <span class="keywordflow">return</span> (std::get&lt;<a class="code hl_variable" href="group__Typelist.html#gad7c3a54514b6f36f1ba682999037bd1b">typelist::index</a>&lt;</div>
 <div class="line"><span class="lineno">  415</span>                std::remove_cvref_t&lt;Option&gt;,</div>
 <div class="line"><span class="lineno">  416</span>                <a class="code hl_typedef" href="group__Typelist.html#ga6ee5883ae8964b73a0dd32bc6bc1e7b7">typelist::from</a>&lt;std::remove_cvref_t&lt;<span class="keyword">decltype</span>(options)&gt;&gt;&gt;&gt;(</div>
 <div class="line"><span class="lineno">  417</span>        std::forward&lt;Tuple&gt;(t)));</div>
 <div class="line"><span class="lineno">  418</span>}</div>
-<div class="ttc" id="agroup__Typelist_html_ga6ee5883ae8964b73a0dd32bc6bc1e7b7"><div class="ttname"><a href="group__Typelist.html#ga6ee5883ae8964b73a0dd32bc6bc1e7b7">loom::typelist::from</a></div><div class="ttdeci">detail::from&lt; Source &gt;::type from</div><div class="ttdoc">Convert a class template Source into type_sequence.</div><div class="ttdef"><b>Definition</b> tmp.hpp:1106</div></div>
-<div class="ttc" id="agroup__Typelist_html_gad7c3a54514b6f36f1ba682999037bd1b"><div class="ttname"><a href="group__Typelist.html#gad7c3a54514b6f36f1ba682999037bd1b">loom::typelist::index</a></div><div class="ttdeci">constexpr std::size_t index</div><div class="ttdoc">The index of the first occurence of type T. If there is no such type, the value is -1ul.</div><div class="ttdef"><b>Definition</b> tmp.hpp:817</div></div>
+<div class="ttc" id="agroup__Typelist_html_ga6ee5883ae8964b73a0dd32bc6bc1e7b7"><div class="ttname"><a href="group__Typelist.html#ga6ee5883ae8964b73a0dd32bc6bc1e7b7">loom::typelist::from</a></div><div class="ttdeci">detail::from&lt; Source &gt;::type from</div><div class="ttdoc">Convert a class template Source into type_sequence.</div><div class="ttdef"><b>Definition</b> <a href="tmp_8hpp_source.html#l01106">tmp.hpp:1106</a></div></div>
+<div class="ttc" id="agroup__Typelist_html_gad7c3a54514b6f36f1ba682999037bd1b"><div class="ttname"><a href="group__Typelist.html#gad7c3a54514b6f36f1ba682999037bd1b">loom::typelist::index</a></div><div class="ttdeci">constexpr std::size_t index</div><div class="ttdoc">The index of the first occurence of type T. If there is no such type, the value is -1ul.</div><div class="ttdef"><b>Definition</b> <a href="tmp_8hpp_source.html#l00817">tmp.hpp:817</a></div></div>
 </div><!-- fragment -->
 </div>
 </div>
@@ -819,6 +855,8 @@ template&lt;typename <a class="el" href="structloom_1_1argparse_1_1Option.html">
 <dl class="test"><dt><b><a class="el" href="test.html#_test000033">Test</a></b></dt><dd><a class="el" href="group__ArgParse.html#ga8923a401b7f22226cd54965402b3ac5f" title="Parse command line arguments.">loom::argparse::parse</a> for few arguments exception. </dd></dl>
 <dl class="test"><dt><b><a class="el" href="test.html#_test000034">Test</a></b></dt><dd><a class="el" href="group__ArgParse.html#ga8923a401b7f22226cd54965402b3ac5f" title="Parse command line arguments.">loom::argparse::parse</a> parsing results. </dd></dl>
 <dl class="test"><dt><b><a class="el" href="test.html#_test000035">Test</a></b></dt><dd>Check that <a class="el" href="group__ArgParse.html#ga8923a401b7f22226cd54965402b3ac5f" title="Parse command line arguments.">loom::argparse::parse</a> doesn't generate errors with valid data. </dd></dl>
+
+<p class="definition">Definition at line <a class="el" href="argparse_8cpp_source.html#l00659">659</a> of file <a class="el" href="argparse_8cpp_source.html">argparse.cpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">  660</span>{</div>
 <div class="line"><span class="lineno">  661</span>    <a class="code hl_class" href="classloom_1_1test_1_1Track.html">Track</a>         track;</div>
 <div class="line"><span class="lineno">  662</span>    <a class="code hl_struct" href="structloom_1_1test_1_1ParmTestMaker.html">ParmTestMaker</a> tm{10000};</div>
@@ -1355,17 +1393,17 @@ template&lt;typename <a class="el" href="structloom_1_1argparse_1_1Option.html">
 <div class="line"><span class="lineno"> 1241</span> </div>
 <div class="line"><span class="lineno"> 1242</span>    <span class="keywordflow">return</span> track.<a class="code hl_function" href="classloom_1_1test_1_1Track.html#a510716b0162ab4688dc6f64da5bf4535">ret_code</a>();</div>
 <div class="line"><span class="lineno"> 1243</span>}</div>
-<div class="ttc" id="aclassloom_1_1test_1_1Track_html"><div class="ttname"><a href="classloom_1_1test_1_1Track.html">loom::test::Track</a></div><div class="ttdoc">Keeps track of tests and prints their status.</div><div class="ttdef"><b>Definition</b> test.hpp:183</div></div>
-<div class="ttc" id="aclassloom_1_1test_1_1Track_html_a510716b0162ab4688dc6f64da5bf4535"><div class="ttname"><a href="classloom_1_1test_1_1Track.html#a510716b0162ab4688dc6f64da5bf4535">loom::test::Track::ret_code</a></div><div class="ttdeci">int ret_code() const noexcept</div><div class="ttdoc">Returns non-zero if there are failed tests.</div><div class="ttdef"><b>Definition</b> test.hpp:408</div></div>
-<div class="ttc" id="aclassloom_1_1test_1_1Track_html_a6f1ed0db7838b0bc058ec1bee0743910"><div class="ttname"><a href="classloom_1_1test_1_1Track.html#a6f1ed0db7838b0bc058ec1bee0743910">loom::test::Track::check</a></div><div class="ttdeci">bool check(Test &amp;&amp;test) noexcept</div><div class="ttdoc">Run test and log the result.</div><div class="ttdef"><b>Definition</b> test.hpp:357</div></div>
-<div class="ttc" id="agroup__ArgParse_html_ga06b81a854ce0e2384b8313fa86df8370"><div class="ttname"><a href="group__ArgParse.html#ga06b81a854ce0e2384b8313fa86df8370">loom::argparse::show_help</a></div><div class="ttdeci">static void show_help(std::string_view program_name, const std::tuple&lt; Options... &gt; &amp;options, const std::tuple&lt; Positionals... &gt; &amp;positionals, std::FILE *file=stdout) noexcept</div><div class="ttdoc">Prints formatted help message to file.</div><div class="ttdef"><b>Definition</b> argparse.hpp:1610</div></div>
-<div class="ttc" id="agroup__ArgParse_html_ga8923a401b7f22226cd54965402b3ac5f"><div class="ttname"><a href="group__ArgParse.html#ga8923a401b7f22226cd54965402b3ac5f">loom::argparse::parse</a></div><div class="ttdeci">static auto parse(const std::tuple&lt; Options... &gt; &amp;options, const std::tuple&lt; Positionals... &gt; &amp;positionals, ArgsRange args, ErrorHandler &amp;&amp;error_handler) noexcept</div><div class="ttdoc">Parse command line arguments.</div><div class="ttdef"><b>Definition</b> argparse.hpp:1888</div></div>
-<div class="ttc" id="anamespaceloom_html_a2863f3ed17f20ba53afadc315c506f84"><div class="ttname"><a href="namespaceloom.html#a2863f3ed17f20ba53afadc315c506f84">loom::copy_id</a></div><div class="ttdeci">constexpr fn::copy_identity copy_id</div><div class="ttdoc">Same as std::identity, but copies input parameter.</div><div class="ttdef"><b>Definition</b> functional.hpp:257</div></div>
-<div class="ttc" id="astructloom_1_1RandomState_html"><div class="ttname"><a href="structloom_1_1RandomState.html">loom::RandomState</a></div><div class="ttdoc">Helper class to make standard random number generators.</div><div class="ttdef"><b>Definition</b> random.hpp:144</div></div>
-<div class="ttc" id="astructloom_1_1test_1_1NamedTest_html"><div class="ttname"><a href="structloom_1_1test_1_1NamedTest.html">loom::test::NamedTest</a></div><div class="ttdoc">Associates a test with a name.</div><div class="ttdef"><b>Definition</b> test.hpp:150</div></div>
-<div class="ttc" id="astructloom_1_1test_1_1ParmTestMaker_html"><div class="ttname"><a href="structloom_1_1test_1_1ParmTestMaker.html">loom::test::ParmTestMaker</a></div><div class="ttdoc">Helper class to make parametric tests.</div><div class="ttdef"><b>Definition</b> test.hpp:514</div></div>
-<div class="ttc" id="astructloom_1_1test_1_1ParmTestMaker_html_adb2a6a59430922b44f647cacd5f9f879"><div class="ttname"><a href="structloom_1_1test_1_1ParmTestMaker.html#adb2a6a59430922b44f647cacd5f9f879">loom::test::ParmTestMaker::with_hint</a></div><div class="ttdeci">auto with_hint(GH &amp;&amp;gh, T &amp;&amp;t, Cmp cmp=Cmp{}) const noexcept</div><div class="ttdoc">Make parametric test with a hint.</div><div class="ttdef"><b>Definition</b> test.hpp:596</div></div>
-<div class="ttc" id="astructloom_1_1test_1_1ParmTestMaker_html_aebad0c4e49ee30917de665adfc572f69"><div class="ttname"><a href="structloom_1_1test_1_1ParmTestMaker.html#aebad0c4e49ee30917de665adfc572f69">loom::test::ParmTestMaker::invariant</a></div><div class="ttdeci">auto invariant(G &amp;&amp;g, T &amp;&amp;t, V &amp;&amp;v) const noexcept</div><div class="ttdoc">Make invariant parametric test.</div><div class="ttdef"><b>Definition</b> test.hpp:569</div></div>
+<div class="ttc" id="aclassloom_1_1test_1_1Track_html"><div class="ttname"><a href="classloom_1_1test_1_1Track.html">loom::test::Track</a></div><div class="ttdoc">Keeps track of tests and prints their status.</div><div class="ttdef"><b>Definition</b> <a href="test_8hpp_source.html#l00182">test.hpp:183</a></div></div>
+<div class="ttc" id="aclassloom_1_1test_1_1Track_html_a510716b0162ab4688dc6f64da5bf4535"><div class="ttname"><a href="classloom_1_1test_1_1Track.html#a510716b0162ab4688dc6f64da5bf4535">loom::test::Track::ret_code</a></div><div class="ttdeci">int ret_code() const noexcept</div><div class="ttdoc">Returns non-zero if there are failed tests.</div><div class="ttdef"><b>Definition</b> <a href="test_8hpp_source.html#l00408">test.hpp:408</a></div></div>
+<div class="ttc" id="aclassloom_1_1test_1_1Track_html_a6f1ed0db7838b0bc058ec1bee0743910"><div class="ttname"><a href="classloom_1_1test_1_1Track.html#a6f1ed0db7838b0bc058ec1bee0743910">loom::test::Track::check</a></div><div class="ttdeci">bool check(Test &amp;&amp;test) noexcept</div><div class="ttdoc">Run test and log the result.</div><div class="ttdef"><b>Definition</b> <a href="test_8hpp_source.html#l00357">test.hpp:357</a></div></div>
+<div class="ttc" id="agroup__ArgParse_html_ga06b81a854ce0e2384b8313fa86df8370"><div class="ttname"><a href="group__ArgParse.html#ga06b81a854ce0e2384b8313fa86df8370">loom::argparse::show_help</a></div><div class="ttdeci">static void show_help(std::string_view program_name, const std::tuple&lt; Options... &gt; &amp;options, const std::tuple&lt; Positionals... &gt; &amp;positionals, std::FILE *file=stdout) noexcept</div><div class="ttdoc">Prints formatted help message to file.</div><div class="ttdef"><b>Definition</b> <a href="argparse_8hpp_source.html#l01610">argparse.hpp:1610</a></div></div>
+<div class="ttc" id="agroup__ArgParse_html_ga8923a401b7f22226cd54965402b3ac5f"><div class="ttname"><a href="group__ArgParse.html#ga8923a401b7f22226cd54965402b3ac5f">loom::argparse::parse</a></div><div class="ttdeci">static auto parse(const std::tuple&lt; Options... &gt; &amp;options, const std::tuple&lt; Positionals... &gt; &amp;positionals, ArgsRange args, ErrorHandler &amp;&amp;error_handler) noexcept</div><div class="ttdoc">Parse command line arguments.</div><div class="ttdef"><b>Definition</b> <a href="argparse_8hpp_source.html#l01888">argparse.hpp:1888</a></div></div>
+<div class="ttc" id="anamespaceloom_html_a2863f3ed17f20ba53afadc315c506f84"><div class="ttname"><a href="namespaceloom.html#a2863f3ed17f20ba53afadc315c506f84">loom::copy_id</a></div><div class="ttdeci">constexpr fn::copy_identity copy_id</div><div class="ttdoc">Same as std::identity, but copies input parameter.</div><div class="ttdef"><b>Definition</b> <a href="functional_8hpp_source.html#l00257">functional.hpp:257</a></div></div>
+<div class="ttc" id="astructloom_1_1RandomState_html"><div class="ttname"><a href="structloom_1_1RandomState.html">loom::RandomState</a></div><div class="ttdoc">Helper class to make standard random number generators.</div><div class="ttdef"><b>Definition</b> <a href="common_2random_8hpp_source.html#l00143">random.hpp:144</a></div></div>
+<div class="ttc" id="astructloom_1_1test_1_1NamedTest_html"><div class="ttname"><a href="structloom_1_1test_1_1NamedTest.html">loom::test::NamedTest</a></div><div class="ttdoc">Associates a test with a name.</div><div class="ttdef"><b>Definition</b> <a href="test_8hpp_source.html#l00149">test.hpp:150</a></div></div>
+<div class="ttc" id="astructloom_1_1test_1_1ParmTestMaker_html"><div class="ttname"><a href="structloom_1_1test_1_1ParmTestMaker.html">loom::test::ParmTestMaker</a></div><div class="ttdoc">Helper class to make parametric tests.</div><div class="ttdef"><b>Definition</b> <a href="test_8hpp_source.html#l00513">test.hpp:514</a></div></div>
+<div class="ttc" id="astructloom_1_1test_1_1ParmTestMaker_html_adb2a6a59430922b44f647cacd5f9f879"><div class="ttname"><a href="structloom_1_1test_1_1ParmTestMaker.html#adb2a6a59430922b44f647cacd5f9f879">loom::test::ParmTestMaker::with_hint</a></div><div class="ttdeci">auto with_hint(GH &amp;&amp;gh, T &amp;&amp;t, Cmp cmp=Cmp{}) const noexcept</div><div class="ttdoc">Make parametric test with a hint.</div><div class="ttdef"><b>Definition</b> <a href="test_8hpp_source.html#l00596">test.hpp:596</a></div></div>
+<div class="ttc" id="astructloom_1_1test_1_1ParmTestMaker_html_aebad0c4e49ee30917de665adfc572f69"><div class="ttname"><a href="structloom_1_1test_1_1ParmTestMaker.html#aebad0c4e49ee30917de665adfc572f69">loom::test::ParmTestMaker::invariant</a></div><div class="ttdeci">auto invariant(G &amp;&amp;g, T &amp;&amp;t, V &amp;&amp;v) const noexcept</div><div class="ttdoc">Make invariant parametric test.</div><div class="ttdef"><b>Definition</b> <a href="test_8hpp_source.html#l00569">test.hpp:569</a></div></div>
 </div><!-- fragment --><div id="dynsection-1" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>Here is the call graph for this function:</div>
 <div id="dynsection-1-summary" class="dynsummary" style="display:block;">
 </div>
@@ -1399,6 +1437,8 @@ template&lt;char Key, typename Keyword, typename Reader, std::size_t n&gt; </div
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="argparse_8cpp_source.html#l00229">229</a> of file <a class="el" href="argparse_8cpp_source.html">argparse.cpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">  230</span>{</div>
 <div class="line"><span class="lineno">  231</span>    <span class="keyword">static_assert</span>(Key != missing_keychar);</div>
 <div class="line"><span class="lineno">  232</span>    <span class="keywordflow">return</span> <span class="stringliteral">&quot;-&quot;</span>s + Key;</div>
@@ -1430,11 +1470,13 @@ template&lt;char Key, typename Keyword, typename Reader, std::size_t n&gt; </div
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="argparse_8cpp_source.html#l00221">221</a> of file <a class="el" href="argparse_8cpp_source.html">argparse.cpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">  222</span>{</div>
 <div class="line"><span class="lineno">  223</span>    <span class="keyword">static_assert</span>(!std::is_same_v&lt;Keyword, missing_keyword&gt;);</div>
 <div class="line"><span class="lineno">  224</span>    <span class="keywordflow">return</span> <span class="stringliteral">&quot;--&quot;</span>s + std::string(<a class="code hl_variable" href="group__CTString.html#ga69a4cafb4286297f3c24f7307a9dbc31">cs2sv&lt;Keyword&gt;</a>);</div>
 <div class="line"><span class="lineno">  225</span>}</div>
-<div class="ttc" id="agroup__CTString_html_ga69a4cafb4286297f3c24f7307a9dbc31"><div class="ttname"><a href="group__CTString.html#ga69a4cafb4286297f3c24f7307a9dbc31">loom::cs2sv</a></div><div class="ttdeci">constexpr std::string_view cs2sv</div><div class="ttdoc">Convert char_sequence S to std::string_view.</div><div class="ttdef"><b>Definition</b> string.hpp:104</div></div>
+<div class="ttc" id="agroup__CTString_html_ga69a4cafb4286297f3c24f7307a9dbc31"><div class="ttname"><a href="group__CTString.html#ga69a4cafb4286297f3c24f7307a9dbc31">loom::cs2sv</a></div><div class="ttdeci">constexpr std::string_view cs2sv</div><div class="ttdoc">Convert char_sequence S to std::string_view.</div><div class="ttdef"><b>Definition</b> <a href="string_8hpp_source.html#l00104">string.hpp:104</a></div></div>
 </div><!-- fragment -->
 </div>
 </div>
@@ -1460,6 +1502,8 @@ template&lt;char Key, typename Keyword, typename Reader, std::size_t n&gt; </div
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="argparse_8cpp_source.html#l00045">45</a> of file <a class="el" href="argparse_8cpp_source.html">argparse.cpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">   46</span>{</div>
 <div class="line"><span class="lineno">   47</span>    std::array&lt;char, 26&gt; az;</div>
 <div class="line"><span class="lineno">   48</span>    <span class="keywordflow">for</span>(<span class="keywordtype">int</span> i = 0; i &lt; 26; ++i) az[i] = static_cast&lt;char&gt;(<span class="charliteral">&#39;a&#39;</span> + i);</div>
@@ -1472,7 +1516,7 @@ template&lt;char Key, typename Keyword, typename Reader, std::size_t n&gt; </div
 <div class="line"><span class="lineno">   55</span>                               <span class="charliteral">&#39;:&#39;</span>, <span class="charliteral">&#39;&lt;&#39;</span>, <span class="charliteral">&#39;&gt;&#39;</span>, <span class="charliteral">&#39;,&#39;</span>, <span class="charliteral">&#39;.&#39;</span>, <span class="charliteral">&#39;?&#39;</span>, <span class="charliteral">&#39;/&#39;</span>, <span class="charliteral">&#39;|&#39;</span>};</div>
 <div class="line"><span class="lineno">   56</span>    <span class="keywordflow">return</span> <a class="code hl_function" href="namespaceloom.html#add29dd6e92c0f22a48f4a8160aa08900">array_cat</a>(az, AZ, nums, allowed_symbols);</div>
 <div class="line"><span class="lineno">   57</span>};</div>
-<div class="ttc" id="anamespaceloom_html_add29dd6e92c0f22a48f4a8160aa08900"><div class="ttname"><a href="namespaceloom.html#add29dd6e92c0f22a48f4a8160aa08900">loom::array_cat</a></div><div class="ttdeci">constexpr auto array_cat(const std::array&lt; T, N1 &gt; &amp;first, const std::array&lt; T, N2 &gt; &amp;second, const Rest &amp;... rest) noexcept</div><div class="ttdoc">Concatenate arrays.</div><div class="ttdef"><b>Definition</b> tuple.hpp:765</div></div>
+<div class="ttc" id="anamespaceloom_html_add29dd6e92c0f22a48f4a8160aa08900"><div class="ttname"><a href="namespaceloom.html#add29dd6e92c0f22a48f4a8160aa08900">loom::array_cat</a></div><div class="ttdeci">constexpr auto array_cat(const std::array&lt; T, N1 &gt; &amp;first, const std::array&lt; T, N2 &gt; &amp;second, const Rest &amp;... rest) noexcept</div><div class="ttdoc">Concatenate arrays.</div><div class="ttdef"><b>Definition</b> <a href="tuple_8hpp_source.html#l00765">tuple.hpp:765</a></div></div>
 </div><!-- fragment -->
 </div>
 </div>
@@ -1496,6 +1540,8 @@ template&lt;typename Pos&gt; </div>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="argparse_8cpp_source.html#l00633">633</a> of file <a class="el" href="argparse_8cpp_source.html">argparse.cpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">  634</span>{</div>
 <div class="line"><span class="lineno">  635</span>    std::tuple&lt;&gt; options;</div>
 <div class="line"><span class="lineno">  636</span>    PARSE_INIT;</div>
@@ -1528,6 +1574,8 @@ template&lt;typename Pos&gt; </div>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="argparse_8cpp_source.html#l00646">646</a> of file <a class="el" href="argparse_8cpp_source.html">argparse.cpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">  647</span>{</div>
 <div class="line"><span class="lineno">  648</span>    std::tuple&lt;&gt; options;</div>
 <div class="line"><span class="lineno">  649</span>    PARSE_INIT;</div>
@@ -1560,6 +1608,8 @@ template&lt;typename Pos&gt; </div>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="argparse_8cpp_source.html#l00620">620</a> of file <a class="el" href="argparse_8cpp_source.html">argparse.cpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">  621</span>{</div>
 <div class="line"><span class="lineno">  622</span>    std::tuple&lt;&gt; options;</div>
 <div class="line"><span class="lineno">  623</span>    PARSE_INIT;</div>
@@ -1569,7 +1619,7 @@ template&lt;typename Pos&gt; </div>
 <div class="line"><span class="lineno">  627</span> </div>
 <div class="line"><span class="lineno">  628</span>    <span class="keywordflow">return</span> <a class="code hl_class" href="classloom_1_1argparse_1_1ParseResults.html">ParseResults</a>(pos_state.bindings);</div>
 <div class="line"><span class="lineno">  629</span>}</div>
-<div class="ttc" id="aclassloom_1_1argparse_1_1ParseResults_html"><div class="ttname"><a href="classloom_1_1argparse_1_1ParseResults.html">loom::argparse::ParseResults</a></div><div class="ttdoc">Holds results of parsing.</div><div class="ttdef"><b>Definition</b> argparse.hpp:947</div></div>
+<div class="ttc" id="aclassloom_1_1argparse_1_1ParseResults_html"><div class="ttname"><a href="classloom_1_1argparse_1_1ParseResults.html">loom::argparse::ParseResults</a></div><div class="ttdoc">Holds results of parsing.</div><div class="ttdef"><b>Definition</b> <a href="argparse_8hpp_source.html#l00946">argparse.hpp:947</a></div></div>
 </div><!-- fragment -->
 </div>
 </div>
@@ -1604,6 +1654,8 @@ template&lt;typename Pos&gt; </div>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="argparse_8cpp_source.html#l00613">613</a> of file <a class="el" href="argparse_8cpp_source.html">argparse.cpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">  614</span>{</div>
 <div class="line"><span class="lineno">  615</span>    <span class="keywordflow">return</span> r &amp;&amp; iter != std::default_sentinel &amp;&amp; !error.has_value();</div>
 <div class="line"><span class="lineno">  616</span>}</div>
@@ -1648,6 +1700,8 @@ template&lt;typename Options, typename Positionals, typename Matcher&gt; </div>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="argparse_8cpp_source.html#l00352">352</a> of file <a class="el" href="argparse_8cpp_source.html">argparse.cpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">  356</span>{</div>
 <div class="line"><span class="lineno">  357</span>    PARSE_INIT;</div>
 <div class="line"><span class="lineno">  358</span>    p(iter, opt_state, pos_state, error);</div>
@@ -1694,6 +1748,8 @@ template&lt;typename Options, typename Positionals, typename Matcher&gt; </div>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="argparse_8cpp_source.html#l00364">364</a> of file <a class="el" href="argparse_8cpp_source.html">argparse.cpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">  368</span>{</div>
 <div class="line"><span class="lineno">  369</span>    PARSE_INIT;</div>
 <div class="line"><span class="lineno">  370</span>    p(iter, opt_state, pos_state, error);</div>
@@ -1740,6 +1796,8 @@ template&lt;typename... Options, typename... Positionals, typename Matcher&gt; <
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="argparse_8cpp_source.html#l00324">324</a> of file <a class="el" href="argparse_8cpp_source.html">argparse.cpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">  328</span>{</div>
 <div class="line"><span class="lineno">  329</span>    PARSE_INIT;</div>
 <div class="line"><span class="lineno">  330</span>    p(iter, opt_state, pos_state, error);</div>
@@ -1791,6 +1849,8 @@ template&lt;typename Options, typename Positionals, typename Matcher&gt; </div>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="argparse_8cpp_source.html#l00341">341</a> of file <a class="el" href="argparse_8cpp_source.html">argparse.cpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">  345</span>{</div>
 <div class="line"><span class="lineno">  346</span>    PARSE_INIT;</div>
 <div class="line"><span class="lineno">  347</span>    <span class="keywordflow">return</span> p(iter, opt_state, pos_state, error);</div>
@@ -1818,6 +1878,8 @@ template&lt;typename Options, typename Positionals, typename Matcher&gt; </div>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="argparse_8cpp_source.html#l00404">404</a> of file <a class="el" href="argparse_8cpp_source.html">argparse.cpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">  404</span>{};</div>
 </div><!-- fragment -->
 </div>
@@ -1841,6 +1903,8 @@ template&lt;typename Options, typename Positionals, typename Matcher&gt; </div>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="argparse_8cpp_source.html#l00405">405</a> of file <a class="el" href="argparse_8cpp_source.html">argparse.cpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">  405</span>{};</div>
 </div><!-- fragment -->
 </div>
@@ -1864,6 +1928,8 @@ template&lt;typename Options, typename Positionals, typename Matcher&gt; </div>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="argparse_8cpp_source.html#l00403">403</a> of file <a class="el" href="argparse_8cpp_source.html">argparse.cpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">  403</span>{};</div>
 </div><!-- fragment -->
 </div>
@@ -1889,8 +1955,10 @@ template&lt;typename Options, typename Positionals, typename Matcher&gt; </div>
 </div><div class="memdoc">
 <b>Initial value:</b><div class="fragment"><div class="line">              =</div>
 <div class="line"><a class="code hl_function" href="group__ArgParse.html#ga6a9662600e3ace55465b531ed2d97306">option</a>&lt;<span class="charliteral">&#39;o&#39;</span>, <span class="stringliteral">&quot;option&quot;</span>&gt;(<span class="stringliteral">&quot;long doc for option&quot;</span>, <span class="stringliteral">&quot;O&quot;</span>, <span class="stringliteral">&quot;default&quot;</span>)</div>
-<div class="ttc" id="agroup__ArgParse_html_ga6a9662600e3ace55465b531ed2d97306"><div class="ttname"><a href="group__ArgParse.html#ga6a9662600e3ace55465b531ed2d97306">loom::argparse::option</a></div><div class="ttdeci">consteval Option&lt; Key, sl2cs&lt; s &gt;, R, 1ul &gt; option(const std::string_view doc, const std::string_view var, const detail::result_type&lt; R &gt; &amp;def_val, R reader=DefaultReader{}) noexcept</div><div class="ttdoc">Create an option with key Key and keyword s.</div><div class="ttdef"><b>Definition</b> argparse.hpp:760</div></div>
+<div class="ttc" id="agroup__ArgParse_html_ga6a9662600e3ace55465b531ed2d97306"><div class="ttname"><a href="group__ArgParse.html#ga6a9662600e3ace55465b531ed2d97306">loom::argparse::option</a></div><div class="ttdeci">consteval Option&lt; Key, sl2cs&lt; s &gt;, R, 1ul &gt; option(const std::string_view doc, const std::string_view var, const detail::result_type&lt; R &gt; &amp;def_val, R reader=DefaultReader{}) noexcept</div><div class="ttdoc">Create an option with key Key and keyword s.</div><div class="ttdef"><b>Definition</b> <a href="argparse_8hpp_source.html#l00760">argparse.hpp:760</a></div></div>
 </div><!-- fragment -->
+<p class="definition">Definition at line <a class="el" href="argparse_8cpp_source.html#l00374">374</a> of file <a class="el" href="argparse_8cpp_source.html">argparse.cpp</a>.</p>
+
 </div>
 </div>
 <a id="aeedce439011982767bd48593e46db485" name="aeedce439011982767bd48593e46db485"></a>
@@ -1915,6 +1983,8 @@ template&lt;typename Options, typename Positionals, typename Matcher&gt; </div>
 <b>Initial value:</b><div class="fragment"><div class="line">                =</div>
 <div class="line"><a class="code hl_function" href="group__ArgParse.html#ga6a9662600e3ace55465b531ed2d97306">option&lt;&#39;c&#39;&gt;</a>(<span class="stringliteral">&quot;long doc for option with keychar only&quot;</span>, <span class="stringliteral">&quot;C&quot;</span>, <span class="stringliteral">&quot;default&quot;</span>)</div>
 </div><!-- fragment -->
+<p class="definition">Definition at line <a class="el" href="argparse_8cpp_source.html#l00376">376</a> of file <a class="el" href="argparse_8cpp_source.html">argparse.cpp</a>.</p>
+
 </div>
 </div>
 <a id="ad53a9af5cceebc544985e17b82a2f1b8" name="ad53a9af5cceebc544985e17b82a2f1b8"></a>
@@ -1939,6 +2009,8 @@ template&lt;typename Options, typename Positionals, typename Matcher&gt; </div>
 <b>Initial value:</b><div class="fragment"><div class="line">                =</div>
 <div class="line"><a class="code hl_function" href="group__ArgParse.html#ga6a9662600e3ace55465b531ed2d97306">option</a>&lt;<span class="stringliteral">&quot;keyword&quot;</span>&gt;(<span class="stringliteral">&quot;long doc for option with keyword only&quot;</span>, <span class="stringliteral">&quot;K&quot;</span>, <span class="stringliteral">&quot;default&quot;</span>)</div>
 </div><!-- fragment -->
+<p class="definition">Definition at line <a class="el" href="argparse_8cpp_source.html#l00378">378</a> of file <a class="el" href="argparse_8cpp_source.html">argparse.cpp</a>.</p>
+
 </div>
 </div>
 <a id="a65d2021336a7b45258aa04508b3146c3" name="a65d2021336a7b45258aa04508b3146c3"></a>
@@ -1971,6 +2043,56 @@ template&lt;typename Options, typename Positionals, typename Matcher&gt; </div>
 <div class="line">{<span class="stringliteral">&quot;2val1&quot;</span>, <span class="stringliteral">&quot;2val2&quot;</span>},</div>
 <div class="line">{<span class="stringliteral">&quot;1111&quot;</span>, <span class="stringliteral">&quot;2222&quot;</span>})</div>
 </div><!-- fragment -->
+<p class="definition">Definition at line <a class="el" href="argparse_8cpp_source.html#l00382">382</a> of file <a class="el" href="argparse_8cpp_source.html">argparse.cpp</a>.</p>
+
+</div>
+</div>
+<a id="a5b6721e2501b4f0a1320d1c065835e54" name="a5b6721e2501b4f0a1320d1c065835e54"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a5b6721e2501b4f0a1320d1c065835e54">&#9670;&#160;</a></span>of1</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">auto of1 = <a class="el" href="group__ArgParse.html#ga0cb58e8535fc44643b0bd08e5970680a">flag</a>&lt;'f', &quot;flag&quot;&gt;(&quot;long doc for flag&quot;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel constexpr">constexpr</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="argparse_8cpp_source.html#l00380">380</a> of file <a class="el" href="argparse_8cpp_source.html">argparse.cpp</a>.</p>
+
+</div>
+</div>
+<a id="a3869fdd7e1853db295826fef20abda46" name="a3869fdd7e1853db295826fef20abda46"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a3869fdd7e1853db295826fef20abda46">&#9670;&#160;</a></span>of2</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">auto of2 = <a class="el" href="group__ArgParse.html#ga0cb58e8535fc44643b0bd08e5970680a">flag</a>&lt;'F', &quot;Flag&quot;&gt;(&quot;long doc for inverse Flag&quot;, true)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel constexpr">constexpr</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="argparse_8cpp_source.html#l00381">381</a> of file <a class="el" href="argparse_8cpp_source.html">argparse.cpp</a>.</p>
+
 </div>
 </div>
 <a id="a49dcaab52eb18f6c13bff9f3410d462a" name="a49dcaab52eb18f6c13bff9f3410d462a"></a>
@@ -1994,8 +2116,10 @@ template&lt;typename Options, typename Positionals, typename Matcher&gt; </div>
 </div><div class="memdoc">
 <b>Initial value:</b><div class="fragment"><div class="line">              =</div>
 <div class="line"><a class="code hl_function" href="group__ArgParse.html#ga37ca279a279ffe0c92f33e5c7e002638">option_list</a>&lt;<span class="charliteral">&#39;m&#39;</span>, <span class="stringliteral">&quot;multi-val&quot;</span>&gt;(<span class="stringliteral">&quot;doc for unlimited values&quot;</span>, <span class="stringliteral">&quot;VAL&quot;</span>)</div>
-<div class="ttc" id="agroup__ArgParse_html_ga37ca279a279ffe0c92f33e5c7e002638"><div class="ttname"><a href="group__ArgParse.html#ga37ca279a279ffe0c92f33e5c7e002638">loom::argparse::option_list</a></div><div class="ttdeci">consteval Option&lt; Key, sl2cs&lt; s &gt;, R, npos &gt; option_list(const std::string_view doc, const std::string_view var, R reader=DefaultReader{}) noexcept</div><div class="ttdoc">Create a list option, one that takes one-or-more values.</div><div class="ttdef"><b>Definition</b> argparse.hpp:843</div></div>
+<div class="ttc" id="agroup__ArgParse_html_ga37ca279a279ffe0c92f33e5c7e002638"><div class="ttname"><a href="group__ArgParse.html#ga37ca279a279ffe0c92f33e5c7e002638">loom::argparse::option_list</a></div><div class="ttdeci">consteval Option&lt; Key, sl2cs&lt; s &gt;, R, npos &gt; option_list(const std::string_view doc, const std::string_view var, R reader=DefaultReader{}) noexcept</div><div class="ttdoc">Create a list option, one that takes one-or-more values.</div><div class="ttdef"><b>Definition</b> <a href="argparse_8hpp_source.html#l00843">argparse.hpp:843</a></div></div>
 </div><!-- fragment -->
+<p class="definition">Definition at line <a class="el" href="argparse_8cpp_source.html#l00392">392</a> of file <a class="el" href="argparse_8cpp_source.html">argparse.cpp</a>.</p>
+
 </div>
 </div>
 <a id="ae09144371e0c4a3d112f793b0c60b22a" name="ae09144371e0c4a3d112f793b0c60b22a"></a>
@@ -2017,8 +2141,34 @@ template&lt;typename Options, typename Positionals, typename Matcher&gt; </div>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="argparse_8cpp_source.html#l00400">400</a> of file <a class="el" href="argparse_8cpp_source.html">argparse.cpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">  400</span>{o1, o1kc, o1kw, of1, of2, o2, om};</div>
 </div><!-- fragment -->
+</div>
+</div>
+<a id="a59e1b3b5ca2a011544711894fe207c6d" name="a59e1b3b5ca2a011544711894fe207c6d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a59e1b3b5ca2a011544711894fe207c6d">&#9670;&#160;</a></span>pos1</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">auto pos1 = <a class="el" href="group__ArgParse.html#ga9af47bc2c4e12b48d0fff43e4eed45d6">positional</a>(&quot;doc for 1st positional&quot;, &quot;pos1&quot;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel constexpr">constexpr</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="argparse_8cpp_source.html#l00395">395</a> of file <a class="el" href="argparse_8cpp_source.html">argparse.cpp</a>.</p>
+
 </div>
 </div>
 <a id="a356833c8abaee543852933659b37390e" name="a356833c8abaee543852933659b37390e"></a>
@@ -2042,8 +2192,10 @@ template&lt;typename Options, typename Positionals, typename Matcher&gt; </div>
 </div><div class="memdoc">
 <b>Initial value:</b><div class="fragment"><div class="line">                =</div>
 <div class="line"><a class="code hl_function" href="group__ArgParse.html#ga9af47bc2c4e12b48d0fff43e4eed45d6">positional&lt;2ul&gt;</a>(<span class="stringliteral">&quot;doc for 2nd positional&quot;</span>, {<span class="stringliteral">&quot;pos21&quot;</span>, <span class="stringliteral">&quot;pos22&quot;</span>})</div>
-<div class="ttc" id="agroup__ArgParse_html_ga9af47bc2c4e12b48d0fff43e4eed45d6"><div class="ttname"><a href="group__ArgParse.html#ga9af47bc2c4e12b48d0fff43e4eed45d6">loom::argparse::positional</a></div><div class="ttdeci">consteval Positional&lt; R, 1ul &gt; positional(const std::string_view doc, const std::string_view var, R reader=DefaultReader{}) noexcept</div><div class="ttdoc">Create a positional option.</div><div class="ttdef"><b>Definition</b> argparse.hpp:909</div></div>
+<div class="ttc" id="agroup__ArgParse_html_ga9af47bc2c4e12b48d0fff43e4eed45d6"><div class="ttname"><a href="group__ArgParse.html#ga9af47bc2c4e12b48d0fff43e4eed45d6">loom::argparse::positional</a></div><div class="ttdeci">consteval Positional&lt; R, 1ul &gt; positional(const std::string_view doc, const std::string_view var, R reader=DefaultReader{}) noexcept</div><div class="ttdoc">Create a positional option.</div><div class="ttdef"><b>Definition</b> <a href="argparse_8hpp_source.html#l00909">argparse.hpp:909</a></div></div>
 </div><!-- fragment -->
+<p class="definition">Definition at line <a class="el" href="argparse_8cpp_source.html#l00396">396</a> of file <a class="el" href="argparse_8cpp_source.html">argparse.cpp</a>.</p>
+
 </div>
 </div>
 <a id="a9048223620c213da4747acc0c0738778" name="a9048223620c213da4747acc0c0738778"></a>
@@ -2065,6 +2217,8 @@ template&lt;typename Options, typename Positionals, typename Matcher&gt; </div>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="argparse_8cpp_source.html#l00406">406</a> of file <a class="el" href="argparse_8cpp_source.html">argparse.cpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">  406</span>{};</div>
 </div><!-- fragment -->
 </div>
@@ -2088,8 +2242,34 @@ template&lt;typename Options, typename Positionals, typename Matcher&gt; </div>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="argparse_8cpp_source.html#l00401">401</a> of file <a class="el" href="argparse_8cpp_source.html">argparse.cpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">  401</span>{pos1, pos2, posl};</div>
 </div><!-- fragment -->
+</div>
+</div>
+<a id="ae7504a2221606549ecad2fb97bf4c804" name="ae7504a2221606549ecad2fb97bf4c804"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae7504a2221606549ecad2fb97bf4c804">&#9670;&#160;</a></span>posl</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">auto posl = <a class="el" href="group__ArgParse.html#ga137e3e0ba130194b7e82ef37af2a8969">positional_list</a>(&quot;doc for <a class="el" href="group__ArgParse.html#ga9af47bc2c4e12b48d0fff43e4eed45d6">positional</a> list&quot;, &quot;poss&quot;)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel constexpr">constexpr</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="argparse_8cpp_source.html#l00398">398</a> of file <a class="el" href="argparse_8cpp_source.html">argparse.cpp</a>.</p>
+
 </div>
 </div>
 <a id="af1c20b7831ff198b76afa51c98d402e5" name="af1c20b7831ff198b76afa51c98d402e5"></a>
@@ -2111,6 +2291,8 @@ template&lt;typename Options, typename Positionals, typename Matcher&gt; </div>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="argparse_8cpp_source.html#l00408">408</a> of file <a class="el" href="argparse_8cpp_source.html">argparse.cpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">  408</span>{};</div>
 </div><!-- fragment -->
 </div>

@@ -1,0 +1,31 @@
+<map id="common/timer.hpp" name="common/timer.hpp">
+<area shape="rect" id="Node000001" title="Easily measure elapsed time." alt="" coords="633,5,778,33"/>
+<area shape="rect" id="Node000002" href="$benchmarks_2render_8hpp_source.html" title=" " alt="" coords="102,165,276,193"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="648,41,233,167,232,162,647,36"/>
+<area shape="rect" id="Node000005" href="$threefry_8cpp_source.html" title=" " alt="" coords="301,165,483,193"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="667,43,419,167,417,162,664,38"/>
+<area shape="rect" id="Node000006" href="$benchmarks_2utils_8hpp_source.html" title=" " alt="" coords="625,81,786,109"/>
+<area shape="poly" id="edge5_Node000001_Node000006" title=" " alt="" coords="708,49,708,81,703,81,703,49"/>
+<area shape="rect" id="Node000011" href="$smallpt_2common_2render_8hpp_source.html" title=" " alt="" coords="1111,81,1316,109"/>
+<area shape="poly" id="edge12_Node000001_Node000011" title=" " alt="" coords="793,30,1122,78,1121,83,793,36"/>
+<area shape="rect" id="Node000014" href="$smallpt_2vm_2pt_8cpp_source.html" title=" " alt="" coords="1340,81,1479,109"/>
+<area shape="poly" id="edge15_Node000001_Node000014" title=" " alt="" coords="793,25,1035,46,1328,78,1340,80,1339,85,1328,84,1034,52,793,30"/>
+<area shape="rect" id="Node000003" href="$primary_8cpp_source.html" title=" " alt="" coords="5,249,187,277"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="165,205,112,251,109,247,161,201"/>
+<area shape="rect" id="Node000004" href="$benchmarks_2pt_8cpp_source.html" title=" " alt="" coords="211,249,357,277"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="218,201,271,247,267,251,214,205"/>
+<area shape="poly" id="edge9_Node000006_Node000002" title=" " alt="" coords="610,111,459,132,290,159,249,167,248,162,289,154,458,127,609,106"/>
+<area shape="poly" id="edge11_Node000006_Node000005" title=" " alt="" coords="641,116,443,167,442,162,640,111"/>
+<area shape="rect" id="Node000007" href="$benchmarks_2factorial_8cpp_source.html" title=" " alt="" coords="507,165,693,193"/>
+<area shape="poly" id="edge6_Node000006_Node000007" title=" " alt="" coords="678,120,619,167,615,162,675,116"/>
+<area shape="rect" id="Node000008" href="$benchmarks_2fibonacci_8cpp_source.html" title=" " alt="" coords="717,165,907,193"/>
+<area shape="poly" id="edge7_Node000006_Node000008" title=" " alt="" coords="736,116,797,162,793,167,733,120"/>
+<area shape="rect" id="Node000009" href="$fp__mix_8cpp_source.html" title=" " alt="" coords="931,165,1109,193"/>
+<area shape="poly" id="edge8_Node000006_Node000009" title=" " alt="" coords="771,111,970,162,969,167,770,116"/>
+<area shape="rect" id="Node000010" href="$root__finding__bisection_8cpp_source.html" title=" " alt="" coords="1133,157,1315,201"/>
+<area shape="poly" id="edge10_Node000006_Node000010" title=" " alt="" coords="802,106,1122,154,1133,156,1132,161,1121,159,801,111"/>
+<area shape="rect" id="Node000012" href="$ref_8cpp_source.html" title=" " alt="" coords="1339,165,1480,193"/>
+<area shape="poly" id="edge13_Node000011_Node000012" title=" " alt="" coords="1260,113,1379,162,1377,167,1258,117"/>
+<area shape="rect" id="Node000013" href="$smallpt_2vm_2vm_8cpp_source.html" title=" " alt="" coords="1504,165,1651,193"/>
+<area shape="poly" id="edge14_Node000011_Node000013" title=" " alt="" coords="1291,110,1493,154,1526,162,1524,167,1491,159,1290,115"/>
+</map>

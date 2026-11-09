@@ -105,7 +105,7 @@ $(function(){initNavTree('classloom_1_1unique__tuple.html','','classloom_1_1uniq
 <p>Tuple class template for objects that aren't default- or copy-constructible.  
  <a href="#details">More...</a></p>
 
-<p><code>#include &quot;tuple.hpp&quot;</code></p>
+<p><code>#include &quot;<a class="el" href="tuple_8hpp_source.html">tuple.hpp</a>&quot;</code></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pub-methods" class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
@@ -134,6 +134,8 @@ unique_tuple &amp;&#160;</td><td class="memItemRight"><b>operator=</b> (const un
 <a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
 <div class="textblock"><div class="compoundTemplParams">template&lt;typename... Ts&gt;<br />
 class loom::unique_tuple&lt; Ts &gt;</div><p>Tuple class template for objects that aren't default- or copy-constructible. </p>
+
+<p class="definition">Definition at line <a class="el" href="tuple_8hpp_source.html#l00577">577</a> of file <a class="el" href="tuple_8hpp_source.html">tuple.hpp</a>.</p>
 </div><a name="doc-constructors" id="doc-constructors"></a><h2 id="header-doc-constructors" class="groupheader">Constructor &amp; Destructor Documentation</h2>
 <a id="a010e657fb59389223728114a129330b1" name="a010e657fb59389223728114a129330b1"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a010e657fb59389223728114a129330b1">&#9670;&#160;</a></span>unique_tuple() <span class="overload">[1/2]</span></h2>
@@ -159,11 +161,13 @@ template&lt;typename... Ts&gt; </div>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="tuple_8hpp_source.html#l00591">591</a> of file <a class="el" href="tuple_8hpp_source.html">tuple.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">  591</span>                                                          :</div>
 <div class="line"><span class="lineno">  592</span>        data(<a class="code hl_class" href="classloom_1_1unique__tuple.html">std::move</a>(<a class="code hl_class" href="classloom_1_1unique__tuple.html">other</a>.data))</div>
 <div class="line"><span class="lineno">  593</span>    {</div>
 <div class="line"><span class="lineno">  594</span>    }</div>
-<div class="ttc" id="aclassloom_1_1unique__tuple_html"><div class="ttname"><a href="classloom_1_1unique__tuple.html">loom::unique_tuple</a></div><div class="ttdoc">Tuple class template for objects that aren&#39;t default- or copy-constructible.</div><div class="ttdef"><b>Definition</b> tuple.hpp:578</div></div>
+<div class="ttc" id="aclassloom_1_1unique__tuple_html"><div class="ttname"><a href="classloom_1_1unique__tuple.html">loom::unique_tuple</a></div><div class="ttdoc">Tuple class template for objects that aren&#39;t default- or copy-constructible.</div><div class="ttdef"><b>Definition</b> <a href="tuple_8hpp_source.html#l00577">tuple.hpp:578</a></div></div>
 </div><!-- fragment -->
 </div>
 </div>
@@ -198,6 +202,8 @@ template&lt;typename... Args&gt; </div>
 <p>By default, each containing object is constructed from the corresponding argument.</p>
 <p>Pass <a class="el" href="namespaceloom.html#a681a1221613b35143ef798d90b8f0462" title="Instance of uniform_init_t.">loom::uniform_init</a> as the first argument to indicate that all the containing elements should be constructed from the same remaining arguments.</p>
 <p>Pass std::piecewise_construct as the first argument or after <a class="el" href="namespaceloom.html#a681a1221613b35143ef798d90b8f0462" title="Instance of uniform_init_t.">loom::uniform_init</a> to indicate that the provided arguments are tuples and should be unpacked for constructing corresponding objects, i. e. uses std::make_from_tuple to construct the objects. </p>
+
+<p class="definition">Definition at line <a class="el" href="tuple_8hpp_source.html#l00611">611</a> of file <a class="el" href="tuple_8hpp_source.html">tuple.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">  611</span>                                                    :</div>
 <div class="line"><span class="lineno">  612</span>        data(<a class="code hl_class" href="classloom_1_1unique__tuple.html">std::forward&lt;Args&gt;</a>(<a class="code hl_class" href="classloom_1_1unique__tuple.html">args</a>)...)</div>
 <div class="line"><span class="lineno">  613</span>    {</div>
@@ -247,13 +253,15 @@ template&lt;typename T&gt; </div>
 
 <p>Access an underlying object of type <code class="param">T</code>. </p>
 <p><code class="param">T</code> should be unique. </p>
+
+<p class="definition">Definition at line <a class="el" href="tuple_8hpp_source.html#l00649">649</a> of file <a class="el" href="tuple_8hpp_source.html">tuple.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">  650</span>    {</div>
 <div class="line"><span class="lineno">  651</span>        <span class="keywordflow">return</span> <span class="keyword">static_cast&lt;</span></div>
 <div class="line"><span class="lineno">  652</span>                   <a class="code hl_class" href="classloom_1_1unique__tuple.html">detail::unique_tuple_leaf&lt;typelist::index&lt;T, Types&gt;</a>, <a class="code hl_class" href="classloom_1_1unique__tuple.html">T</a><span class="keyword">&gt;</span>&amp;&gt;(</div>
 <div class="line"><span class="lineno">  653</span>                   data)</div>
 <div class="line"><span class="lineno">  654</span>            .<a class="code hl_function" href="#a2e236f289c586c489490526f7671bcf4">get</a>();</div>
 <div class="line"><span class="lineno">  655</span>    }</div>
-<div class="ttc" id="aclassloom_1_1unique__tuple_html_a2e236f289c586c489490526f7671bcf4"><div class="ttname"><a href="#a2e236f289c586c489490526f7671bcf4">loom::unique_tuple::get</a></div><div class="ttdeci">constexpr decltype(auto) get() const noexcept</div><div class="ttdoc">Access an underlying object by index I.</div><div class="ttdef"><b>Definition</b> tuple.hpp:626</div></div>
+<div class="ttc" id="aclassloom_1_1unique__tuple_html_a2e236f289c586c489490526f7671bcf4"><div class="ttname"><a href="#a2e236f289c586c489490526f7671bcf4">loom::unique_tuple::get</a></div><div class="ttdeci">constexpr decltype(auto) get() const noexcept</div><div class="ttdoc">Access an underlying object by index I.</div><div class="ttdef"><b>Definition</b> <a href="tuple_8hpp_source.html#l00626">tuple.hpp:626</a></div></div>
 </div><!-- fragment -->
 </div>
 </div>
@@ -285,6 +293,8 @@ template&lt;std::size_t I&gt; </div>
 </div><div class="memdoc">
 
 <p>Access an underlying object by index <code class="param">I</code>. </p>
+
+<p class="definition">Definition at line <a class="el" href="tuple_8hpp_source.html#l00626">626</a> of file <a class="el" href="tuple_8hpp_source.html">tuple.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">  627</span>    {</div>
 <div class="line"><span class="lineno">  628</span>        <span class="keywordflow">return</span> <span class="keyword">static_cast&lt;</span></div>
 <div class="line"><span class="lineno">  629</span>                   <span class="keyword">const </span><a class="code hl_class" href="classloom_1_1unique__tuple.html">detail::unique_tuple_leaf&lt;I, typelist::at&lt;I, Types&gt;</a><span class="keyword">&gt;</span>&amp;&gt;(</div>
@@ -323,6 +333,8 @@ template&lt;typename T&gt; </div>
 
 <p>Access an underlying object of type <code class="param">T</code>. </p>
 <p><code class="param">T</code> should be unique. </p>
+
+<p class="definition">Definition at line <a class="el" href="tuple_8hpp_source.html#l00662">662</a> of file <a class="el" href="tuple_8hpp_source.html">tuple.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">  663</span>    {</div>
 <div class="line"><span class="lineno">  664</span>        <span class="keywordflow">return</span> <span class="keyword">static_cast&lt;</span></div>
 <div class="line"><span class="lineno">  665</span>                   <a class="code hl_class" href="classloom_1_1unique__tuple.html">detail::unique_tuple_leaf&lt;typelist::index&lt;T, Types&gt;</a>, <a class="code hl_class" href="classloom_1_1unique__tuple.html">T</a><span class="keyword">&gt;</span>&amp;&gt;(</div>
@@ -360,6 +372,8 @@ template&lt;std::size_t I&gt; </div>
 </div><div class="memdoc">
 
 <p>Access an underlying object by index <code class="param">I</code>. </p>
+
+<p class="definition">Definition at line <a class="el" href="tuple_8hpp_source.html#l00637">637</a> of file <a class="el" href="tuple_8hpp_source.html">tuple.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">  638</span>    {</div>
 <div class="line"><span class="lineno">  639</span>        <span class="keywordflow">return</span> <span class="keyword">static_cast&lt;</span></div>
 <div class="line"><span class="lineno">  640</span>                   <a class="code hl_class" href="classloom_1_1unique__tuple.html">detail::unique_tuple_leaf&lt;I, typelist::at&lt;I, Types&gt;</a><span class="keyword">&gt;</span>&amp;&gt;(data)</div>
@@ -392,6 +406,8 @@ template&lt;typename... Ts&gt; </div>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="tuple_8hpp_source.html#l00617">617</a> of file <a class="el" href="tuple_8hpp_source.html">tuple.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">  618</span>    {</div>
 <div class="line"><span class="lineno">  619</span>        data = <a class="code hl_class" href="classloom_1_1unique__tuple.html">std::move</a>(<a class="code hl_class" href="classloom_1_1unique__tuple.html">other</a>.data);</div>
 <div class="line"><span class="lineno">  620</span>        <span class="keywordflow">return</span> *<span class="keyword">this</span>;</div>
@@ -400,7 +416,7 @@ template&lt;typename... Ts&gt; </div>
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following file:<ul>
-<li>common/<a class="el" href="tuple_8hpp.html">tuple.hpp</a></li>
+<li>common/<a class="el" href="tuple_8hpp_source.html">tuple.hpp</a></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->

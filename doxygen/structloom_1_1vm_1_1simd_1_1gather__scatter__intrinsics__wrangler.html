@@ -105,14 +105,12 @@ $(function(){initNavTree('structloom_1_1vm_1_1simd_1_1gather__scatter__intrinsic
 <p>Intrinsics wrangler for gather/scatter operations. Only for use with AVX-512.  
  <a href="#details">More...</a></p>
 
-<p><code>#include &quot;simd.hpp&quot;</code></p>
+<p><code>#include &quot;<a class="el" href="simd_8hpp_source.html">simd.hpp</a>&quot;</code></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pub-types" class="groupheader"><a id="pub-types" name="pub-types"></a>
 Public Types</h2></td></tr>
-<tr class="memitem:a95c47e1f0f66d57ae433041a14c50bde" id="r_a95c47e1f0f66d57ae433041a14c50bde"><td class="memItemLeft"><a id="a95c47e1f0f66d57ae433041a14c50bde" name="a95c47e1f0f66d57ae433041a14c50bde"></a>
-using&#160;</td><td class="memItemRight"><b>vector_t</b> = <a class="el" href="namespaceloom_1_1vm_1_1simd.html#a736757f9b89dc96a7b1448e5914327aa">packed_vector</a>&lt;T, N&gt;</td></tr>
-<tr class="memitem:a7bd34b775b31d72dcf1ef7ce3393e87d" id="r_a7bd34b775b31d72dcf1ef7ce3393e87d"><td class="memItemLeft"><a id="a7bd34b775b31d72dcf1ef7ce3393e87d" name="a7bd34b775b31d72dcf1ef7ce3393e87d"></a>
-using&#160;</td><td class="memItemRight"><b>index_type</b> = <a class="el" href="namespaceloom_1_1vm_1_1simd.html#a736757f9b89dc96a7b1448e5914327aa">packed_vector</a>&lt;I, N&gt;</td></tr>
+<tr class="memitem:a95c47e1f0f66d57ae433041a14c50bde" id="r_a95c47e1f0f66d57ae433041a14c50bde"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="#a95c47e1f0f66d57ae433041a14c50bde">vector_t</a> = <a class="el" href="namespaceloom_1_1vm_1_1simd.html#a736757f9b89dc96a7b1448e5914327aa">packed_vector</a>&lt;T, N&gt;</td></tr>
+<tr class="memitem:a7bd34b775b31d72dcf1ef7ce3393e87d" id="r_a7bd34b775b31d72dcf1ef7ce3393e87d"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="#a7bd34b775b31d72dcf1ef7ce3393e87d">index_type</a> = <a class="el" href="namespaceloom_1_1vm_1_1simd.html#a736757f9b89dc96a7b1448e5914327aa">packed_vector</a>&lt;I, N&gt;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pub-static-methods" class="groupheader"><a id="pub-static-methods" name="pub-static-methods"></a>
 Static Public Member Functions</h2></td></tr>
@@ -124,7 +122,46 @@ Static Public Member Functions</h2></td></tr>
 <a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
 <div class="textblock"><div class="compoundTemplParams">template&lt;typename T, <a class="el" href="namespaceloom_1_1vm_1_1simd.html#a13f74c165cada10f5eb92d2beb50b144">fsize_t</a> N, std::integral I = fsize_t&gt;<br />
 struct loom::vm::simd::gather_scatter_intrinsics_wrangler&lt; T, N, I &gt;</div><p>Intrinsics wrangler for gather/scatter operations. Only for use with AVX-512. </p>
-</div><a name="doc-func-members" id="doc-func-members"></a><h2 id="header-doc-func-members" class="groupheader">Member Function Documentation</h2>
+
+<p class="definition">Definition at line <a class="el" href="simd_8hpp_source.html#l00289">289</a> of file <a class="el" href="simd_8hpp_source.html">simd.hpp</a>.</p>
+</div><a name="doc-typedef-members" id="doc-typedef-members"></a><h2 id="header-doc-typedef-members" class="groupheader">Member Typedef Documentation</h2>
+<a id="a7bd34b775b31d72dcf1ef7ce3393e87d" name="a7bd34b775b31d72dcf1ef7ce3393e87d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a7bd34b775b31d72dcf1ef7ce3393e87d">&#9670;&#160;</a></span>index_type</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename T, <a class="el" href="namespaceloom_1_1vm_1_1simd.html#a13f74c165cada10f5eb92d2beb50b144">fsize_t</a> N, std::integral I = fsize_t&gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">using <a class="el" href="structloom_1_1vm_1_1simd_1_1gather__scatter__intrinsics__wrangler.html">loom::vm::simd::gather_scatter_intrinsics_wrangler</a>&lt; T, N, I &gt;::index_type = <a class="el" href="namespaceloom_1_1vm_1_1simd.html#a736757f9b89dc96a7b1448e5914327aa">packed_vector</a>&lt;I, N&gt;</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="simd_8hpp_source.html#l00292">292</a> of file <a class="el" href="simd_8hpp_source.html">simd.hpp</a>.</p>
+
+</div>
+</div>
+<a id="a95c47e1f0f66d57ae433041a14c50bde" name="a95c47e1f0f66d57ae433041a14c50bde"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a95c47e1f0f66d57ae433041a14c50bde">&#9670;&#160;</a></span>vector_t</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename T, <a class="el" href="namespaceloom_1_1vm_1_1simd.html#a13f74c165cada10f5eb92d2beb50b144">fsize_t</a> N, std::integral I = fsize_t&gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">using <a class="el" href="structloom_1_1vm_1_1simd_1_1gather__scatter__intrinsics__wrangler.html">loom::vm::simd::gather_scatter_intrinsics_wrangler</a>&lt; T, N, I &gt;::vector_t = <a class="el" href="namespaceloom_1_1vm_1_1simd.html#a736757f9b89dc96a7b1448e5914327aa">packed_vector</a>&lt;T, N&gt;</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="simd_8hpp_source.html#l00291">291</a> of file <a class="el" href="simd_8hpp_source.html">simd.hpp</a>.</p>
+
+</div>
+</div>
+<a name="doc-func-members" id="doc-func-members"></a><h2 id="header-doc-func-members" class="groupheader">Member Function Documentation</h2>
 <a id="aa3cee8636617aa54c713117e89d7bf27" name="aa3cee8636617aa54c713117e89d7bf27"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#aa3cee8636617aa54c713117e89d7bf27">&#9670;&#160;</a></span>gather()</h2>
 
@@ -155,12 +192,14 @@ template&lt;typename T, <a class="el" href="namespaceloom_1_1vm_1_1simd.html#a13
 </div><div class="memdoc">
 
 <p>Fallback implementation for gather operation. </p>
+
+<p class="definition">Definition at line <a class="el" href="simd_8hpp_source.html#l00296">296</a> of file <a class="el" href="simd_8hpp_source.html">simd.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">  297</span>    {</div>
 <div class="line"><span class="lineno">  298</span>        vector_t <a class="code hl_struct" href="structloom_1_1vm_1_1simd_1_1gather__scatter__intrinsics__wrangler.html">ret</a>;</div>
 <div class="line"><span class="lineno">  299</span>        <span class="keywordflow">for</span>(<span class="keywordtype">unsigned</span> <a class="code hl_struct" href="structloom_1_1vm_1_1simd_1_1gather__scatter__intrinsics__wrangler.html">i</a> = 0; <a class="code hl_struct" href="structloom_1_1vm_1_1simd_1_1gather__scatter__intrinsics__wrangler.html">i</a> &lt; <a class="code hl_struct" href="structloom_1_1vm_1_1simd_1_1gather__scatter__intrinsics__wrangler.html">N</a>; ++<a class="code hl_struct" href="structloom_1_1vm_1_1simd_1_1gather__scatter__intrinsics__wrangler.html">i</a>) <a class="code hl_struct" href="structloom_1_1vm_1_1simd_1_1gather__scatter__intrinsics__wrangler.html">ret</a>[<a class="code hl_struct" href="structloom_1_1vm_1_1simd_1_1gather__scatter__intrinsics__wrangler.html">i</a>] = *(<a class="code hl_struct" href="structloom_1_1vm_1_1simd_1_1gather__scatter__intrinsics__wrangler.html">base_addr</a> + <a class="code hl_struct" href="structloom_1_1vm_1_1simd_1_1gather__scatter__intrinsics__wrangler.html">vindex</a>[<a class="code hl_struct" href="structloom_1_1vm_1_1simd_1_1gather__scatter__intrinsics__wrangler.html">i</a>]);</div>
 <div class="line"><span class="lineno">  300</span>        <span class="keywordflow">return</span> <a class="code hl_struct" href="structloom_1_1vm_1_1simd_1_1gather__scatter__intrinsics__wrangler.html">ret</a>;</div>
 <div class="line"><span class="lineno">  301</span>    }</div>
-<div class="ttc" id="astructloom_1_1vm_1_1simd_1_1gather__scatter__intrinsics__wrangler_html"><div class="ttname"><a href="structloom_1_1vm_1_1simd_1_1gather__scatter__intrinsics__wrangler.html">loom::vm::simd::gather_scatter_intrinsics_wrangler</a></div><div class="ttdoc">Intrinsics wrangler for gather/scatter operations. Only for use with AVX-512.</div><div class="ttdef"><b>Definition</b> simd.hpp:290</div></div>
+<div class="ttc" id="astructloom_1_1vm_1_1simd_1_1gather__scatter__intrinsics__wrangler_html"><div class="ttname"><a href="structloom_1_1vm_1_1simd_1_1gather__scatter__intrinsics__wrangler.html">loom::vm::simd::gather_scatter_intrinsics_wrangler</a></div><div class="ttdoc">Intrinsics wrangler for gather/scatter operations. Only for use with AVX-512.</div><div class="ttdef"><b>Definition</b> <a href="simd_8hpp_source.html#l00289">simd.hpp:290</a></div></div>
 </div><!-- fragment -->
 </div>
 </div>
@@ -199,6 +238,8 @@ template&lt;typename T, <a class="el" href="namespaceloom_1_1vm_1_1simd.html#a13
 </div><div class="memdoc">
 
 <p>Fallback implementation for scatter operation. </p>
+
+<p class="definition">Definition at line <a class="el" href="simd_8hpp_source.html#l00305">305</a> of file <a class="el" href="simd_8hpp_source.html">simd.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">  306</span>    {</div>
 <div class="line"><span class="lineno">  307</span>        <span class="keywordflow">for</span>(<span class="keywordtype">unsigned</span> <a class="code hl_struct" href="structloom_1_1vm_1_1simd_1_1gather__scatter__intrinsics__wrangler.html">i</a> = 0; <a class="code hl_struct" href="structloom_1_1vm_1_1simd_1_1gather__scatter__intrinsics__wrangler.html">i</a> &lt; <a class="code hl_struct" href="structloom_1_1vm_1_1simd_1_1gather__scatter__intrinsics__wrangler.html">N</a>; ++<a class="code hl_struct" href="structloom_1_1vm_1_1simd_1_1gather__scatter__intrinsics__wrangler.html">i</a>) *(<a class="code hl_struct" href="structloom_1_1vm_1_1simd_1_1gather__scatter__intrinsics__wrangler.html">base_addr</a> + <a class="code hl_struct" href="structloom_1_1vm_1_1simd_1_1gather__scatter__intrinsics__wrangler.html">vindex</a>[<a class="code hl_struct" href="structloom_1_1vm_1_1simd_1_1gather__scatter__intrinsics__wrangler.html">i</a>]) = <a class="code hl_struct" href="structloom_1_1vm_1_1simd_1_1gather__scatter__intrinsics__wrangler.html">a</a>[<a class="code hl_struct" href="structloom_1_1vm_1_1simd_1_1gather__scatter__intrinsics__wrangler.html">i</a>];</div>
 <div class="line"><span class="lineno">  308</span>    }</div>
@@ -206,7 +247,7 @@ template&lt;typename T, <a class="el" href="namespaceloom_1_1vm_1_1simd.html#a13
 </div>
 </div>
 <hr/>The documentation for this struct was generated from the following file:<ul>
-<li>vm/<a class="el" href="simd_8hpp.html">simd.hpp</a></li>
+<li>vm/<a class="el" href="simd_8hpp_source.html">simd.hpp</a></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->

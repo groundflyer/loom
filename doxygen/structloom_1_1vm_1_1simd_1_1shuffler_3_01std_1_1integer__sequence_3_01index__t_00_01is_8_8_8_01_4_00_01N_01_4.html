@@ -105,7 +105,7 @@ $(function(){initNavTree('structloom_1_1vm_1_1simd_1_1shuffler_3_01std_1_1intege
 <p>Helper specialization for multi-way jump.  
  <a href="#details">More...</a></p>
 
-<p><code>#include &quot;simd.hpp&quot;</code></p>
+<p><code>#include &quot;<a class="el" href="simd_8hpp_source.html">simd.hpp</a>&quot;</code></p>
 <div id="dynsection-0" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>Inheritance diagram for loom::vm::simd::shuffler&lt; std::integer_sequence&lt; index_t, is... &gt;, N &gt;:</div>
 <div id="dynsection-0-summary" class="dynsummary" style="display:block;">
 </div>
@@ -121,8 +121,7 @@ $(function(){initNavTree('structloom_1_1vm_1_1simd_1_1shuffler_3_01std_1_1intege
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pub-types" class="groupheader"><a id="pub-types" name="pub-types"></a>
 Public Types</h2></td></tr>
-<tr class="memitem:ab8deb5df5ec1fce3b7a3dd250c1b999b" id="r_ab8deb5df5ec1fce3b7a3dd250c1b999b"><td class="memItemLeft"><a id="ab8deb5df5ec1fce3b7a3dd250c1b999b" name="ab8deb5df5ec1fce3b7a3dd250c1b999b"></a>
-using&#160;</td><td class="memItemRight"><b>IdxVec</b> = <a class="el" href="namespaceloom_1_1vm_1_1simd.html#a736757f9b89dc96a7b1448e5914327aa">packed_vector</a>&lt;index_t, N&gt;</td></tr>
+<tr class="memitem:ab8deb5df5ec1fce3b7a3dd250c1b999b" id="r_ab8deb5df5ec1fce3b7a3dd250c1b999b"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="#ab8deb5df5ec1fce3b7a3dd250c1b999b">IdxVec</a> = <a class="el" href="namespaceloom_1_1vm_1_1simd.html#a736757f9b89dc96a7b1448e5914327aa">packed_vector</a>&lt;index_t, N&gt;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pub-methods" class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
@@ -136,7 +135,28 @@ Static Public Attributes</h2></td></tr>
 <div class="textblock"><div class="compoundTemplParams">template&lt;typename index_t, index_t... is, <a class="el" href="namespaceloom_1_1vm_1_1simd.html#a13f74c165cada10f5eb92d2beb50b144">fsize_t</a> N&gt;<br />
 requires (sizeof...(is) &lt;= N)<br />
 struct loom::vm::simd::shuffler&lt; std::integer_sequence&lt; index_t, is... &gt;, N &gt;</div><p>Helper specialization for multi-way jump. </p>
-</div><a name="doc-func-members" id="doc-func-members"></a><h2 id="header-doc-func-members" class="groupheader">Member Function Documentation</h2>
+
+<p class="definition">Definition at line <a class="el" href="simd_8hpp_source.html#l01901">1901</a> of file <a class="el" href="simd_8hpp_source.html">simd.hpp</a>.</p>
+</div><a name="doc-typedef-members" id="doc-typedef-members"></a><h2 id="header-doc-typedef-members" class="groupheader">Member Typedef Documentation</h2>
+<a id="ab8deb5df5ec1fce3b7a3dd250c1b999b" name="ab8deb5df5ec1fce3b7a3dd250c1b999b"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab8deb5df5ec1fce3b7a3dd250c1b999b">&#9670;&#160;</a></span>IdxVec</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename index_t, index_t... is, <a class="el" href="namespaceloom_1_1vm_1_1simd.html#a13f74c165cada10f5eb92d2beb50b144">fsize_t</a> N&gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">using <a class="el" href="structloom_1_1vm_1_1simd_1_1shuffler.html">loom::vm::simd::shuffler</a>&lt; std::integer_sequence&lt; index_t, is... &gt;, N &gt;::IdxVec = <a class="el" href="namespaceloom_1_1vm_1_1simd.html#a736757f9b89dc96a7b1448e5914327aa">packed_vector</a>&lt;index_t, N&gt;</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="simd_8hpp_source.html#l01903">1903</a> of file <a class="el" href="simd_8hpp_source.html">simd.hpp</a>.</p>
+
+</div>
+</div>
+<a name="doc-func-members" id="doc-func-members"></a><h2 id="header-doc-func-members" class="groupheader">Member Function Documentation</h2>
 <a id="a8a2c8e16d1eaae0604ea97ec60778c9e" name="a8a2c8e16d1eaae0604ea97ec60778c9e"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a8a2c8e16d1eaae0604ea97ec60778c9e">&#9670;&#160;</a></span>operator()()</h2>
 
@@ -161,10 +181,12 @@ template&lt;typename index_t, index_t... is, <a class="el" href="namespaceloom_1
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="simd_8hpp_source.html#l01907">1907</a> of file <a class="el" href="simd_8hpp_source.html">simd.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno"> 1908</span>    {</div>
 <div class="line"><span class="lineno"> 1909</span>        <span class="keywordflow">return</span> <a class="code hl_struct" href="structloom_1_1vm_1_1simd_1_1shuffler.html">__builtin_shufflevector</a>(table, <a class="code hl_struct" href="structloom_1_1vm_1_1simd_1_1shuffler.html">var</a>);</div>
 <div class="line"><span class="lineno"> 1910</span>    }</div>
-<div class="ttc" id="astructloom_1_1vm_1_1simd_1_1shuffler_html"><div class="ttname"><a href="structloom_1_1vm_1_1simd_1_1shuffler.html">loom::vm::simd::shuffler</a></div><div class="ttdoc">Helper class for prametric jumps.</div><div class="ttdef"><b>Definition</b> simd.hpp:1880</div></div>
+<div class="ttc" id="astructloom_1_1vm_1_1simd_1_1shuffler_html"><div class="ttname"><a href="structloom_1_1vm_1_1simd_1_1shuffler.html">loom::vm::simd::shuffler</a></div><div class="ttdoc">Helper class for prametric jumps.</div><div class="ttdef"><b>Definition</b> <a href="simd_8hpp_source.html#l01880">simd.hpp:1880</a></div></div>
 </div><!-- fragment -->
 </div>
 </div>
@@ -190,12 +212,14 @@ template&lt;typename index_t, index_t... is, <a class="el" href="namespaceloom_1
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="simd_8hpp_source.html#l01904">1904</a> of file <a class="el" href="simd_8hpp_source.html">simd.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno"> 1904</span>{<a class="code hl_struct" href="structloom_1_1vm_1_1simd_1_1shuffler.html">is</a>...};</div>
 </div><!-- fragment -->
 </div>
 </div>
 <hr/>The documentation for this struct was generated from the following file:<ul>
-<li>vm/<a class="el" href="simd_8hpp.html">simd.hpp</a></li>
+<li>vm/<a class="el" href="simd_8hpp_source.html">simd.hpp</a></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->

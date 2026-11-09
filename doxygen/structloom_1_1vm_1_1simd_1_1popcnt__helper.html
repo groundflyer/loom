@@ -105,7 +105,7 @@ $(function(){initNavTree('structloom_1_1vm_1_1simd_1_1popcnt__helper.html','','s
 <p>Helper to count the number of logical 1 in packed vector <code class="param">vec</code>.  
  <a href="#details">More...</a></p>
 
-<p><code>#include &quot;simd.hpp&quot;</code></p>
+<p><code>#include &quot;<a class="el" href="simd_8hpp_source.html">simd.hpp</a>&quot;</code></p>
 <div id="dynsection-0" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>Inheritance diagram for loom::vm::simd::popcnt_helper&lt; T, N &gt;:</div>
 <div id="dynsection-0-summary" class="dynsummary" style="display:block;">
 </div>
@@ -121,6 +121,8 @@ Public Member Functions</h2></td></tr>
 <a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
 <div class="textblock"><div class="compoundTemplParams">template&lt;std::integral T, <a class="el" href="namespaceloom_1_1vm_1_1simd.html#a13f74c165cada10f5eb92d2beb50b144">fsize_t</a> N&gt;<br />
 struct loom::vm::simd::popcnt_helper&lt; T, N &gt;</div><p>Helper to count the number of logical 1 in packed vector <code class="param">vec</code>. </p>
+
+<p class="definition">Definition at line <a class="el" href="simd_8hpp_source.html#l02343">2343</a> of file <a class="el" href="simd_8hpp_source.html">simd.hpp</a>.</p>
 </div><a name="doc-func-members" id="doc-func-members"></a><h2 id="header-doc-func-members" class="groupheader">Member Function Documentation</h2>
 <a id="aa4392cd7bff33e9255989e22bf02f470" name="aa4392cd7bff33e9255989e22bf02f470"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#aa4392cd7bff33e9255989e22bf02f470">&#9670;&#160;</a></span>operator()() <span class="overload">[1/2]</span></h2>
@@ -146,11 +148,13 @@ template&lt;std::integral T, <a class="el" href="namespaceloom_1_1vm_1_1simd.htm
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="simd_8hpp_source.html#l02346">2346</a> of file <a class="el" href="simd_8hpp_source.html">simd.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno"> 2347</span>    {</div>
 <div class="line"><span class="lineno"> 2348</span>        <span class="keywordflow">return</span> <a class="code hl_struct" href="structloom_1_1vm_1_1simd_1_1popcnt__helper.html">__builtin_reduce_add</a>(</div>
 <div class="line"><span class="lineno"> 2349</span>            <a class="code hl_struct" href="structloom_1_1vm_1_1simd_1_1popcnt__helper.html">__builtin_elementwise_min</a>(<a class="code hl_struct" href="structloom_1_1vm_1_1simd_1_1popcnt__helper.html">vec</a>, <a class="code hl_struct" href="structloom_1_1vm_1_1simd_1_1popcnt__helper.html">broadcast&lt;N&gt;</a>(<span class="keyword">static_cast&lt;</span><a class="code hl_struct" href="structloom_1_1vm_1_1simd_1_1popcnt__helper.html">T</a><span class="keyword">&gt;</span>(1))));</div>
 <div class="line"><span class="lineno"> 2350</span>    }</div>
-<div class="ttc" id="astructloom_1_1vm_1_1simd_1_1popcnt__helper_html"><div class="ttname"><a href="structloom_1_1vm_1_1simd_1_1popcnt__helper.html">loom::vm::simd::popcnt_helper</a></div><div class="ttdoc">Helper to count the number of logical 1 in packed vector vec.</div><div class="ttdef"><b>Definition</b> simd.hpp:2344</div></div>
+<div class="ttc" id="astructloom_1_1vm_1_1simd_1_1popcnt__helper_html"><div class="ttname"><a href="structloom_1_1vm_1_1simd_1_1popcnt__helper.html">loom::vm::simd::popcnt_helper</a></div><div class="ttdoc">Helper to count the number of logical 1 in packed vector vec.</div><div class="ttdef"><b>Definition</b> <a href="simd_8hpp_source.html#l02343">simd.hpp:2344</a></div></div>
 </div><!-- fragment -->
 </div>
 </div>
@@ -178,6 +182,8 @@ template&lt;std::integral T, <a class="el" href="namespaceloom_1_1vm_1_1simd.htm
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="simd_8hpp_source.html#l02354">2354</a> of file <a class="el" href="simd_8hpp_source.html">simd.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno"> 2355</span>    {</div>
 <div class="line"><span class="lineno"> 2356</span>        <span class="keywordflow">return</span> <a class="code hl_struct" href="structloom_1_1vm_1_1simd_1_1popcnt__helper.html">std::popcount</a>(<a class="code hl_struct" href="structloom_1_1vm_1_1simd_1_1popcnt__helper.html">k</a>);</div>
 <div class="line"><span class="lineno"> 2357</span>    }</div>
@@ -185,7 +191,7 @@ template&lt;std::integral T, <a class="el" href="namespaceloom_1_1vm_1_1simd.htm
 </div>
 </div>
 <hr/>The documentation for this struct was generated from the following file:<ul>
-<li>vm/<a class="el" href="simd_8hpp.html">simd.hpp</a></li>
+<li>vm/<a class="el" href="simd_8hpp_source.html">simd.hpp</a></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->

@@ -105,7 +105,7 @@ $(function(){initNavTree('structloom_1_1RandomState.html','','structloom_1_1Rand
 <p>Helper class to make standard random number generators.  
  <a href="#details">More...</a></p>
 
-<p><code>#include &quot;random.hpp&quot;</code></p>
+<p><code>#include &quot;<a class="el" href="common_2random_8hpp_source.html">random.hpp</a>&quot;</code></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pub-methods" class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
@@ -117,11 +117,12 @@ Public Member Functions</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pub-attribs" class="groupheader"><a id="pub-attribs" name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
-<tr class="memitem:a9f87e3853af87445f47943e18ed496c3" id="r_a9f87e3853af87445f47943e18ed496c3"><td class="memItemLeft"><a id="a9f87e3853af87445f47943e18ed496c3" name="a9f87e3853af87445f47943e18ed496c3"></a>
-std::default_random_engine&#160;</td><td class="memItemRight"><b>g</b></td></tr>
+<tr class="memitem:a9f87e3853af87445f47943e18ed496c3" id="r_a9f87e3853af87445f47943e18ed496c3"><td class="memItemLeft">std::default_random_engine&#160;</td><td class="memItemRight"><a class="el" href="#a9f87e3853af87445f47943e18ed496c3">g</a></td></tr>
 </table>
 <a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Helper class to make standard random number generators. </p>
+
+<p class="definition">Definition at line <a class="el" href="common_2random_8hpp_source.html#l00143">143</a> of file <a class="el" href="common_2random_8hpp_source.html">random.hpp</a>.</p>
 </div><a name="doc-constructors" id="doc-constructors"></a><h2 id="header-doc-constructors" class="groupheader">Constructor &amp; Destructor Documentation</h2>
 <a id="ac84c4458062e89e9c70b4d4756edf451" name="ac84c4458062e89e9c70b4d4756edf451"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#ac84c4458062e89e9c70b4d4756edf451">&#9670;&#160;</a></span>RandomState()</h2>
@@ -147,6 +148,8 @@ template&lt;typename T = unsigned&gt; </div>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="common_2random_8hpp_source.html#l00148">148</a> of file <a class="el" href="common_2random_8hpp_source.html">random.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">  148</span>                              {}) <span class="keyword">noexcept</span> : g(seed)</div>
 <div class="line"><span class="lineno">  149</span>    {</div>
 <div class="line"><span class="lineno">  150</span>    }</div>
@@ -186,6 +189,8 @@ template&lt;typename T, typename... Args&gt; </div>
   </table>
   </dd>
 </dl>
+
+<p class="definition">Definition at line <a class="el" href="common_2random_8hpp_source.html#l00157">157</a> of file <a class="el" href="common_2random_8hpp_source.html">random.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">  158</span>    {</div>
 <div class="line"><span class="lineno">  159</span>        <span class="keywordflow">if</span> <span class="keyword">constexpr</span>(std::is_floating_point_v&lt;T&gt; &amp;&amp; !<span class="keyword">sizeof</span>...(Args))</div>
 <div class="line"><span class="lineno">  160</span>            <span class="keywordflow">return</span> [&amp;]() <span class="keyword">noexcept</span> { <span class="keywordflow">return</span> std::generate_canonical&lt;T, 10&gt;(g); };</div>
@@ -197,8 +202,25 @@ template&lt;typename T, typename... Args&gt; </div>
 </div><!-- fragment -->
 </div>
 </div>
+<a name="doc-variable-members" id="doc-variable-members"></a><h2 id="header-doc-variable-members" class="groupheader">Member Data Documentation</h2>
+<a id="a9f87e3853af87445f47943e18ed496c3" name="a9f87e3853af87445f47943e18ed496c3"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a9f87e3853af87445f47943e18ed496c3">&#9670;&#160;</a></span>g</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::default_random_engine loom::RandomState::g</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="common_2random_8hpp_source.html#l00145">145</a> of file <a class="el" href="common_2random_8hpp_source.html">random.hpp</a>.</p>
+
+</div>
+</div>
 <hr/>The documentation for this struct was generated from the following file:<ul>
-<li>common/<a class="el" href="common_2random_8hpp.html">random.hpp</a></li>
+<li>common/<a class="el" href="common_2random_8hpp_source.html">random.hpp</a></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->

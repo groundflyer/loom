@@ -105,7 +105,7 @@ $(function(){initNavTree('classloom_1_1vm_1_1simd_1_1KernelMemory.html','','clas
 <p>Local memory pool of SIMD vectors.  
  <a href="#details">More...</a></p>
 
-<p><code>#include &quot;simd.hpp&quot;</code></p>
+<p><code>#include &quot;<a class="el" href="simd_8hpp_source.html">simd.hpp</a>&quot;</code></p>
 <div id="dynsection-0" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>Inheritance diagram for loom::vm::simd::KernelMemory&lt; RegTypes, RegNames, PCVar, N &gt;:</div>
 <div id="dynsection-0-summary" class="dynsummary" style="display:block;">
 </div>
@@ -125,6 +125,8 @@ Public Member Functions</h2></td></tr>
 <a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
 <div class="textblock"><div class="compoundTemplParams">template&lt;typename RegTypes, typename RegNames, typename PCVar, <a class="el" href="namespaceloom_1_1vm_1_1simd.html#a13f74c165cada10f5eb92d2beb50b144">fsize_t</a> N&gt;<br />
 class loom::vm::simd::KernelMemory&lt; RegTypes, RegNames, PCVar, N &gt;</div><p>Local memory pool of SIMD vectors. </p>
+
+<p class="definition">Definition at line <a class="el" href="simd_8hpp_source.html#l01552">1552</a> of file <a class="el" href="simd_8hpp_source.html">simd.hpp</a>.</p>
 </div><a name="doc-func-members" id="doc-func-members"></a><h2 id="header-doc-func-members" class="groupheader">Member Function Documentation</h2>
 <a id="a7702e19b03aa02cd9ec2e6e0da6932ea" name="a7702e19b03aa02cd9ec2e6e0da6932ea"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a7702e19b03aa02cd9ec2e6e0da6932ea">&#9670;&#160;</a></span>get() <span class="overload">[1/2]</span></h2>
@@ -152,10 +154,12 @@ template&lt;typename Var&gt; </div>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="simd_8hpp_source.html#l01585">1585</a> of file <a class="el" href="simd_8hpp_source.html">simd.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno"> 1586</span>    {</div>
 <div class="line"><span class="lineno"> 1587</span>        <span class="keywordflow">return</span> <a class="code hl_class" href="classloom_1_1vm_1_1simd_1_1KernelMemory.html">helper::template</a> get&lt;vec_var&lt;Var&gt;&gt;(m_data);</div>
 <div class="line"><span class="lineno"> 1588</span>    }</div>
-<div class="ttc" id="aclassloom_1_1vm_1_1simd_1_1KernelMemory_html"><div class="ttname"><a href="classloom_1_1vm_1_1simd_1_1KernelMemory.html">loom::vm::simd::KernelMemory</a></div><div class="ttdoc">Local memory pool of SIMD vectors.</div><div class="ttdef"><b>Definition</b> simd.hpp:1553</div></div>
+<div class="ttc" id="aclassloom_1_1vm_1_1simd_1_1KernelMemory_html"><div class="ttname"><a href="classloom_1_1vm_1_1simd_1_1KernelMemory.html">loom::vm::simd::KernelMemory</a></div><div class="ttdoc">Local memory pool of SIMD vectors.</div><div class="ttdef"><b>Definition</b> <a href="simd_8hpp_source.html#l01552">simd.hpp:1553</a></div></div>
 </div><!-- fragment -->
 </div>
 </div>
@@ -185,6 +189,8 @@ template&lt;typename Var&gt; </div>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="simd_8hpp_source.html#l01572">1572</a> of file <a class="el" href="simd_8hpp_source.html">simd.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno"> 1573</span>    {</div>
 <div class="line"><span class="lineno"> 1574</span>        <span class="keywordflow">return</span> <a class="code hl_class" href="classloom_1_1vm_1_1simd_1_1KernelMemory.html">helper::template</a> get&lt;vec_var&lt;Var&gt;&gt;(m_data);</div>
 <div class="line"><span class="lineno"> 1575</span>    }</div>
@@ -215,6 +221,8 @@ template&lt;typename RegTypes, typename RegNames, typename PCVar, <a class="el" 
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="simd_8hpp_source.html#l01591">1591</a> of file <a class="el" href="simd_8hpp_source.html">simd.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno"> 1592</span>    {</div>
 <div class="line"><span class="lineno"> 1593</span>        <span class="keywordflow">return</span> get&lt;PCVar&gt;();</div>
 <div class="line"><span class="lineno"> 1594</span>    }</div>
@@ -245,6 +253,8 @@ template&lt;typename RegTypes, typename RegNames, typename PCVar, <a class="el" 
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="simd_8hpp_source.html#l01578">1578</a> of file <a class="el" href="simd_8hpp_source.html">simd.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno"> 1579</span>    {</div>
 <div class="line"><span class="lineno"> 1580</span>        <span class="keywordflow">return</span> get&lt;PCVar&gt;();</div>
 <div class="line"><span class="lineno"> 1581</span>    }</div>
@@ -252,7 +262,7 @@ template&lt;typename RegTypes, typename RegNames, typename PCVar, <a class="el" 
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following file:<ul>
-<li>vm/<a class="el" href="simd_8hpp.html">simd.hpp</a></li>
+<li>vm/<a class="el" href="simd_8hpp_source.html">simd.hpp</a></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->

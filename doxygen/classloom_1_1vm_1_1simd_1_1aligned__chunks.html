@@ -105,7 +105,7 @@ $(function(){initNavTree('classloom_1_1vm_1_1simd_1_1aligned__chunks.html','','c
 <p>Same as <a class="el" href="classloom_1_1vm_1_1simd_1_1memory__chunks.html" title="Helper grouper range view over memory pool. Splits proxy views by program counter value....">memory_chunks</a>, but iterated proxy views are of constant size <code class="param">N</code>.  
  <a href="#details">More...</a></p>
 
-<p><code>#include &quot;simd.hpp&quot;</code></p>
+<p><code>#include &quot;<a class="el" href="simd_8hpp_source.html">simd.hpp</a>&quot;</code></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pub-methods" class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
@@ -116,6 +116,8 @@ Public Member Functions</h2></td></tr>
 <a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
 <div class="textblock"><div class="compoundTemplParams">template&lt;typename _Memory, <a class="el" href="namespaceloom_1_1vm_1_1simd.html#a13f74c165cada10f5eb92d2beb50b144">fsize_t</a> N, auto halt_pos&gt;<br />
 class loom::vm::simd::aligned_chunks&lt; _Memory, N, halt_pos &gt;</div><p>Same as <a class="el" href="classloom_1_1vm_1_1simd_1_1memory__chunks.html" title="Helper grouper range view over memory pool. Splits proxy views by program counter value....">memory_chunks</a>, but iterated proxy views are of constant size <code class="param">N</code>. </p>
+
+<p class="definition">Definition at line <a class="el" href="simd_8hpp_source.html#l03046">3046</a> of file <a class="el" href="simd_8hpp_source.html">simd.hpp</a>.</p>
 </div><a name="doc-constructors" id="doc-constructors"></a><h2 id="header-doc-constructors" class="groupheader">Constructor &amp; Destructor Documentation</h2>
 <a id="a6aa6a6733be902d1abc1dc812a896bff" name="a6aa6a6733be902d1abc1dc812a896bff"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a6aa6a6733be902d1abc1dc812a896bff">&#9670;&#160;</a></span>aligned_chunks()</h2>
@@ -141,12 +143,14 @@ template&lt;typename _Memory, <a class="el" href="namespaceloom_1_1vm_1_1simd.ht
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="simd_8hpp_source.html#l03137">3137</a> of file <a class="el" href="simd_8hpp_source.html">simd.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno"> 3137</span>                                             : m_view(<a class="code hl_class" href="classloom_1_1vm_1_1simd_1_1aligned__chunks.html">view</a>)</div>
 <div class="line"><span class="lineno"> 3138</span>    {</div>
 <div class="line"><span class="lineno"> 3139</span>        <a class="code hl_class" href="classloom_1_1vm_1_1simd_1_1aligned__chunks.html">ASSERT</a>(<a class="code hl_class" href="classloom_1_1vm_1_1simd_1_1aligned__chunks.html">view</a>.size() % <a class="code hl_class" href="classloom_1_1vm_1_1simd_1_1aligned__chunks.html">N</a> == 0,</div>
 <div class="line"><span class="lineno"> 3140</span>               <span class="stringliteral">&quot;view size is not divisible by vector size&quot;</span>);</div>
 <div class="line"><span class="lineno"> 3141</span>    }</div>
-<div class="ttc" id="aclassloom_1_1vm_1_1simd_1_1aligned__chunks_html"><div class="ttname"><a href="classloom_1_1vm_1_1simd_1_1aligned__chunks.html">loom::vm::simd::aligned_chunks</a></div><div class="ttdoc">Same as memory_chunks, but iterated proxy views are of constant size N.</div><div class="ttdef"><b>Definition</b> simd.hpp:3048</div></div>
+<div class="ttc" id="aclassloom_1_1vm_1_1simd_1_1aligned__chunks_html"><div class="ttname"><a href="classloom_1_1vm_1_1simd_1_1aligned__chunks.html">loom::vm::simd::aligned_chunks</a></div><div class="ttdoc">Same as memory_chunks, but iterated proxy views are of constant size N.</div><div class="ttdef"><b>Definition</b> <a href="simd_8hpp_source.html#l03046">simd.hpp:3048</a></div></div>
 </div><!-- fragment -->
 </div>
 </div>
@@ -175,6 +179,8 @@ template&lt;typename _Memory, <a class="el" href="namespaceloom_1_1vm_1_1simd.ht
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="simd_8hpp_source.html#l03144">3144</a> of file <a class="el" href="simd_8hpp_source.html">simd.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno"> 3145</span>    {</div>
 <div class="line"><span class="lineno"> 3146</span>        <span class="keywordflow">return</span> _iterator(m_view);</div>
 <div class="line"><span class="lineno"> 3147</span>    }</div>
@@ -205,6 +211,8 @@ template&lt;typename _Memory, <a class="el" href="namespaceloom_1_1vm_1_1simd.ht
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="simd_8hpp_source.html#l03150">3150</a> of file <a class="el" href="simd_8hpp_source.html">simd.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno"> 3151</span>    {</div>
 <div class="line"><span class="lineno"> 3152</span>        <span class="keywordflow">return</span> <a class="code hl_class" href="classloom_1_1vm_1_1simd_1_1aligned__chunks.html">std::default_sentinel</a>;</div>
 <div class="line"><span class="lineno"> 3153</span>    }</div>
@@ -212,7 +220,7 @@ template&lt;typename _Memory, <a class="el" href="namespaceloom_1_1vm_1_1simd.ht
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following file:<ul>
-<li>vm/<a class="el" href="simd_8hpp.html">simd.hpp</a></li>
+<li>vm/<a class="el" href="simd_8hpp_source.html">simd.hpp</a></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->

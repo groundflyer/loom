@@ -105,39 +105,231 @@ $(function(){initNavTree('structloom_1_1vm_1_1simd_1_1minikernel__helper.html','
 <p>Helper class for minikernel evaluation.  
  <a href="#details">More...</a></p>
 
-<p><code>#include &quot;simd.hpp&quot;</code></p>
+<p><code>#include &quot;<a class="el" href="simd_8hpp_source.html">simd.hpp</a>&quot;</code></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pub-types" class="groupheader"><a id="pub-types" name="pub-types"></a>
 Public Types</h2></td></tr>
-<tr class="memitem:a2cd424461176b86ae063739a9c643b06" id="r_a2cd424461176b86ae063739a9c643b06"><td class="memItemLeft"><a id="a2cd424461176b86ae063739a9c643b06" name="a2cd424461176b86ae063739a9c643b06"></a>
-using&#160;</td><td class="memItemRight"><b>load_vars</b> = <a class="el" href="namespaceloom_1_1vm.html#ac8b0ed60943ea90d334aeb20059328c2">load_list_t</a>&lt;Block, PCVar&gt;</td></tr>
-<tr class="memitem:af0f37988a52b0f309f0814b892a9070a" id="r_af0f37988a52b0f309f0814b892a9070a"><td class="memItemLeft"><a id="af0f37988a52b0f309f0814b892a9070a" name="af0f37988a52b0f309f0814b892a9070a"></a>
-using&#160;</td><td class="memItemRight"><b>store_vars</b> = <a class="el" href="namespaceloom_1_1vm.html#a43dfda43dd5b06653cd107c2d33886f0">store_list_t</a>&lt;Block, PCVar&gt;</td></tr>
-<tr class="memitem:a4876759c919a857d5b4f1f07ea1dd6e1" id="r_a4876759c919a857d5b4f1f07ea1dd6e1"><td class="memItemLeft"><a id="a4876759c919a857d5b4f1f07ea1dd6e1" name="a4876759c919a857d5b4f1f07ea1dd6e1"></a>
-using&#160;</td><td class="memItemRight"><b>vars</b> = <a class="el" href="group__Typelist.html#ga93803cb46926540c2965489046c80136">typelist::nub</a>&lt;<a class="el" href="group__Typelist.html#ga23f16e48bf88c44e2b2741f79181219e">typelist::join</a>&lt;load_vars, store_vars&gt;&gt;</td></tr>
-<tr class="memitem:a5e275e41b878429ddd1537f6fbf42215" id="r_a5e275e41b878429ddd1537f6fbf42215"><td class="memItemLeft"><a id="a5e275e41b878429ddd1537f6fbf42215" name="a5e275e41b878429ddd1537f6fbf42215"></a>
-using&#160;</td><td class="memItemRight"><b>index_t</b> = <a class="el" href="namespaceloom_1_1vm.html#a569e338bf791b4e04a8a5a386c9e4983">vartype</a>&lt;PCVar&gt;</td></tr>
-<tr class="memitem:add1ae159618077f3360b05319146847d" id="r_add1ae159618077f3360b05319146847d"><td class="memItemLeft"><a id="add1ae159618077f3360b05319146847d" name="add1ae159618077f3360b05319146847d"></a>
-using&#160;</td><td class="memItemRight"><b>reg_names</b> = <a class="el" href="group__Typelist.html#ga93803cb46926540c2965489046c80136">typelist::nub</a>&lt;<a class="el" href="group__Typelist.html#gaecd8e1bc8dfc53fbfd1abde91a668f46">typelist::map</a>&lt;<a class="el" href="namespaceloom_1_1vm.html#a75a60c2650b102821cc6074ab663c81d">varname</a>, vars&gt;&gt;</td></tr>
-<tr class="memitem:ada971d65be7e2f50bad849adb89aa031" id="r_ada971d65be7e2f50bad849adb89aa031"><td class="memItemLeft"><a id="ada971d65be7e2f50bad849adb89aa031" name="ada971d65be7e2f50bad849adb89aa031"></a>
-using&#160;</td><td class="memItemRight"><b>reg_types</b> = infer_reg_types_t&lt;vars, reg_names&gt;</td></tr>
-<tr class="memitem:a69026aa28a9f8b4ad0f8b5d9413784e4" id="r_a69026aa28a9f8b4ad0f8b5d9413784e4"><td class="memItemLeft"><a id="a69026aa28a9f8b4ad0f8b5d9413784e4" name="a69026aa28a9f8b4ad0f8b5d9413784e4"></a>
-using&#160;</td><td class="memItemRight"><b>serial_kernel</b> = <a class="el" href="structloom_1_1vm_1_1standard__compiler.html">standard_compiler</a>&lt;Block, LabelMap&gt;</td></tr>
-<tr class="memitem:ad582e983247a5ea6891618cba03897c0" id="r_ad582e983247a5ea6891618cba03897c0"><td class="memItemLeft"><a id="ad582e983247a5ea6891618cba03897c0" name="ad582e983247a5ea6891618cba03897c0"></a>
-using&#160;</td><td class="memItemRight"><b>serial_storage</b> = bse::Memory&lt;reg_types, reg_names, PCVar&gt;</td></tr>
-<tr class="memitem:a7673331b87bd6118615164922527fe52" id="r_a7673331b87bd6118615164922527fe52"><td class="memTemplParams" colspan="2"><a id="a7673331b87bd6118615164922527fe52" name="a7673331b87bd6118615164922527fe52"></a>
-template&lt;typename I, typename _LabelMap&gt; </td></tr>
-<tr class="memitem:a7673331b87bd6118615164922527fe52 template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><b>simd_eval</b> = <a class="el" href="classloom_1_1vm_1_1simd_1_1eval.html">eval</a>&lt;I, _LabelMap, N&gt;</td></tr>
-<tr class="memitem:ab69c57683e9d9a74e85508101449d629" id="r_ab69c57683e9d9a74e85508101449d629"><td class="memItemLeft"><a id="ab69c57683e9d9a74e85508101449d629" name="ab69c57683e9d9a74e85508101449d629"></a>
-using&#160;</td><td class="memItemRight"><b>simd_kernel</b> = <a class="el" href="structloom_1_1vm_1_1standard__compiler.html">standard_compiler</a>&lt;Block, LabelMap, simd_eval&gt;</td></tr>
-<tr class="memitem:a32ddadec76618ad6f542d86c5843c8d8" id="r_a32ddadec76618ad6f542d86c5843c8d8"><td class="memItemLeft"><a id="a32ddadec76618ad6f542d86c5843c8d8" name="a32ddadec76618ad6f542d86c5843c8d8"></a>
-using&#160;</td><td class="memItemRight"><b>simd_storage</b> = <a class="el" href="classloom_1_1vm_1_1simd_1_1KernelMemory.html">KernelMemory</a>&lt;reg_types, reg_names, PCVar, N&gt;</td></tr>
+<tr class="memitem:a2cd424461176b86ae063739a9c643b06" id="r_a2cd424461176b86ae063739a9c643b06"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="#a2cd424461176b86ae063739a9c643b06">load_vars</a> = <a class="el" href="namespaceloom_1_1vm.html#ac8b0ed60943ea90d334aeb20059328c2">load_list_t</a>&lt;Block, PCVar&gt;</td></tr>
+<tr class="memitem:af0f37988a52b0f309f0814b892a9070a" id="r_af0f37988a52b0f309f0814b892a9070a"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="#af0f37988a52b0f309f0814b892a9070a">store_vars</a> = <a class="el" href="namespaceloom_1_1vm.html#a43dfda43dd5b06653cd107c2d33886f0">store_list_t</a>&lt;Block, PCVar&gt;</td></tr>
+<tr class="memitem:a4876759c919a857d5b4f1f07ea1dd6e1" id="r_a4876759c919a857d5b4f1f07ea1dd6e1"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="#a4876759c919a857d5b4f1f07ea1dd6e1">vars</a> = <a class="el" href="group__Typelist.html#ga93803cb46926540c2965489046c80136">typelist::nub</a>&lt;<a class="el" href="group__Typelist.html#ga23f16e48bf88c44e2b2741f79181219e">typelist::join</a>&lt;load_vars, store_vars&gt;&gt;</td></tr>
+<tr class="memitem:a5e275e41b878429ddd1537f6fbf42215" id="r_a5e275e41b878429ddd1537f6fbf42215"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="#a5e275e41b878429ddd1537f6fbf42215">index_t</a> = <a class="el" href="namespaceloom_1_1vm.html#a569e338bf791b4e04a8a5a386c9e4983">vartype</a>&lt;PCVar&gt;</td></tr>
+<tr class="memitem:add1ae159618077f3360b05319146847d" id="r_add1ae159618077f3360b05319146847d"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="#add1ae159618077f3360b05319146847d">reg_names</a> = <a class="el" href="group__Typelist.html#ga93803cb46926540c2965489046c80136">typelist::nub</a>&lt;<a class="el" href="group__Typelist.html#gaecd8e1bc8dfc53fbfd1abde91a668f46">typelist::map</a>&lt;<a class="el" href="namespaceloom_1_1vm.html#a75a60c2650b102821cc6074ab663c81d">varname</a>, vars&gt;&gt;</td></tr>
+<tr class="memitem:ada971d65be7e2f50bad849adb89aa031" id="r_ada971d65be7e2f50bad849adb89aa031"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="#ada971d65be7e2f50bad849adb89aa031">reg_types</a> = infer_reg_types_t&lt;vars, reg_names&gt;</td></tr>
+<tr class="memitem:a69026aa28a9f8b4ad0f8b5d9413784e4" id="r_a69026aa28a9f8b4ad0f8b5d9413784e4"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="#a69026aa28a9f8b4ad0f8b5d9413784e4">serial_kernel</a> = <a class="el" href="structloom_1_1vm_1_1standard__compiler.html">standard_compiler</a>&lt;Block, LabelMap&gt;</td></tr>
+<tr class="memitem:ad582e983247a5ea6891618cba03897c0" id="r_ad582e983247a5ea6891618cba03897c0"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="#ad582e983247a5ea6891618cba03897c0">serial_storage</a> = bse::Memory&lt;reg_types, reg_names, PCVar&gt;</td></tr>
+<tr class="memitem:a7673331b87bd6118615164922527fe52" id="r_a7673331b87bd6118615164922527fe52"><td class="memTemplParams" colspan="2">template&lt;typename I, typename _LabelMap&gt; </td></tr>
+<tr class="memitem:a7673331b87bd6118615164922527fe52 template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="#a7673331b87bd6118615164922527fe52">simd_eval</a> = <a class="el" href="classloom_1_1vm_1_1simd_1_1eval.html">eval</a>&lt;I, _LabelMap, N&gt;</td></tr>
+<tr class="memitem:ab69c57683e9d9a74e85508101449d629" id="r_ab69c57683e9d9a74e85508101449d629"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="#ab69c57683e9d9a74e85508101449d629">simd_kernel</a> = <a class="el" href="structloom_1_1vm_1_1standard__compiler.html">standard_compiler</a>&lt;Block, LabelMap, simd_eval&gt;</td></tr>
+<tr class="memitem:a32ddadec76618ad6f542d86c5843c8d8" id="r_a32ddadec76618ad6f542d86c5843c8d8"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="#a32ddadec76618ad6f542d86c5843c8d8">simd_storage</a> = <a class="el" href="classloom_1_1vm_1_1simd_1_1KernelMemory.html">KernelMemory</a>&lt;reg_types, reg_names, PCVar, N&gt;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
 <div class="textblock"><div class="compoundTemplParams">template&lt;typename Block, typename LabelMap, typename PCVar, <a class="el" href="namespaceloom_1_1vm_1_1simd.html#a13f74c165cada10f5eb92d2beb50b144">fsize_t</a> N&gt;<br />
 struct loom::vm::simd::minikernel_helper&lt; Block, LabelMap, PCVar, N &gt;</div><p>Helper class for minikernel evaluation. </p>
-</div><hr/>The documentation for this struct was generated from the following file:<ul>
-<li>vm/<a class="el" href="simd_8hpp.html">simd.hpp</a></li>
+
+<p class="definition">Definition at line <a class="el" href="simd_8hpp_source.html#l02078">2078</a> of file <a class="el" href="simd_8hpp_source.html">simd.hpp</a>.</p>
+</div><a name="doc-typedef-members" id="doc-typedef-members"></a><h2 id="header-doc-typedef-members" class="groupheader">Member Typedef Documentation</h2>
+<a id="a5e275e41b878429ddd1537f6fbf42215" name="a5e275e41b878429ddd1537f6fbf42215"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a5e275e41b878429ddd1537f6fbf42215">&#9670;&#160;</a></span>index_t</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename Block, typename LabelMap, typename PCVar, <a class="el" href="namespaceloom_1_1vm_1_1simd.html#a13f74c165cada10f5eb92d2beb50b144">fsize_t</a> N&gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">using <a class="el" href="structloom_1_1vm_1_1simd_1_1minikernel__helper.html">loom::vm::simd::minikernel_helper</a>&lt; Block, LabelMap, PCVar, N &gt;::index_t = <a class="el" href="namespaceloom_1_1vm.html#a569e338bf791b4e04a8a5a386c9e4983">vartype</a>&lt;PCVar&gt;</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="simd_8hpp_source.html#l02084">2084</a> of file <a class="el" href="simd_8hpp_source.html">simd.hpp</a>.</p>
+
+</div>
+</div>
+<a id="a2cd424461176b86ae063739a9c643b06" name="a2cd424461176b86ae063739a9c643b06"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a2cd424461176b86ae063739a9c643b06">&#9670;&#160;</a></span>load_vars</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename Block, typename LabelMap, typename PCVar, <a class="el" href="namespaceloom_1_1vm_1_1simd.html#a13f74c165cada10f5eb92d2beb50b144">fsize_t</a> N&gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">using <a class="el" href="structloom_1_1vm_1_1simd_1_1minikernel__helper.html">loom::vm::simd::minikernel_helper</a>&lt; Block, LabelMap, PCVar, N &gt;::load_vars = <a class="el" href="namespaceloom_1_1vm.html#ac8b0ed60943ea90d334aeb20059328c2">load_list_t</a>&lt;Block, PCVar&gt;</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="simd_8hpp_source.html#l02080">2080</a> of file <a class="el" href="simd_8hpp_source.html">simd.hpp</a>.</p>
+
+</div>
+</div>
+<a id="add1ae159618077f3360b05319146847d" name="add1ae159618077f3360b05319146847d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#add1ae159618077f3360b05319146847d">&#9670;&#160;</a></span>reg_names</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename Block, typename LabelMap, typename PCVar, <a class="el" href="namespaceloom_1_1vm_1_1simd.html#a13f74c165cada10f5eb92d2beb50b144">fsize_t</a> N&gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">using <a class="el" href="structloom_1_1vm_1_1simd_1_1minikernel__helper.html">loom::vm::simd::minikernel_helper</a>&lt; Block, LabelMap, PCVar, N &gt;::reg_names = <a class="el" href="group__Typelist.html#ga93803cb46926540c2965489046c80136">typelist::nub</a>&lt;<a class="el" href="group__Typelist.html#gaecd8e1bc8dfc53fbfd1abde91a668f46">typelist::map</a>&lt;<a class="el" href="namespaceloom_1_1vm.html#a75a60c2650b102821cc6074ab663c81d">varname</a>, vars&gt;&gt;</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="simd_8hpp_source.html#l02086">2086</a> of file <a class="el" href="simd_8hpp_source.html">simd.hpp</a>.</p>
+
+</div>
+</div>
+<a id="ada971d65be7e2f50bad849adb89aa031" name="ada971d65be7e2f50bad849adb89aa031"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ada971d65be7e2f50bad849adb89aa031">&#9670;&#160;</a></span>reg_types</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename Block, typename LabelMap, typename PCVar, <a class="el" href="namespaceloom_1_1vm_1_1simd.html#a13f74c165cada10f5eb92d2beb50b144">fsize_t</a> N&gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">using <a class="el" href="structloom_1_1vm_1_1simd_1_1minikernel__helper.html">loom::vm::simd::minikernel_helper</a>&lt; Block, LabelMap, PCVar, N &gt;::reg_types = infer_reg_types_t&lt;vars, reg_names&gt;</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="simd_8hpp_source.html#l02087">2087</a> of file <a class="el" href="simd_8hpp_source.html">simd.hpp</a>.</p>
+
+</div>
+</div>
+<a id="a69026aa28a9f8b4ad0f8b5d9413784e4" name="a69026aa28a9f8b4ad0f8b5d9413784e4"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a69026aa28a9f8b4ad0f8b5d9413784e4">&#9670;&#160;</a></span>serial_kernel</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename Block, typename LabelMap, typename PCVar, <a class="el" href="namespaceloom_1_1vm_1_1simd.html#a13f74c165cada10f5eb92d2beb50b144">fsize_t</a> N&gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">using <a class="el" href="structloom_1_1vm_1_1simd_1_1minikernel__helper.html">loom::vm::simd::minikernel_helper</a>&lt; Block, LabelMap, PCVar, N &gt;::serial_kernel = <a class="el" href="structloom_1_1vm_1_1standard__compiler.html">standard_compiler</a>&lt;Block, LabelMap&gt;</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="simd_8hpp_source.html#l02089">2089</a> of file <a class="el" href="simd_8hpp_source.html">simd.hpp</a>.</p>
+
+</div>
+</div>
+<a id="ad582e983247a5ea6891618cba03897c0" name="ad582e983247a5ea6891618cba03897c0"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad582e983247a5ea6891618cba03897c0">&#9670;&#160;</a></span>serial_storage</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename Block, typename LabelMap, typename PCVar, <a class="el" href="namespaceloom_1_1vm_1_1simd.html#a13f74c165cada10f5eb92d2beb50b144">fsize_t</a> N&gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">using <a class="el" href="structloom_1_1vm_1_1simd_1_1minikernel__helper.html">loom::vm::simd::minikernel_helper</a>&lt; Block, LabelMap, PCVar, N &gt;::serial_storage = bse::Memory&lt;reg_types, reg_names, PCVar&gt;</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="simd_8hpp_source.html#l02090">2090</a> of file <a class="el" href="simd_8hpp_source.html">simd.hpp</a>.</p>
+
+</div>
+</div>
+<a id="a7673331b87bd6118615164922527fe52" name="a7673331b87bd6118615164922527fe52"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a7673331b87bd6118615164922527fe52">&#9670;&#160;</a></span>simd_eval</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename Block, typename LabelMap, typename PCVar, <a class="el" href="namespaceloom_1_1vm_1_1simd.html#a13f74c165cada10f5eb92d2beb50b144">fsize_t</a> N&gt; </div>
+<div class="memtemplate">
+template&lt;typename I, typename _LabelMap&gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">using <a class="el" href="structloom_1_1vm_1_1simd_1_1minikernel__helper.html">loom::vm::simd::minikernel_helper</a>&lt; Block, LabelMap, PCVar, N &gt;::simd_eval = <a class="el" href="classloom_1_1vm_1_1simd_1_1eval.html">eval</a>&lt;I, _LabelMap, N&gt;</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="simd_8hpp_source.html#l02093">2093</a> of file <a class="el" href="simd_8hpp_source.html">simd.hpp</a>.</p>
+
+</div>
+</div>
+<a id="ab69c57683e9d9a74e85508101449d629" name="ab69c57683e9d9a74e85508101449d629"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab69c57683e9d9a74e85508101449d629">&#9670;&#160;</a></span>simd_kernel</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename Block, typename LabelMap, typename PCVar, <a class="el" href="namespaceloom_1_1vm_1_1simd.html#a13f74c165cada10f5eb92d2beb50b144">fsize_t</a> N&gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">using <a class="el" href="structloom_1_1vm_1_1simd_1_1minikernel__helper.html">loom::vm::simd::minikernel_helper</a>&lt; Block, LabelMap, PCVar, N &gt;::simd_kernel = <a class="el" href="structloom_1_1vm_1_1standard__compiler.html">standard_compiler</a>&lt;Block, LabelMap, simd_eval&gt;</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="simd_8hpp_source.html#l02095">2095</a> of file <a class="el" href="simd_8hpp_source.html">simd.hpp</a>.</p>
+
+</div>
+</div>
+<a id="a32ddadec76618ad6f542d86c5843c8d8" name="a32ddadec76618ad6f542d86c5843c8d8"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a32ddadec76618ad6f542d86c5843c8d8">&#9670;&#160;</a></span>simd_storage</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename Block, typename LabelMap, typename PCVar, <a class="el" href="namespaceloom_1_1vm_1_1simd.html#a13f74c165cada10f5eb92d2beb50b144">fsize_t</a> N&gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">using <a class="el" href="structloom_1_1vm_1_1simd_1_1minikernel__helper.html">loom::vm::simd::minikernel_helper</a>&lt; Block, LabelMap, PCVar, N &gt;::simd_storage = <a class="el" href="classloom_1_1vm_1_1simd_1_1KernelMemory.html">KernelMemory</a>&lt;reg_types, reg_names, PCVar, N&gt;</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="simd_8hpp_source.html#l02096">2096</a> of file <a class="el" href="simd_8hpp_source.html">simd.hpp</a>.</p>
+
+</div>
+</div>
+<a id="af0f37988a52b0f309f0814b892a9070a" name="af0f37988a52b0f309f0814b892a9070a"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#af0f37988a52b0f309f0814b892a9070a">&#9670;&#160;</a></span>store_vars</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename Block, typename LabelMap, typename PCVar, <a class="el" href="namespaceloom_1_1vm_1_1simd.html#a13f74c165cada10f5eb92d2beb50b144">fsize_t</a> N&gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">using <a class="el" href="structloom_1_1vm_1_1simd_1_1minikernel__helper.html">loom::vm::simd::minikernel_helper</a>&lt; Block, LabelMap, PCVar, N &gt;::store_vars = <a class="el" href="namespaceloom_1_1vm.html#a43dfda43dd5b06653cd107c2d33886f0">store_list_t</a>&lt;Block, PCVar&gt;</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="simd_8hpp_source.html#l02081">2081</a> of file <a class="el" href="simd_8hpp_source.html">simd.hpp</a>.</p>
+
+</div>
+</div>
+<a id="a4876759c919a857d5b4f1f07ea1dd6e1" name="a4876759c919a857d5b4f1f07ea1dd6e1"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a4876759c919a857d5b4f1f07ea1dd6e1">&#9670;&#160;</a></span>vars</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename Block, typename LabelMap, typename PCVar, <a class="el" href="namespaceloom_1_1vm_1_1simd.html#a13f74c165cada10f5eb92d2beb50b144">fsize_t</a> N&gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">using <a class="el" href="structloom_1_1vm_1_1simd_1_1minikernel__helper.html">loom::vm::simd::minikernel_helper</a>&lt; Block, LabelMap, PCVar, N &gt;::vars = <a class="el" href="group__Typelist.html#ga93803cb46926540c2965489046c80136">typelist::nub</a>&lt;<a class="el" href="group__Typelist.html#ga23f16e48bf88c44e2b2741f79181219e">typelist::join</a>&lt;load_vars, store_vars&gt;&gt;</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="simd_8hpp_source.html#l02083">2083</a> of file <a class="el" href="simd_8hpp_source.html">simd.hpp</a>.</p>
+
+</div>
+</div>
+<hr/>The documentation for this struct was generated from the following file:<ul>
+<li>vm/<a class="el" href="simd_8hpp_source.html">simd.hpp</a></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->

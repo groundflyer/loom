@@ -104,10 +104,10 @@ $(function(){initNavTree('common_2linal_8hpp.html','',''); });
 
 <p>Legacy linear algebra functions.  
 <a href="#details">More...</a></p>
-<div class="textblock"><code>#include &lt;<a class="el" href="debug_8hpp.html">common/debug.hpp</a>&gt;</code><br />
-<code>#include &lt;<a class="el" href="functional_8hpp.html">common/functional.hpp</a>&gt;</code><br />
-<code>#include &lt;<a class="el" href="math_8hpp.html">common/math.hpp</a>&gt;</code><br />
-<code>#include &lt;<a class="el" href="tmp_8hpp.html">common/tmp.hpp</a>&gt;</code><br />
+<div class="textblock"><code>#include &lt;<a class="el" href="debug_8hpp_source.html">common/debug.hpp</a>&gt;</code><br />
+<code>#include &lt;<a class="el" href="functional_8hpp_source.html">common/functional.hpp</a>&gt;</code><br />
+<code>#include &lt;<a class="el" href="math_8hpp_source.html">common/math.hpp</a>&gt;</code><br />
+<code>#include &lt;<a class="el" href="tmp_8hpp_source.html">common/tmp.hpp</a>&gt;</code><br />
 <code>#include &lt;array&gt;</code><br />
 <code>#include &lt;functional&gt;</code><br />
 <code>#include &lt;limits&gt;</code><br />
@@ -125,9 +125,11 @@ $(function(){initNavTree('common_2linal_8hpp.html','',''); });
 <div id="dynsection-1-summary" class="dynsummary" style="display:block;">
 </div>
 <div id="dynsection-1-content" class="dyncontent" style="display:none;">
-<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="common_2linal_8hpp__dep__incl.svg" width="368" height="115"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><div class="zoom"><iframe scrolling="no" loading="lazy" frameborder="0" src="common_2linal_8hpp__dep__incl.svg" width="100%" height="600"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
 </div>
-</div><table class="memberdecls">
+</div>
+<p><a href="common_2linal_8hpp_source.html">Go to the source code of this file.</a></p>
+<table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-nested-classes" class="groupheader"><a id="nested-classes" name="nested-classes"></a>
 Classes</h2></td></tr>
 <tr class="memitem:loom_3A_3AVector_3C_20T_2C_20N_2C_20Container_20_3E" id="r_loom_3A_3AVector_3C_20T_2C_20N_2C_20Container_20_3E"><td class="memItemLeft">class &#160;</td><td class="memItemRight"><a class="el" href="classloom_1_1Vector.html">loom::Vector&lt; T, N, Container &gt;</a></td></tr>
@@ -259,21 +261,19 @@ requires (I &lt; M || J &lt; N)</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-var-members" class="groupheader"><a id="var-members" name="var-members"></a>
 Variables</h2></td></tr>
-<tr class="memitem:ga3d0f274c6c7dc6074cfbcc84a91a72f7" id="r_ga3d0f274c6c7dc6074cfbcc84a91a72f7"><td class="memItemLeft">
-constexpr fn::min_fn&#160;</td><td class="memItemRight"><b>loom::min</b></td></tr>
-<tr class="memdesc:ga3d0f274c6c7dc6074cfbcc84a91a72f7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Select the smallest corresponding elements of two vectors or numbers. <br /></td></tr>
-<tr class="memitem:ga723a973a57faf04714cf7d30b5cfbec4" id="r_ga723a973a57faf04714cf7d30b5cfbec4"><td class="memItemLeft">
-constexpr fn::max_fn&#160;</td><td class="memItemRight"><b>loom::max</b></td></tr>
-<tr class="memdesc:ga723a973a57faf04714cf7d30b5cfbec4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Select the biggest corresponding elements of two vectors or numbers. <br /></td></tr>
-<tr class="memitem:ga2ccb79e916d41a13aabfd1dee7106971" id="r_ga2ccb79e916d41a13aabfd1dee7106971"><td class="memTemplParams" colspan="2">
-template&lt;typename Int&gt; </td></tr>
-<tr class="memitem:ga2ccb79e916d41a13aabfd1dee7106971 template"><td class="memItemLeft">constexpr fn::downsample_fn&lt; Int &gt;&#160;</td><td class="memItemRight"><b>loom::downsample</b></td></tr>
-<tr class="memdesc:ga2ccb79e916d41a13aabfd1dee7106971"><td class="mdescLeft">&#160;</td><td class="mdescRight">Downsample floating point value to integer value with maximum integer equal to 1.0 of floating point value. <br /></td></tr>
-<tr class="memitem:ga7593e2faa36a79c080d3c6a35bc1d22b" id="r_ga7593e2faa36a79c080d3c6a35bc1d22b"><td class="memItemLeft">
-constexpr fn::multiplies_fn&#160;</td><td class="memItemRight"><b>loom::multiplies</b></td></tr>
+<tr class="memitem:ga3d0f274c6c7dc6074cfbcc84a91a72f7" id="r_ga3d0f274c6c7dc6074cfbcc84a91a72f7"><td class="memItemLeft">constexpr fn::min_fn&#160;</td><td class="memItemRight"><a class="el" href="group__LINAL.html#ga3d0f274c6c7dc6074cfbcc84a91a72f7">loom::min</a></td></tr>
+<tr class="memdesc:ga3d0f274c6c7dc6074cfbcc84a91a72f7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Select the smallest corresponding elements of two vectors or numbers.  <br /></td></tr>
+<tr class="memitem:ga723a973a57faf04714cf7d30b5cfbec4" id="r_ga723a973a57faf04714cf7d30b5cfbec4"><td class="memItemLeft">constexpr fn::max_fn&#160;</td><td class="memItemRight"><a class="el" href="group__LINAL.html#ga723a973a57faf04714cf7d30b5cfbec4">loom::max</a></td></tr>
+<tr class="memdesc:ga723a973a57faf04714cf7d30b5cfbec4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Select the biggest corresponding elements of two vectors or numbers.  <br /></td></tr>
+<tr class="memitem:ga2ccb79e916d41a13aabfd1dee7106971" id="r_ga2ccb79e916d41a13aabfd1dee7106971"><td class="memTemplParams" colspan="2">template&lt;typename Int&gt; </td></tr>
+<tr class="memitem:ga2ccb79e916d41a13aabfd1dee7106971 template"><td class="memItemLeft">constexpr fn::downsample_fn&lt; Int &gt;&#160;</td><td class="memItemRight"><a class="el" href="group__LINAL.html#ga2ccb79e916d41a13aabfd1dee7106971">loom::downsample</a></td></tr>
+<tr class="memdesc:ga2ccb79e916d41a13aabfd1dee7106971"><td class="mdescLeft">&#160;</td><td class="mdescRight">Downsample floating point value to integer value with maximum integer equal to 1.0 of floating point value.  <br /></td></tr>
+<tr class="memitem:ga7593e2faa36a79c080d3c6a35bc1d22b" id="r_ga7593e2faa36a79c080d3c6a35bc1d22b"><td class="memItemLeft">constexpr fn::multiplies_fn&#160;</td><td class="memItemRight"><a class="el" href="group__LINAL.html#ga7593e2faa36a79c080d3c6a35bc1d22b">loom::multiplies</a></td></tr>
 </table>
 <a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Legacy linear algebra functions. </p>
+
+<p class="definition">Definition in file <a class="el" href="common_2linal_8hpp_source.html">linal.hpp</a>.</p>
 </div><a name="doc-define-members" id="doc-define-members"></a><h2 id="header-doc-define-members" class="groupheader">Macro Definition Documentation</h2>
 <a id="afc9761c0ffab636c178d9297f3463455" name="afc9761c0ffab636c178d9297f3463455"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#afc9761c0ffab636c178d9297f3463455">&#9670;&#160;</a></span>DEF_BINARY_OP</h2>
@@ -295,6 +295,8 @@ constexpr fn::multiplies_fn&#160;</td><td class="memItemRight"><b>loom::multipli
 </div><div class="memdoc">
 
 <p>Generate code for arithmetic binary operators of <a class="el" href="classloom_1_1Vector.html" title="N-dimensional euclidian vector.">loom::Vector</a> and <a class="el" href="classloom_1_1Matrix.html" title="Row-major matrix of size .">loom::Matrix</a>. </p>
+
+<p class="definition">Definition at line <a class="el" href="common_2linal_8hpp_source.html#l00038">38</a> of file <a class="el" href="common_2linal_8hpp_source.html">linal.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">   38</span><span class="preprocessor">#define DEF_BINARY_OP(FUNC, OP)                                           \</span></div>
 <div class="line"><span class="lineno">   39</span><span class="preprocessor">    namespace fn                                                          \</span></div>
 <div class="line"><span class="lineno">   40</span><span class="preprocessor">    {                                                                     \</span></div>
@@ -385,6 +387,8 @@ constexpr fn::multiplies_fn&#160;</td><td class="memItemRight"><b>loom::multipli
 </div><div class="memdoc">
 
 <p>Generate code for unary operators of <a class="el" href="classloom_1_1Vector.html" title="N-dimensional euclidian vector.">loom::Vector</a> and <a class="el" href="classloom_1_1Matrix.html" title="Row-major matrix of size .">loom::Matrix</a>. </p>
+
+<p class="definition">Definition at line <a class="el" href="common_2linal_8hpp_source.html#l00107">107</a> of file <a class="el" href="common_2linal_8hpp_source.html">linal.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">  107</span><span class="preprocessor">#define DEF_UNARY_OP(FUNC, OP)                                           \</span></div>
 <div class="line"><span class="lineno">  108</span><span class="preprocessor">    namespace fn                                                         \</span></div>
 <div class="line"><span class="lineno">  109</span><span class="preprocessor">    {                                                                    \</span></div>
@@ -447,9 +451,11 @@ constexpr fn::multiplies_fn&#160;</td><td class="memItemRight"><b>loom::multipli
       </table>
 </div><div class="memdoc">
 <b>Value:</b><div class="fragment"><div class="line"><a class="code hl_define" href="#a1accf3841db814ad4632e5159ef5afa7">VEC_NAMED_FN_OBJ</a>(FUNC, FUNC)</div>
-<div class="ttc" id="acommon_2linal_8hpp_html_a1accf3841db814ad4632e5159ef5afa7"><div class="ttname"><a href="#a1accf3841db814ad4632e5159ef5afa7">VEC_NAMED_FN_OBJ</a></div><div class="ttdeci">#define VEC_NAMED_FN_OBJ(NAME, FUNC)</div><div class="ttdoc">Generate code for loom::Vector&#39;ised analogue of FUNC.</div><div class="ttdef"><b>Definition</b> linal.hpp:153</div></div>
+<div class="ttc" id="acommon_2linal_8hpp_html_a1accf3841db814ad4632e5159ef5afa7"><div class="ttname"><a href="#a1accf3841db814ad4632e5159ef5afa7">VEC_NAMED_FN_OBJ</a></div><div class="ttdeci">#define VEC_NAMED_FN_OBJ(NAME, FUNC)</div><div class="ttdoc">Generate code for loom::Vector&#39;ised analogue of FUNC.</div><div class="ttdef"><b>Definition</b> <a href="common_2linal_8hpp_source.html#l00153">linal.hpp:153</a></div></div>
 </div><!-- fragment -->
 <p>Same as VEC_NAMED_FN_OBJ, but <code class="param">FUNC</code> as the <code class="param">NAME</code>. </p>
+
+<p class="definition">Definition at line <a class="el" href="common_2linal_8hpp_source.html#l00180">180</a> of file <a class="el" href="common_2linal_8hpp_source.html">linal.hpp</a>.</p>
 
 </div>
 </div>
@@ -495,9 +501,11 @@ constexpr fn::multiplies_fn&#160;</td><td class="memItemRight"><b>loom::multipli
 <div class="line">};                                                                 \</div>
 <div class="line">}                                                                  \</div>
 <div class="line"><span class="keyword">inline</span> <span class="keyword">constexpr</span> fn::NAME##_fn NAME{};</div>
-<div class="ttc" id="anamespacefn_html"><div class="ttname"><a href="namespacefn.html">fn</a></div><div class="ttdef"><b>Definition</b> programs.hpp:290</div></div>
+<div class="ttc" id="anamespacefn_html"><div class="ttname"><a href="namespacefn.html">fn</a></div><div class="ttdef"><b>Definition</b> <a href="programs_8hpp_source.html#l00289">programs.hpp:290</a></div></div>
 </div><!-- fragment -->
 <p>Generate code for <a class="el" href="classloom_1_1Vector.html" title="N-dimensional euclidian vector.">loom::Vector</a>'ised analogue of <code class="param">FUNC</code>. </p>
+
+<p class="definition">Definition at line <a class="el" href="common_2linal_8hpp_source.html#l00153">153</a> of file <a class="el" href="common_2linal_8hpp_source.html">linal.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">  153</span><span class="preprocessor">#define VEC_NAMED_FN_OBJ(NAME, FUNC)                                   \</span></div>
 <div class="line"><span class="lineno">  154</span><span class="preprocessor">    namespace fn                                                       \</span></div>
 <div class="line"><span class="lineno">  155</span><span class="preprocessor">    {                                                                  \</span></div>
@@ -569,6 +577,8 @@ constexpr fn::multiplies_fn&#160;</td><td class="memItemRight"><b>loom::multipli
 <div class="line"><span class="keyword">inline</span> <span class="keyword">constexpr</span> fn::FUNC##_fn FUNC{};</div>
 </div><!-- fragment -->
 <p>Same as VEC_FN_OBJ, but when static_math analogue of <code class="param">FUNC</code> is also available. </p>
+
+<p class="definition">Definition at line <a class="el" href="common_2linal_8hpp_source.html#l00184">184</a> of file <a class="el" href="common_2linal_8hpp_source.html">linal.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">  184</span><span class="preprocessor">#define VEC_NAMED_FN_OBJ_SMATH(FUNC)                                   \</span></div>
 <div class="line"><span class="lineno">  185</span><span class="preprocessor">    namespace fn                                                       \</span></div>
 <div class="line"><span class="lineno">  186</span><span class="preprocessor">    {                                                                  \</span></div>

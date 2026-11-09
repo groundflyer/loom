@@ -105,19 +105,47 @@ $(function(){initNavTree('structloom_1_1cache__line__capacity.html','','structlo
 <p>The number of values of type <code class="param">T</code> that can fit into cache line.  
  <a href="#details">More...</a></p>
 
-<p><code>#include &quot;memory.hpp&quot;</code></p>
+<p><code>#include &quot;<a class="el" href="memory_8hpp_source.html">memory.hpp</a>&quot;</code></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pub-static-attribs" class="groupheader"><a id="pub-static-attribs" name="pub-static-attribs"></a>
 Static Public Attributes</h2></td></tr>
-<tr class="memitem:a9df7855ca4d73fc972a278744e52ef8b" id="r_a9df7855ca4d73fc972a278744e52ef8b"><td class="memItemLeft"><a id="a9df7855ca4d73fc972a278744e52ef8b" name="a9df7855ca4d73fc972a278744e52ef8b"></a>
-static constexpr std::size_t&#160;</td><td class="memItemRight"><b>value</b> = cache_line_size / sizeof(T)</td></tr>
+<tr class="memitem:a9df7855ca4d73fc972a278744e52ef8b" id="r_a9df7855ca4d73fc972a278744e52ef8b"><td class="memItemLeft">static constexpr std::size_t&#160;</td><td class="memItemRight"><a class="el" href="#a9df7855ca4d73fc972a278744e52ef8b">value</a> = cache_line_size / sizeof(T)</td></tr>
 </table>
 <a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
 <div class="textblock"><div class="compoundTemplParams">template&lt;typename T&gt;<br />
 requires (sizeof(T) % alignof(T) == 0 &amp;&amp; alignof(T) &lt;= sizeof(T))<br />
 struct loom::cache_line_capacity&lt; T &gt;</div><p>The number of values of type <code class="param">T</code> that can fit into cache line. </p>
-</div><hr/>The documentation for this struct was generated from the following file:<ul>
-<li>common/<a class="el" href="memory_8hpp.html">memory.hpp</a></li>
+
+<p class="definition">Definition at line <a class="el" href="memory_8hpp_source.html#l00088">88</a> of file <a class="el" href="memory_8hpp_source.html">memory.hpp</a>.</p>
+</div><a name="doc-variable-members" id="doc-variable-members"></a><h2 id="header-doc-variable-members" class="groupheader">Member Data Documentation</h2>
+<a id="a9df7855ca4d73fc972a278744e52ef8b" name="a9df7855ca4d73fc972a278744e52ef8b"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a9df7855ca4d73fc972a278744e52ef8b">&#9670;&#160;</a></span>value</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename T&gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::size_t <a class="el" href="structloom_1_1cache__line__capacity.html">loom::cache_line_capacity</a>&lt; T &gt;::value = cache_line_size / sizeof(T)</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span><span class="mlabel constexpr">constexpr</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="memory_8hpp_source.html#l00090">90</a> of file <a class="el" href="memory_8hpp_source.html">memory.hpp</a>.</p>
+
+</div>
+</div>
+<hr/>The documentation for this struct was generated from the following file:<ul>
+<li>common/<a class="el" href="memory_8hpp_source.html">memory.hpp</a></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->

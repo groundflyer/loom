@@ -105,7 +105,7 @@ $(function(){initNavTree('classloom_1_1vm_1_1simd_1_1ConcurrentStreamFacade.html
 <p>Stream facade that allows concurrent exchange/computation.  
  <a href="#details">More...</a></p>
 
-<p><code>#include &quot;simd.hpp&quot;</code></p>
+<p><code>#include &quot;<a class="el" href="simd_8hpp_source.html">simd.hpp</a>&quot;</code></p>
 <div id="dynsection-0" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>Inheritance diagram for loom::vm::simd::ConcurrentStreamFacade&lt; K, _Vector, Allocator, Sorter &gt;:</div>
 <div id="dynsection-0-summary" class="dynsummary" style="display:block;">
 </div>
@@ -125,6 +125,8 @@ Public Member Functions</h2></td></tr>
 <div class="textblock"><div class="compoundTemplParams">template&lt;Kernel K, template&lt; typename, typename &gt; typename _Vector, template&lt; typename &gt; typename Allocator, typename Sorter&gt;<br />
 requires (cache_line_size % simd_width == 0)<br />
 class loom::vm::simd::ConcurrentStreamFacade&lt; K, _Vector, Allocator, Sorter &gt;</div><p>Stream facade that allows concurrent exchange/computation. </p>
+
+<p class="definition">Definition at line <a class="el" href="simd_8hpp_source.html#l02803">2803</a> of file <a class="el" href="simd_8hpp_source.html">simd.hpp</a>.</p>
 </div><a name="doc-func-members" id="doc-func-members"></a><h2 id="header-doc-func-members" class="groupheader">Member Function Documentation</h2>
 <a id="a7cc85a48f852cee6c07e5622105c41f1" name="a7cc85a48f852cee6c07e5622105c41f1"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a7cc85a48f852cee6c07e5622105c41f1">&#9670;&#160;</a></span>exchange()</h2>
@@ -152,6 +154,8 @@ template&lt;std::ranges::input_range Input&gt; </div>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="simd_8hpp_source.html#l02883">2883</a> of file <a class="el" href="simd_8hpp_source.html">simd.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno"> 2884</span>    {</div>
 <div class="line"><span class="lineno"> 2885</span>        <span class="keywordflow">return</span> <a class="code hl_class" href="classloom_1_1vm_1_1simd_1_1ConcurrentStreamFacade.html">bve::exchange_from</a>(<span class="keyword">static_cast&lt;</span>facade&amp;<span class="keyword">&gt;</span>(*<span class="keyword">this</span>),</div>
 <div class="line"><span class="lineno"> 2886</span>                                  <a class="code hl_class" href="classloom_1_1vm_1_1simd_1_1ConcurrentStreamFacade.html">std::forward&lt;Input&gt;</a>(<a class="code hl_class" href="classloom_1_1vm_1_1simd_1_1ConcurrentStreamFacade.html">input</a>),</div>
@@ -159,7 +163,7 @@ template&lt;std::ranges::input_range Input&gt; </div>
 <div class="line"><span class="lineno"> 2888</span>                                      <a class="code hl_class" href="classloom_1_1vm_1_1simd_1_1ConcurrentStreamFacade.html">facade::mem</a>().<a class="code hl_class" href="classloom_1_1vm_1_1simd_1_1ConcurrentStreamFacade.html">end</a>() : <span class="comment">// empty exchange</span></div>
 <div class="line"><span class="lineno"> 2889</span>                                      <a class="code hl_class" href="classloom_1_1vm_1_1simd_1_1ConcurrentStreamFacade.html">facade::mem</a>().<a class="code hl_class" href="classloom_1_1vm_1_1simd_1_1ConcurrentStreamFacade.html">begin</a>() + m_pos);</div>
 <div class="line"><span class="lineno"> 2890</span>    }</div>
-<div class="ttc" id="aclassloom_1_1vm_1_1simd_1_1ConcurrentStreamFacade_html"><div class="ttname"><a href="classloom_1_1vm_1_1simd_1_1ConcurrentStreamFacade.html">loom::vm::simd::ConcurrentStreamFacade</a></div><div class="ttdoc">Stream facade that allows concurrent exchange/computation.</div><div class="ttdef"><b>Definition</b> simd.hpp:2805</div></div>
+<div class="ttc" id="aclassloom_1_1vm_1_1simd_1_1ConcurrentStreamFacade_html"><div class="ttname"><a href="classloom_1_1vm_1_1simd_1_1ConcurrentStreamFacade.html">loom::vm::simd::ConcurrentStreamFacade</a></div><div class="ttdoc">Stream facade that allows concurrent exchange/computation.</div><div class="ttdef"><b>Definition</b> <a href="simd_8hpp_source.html#l02803">simd.hpp:2805</a></div></div>
 </div><!-- fragment -->
 </div>
 </div>
@@ -187,6 +191,8 @@ template&lt;Kernel K, template&lt; typename, typename &gt; typename _Vector, tem
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="simd_8hpp_source.html#l02867">2867</a> of file <a class="el" href="simd_8hpp_source.html">simd.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno"> 2868</span>    {</div>
 <div class="line"><span class="lineno"> 2869</span>        <span class="keywordflow">if</span> <span class="keyword">constexpr</span>(<a class="code hl_class" href="classloom_1_1vm_1_1simd_1_1ConcurrentStreamFacade.html">is_counting_sorter&lt;Sorter&gt;::value</a>)</div>
 <div class="line"><span class="lineno"> 2870</span>            <span class="keywordflow">return</span> update_pos(<a class="code hl_class" href="classloom_1_1vm_1_1simd_1_1ConcurrentStreamFacade.html">facade::sort</a>());</div>
@@ -225,6 +231,8 @@ template&lt;typename F&gt; </div>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="simd_8hpp_source.html#l02894">2894</a> of file <a class="el" href="simd_8hpp_source.html">simd.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno"> 2895</span>    {</div>
 <div class="line"><span class="lineno"> 2896</span>        <a class="code hl_class" href="classloom_1_1vm_1_1simd_1_1ConcurrentStreamFacade.html">std::invoke</a>(<a class="code hl_class" href="classloom_1_1vm_1_1simd_1_1ConcurrentStreamFacade.html">std::forward&lt;F&gt;</a>(<a class="code hl_class" href="classloom_1_1vm_1_1simd_1_1ConcurrentStreamFacade.html">f</a>),</div>
 <div class="line"><span class="lineno"> 2897</span>                    m_pos == npos ? <a class="code hl_class" href="classloom_1_1vm_1_1simd_1_1ConcurrentStreamFacade.html">facade::mem</a>().<a class="code hl_class" href="classloom_1_1vm_1_1simd_1_1ConcurrentStreamFacade.html">view</a>() :</div>
@@ -237,7 +245,7 @@ template&lt;typename F&gt; </div>
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following file:<ul>
-<li>vm/<a class="el" href="simd_8hpp.html">simd.hpp</a></li>
+<li>vm/<a class="el" href="simd_8hpp_source.html">simd.hpp</a></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->

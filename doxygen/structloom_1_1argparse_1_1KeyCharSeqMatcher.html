@@ -105,7 +105,7 @@ $(function(){initNavTree('structloom_1_1argparse_1_1KeyCharSeqMatcher.html','','
 <p>Matches "-abcd [values...]".  
  <a href="#details">More...</a></p>
 
-<p><code>#include &quot;argparse.hpp&quot;</code></p>
+<p><code>#include &quot;<a class="el" href="argparse_8hpp_source.html">argparse.hpp</a>&quot;</code></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pub-methods" class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
@@ -114,6 +114,8 @@ Public Member Functions</h2></td></tr>
 </table>
 <a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Matches "-abcd [values...]". </p>
+
+<p class="definition">Definition at line <a class="el" href="argparse_8hpp_source.html#l01388">1388</a> of file <a class="el" href="argparse_8hpp_source.html">argparse.hpp</a>.</p>
 </div><a name="doc-func-members" id="doc-func-members"></a><h2 id="header-doc-func-members" class="groupheader">Member Function Documentation</h2>
 <a id="aad1b5fdd2226d8d2810f37fe1bace6fd" name="aad1b5fdd2226d8d2810f37fe1bace6fd"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#aad1b5fdd2226d8d2810f37fe1bace6fd">&#9670;&#160;</a></span>operator()()</h2>
@@ -153,6 +155,8 @@ template&lt;typename Opt, typename Pos&gt; </div>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="argparse_8hpp_source.html#l01392">1392</a> of file <a class="el" href="argparse_8hpp_source.html">argparse.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno"> 1396</span>    {</div>
 <div class="line"><span class="lineno"> 1397</span>        <span class="keyword">const</span> std::string_view word = *iter;</div>
 <div class="line"><span class="lineno"> 1398</span>        <span class="keywordflow">if</span>(word.size() &lt; 3 || word.front() != <span class="charliteral">&#39;-&#39;</span> || word.substr(0, 2) == <span class="stringliteral">&quot;--&quot;</span>)</div>
@@ -214,15 +218,15 @@ template&lt;typename Opt, typename Pos&gt; </div>
 <div class="line"><span class="lineno"> 1454</span>        ++iter;</div>
 <div class="line"><span class="lineno"> 1455</span>        <span class="keywordflow">return</span> <span class="keyword">true</span>;</div>
 <div class="line"><span class="lineno"> 1456</span>    }</div>
-<div class="ttc" id="agroup__ArgParse_html_ga300f35b016232578f05f11d23dad8936"><div class="ttname"><a href="group__ArgParse.html#ga300f35b016232578f05f11d23dad8936">loom::argparse::tokenize</a></div><div class="ttdeci">static std::size_t tokenize(const Key key, const std::tuple&lt; Options... &gt;) noexcept</div><div class="ttdoc">Get a corresponding option index with a key key.</div><div class="ttdef"><b>Definition</b> argparse.hpp:939</div></div>
-<div class="ttc" id="agroup__ArgParse_html_ga35e5c6acd920250ada591b795fe404f7"><div class="ttname"><a href="group__ArgParse.html#ga35e5c6acd920250ada591b795fe404f7">loom::argparse::get_nvals</a></div><div class="ttdeci">static std::size_t get_nvals(const std::size_t token, const Options &amp;opts) noexcept</div><div class="ttdoc">Get number of expected values for a given token.</div><div class="ttdef"><b>Definition</b> argparse.hpp:1079</div></div>
-<div class="ttc" id="agroup__ArgParse_html_ga57f0d384e106c7aeca822d530b9f21f8"><div class="ttname"><a href="group__ArgParse.html#ga57f0d384e106c7aeca822d530b9f21f8">loom::argparse::bind_value</a></div><div class="ttdeci">static void bind_value(std::tuple&lt; Bindings... &gt; &amp;bindings, const std::size_t token, Value value) noexcept</div><div class="ttdoc">Set token&#39;th value.</div><div class="ttdef"><b>Definition</b> argparse.hpp:1063</div></div>
-<div class="ttc" id="agroup__ArgParse_html_ga95401598621d5274b657acbd3f740ecf"><div class="ttname"><a href="group__ArgParse.html#ga95401598621d5274b657acbd3f740ecf">loom::argparse::npos</a></div><div class="ttdeci">constexpr std::size_t npos</div><div class="ttdoc">Special value. The exact meaning depends on the context.</div><div class="ttdef"><b>Definition</b> argparse.hpp:57</div></div>
+<div class="ttc" id="agroup__ArgParse_html_ga300f35b016232578f05f11d23dad8936"><div class="ttname"><a href="group__ArgParse.html#ga300f35b016232578f05f11d23dad8936">loom::argparse::tokenize</a></div><div class="ttdeci">static std::size_t tokenize(const Key key, const std::tuple&lt; Options... &gt;) noexcept</div><div class="ttdoc">Get a corresponding option index with a key key.</div><div class="ttdef"><b>Definition</b> <a href="argparse_8hpp_source.html#l00939">argparse.hpp:939</a></div></div>
+<div class="ttc" id="agroup__ArgParse_html_ga35e5c6acd920250ada591b795fe404f7"><div class="ttname"><a href="group__ArgParse.html#ga35e5c6acd920250ada591b795fe404f7">loom::argparse::get_nvals</a></div><div class="ttdeci">static std::size_t get_nvals(const std::size_t token, const Options &amp;opts) noexcept</div><div class="ttdoc">Get number of expected values for a given token.</div><div class="ttdef"><b>Definition</b> <a href="argparse_8hpp_source.html#l01079">argparse.hpp:1079</a></div></div>
+<div class="ttc" id="agroup__ArgParse_html_ga57f0d384e106c7aeca822d530b9f21f8"><div class="ttname"><a href="group__ArgParse.html#ga57f0d384e106c7aeca822d530b9f21f8">loom::argparse::bind_value</a></div><div class="ttdeci">static void bind_value(std::tuple&lt; Bindings... &gt; &amp;bindings, const std::size_t token, Value value) noexcept</div><div class="ttdoc">Set token&#39;th value.</div><div class="ttdef"><b>Definition</b> <a href="argparse_8hpp_source.html#l01063">argparse.hpp:1063</a></div></div>
+<div class="ttc" id="agroup__ArgParse_html_ga95401598621d5274b657acbd3f740ecf"><div class="ttname"><a href="group__ArgParse.html#ga95401598621d5274b657acbd3f740ecf">loom::argparse::npos</a></div><div class="ttdeci">constexpr std::size_t npos</div><div class="ttdoc">Special value. The exact meaning depends on the context.</div><div class="ttdef"><b>Definition</b> <a href="argparse_8hpp_source.html#l00057">argparse.hpp:57</a></div></div>
 </div><!-- fragment -->
 </div>
 </div>
 <hr/>The documentation for this struct was generated from the following file:<ul>
-<li>common/<a class="el" href="argparse_8hpp.html">argparse.hpp</a></li>
+<li>common/<a class="el" href="argparse_8hpp_source.html">argparse.hpp</a></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->

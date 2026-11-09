@@ -162,6 +162,8 @@ template&lt;std::floating_point T&gt; </div>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="root__finding_8hpp_source.html#l00186">186</a> of file <a class="el" href="root__finding_8hpp_source.html">root_finding.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">  187</span>{</div>
 <div class="line"><span class="lineno">  188</span>    <span class="keywordflow">return</span> l + (r - l) * <span class="keyword">static_cast&lt;</span>T<span class="keyword">&gt;</span>(0.5);</div>
 <div class="line"><span class="lineno">  189</span>}</div>
@@ -192,6 +194,8 @@ template&lt;std::unsigned_integral T&gt; </div>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="programs_8hpp_source.html#l00375">375</a> of file <a class="el" href="programs_8hpp_source.html">programs.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">  376</span>{</div>
 <div class="line"><span class="lineno">  377</span>    <span class="keywordflow">return</span> ~v;</div>
 <div class="line"><span class="lineno">  378</span>}</div>
@@ -236,6 +240,8 @@ template&lt;std::floating_point T&gt; </div>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="root__finding_8hpp_source.html#l00193">193</a> of file <a class="el" href="root__finding_8hpp_source.html">root_finding.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">  194</span>{</div>
 <div class="line"><span class="lineno">  195</span>    <span class="keyword">auto</span> [l, r]                        = val_find_bounds(a, b, c, d);</div>
 <div class="line"><span class="lineno">  196</span>    <span class="keyword">auto</span>                             s = median(l, r);</div>
@@ -258,7 +264,7 @@ template&lt;std::floating_point T&gt; </div>
 <div class="line"><span class="lineno">  213</span> </div>
 <div class="line"><span class="lineno">  214</span>    <span class="keywordflow">return</span> {s, i};</div>
 <div class="line"><span class="lineno">  215</span>}</div>
-<div class="ttc" id="anamespaceloom_html_a5d16492618b736dbf84dbc352c4921de"><div class="ttname"><a href="namespaceloom.html#a5d16492618b736dbf84dbc352c4921de">loom::uint_of_size_t</a></div><div class="ttdeci">uint_of_bits_t&lt; S *8 &gt; uint_of_size_t</div><div class="ttdoc">Unsigned integer type at least of size S bytes.</div><div class="ttdef"><b>Definition</b> tmp.hpp:2021</div></div>
+<div class="ttc" id="anamespaceloom_html_a5d16492618b736dbf84dbc352c4921de"><div class="ttname"><a href="namespaceloom.html#a5d16492618b736dbf84dbc352c4921de">loom::uint_of_size_t</a></div><div class="ttdeci">uint_of_bits_t&lt; S *8 &gt; uint_of_size_t</div><div class="ttdoc">Unsigned integer type at least of size S bytes.</div><div class="ttdef"><b>Definition</b> <a href="tmp_8hpp_source.html#l02021">tmp.hpp:2021</a></div></div>
 </div><!-- fragment -->
 </div>
 </div>
@@ -305,6 +311,8 @@ template&lt;std::floating_point T&gt; </div>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="root__finding_8hpp_source.html#l00150">150</a> of file <a class="el" href="root__finding_8hpp_source.html">root_finding.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">  151</span>{</div>
 <div class="line"><span class="lineno">  152</span>    T x2 = x * x;</div>
 <div class="line"><span class="lineno">  153</span>    T x3 = x2 * x;</div>
@@ -313,7 +321,7 @@ template&lt;std::floating_point T&gt; </div>
 <div class="line"><span class="lineno">  156</span>        x3,</div>
 <div class="line"><span class="lineno">  157</span>        <a class="code hl_function" href="namespaceloom.html#a66b1b6b376b7dc3b58ba4087c67d7d59">loom::fma</a>(b, x2, <a class="code hl_function" href="namespaceloom.html#a66b1b6b376b7dc3b58ba4087c67d7d59">loom::fma</a>(c, x, d))); <span class="comment">// a * x3 + b * x2 + c * x + d;</span></div>
 <div class="line"><span class="lineno">  158</span>}</div>
-<div class="ttc" id="anamespaceloom_html_a66b1b6b376b7dc3b58ba4087c67d7d59"><div class="ttname"><a href="namespaceloom.html#a66b1b6b376b7dc3b58ba4087c67d7d59">loom::fma</a></div><div class="ttdeci">static T FORCE_INLINE fma(const T x, const T y, const T z) noexcept</div><div class="ttdoc">FMA that fallbacks to expression  if fast FMA instruction is not available.</div><div class="ttdef"><b>Definition</b> math.hpp:45</div></div>
+<div class="ttc" id="anamespaceloom_html_a66b1b6b376b7dc3b58ba4087c67d7d59"><div class="ttname"><a href="namespaceloom.html#a66b1b6b376b7dc3b58ba4087c67d7d59">loom::fma</a></div><div class="ttdeci">static T FORCE_INLINE fma(const T x, const T y, const T z) noexcept</div><div class="ttdoc">FMA that fallbacks to expression  if fast FMA instruction is not available.</div><div class="ttdef"><b>Definition</b> <a href="math_8hpp_source.html#l00045">math.hpp:45</a></div></div>
 </div><!-- fragment -->
 </div>
 </div>
@@ -341,10 +349,12 @@ template&lt;std::unsigned_integral T&gt; </div>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="programs_8hpp_source.html#l00302">302</a> of file <a class="el" href="programs_8hpp_source.html">programs.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">  303</span>{</div>
 <div class="line"><span class="lineno">  304</span>    <span class="keywordflow">return</span> <a class="code hl_function" href="namespaceloom.html#a2891415eee381f95f56b71e9c78cd8bd">loom::fac</a>(i);</div>
 <div class="line"><span class="lineno">  305</span>}</div>
-<div class="ttc" id="anamespaceloom_html_a2891415eee381f95f56b71e9c78cd8bd"><div class="ttname"><a href="namespaceloom.html#a2891415eee381f95f56b71e9c78cd8bd">loom::fac</a></div><div class="ttdeci">constexpr T fac(const T val) noexcept</div><div class="ttdoc">Compute number factorial.</div><div class="ttdef"><b>Definition</b> math.hpp:104</div></div>
+<div class="ttc" id="anamespaceloom_html_a2891415eee381f95f56b71e9c78cd8bd"><div class="ttname"><a href="namespaceloom.html#a2891415eee381f95f56b71e9c78cd8bd">loom::fac</a></div><div class="ttdeci">constexpr T fac(const T val) noexcept</div><div class="ttdoc">Compute number factorial.</div><div class="ttdef"><b>Definition</b> <a href="math_8hpp_source.html#l00104">math.hpp:104</a></div></div>
 </div><!-- fragment -->
 </div>
 </div>
@@ -372,6 +382,8 @@ template&lt;std::unsigned_integral T&gt; </div>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="programs_8hpp_source.html#l00355">355</a> of file <a class="el" href="programs_8hpp_source.html">programs.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">  356</span>{</div>
 <div class="line"><span class="lineno">  357</span>    <span class="keywordflow">if</span>(n &lt;= 1) <span class="keywordflow">return</span> n;</div>
 <div class="line"><span class="lineno">  358</span> </div>
@@ -426,6 +438,8 @@ template&lt;std::floating_point T&gt; </div>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="root__finding_8hpp_source.html#l00170">170</a> of file <a class="el" href="root__finding_8hpp_source.html">root_finding.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">  171</span>{</div>
 <div class="line"><span class="lineno">  172</span>    T l = -10;</div>
 <div class="line"><span class="lineno">  173</span>    T r = 10;</div>
@@ -465,6 +479,8 @@ template&lt;std::integral T&gt; </div>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="programs_8hpp_source.html#l00294">294</a> of file <a class="el" href="programs_8hpp_source.html">programs.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">  295</span>{</div>
 <div class="line"><span class="lineno">  296</span>    <span class="keywordflow">return</span> i + 1;</div>
 <div class="line"><span class="lineno">  297</span>}</div>
@@ -495,6 +511,8 @@ template&lt;std::unsigned_integral T&gt; </div>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="programs_8hpp_source.html#l00327">327</a> of file <a class="el" href="programs_8hpp_source.html">programs.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">  328</span>{</div>
 <div class="line"><span class="lineno">  329</span>    <span class="keywordflow">switch</span>(i)</div>
 <div class="line"><span class="lineno">  330</span>    {</div>
@@ -536,6 +554,8 @@ template&lt;std::unsigned_integral T&gt; </div>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="programs_8hpp_source.html#l00341">341</a> of file <a class="el" href="programs_8hpp_source.html">programs.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">  342</span>{</div>
 <div class="line"><span class="lineno">  343</span>    <span class="keywordflow">return</span> a &lt;&lt; b;</div>
 <div class="line"><span class="lineno">  344</span>}</div>
@@ -590,6 +610,8 @@ template&lt;std::floating_point T&gt; </div>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="root__finding_8hpp_source.html#l00162">162</a> of file <a class="el" href="root__finding_8hpp_source.html">root_finding.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">  163</span>{</div>
 <div class="line"><span class="lineno">  164</span>    <span class="keywordflow">return</span> std::signbit(val_eval(a, b, c, d, l)) !=</div>
 <div class="line"><span class="lineno">  165</span>           std::signbit(val_eval(a, b, c, d, r));</div>
@@ -625,6 +647,8 @@ template&lt;std::unsigned_integral T&gt; </div>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="programs_8hpp_source.html#l00348">348</a> of file <a class="el" href="programs_8hpp_source.html">programs.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">  349</span>{</div>
 <div class="line"><span class="lineno">  350</span>    <span class="keywordflow">return</span> a &gt;&gt; b;</div>
 <div class="line"><span class="lineno">  351</span>}</div>
@@ -655,6 +679,8 @@ template&lt;std::floating_point T&gt; </div>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="programs_8hpp_source.html#l00310">310</a> of file <a class="el" href="programs_8hpp_source.html">programs.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">  311</span>{</div>
 <div class="line"><span class="lineno">  312</span>    <span class="keywordflow">return</span> <span class="keyword">static_cast&lt;</span><a class="code hl_typedef" href="namespaceloom.html#a5d16492618b736dbf84dbc352c4921de">loom::uint_of_size_t</a>&lt;sizeof(T)<span class="keyword">&gt;</span>&gt;(i);</div>
 <div class="line"><span class="lineno">  313</span>}</div>
@@ -685,6 +711,8 @@ template&lt;std::floating_point T&gt; </div>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="programs_8hpp_source.html#l00318">318</a> of file <a class="el" href="programs_8hpp_source.html">programs.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">  319</span>{</div>
 <div class="line"><span class="lineno">  320</span>    <span class="keyword">using </span>R = <a class="code hl_typedef" href="namespaceloom.html#a5d16492618b736dbf84dbc352c4921de">loom::uint_of_size_t</a>&lt;<span class="keyword">sizeof</span>(T)&gt;;</div>
 <div class="line"><span class="lineno">  321</span>    <span class="keywordflow">return</span> i &lt; static_cast&lt;T&gt;(0.5) ? <span class="keyword">static_cast&lt;</span>R<span class="keyword">&gt;</span>(200) : static_cast&lt;R&gt;(100);</div>

@@ -105,7 +105,7 @@ $(function(){initNavTree('classloom_1_1CPUTopology.html','','classloom_1_1CPUTop
 <p>Range view exposing cores topology of CPUs with SMP.  
  <a href="#details">More...</a></p>
 
-<p><code>#include &quot;threadpool.hpp&quot;</code></p>
+<p><code>#include &quot;<a class="el" href="threadpool_8hpp_source.html">threadpool.hpp</a>&quot;</code></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pub-methods" class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
@@ -115,6 +115,8 @@ Public Member Functions</h2></td></tr>
 <a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Range view exposing cores topology of CPUs with SMP. </p>
 <p>Iterates over CPU cores and extracts sets of logical siblings. </p>
+
+<p class="definition">Definition at line <a class="el" href="threadpool_8hpp_source.html#l00069">69</a> of file <a class="el" href="threadpool_8hpp_source.html">threadpool.hpp</a>.</p>
 </div><a name="doc-constructors" id="doc-constructors"></a><h2 id="header-doc-constructors" class="groupheader">Constructor &amp; Destructor Documentation</h2>
 <a id="af90a7846927085978fc32b5937a5949b" name="af90a7846927085978fc32b5937a5949b"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#af90a7846927085978fc32b5937a5949b">&#9670;&#160;</a></span>CPUTopology()</h2>
@@ -138,6 +140,8 @@ Public Member Functions</h2></td></tr>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="threadpool_8hpp_source.html#l00204">204</a> of file <a class="el" href="threadpool_8hpp_source.html">threadpool.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">  205</span>    {</div>
 <div class="line"><span class="lineno">  206</span>        hwloc_topology_init(&amp;p_topology);</div>
 <div class="line"><span class="lineno">  207</span>        hwloc_topology_load(p_topology);</div>
@@ -167,6 +171,8 @@ Public Member Functions</h2></td></tr>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="threadpool_8hpp_source.html#l00222">222</a> of file <a class="el" href="threadpool_8hpp_source.html">threadpool.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">  222</span>{ hwloc_topology_destroy(p_topology); }</div>
 </div><!-- fragment -->
 </div>
@@ -194,6 +200,8 @@ Public Member Functions</h2></td></tr>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="threadpool_8hpp_source.html#l00211">211</a> of file <a class="el" href="threadpool_8hpp_source.html">threadpool.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">  212</span>    {</div>
 <div class="line"><span class="lineno">  213</span>        <span class="keywordflow">return</span> {p_topology};</div>
 <div class="line"><span class="lineno">  214</span>    }</div>
@@ -222,6 +230,8 @@ Public Member Functions</h2></td></tr>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="threadpool_8hpp_source.html#l00217">217</a> of file <a class="el" href="threadpool_8hpp_source.html">threadpool.hpp</a>.</p>
 <div class="fragment"><div class="line"><span class="lineno">  218</span>    {</div>
 <div class="line"><span class="lineno">  219</span>        <span class="keywordflow">return</span> std::default_sentinel;</div>
 <div class="line"><span class="lineno">  220</span>    }</div>
@@ -229,7 +239,7 @@ Public Member Functions</h2></td></tr>
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following file:<ul>
-<li>common/<a class="el" href="threadpool_8hpp.html">threadpool.hpp</a></li>
+<li>common/<a class="el" href="threadpool_8hpp_source.html">threadpool.hpp</a></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->

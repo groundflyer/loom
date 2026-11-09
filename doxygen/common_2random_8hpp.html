@@ -117,9 +117,11 @@ $(function(){initNavTree('common_2random_8hpp.html','',''); });
 <div id="dynsection-1-summary" class="dynsummary" style="display:block;">
 </div>
 <div id="dynsection-1-content" class="dyncontent" style="display:none;">
-<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="common_2random_8hpp__dep__incl.svg" width="315" height="115"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><div class="zoom"><iframe scrolling="no" loading="lazy" frameborder="0" src="common_2random_8hpp__dep__incl.svg" width="100%" height="512"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
 </div>
-</div><table class="memberdecls">
+</div>
+<p><a href="common_2random_8hpp_source.html">Go to the source code of this file.</a></p>
+<table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-nested-classes" class="groupheader"><a id="nested-classes" name="nested-classes"></a>
 Classes</h2></td></tr>
 <tr class="memitem:loom_3A_3Afn_3A_3Athreefry2x32r32_3C_20k0_2C_20k1_20_3E" id="r_loom_3A_3Afn_3A_3Athreefry2x32r32_3C_20k0_2C_20k1_20_3E"><td class="memItemLeft">struct &#160;</td><td class="memItemRight"><a class="el" href="structloom_1_1fn_1_1threefry2x32r32.html">loom::fn::threefry2x32r32&lt; k0, k1 &gt;</a></td></tr>
@@ -142,11 +144,9 @@ Macros</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-typedef-members" class="groupheader"><a id="typedef-members" name="typedef-members"></a>
 Typedefs</h2></td></tr>
-<tr class="memitem:a0ec52d3300fc8b585d2a218287bde7b4" id="r_a0ec52d3300fc8b585d2a218287bde7b4"><td class="memItemLeft"><a id="a0ec52d3300fc8b585d2a218287bde7b4" name="a0ec52d3300fc8b585d2a218287bde7b4"></a>
-using&#160;</td><td class="memItemRight"><b>loom::fn::ar_32_2</b> = std::array&lt;std::uint32_t, 2&gt;</td></tr>
-<tr class="memitem:a03cdd94ca6c3ac57c5a6098b08c105c8" id="r_a03cdd94ca6c3ac57c5a6098b08c105c8"><td class="memTemplParams" colspan="2"><a id="a03cdd94ca6c3ac57c5a6098b08c105c8" name="a03cdd94ca6c3ac57c5a6098b08c105c8"></a>
-template&lt;typename T&gt; </td></tr>
-<tr class="memitem:a03cdd94ca6c3ac57c5a6098b08c105c8 template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><b>loom::random_dist</b> = detail::random_dist&lt;T&gt;::type</td></tr>
+<tr class="memitem:a0ec52d3300fc8b585d2a218287bde7b4" id="r_a0ec52d3300fc8b585d2a218287bde7b4"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="namespaceloom_1_1fn.html#a0ec52d3300fc8b585d2a218287bde7b4">loom::fn::ar_32_2</a> = std::array&lt;std::uint32_t, 2&gt;</td></tr>
+<tr class="memitem:a03cdd94ca6c3ac57c5a6098b08c105c8" id="r_a03cdd94ca6c3ac57c5a6098b08c105c8"><td class="memTemplParams" colspan="2">template&lt;typename T&gt; </td></tr>
+<tr class="memitem:a03cdd94ca6c3ac57c5a6098b08c105c8 template"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="namespaceloom.html#a03cdd94ca6c3ac57c5a6098b08c105c8">loom::random_dist</a> = detail::random_dist&lt;T&gt;::type</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-func-members" class="groupheader"><a id="func-members" name="func-members"></a>
 Functions</h2></td></tr>
@@ -163,6 +163,8 @@ Variables</h2></td></tr>
 </table>
 <a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Random number generation. </p>
+
+<p class="definition">Definition in file <a class="el" href="common_2random_8hpp_source.html">random.hpp</a>.</p>
 </div><a name="doc-define-members" id="doc-define-members"></a><h2 id="header-doc-define-members" class="groupheader">Macro Definition Documentation</h2>
 <a id="a4fb8c7188ed63c8a940b956fabe77ac1" name="a4fb8c7188ed63c8a940b956fabe77ac1"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a4fb8c7188ed63c8a940b956fabe77ac1">&#9670;&#160;</a></span>THREEFRY_8ROUNDS</h2>
@@ -212,7 +214,9 @@ Variables</h2></td></tr>
 <div class="line">THREEFRY_ROUND(16);                              \</div>
 <div class="line">THREEFRY_ROUND(24);                              \</div>
 <div class="line">THREEFRY_KEY_INJECTION(C2, KS3, KS4)</div>
-</div><!-- fragment --><div class="fragment"><div class="line"><span class="lineno">   45</span><span class="preprocessor">#define THREEFRY_8ROUNDS(C1, C2, KS1, KS2, KS3, KS4) \</span></div>
+</div><!-- fragment -->
+<p class="definition">Definition at line <a class="el" href="common_2random_8hpp_source.html#l00045">45</a> of file <a class="el" href="common_2random_8hpp_source.html">random.hpp</a>.</p>
+<div class="fragment"><div class="line"><span class="lineno">   45</span><span class="preprocessor">#define THREEFRY_8ROUNDS(C1, C2, KS1, KS2, KS3, KS4) \</span></div>
 <div class="line"><span class="lineno">   46</span><span class="preprocessor">    THREEFRY_ROUND(13);                              \</span></div>
 <div class="line"><span class="lineno">   47</span><span class="preprocessor">    THREEFRY_ROUND(15);                              \</span></div>
 <div class="line"><span class="lineno">   48</span><span class="preprocessor">    THREEFRY_ROUND(26);                              \</span></div>
@@ -251,7 +255,9 @@ Variables</h2></td></tr>
 </div><div class="memdoc">
 <b>Value:</b><div class="fragment"><div class="line">c[0] += KS1;                            \</div>
 <div class="line">c[1] += KS2 + C</div>
-</div><!-- fragment --><div class="fragment"><div class="line"><span class="lineno">   41</span><span class="preprocessor">#define THREEFRY_KEY_INJECTION(C, KS1, KS2) \</span></div>
+</div><!-- fragment -->
+<p class="definition">Definition at line <a class="el" href="common_2random_8hpp_source.html#l00041">41</a> of file <a class="el" href="common_2random_8hpp_source.html">random.hpp</a>.</p>
+<div class="fragment"><div class="line"><span class="lineno">   41</span><span class="preprocessor">#define THREEFRY_KEY_INJECTION(C, KS1, KS2) \</span></div>
 <div class="line"><span class="lineno">   42</span><span class="preprocessor">    c[0] += KS1;                            \</span></div>
 <div class="line"><span class="lineno">   43</span><span class="preprocessor">    c[1] += KS2 + C</span></div>
 </div><!-- fragment -->
@@ -273,7 +279,9 @@ Variables</h2></td></tr>
 </div><div class="memdoc">
 <b>Value:</b><div class="fragment"><div class="line">c[0] += c[1];         \</div>
 <div class="line">c[1] = rotl32(c[1], R) ^ c[0]</div>
-</div><!-- fragment --><div class="fragment"><div class="line"><span class="lineno">   37</span><span class="preprocessor">#define THREEFRY_ROUND(R) \</span></div>
+</div><!-- fragment -->
+<p class="definition">Definition at line <a class="el" href="common_2random_8hpp_source.html#l00037">37</a> of file <a class="el" href="common_2random_8hpp_source.html">random.hpp</a>.</p>
+<div class="fragment"><div class="line"><span class="lineno">   37</span><span class="preprocessor">#define THREEFRY_ROUND(R) \</span></div>
 <div class="line"><span class="lineno">   38</span><span class="preprocessor">    c[0] += c[1];         \</span></div>
 <div class="line"><span class="lineno">   39</span><span class="preprocessor">    c[1] = rotl32(c[1], R) ^ c[0]</span></div>
 </div><!-- fragment -->
