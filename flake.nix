@@ -148,6 +148,25 @@
               strip -s -x $out/bin/*
             '';
           };
+
+      docsCmakeFlags = [
+        "-DBUILD_DOCS=ON"
+        "-DBUILD_TESTS=OFF"
+        "-DBUILD_BENCHMARKS=OFF"
+        "-DBUILD_DEBUGGERS=OFF"
+        "-DBUILD_DEMO=OFF"
+        "-DBUILD_PROF=OFF"
+      ];
+      pypkgs = pkgs.python313Packages;
+      siteDeps = with pypkgs; [
+            mkdocs
+            mkdocs-material
+            mkdocs-minify-plugin
+            mkdocs-macros-plugin
+            mkdocs-include-markdown-plugin
+            mkdocs-glightbox
+            mkdocs-git-revision-date-localized-plugin
+          ];
     in {
       devShells.${system} = {
         default = pkgs.mkShell {
@@ -171,6 +190,10 @@
           export LIBCXX_DIR=${pkgs.lib.getStatic pkgs.llvmPackages.libcxx}
           '' + prepare;
         };
+
+        site = pkgs.mkShell {
+          packages = siteDeps ++ docsDeps ++ buildDeps;
+        };
       };
 
       packages.${system} = {
@@ -181,18 +204,31 @@
 
           nativeBuildInputs = docsDeps ++ buildDeps ++ [ pkgs.clang ];
 
-          cmakeFlags = [
-            "-DBUILD_DOCS=ON"
-            "-DBUILD_TESTS=OFF"
-            "-DBUILD_BENCHMARKS=OFF"
-            "-DBUILD_DEBUGGERS=OFF"
-            "-DBUILD_DEMO=OFF"
-            "-DBUILD_PROF=OFF"
-          ];
+          cmakeFlags = docsCmakeFlags;
 
           installPhase = ''
           mkdir -p $out
           cp -r html $out/html
+          '';
+        };
+
+        site = pkgs.stdenv.mkDerivation {
+          pname = "loom-site";
+          version = pver;
+          src = self;
+
+          nativeBuildInputs = siteDeps ++ docsDeps ++ buildDeps ++ [ pkgs.clang ];
+
+          cmakeFlags = docsCmakeFlags;
+
+          postBuild = ''
+          mkdocs build --site-dir $out -f $src/mkdocs.yml
+          '';
+
+          installPhase = ''
+          runHook preInstall
+          cp -a html $out/doxygen
+          runHook postInstall
           '';
         };
 

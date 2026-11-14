@@ -522,7 +522,7 @@ if(BUILD_DOCS)
     message(STATUS "Building documentation")
 
     set(_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src)
-    set(DOC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/doc)
+    set(DOC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/doxygen-docs)
     set(BIB_DIR ${DOC_DIR}/bib)
 
     set(DOXYGEN_PROJECT_BRIEF ${desc})

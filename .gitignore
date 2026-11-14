@@ -12,6 +12,8 @@ compile_commands.json
 .dir-locals.el
 bm_results
 /build/
-/doc/bib/auto/other.el
+/doxygen-docs/bib/auto/other.el
 result*
 *.csv
+site
+/site-docs/doxygen
