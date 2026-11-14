@@ -12,7 +12,6 @@ compile_commands.json
 .dir-locals.el
 bm_results
 /build/
-*.lock
 /doc/bib/auto/other.el
 result*
 *.csv
