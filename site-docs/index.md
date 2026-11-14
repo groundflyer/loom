@@ -25,7 +25,7 @@ The project explores a programming and execution model that can target different
 The project comes with an interactive path-tracing demo showing execution of the same path-tracing kernel with different VM backends.
 
 <video controls width="100%">
-  <source src="../assets/video/predicated-vs-hybrid.mp4" type="video/mp4">
+  <source src="assets/video/predicated-vs-hybrid.mp4" type="video/mp4">
   Your browser does not support video playback.
 </video>
 
