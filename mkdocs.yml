@@ -6,6 +6,9 @@ nav:
   - API Reference: api.md
 docs_dir: site-docs
 markdown_extensions:
+  - admonition
   - attr_list
+  - pymdownx.details
+  - pymdownx.superfences
 theme:
   name: material

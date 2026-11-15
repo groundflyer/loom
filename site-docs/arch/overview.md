@@ -91,7 +91,7 @@ The implementation is organized around several major components:
 
 ## Further Reading
 
-- [Draft Article](../assets/pdf/draft.pdf)
+- [Draft Article](article.md)
 <!-- - [Programming Model](programming-model.md) -->
 <!-- - [Instruction Set](instruction-set.md) -->
 <!-- - [Scheduling](scheduling.md) -->
