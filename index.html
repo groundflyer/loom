@@ -265,10 +265,32 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#key-features" class="md-nav__link">
+  <a href="#problem" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Key Features
+        Problem
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#concept" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Concept
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#benchmarks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Benchmarks
       
     </span>
   </a>
@@ -424,10 +446,32 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#key-features" class="md-nav__link">
+  <a href="#problem" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Key Features
+        Problem
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#concept" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Concept
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#benchmarks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Benchmarks
       
     </span>
   </a>
@@ -474,23 +518,44 @@
 
 
 <h1 id="loom">Loom</h1>
-<p><strong>A proof-of-concept virtual machine for unordered, streaming execution of data-parallel SPMD programs.</strong></p>
+<p><strong>A proof-of-concept virtual machine for SPMD execution, embedded in C++.</strong></p>
 <h2 id="overview">Overview</h2>
 <p>Loom is an experimental software framework exploring an alternative approach to data-parallel execution.</p>
 <p>It implements an abstract execution machine for Single Program Multiple Data (SPMD) programs,
-using dynamic instance regrouping and unordered scheduling to improve execution efficiency on workloads with irregular control flow and divergent execution paths.</p>
-<p>The project explores a programming and execution model that can target different parallel processing architectures, including CPU SIMD and GPU SIMT hardware.</p>
-<h2 id="key-features">Key Features</h2>
-<ul>
-<li><strong>Unordered execution:</strong> Program instances are scheduled dynamically rather than following a globally synchronized execution order.</li>
-<li><strong>Dynamic regrouping:</strong> Instances executing the same basic block are grouped together to improve execution coherence.</li>
-<li><strong>Streaming execution:</strong> Work progresses through the execution system without requiring global ordering of independent instances.</li>
-<li><strong>Persistent execution state:</strong> Virtual registers preserve per-instance state across scheduling cycles.</li>
-<li><strong>Multiple backends:</strong> The abstract machine can be implemented on different hardware architectures.</li>
-<li><strong>Inspectable execution:</strong> Development tools provide facilities for inspecting and debugging execution behavior.</li>
-</ul>
+using dynamic thread regrouping and unordered scheduling to improve execution throughput
+on workloads with highly irregular control flow.</p>
+<div class="admonition example">
+<p class="admonition-title">Single Program Multiple Data</p>
+<p><a href="https://en.wikipedia.org/wiki/Single_program,_multiple_data">SPMD</a> is quite a general term.
+Shaders and GPGPU compute kernels are canonical examples of SPMD programs.
+The project focuses on such kernels.</p>
+</div>
+<p>The project explores a programming and execution model that can target
+different parallel processing architectures, including CPU SIMD and GPU SIMT hardware.</p>
+<h2 id="problem">Problem</h2>
+<p>SIMD/SIMT architectures show exceptional performance in compute-heavy parallel tasks as their main execution mechanism
+is to group a few threads into a warp and execute them together, in parallel, within a lockstep.</p>
+<div class="admonition question">
+<p class="admonition-title">Warps or wavefronts</p>
+<p>NVidia's term for such group of threads is <em>warp</em> and AMD uses <em>wavefront</em> in their documentation.</p>
+</div>
+<p>However, irregular control flow in compute kernels can impact performance greatly.</p>
+<div class="admonition info">
+<p class="admonition-title">Control-flow divergence</p>
+<p>Control-flow divergence occurs when threads of a warp take different execution paths due to data-dependent branches.
+In this case, scheduler has to execute each path with different warp masks (predicated execution),
+leaving some processing lanes idle and reducing effective hardware utilization.</p>
+</div>
+<h2 id="concept">Concept</h2>
+<p>The key concept is embarrassingly simple. It comes from the next observation:</p>
+<p>Considering a large enough pool of threads executing the same kernel, there should be a chance that some threads
+execute the same control-flow paths: let's group those threads together.</p>
+<h2 id="benchmarks">Benchmarks</h2>
+<p>There are quite a few benchmarks available. See <a href="getting-started/">Getting Started</a> on how to run them and <a href="bm-results/">Benchmark Results</a>
+to compare the results across different hardware.</p>
 <h2 id="demo">Demo</h2>
-<p>The project comes with an interactive path-tracing demo showing execution of the same path-tracing kernel with different VM backends.</p>
+<p>The project comes with an interactive path-tracing demo showing execution of the same path-tracing kernel with different VM backends.
+Executing the  kernel on the hybrid VM backend makes the path tracer inherently wavefront.</p>
 <video controls width="100%">
   <source src="assets/video/predicated-vs-hybrid.mp4" type="video/mp4">
   Your browser does not support video playback.
