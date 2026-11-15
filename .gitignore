@@ -10,10 +10,8 @@ build_*
 compile_commands.json
 .ccls-cache
 .dir-locals.el
-bm_results
 /build/
 /doxygen-docs/bib/auto/other.el
-result*
-*.csv
-site
+/result*
+/site
 /site-docs/doxygen
