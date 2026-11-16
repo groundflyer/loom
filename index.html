@@ -265,21 +265,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#problem" class="md-nav__link">
+  <a href="#the-problem-of-control-flow-divergence" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Problem
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#concept" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Concept
+        The problem of control-flow divergence
       
     </span>
   </a>
@@ -333,6 +322,53 @@
   
   
   
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Architecture
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
     <li class="md-nav__item">
       <a href="arch/overview/" class="md-nav__link">
         
@@ -350,6 +386,14 @@
   
 
       </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
     </li>
   
 
@@ -446,21 +490,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#problem" class="md-nav__link">
+  <a href="#the-problem-of-control-flow-divergence" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Problem
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#concept" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Concept
+        The problem of control-flow divergence
       
     </span>
   </a>
@@ -520,9 +553,9 @@
 <h1 id="loom">Loom</h1>
 <p><strong>A proof-of-concept virtual machine for SPMD execution, embedded in C++.</strong></p>
 <h2 id="overview">Overview</h2>
-<p>Loom is an experimental software framework exploring an alternative approach to data-parallel execution.</p>
-<p>It implements an abstract execution machine for Single Program Multiple Data (SPMD) programs,
-using dynamic thread regrouping and unordered scheduling to improve execution throughput
+<p>Loom is an experimental software framework exploring an alternative execution model
+for data-parallel SPMD programs.
+It uses dynamic thread regrouping and unordered scheduling to improve performance
 on workloads with highly irregular control flow.</p>
 <div class="admonition example">
 <p class="admonition-title">Single Program Multiple Data</p>
@@ -530,26 +563,34 @@ on workloads with highly irregular control flow.</p>
 Shaders and GPGPU compute kernels are canonical examples of SPMD programs.
 The project focuses on such kernels.</p>
 </div>
-<p>The project explores a programming and execution model that can target
-different parallel processing architectures, including CPU SIMD and GPU SIMT hardware.</p>
-<h2 id="problem">Problem</h2>
-<p>SIMD/SIMT architectures show exceptional performance in compute-heavy parallel tasks as their main execution mechanism
-is to group a few threads into a warp and execute them together, in parallel, within a lockstep.</p>
+<p>The main idea is simple: instead of keeping threads in their original order and relying on conventional SIMD/SIMT reconvergence,
+we can sacrifice that ordering and dynamically regroup threads based on where they are in the program.
+This allows threads following the same execution path to work together, potentially reducing the impact of control-flow divergence.</p>
+<p>The project builds a virtual machine to explore this idea, develop the underlying execution and programming models,
+and experiment with different scheduling strategies.</p>
+<p>The main goal is to find out whether this approach can actually be efficient on contemporary hardware,
+and whether it can offer an alternative to conventional ways of handling control-flow divergence.</p>
+<h2 id="the-problem-of-control-flow-divergence">The problem of control-flow divergence</h2>
+<p>SIMD/SIMT architectures are particularly effective at compute-heavy, data-parallel workloads.
+Their execution model groups multiple threads into a <em>warp</em> and executes the same instruction across all threads in the group.</p>
 <div class="admonition question">
 <p class="admonition-title">Warps or wavefronts</p>
-<p>NVidia's term for such group of threads is <em>warp</em> and AMD uses <em>wavefront</em> in their documentation.</p>
+<p>NVIDIA uses the term <em>warp</em>, while AMD uses <em>wavefront</em> to describe these groups of threads.</p>
 </div>
-<p>However, irregular control flow in compute kernels can impact performance greatly.</p>
+<p>This approach works well when threads follow similar execution paths.
+However, real-world workloads are not always that predictable.
+Data-dependent branches can send threads in the same warp down different execution paths, significantly reducing execution efficiency.</p>
 <div class="admonition info">
 <p class="admonition-title">Control-flow divergence</p>
-<p>Control-flow divergence occurs when threads of a warp take different execution paths due to data-dependent branches.
-In this case, scheduler has to execute each path with different warp masks (predicated execution),
-leaving some processing lanes idle and reducing effective hardware utilization.</p>
+<p>Control-flow divergence occurs when threads within a warp take different execution paths due to data-dependent branches.
+The hardware handles this by executing each path separately, using different thread masks to enable only the threads that follow that path.
+Threads that are not active during a given execution step leave their processing lanes idle, reducing effective hardware utilization.</p>
 </div>
-<h2 id="concept">Concept</h2>
-<p>The key concept is embarrassingly simple. It comes from the next observation:</p>
-<p>Considering a large enough pool of threads executing the same kernel, there should be a chance that some threads
-execute the same control-flow paths: let's group those threads together.</p>
+<p>The impact becomes especially noticeable in workloads with highly irregular control flow,
+where threads frequently diverge and follow different paths.
+Conventional reconvergence mechanisms help manage this problem, but they cannot always prevent substantial lane underutilization.</p>
+<p>This raises an interesting question:
+<strong>what if we stopped trying to keep threads in their original groups and instead regrouped them dynamically based on their current execution paths?</strong></p>
 <h2 id="benchmarks">Benchmarks</h2>
 <p>There are quite a few benchmarks available. See <a href="getting-started/">Getting Started</a> on how to run them and <a href="bm-results/">Benchmark Results</a>
 to compare the results across different hardware.</p>
