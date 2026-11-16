@@ -1,30 +1,34 @@
-**Loom is a proof-of-concept virtual machine for SPMD (single program-multiple data) execution, embedded in C++.**
+# Overview
 
-The purpose of this project is to answer question:
-can we decrease the performance impact of control-flow divergence, sacrificing the ordering?
+Loom is an experimental software framework exploring an alternative execution model
+for data-parallel SPMD programs.
+It uses dynamic thread regrouping and unordered scheduling to improve performance
+on workloads with highly irregular control flow.
 
-The project focuses only on program execution and scheduling.
-In order to experiment freely I had to simplify and restrict conventional SPMD programming model significantly.
+The main idea is simple: instead of keeping threads in their original order and relying on conventional SIMD/SIMT reconvergence,
+we can sacrifice that ordering and dynamically regroup threads based on where they are in the program.
+This allows threads following the same execution path to work together, potentially reducing the impact of control-flow divergence.
 
-## Concept
+The project builds a virtual machine to explore this idea, develop the underlying execution and programming models,
+and experiment with different scheduling strategies.
 
-The core idea is embarrassingly simple: having a thread pool of persistent threads (SPMD kernel instances),
-let's sort the threads by program counter and regroup them into more coherent groups.
-This scheduling scheme can be more efficient for highly irregular workloads than conventional reconvergence.
+The main goal is to find out whether this approach can actually be efficient on contemporary hardware,
+and whether it can offer an alternative to conventional ways of handling control-flow divergence.
 
-## Implementation
+# Implementation
 
-The VM targets x86 vector extensions from SSE to AVX-512 and implements two main SIMD backends:
+The VM targets x86 vector extensions from SSE to AVX-512 and implements a few execution backends.
+However, only the two SIMD backends are of the practical interest:
 
 * compact - predicated warp execution with dynamic reconvergence
 * hybrid - compact SIMD backend integrated within thread pool sorting and regrouping
 
-In path tracing benchmarks the hybrid backend is up to 1.54x faster than the compact one.
+On AMD Zen 4 CPU in path tracing benchmarks the hybrid backend is up to 1.54x faster than the compact one.
 
 There are other execution backends, including CUDA, developed for sole purpose to test things and establish API,
 so they are not efficient and do not participate in benchmarking (except the scalar backend that sometimes faster than plain C++).
 
-## Demo
+# Demo
 
 The project comes with an interactive path-tracing demo.
 

@@ -4,10 +4,9 @@
 
 ## Overview
 
-Loom is an experimental software framework exploring an alternative approach to data-parallel execution.
-
-It implements an abstract execution machine for Single Program Multiple Data (SPMD) programs,
-using dynamic thread regrouping and unordered scheduling to improve execution throughput
+Loom is an experimental software framework exploring an alternative execution model
+for data-parallel SPMD programs.
+It uses dynamic thread regrouping and unordered scheduling to improve performance
 on workloads with highly irregular control flow.
 
 !!! example "Single Program Multiple Data"
@@ -15,30 +14,39 @@ on workloads with highly irregular control flow.
     Shaders and GPGPU compute kernels are canonical examples of SPMD programs.
     The project focuses on such kernels.
 
-The project explores a programming and execution model that can target
-different parallel processing architectures, including CPU SIMD and GPU SIMT hardware.
+The main idea is simple: instead of keeping threads in their original order and relying on conventional SIMD/SIMT reconvergence,
+we can sacrifice that ordering and dynamically regroup threads based on where they are in the program.
+This allows threads following the same execution path to work together, potentially reducing the impact of control-flow divergence.
 
-## Problem
+The project builds a virtual machine to explore this idea, develop the underlying execution and programming models,
+and experiment with different scheduling strategies.
 
-SIMD/SIMT architectures show exceptional performance in compute-heavy parallel tasks as their main execution mechanism
-is to group a few threads into a warp and execute them together, in parallel, within a lockstep.
+The main goal is to find out whether this approach can actually be efficient on contemporary hardware,
+and whether it can offer an alternative to conventional ways of handling control-flow divergence.
+
+## The problem of control-flow divergence
+
+SIMD/SIMT architectures are particularly effective at compute-heavy, data-parallel workloads.
+Their execution model groups multiple threads into a *warp* and executes the same instruction across all threads in the group.
 
 !!! question "Warps or wavefronts"
-    NVidia's term for such group of threads is *warp* and AMD uses *wavefront* in their documentation.
+    NVIDIA uses the term *warp*, while AMD uses *wavefront* to describe these groups of threads.
 
-However, irregular control flow in compute kernels can impact performance greatly.
+This approach works well when threads follow similar execution paths.
+However, real-world workloads are not always that predictable.
+Data-dependent branches can send threads in the same warp down different execution paths, significantly reducing execution efficiency.
 
 !!! info "Control-flow divergence"
-    Control-flow divergence occurs when threads of a warp take different execution paths due to data-dependent branches.
-    In this case, scheduler has to execute each path with different warp masks (predicated execution),
-    leaving some processing lanes idle and reducing effective hardware utilization.
+    Control-flow divergence occurs when threads within a warp take different execution paths due to data-dependent branches.
+    The hardware handles this by executing each path separately, using different thread masks to enable only the threads that follow that path.
+    Threads that are not active during a given execution step leave their processing lanes idle, reducing effective hardware utilization.
 
-## Concept
+The impact becomes especially noticeable in workloads with highly irregular control flow,
+where threads frequently diverge and follow different paths.
+Conventional reconvergence mechanisms help manage this problem, but they cannot always prevent substantial lane underutilization.
 
-The key concept is embarrassingly simple. It comes from the next observation:
-
-Considering a large enough pool of threads executing the same kernel, there should be a chance that some threads
-execute the same control-flow paths: let's group those threads together.
+This raises an interesting question:
+**what if we stopped trying to keep threads in their original groups and instead regrouped them dynamically based on their current execution paths?**
 
 ## Benchmarks
 

@@ -1,7 +1,8 @@
 site_name: Loom
 nav:
   - Home: index.md
-  - Overview: arch/overview.md
+  - Architecture:
+      - Overview: arch/overview.md
   - Getting Started: getting-started.md
   - API Reference: api.md
 docs_dir: site-docs
