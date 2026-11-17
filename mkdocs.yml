@@ -3,6 +3,7 @@ nav:
   - Home: index.md
   - Architecture:
       - Overview: arch/overview.md
+      - Article: arch/article.md
   - Getting Started: getting-started.md
   - API Reference: api.md
 docs_dir: site-docs
