@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+# Select and run benchmarks
+
 # Loom: a proof-of-concept virtual machine for SPMD execution
 # Copyright (C) 2026 Roman Saldygashev (sldg.roman@gmail.com)
 
@@ -43,6 +45,9 @@ light=(
 )
 
 render=(
+    bm_primary_b1
+    bm_primary_b5
+    bm_primary_b20
     bm_pt_const_b1_t0.0001_d2
     bm_pt_const_b1_t0.0001_d20
     bm_pt_const_b1_t0.0001_d5
