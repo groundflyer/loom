@@ -19,11 +19,12 @@
 import argparse
 import datetime as dt
 import logging
+import os
 
-from enum import Enum
+from enum import StrEnum
 from dataclasses import dataclass, asdict
 from functools import reduce
-from os import path
+from pathlib import Path
 
 orig_methods = ['reference',
                 'scalar',
@@ -32,65 +33,75 @@ orig_methods = ['reference',
                 'hybrid-stream',
                 'hybrid-full-range']
 
-render=('pt_const_b1_t0.0001_d2',
-        'pt_const_b1_t0.0001_d20',
-        'pt_const_b1_t0.0001_d5',
-        'pt_const_b1_t0.0005_d2',
-        'pt_const_b1_t0.0005_d20',
-        'pt_const_b1_t0.0005_d5',
-        'pt_const_b1_t0.001_d2',
-        'pt_const_b1_t0.001_d20',
-        'pt_const_b1_t0.001_d5',
-        'pt_const_b20_t0.0001_d2',
-        'pt_const_b20_t0.0001_d20',
-        'pt_const_b20_t0.0001_d5',
-        'pt_const_b20_t0.0005_d2',
-        'pt_const_b20_t0.0005_d20',
-        'pt_const_b20_t0.0005_d5',
-        'pt_const_b20_t0.001_d2',
-        'pt_const_b20_t0.001_d20',
-        'pt_const_b20_t0.001_d5',
-        'pt_const_b5_t0.0001_d2',
-        'pt_const_b5_t0.0001_d20',
-        'pt_const_b5_t0.0001_d5',
-        'pt_const_b5_t0.0005_d2',
-        'pt_const_b5_t0.0005_d20',
-        'pt_const_b5_t0.0005_d5',
-        'pt_const_b5_t0.001_d2',
-        'pt_const_b5_t0.001_d20',
-        'pt_const_b5_t0.001_d5',
-        'pt2_const_b1_t0.0001_d2',
-        'pt2_const_b1_t0.0001_d20',
-        'pt2_const_b1_t0.0001_d5',
-        'pt2_const_b1_t0.0005_d2',
-        'pt2_const_b1_t0.0005_d20',
-        'pt2_const_b1_t0.0005_d5',
-        'pt2_const_b1_t0.001_d2',
-        'pt2_const_b1_t0.001_d20',
-        'pt2_const_b1_t0.001_d5',
-        'pt2_const_b20_t0.0001_d2',
-        'pt2_const_b20_t0.0001_d20',
-        'pt2_const_b20_t0.0001_d5',
-        'pt2_const_b20_t0.0005_d2',
-        'pt2_const_b20_t0.0005_d20',
-        'pt2_const_b20_t0.0005_d5',
-        'pt2_const_b20_t0.001_d2',
-        'pt2_const_b20_t0.001_d20',
-        'pt2_const_b20_t0.001_d5',
-        'pt2_const_b5_t0.0001_d2',
-        'pt2_const_b5_t0.0001_d20',
-        'pt2_const_b5_t0.0001_d5',
-        'pt2_const_b5_t0.0005_d2',
-        'pt2_const_b5_t0.0005_d20',
-        'pt2_const_b5_t0.0005_d5',
-        'pt2_const_b5_t0.001_d2',
-        'pt2_const_b5_t0.001_d20',
-        'pt2_const_b5_t0.001_d5')
+pt1_suite=('pt_const_b1_t0.0001_d2',
+           'pt_const_b1_t0.0001_d20',
+           'pt_const_b1_t0.0001_d5',
+           'pt_const_b1_t0.0005_d2',
+           'pt_const_b1_t0.0005_d20',
+           'pt_const_b1_t0.0005_d5',
+           'pt_const_b1_t0.001_d2',
+           'pt_const_b1_t0.001_d20',
+           'pt_const_b1_t0.001_d5',
+           'pt_const_b20_t0.0001_d2',
+           'pt_const_b20_t0.0001_d20',
+           'pt_const_b20_t0.0001_d5',
+           'pt_const_b20_t0.0005_d2',
+           'pt_const_b20_t0.0005_d20',
+           'pt_const_b20_t0.0005_d5',
+           'pt_const_b20_t0.001_d2',
+           'pt_const_b20_t0.001_d20',
+           'pt_const_b20_t0.001_d5',
+           'pt_const_b5_t0.0001_d2',
+           'pt_const_b5_t0.0001_d20',
+           'pt_const_b5_t0.0001_d5',
+           'pt_const_b5_t0.0005_d2',
+           'pt_const_b5_t0.0005_d20',
+           'pt_const_b5_t0.0005_d5',
+           'pt_const_b5_t0.001_d2',
+           'pt_const_b5_t0.001_d20',
+           'pt_const_b5_t0.001_d5')
+
+pt2_suite=('pt2_const_b1_t0.0001_d2',
+           'pt2_const_b1_t0.0001_d20',
+           'pt2_const_b1_t0.0001_d5',
+           'pt2_const_b1_t0.0005_d2',
+           'pt2_const_b1_t0.0005_d20',
+           'pt2_const_b1_t0.0005_d5',
+           'pt2_const_b1_t0.001_d2',
+           'pt2_const_b1_t0.001_d20',
+           'pt2_const_b1_t0.001_d5',
+           'pt2_const_b20_t0.0001_d2',
+           'pt2_const_b20_t0.0001_d20',
+           'pt2_const_b20_t0.0001_d5',
+           'pt2_const_b20_t0.0005_d2',
+           'pt2_const_b20_t0.0005_d20',
+           'pt2_const_b20_t0.0005_d5',
+           'pt2_const_b20_t0.001_d2',
+           'pt2_const_b20_t0.001_d20',
+           'pt2_const_b20_t0.001_d5',
+           'pt2_const_b5_t0.0001_d2',
+           'pt2_const_b5_t0.0001_d20',
+           'pt2_const_b5_t0.0001_d5',
+           'pt2_const_b5_t0.0005_d2',
+           'pt2_const_b5_t0.0005_d20',
+           'pt2_const_b5_t0.0005_d5',
+           'pt2_const_b5_t0.001_d2',
+           'pt2_const_b5_t0.001_d20',
+           'pt2_const_b5_t0.001_d5')
+
+
+def get_last_line(p) -> str:
+    with p.open('rb') as f:
+        f.seek(-2, os.SEEK_END)
+        while f.read(1) != b"\n":
+            f.seek(-2, os.SEEK_CUR)
+
+        return f.readline().decode('utf-8').rstrip('\r\n')
 
 def sm_prep(s) -> str:
     return s.replace('-', '_').upper()
 
-Method = Enum('Method', [sm_prep(s) for s in orig_methods])
+Method = StrEnum('Method', [sm_prep(s) for s in orig_methods])
 
 logger = logging.getLogger(__name__)
 
@@ -152,7 +163,7 @@ def make_bid(l) -> BenchmarkID:
                        UTR=extract_prop('UTR', lambda s: float(s[:-1]) / 100.0),
                        stream_size=extract_prop('size', int))
 
-def parse_record(line) -> Record:
+def parse_record(line: str) -> Record:
     vals = line.split(',')
     return Record(date=dt.datetime.strptime(vals[0], "%Y-%m-%dT%H:%M:%S%z"),
                   hash=vals[1],
@@ -163,16 +174,10 @@ def parse_record(line) -> Record:
                   id= make_bid(vals[6]),
                   time=float(vals[7]))
 
-def get_records(path, latest=True):
-    logger.debug("working with %s", path)
-    with open(path, 'r') as f:
-        records = [parse_record(l) for l in f.readlines()]
-    if latest:
-        lh = records[-1].hash
-        logger.debug("Latest hash: %s", lh)
-        return list(filter(lambda r: r.hash == lh, records))
-    else:
-        return records
+def get_records(p, k):
+    logger.debug("working with %s", p)
+    with p.open() as f:
+        return list(filter(k, (parse_record(l) for l in f)))
 
 def get_unique_bids(records):
     return set(r.id for r in records)
@@ -203,32 +208,18 @@ def h2p_speedup(records):
     return ratio, hbid
 
 def decode_pt(s):
-    kernel, _, b, t, d = s.split('_')
+    _, __, b, t, d = s.split('_')
     blur = int(b[1:])
     threshold = float(t[1:])
     depth = int(d[1:])
-    return "PT v{}; blur={}; threshold={}; depth:{}".format(1 if kernel == "pt" else 2,
-                                                            blur, threshold, depth)
+    return blur, threshold, depth
 
-def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('path', help='path to directory with benchmarks logs')
-    parser.add_argument('-v', '--verbose', help='verbose logging', action='store_true')
-    parser.add_argument('-a', '--all', help='print all results', action='store_true')
-    args = parser.parse_args()
+def pt_h2p_report(k, suite_name, benchmarks, log_dir, full=False):
+    xs1 = ((h2p_speedup(get_records(x[1], k)), decode_pt(x[0])) for x in
+          filter(lambda x: x[1].exists(),
+                 ((n, Path(log_dir, n + '.csv')) for n in benchmarks)))
 
-    logging.basicConfig(level=logging.INFO)
-
-    if (args.verbose):
-        logger.setLevel(logging.DEBUG)
-
-    d = path.abspath(args.path)
-
-    xs1 = ((h2p_speedup(get_records(x[1])), decode_pt(x[0])) for x in
-          filter(lambda x: path.exists(x[1]),
-                 ((n, path.join(d, n + '.csv')) for n in render)))
-
-    xs = [(x[0][0], (x[1], str(asdict(x[0][1])))) for x in xs1]
+    xs = [(x[0][0], (x[1], asdict(x[0][1]))) for x in xs1]
     xs.sort(key=lambda v: v[0])
 
     vs, ns = zip(*xs)
@@ -238,31 +229,85 @@ def main():
     min_speedup, worst = xs[0]
     avg_speedup = sum(vs) / l
 
-    sep = lambda: print("{:=^40}".format(""))
+    sep = lambda: print("{:=^105}".format(""))
 
     sep()
-    print("Maximum speedup: {:.2f}x ({})\nAverage speedup: {:.2f}x\nMinimum speedup: {:.2f}x ({})".format(
-        max_speedup, best, avg_speedup, min_speedup, worst))
+    print("Hybrid to predicated ratio statistics for {} benchmark suite".format(suite_name))
+
+    sep()
+    print("Average speedup: {0:.2f}x".format(avg_speedup))
+
+    # BRP - block-local register allocation
+    header = """| Case   | Speedup  | Blur | Threshold | Depth | Method            | Stream Size | TE   | BRP  | UTR    |
+|:------:|---------:|:----:|:---------:|:-----:|:-----------------:|:-----------:|:----:|:----:|:------:|"""
+
+    make_row = lambda c, ratio, pt_conf, pt_bid: "| {case:^6} | {0:>7.2f}x | {1:^4} | {2:^9} | {3:^5} | {method:^17} | {stream_size:^11} | {tbd} | {ts} | {UTR:>6.0%} |".format(ratio, *pt_conf, **{k: ("N/A" if v is None else v) for k, v in pt_bid.items()}, case=c)
+    sep()
+    print(header)
+    print(make_row("best", max_speedup, best[0], best[1]))
+    print(make_row("worst", min_speedup, worst[0], worst[1]))
 
     sep()
 
-    print("\nTop 3")
-    for i in range(3):
-        print("{:.2f}x {}".format(*xs[-1-i]))
-
-    print("\nBottom 3")
-    for i in range(3):
-        print("{:.2f}x {}".format(*xs[2-i]))
-
-    print("\nMedian 3")
-    for i in range(3):
-        print("{:.2f}x {}".format(*xs[l // 2 - 1 + i]))
-
-    if(args.all):
-        sep()
+    if(full):
         print("\nAll results")
-        for (x, y) in xs[::-1]:
-            print("{:.2f}x {}".format(x, y))
+        print(header)
+        for i, (x, y) in enumerate(xs[::-1], 1):
+            print(make_row(i, x, y[0], y[1]))
+    else:
+        print("\nTop 3")
+        print(header)
+        for i in range(3):
+            a, b = xs[-1-i]
+            print(make_row(i+1, a, b[0], b[1]))
+
+        print("\nMedian 3")
+        print(header)
+        for i in range(3):
+            j = l // 2 - 1 + i
+            a, b = xs[j]
+            print(make_row(j, a, b[0], b[1]))
+
+        print("\nBottom 3")
+        print(header)
+        for i in range(3):
+            j = 2 - i
+            a, b = xs[-j]
+            print(make_row(l-j, a, b[0], b[1]))
+
+    print("\n\n")
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('path', help='path to directory with benchmarks logs', type=Path)
+    parser.add_argument('--hash', help='git repo hash to show stats for', default='')
+    parser.add_argument('-v', '--verbose', help='verbose logging', action='store_true')
+    parser.add_argument('-a', '--all', help='print all results', action='store_true')
+    args = parser.parse_args()
+
+    logging.basicConfig(level=logging.INFO)
+
+    if (args.verbose):
+        logger.setLevel(logging.DEBUG)
+
+    d = args.path
+    d.absolute()
+
+    lf = max((p for p in d.rglob("*") if p.is_file()), key=lambda p: p.stat().st_mtime, default=None)
+
+    if not lf:
+        print("Files not found")
+        exit(1)
+
+    rec = parse_record(get_last_line(lf))
+
+    print("Repo hash: {hash}\nCompiler: {compiler}\nFash-math: {fast_math}\nCPU: {cpu}\nSIMD: {simd}".format(**asdict(rec)))
+
+    k = lambda r: r.hash == args.hash if args.hash else rec.hash
+
+    pt_h2p_report(k, "Path-tracer v1", pt1_suite, d, args.all)
+    pt_h2p_report(k, "Path-tracer v2", pt2_suite, d, args.all)
 
 if __name__ == '__main__':
     main()
