@@ -214,7 +214,7 @@ def decode_pt(s):
     depth = int(d[1:])
     return blur, threshold, depth
 
-def pt_h2p_report(k, suite_name, benchmarks, log_dir, full=False):
+def pt_h2p_report(k, suite_name, benchmarks, log_dir, details=False):
     xs1 = ((h2p_speedup(get_records(x[1], k)), decode_pt(x[0])) for x in
           filter(lambda x: x[1].exists(),
                  ((n, Path(log_dir, n + '.csv')) for n in benchmarks)))
@@ -229,51 +229,25 @@ def pt_h2p_report(k, suite_name, benchmarks, log_dir, full=False):
     min_speedup, worst = xs[0]
     avg_speedup = sum(vs) / l
 
-    sep = lambda: print("{:=^105}".format(""))
+    print("# Hybrid to predicated ratio statistics for {} benchmark suite\n".format(suite_name))
 
-    sep()
-    print("Hybrid to predicated ratio statistics for {} benchmark suite".format(suite_name))
-
-    sep()
-    print("Average speedup: {0:.2f}x".format(avg_speedup))
+    print("Average speedup: {0:.2f}x\n".format(avg_speedup))
 
     # BRP - block-local register allocation
     header = """| Case   | Speedup  | Blur | Threshold | Depth | Method            | Stream Size | TE   | BRP  | UTR    |
 |:------:|---------:|:----:|:---------:|:-----:|:-----------------:|:-----------:|:----:|:----:|:------:|"""
 
     make_row = lambda c, ratio, pt_conf, pt_bid: "| {case:^6} | {0:>7.2f}x | {1:^4} | {2:^9} | {3:^5} | {method:^17} | {stream_size:^11} | {tbd} | {ts} | {UTR:>6.0%} |".format(ratio, *pt_conf, **{k: ("N/A" if v is None else v) for k, v in pt_bid.items()}, case=c)
-    sep()
+
     print(header)
     print(make_row("best", max_speedup, best[0], best[1]))
     print(make_row("worst", min_speedup, worst[0], worst[1]))
 
-    sep()
-
-    if(full):
-        print("\nAll results")
+    if(details):
+        print("\n## Details\n")
         print(header)
         for i, (x, y) in enumerate(xs[::-1], 1):
             print(make_row(i, x, y[0], y[1]))
-    else:
-        print("\nTop 3")
-        print(header)
-        for i in range(3):
-            a, b = xs[-1-i]
-            print(make_row(i+1, a, b[0], b[1]))
-
-        print("\nMedian 3")
-        print(header)
-        for i in range(3):
-            j = l // 2 - 1 + i
-            a, b = xs[j]
-            print(make_row(j, a, b[0], b[1]))
-
-        print("\nBottom 3")
-        print(header)
-        for i in range(3):
-            j = 2 - i
-            a, b = xs[-j]
-            print(make_row(l-j, a, b[0], b[1]))
 
     print("\n\n")
 
@@ -283,7 +257,7 @@ def main():
     parser.add_argument('path', help='path to directory with benchmarks logs', type=Path)
     parser.add_argument('--hash', help='git repo hash to show stats for', default='')
     parser.add_argument('-v', '--verbose', help='verbose logging', action='store_true')
-    parser.add_argument('-a', '--all', help='print all results', action='store_true')
+    parser.add_argument('-d', '--details', help='print all results', action='store_true')
     args = parser.parse_args()
 
     logging.basicConfig(level=logging.INFO)
@@ -302,12 +276,23 @@ def main():
 
     rec = parse_record(get_last_line(lf))
 
-    print("Repo hash: {hash}\nCompiler: {compiler}\nFash-math: {fast_math}\nCPU: {cpu}\nSIMD: {simd}".format(**asdict(rec)))
+    print("""# Configuration
+
+Repo hash: {hash}
+
+Compiler: {compiler}
+
+Fash-math: {fast_math}
+
+CPU: {cpu}
+
+SIMD: {simd}
+""".format(**asdict(rec)))
 
     k = lambda r: r.hash == args.hash if args.hash else rec.hash
 
-    pt_h2p_report(k, "Path-tracer v1", pt1_suite, d, args.all)
-    pt_h2p_report(k, "Path-tracer v2", pt2_suite, d, args.all)
+    pt_h2p_report(k, "Path-tracer v1", pt1_suite, d, args.details)
+    pt_h2p_report(k, "Path-tracer v2", pt2_suite, d, args.details)
 
 if __name__ == '__main__':
     main()
