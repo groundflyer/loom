@@ -229,27 +229,49 @@ def pt_h2p_report(k, suite_name, benchmarks, log_dir, details=False):
     min_speedup, worst = xs[0]
     avg_speedup = sum(vs) / l
 
-    print("# Hybrid to predicated ratio statistics for {} benchmark suite\n".format(suite_name))
+    print("## Hybrid to predicated ratio statistics for {} benchmark suite\n".format(suite_name))
 
     print("Average speedup: {0:.2f}x\n".format(avg_speedup))
 
     # BRP - block-local register allocation
-    header = """| Case   | Speedup  | Blur | Threshold | Depth | Method            | Stream Size | TE   | BRP  | UTR    |
-|:------:|---------:|:----:|:---------:|:-----:|:-----------------:|:-----------:|:----:|:----:|:------:|"""
+    header = """| Case   | Speedup  | Blur | Threshold | Depth | Method            | Stream Size | TE   | BRP  | UTR |
+|:------:|---------:|:----:|:---------:|:-----:|:-----------------:|:-----------:|:----:|:----:|:---:|"""
 
-    make_row = lambda c, ratio, pt_conf, pt_bid: "| {case:^6} | {0:>7.2f}x | {1:^4} | {2:^9} | {3:^5} | {method:^17} | {stream_size:^11} | {tbd} | {ts} | {UTR:>6.0%} |".format(ratio, *pt_conf, **{k: ("N/A" if v is None else v) for k, v in pt_bid.items()}, case=c)
+    make_row = lambda c, ratio, pt_conf, pt_bid: "| {case:^6} | {0:>7.2f}x | {1:^4} | {2:^9} | {3:^5} | {method:^17} | {stream_size:^11} | {tbd} | {ts} | {UTR:>3.0%} |".format(ratio, *pt_conf, **{k: ("N/A" if v is None else v) for k, v in pt_bid.items()}, case=c)
 
     print(header)
     print(make_row("best", max_speedup, best[0], best[1]))
     print(make_row("worst", min_speedup, worst[0], worst[1]))
 
     if(details):
-        print("\n## Details\n")
+        print("\n### Details\n")
         print(header)
         for i, (x, y) in enumerate(xs[::-1], 1):
             print(make_row(i, x, y[0], y[1]))
 
     print("\n\n")
+
+def report_pt_conf(d, rev, args):
+    with Path(d, pt1_suite[0] + '.csv').open() as f:
+        rec = next(filter(lambda r: r.hash == rev, (parse_record(l) for l in f)))
+
+    print("""# Configuration
+
+Repo hash: {hash}
+
+Compiler: {compiler}
+
+Fash-math: {fast_math}
+
+CPU: {cpu}
+
+SIMD: {simd}
+""".format(**asdict(rec)))
+
+    k = lambda r: r.hash == rec.hash
+
+    pt_h2p_report(k, "Path-tracer v1", pt1_suite, d, args.details)
+    pt_h2p_report(k, "Path-tracer v2", pt2_suite, d, args.details)
 
 
 def main():
@@ -268,31 +290,28 @@ def main():
     d = args.path
     d.absolute()
 
-    lf = max((p for p in d.rglob("*") if p.is_file()), key=lambda p: p.stat().st_mtime, default=None)
-
-    if not lf:
-        print("Files not found")
+    if not (d.is_dir() and d.exists()):
+        logger.fatal("%s is not a directory or does not exist", d)
         exit(1)
 
-    rec = parse_record(get_last_line(lf))
+    rev = args.hash
 
-    print("""# Configuration
+    # get latest revision hash
+    if not rev:
+        # last changed file file
+        lf = max((p for p in d.rglob("*.csv") if p.is_file()), key=lambda p: p.stat().st_mtime, default=None)
 
-Repo hash: {hash}
+        if not lf:
+            logger.fatal("%s does not contain any files", d)
+            exit(2)
 
-Compiler: {compiler}
+        rev = parse_record(get_last_line(lf)).hash
 
-Fash-math: {fast_math}
-
-CPU: {cpu}
-
-SIMD: {simd}
-""".format(**asdict(rec)))
-
-    k = lambda r: r.hash == args.hash if args.hash else rec.hash
-
-    pt_h2p_report(k, "Path-tracer v1", pt1_suite, d, args.details)
-    pt_h2p_report(k, "Path-tracer v2", pt2_suite, d, args.details)
+    if list(d.glob("*.csv")):
+        report_pt_conf(d, rev, args)
+    else:
+        for sd in filter(lambda dd: dd.is_dir() and len(dd.name) == 10, d.glob("*")):
+            report_pt_conf(sd, rev, args)
 
 if __name__ == '__main__':
     main()
