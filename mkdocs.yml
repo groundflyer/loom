@@ -6,11 +6,21 @@ nav:
       - Article: arch/article.md
   - Getting Started: getting-started.md
   - API Reference: api.md
+  - Benchmarks:
+      - Results: bm-results.md
 docs_dir: site-docs
 markdown_extensions:
   - admonition
   - attr_list
+  - tables
   - pymdownx.details
   - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+      slugify: !!python/object/apply:pymdownx.slugs.slugify
+        kwds:
+          case: lower
 theme:
   name: material
+  features: content.tabs.link
+repo_url: https://github.com/groundflyer/loom
